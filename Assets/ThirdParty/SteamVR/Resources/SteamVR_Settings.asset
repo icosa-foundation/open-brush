@@ -21,7 +21,7 @@ MonoBehaviour:
   poseUpdateMode: 8
   activateFirstActionSetOnStart: 1
   editorAppKey: application.generated.unity.yournamehere.exe
-  autoEnableVR: 0
+  autoEnableVR: 1
   legacyMixedRealityCamera: 1
   mixedRealityCameraPose:
     actionPath: /actions/mixedreality/in/ExternalCamera
