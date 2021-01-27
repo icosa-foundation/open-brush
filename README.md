@@ -1,3 +1,18 @@
+# Open Brush - A fork of Tilt Brush.
+We hope to help maintain Tilt Brush.  
+As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
+
+[Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)
+
+### Currently we are:
+* Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
+* Looking at modding support. 
+* Creating a version that does not violate trademarks and can be used so people can publish their forks.
+
+Thank you Tilt Brush developers for your amazing work! 
+
+Note: we are using Unity 2019.4.18f1.
+
 # Tilt Brush README
 
 Tilt Brush is licensed under Apache 2.0. It is not an officially supported
