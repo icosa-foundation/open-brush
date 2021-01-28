@@ -26,6 +26,7 @@
 /*.sln
 /*.userprefs
 .vs
+.vscode/
 
 # Generated files in TiltBrushCpp project
 /Support/TiltBrushCpp/x64
