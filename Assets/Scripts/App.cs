@@ -1627,6 +1627,7 @@ public class App : MonoBehaviour {
     case RuntimePlatform.OSXPlayer:
     case RuntimePlatform.OSXEditor:
     case RuntimePlatform.LinuxPlayer:
+    case RuntimePlatform.LinuxEditor:
       // user Documents folder
       m_UserPath = Path.Combine(System.Environment.GetFolderPath(
                               System.Environment.SpecialFolder.Personal),
