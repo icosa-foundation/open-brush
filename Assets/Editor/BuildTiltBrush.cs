@@ -305,12 +305,12 @@ static class BuildTiltBrush {
       case BuildTarget.Android:
         location += "/" + App.kGuiBuildAndroidExecutableName;
         break;
-      case BuildTarget.StandaloneLinux64:
-	  	location += "/" + App.kGuiBuildLinuxExecutableName;
-		break;
       case BuildTarget.StandaloneWindows:
       case BuildTarget.StandaloneWindows64:
         location += "/" + App.kGuiBuildWindowsExecutableName;
+        break;
+      case BuildTarget.StandaloneLinux64:
+        location += "/" + App.kGuiBuildLinuxExecutableName;
         break;
       case BuildTarget.StandaloneOSX:
         location += "/" + App.kGuiBuildOSXExecutableName;
