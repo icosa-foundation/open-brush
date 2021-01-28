@@ -82,6 +82,7 @@ static class BuildTiltBrush {
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.Android),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneWindows64),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneOSX),
+    new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneLinux64),
 #if OCULUS_SUPPORTED
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.Android),
@@ -305,6 +306,9 @@ static class BuildTiltBrush {
         break;
       case BuildTarget.StandaloneOSX:
         location += "/" + App.kGuiBuildOSXExecutableName;
+        break;
+      case BuildTarget.StandaloneLinux64:
+        location += "/" + App.kGuiBuildLinuxExecutableName;
         break;
       default:
         throw new BuildFailedException("Unsupported BuildTarget: " + buildTarget.ToString());
