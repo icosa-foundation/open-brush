@@ -352,7 +352,7 @@ public class QualityControls : MonoBehaviour {
 
   void SetBloomMode(BloomMode rMode) {
     for (int i = 0; i < m_Bloom.Count; ++i) {
-      m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast) && !App.Config.IsMobileHardware;
+      m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast);
     }
 
     m_DesiredBloom = rMode == BloomMode.None ? 0 : 1;
