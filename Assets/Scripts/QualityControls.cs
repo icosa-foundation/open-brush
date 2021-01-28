@@ -352,15 +352,15 @@ public class QualityControls : MonoBehaviour {
 
   void SetBloomMode(BloomMode rMode) {
     for (int i = 0; i < m_Bloom.Count; ++i) {
-      m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast);
+      m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast) && !App.Config.IsMobileHardware;
     }
 
-    m_DesiredBloom = rMode == BloomMode.None ? 0 : 1;
+    m_DesiredBloom = rMode == BloomMode.None || App.Config.IsMobileHardware ? 0 : 1;
   }
 
   void EnableFxaa(bool bEnable) {
     foreach (var fxaa in m_Fxaa) {
-      fxaa.enabled = bEnable;
+      fxaa.enabled = bEnable && !App.Config.IsMobileHardware;
     }
   }
 
