@@ -54,7 +54,7 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 1
   m_LightmapEditorSettings:
-    serializedVersion: 10
+    serializedVersion: 12
     m_Resolution: 2
     m_BakeResolution: 40
     m_AtlasSize: 1024
@@ -62,6 +62,7 @@ LightmapSettings:
     m_AOMaxDistance: 1
     m_CompAOExponent: 1
     m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
     m_Padding: 2
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
@@ -76,10 +77,16 @@ LightmapSettings:
     m_PVRDirectSampleCount: 32
     m_PVRSampleCount: 500
     m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 500
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 2
+    m_PVRDenoiserTypeDirect: 0
+    m_PVRDenoiserTypeIndirect: 0
+    m_PVRDenoiserTypeAO: 0
     m_PVRFilterTypeDirect: 0
     m_PVRFilterTypeIndirect: 0
     m_PVRFilterTypeAO: 0
-    m_PVRFilteringMode: 1
+    m_PVREnvironmentMIS: 0
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
@@ -87,7 +94,9 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
-    m_ShowResolutionOverlay: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -240,9 +249,10 @@ Camera:
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
-  m_GateFitMode: 2
   m_FocalLength: 50
   m_NormalizedViewPortRect:
     serializedVersion: 2
@@ -278,7 +288,11 @@ PrefabInstance:
     m_TransformParent: {fileID: 326031496}
     m_Modifications:
     - target: {fileID: 1519074236726350, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
-      propertyPath: m_IsActive
+      propertyPath: m_Name
+      value: LoadingSceneOverlay
+      objectReference: {fileID: 0}
+    - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
+      propertyPath: m_RootOrder
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
@@ -294,6 +308,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
@@ -306,11 +324,15 @@ PrefabInstance:
       value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
-      propertyPath: m_RootOrder
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810,
@@ -318,76 +340,6 @@ PrefabInstance:
       propertyPath: m_VrCamera
       value: 
       objectReference: {fileID: 1379267300}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_havePropertiesChanged
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_isInputParsingRequired
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_text
-      value: Loading...
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_textInfo.characterCount
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_textInfo.spaceCount
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_textInfo.wordCount
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 24
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontSizeBase
-      value: 24
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_firstOverflowCharacterIndex
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontColor.r
-      value: 0.3529412
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontColor.g
-      value: 0.3529412
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontColor.b
-      value: 0.3529412
-      objectReference: {fileID: 0}
-    - target: {fileID: 114573441618034056, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4284111450
-      objectReference: {fileID: 0}
-    - target: {fileID: 33152007889839154, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
 --- !u!114 &1684060409 stripped
