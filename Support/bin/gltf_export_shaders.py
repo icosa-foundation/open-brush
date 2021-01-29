@@ -117,7 +117,7 @@ def preprocess(input_file, defines, include_dirs):
 defines is a dict of #defines.
 include_dirs is a list of directories.
 Raises PreprocessException on error."""
-  assert not isinstance(include_dirs, basestring)
+  assert not isinstance(include_dirs, str)
   if platform.system() == 'Windows':
     stdout = preprocess_msvc(input_file, defines, include_dirs)
   else:
@@ -144,7 +144,7 @@ def preprocess_msvc(input_file, defines, include_dirs):
   cmd = [find_cpp_exe(), '/nologo']
   cmd.append('/X')  # Ignore standard include paths
   cmd.append('/we4668')  # Enable C4668, "'X' is not defined" warning
-  for key, val in defines.iteritems():
+  for key, val in defines.items():
     assert re.match(r'^[A-Z0-9_]+$', key)
     cmd.append('/D%s=%s' % (key, val))
   for directory_name in include_dirs:
@@ -225,7 +225,7 @@ class Generator(object):
   def generate(self, out_root):
     """Generate output for all brushes in the manifest."""
     brushes = self.brush_manifest["brushes"]
-    for guid, brush in brushes.iteritems():
+    for guid, brush in brushes.items():
       self.generate_brush(brush, out_root)
 
   def copy_from_prev_brush(self, brush, out_dir):
@@ -246,7 +246,7 @@ class Generator(object):
         txt = file(old_hc).read()
         txt = "// Auto-copied from %s\n%s" % (os.path.basename(old_hc), txt)
         file(new_hc, 'w').write(txt)
-        print 'copy %s -> %s' % (os.path.basename(old_hc), os.path.basename(new_hc))
+        print('copy %s -> %s' % (os.path.basename(old_hc), os.path.basename(new_hc)))
 
     maybe_copy('vertexShader')
     maybe_copy('fragmentShader')
@@ -271,7 +271,7 @@ class Generator(object):
     if not os.path.exists(vert_input):
       self.copy_from_prev_brush(brush, out_dir)
     if not os.path.exists(vert_input):
-      print "Auto-creating %s" % os.path.basename(vert_input)
+      print("Auto-creating %s" % os.path.basename(vert_input))
       file(vert_input, 'w').write('#include "VertDefault.glsl"\n')
     self.preprocess(vert_input, vert_output, defines, self.include_dirs)
 
@@ -280,7 +280,7 @@ class Generator(object):
     frag_output = os.path.join(out_dir, brush['fragmentShader'])
     frag_input = self.get_handcrafted_shader(frag_output)
     if not os.path.exists(frag_input):
-      print "Auto-creating %s" % os.path.basename(frag_input)
+      print("Auto-creating %s" % os.path.basename(frag_input))
       file(frag_input, 'w').write('#include "%s"\n' % self.get_frag_template(brush))
     self.preprocess(frag_input, frag_output, defines, self.include_dirs)
 
@@ -320,10 +320,10 @@ def finalize_dir(tmp_dir, out_dir):
       assert False, "Unexpected: %s is a dir" % out_file
     elif filename not in out_files:
       shutil.copyfile(tmp_file, out_file)
-      print '+', out_file
+      print('+', out_file)
     elif file(tmp_file,'rb').read() != file(out_file,'rb').read():
       shutil.copyfile(tmp_file, out_file)
-      print '~', out_file
+      print('~', out_file)
     else:
       # identical; ignore
       pass
@@ -334,7 +334,7 @@ def finalize_dir(tmp_dir, out_dir):
       out_file = os.path.join(out_dir, filename)
       if not os.path.isfile(out_file):
         continue
-      print '-', out_file
+      print('-', out_file)
       destroy(out_file)
 
 
@@ -360,7 +360,7 @@ def main():
   gen = Generator(input_dir, include_dirs, args.brush_manifest)
   destroy(tmp_dir)
   gen.generate(tmp_dir)
-  print "Writing to %s" % os.path.normpath(args.export_root)
+  print("Writing to %s" % os.path.normpath(args.export_root))
   finalize_dir(tmp_dir, args.export_root)
   destroy(tmp_dir)
 

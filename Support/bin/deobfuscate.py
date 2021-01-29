@@ -99,17 +99,17 @@ class ObfuscationMap(object):
     proc = Popen(['git', 'cat-file', '-p', git_object], stdout=PIPE, stderr=PIPE)
     stdout, stderr = proc.communicate()
     if proc.returncode != 0:
-      print >>sys.stderr, "WARN: Couldn't load deobfuscation from '%s'\n%s" % (git_object, stderr)
+      print("WARN: Couldn't load deobfuscation from '%s'\n%s" % (git_object, stderr), file=sys.stderr)
       return
     n = self._load_from_text(stdout)
     if n > 0 and os.isatty(sys.stdout.fileno()):
-      print "Added %d symbols from '%s'" % (n, git_object)
+      print("Added %d symbols from '%s'" % (n, git_object))
 
   def _load_from_text(self, text):
     """Returns number of symbols added to the map."""
-    SEP_CHAR = u'\u21e8'
+    SEP_CHAR = '\u21e8'
     num_added = 0
-    if not isinstance(text, unicode):
+    if not isinstance(text, str):
       text = text.decode('utf-8')
     for line in text.split('\n'):
       if not line:
@@ -135,7 +135,7 @@ class ObfuscationMap(object):
     # Create a simple aggregation of the lookup table
     ob_to_syms = defaultdict(set)
     for (name, section) in sorted(self.sections_by_name.items()):
-      for (ob, syms) in section.ob_to_syms.iteritems():
+      for (ob, syms) in section.ob_to_syms.items():
         ob_to_syms[ob] |= syms
     self.ob_to_syms = dict(ob_to_syms)
 
@@ -181,7 +181,7 @@ def format_nicely(txt, verbose):
     line = ignore_pat.sub('', line)
     line = ignore_pat2.sub('', line)
     return line
-  lines = map(remove_instruction_pointer, lines)
+  lines = list(map(remove_instruction_pointer, lines))
 
   # Exception lines have a stack frame stuck onto them; move those frames to the next line.
   # Also clean up tabs and other junk that comes in when you copy/paste from the analytics table.
@@ -198,7 +198,7 @@ def format_nicely(txt, verbose):
       return frame_pat.sub(r'\n\1', line)
     else:
       return line
-  lines = map(move_trailing_stack_frame, lines)
+  lines = list(map(move_trailing_stack_frame, lines))
 
   if not verbose:
     def remove_arglist(line):
@@ -213,7 +213,7 @@ def format_nicely(txt, verbose):
         else:
           return ' %s(...)' % (name,)
     lines = [line for line in lines if line != " (wrapper remoting-invoke-with-check)"]
-    lines = map(remove_arglist, lines)
+    lines = list(map(remove_arglist, lines))
 
     def demangle_coroutine(line):
       # TiltBrush.<RunInCompositor>d__38:MoveNext()
@@ -227,7 +227,7 @@ def format_nicely(txt, verbose):
           r'(?P<class>[a-zA-Z0-9_.`]+)[+.]<(?P<coroutine><[^>]+>[^>]+)>d_*\d*[:.]MoveNext',
           repl, line)
       return ret
-    lines = map(demangle_coroutine, lines)
+    lines = list(map(demangle_coroutine, lines))
 
     lines = elide_async_frames(lines)
 
@@ -235,7 +235,7 @@ def format_nicely(txt, verbose):
       # TiltBrush.SketchControlsScript+<>c.<ExportCoroutine>b__307_0()
       def repl(m): return '%(prefix)s.%(owner)s.[lambda %(id)s]' % m.groupdict()
       return re.sub(r'(?P<prefix>[a-zA-Z0-9_.]+)\+<>c\.<(?P<owner>[a-zA-Z0-9_]+)>b__(?P<id>[0-9_]+)', repl, line)
-    lines = map(demangle_lambda, lines)
+    lines = list(map(demangle_lambda, lines))
 
   return '\n'.join(lines)
 
@@ -302,7 +302,7 @@ def main():
   omap = ObfuscationMap()
   omap.load_from_file(map_file)
   # Assumes that the remote is called "origin", but that's typically the case
-  args.releases = map(lambda s: 'origin/release/' + s, args.releases)
+  args.releases = ['origin/release/' + s for s in args.releases]
   for branch in itertools.chain(args.releases, args.branches):
     omap.load_from_git_rev('%s:%s' % (branch, args.map_file))
   sys.stdout.flush()
@@ -311,11 +311,11 @@ def main():
     parser.error("No symbols loaded. Do you need to pass '--release' or '--branch'?")
 
   if os.isatty(sys.stdout.fileno()):
-    print 'Paste text and hit Control-Z or Control-D'
+    print('Paste text and hit Control-Z or Control-D')
   txt = sys.stdin.read().decode('ascii', 'ignore')
   txt = omap.deobfuscate(txt)
   txt = format_nicely(txt, args.verbose)
-  print txt
+  print(txt)
 
 
 if __name__ == '__main__':

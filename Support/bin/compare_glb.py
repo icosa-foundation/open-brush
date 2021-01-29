@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
+
 import glob
 import json
 import os
@@ -80,7 +80,7 @@ def get_baseline_glb(name, baseline_dir_name, poly=True):
 
 def redact(dct, keys):
   """Helper for the tweak_ functions"""
-  if isinstance(keys, basestring): keys = [keys]
+  if isinstance(keys, str): keys = [keys]
   for key in keys:
     if key in dct:
       dct[key] = 'redacted'
@@ -94,15 +94,15 @@ def tweak_fix_sampler(dcts):
       def rename(txt):
         return txt.replace('sampler_LINEAR_LINEAR_REPEAT',
                            'sampler_LINEAR_LINEAR_MIPMAP_LINEAR_REPEAT')
-      dct['samplers'] = dict((rename(k), v) for (k,v) in dct['samplers'].items())
-      for texture in dct.get('textures', {}).values():
+      dct['samplers'] = dict((rename(k), v) for (k,v) in list(dct['samplers'].items()))
+      for texture in list(dct.get('textures', {}).values()):
         texture['sampler'] = rename(texture['sampler'])
 
 
 def tweak_ignore_nondeterministic_geometry(dcts):
   for label, dct in enumerate(dcts):
     # Geometry is nondeterministic, so ignore min/max values
-    for accessor in dct.get('accessors', {}).values():
+    for accessor in list(dct.get('accessors', {}).values()):
       redact(accessor, ['min', 'max'])
 
 
@@ -125,18 +125,18 @@ def tweak_remove_vertexid(dcts):
   removed = []     # nodes that were deleted; may contain Nones
   for label, dct in enumerate(dcts):
     accs = dct['accessors']
-    for k in accs.keys():
+    for k in list(accs.keys()):
       if 'vertexId' in k:
         removed.append(accs.pop(k))
-    for m in dct['meshes'].values():
+    for m in list(dct['meshes'].values()):
       for prim in m['primitives']:
         removed.append(prim['attributes'].pop('VERTEXID', None))
 
   # Only do this if we detected any vertexid; otherwise I want to verify the offsets, lengths, etc
-  if any(filter(None, removed)):
+  if any([_f for _f in removed if _f]):
     for label, dct in enumerate(dcts):
       dct['bufferViews'].pop('floatBufferView', None)
-      for bv in dct['bufferViews'].values():
+      for bv in list(dct['bufferViews'].values()):
         redact(bv, 'byteOffset')
       redact(dct['buffers']['binary_glTF'], 'byteLength')
 
@@ -144,7 +144,7 @@ def tweak_remove_vertexid(dcts):
 def tweak_remove_color_minmax(dcts):
   # It's ok if the newer glb doesn't have min/max on color. I intentionally removed it.
   for dct in dcts:
-    for name, acc in dct['accessors'].items():
+    for name, acc in list(dct['accessors'].items()):
       if 'color' in name:
         acc.pop('min', None)
         acc.pop('max', None)
@@ -153,7 +153,7 @@ def tweak_remove_color_minmax(dcts):
 def items(dct_or_lst):
   """Returns list items, or dictionary items"""
   if type(dct_or_lst) is dict:
-    return dct_or_lst.items()
+    return list(dct_or_lst.items())
   else:
     return list(enumerate(dct_or_lst))
 
@@ -161,7 +161,7 @@ def items(dct_or_lst):
 def values(dct_or_lst):
   """Returns list values, or dictionary values"""
   if type(dct_or_lst) is dict:
-    return dct_or_lst.values()
+    return list(dct_or_lst.values())
   else:
     return list(dct_or_lst)
 
@@ -198,7 +198,7 @@ def compare_glb(a, b, binary,
   if open(a).read() == open(b).read():
     return (True, 'IDENTICAL')
 
-  glbs = map(BaseGlb.create, [a, b])
+  glbs = list(map(BaseGlb.create, [a, b]))
   objs = [json.loads(g.get_json()) for g in glbs]
   for tweak in tweaks: tweak(objs)
   details = jsondiff.diff(objs[0], objs[1], syntax='symmetric',

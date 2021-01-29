@@ -77,8 +77,8 @@ def print_request(headers_file, body_file):
   except Exception as e:
     raise Error("Decode %s %s" % (body_file, encoding), e)
 
-  print headers
-  print body_decoded
+  print(headers)
+  print(body_decoded)
 
 
 def quick_print_request(n, prefix='c:/src/tb/Requests'):
@@ -90,4 +90,4 @@ if __name__ == '__main__':
   try:
     quick_print_request(440)
   except Error as e:
-    for x in e.args: print x
+    for x in e.args: print(x)

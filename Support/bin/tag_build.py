@@ -56,7 +56,7 @@ def make_tag_name(full_version, store):
   if full_version.endswith('b'):
     raise Error('Do you really want to tag a beta version %s?' % full_version)
   if major_version == '19' and store != 'oculus-quest':
-    print 'WARNING: 19.x builds are only for Oculus Quest'
+    print('WARNING: 19.x builds are only for Oculus Quest')
   return 'v%s/%s-%s' % (major_version, full_version, store)
 
 
@@ -101,7 +101,7 @@ def make_oculus_cmd(txt, store):
 
 
 def do_gui():
-  import Tkinter as tk
+  import tkinter as tk
   root = tk.Tk()
 
   def close_window():
@@ -116,7 +116,7 @@ def do_gui():
     name = str(event.widget.cget("text"))
     try: url = STOREFRONT_INFO[name]['url']
     except KeyError as e:
-      print e
+      print(e)
       return
     import webbrowser
     webbrowser.open_new(url)
@@ -160,15 +160,15 @@ def main():
       cmd = make_oculus_cmd(text_input.strip(), args.store)
   except Error as e:
     if args.gui:
-      import tkMessageBox
-      tkMessageBox.showerror('Error', str(e))
+      import tkinter.messagebox
+      tkinter.messagebox.showerror('Error', str(e))
     else:
-      print >>sys.stderr, e
+      print(e, file=sys.stderr)
     sys.exit(1)
   else:
     def quotify(txt):
       return txt if ' ' not in txt else '"%s"' % txt
-    print("Running %s" % ' '.join(map(quotify, cmd)))
+    print(("Running %s" % ' '.join(map(quotify, cmd))))
     subprocess.call(cmd)
 
 if __name__ == '__main__':

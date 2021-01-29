@@ -54,19 +54,19 @@ def main():
   used = set(gen_used_assets(r'../Builds/Windows_SteamVR_Release/'))
   exist = set(gen_existing_assets('.'))
   if len(used) == 0:
-    print 'WARN: no used assets; did Unity change their build.log format again?'
+    print('WARN: no used assets; did Unity change their build.log format again?')
     return
 
   missing = used-exist
   extra = exist-used
   for m in sorted(missing):
-    print 'miss', m
-  print '---'
+    print('miss', m)
+  print('---')
   extra_with_size = [(get_filesize(x), x) for x in extra]
   extra_with_size.sort(key=lambda x: -x[0])
   for size, filename in extra_with_size:
     if '/Resources/' in x: continue
-    print 'xtra %8d %s' % (size, filename)
+    print('xtra %8d %s' % (size, filename))
 
   both = set(map(str.lower, missing)) & set(map(str.lower, extra))
   assert len(both) == 0
