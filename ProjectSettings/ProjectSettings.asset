@@ -168,7 +168,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.yourcompany.yourproduct
+    Android: com.gallery.icosa.openbrush
     Standalone: com.yourcompany.yourproduct
     Tizen: com.yourcompany.yourproduct
     WebGL: com.yourcompany.yourproduct
@@ -177,9 +177,9 @@ PlayerSettings:
     tvOS: com.yourcompany.yourproduct
   buildNumber:
     iPhone: 0
-  AndroidBundleVersionCode: 86
+  AndroidBundleVersionCode: 0
   AndroidMinSdkVersion: 24
-  AndroidTargetSdkVersion: 26
+  AndroidTargetSdkVersion: 29
   AndroidPreferredInstallLocation: 0
   aotOptions: 
   stripEngineCode: 1
@@ -447,8 +447,9 @@ PlayerSettings:
     m_Enabled: 0
     m_Devices: []
   - m_BuildTarget: Standalone
-    m_Enabled: 0
+    m_Enabled: 1
     m_Devices:
+    - OpenVR
     - Oculus
   - m_BuildTarget: Tizen
     m_Enabled: 0
