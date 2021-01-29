@@ -39,7 +39,7 @@ public class UserConfig {
     bool? m_ShowDangerousBrushes;
     public bool ShowDangerousBrushes {
       get {
-#if EXPERIMENTAL_ENABLED
+#if EXPERIMENTAL_ENABLED || UNITY_EDITOR
         return m_ShowDangerousBrushes ?? true;
 #else
         return m_ShowDangerousBrushes ?? false;
