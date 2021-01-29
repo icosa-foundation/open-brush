@@ -178,11 +178,9 @@ enable native Oculus support:
 
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/1.41.0/).
-
-**Note:** The above link goes to version 1.41, which the official version of
-Tilt Brush was built with. Later versions have not been tested. You only need to
-include the `Platform` and `VR` subdirectories when you import.
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
+    Ensure that you have the [Oculus audio spatialiser](https://developer.oculus.com/documentation/unity/audio-osp-unity-req-setup/).
+    Best just import the whole thing minus the samples.    
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.

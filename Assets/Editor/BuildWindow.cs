@@ -524,8 +524,9 @@ namespace TiltBrush {
 
     public static string[] RunAdb(params string[] arguments) {
       var process = new System.Diagnostics.Process();
+      const string kBinPath = @"C:\Unity\2019.4.18f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools"; // TODO - Fix hack.
       process.StartInfo =
-          new System.Diagnostics.ProcessStartInfo("adb.exe", String.Join(" ", arguments));
+          new System.Diagnostics.ProcessStartInfo(Path.Combine(kBinPath, "adb.exe"), String.Join(" ", arguments));
       process.StartInfo.UseShellExecute = false;
       process.StartInfo.CreateNoWindow = true;
       process.StartInfo.RedirectStandardOutput = true;
