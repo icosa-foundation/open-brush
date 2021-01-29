@@ -19,7 +19,7 @@ allprojects {
   }
 }
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
@@ -31,11 +31,12 @@ android {
     buildToolsVersion '**BUILDTOOLS**'
 
   defaultConfig {
+consumerProguardFiles 'proguard-unity.txt'**USER_PROGUARD**
     minSdkVersion **MINSDKVERSION**
     versionCode **VERSIONCODE**
     versionName '**VERSIONNAME**'
     targetSdkVersion **TARGETSDKVERSION**
-    applicationId '**APPLICATIONID**'
+    
     ndk {
       abiFilters **ABIFILTERS**
     }
@@ -76,17 +77,7 @@ android {
   }
   **PACKAGING_OPTIONS**
 
-  bundle {
-    language {
-      enableSplit = false
-    }
-    density {
-      enableSplit = false
-    }
-    abi {
-      enableSplit = true
-    }
-  }
+  
 }
 
 
