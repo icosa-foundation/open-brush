@@ -74,3 +74,6 @@
 
 # Google process
 .gitbugtraq
+
+# Oculus Integration
+/Assets/Oculus
