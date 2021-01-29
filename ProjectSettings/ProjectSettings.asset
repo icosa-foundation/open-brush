@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Your Company Here
-  productName: Your Name Here
+  companyName: Icosa
+  productName: OpenBrush
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -275,7 +275,7 @@ PlayerSettings:
   - m_BuildTarget: 
     m_Icons:
     - serializedVersion: 2
-      m_Icon: {fileID: 2800000, guid: 376eeefe349e68c4c8e7a9355c00cd5f, type: 3}
+      m_Icon: {fileID: 2800000, guid: 25dd4b19d68928e4d9acfcf0e26ac4b3, type: 3}
       m_Width: 128
       m_Height: 128
       m_Kind: 0
@@ -423,7 +423,7 @@ PlayerSettings:
     m_Devices:
     - Oculus
   - m_BuildTarget: Windows Store Apps
-    m_Enabled: 0
+    m_Enabled: 1
     m_Devices:
     - WindowsMR
   - m_BuildTarget: N3DS
