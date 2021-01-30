@@ -22,6 +22,9 @@ namespace TiltBrush {
 /// and a static class constructor to monitor whether Gpu Emulation has been turned on and
 /// turns it off again when it finds it so.
 /// This behaviour can be toggled using Tilt -> Keep GPU Emulation Turned Off.
+/// Unity 2019 doesn't have gpu emulation in the same place, so all this does is spew errors all the time.
+#if UNITY_2018
+
 [InitializeOnLoad]
 public static class TurnOffGpuEmulation {
 
@@ -63,4 +66,6 @@ public static class TurnOffGpuEmulation {
   }
 
 }
+
+#endif
 }
