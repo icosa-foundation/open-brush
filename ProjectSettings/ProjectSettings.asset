@@ -177,7 +177,7 @@ PlayerSettings:
     tvOS: com.yourcompany.yourproduct
   buildNumber:
     iPhone: 0
-  AndroidBundleVersionCode: 0
+  AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 24
   AndroidTargetSdkVersion: 29
   AndroidPreferredInstallLocation: 0
@@ -450,7 +450,6 @@ PlayerSettings:
     m_Enabled: 1
     m_Devices:
     - OpenVR
-    - Oculus
   - m_BuildTarget: Tizen
     m_Enabled: 0
     m_Devices: []
