@@ -1632,7 +1632,7 @@ public class App : MonoBehaviour {
                           "Documents");
       break;
     case RuntimePlatform.Android:
-      m_UserPath = "/sdcard/";
+      m_UserPath = Application.persistentDataPath;
       m_OldUserPath = Application.persistentDataPath;
       break;
     case RuntimePlatform.IPhonePlayer:
