@@ -733,7 +733,7 @@ static class BuildTiltBrush {
       m_company = PlayerSettings.companyName;
       if (m_isAndroid) {
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android,
-                                                App.kGuiBuildAndroidExecutableName);
+                                                App.kGuiBuildAndroidApplicationIdentifier);
       }
       PlayerSettings.productName = App.kAppDisplayName;
       PlayerSettings.companyName = App.kDisplayVendorName;
