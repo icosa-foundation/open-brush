@@ -20,7 +20,7 @@ MonoBehaviour:
   inputUpdateMode: 2
   poseUpdateMode: 8
   activateFirstActionSetOnStart: 1
-  editorAppKey: application.generated.unity.yournamehere.exe
+  editorAppKey: application.generated.unity.openbrush.exe
   autoEnableVR: 1
   legacyMixedRealityCamera: 1
   mixedRealityCameraPose:
