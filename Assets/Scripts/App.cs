@@ -69,9 +69,10 @@ public class App : MonoBehaviour {
   public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
   // OSX Executable
   public const string kGuiBuildOSXExecutableName = kGuiBuildExecutableName + ".app";
+  // Android Application Identifier
+  public const string kGuiBuildAndroidApplicationIdentifier = "com." + kVendorName + "." + kGuiBuildExecutableName;
   // Android Executable
-  public const string kGuiBuildAndroidExecutableName =
-      "com." + kVendorName + "." + kGuiBuildExecutableName + ".apk";
+  public const string kGuiBuildAndroidExecutableName = kGuiBuildAndroidApplicationIdentifier + ".apk";
 
   public const string kPlayerPrefHasPlayedBefore = "Has played before";
   public const string kReferenceImagesSeeded = "Reference Images seeded";
