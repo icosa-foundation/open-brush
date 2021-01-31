@@ -21,7 +21,7 @@ Not intended for production use.
 This was written to help scope out the work required to convert
 Tilt Brush gltf1 to gltf2."""
 
-from __future__ import print_function
+
 
 import collections
 import json
@@ -39,7 +39,7 @@ def convert_to_array_helper(dct, name_to_index, key):
     return
   by_name = dct[key]
   by_index = []
-  for name, value in by_name.items():
+  for name, value in list(by_name.items()):
     assert name not in name_to_index, "Name %s already added as %s" % (name, name_to_index[name])
 
     if 'name' in value:
@@ -127,7 +127,7 @@ def convert(filename):
   name_to_index = {}
 
   # Store the vertex shader URI for convenient access; it'll be removed again later down
-  for mat in gltf['materials'].values():
+  for mat in list(gltf['materials'].values()):
     if 'technique' in mat:
       technique = gltf['techniques'][mat['technique']]
       program = gltf['programs'][technique['program']]
@@ -203,7 +203,7 @@ def convert(filename):
   for mesh in gltf['meshes']:
     for primitive in mesh.get('primitives', []):
       attributes = primitive.get('attributes', {})
-      for semantic, accessor in attributes.items():
+      for semantic, accessor in list(attributes.items()):
         convert_to_index(attributes, semantic, name_to_index, 'accessors')
       convert_to_index(primitive, 'indices', name_to_index, 'accessors')
       convert_to_index(primitive, 'material', name_to_index, 'materials')
@@ -246,15 +246,15 @@ def convert(filename):
   return json.dumps(gltf, indent=2)
 
 
-def check_for_forbidden_values(value, forbidden, primitives=set([int, long, float, str, unicode])):
+def check_for_forbidden_values(value, forbidden, primitives=set([int, int, float, str, str])):
   """Recursively check that value does not contain any values in forbidden."""
   if type(value) in (dict, collections.OrderedDict):
-    for (k, v) in value.iteritems():
+    for (k, v) in value.items():
       # It's okay for the name to be in the forbidden list
       if k != 'name':
         check_for_forbidden_values(v, forbidden)
   elif type(value) is list:
-    if len(value) > 0 and type(value[0]) in (int, float, long):
+    if len(value) > 0 and type(value[0]) in (int, float, int):
       # Don't bother
       return
     for elt in value:

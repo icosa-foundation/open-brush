@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """Helpers for getting credentials, either from the command line or saved in keyrings."""
-from __future__ import print_function
+
 
 import sys
 

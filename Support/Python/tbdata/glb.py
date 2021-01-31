@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
+
 
 import itertools
 import json
@@ -43,7 +43,7 @@ STRUCT_FORMAT = {
 def grouper(n, iterable, fillvalue=None):
   "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
   args = [iter(iterable)] * n
-  return itertools.izip_longest(fillvalue=fillvalue, *args)
+  return itertools.zip_longest(fillvalue=fillvalue, *args)
 
 
 class binfile(object):
@@ -127,7 +127,7 @@ class BaseGltf(object):
     for _, mesh in self.iter_objs('mesh'):
       for prim in mesh['primitives']:
         attrs = prim['attributes']
-        for attr_name in attrs.keys():
+        for attr_name in list(attrs.keys()):
           deref_property(attrs, attr_name, 'accessor')
         deref_property(prim, 'indices', 'accessor')
         deref_property(prim, 'material')
@@ -137,7 +137,7 @@ class BaseGltf(object):
     In gltf1 the keys are names; in gltf2 the keys are indices."""
     if self.version == 1:
       plural = self.PLURAL_SUFFIX.get(obj_type, 's')
-      return self.json[obj_type + plural].items()
+      return list(self.json[obj_type + plural].items())
     elif self.version == 2:
       plural = self.PLURAL_SUFFIX.get(obj_type, 's')
       return enumerate(self.json[obj_type + plural])

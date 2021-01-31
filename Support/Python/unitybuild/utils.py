@@ -31,7 +31,7 @@ def ensure_terminate(proc):
       if proc.poll() is None:
         proc.terminate()
     except Exception as e:
-      print "WARN: Could not kill process: %s" % (e,)
+      print("WARN: Could not kill process: %s" % (e,))
 
 
 def destroy(file_or_dir):
@@ -90,13 +90,13 @@ def msys_control_c_workaround():
     return self.poll()
   subprocess.Popen.wait = polling_wait
 
-  import thread
+  import _thread
   import threading
   def look_for_control_c():
-    import msvcrt, thread
+    import msvcrt, _thread
     while msvcrt.getch() != '\x03':
       continue
-    thread.interrupt_main()
+    _thread.interrupt_main()
   t = threading.Thread(target=look_for_control_c)
   t.daemon = True
   t.start()

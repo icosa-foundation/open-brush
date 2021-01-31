@@ -37,8 +37,8 @@ try:
   import PIL.ImageFilter
 
 except ImportError as e:
-  print e
-  print "You need to 'pip install pillow' to run this script"
+  print(e)
+  print("You need to 'pip install pillow' to run this script")
   sys.exit(1)
 
 
@@ -99,7 +99,7 @@ def main():
 
   input_bytes = sum(r['input_bytes'] for r in requests['exports'])
   output_bytes = sum(r['output_bytes'] for r in requests['exports'])
-  print "Input: %.2f MiB   Output: %.2f MiB" % (input_bytes / MEG, output_bytes / MEG)
+  print("Input: %.2f MiB   Output: %.2f MiB" % (input_bytes / MEG, output_bytes / MEG))
 
 
 if __name__ == '__main__':

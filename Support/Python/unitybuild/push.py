@@ -88,9 +88,9 @@ def get_build_stamp(directory):
     with file(filename, 'rb') as inf:
       return inf.read().strip()
   except IOError:
-    print "WARN: Build stamp not found with this build."
-    print "Supply one manually, or leave empty to abort this push."
-    stamp = raw_input("Stamp: ").strip()
+    print("WARN: Build stamp not found with this build.")
+    print("Supply one manually, or leave empty to abort this push.")
+    stamp = input("Stamp: ").strip()
     if not stamp:
       raise BuildFailed("Aborted: no build stamp")
 
@@ -163,7 +163,7 @@ def push_tilt_brush_to_steam(source_dir, description, steam_user, steam_branch=N
   app_vdf = create_from_template(
     os.path.join(support_dir, 'steam/app_template.vdf'), variables, tmp_steam_dir)
 
-  print "Pushing %s to Steam" % (variables['CONTENT_ROOT'], )
+  print("Pushing %s to Steam" % (variables['CONTENT_ROOT'], ))
   steamcmd('+login', steam_user,
            '+run_app_build', app_vdf,
            '+quit')
@@ -311,7 +311,7 @@ def push_tilt_brush_to_oculus(
     sys.stdout.write(line)
     # The request will be retried indefinitely, so stall it out
     if 'error occurred. The request will be retried.' in line:
-      print
+      print()
       get_credential(app_id).delete_secret()
       # Maybe the secret changed; ask user to re-enter it
       raise BuildFailed("Your App Secret might be incorrect. Try again.")
@@ -379,4 +379,4 @@ if __name__ == '__main__':
   try:
     main()
   except BuildFailed as e:
-    print "ERROR: %s" % e
+    print("ERROR: %s" % e)

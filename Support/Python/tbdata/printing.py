@@ -29,8 +29,8 @@ import numpy
 try:
   from tiltbrush.tilt import Tilt
 except ImportError:
-  print "You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)"
-  print "and then put its Python directory in your PYTHONPATH."
+  print("You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)")
+  print("and then put its Python directory in your PYTHONPATH.")
   sys.exit(1)
 
 from tbdata.brush_lookup import BrushLookup
@@ -157,9 +157,9 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
     for stroke in tilt.sketch.strokes:
       guid = index_to_guid[stroke.brush_idx]
       used_guids[guid] += 1
-    print "Brushes used:"
-    for guid, n in sorted(used_guids.items(), key=lambda p:-p[1]):
-      print "  %5d %s" % (n, brush_lookup.guid_to_name.get(guid))
+    print("Brushes used:")
+    for guid, n in sorted(list(used_guids.items()), key=lambda p:-p[1]):
+      print("  %5d %s" % (n, brush_lookup.guid_to_name.get(guid)))
     sys.stdout.flush()
     del used_guids
 
@@ -170,20 +170,20 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
       try:
         new_guid = replacements[guid]
       except KeyError:
-        print "%d: Don't know what to do with brush %s" % (i, name)
+        print("%d: Don't know what to do with brush %s" % (i, name))
         index_to_new_index[i] = i
       else:
         new_name = brush_lookup.guid_to_name.get(new_guid, new_guid)
         if new_guid is None:
-          print "%d: Remove %s" % (i, name)
+          print("%d: Remove %s" % (i, name))
           index_to_new_index[i] = None
         else:
           if guid == new_guid:
-            print "%d: Keep %s" % (i, name)
+            print("%d: Keep %s" % (i, name))
           elif name == new_name:
-            print "%d: Replace %s/%s -> %s/%s" % (i, name, guid, new_name, new_guid)
+            print("%d: Replace %s/%s -> %s/%s" % (i, name, guid, new_name, new_guid))
           else:
-            print "%d: Replace %s -> %s" % (i, name, new_name)
+            print("%d: Replace %s -> %s" % (i, name, new_name))
           try:
             new_idx = index_to_guid.index(new_guid)
           except ValueError:
@@ -191,7 +191,7 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
             index_to_guid.append(new_guid)
           index_to_new_index[i] = new_idx
 
-  brush_indices_to_remove = set(i for (i, new_i) in index_to_new_index.items() if new_i is None)
+  brush_indices_to_remove = set(i for (i, new_i) in list(index_to_new_index.items()) if new_i is None)
 
   if brush_indices_to_remove:
     old_len = len(tilt.sketch.strokes)
@@ -203,11 +203,9 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
         else:
           stroke.brush_color = stroke.brush_color
     else:
-      tilt.sketch.strokes[:] = filter(
-        lambda s: s.brush_idx not in brush_indices_to_remove,
-        tilt.sketch.strokes)
+      tilt.sketch.strokes[:] = [s for s in tilt.sketch.strokes if s.brush_idx not in brush_indices_to_remove]
     new_len = len(tilt.sketch.strokes)
-    print "Strokes %d -> %d" % (old_len, new_len)
+    print("Strokes %d -> %d" % (old_len, new_len))
 
   for stroke in tilt.sketch.strokes:
     new_idx = index_to_new_index[stroke.brush_idx]
@@ -317,13 +315,13 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
   if False:
     # Print out x/y/z histograms
     histograms = [np.histogram(positions[... , i], bins=30) for i in range(3)]
-    for irow in xrange(len(histograms[0][0])+1):
+    for irow in range(len(histograms[0][0])+1):
       for axis, histogram in enumerate(histograms):
         try:
-          print "%s %3d %6d   " % ('xyz'[axis], histogram[1][irow], histogram[0][irow]),
+          print("%s %3d %6d   " % ('xyz'[axis], histogram[1][irow], histogram[0][irow]), end=' ')
         except IndexError:
-          print "%s %3d %6s   " % ('xyz'[axis], histogram[1][irow], ''),
-      print
+          print("%s %3d %6s   " % ('xyz'[axis], histogram[1][irow], ''), end=' ')
+      print()
 
   if max_dist > 0:
     # Convert replacement guid -> replacement index
@@ -351,7 +349,7 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
     def out_of_bounds(stroke):
       i0 = stroke._first_cp
       i1 = i0 + len(stroke.controlpoints)
-      dists = np.array(map(mahalanobis_distance, positions[i0 : i1]))
+      dists = np.array(list(map(mahalanobis_distance, positions[i0 : i1])))
       return np.any(dists > max_dist)
 
     msg("Finding OOB strokes")
@@ -365,11 +363,11 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
     if len(oob_strokes):
       if replacement_brush_index is not None:
         for i, stroke in oob_strokes:
-          print "Replacing out-of-bounds stroke", i
+          print("Replacing out-of-bounds stroke", i)
           stroke.brush_idx = replacement_brush_index
           stroke.brush_color = (1,0,1,1)
       else:
-        print "Removing %d strokes" % len(oob_strokes)
+        print("Removing %d strokes" % len(oob_strokes))
         remove_indices = set(pair[0] for pair in oob_strokes)
         tilt.sketch.strokes[:] = [
           stroke for i, stroke in enumerate(tilt.sketch.stroke)
@@ -443,28 +441,28 @@ def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
   counter = Counter()
   for color, n in iter_rgb8_colors(tilt):
     counter[color] += n
-  most_used_color, amt = max(counter.iteritems(), key=lambda pair: pair[1])
+  most_used_color, amt = max(iter(counter.items()), key=lambda pair: pair[1])
 
   for rgb8 in preserve_colors:
     if rgb8 not in counter:
-      print "Ignoring: #%02x%02x%02x is not in the image" % rgb8
+      print("Ignoring: #%02x%02x%02x is not in the image" % rgb8)
     else:
       counter[rgb8] += amt / 2
 
   # Find a "nice" width and height, possibly adjusting the number of texels
-  num_texels = sum(counter.itervalues())
+  num_texels = sum(counter.values())
   width, height = get_good_factors(num_texels, max_aspect_ratio)
   if width * height != num_texels:
     counter[most_used_color] += width * height - num_texels
     assert counter[most_used_color] > 0
-    num_texels = sum(counter.itervalues())
+    num_texels = sum(counter.values())
     assert width * height == num_texels
     
   # Expand the colors into a 1d array, then turn into an Image
   colors_array = np.zeros(shape=(num_texels, 3), dtype='uint8')
   i = 0
   # The sort used here only matters to humans when they look at the images
-  colors_and_counts = sorted(counter.iteritems(), key=by_color_similarity)
+  colors_and_counts = sorted(iter(counter.items()), key=by_color_similarity)
   # colors_and_counts = sorted(counter.iteritems(), key=by_decreasing_usage)
   for (color, count) in colors_and_counts:
     colors_array[i:i+count] = color
@@ -475,7 +473,7 @@ def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
 
 def get_quantized_image_pillow(im, num_colors):
   MAXIMUM_COVERAGE = 1
-  print "Falling back to old color quantization"
+  print("Falling back to old color quantization")
   return im.quantize(colors=num_colors, method=MAXIMUM_COVERAGE), 'pillow'
 
 def get_quantized_image_pngquant(im, num_colors):
@@ -510,10 +508,10 @@ def get_quantized_image(im, num_colors):
   try:
     return get_quantized_image_pngquant(im, num_colors)
   except subprocess.CalledProcessError as e:
-    print "Error running pngquant: %s" % e
+    print("Error running pngquant: %s" % e)
   except OSError as e:
-    print "Missing pngquant: %s" % e
-    print "Download pngquant.exe it and put it in your PATH."
+    print("Missing pngquant: %s" % e)
+    print("Download pngquant.exe it and put it in your PATH.")
   return get_quantized_image_pillow(im, num_colors)
 
 
@@ -526,7 +524,7 @@ def simplify_colors(tilt, num_colors, preserve_colors):
     imq, method = get_quantized_image(im, num_colors)
 
   def iter_rgb8(im):
-    return itertools.izip(im.getdata(0), im.getdata(1), im.getdata(2))
+    return zip(im.getdata(0), im.getdata(1), im.getdata(2))
 
   def get_imq_color(ipixel, data=imq.getdata(), palette=imq.getpalette()):
     # Look up color in imq, which is awkward because it's palettized
@@ -547,15 +545,15 @@ def simplify_colors(tilt, num_colors, preserve_colors):
 
   if True:
     import numpy as np
-    for old8, newf in old_to_new.iteritems():
+    for old8, newf in old_to_new.items():
       oldv = np.array(rgb8_to_rgbaf(old8)[0:3])
       newv = np.array(newf[0:3])
       err = oldv - newv
       err = math.sqrt(np.dot(err, err))
       if err > .2:
-        print "High color error: #%02x%02x%02x" % old8
+        print("High color error: #%02x%02x%02x" % old8)
 
-    num_colors = len(set(map(tuple, old_to_new.values())))
+    num_colors = len(set(map(tuple, list(old_to_new.values()))))
     base, _ = os.path.splitext(tilt.filename)
     im.save('%s_%s.png' % (base, 'orig'))
     imq.save('%s_%s_%d.png' % (base, method, num_colors))
@@ -575,7 +573,7 @@ def iter_aggregated_by_color(json_filename):
 
 
 def write_simple_obj(mesh, outf_name):
-  from cStringIO import StringIO
+  from io import StringIO
   tmpf = StringIO()
 
   for v in mesh.v:
@@ -641,7 +639,7 @@ def process_tilt(filename, args):
   if args.debug:
     final_strokes = []
     # interleave them so it renders semi-nicely...
-    for before, after in itertools.izip_longest(before_strokes, tilt.sketch.strokes):
+    for before, after in itertools.zip_longest(before_strokes, tilt.sketch.strokes):
       if before is not None:
         for cp in before.controlpoints:
           cp.position[1] += 10
