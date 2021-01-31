@@ -1354,10 +1354,18 @@ static class BuildTiltBrush {
   }
 
   private static void SyncDirectoryTo(string source, string destination, bool subdirs = true) {
+#if UNITY_EDITOR_WIN
     string args = string.Format("\"{0}\" \"{1}\" {2} /PURGE",
                                 source, destination, subdirs ? "/E" : "");
+    string copyexe = "robocopy.exe";
+#else
+    string args = string.Format("\"{0}/\" \"{1}/\" {2} --delete",
+                                source, destination, subdirs ? "-a": "-d");
+    string copyexe = "rsync";
+#endif
+
     var process = new System.Diagnostics.Process();
-    process.StartInfo = new System.Diagnostics.ProcessStartInfo("robocopy.exe", args);
+    process.StartInfo = new System.Diagnostics.ProcessStartInfo(copyexe, args);
     process.StartInfo.UseShellExecute = false;
     process.StartInfo.CreateNoWindow = true;
     process.Start();
