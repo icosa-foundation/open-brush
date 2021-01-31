@@ -25,7 +25,7 @@ namespace TiltBrush{
 
 public class OculusControllerInfo : ControllerInfo {
   private bool m_IsValid = false;
-  private Coroutine m_VibrationCoroutine = null;
+  private Coroutine m_VibrationCoroutine;
 
   public override bool IsTrackedObjectValid { get { return m_IsValid; } set { m_IsValid = value; } }
 

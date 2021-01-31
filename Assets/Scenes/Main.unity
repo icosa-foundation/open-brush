@@ -17531,7 +17531,6 @@ MonoBehaviour:
   m_GvrOverlayPrefab: {fileID: 114044421867326160, guid: 50a6faaa5f4e1cf4487e55d232fa8d39,
     type: 3}
   m_OverlayMaxAlpha: 0.5
-  m_OverlayMaxSize: 8
   m_VrSystem: {fileID: 17776372}
   m_SteamUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}

@@ -56,7 +56,6 @@ public class VrSdk : MonoBehaviour {
   [SerializeField] private SteamVR_Overlay m_SteamVROverlay;
   [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
   [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
-  [SerializeField] private float m_OverlayMaxSize = 8;
   
   // VR  Data and Prefabs for specific VR systems
   [SerializeField] private GameObject m_VrSystem;

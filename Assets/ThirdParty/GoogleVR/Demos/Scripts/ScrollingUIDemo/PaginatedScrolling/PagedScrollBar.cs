@@ -15,7 +15,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-
+#pragma warning disable 0114
 /// Extension of Unity's built-in Scrollbar that integrates with PagedScrollRect.
 /// Dragging the scrollbar will control the PagedScrollRect.
 /// The Scrollbar will also automatically update when the PagedScrollRect
