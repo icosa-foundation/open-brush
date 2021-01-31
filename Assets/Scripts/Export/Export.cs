@@ -99,6 +99,7 @@ URL=" + kExportDocumentationUrl;
 
     // Set up progress bar.
     var progress = new Progress();
+    if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
     if (App.PlatformConfig.EnableExportJson) { progress.SetWork("json"); }
 #if FBX_SUPPORTED
     if (App.PlatformConfig.EnableExportFbx) { progress.SetWork("fbx"); }
@@ -115,9 +116,28 @@ URL=" + kExportDocumentationUrl;
 #endif
     }
 #endif
-    if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
 
     string filename;
+
+    if (App.PlatformConfig.EnableExportGlb) {
+      string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
+      int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
+      filename = MakeExportPath(parent, basename, extension);
+      if (filename != null) {
+        using (var unused = new AutoTimer("glb export")) {
+          OverlayManager.m_Instance.UpdateProgress(0.7f);
+          var exporter = new ExportGlTF();
+          // TBT doesn't need (or want) brush textures in the output because it replaces all
+          // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
+          // http textures so if uploaded, this glb will have missing textures.
+          exporter.ExportBrushStrokes(
+              filename, AxisConvention.kGltf2, binary: true, doExtras: false,
+              includeLocalMediaContent: true,
+              gltfVersion: gltfVersion);
+          progress.CompleteWork("glb");
+        }
+      }
+    }
 
     if (App.PlatformConfig.EnableExportJson &&
         (filename = MakeExportPath(parent, basename, "json")) != null)
@@ -172,26 +192,6 @@ URL=" + kExportDocumentationUrl;
     }
 #endif
 #endif
-
-    if (App.PlatformConfig.EnableExportGlb) {
-      string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
-      int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
-      filename = MakeExportPath(parent, basename, extension);
-      if (filename != null) {
-        using (var unused = new AutoTimer("glb export")) {
-          OverlayManager.m_Instance.UpdateProgress(0.7f);
-          var exporter = new ExportGlTF();
-          // TBT doesn't need (or want) brush textures in the output because it replaces all
-          // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
-          // http textures so if uploaded, this glb will have missing textures.
-          exporter.ExportBrushStrokes(
-              filename, AxisConvention.kGltf2, binary: true, doExtras: false,
-              includeLocalMediaContent: true,
-              gltfVersion: gltfVersion);
-          progress.CompleteWork("glb");
-        }
-      }
-    }
 
     OutputWindowScript.m_Instance.CreateInfoCardAtController(
         InputManager.ControllerName.Brush, basename + " exported!");
