@@ -1405,6 +1405,9 @@ static class BuildTiltBrush {
     StringBuilder args = new StringBuilder();
     string logFile = Path.Combine(rootCopyDir.FullName, "BackgroundBuild.log");
     FileUtil.DeleteFileOrDirectory(logFile);
+#if UNITY_EDITOR_OSX
+    args.AppendFormat("--args ");
+#endif
     args.AppendFormat("-logFile {0} ", logFile);
     if (!interactive) { args.Append("-batchmode "); }
     args.AppendFormat("-projectpath {0} ", rootCopyDir.FullName);
@@ -1424,8 +1427,13 @@ static class BuildTiltBrush {
     if (!interactive) { args.Append("-quit "); }
 
     var process = new System.Diagnostics.Process();
-    process.StartInfo = new System.Diagnostics.ProcessStartInfo(
-        EditorApplication.applicationPath, args.ToString());
+    StringBuilder unityPath = new StringBuilder();
+    unityPath.AppendFormat(EditorApplication.applicationPath);
+#if UNITY_EDITOR_OSX
+    // We want to run the inner Unity executable, not the GUI wrapper
+    unityPath.AppendFormat("/Contents/MacOS/Unity");
+#endif
+    process.StartInfo = new System.Diagnostics.ProcessStartInfo(unityPath.ToString(), args.ToString());
     DetectBackgroundProcessExit(process);
     process.Start();
     s_BackgroundBuildProcessId = process.Id;
