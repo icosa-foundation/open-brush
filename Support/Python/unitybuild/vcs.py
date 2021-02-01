@@ -44,7 +44,7 @@ Raises CalledProcessError if process cannot be started, or exits with an error."
   if proc.wait() != 0:
     raise CalledProcessError(proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (
       cwd, stderr, stdout))
-  return stdout
+  return str(stdout)
 
 
 def create():
