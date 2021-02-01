@@ -216,10 +216,6 @@ include the `Platform` and `VR` subdirectories when you import.
 
 Follow these steps to build your app for Oculus Quest:
 
-1.  Define `OCULUS_SUPPORTED` in **Scripting Define Symbols** in the **Android**
-    tab of **Player Settings**, under **Other Settings**. Add it to the end of
-    the list and use a semicolon to separate it from the previous define
-    command.
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
@@ -228,8 +224,8 @@ Follow these steps to build your app for Oculus Quest:
     *   **Tilt** > **Build** > **Runtime: Mono**
 1.  Navigate to **Tilt** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
-    `Builds/OculusMobile_Release_TiltBrush_FromGui/`.
-1.  Run `adb install com.google.tiltbrush.apk`.
+    `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
+1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
 ### Publishing to Oculus stores
 
