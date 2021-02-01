@@ -58,8 +58,8 @@ import unitybuild.utils
 import unitybuild.push
 from unitybuild.constants import *
 
-BUILD_OUT = 'TiltBrush'
-EXE_BASE_NAME = 'TiltBrush'
+BUILD_OUT = 'OpenBrush'
+EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
 # Build logic
