@@ -614,7 +614,7 @@ This software makes use of third-party software with the following notices.
 
 def parse_args(args):
   import argparse
-  parser = argparse.ArgumentParser(description="Make Tilt Brush builds")
+  parser = argparse.ArgumentParser(description="Make Open Brush builds")
   parser.add_argument('--vrsdk',
                       action='append', dest='vrsdks',
                       choices=['Monoscopic', 'Oculus', 'SteamVR'],
