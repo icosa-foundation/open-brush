@@ -17,51 +17,55 @@ using UnityEditor;
 
 namespace TiltBrush {
 
-    /// Unity has an irritating habit of turning on Gpu Emulation automatically when you're developing
-    /// for Android, and it breaks some things in Tilt Brush. This class uses [InitializeOnLoad]
-    /// and a static class constructor to monitor whether Gpu Emulation has been turned on and
-    /// turns it off again when it finds it so.
-    /// This behaviour can be toggled using Tilt -> Keep GPU Emulation Turned Off.
+/// Unity has an irritating habit of turning on Gpu Emulation automatically when you're developing
+/// for Android, and it breaks some things in Tilt Brush. This class uses [InitializeOnLoad]
+/// and a static class constructor to monitor whether Gpu Emulation has been turned on and
+/// turns it off again when it finds it so.
+/// This behaviour can be toggled using Tilt -> Keep GPU Emulation Turned Off.
+/// Unity 2019 doesn't have gpu emulation in the same place, so all this does is spew errors all the time.
+#if UNITY_2018
 
-//[InitializeOnLoad]
-//public static class TurnOffGpuEmulation {
+[InitializeOnLoad]
+public static class TurnOffGpuEmulation {
 
-//  private const string kGpuMenuString = "Edit/Graphics Emulation/No Emulation";
-//  private const string kTurnOffGpuEmulation = "Tilt/Keep GPU Emulation Turned Off";
+  private const string kGpuMenuString = "Edit/Graphics Emulation/No Emulation";
+  private const string kTurnOffGpuEmulation = "Tilt/Keep GPU Emulation Turned Off";
 
-//  public static bool Enabled {
-//    get {
-//      return EditorPrefs.GetBool(kTurnOffGpuEmulation, true);
-//    }
-//    set {
-//      EditorPrefs.SetBool(kTurnOffGpuEmulation, value);
-//      Execute();
-//    }
-//  }
+  public static bool Enabled {
+    get {
+      return EditorPrefs.GetBool(kTurnOffGpuEmulation, true);
+    }
+    set {
+      EditorPrefs.SetBool(kTurnOffGpuEmulation, value);
+      Execute();
+    }
+  }
 
-//  static TurnOffGpuEmulation() {
-//    EditorApplication.delayCall += Execute;
-//  }
+  static TurnOffGpuEmulation() {
+    EditorApplication.delayCall += Execute;
+  }
 
-//  [MenuItem(kTurnOffGpuEmulation, validate = true)]
-//  static bool ValidateKeepGpuEmTurnedOff() {
-//    Menu.SetChecked(kTurnOffGpuEmulation, Enabled);
-//    return true;
-//  }
+  [MenuItem(kTurnOffGpuEmulation, validate = true)]
+  static bool ValidateKeepGpuEmTurnedOff() {
+    Menu.SetChecked(kTurnOffGpuEmulation, Enabled);
+    return true;
+  }
 
-//  [MenuItem(kTurnOffGpuEmulation)]
-//  static void KeepGpuEmTurnedOff() {
-//    Enabled = !Enabled;
-//  }
+  [MenuItem(kTurnOffGpuEmulation)]
+  static void KeepGpuEmTurnedOff() {
+    Enabled = !Enabled;
+  }
 
-//  static void Execute() {
-//    if (Enabled) {
-//      if (!Menu.GetChecked(kGpuMenuString)) {
-//        EditorApplication.ExecuteMenuItem(kGpuMenuString);
-//        Debug.LogWarning("GPU Emulation was turned on; turning off.");
-//      }
-//    }
-//  }
+  static void Execute() {
+    if (Enabled) {
+      if (!Menu.GetChecked(kGpuMenuString)) {
+        EditorApplication.ExecuteMenuItem(kGpuMenuString);
+        Debug.LogWarning("GPU Emulation was turned on; turning off.");
+      }
+    }
+  }
 
-//}
+}
+
+#endif
 }

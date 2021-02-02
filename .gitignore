@@ -29,6 +29,7 @@
 /*.sln
 /*.userprefs
 .vs
+.vscode/
 
 # Generated files in TiltBrushCpp project
 /Support/TiltBrushCpp/x64
@@ -77,6 +78,6 @@
 # Google process
 .gitbugtraq
 
-# Oculus SDK
-/Assets/Oculus/
-/Assets/Oculus.meta
+# Oculus Integration
+/Assets/Oculus
+Assets/Oculus.meta
