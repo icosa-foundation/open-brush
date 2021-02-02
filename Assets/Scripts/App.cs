@@ -1599,6 +1599,7 @@ public class App : MonoBehaviour {
     case RuntimePlatform.OSXPlayer:
     case RuntimePlatform.OSXEditor:
     case RuntimePlatform.LinuxPlayer:
+    case RuntimePlatform.LinuxEditor:
       return System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
     case RuntimePlatform.Android:
     case RuntimePlatform.IPhonePlayer:
@@ -1628,6 +1629,7 @@ public class App : MonoBehaviour {
     case RuntimePlatform.OSXPlayer:
     case RuntimePlatform.OSXEditor:
     case RuntimePlatform.LinuxPlayer:
+    case RuntimePlatform.LinuxEditor:
       // user Documents folder
       m_UserPath = Path.Combine(System.Environment.GetFolderPath(
                               System.Environment.SpecialFolder.Personal),
@@ -1921,12 +1923,18 @@ public class App : MonoBehaviour {
       Application.OpenURL(url);
     }
 #else
-    // Something about the url makes OpenURL() not work on OSX, so use a workaround
-    if (Application.platform == RuntimePlatform.OSXEditor ||
-        Application.platform == RuntimePlatform.OSXPlayer) {
-      System.Diagnostics.Process.Start(url);
-    } else {
-      Application.OpenURL(url);
+    // Something about the url makes OpenURL() not work on OSX or Linux, so use a workaround
+    switch (Application.platform)
+    {
+      case RuntimePlatform.OSXEditor:
+      case RuntimePlatform.OSXPlayer:
+      case RuntimePlatform.LinuxEditor:
+      case RuntimePlatform.LinuxPlayer:
+        System.Diagnostics.Process.Start(url);
+        break;
+      default:
+        Application.OpenURL(url);
+        break;
     }
 #endif
   }
