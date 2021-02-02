@@ -78,10 +78,12 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			return fixed3(x, x, x);
 		}
 
+		#if !SHADER_API_VULKAN
 		float Luminance(float3 c)
 		{
 			return dot(c, float3(0.33333, 0.33333, 0.33333));
 		}
+		#endif
 
 		float4 GetViewSpacePosition(float2 coord)
 		{
