@@ -14,6 +14,7 @@
 
 using UnityEngine;
 #if USD_SUPPORTED
+using System;
 using USD.NET;
 using USD.NET.Unity;
 #endif
@@ -88,7 +89,12 @@ public class UsdPathSerializer : MonoBehaviour {
 
     var sketchRoot = ExportUsd.CreateSketchRoot();
     m_UsdCamera = new UsdCameraXformSample();
-    m_Scene = USD.NET.Scene.Create();
+    try {
+      m_Scene = USD.NET.Scene.Create();
+    } catch (ApplicationException e) {
+      Debug.LogError("USD library could not be loaded!");
+      return false;
+    }
 
     m_Scene.Write(sketchName, sketchRoot);
 
