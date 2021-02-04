@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using uGIF;
 using UnityEngine;
 
 namespace TiltBrush {
@@ -139,28 +140,33 @@ public class GifEncodeTask {
     // TODO: Add back gif encoding.
     // If you wish to use a gif encoder, you should add that code in here.
     // Alternatively, you could push the frames to ffmpeg and use that instead.
-    /*
-    using (var encoder = new Insert_Your_Own_Gif_Encoder_Here()) {
-      encoder.SetEncodingParameters( ... )
+    var ge = new GIFEncoder();
+	ge.useGlobalColorTable = true;
+	ge.repeat = 0;
+	ge.FPS = 1000 / m_FrameDelayMs;
+	ge.transparent = new Color32(255, 0, 255, 255);
+	ge.dispose = 1;
 
-      int nAdded = 0;
-      int nTotal = m_Frames.Count;
+	var stream = new MemoryStream ();
+	ge.Start(stream);
+            
+    int nAdded = 0;
+    int nTotal = m_Frames.Count;
+    List<Color32[]> flippedFrames = new List<Color32[]>();
 
-      if (!m_bPalettePerFrame) {
-        nTotal *= 2;
-
-        for (int i = 0; i < m_Frames.Count; ++i) {
-          encoder.AnalyzeFrameForPalette(m_Frames[i]);
-          m_CreationPercent = (float)(++nAdded) / nTotal;
-        }
+    foreach (var f in m_Frames) {
+      var gframe = new Image(m_GifWidth, m_GifHeight, f);
+      if (!flippedFrames.Contains(f))
+      {
+        flippedFrames.Add(f);
+        gframe.Flip();
       }
-
-      for (int i = 0; i < m_Frames.Count; ++i) {
-        encoder.AddFrame(m_Frames[i]);
-        m_CreationPercent = (float)(++nAdded) / nTotal;
-      }
-    }
-    */
+      ge.AddFrame(gframe);
+      m_CreationPercent = (float)(++nAdded) / nTotal;
+	}
+	ge.Finish();
+    File.WriteAllBytes(m_GifName, stream.GetBuffer());
+	stream.Close();
   }
 
   // Helper function
