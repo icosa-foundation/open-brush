@@ -1928,8 +1928,6 @@ public class App : MonoBehaviour {
     {
       case RuntimePlatform.OSXEditor:
       case RuntimePlatform.OSXPlayer:
-      case RuntimePlatform.LinuxEditor:
-      case RuntimePlatform.LinuxPlayer:
         System.Diagnostics.Process.Start(url);
         break;
       default:
