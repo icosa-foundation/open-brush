@@ -15,5 +15,5 @@ functions implemented in C for speed.
 1. Add the package to your Tilt Brush project. The quickest way to do this
    is to copy or link the resulting directory `build/install/com.autodesk.fbx`
    into the `Packages` directory of your Tilt Brush repository.
-1. Add `FBX_SUPPORTED` to Project Settings -> Player -> Scripting Define
+1. Add `FBX_SUPPORTED` and `FBXSDK_RUNTIME` to Project Settings -> Player -> Scripting Define
    Symbols.

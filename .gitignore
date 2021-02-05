@@ -64,6 +64,8 @@
 #  androidSDKPath: C:\Users\pld\AppData\Local\Android\Sdk
 # and doesn't contain any general configuration data, so I think it doesn't go in the repo
 /Assets/Resources/OVRBuildConfig.asset*
+# Oculus Unitypackage 23.1 (or something in between 1.41 and 23.1) added this as a local file
+/Assets/Resources/OVRPlatformToolSettings.asset*
 
 # m_DebugWebRequest creates this
 /Requests
@@ -78,7 +80,6 @@
 # Oculus Integration
 /Assets/Oculus
 Assets/Oculus.meta
-
 
 # Cache files
 *.cache

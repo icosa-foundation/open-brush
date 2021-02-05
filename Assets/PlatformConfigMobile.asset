@@ -31,7 +31,7 @@ MonoBehaviour:
   EnableExportUsd: 0
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
-  EnabledMulticamStyles: 00000000
+  EnabledMulticamStyles: 000000000100000002000000
   MaxSnapshotDimension: 4096
   FrameRateToPreviewRenderGap:
     serializedVersion: 2
