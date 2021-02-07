@@ -20,6 +20,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 using USD.NET.Unity;
+using Unity.Formats.USD;
 
 namespace TiltBrush {
 static class ExportUsd {
@@ -690,7 +691,7 @@ static class ExportUsd {
   static public void ExportPayload(string outputFile) {
     // Would be nice to find a way to kick this off automatically.
     // Redundant calls are ignored.
-    if (!App.InitializeUsd()) {
+    if (!InitUsd.Initialize()) {
       return;
     }
 

@@ -24,6 +24,10 @@ using System.Runtime.CompilerServices;
 
 using Newtonsoft.Json;
 
+#if USD_SUPPORTED
+using Unity.Formats.USD;
+#endif
+
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
@@ -604,7 +608,7 @@ public class App : MonoBehaviour {
     }
 
     // Load the Usd Plugins
-    InitializeUsd();
+    InitUsd.Initialize();
 
     foreach (string s in Config.m_SketchFiles) {
       // Assume all relative paths are relative to the Sketches directory.
@@ -1866,13 +1870,6 @@ public class App : MonoBehaviour {
     }
 #endif
     return manifest;
-  }
-
-  public static bool InitializeUsd() {
-    if (!UsdUtils.InitializeUsd()) {
-      return false;
-    }
-    return true;
   }
 
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
