@@ -80,3 +80,6 @@
 # Oculus Integration
 /Assets/Oculus
 /Assets/Oculus.meta
+
+# Cache files
+*.cache

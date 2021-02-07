@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// USD is not supported on Linux and macOS for now because of missing native dependencies
+#if !UNITY_EDITOR_WIN && !UNITY_STANDALONE_WIN
+#undef USD_SUPPORTED
+#endif
+
 using System;
 using UnityEngine;
 
