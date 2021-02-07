@@ -183,9 +183,9 @@ static class BuildTiltBrush {
         case BuildTarget.StandaloneWindows64:
           Menu.SetChecked(kMenuPlatformWindows, true);
           break;
-		case BuildTarget.StandaloneLinux64:
-		  Menu.SetChecked(kMenuPlatformLinux, true);
-		  break;
+        case BuildTarget.StandaloneLinux64:
+          Menu.SetChecked(kMenuPlatformLinux, true);
+          break;
         case BuildTarget.StandaloneOSX:
           Menu.SetChecked(kMenuPlatformOsx, true);
           break;

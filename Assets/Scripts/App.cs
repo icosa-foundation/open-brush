@@ -1923,7 +1923,6 @@ public class App : MonoBehaviour {
       Application.OpenURL(url);
     }
 #else
-    // Something about the url makes OpenURL() not work on OSX or Linux, so use a workaround
     switch (Application.platform)
     {
       case RuntimePlatform.OSXEditor:
