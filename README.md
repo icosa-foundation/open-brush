@@ -1,3 +1,25 @@
+# Open Brush - A fork of Tilt Brush.
+
+We hope to help maintain Tilt Brush.  
+As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
+
+[Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
+[Trello Here](https://trello.com/b/jItetqYe/open-brush)  
+[List of Tutorials, Write ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
+[Taking donations through open collective](https://opencollective.com/icosa)  
+
+### Currently we are:
+* Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
+* Looking at modding support. 
+* Re-enabling the additional features.
+
+## Thank you 
+* Tilt Brush developers for your amazing work! 
+* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
+* The [SideQuest](https://sidequestvr.com/) team for your support. 
+
+Note: we are using Unity 2019.4.18f1.
+
 # Tilt Brush README
 
 Tilt Brush is licensed under Apache 2.0. It is not an officially supported
@@ -20,11 +42,10 @@ Get the Tilt Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea)
+*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea) (Unity 2019.4.18f1 for this fork)
 *   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
-*   [Python 3](https://www.python.org/downloads/) (Optional —
+*   [Python 2.7.0](https://www.python.org/download/releases/2.7/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
-    Tested with Python 3.8.
 
 ### Changing the application name
 
@@ -179,8 +200,8 @@ enable native Oculus support:
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
     [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
-    Ensure that you have the [Oculus audio spatialiser](https://developer.oculus.com/documentation/unity/audio-osp-unity-req-setup/).
-    Best just import the whole thing minus the samples.    
+
+**Note:** The above link goes to version 23.1 which is the current latest version. Tilt Brush was formerly built with 1.41, but appears to function well with 23.1. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.
@@ -193,10 +214,6 @@ enable native Oculus support:
 
 Follow these steps to build your app for Oculus Quest:
 
-1.  Define `OCULUS_SUPPORTED` in **Scripting Define Symbols** in the **Android**
-    tab of **Player Settings**, under **Other Settings**. Add it to the end of
-    the list and use a semicolon to separate it from the previous define
-    command.
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
@@ -205,8 +222,8 @@ Follow these steps to build your app for Oculus Quest:
     *   **Tilt** > **Build** > **Runtime: Mono**
 1.  Navigate to **Tilt** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
-    `Builds/OculusMobile_Release_TiltBrush_FromGui/`.
-1.  Run `adb install com.google.tiltbrush.apk`.
+    `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
+1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
 ### Publishing to Oculus stores
 

@@ -6,7 +6,7 @@
 *.unity text eol=lf
 *.prefab text eol=lf
 *.gradle text eol=lf
-Packages/manifest.json text eol=lf
+Packages/*.json text eol=lf
 UnityPackageManager/manifest.json text eol=lf
 ProjectSettings/ProjectVersion.txt text eol=lf
 

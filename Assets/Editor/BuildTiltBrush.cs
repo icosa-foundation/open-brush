@@ -64,6 +64,7 @@ static class BuildTiltBrush {
   const string kMenuSdkGoogleVr     = "Tilt/Build/Sdk: GoogleVR";
   const string kMenuPlatformPref    = "Tilt/Build/Platform";
   const string kMenuPlatformWindows = "Tilt/Build/Platform: Windows";
+  const string kMenuPlatformLinux   = "Tilt/Build/Platform: Linux";
   const string kMenuPlatformOsx     = "Tilt/Build/Platform: OSX";
   const string kMenuPlatformAndroid = "Tilt/Build/Platform: Android";
   const string kMenuExperimental    = "Tilt/Build/Experimental";
@@ -81,6 +82,7 @@ static class BuildTiltBrush {
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.StandaloneOSX),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.Android),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneWindows64),
+    new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneLinux64),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneOSX),
 #if OCULUS_SUPPORTED
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
@@ -173,12 +175,16 @@ static class BuildTiltBrush {
     set {
       EditorPrefs.SetString(kMenuPlatformPref, value.ToString());
       Menu.SetChecked(kMenuPlatformWindows, false);
+      Menu.SetChecked(kMenuPlatformLinux, false);
       Menu.SetChecked(kMenuPlatformOsx, false);
       Menu.SetChecked(kMenuPlatformAndroid, false);
 
       switch (value) {
         case BuildTarget.StandaloneWindows64:
           Menu.SetChecked(kMenuPlatformWindows, true);
+          break;
+        case BuildTarget.StandaloneLinux64:
+          Menu.SetChecked(kMenuPlatformLinux, true);
           break;
         case BuildTarget.StandaloneOSX:
           Menu.SetChecked(kMenuPlatformOsx, true);
@@ -303,6 +309,9 @@ static class BuildTiltBrush {
       case BuildTarget.StandaloneWindows64:
         location += "/" + App.kGuiBuildWindowsExecutableName;
         break;
+      case BuildTarget.StandaloneLinux64:
+        location += "/" + App.kGuiBuildLinuxExecutableName;
+        break;
       case BuildTarget.StandaloneOSX:
         location += "/" + App.kGuiBuildOSXExecutableName;
         break;
@@ -392,6 +401,17 @@ static class BuildTiltBrush {
     Menu.SetChecked(kMenuPlatformWindows,
         GuiSelectedBuildTarget == BuildTarget.StandaloneWindows64);
     return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneWindows64);
+  }
+  
+  [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 202)]
+  static void MenuItem_Platform_Linux() {
+    GuiSelectedBuildTarget = BuildTarget.StandaloneLinux64;
+  }
+
+  [MenuItem(kMenuPlatformLinux, isValidateFunction: true)]
+  static bool MenuItem_Platform_Linux_Validate() {
+    Menu.SetChecked(kMenuPlatformLinux, GuiSelectedBuildTarget == BuildTarget.StandaloneLinux64);
+    return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneLinux64); 
   }
 
   [MenuItem(kMenuPlatformOsx, isValidateFunction: false, priority: 205)]
@@ -733,7 +753,7 @@ static class BuildTiltBrush {
       m_company = PlayerSettings.companyName;
       if (m_isAndroid) {
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android,
-                                                App.kGuiBuildAndroidExecutableName);
+                                                App.kGuiBuildAndroidApplicationIdentifier);
       }
       PlayerSettings.productName = App.kAppDisplayName;
       PlayerSettings.companyName = App.kDisplayVendorName;
@@ -1354,10 +1374,18 @@ static class BuildTiltBrush {
   }
 
   private static void SyncDirectoryTo(string source, string destination, bool subdirs = true) {
+#if UNITY_EDITOR_WIN
     string args = string.Format("\"{0}\" \"{1}\" {2} /PURGE",
                                 source, destination, subdirs ? "/E" : "");
+    string copyexe = "robocopy.exe";
+#else
+    string args = string.Format("\"{0}/\" \"{1}/\" {2} --delete",
+                                source, destination, subdirs ? "-a": "-d");
+    string copyexe = "rsync";
+#endif
+
     var process = new System.Diagnostics.Process();
-    process.StartInfo = new System.Diagnostics.ProcessStartInfo("robocopy.exe", args);
+    process.StartInfo = new System.Diagnostics.ProcessStartInfo(copyexe, args);
     process.StartInfo.UseShellExecute = false;
     process.StartInfo.CreateNoWindow = true;
     process.Start();
@@ -1397,6 +1425,9 @@ static class BuildTiltBrush {
     StringBuilder args = new StringBuilder();
     string logFile = Path.Combine(rootCopyDir.FullName, "BackgroundBuild.log");
     FileUtil.DeleteFileOrDirectory(logFile);
+#if UNITY_EDITOR_OSX
+    args.AppendFormat("--args ");
+#endif
     args.AppendFormat("-logFile {0} ", logFile);
     if (!interactive) { args.Append("-batchmode "); }
     args.AppendFormat("-projectpath {0} ", rootCopyDir.FullName);
@@ -1416,8 +1447,13 @@ static class BuildTiltBrush {
     if (!interactive) { args.Append("-quit "); }
 
     var process = new System.Diagnostics.Process();
-    process.StartInfo = new System.Diagnostics.ProcessStartInfo(
-        EditorApplication.applicationPath, args.ToString());
+    StringBuilder unityPath = new StringBuilder();
+    unityPath.AppendFormat(EditorApplication.applicationPath);
+#if UNITY_EDITOR_OSX
+    // We want to run the inner Unity executable, not the GUI wrapper
+    unityPath.AppendFormat("/Contents/MacOS/Unity");
+#endif
+    process.StartInfo = new System.Diagnostics.ProcessStartInfo(unityPath.ToString(), args.ToString());
     DetectBackgroundProcessExit(process);
     process.Start();
     s_BackgroundBuildProcessId = process.Id;

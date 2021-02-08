@@ -951,7 +951,11 @@ public class VrSdk : MonoBehaviour {
   /// So that they can be restored later with RestorePoseTracking.
   public void DisablePoseTracking() {
     m_TrackingBackupXf = TrTransform.FromTransform(GetVrCamera().transform);
-    m_OldOnPoseApplied = NewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
+    if (NewControllerPosesApplied == null) {
+      m_OldOnPoseApplied = Array.Empty<Action>();
+    } else {
+      m_OldOnPoseApplied = NewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
+    }
     NewControllerPosesApplied = null;
   }
 
