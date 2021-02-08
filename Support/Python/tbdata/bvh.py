@@ -19,12 +19,12 @@
 import os
 import struct
 import sys
-from cStringIO import StringIO
+from io import StringIO
 
 try:
   import rtree
 except ImportError:
-  print "You need to install rtree (https://pypi.org/project/Rtree/)."
+  print("You need to install rtree (https://pypi.org/project/Rtree/).")
   sys.exit(1)
 
 
@@ -43,7 +43,7 @@ class BBox(tuple):
     nmax = ( max(lmax[0], rmax[0]),
              max(lmax[1], rmax[1]),
              max(lmax[2], rmax[2]) )
-    for i in xrange(3):
+    for i in range(3):
       assert nmax[i] > nmin[i], self
     return BBox((nmin, nmax))
 
@@ -112,7 +112,7 @@ class RTreeStorageDict(rtree.index.CustomStorage):
     pass
 
   def loadByteArray(self, page, returnError):
-    print "RTreeStorageDict: load", page
+    print("RTreeStorageDict: load", page)
     assert page >= 0
     try:
       data = self.datas[page]
@@ -240,7 +240,7 @@ class RTreeNode(object):
     self.node_id = node_id
     reader = BinaryReader(inf_or_data)
     (self.nodeType, self.level, nChildren) = reader.read("III")
-    self.children = [ RTreeChild(reader) for i in xrange(nChildren) ]
+    self.children = [ RTreeChild(reader) for i in range(nChildren) ]
     self.bounds = reader.read_bounds()
 
   def is_index(self):

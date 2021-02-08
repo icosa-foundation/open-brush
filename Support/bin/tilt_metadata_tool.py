@@ -20,17 +20,17 @@ import pprint
 try:
   from tiltbrush.tilt import Tilt
 except ImportError:
-  print "You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)"
-  print "and then put its Python directory in your PYTHONPATH."
+  print("You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)")
+  print("and then put its Python directory in your PYTHONPATH.")
   sys.exit(1)
 
 def as_unicode(txt):
-  if type(txt) is not unicode:
+  if type(txt) is not str:
     try:
       txt = txt.decode('utf-8')
     except UnicodeDecodeError:
       # probably latin-1 or some windows codepage
-      print "Warning: argument is not utf-8. Trying latin-1."
+      print("Warning: argument is not utf-8. Trying latin-1.")
       txt = txt.decode('latin-1')
   return txt
 
@@ -44,7 +44,7 @@ def main(args=None):
   args = parser.parse_args(args)
 
   for filename in args.files:
-    print '-- %s -- ' % filename
+    print('-- %s -- ' % filename)
     sketch = Tilt(filename)
     with sketch.mutable_metadata() as meta:
       if args.author is not None:

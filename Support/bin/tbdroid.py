@@ -63,7 +63,7 @@ def get_profile_data():
         if line.startswith("TBProfile: END"):
           finished = True
         else:
-          print(line[len('TBProfile: '):-2])  # Strip off the CR LF at the end of each line
+          print((line[len('TBProfile: '):-2]))  # Strip off the CR LF at the end of each line
       else:
         if line.startswith("TBProfile: START"):
           started = True
@@ -76,7 +76,7 @@ def clear_config():
 
 def create_config(sketchname, csv, template, lod):
   if not os.path.exists(template):
-    print("Config file '%s' does not exist." % (template))
+    print(("Config file '%s' does not exist." % (template)))
     return
   configfile = open(template, 'r')
   configtemplate = configfile.read()
@@ -105,13 +105,13 @@ def profile_sketches(sketches, reps, csv, configtemplate, lod, skip):
       create_config(sketch, csv, configtemplate, lod)
       upload_sketch(sketch)
       print_header(sketch, csv)
-      for i in xrange(0, reps):
+      for i in range(0, reps):
         kill()
         run()
         get_profile_data()
         get_screenshot(sketch)
         time.sleep(5)
-      print
+      print()
   finally:
     cleanup()
 
@@ -156,7 +156,7 @@ def profile_configs(configs, reps, csv, skip):
         upload_config_text(newText)
         upload_sketch(sketch)
         print_header(sketch, csv)
-        for i in xrange(0, reps):
+        for i in range(0, reps):
           kill()
           run()
           get_profile_data()
@@ -179,7 +179,7 @@ def cleanup():
 def print_header(sketch, csv):
   sketch = os.path.basename(sketch)
   if (not csv):
-    print('Sketch, %s' % (sketch))
+    print(('Sketch, %s' % (sketch)))
 
 
 def find_sketch(sketch):
@@ -204,7 +204,7 @@ def enable_powersaving(enable):
                           stdout=FNULL)
     info("Set powersaving to %s" % (enable))
   except subprocess.CalledProcessError as err:
-    print('Failed to set power saving mode:', err)
+    print(('Failed to set power saving mode:', err))
 
 def save_config():
   temp = tempfile.NamedTemporaryFile(mode='w', delete=False)

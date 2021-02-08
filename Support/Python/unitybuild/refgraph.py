@@ -14,8 +14,8 @@
 
 import os
 import re
-import cPickle as pickle
-import cStringIO as StringIO
+import pickle as pickle
+import io as StringIO
 import sys
 
 import networkx as nx
@@ -113,13 +113,13 @@ class ReferenceGraph(object):
       self.guid_to_name = pickle.load(inf)
 
   def _recreate(self):
-    print "Recreating refgraph. Please wait..."
+    print("Recreating refgraph. Please wait...")
     sys.stdout.flush()
     self.g = nx.DiGraph()
 
     # This part of the graph is all guid -> guid
     self.guid_to_name = dict(_iter_guid_names(self.project_dir))
-    self.g.add_nodes_from(self.guid_to_name.iterkeys())
+    self.g.add_nodes_from(iter(self.guid_to_name.keys()))
     self.g.add_edges_from(_iter_refs(self.project_dir))
 
     self._recreate_tb_stuff()
@@ -130,7 +130,7 @@ class ReferenceGraph(object):
     Also creates a dummy .cs file that can be used to find references to GlobalCommands
     enums from within Visual Studio and Rider"""
     import unitybuild.tb_refgraph as tb
-    name_to_guid = dict((n, g) for (g, n) in self.guid_to_name.items())
+    name_to_guid = dict((n, g) for (g, n) in list(self.guid_to_name.items()))
 
     for command in tb.iter_command_nodes(self.project_dir):
       self.g.add_node(command)
@@ -139,7 +139,7 @@ class ReferenceGraph(object):
     command_edges = list(tb.iter_command_edges(self.project_dir))
     for (file_name, command) in command_edges:
       try: file_guid = name_to_guid[file_name]
-      except KeyError: print "Couldn't find %s" % file_name
+      except KeyError: print("Couldn't find %s" % file_name)
       else: self.g.add_edge(file_guid, command)
 
     tb.create_dummy_cs(self.project_dir, command_edges)
@@ -160,10 +160,10 @@ class ReferenceGraph(object):
     self.name_to_guid = {}
     # For convenience, also add lowercased-versions
     # (but this is incorrect on case-sensitive filesystems)
-    for (g, n) in self.guid_to_name.iteritems():
+    for (g, n) in self.guid_to_name.items():
       self.name_to_guid[n.lower()] = g
     # True capitalization takes precedence
-    for (g, n) in self.guid_to_name.iteritems():
+    for (g, n) in self.guid_to_name.items():
       self.name_to_guid[n] = g
 
     # TILT BRUSH SPECIFIC:
@@ -179,7 +179,7 @@ class ReferenceGraph(object):
         self.g.add_edge(n2g['ROOT'], n2g[node_name])
 
     prefab_pat = re.compile(r'^Assets/Resources/EnvironmentPrefabs/.*prefab|^Assets/Scenes', re.I)
-    for n in n2g.iterkeys():
+    for n in n2g.keys():
       if prefab_pat.search(n):
         self.g.add_edge(n2g['ROOT'], n2g[n])
 

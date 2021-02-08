@@ -44,7 +44,7 @@ Raises CalledProcessError if process cannot be started, or exits with an error."
   if proc.wait() != 0:
     raise CalledProcessError(proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (
       cwd, stderr, stdout))
-  return stdout
+  return str(stdout)
 
 
 def create():
@@ -122,8 +122,8 @@ class GitVcs(VcsBase):
     try:
       status = git('status --porcelain', cwd=input_directory)
     except CalledProcessError as e:
-      print 'UNEXPECTED: %s\n%s' % (e, e.output)
-      print 'In:', os.getcwd()
+      print('UNEXPECTED: %s\n%s' % (e, e.output))
+      print('In:', os.getcwd())
       assert False
     for match in re.finditer(r'^(.[MADR]|[MADR].) (.*)', status, re.MULTILINE):
       # Ignore changes in build script files
@@ -153,21 +153,21 @@ class GitVcs(VcsBase):
     if len(ahead_commits) == 0:
       if len(behind_commits) > 0:
         # Still allow the build without a custom stamp, but warn that it's not head
-        print "HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref)
+        print("HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref))
         for c in behind_commits[::-1][:10]:
-          print ' ',c
+          print(' ',c)
       return gob_name
     else:
       if len(ahead_commits) > 0:
-        print "HEAD is %s ahead of %s:" % (_plural('commit', len(ahead_commits)), tracked_ref)
+        print("HEAD is %s ahead of %s:" % (_plural('commit', len(ahead_commits)), tracked_ref))
         for c in ahead_commits[:10]:
-          print ' ',c
+          print(' ',c)
       if len(behind_commits) > 0:
-        print "HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref)
+        print("HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref))
         for c in behind_commits[::-1][:10]:
-          print ' ',c
-      print "\nEnter a suffix to uniquify the build stamp, or empty string to abort"
-      suffix = raw_input("> ")
+          print(' ',c)
+      print("\nEnter a suffix to uniquify the build stamp, or empty string to abort")
+      suffix = input("> ")
       if not suffix.strip():
         raise LookupError("Not at the official GoB commit")
       return gob_name + '+' + suffix
@@ -178,9 +178,9 @@ class GitVcs(VcsBase):
 
 def test():
   try:
-    print create().get_build_stamp(os.getcwd())
+    print(create().get_build_stamp(os.getcwd()))
   except LookupError as e:
-    print 'No stamp (%s)' % e
+    print('No stamp (%s)' % e)
 
 if __name__=='__main__':
   test()
