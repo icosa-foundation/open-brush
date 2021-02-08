@@ -44,9 +44,8 @@ Get the Tilt Brush open-source application running on your own devices.
 
 *   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea) (Unity 2019.4.18f1 for this fork)
 *   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
-*   [Python 3](https://www.python.org/downloads/) (Optional —
+*   [Python 2.7.0](https://www.python.org/download/releases/2.7/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
-    Tested with Python 3.8.
 
 ### Changing the application name
 
@@ -201,8 +200,8 @@ enable native Oculus support:
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
     [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
-    Ensure that you have the [Oculus audio spatialiser](https://developer.oculus.com/documentation/unity/audio-osp-unity-req-setup/).
-    Best just import the whole thing minus the samples.    
+
+**Note:** The above link goes to version 23.1 which is the current latest version. Tilt Brush was formerly built with 1.41, but appears to function well with 23.1. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.

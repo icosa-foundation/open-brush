@@ -64,6 +64,7 @@ static class BuildTiltBrush {
   const string kMenuSdkGoogleVr     = "Tilt/Build/Sdk: GoogleVR";
   const string kMenuPlatformPref    = "Tilt/Build/Platform";
   const string kMenuPlatformWindows = "Tilt/Build/Platform: Windows";
+  const string kMenuPlatformLinux   = "Tilt/Build/Platform: Linux";
   const string kMenuPlatformOsx     = "Tilt/Build/Platform: OSX";
   const string kMenuPlatformAndroid = "Tilt/Build/Platform: Android";
   const string kMenuExperimental    = "Tilt/Build/Experimental";
@@ -81,6 +82,7 @@ static class BuildTiltBrush {
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.StandaloneOSX),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.Android),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneWindows64),
+    new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneLinux64),
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneOSX),
 #if OCULUS_SUPPORTED
     new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
@@ -173,12 +175,16 @@ static class BuildTiltBrush {
     set {
       EditorPrefs.SetString(kMenuPlatformPref, value.ToString());
       Menu.SetChecked(kMenuPlatformWindows, false);
+      Menu.SetChecked(kMenuPlatformLinux, false);
       Menu.SetChecked(kMenuPlatformOsx, false);
       Menu.SetChecked(kMenuPlatformAndroid, false);
 
       switch (value) {
         case BuildTarget.StandaloneWindows64:
           Menu.SetChecked(kMenuPlatformWindows, true);
+          break;
+        case BuildTarget.StandaloneLinux64:
+          Menu.SetChecked(kMenuPlatformLinux, true);
           break;
         case BuildTarget.StandaloneOSX:
           Menu.SetChecked(kMenuPlatformOsx, true);
@@ -303,6 +309,9 @@ static class BuildTiltBrush {
       case BuildTarget.StandaloneWindows64:
         location += "/" + App.kGuiBuildWindowsExecutableName;
         break;
+      case BuildTarget.StandaloneLinux64:
+        location += "/" + App.kGuiBuildLinuxExecutableName;
+        break;
       case BuildTarget.StandaloneOSX:
         location += "/" + App.kGuiBuildOSXExecutableName;
         break;
@@ -392,6 +401,17 @@ static class BuildTiltBrush {
     Menu.SetChecked(kMenuPlatformWindows,
         GuiSelectedBuildTarget == BuildTarget.StandaloneWindows64);
     return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneWindows64);
+  }
+  
+  [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 202)]
+  static void MenuItem_Platform_Linux() {
+    GuiSelectedBuildTarget = BuildTarget.StandaloneLinux64;
+  }
+
+  [MenuItem(kMenuPlatformLinux, isValidateFunction: true)]
+  static bool MenuItem_Platform_Linux_Validate() {
+    Menu.SetChecked(kMenuPlatformLinux, GuiSelectedBuildTarget == BuildTarget.StandaloneLinux64);
+    return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneLinux64); 
   }
 
   [MenuItem(kMenuPlatformOsx, isValidateFunction: false, priority: 205)]
