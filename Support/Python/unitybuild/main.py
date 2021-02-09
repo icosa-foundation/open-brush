@@ -58,8 +58,8 @@ import unitybuild.utils
 import unitybuild.push
 from unitybuild.constants import *
 
-BUILD_OUT = 'TiltBrush'
-EXE_BASE_NAME = 'TiltBrush'
+BUILD_OUT = 'OpenBrush'
+EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
 # Build logic
@@ -212,6 +212,9 @@ def iter_editors_and_versions():
     else:
       # TODO: make it work with Unity hub?
       app_list = ['/Applications/Unity/Unity.app']
+      # Since we don't have Unity hub support (commented out above because headless isn't 
+      # headless), look for where it installs directly
+      app_list.extend(glob.glob('/Applications/Unity/*/Unity.app'))
     for editor_dir in app_list:
       exe = os.path.join(editor_dir, 'Contents/MacOS/Unity')
       editor_data_dir = os.path.join(editor_dir, 'Contents')
@@ -262,9 +265,9 @@ def get_editor_unity_version(editor_app, editor_data_dir):
 
   # I can't find a way to get the version out of 2019.x.
   # This is pretty janky so only use for Jenkins and 2019.
-  for m in re.finditer(r'/Users/jenkins/JenkinsCommon/Unity/Unity_(2019)\.(\d+)\.(\d+)',
+  for m in re.finditer(r'Unity/(Unity_)?(2019)\.(\d+)\.(\d+)',
                        editor_data_dir):
-    major, minor, point = m.groups()
+    _, major, minor, point = m.groups()
     ret = (major, minor, point)
     print("WARNING: %s using fallback to determine Unity version %s" % (editor_data_dir, ret))
     return ret
@@ -611,7 +614,7 @@ This software makes use of third-party software with the following notices.
 
 def parse_args(args):
   import argparse
-  parser = argparse.ArgumentParser(description="Make Tilt Brush builds")
+  parser = argparse.ArgumentParser(description="Make Open Brush builds")
   parser.add_argument('--vrsdk',
                       action='append', dest='vrsdks',
                       choices=['Monoscopic', 'Oculus', 'SteamVR'],

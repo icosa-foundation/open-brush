@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 The Tilt Brush Authors
 #
@@ -45,7 +45,7 @@ def import_keyring():
 
 
 class Credential(object):
-  KEYRING_USERNAME = 'Tilt Brush Build'
+  KEYRING_USERNAME = 'Open Brush Build'
 
   def __init__(self, name, location, **extra):
     self.name = name % extra
@@ -93,9 +93,9 @@ CREDENTIALS_BY_NAME = dict(
     Credential('%(app_id)s',
                'https://dashboard.oculus.com/application/%(app_id)s/api',
                app_id=TB_OCULUS_QUEST_APP_ID),
-    Credential('Tilt Brush keystore password',
+    Credential('Open Brush keystore password',
                None),  # Redacted
-    Credential('Tilt Brush Oculus Quest signing key password',
+    Credential('Open Brush Oculus Quest signing key password',
                None),  # Redacted
   ])
 
