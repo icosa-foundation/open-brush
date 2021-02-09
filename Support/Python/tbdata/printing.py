@@ -14,20 +14,25 @@
 
 """Helpers for 3d printing."""
 
+import argparse
+import itertools
+import math
 import os
 import re
-import sys
-import math
-import pprint
 import shutil
-import itertools
 import subprocess
+import sys
+import struct
+from io import StringIO
 from collections import Counter
+from math import sqrt
 
-import numpy
+import numpy as np  # pylint: disable=import-error
+from PIL import Image  # pylint: disable=import-error
 
 try:
   from tiltbrush.tilt import Tilt
+  from tiltbrush.export import iter_meshes, TiltBrushMesh
 except ImportError:
   print("You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)")
   print("and then put its Python directory in your PYTHONPATH.")
@@ -42,31 +47,31 @@ from tbdata.brush_lookup import BrushLookup
 #   names can also be guids, which is useful when the name is ambiguous
 BRUSH_REPLACEMENTS = [
   # Good brushes
-  ('SquarePaper',   True),
+  ('SquarePaper', True),
   ('ThickGeometry', True),
-  ('Wire',          True),
+  ('Wire', True),
   # Brushes that should be replaced
   ('TaperedMarker', 'ThickGeometry'),
-  ('OilPaint',      'ThickGeometry'),
-  ('Ink',           'ThickGeometry'),
-  ('Marker',        'ThickGeometry'),
-  ('Paper',         'ThickGeometry'),
-  ('FlatDeprecated','ThickGeometry'),
+  ('OilPaint', 'ThickGeometry'),
+  ('Ink', 'ThickGeometry'),
+  ('Marker', 'ThickGeometry'),
+  ('Paper', 'ThickGeometry'),
+  ('FlatDeprecated', 'ThickGeometry'),
   # Questionable
-  ('Highlighter',   'ThickGeometry'),
-  ('Light',         'Wire'),
+  ('Highlighter', 'ThickGeometry'),
+  ('Light', 'Wire'),
 
   # Remove particles
-  ('Smoke',         None),
-  ('Snow',          None),
-  ('Embers',        None),
-  ('Stars',         None),
+  ('Smoke', None),
+  ('Snow', None),
+  ('Embers', None),
+  ('Stars', None),
   # Remove animated
-  ('Fire',          None),
+  ('Fire', None),
   # Remove shader-based
-  ('Plasma',        None),
-  ('Rainbow',       None),
-  ('Streamers',     None),
+  ('Plasma', None),
+  ('Rainbow', None),
+  ('Streamers', None),
 ]
 
 
@@ -86,8 +91,6 @@ def msgln(text):
 
 def rgb8_to_hsl(rgb):
   """Takes a rgb8 tuple, returns a hsl tuple."""
-  HUE_MAX = 6
-
   r = rgb[0] / 255.0
   g = rgb[1] / 255.0
   b = rgb[2] / 255.0
@@ -97,7 +100,7 @@ def rgb8_to_hsl(rgb):
   delta = cmax - cmin
   h = 0
   s = 0
-  l = (cmax + cmin)
+  l = (cmax + cmin)  # noqa: E741
 
   if delta != 0:
     if l < 0.5:
@@ -126,10 +129,9 @@ def get_replacements_by_guid(replacements_by_name):
   def guid_or_name_to_guid(guid_or_name):
     if guid_or_name in brush_lookup.guid_to_name:
       return guid_or_name
-    elif guid_or_name in brush_lookup.name_to_guids:
+    if guid_or_name in brush_lookup.name_to_guids:
       return brush_lookup.get_unique_guid(guid_or_name)
-    else:
-      raise LookupError("Not a known brush or brush guid: %r" % guid_or_name)
+    raise LookupError("Not a known brush or brush guid: %r" % guid_or_name)
 
   dct = {}
   for before, after in replacements_by_name:
@@ -142,9 +144,9 @@ def get_replacements_by_guid(replacements_by_name):
       after_guid = guid_or_name_to_guid(after)
     dct[before_guid] = after_guid
   return dct
-    
 
-def convert_brushes(tilt, replacements_by_name, show_removed=False):
+
+def convert_brushes(tilt, replacements_by_name, show_removed=False):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
   """Convert brushes to 3d-printable versions, or remove their strokes from the tilt."""
   replacements = get_replacements_by_guid(replacements_by_name)
   brush_lookup = BrushLookup.get()
@@ -158,7 +160,7 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
       guid = index_to_guid[stroke.brush_idx]
       used_guids[guid] += 1
     print("Brushes used:")
-    for guid, n in sorted(list(used_guids.items()), key=lambda p:-p[1]):
+    for guid, n in sorted(list(used_guids.items()), key=lambda p: -p[1]):
       print("  %5d %s" % (n, brush_lookup.guid_to_name.get(guid)))
     sys.stdout.flush()
     del used_guids
@@ -219,6 +221,8 @@ def convert_brushes(tilt, replacements_by_name, show_removed=False):
 # ----------------------------------------------------------------------
 
 def calculate_pos_error(cp0, cp1, middle_cps):
+  # This function needs access to a lot of internal variables
+  # pylint: disable=protected-access
   if len(middle_cps) == 0:
     return 0
   strip_length = cp1._dist - cp0._dist
@@ -226,39 +230,41 @@ def calculate_pos_error(cp0, cp1, middle_cps):
     return 0
 
   max_pos_error = 0
-  for i, cp in enumerate(middle_cps):
+  for _, cp in enumerate(middle_cps):
     t = (cp._dist - cp0._dist) / strip_length
-    pos_interpolated = t * cp0._pos + (1-t) * cp1._pos
-    pos_error = numpy.linalg.norm((pos_interpolated - cp._pos))
+    pos_interpolated = t * cp0._pos + (1 - t) * cp1._pos
+    pos_error = np.linalg.norm((pos_interpolated - cp._pos))
     if pos_error > max_pos_error:
       max_pos_error = pos_error
-  
+
   return max_pos_error
 
 
 def simplify_stroke(stroke, max_error):
+  # This function needs access to a lot of internal variables
+  # pylint: disable=protected-access
+
   # Do greedy optimization of stroke.
   REQUIRED_END_CPS = 1  # or 2
   keep_cps = []
   toss_cps = []   # The current set of candidates to toss
 
   n = len(stroke.controlpoints)
-  brush_size = stroke.brush_size
   for i, cp in enumerate(stroke.controlpoints):
-    cp._pos = numpy.array(cp.position)
+    cp._pos = np.array(cp.position)
     if i == 0:
       cp._dist = 0
     else:
-      prev_cp = stroke.controlpoints[i-1]
-      cp._dist = prev_cp._dist + numpy.linalg.norm(prev_cp._pos - cp._pos)
+      prev_cp = stroke.controlpoints[i - 1]
+      cp._dist = prev_cp._dist + np.linalg.norm(prev_cp._pos - cp._pos)
 
     if REQUIRED_END_CPS <= i < n - REQUIRED_END_CPS:
       pos_error = calculate_pos_error(keep_cps[-1], cp, toss_cps)
       keep = (pos_error > max_error * stroke.brush_size)
-      #print "  %3d: %s %f %f" % (i, keep, pos_error, stroke.brush_size * .2)
+      # print "  %3d: %s %f %f" % (i, keep, pos_error, stroke.brush_size * .2)
     else:
       keep = True
-      #print "  %3d: True (End)" % i
+      # print "  %3d: True (End)" % i
 
     if keep:
       keep_cps.append(cp)
@@ -278,10 +284,10 @@ def reduce_control_points(tilt, max_error):
   pct = 0
   n = len(tilt.sketch.strokes)
   for i, stroke in enumerate(tilt.sketch.strokes):
-    new_pct = (i+1) * 100 / n
+    new_pct = (i + 1) * 100 / n
     if new_pct != pct:
       pct = new_pct
-      removed_pct = (before_cp - after_cp) * 100 / (before_cp+1)
+      removed_pct = (before_cp - after_cp) * 100 / (before_cp + 1)
       msg("Simplify strokes: %3d%% %5d/%5d  Removed %3d%%" % (pct, i, n, removed_pct))
 
     before_cp += len(stroke.controlpoints)
@@ -297,10 +303,11 @@ def reduce_control_points(tilt, max_error):
 # Stray strokes
 # ----------------------------------------------------------------------
 
-def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
+def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):  # pylint: disable=too-many-locals
+  # This function needs access to a lot of internal variables
+  # pylint: disable=protected-access
+
   """Show histograms of control point positions, to help with resizing."""
-  import numpy as np
-  from math import sqrt
 
   def iter_pos(tilt):
     first_cp = 0
@@ -312,9 +319,9 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
 
   positions = np.array(list(iter_pos(tilt)))
 
-  if False:
+  if False:  # pylint: disable=using-constant-test
     # Print out x/y/z histograms
-    histograms = [np.histogram(positions[... , i], bins=30) for i in range(3)]
+    histograms = [np.histogram(positions[..., i], bins=30) for i in range(3)]
     for irow in range(len(histograms[0][0])+1):
       for axis, histogram in enumerate(histograms):
         try:
@@ -340,7 +347,7 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
     mean = np.mean(positions, axis=0)
     cov = np.cov(positions, rowvar=False)
     invcov = np.linalg.inv(cov)
-    
+
     def mahalanobis_distance(v):
       """Return distance of row vector"""
       cv = (v - mean)[np.newaxis]
@@ -349,7 +356,7 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
     def out_of_bounds(stroke):
       i0 = stroke._first_cp
       i1 = i0 + len(stroke.controlpoints)
-      dists = np.array(list(map(mahalanobis_distance, positions[i0 : i1])))
+      dists = np.array([mahalanobis_distance(pos) for pos in positions[i0: i1]])
       return np.any(dists > max_dist)
 
     msg("Finding OOB strokes")
@@ -360,12 +367,12 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
     ]
     msg("")
 
-    if len(oob_strokes):
+    if oob_strokes:
       if replacement_brush_index is not None:
         for i, stroke in oob_strokes:
           print("Replacing out-of-bounds stroke", i)
           stroke.brush_idx = replacement_brush_index
-          stroke.brush_color = (1,0,1,1)
+          stroke.brush_color = (1, 0, 1, 1)
       else:
         print("Removing %d strokes" % len(oob_strokes))
         remove_indices = set(pair[0] for pair in oob_strokes)
@@ -380,12 +387,12 @@ def remove_stray_strokes(tilt, max_dist=0, replacement_brush_guid=None):
 # ----------------------------------------------------------------------
 
 def get_most_similar_factors(n):
-  """Factorize n into two numbers. 
+  """Factorize n into two numbers.
   Returns the best pair, in the sense that the numbers are the closest to each other."""
   i = int(n**0.5 + 0.5)
   while n % i != 0:
     i -= 1
-  return i, n/i
+  return i, n / i
 
 
 def get_good_factors(n, max_aspect_ratio=None):
@@ -396,8 +403,10 @@ def get_good_factors(n, max_aspect_ratio=None):
     return get_most_similar_factors(n)
   for i in itertools.count():
     a, b = get_most_similar_factors(n + i)
-    if float(b)/a <= max_aspect_ratio:
+    if float(b) / a <= max_aspect_ratio:
       return a, b
+  # The original code didn't return anything if we reached the end. Added an assert
+  raise AssertionError("No factors found!")
 
 
 def rgbaf_to_rgb8(rgbaf):
@@ -412,14 +421,12 @@ def rgb8_to_rgbaf(rgb8):
   return lst
 
 
-def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
+def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):  # pylint: disable=too-many-locals
   """Returns a PIL.Image containing the colors used in the tilt.
   The image will have colors in roughly the same proportion as the
   control points in the tilt.
 
   preserve_colors is a list of rgb8 colors."""
-  import numpy as np
-  from PIL import Image
   assert max_aspect_ratio is None or max_aspect_ratio > 0
 
   preserve_colors = set(preserve_colors)
@@ -428,14 +435,14 @@ def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
     for stroke in tilt.sketch.strokes:
       yield (rgbaf_to_rgb8(stroke.brush_color), len(stroke.controlpoints))
 
-  def by_decreasing_usage(counter_pair):
-    # Sort function for colors
-    return -counter_pair[1]
+  # def by_decreasing_usage(counter_pair):
+    # # Sort function for colors
+    # return -counter_pair[1]
 
   def by_color_similarity(counter_pair):
     # Sort function for colors
-    rgb8, usage = counter_pair
-    h, s, l = rgb8_to_hsl(rgb8)
+    rgb8, _ = counter_pair
+    _, _, l = rgb8_to_hsl(rgb8)  # noqa: E741
     return (rgb8 in preserve_colors), l
 
   counter = Counter()
@@ -457,7 +464,7 @@ def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
     assert counter[most_used_color] > 0
     num_texels = sum(counter.values())
     assert width * height == num_texels
-    
+
   # Expand the colors into a 1d array, then turn into an Image
   colors_array = np.zeros(shape=(num_texels, 3), dtype='uint8')
   i = 0
@@ -465,20 +472,19 @@ def tilt_colors_to_image(tilt, max_aspect_ratio=None, preserve_colors=()):
   colors_and_counts = sorted(iter(counter.items()), key=by_color_similarity)
   # colors_and_counts = sorted(counter.iteritems(), key=by_decreasing_usage)
   for (color, count) in colors_and_counts:
-    colors_array[i:i+count] = color
+    colors_array[i:i + count] = color
     i += count
   colors_array.shape = (height, width, 3)
   return Image.fromarray(colors_array, mode='RGB')
-  
+
 
 def get_quantized_image_pillow(im, num_colors):
   MAXIMUM_COVERAGE = 1
   print("Falling back to old color quantization")
   return im.quantize(colors=num_colors, method=MAXIMUM_COVERAGE), 'pillow'
 
+
 def get_quantized_image_pngquant(im, num_colors):
-  from PIL import Image
-  import subprocess
   # pngquant errors out if its best solution is below this "quality"
   QUALITY_MIN = 0               # never error out
   # pngquant stops using colors when "quality" goes above this.
@@ -504,6 +510,7 @@ def get_quantized_image_pngquant(im, num_colors):
       os.unlink('tmp_pngquant_out.png')
   return imq, 'pngquant'
 
+
 def get_quantized_image(im, num_colors):
   try:
     return get_quantized_image_pngquant(im, num_colors)
@@ -515,7 +522,7 @@ def get_quantized_image(im, num_colors):
   return get_quantized_image_pillow(im, num_colors)
 
 
-def simplify_colors(tilt, num_colors, preserve_colors):
+def simplify_colors(tilt, num_colors, preserve_colors):  # pylint: disable=too-many-locals
   im = tilt_colors_to_image(tilt, max_aspect_ratio=4, preserve_colors=preserve_colors)
   if num_colors < 0:
     # Little hack to force use of pillow
@@ -529,9 +536,9 @@ def simplify_colors(tilt, num_colors, preserve_colors):
   def get_imq_color(ipixel, data=imq.getdata(), palette=imq.getpalette()):
     # Look up color in imq, which is awkward because it's palettized
     palette_entry = data[ipixel]
-    r, g, b = palette[palette_entry * 3 : (palette_entry + 1) * 3]
+    r, g, b = palette[palette_entry * 3: (palette_entry + 1) * 3]
     return (r, g, b)
-  
+
   # Create table mapping unquantized rgb8 to quantized rgbaf
   old_to_new = {}
   idx = 0
@@ -543,21 +550,19 @@ def simplify_colors(tilt, num_colors, preserve_colors):
   for stroke in tilt.sketch.strokes:
     stroke.brush_color = old_to_new[rgbaf_to_rgb8(stroke.brush_color)]
 
-  if True:
-    import numpy as np
-    for old8, newf in old_to_new.items():
-      oldv = np.array(rgb8_to_rgbaf(old8)[0:3])
-      newv = np.array(newf[0:3])
-      err = oldv - newv
-      err = math.sqrt(np.dot(err, err))
-      if err > .2:
-        print("High color error: #%02x%02x%02x" % old8)
+  for old8, newf in old_to_new.items():
+    oldv = np.array(rgb8_to_rgbaf(old8)[0:3])
+    newv = np.array(newf[0:3])
+    err = oldv - newv
+    err = math.sqrt(np.dot(err, err))
+    if err > .2:
+      print("High color error: #%02x%02x%02x" % old8)
 
-    num_colors = len(set(map(tuple, list(old_to_new.values()))))
-    base, _ = os.path.splitext(tilt.filename)
-    im.save('%s_%s.png' % (base, 'orig'))
-    imq.save('%s_%s_%d.png' % (base, method, num_colors))
-  
+  num_colors = len({tuple(v) for v in old_to_new.values()})
+  base, _ = os.path.splitext(tilt.filename)
+  im.save('%s_%s.png' % (base, 'orig'))
+  imq.save('%s_%s_%d.png' % (base, method, num_colors))
+
 
 # ----------------------------------------------------------------------
 # Split export into multiple .obj files
@@ -565,31 +570,31 @@ def simplify_colors(tilt, num_colors, preserve_colors):
 
 def iter_aggregated_by_color(json_filename):
   """Yields TiltBrushMesh instances, each of a uniform color."""
-  from tiltbrush.export import iter_meshes, TiltBrushMesh
-  def by_color(m): return m.c[0]
+  def by_color(m):
+    return m.c[0]
+
   meshes = iter_meshes(json_filename)
-  for (color, group) in itertools.groupby(sorted(meshes, key=by_color), key=by_color):
+  for (_, group) in itertools.groupby(sorted(meshes, key=by_color), key=by_color):
     yield TiltBrushMesh.from_meshes(group)
 
 
 def write_simple_obj(mesh, outf_name):
-  from io import StringIO
   tmpf = StringIO()
 
   for v in mesh.v:
     tmpf.write("v %f %f %f\n" % v)
 
   for (t1, t2, t3) in mesh.tri:
-    t1 += 1; t2 += 1; t3 += 1
+    t1 += 1
+    t2 += 1
+    t3 += 1
     tmpf.write("f %d %d %d\n" % (t1, t2, t3))
 
-  with file(outf_name, 'wb') as outf:
+  with open(outf_name, 'wb') as outf:
     outf.write(tmpf.getvalue())
 
 
 def split_json_into_obj(json_filename):
-  import struct
-
   output_base = os.path.splitext(json_filename)[0].replace('_out', '')
 
   meshes = list(iter_aggregated_by_color(json_filename))
@@ -615,7 +620,8 @@ def process_tilt(filename, args):
   msg("Load tilt")
   tilt = Tilt(filename)
   msg("Load strokes")
-  tilt.sketch.strokes
+  # TODO: this seems to do nothing; is there a function that's supposed to be called here?
+  tilt.sketch.strokes  # pylint: disable=pointless-statement
   msg("")
 
   if args.debug:
@@ -653,7 +659,6 @@ def process_tilt(filename, args):
 
 
 def main():
-  import argparse
   parser = argparse.ArgumentParser(usage='''%(prog)s [ files ]
 
 Process .tilt files to get them ready for 3D printing.
@@ -674,8 +679,7 @@ You should generally do the steps in this order:
     m = re.match(r'^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$', arg)
     if m is not None:
       return tuple(int(m.group(i), 16) for i in (1, 2, 3))
-    else:
-      raise argparse.ArgumentTypeError("Must be exactly hex 6 digits: %r" % arg)
+    raise argparse.ArgumentTypeError("Must be exactly hex 6 digits: %r" % arg)
 
   parser.add_argument(
     '--debug', action='store_true',
@@ -716,7 +720,7 @@ You should generally do the steps in this order:
       process_tilt(working_filename, args)
     elif orig_filename.endswith('.json'):
       split_json_into_obj(orig_filename)
-  
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
   main()

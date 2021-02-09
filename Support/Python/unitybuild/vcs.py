@@ -15,13 +15,13 @@
 import os
 import re
 import subprocess
-from subprocess import Popen, PIPE, STDOUT, CalledProcessError
 
 from unitybuild.constants import UserError
 
 
 def _plural(noun, num):
-  if num == 1: return '%d %s' % (num, noun)
+  if num == 1:
+    return '%d %s' % (num, noun)
   return '%d %ss' % (num, noun)
 
 
@@ -30,36 +30,33 @@ def git(cmd, cwd=None):
 Raises CalledProcessError if process cannot be started, or exits with an error."""
   if cwd is None:
     cwd = os.getcwd()
-  if type(cmd) is str:
+  if isinstance(cmd, str):
     cmd = ['git'] + cmd.split()
   else:
     cmd = ['git'] + list(cmd)
 
   try:
-    proc = Popen(cmd, cwd=cwd, stdout=PIPE, stderr=PIPE)
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   except OSError as e:
-    raise CalledProcessError(1, cmd, str(e))
+    raise subprocess.CalledProcessError(1, cmd, str(e))
 
   (stdout, stderr) = proc.communicate()
   if proc.wait() != 0:
-    raise CalledProcessError(proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (
-      cwd, stderr, stdout))
+    raise subprocess.CalledProcessError(proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (cwd, stderr, stdout))
   return str(stdout)
 
 
 def create():
   """Returns a VCS instance."""
-  warnings = []
-  in_git = True
   try:
     git('status')
-  except CalledProcessError as e1:
+  except subprocess.CalledProcessError:
     return NullVcs()
   else:
-    return GitVcs();
+    return GitVcs()
 
 
-class VcsBase(object):
+class VcsBase():  # pylint: disable=too-few-public-methods
   # Pretty much just here to define API
   def __init__(self):
     """Raises UserError if the appropriate VCS is not detected."""
@@ -70,23 +67,25 @@ class VcsBase(object):
     raise NotImplementedError()
 
 
-class NullVcs(VcsBase):
+class NullVcs(VcsBase):  # pylint: disable=too-few-public-methods
   """VCS implementation that does nothing"""
   def get_build_stamp(self, input_directory):
     raise LookupError("Not using version control")
-  
 
-class GitVcs(VcsBase):
+
+class GitVcs(VcsBase):  # pylint: disable=too-few-public-methods
   """VCS implementation that uses git (without p4)"""
   def __init__(self):
+    super().__init__()
     try:
-      s = git('status')
-    except CalledProcessError:
-      raise UserError("Not in a git client")
+      git('status')
+    except subprocess.CalledProcessError as e:
+      raise UserError("Not in a git client") from e
 
-  def _get_local_branch(self):
+  @staticmethod
+  def _get_local_branch():
     ref = git('rev-parse --symbolic-full-name HEAD')
-    m = re.match('refs/heads/(.*)', ref)
+    m = re.match(r'refs/heads/(.*)', ref)
     if m is None:
       raise LookupError("Not on a branch")
     return m.group(1)
@@ -97,13 +96,13 @@ class GitVcs(VcsBase):
     eg, ("master", "refs/remotes/origin/master")
     Raises LookupError on failure, eg if not on a branch, or remote is not GoB."""
     branch = self._get_local_branch()
-    try: remote = git('config branch.%s.remote' % branch).strip()
-    except CalledProcessError: remote = ''
+    try:
+      remote = git('config branch.%s.remote' % branch).strip()
+    except subprocess.CalledProcessError:
+      remote = ''
     if remote == '':
       raise LookupError("Can't determine GoB branch: no remote")
-    remote_url = git('config remote.%s.url' % remote).strip()
-    # if ('Prod/TiltBrush' not in remote_url) and ('tiltbrush/launch_trailer' not in remote_url):
-    #   raise LookupError("Can't determine GoB branch: remote is not GoB")
+    git('config remote.%s.url' % remote).strip()
     remote_branch = git('config branch.%s.merge' % branch).strip()
     m = re.match('refs/heads/(.*)', remote_branch)
     if m is None:
@@ -113,7 +112,7 @@ class GitVcs(VcsBase):
     assert tracking != ''
     return m.group(1), tracking
 
-  def get_build_stamp(self, input_directory):
+  def get_build_stamp(self, input_directory):  # pylint: disable=too-many-branches
     """Stamp is of the form:
       <sha>
       <sha>+<local changes>
@@ -121,7 +120,7 @@ class GitVcs(VcsBase):
     <local changes> is a tiny description of any changes in the build that aren't on GoB."""
     try:
       status = git('status --porcelain', cwd=input_directory)
-    except CalledProcessError as e:
+    except subprocess.CalledProcessError as e:
       print('UNEXPECTED: %s\n%s' % (e, e.output))
       print('In:', os.getcwd())
       assert False
@@ -138,7 +137,7 @@ class GitVcs(VcsBase):
         continue
       raise LookupError('repo has modified files (%s)' % filename)
 
-    tracked_name, tracked_ref = self._get_gob_branch()
+    _, tracked_ref = self._get_gob_branch()
     base = git('merge-base %s HEAD' % tracked_ref).strip()
     if base == '':
       raise LookupError('No common ancestor with %s' % tracked_ref)
@@ -155,26 +154,26 @@ class GitVcs(VcsBase):
         # Still allow the build without a custom stamp, but warn that it's not head
         print("HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref))
         for c in behind_commits[::-1][:10]:
-          print(' ',c)
+          print(' ', c)
       return gob_name
-    else:
-      if len(ahead_commits) > 0:
-        print("HEAD is %s ahead of %s:" % (_plural('commit', len(ahead_commits)), tracked_ref))
-        for c in ahead_commits[:10]:
-          print(' ',c)
-      if len(behind_commits) > 0:
-        print("HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref))
-        for c in behind_commits[::-1][:10]:
-          print(' ',c)
-      print("\nEnter a suffix to uniquify the build stamp, or empty string to abort")
-      suffix = input("> ")
-      if not suffix.strip():
-        raise LookupError("Not at the official GoB commit")
-      return gob_name + '+' + suffix
+    if len(ahead_commits) > 0:
+      print("HEAD is %s ahead of %s:" % (_plural('commit', len(ahead_commits)), tracked_ref))
+      for c in ahead_commits[:10]:
+        print(' ', c)
+    if len(behind_commits) > 0:
+      print("HEAD is %s behind of %s:" % (_plural('commit', len(behind_commits)), tracked_ref))
+      for c in behind_commits[::-1][:10]:
+        print(' ', c)
+    print("\nEnter a suffix to uniquify the build stamp, or empty string to abort")
+    suffix = input("> ")
+    if not suffix.strip():
+      raise LookupError("Not at the official GoB commit")
+    return gob_name + '+' + suffix
 
 #
 # Testing
 #
+
 
 def test():
   try:
@@ -182,5 +181,6 @@ def test():
   except LookupError as e:
     print('No stamp (%s)' % e)
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
   test()

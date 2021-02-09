@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-
 import itertools
 import json
 import os
@@ -46,7 +45,7 @@ def grouper(n, iterable, fillvalue=None):
   return itertools.zip_longest(fillvalue=fillvalue, *args)
 
 
-class binfile(object):
+class binfile():
   # Helper for parsing
   def __init__(self, inf):
     self.inf = inf
@@ -78,13 +77,13 @@ class binfile(object):
     return self.inf.write(data)
 
 
-class BaseGltf(object):
+class BaseGltf():
   """Abstract subclass for classes that parse:
   - gltf+bin
   - glb version 1
   - glb version 2"""
   # Jeez
-  PLURAL_SUFFIX = { 'mesh': 'es' }
+  PLURAL_SUFFIX = {'mesh': 'es'}
 
   @staticmethod
   def create(filename):
@@ -93,17 +92,22 @@ class BaseGltf(object):
     first_bytes = bf.read(4)
     if first_bytes == 'glTF':
       version, = bf.unpack("I")
-      if version == 1: return Glb1(filename)
-      elif version == 2: return Glb2(filename)
+      if version == 1:
+        return Glb1(filename)
+      if version == 2:
+        return Glb2(filename)
       raise Exception("Bad version %d" % version)
-    elif filename.lower().endswith('.gltf') or first_bytes.startswith("{"):
+    if filename.lower().endswith('.gltf') or first_bytes.startswith("{"):
       return Gltf(filename)
-    else:
-      raise Exception("Unknown format")
+    raise Exception("Unknown format")
 
   def __init__(self, filename):
     self.filename = filename
     # subclass will init version, json_chunk, json, and bin_chunk
+    self.json = None
+    self.version = None
+    self.bin_chunk = None
+    self.json_chunk = None
 
   def dereference(self):
     """Converts (some) inter-object references from ints/strings to
@@ -113,13 +117,16 @@ class BaseGltf(object):
       # Deref obj[prop]
       dest_type = dest_type or prop  # prop name is usually the obj type
       lookup_table_name = dest_type + 's'
-      try: idx_or_name = obj[prop]
-      except KeyError: pass
-      else: obj[prop+'_'] = self.json[lookup_table_name][idx_or_name]
+      try:
+        idx_or_name = obj[prop]
+      except KeyError:
+        pass
+      else:
+        obj[prop + '_'] = self.json[lookup_table_name][idx_or_name]
 
     def deref_all(source_type, prop, dest_type=None):
       # Deref obj[prop] for all objs of type source_type
-      for name_or_idx, obj in self.iter_objs(source_type):
+      for _, obj in self.iter_objs(source_type):
         deref_property(obj, prop, dest_type)
 
     deref_all('accessor', 'bufferView')
@@ -138,23 +145,22 @@ class BaseGltf(object):
     if self.version == 1:
       plural = self.PLURAL_SUFFIX.get(obj_type, 's')
       return list(self.json[obj_type + plural].items())
-    elif self.version == 2:
+    if self.version == 2:
       plural = self.PLURAL_SUFFIX.get(obj_type, 's')
       return enumerate(self.json[obj_type + plural])
-    else:
-      raise Exception("Unknown gltf version; cannot iterate objects")
-
+    raise Exception("Unknown gltf version; cannot iterate objects")
 
   # backwards-compat
-  def get_json(self): return self.json_chunk
+  def get_json(self):
+    return self.json_chunk
 
   def get_mesh_by_name(self, name):
     if self.version == 1:
       return self.json['meshes'][name]
-    else:
-      for m in self.json['meshes']:
-        if m['name'] == name: return m
-      raise LookupError(name)
+    for m in self.json['meshes']:
+      if m['name'] == name:
+        return m
+    raise LookupError(name)
 
   def get_bufferView_data(self, buffer_view):
     """Returns a hunk of bytes."""
@@ -172,16 +178,17 @@ class BaseGltf(object):
     flat_count = accessor['count'] * count_per_element
     byte_length = flat_count * SIZES[componentType]
     bufferview_data = self.get_bufferView_data(accessor['bufferView_'])
-    attr_data = bufferview_data[start : start + byte_length]
+    attr_data = bufferview_data[start: start + byte_length]
     struct_format = '<' + str(flat_count) + STRUCT_FORMAT[componentType]
     flat = struct.unpack(struct_format, attr_data)
-    if count_per_element == 1: return flat
-    else: return list(grouper(count_per_element, flat))
+    if count_per_element == 1:
+      return flat
+    return list(grouper(count_per_element, flat))
 
 
 class Gltf(BaseGltf):
   def __init__(self, filename):
-    super(Gltf, self).__init__(filename)
+    super().__init__(filename)
     # Not fully general; just good enough to work for TB .gltf/bin pairs
     bin_name = os.path.splitext(filename)[0] + '.bin'
     if not os.path.exists(bin_name):
@@ -196,7 +203,7 @@ class Gltf(BaseGltf):
 
 class Glb1(BaseGltf):
   def __init__(self, filename):
-    super(Glb1, self).__init__(filename)
+    super().__init__(filename)
     bf = binfile(open(self.filename, 'rb'))
     assert bf.read(4) == 'glTF'
     self.version, self.total_len, json_len, json_fmt = bf.unpack("<4I")
@@ -208,6 +215,7 @@ class Glb1(BaseGltf):
 
 class Glb2(BaseGltf):
   def __init__(self, filename):
+    super().__init__()
     self.filename = filename
     bf = binfile(open(self.filename, 'rb'))
     assert bf.read(4) == 'glTF'
@@ -218,7 +226,8 @@ class Glb2(BaseGltf):
     self.bin_chunk = self._read_chunk(bf, 'BIN\0')
     self.json = json.loads(self.json_chunk)
 
-  def _read_chunk(self, bf, expect_tag):
+  @staticmethod
+  def _read_chunk(bf, expect_tag):
     length, = bf.unpack("I")
     tag = bf.read(4)
     assert tag == expect_tag, tag
@@ -230,6 +239,8 @@ class Glb2(BaseGltf):
 # Testing
 #
 
+# pylint: disable=all
+# flake8: noqa
 def load(version, name):
   ROOT = os.path.expanduser('~/Documents/Tilt Brush/Exports/Baseline 22.0b4')
   formatname = 'glb1' if (version == 1) else 'glb'
