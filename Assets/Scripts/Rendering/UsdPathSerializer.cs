@@ -73,7 +73,7 @@ public class UsdPathSerializer : MonoBehaviour {
   /// Starts recording the transform to a named transform in a new usd file given by the path.
   public bool StartRecording(string path, string sketchName = "/Sketch", string xformName = "/VideoCamera") {
     m_xformName = sketchName + xformName;
-    if (!InitUsd.Initialize()) {
+    if (!InitUsd.Initialize() || string.IsNullOrEmpty(path)) {
       return false;
     }
 
