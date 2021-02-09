@@ -36,7 +36,7 @@ Raises CalledProcessError if process cannot be started, or exits with an error."
     cmd = ['git'] + list(cmd)
 
   try:
-    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
   except OSError as e:
     raise subprocess.CalledProcessError(1, cmd, str(e))
 
