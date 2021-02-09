@@ -17,6 +17,7 @@
 # Tilt Brush-specific refgraph code
 import os
 import re
+from collections import defaultdict
 
 
 def _get_command_lookup(project_dir):
@@ -34,19 +35,19 @@ def _get_command_lookup(project_dir):
     for key in (v, v.lower(), i, str(i)):
       to_index[key] = i
       to_name[key] = v
-  return to_name #, to_index
+  return to_name  # , to_index
 
 
 def _iter_prefab_and_scene(project_dir):
   pat = re.compile(r'.*\.(unity|prefab)$')
-  for (r, ds, fs) in os.walk(os.path.join(project_dir, 'Assets')):
+  for (r, _, fs) in os.walk(os.path.join(project_dir, 'Assets')):
     for f in fs:
       if pat.match(f):
         yield os.path.join(r, f)
 
 
 def _iter_cs(project_dir):
-  for (r, ds, fs) in os.walk(os.path.join(project_dir, 'Assets')):
+  for (r, _, fs) in os.walk(os.path.join(project_dir, 'Assets')):
     for f in fs:
       if f.endswith('.cs'):
         yield os.path.join(r, f)
@@ -62,7 +63,6 @@ def iter_command_nodes(project_dir):
 def iter_command_edges(project_dir):
   """Yields tuples like ('Assets/Prefabs/MyPrefab.prefab', 'GlobalCommands.ShowTos')"""
   to_name = _get_command_lookup(project_dir)
-  chop = len(project_dir) + 1
 
   def command_to_node_name(command):
     # Returns a canonical node name as it appears in the graph
@@ -82,16 +82,17 @@ def iter_command_edges(project_dir):
   # Find references in .cs files
   cs_pat = re.compile(r'GlobalCommands\.[A-Za-z0-9_]+')
   for path in _iter_cs(project_dir):
-    if path.endswith('DummyCommandRefs.cs'): continue
+    if path.endswith('DummyCommandRefs.cs'):
+      continue
     for match in cs_pat.finditer(open(path).read()):
       yield file_to_node_name(path), match.group(0)
 
 
 def create_dummy_cs(project_dir, command_edges):
-  from collections import defaultdict
   file_to_commands = defaultdict(set)
   for src, dst in command_edges:
-    if src.endswith('.cs'): break
+    if src.endswith('.cs'):
+      break
     file_to_commands[src].add(dst)
   file_to_commands = [(k, sorted(file_to_commands[k]))
                       for k in sorted(file_to_commands.keys())]
@@ -100,12 +101,10 @@ def create_dummy_cs(project_dir, command_edges):
     file_name, commands = file_and_commands
     func_name = os.path.splitext(file_name)[0][7:]
     func_name = func_name.replace('/', '_').replace('.', '_')
-    return ('  public static void %s() {\n' % func_name +
-            '\n'.join('    Use(%s);' % c for c in commands) +
-            '\n  }\n')
+    return '  public static void %s() {\n' % func_name + '\n'.join('    Use(%s);' % c for c in commands) + '\n  }\n'
 
   cs_name = os.path.join(project_dir, 'Assets/Editor/DummyCommandRefs.cs')
-  with file(cs_name, 'w') as outf:
+  with open(cs_name, 'w') as outf:
     outf.write('''// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -129,10 +128,10 @@ public static class DummyCommandRefs {
   static void Use(GlobalCommands c) { UnityEngine.Debug.Log(c.ToString()); }
 
 %s}
-}''' % '\n'.join(map(as_func, file_to_commands)))
+}''' % '\n'.join([as_func(fc) for fc in file_to_commands]))
 
 
 if __name__ == '__main__':
   # This is also done as part of analyze_refgraph.py --recreate
-  project_dir = 'c:/src/tb'
-  create_dummy_cs(project_dir, iter_command_edges(project_dir))
+  test_project_dir = 'c:/src/tb'
+  create_dummy_cs(test_project_dir, iter_command_edges(test_project_dir))

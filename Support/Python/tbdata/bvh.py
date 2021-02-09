@@ -16,9 +16,9 @@
 # Usage:
 #   RTree.from_bounds_iter()
 
-import os
 import struct
 import sys
+from collections import deque
 from io import StringIO
 
 try:
@@ -37,21 +37,21 @@ class BBox(tuple):
   def union(lhs, rhs):
     lmin, lmax = lhs
     rmin, rmax = rhs
-    nmin = ( min(lmin[0], rmin[0]),
-             min(lmin[1], rmin[1]),
-             min(lmin[2], rmin[2]) )
-    nmax = ( max(lmax[0], rmax[0]),
-             max(lmax[1], rmax[1]),
-             max(lmax[2], rmax[2]) )
+    nmin = (min(lmin[0], rmin[0]),
+            min(lmin[1], rmin[1]),
+            min(lmin[2], rmin[2]))
+    nmax = (max(lmax[0], rmax[0]),
+            max(lmax[1], rmax[1]),
+            max(lmax[2], rmax[2]))
     for i in range(3):
-      assert nmax[i] > nmin[i], self
+      assert nmax[i] > nmin[i]
     return BBox((nmin, nmax))
 
   def half_width(self):
     bmin, bmax = self
-    return ((bmax[0]-bmin[0]) * .5,
-            (bmax[1]-bmin[1]) * .5,
-            (bmax[2]-bmin[2]) * .5)
+    return ((bmax[0] - bmin[0]) * .5,
+            (bmax[1] - bmin[1]) * .5,
+            (bmax[2] - bmin[2]) * .5)
 
   def surface_area(self):
     dx, dy, dz = self.half_width()
@@ -63,21 +63,24 @@ class BBox(tuple):
 # RTree
 # ---------------------------------------------------------------------------
 
+
 # Tunables
 INDEX_CAPACITY = 80
 LEAF_CAPACITY = 410
 
+
 def str_vec3(vec3):
   return "(%6.1f %6.1f %6.1f)" % vec3
 
+
 def str_bounds(bounds):
-  #return "(%s, %s)" % (str_vec3(bounds[0]), str_vec3(bounds[1]))
+  # return "(%s, %s)" % (str_vec3(bounds[0]), str_vec3(bounds[1]))
   bmin, bmax = bounds
-  halfsize = (bmax[0]-bmin[0], bmax[1]-bmin[1], bmax[2]-bmin[2])
+  halfsize = (bmax[0] - bmin[0], bmax[1] - bmin[1], bmax[2] - bmin[2])
   return "(%5.1f %5.1f %5.1f)" % halfsize
 
 
-class BinaryReader(object):
+class BinaryReader():
   # Wraps struct.unpack
   def __init__(self, inf):
     if isinstance(inf, bytes):
@@ -104,9 +107,11 @@ class RTreeStorageDict(rtree.index.CustomStorage):
   def flush(self, returnError):
     # print "flush"
     pass
+
   def create(self, returnError):
     # print "create"
     pass
+
   def destroy(self, returnError):
     # print "destroy"
     pass
@@ -120,25 +125,26 @@ class RTreeStorageDict(rtree.index.CustomStorage):
     except KeyError:
       returnError.contents.value = self.InvalidPageError
 
-  def storeByteArray(self, page, data, returnError):
+  def storeByteArray(self, page, data):
     if page == self.NewPage:
       page = len(self.datas)
       self.datas[page] = data
       # print "store new %s %s" % (page, len(data))
     else:
       assert page in self.datas
-      old_data = self.datas[page]
+      # old_data = self.datas[page]
       self.datas[page] = data
       # print "store %s %s -> %s" % (page, len(old_data), len(data))
 
     return page
 
-  def deleteByteArray(self, page, returnError):
+  def deleteByteArray(self, page):
     # print "RTreeStorageDict: delete", page
     assert page in self.datas
     self.datas[page] = 'deleted'
-    
-class RTree(object):
+
+
+class RTree():
   @classmethod
   def from_bounds_iter(cls, bounds_iter, leaf_capacity_multiplier=1):
     storage = RTreeStorageDict()
@@ -168,11 +174,10 @@ class RTree(object):
       for c in node.children:
         assert c.data is None
         c.node = self._recursive_create_node(storage, c.id)
-      
+
     return node
 
   def dfs_iter(self):
-    from collections import deque
     q = deque([self.root])
     while q:
       n = q.popleft()
@@ -181,7 +186,7 @@ class RTree(object):
         q.extend(c.node for c in n.children)
 
 
-class RTreeHeader(object):
+class RTreeHeader():  # pylint: disable=too-few-public-methods,too-many-instance-attributes
   # RTree::storeHeader
   #  id_type    root
   #  u32        RTreeVariant (0 linear, 1 quadratic, 2 rstar)
@@ -220,7 +225,9 @@ class RTreeHeader(object):
 
 class CannotSplit(Exception):
   pass
-class RTreeNode(object):
+
+
+class RTreeNode():
   # for nodeType
   PERSISTENT_INDEX = 1
   PERSISTENT_LEAF = 2
@@ -240,7 +247,7 @@ class RTreeNode(object):
     self.node_id = node_id
     reader = BinaryReader(inf_or_data)
     (self.nodeType, self.level, nChildren) = reader.read("III")
-    self.children = [ RTreeChild(reader) for i in range(nChildren) ]
+    self.children = [RTreeChild(reader) for i in range(nChildren)]
     self.bounds = reader.read_bounds()
 
   def is_index(self):
@@ -267,6 +274,7 @@ class RTreeNode(object):
     #   isinstance(v, RTreeChild) == True
     #   v.node.is_leaf() == True
     bounds = []
+
     def get_all_bounds(node, bounds):
       if node.is_leaf():
         for c in node.children:
@@ -279,6 +287,7 @@ class RTreeNode(object):
     new_node = RTree.from_bounds_iter(bounds, multiplier).root
     if new_node.is_leaf():
       raise CannotSplit()
+
     def iter_leaf_children(node):
       for c in node.children:
         if c.node.is_leaf():
@@ -286,7 +295,8 @@ class RTreeNode(object):
           RTreeNode.GENERATED_SPLIT_ID -= 1
           yield c
         else:
-          for leaf in iter_leaf_children(c.node):
+          for leaf in iter_leaf_children(c.node):  # pylint: disable=unused-variable
+            # TODO: Should this be "yield leaf"? (if so, remove the pylint comment above)
             yield c
 
     lst = list(iter_leaf_children(new_node))
@@ -301,7 +311,7 @@ class RTreeNode(object):
       str_bounds(self.bounds))
 
 
-class RTreeChild(object):
+class RTreeChild():  # pylint: disable=too-few-public-methods
   # .id
   #   If parent is PERSISTENT_INDEX, this is a node id.
   #   If parent is PESISTENT_LEAF, this is some leaf-specific id (like a stroke number)
