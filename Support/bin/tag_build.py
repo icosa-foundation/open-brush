@@ -14,9 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import re
 import sys
+import tkinter as tk
 import subprocess
+import webbrowser
 
 TEST_STEAM_1 = 'testing_point_release	1327514	Sep 9, 2016 @ 12:26pm	Release 7.1-06cb99f'
 TEST_STEAM_2 = '1327514	Sep 9, 2016 @ 12:26pm	Release 7.1-06cb99f'
@@ -46,13 +49,14 @@ STOREFRONT_INFO = {
 }
 STOREFRONTS = sorted(STOREFRONT_INFO.keys())
 
+
 class Error(Exception):
   pass
 
 
 def make_tag_name(full_version, store):
   """Converts a version number to a tag name, and does some sanity checking."""
-  (major_version, rest) = full_version.split('.', 1)
+  (major_version, _) = full_version.split('.', 1)
   if full_version.endswith('b'):
     raise Error('Do you really want to tag a beta version %s?' % full_version)
   if major_version == '19' and store != 'oculus-quest':
@@ -62,10 +66,10 @@ def make_tag_name(full_version, store):
 
 def make_steam_cmd(line, store):
   """Returns a dictionary with the keys 'buildid', 'version', 'sha'"""
-  #1327514	Sep 9, 2016 @ 12:26pm	Release 7.1-06cb99f
+  # 1327514	Sep 9, 2016 @ 12:26pm	Release 7.1-06cb99f
   pat = re.compile(r'''
     (?P<branch>[a-z_]+ \t )?
-    (?P<buildid>\d+)   \t 
+    (?P<buildid>\d+)   \t
     (?P<date>[^\t]+)  \t
     Release \s (?P<version>\d+\.\d+)-(?P<sha>[0-9a-f]+)''', re.X)
   m = pat.match(line)
@@ -101,7 +105,6 @@ def make_oculus_cmd(txt, store):
 
 
 def do_gui():
-  import tkinter as tk
   root = tk.Tk()
 
   def close_window():
@@ -114,18 +117,18 @@ def do_gui():
 
   def open_url(event):
     name = str(event.widget.cget("text"))
-    try: url = STOREFRONT_INFO[name]['url']
+    try:
+      url = STOREFRONT_INFO[name]['url']
     except KeyError as e:
       print(e)
       return
-    import webbrowser
     webbrowser.open_new(url)
 
-  for storefront, info in sorted(STOREFRONT_INFO.items()):
-    button = tk.Radiobutton(
+  for storefront, _ in sorted(STOREFRONT_INFO.items()):
+    rb_button = tk.Radiobutton(
       root, text=storefront, padx=20, variable=store_var, value=storefront)
-    button.pack(anchor=tk.W)
-    button.bind("<Button-1>", open_url)
+    rb_button.pack(anchor=tk.W)
+    rb_button.bind("<Button-1>", open_url)
 
   tk.Label(root, text="Paste build info here").pack()
   text_widget = tk.Text(root, height=6, width=80)
@@ -137,7 +140,6 @@ def do_gui():
 
 
 def main():
-  import argparse
   parser = argparse.ArgumentParser()
   parser.add_argument('--store', choices=sorted(STOREFRONT_INFO.keys()))
   parser.add_argument('--gui', action='store_true')
@@ -160,16 +162,16 @@ def main():
       cmd = make_oculus_cmd(text_input.strip(), args.store)
   except Error as e:
     if args.gui:
-      import tkinter.messagebox
-      tkinter.messagebox.showerror('Error', str(e))
+      tk.messagebox.showerror('Error', str(e))
     else:
       print(e, file=sys.stderr)
     sys.exit(1)
   else:
     def quotify(txt):
       return txt if ' ' not in txt else '"%s"' % txt
-    print(("Running %s" % ' '.join(map(quotify, cmd))))
+    print("Running %s" % ' '.join([quotify(c) for c in cmd]))
     subprocess.call(cmd)
+
 
 if __name__ == '__main__':
   main()

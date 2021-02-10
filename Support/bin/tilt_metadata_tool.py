@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import sys
 import pprint
 
@@ -24,8 +25,9 @@ except ImportError:
   print("and then put its Python directory in your PYTHONPATH.")
   sys.exit(1)
 
+
 def as_unicode(txt):
-  if type(txt) is not str:
+  if isinstance(txt, str):
     try:
       txt = txt.decode('utf-8')
     except UnicodeDecodeError:
@@ -34,8 +36,8 @@ def as_unicode(txt):
       txt = txt.decode('latin-1')
   return txt
 
+
 def main(args=None):
-  import argparse
   parser = argparse.ArgumentParser(description="View and modify .tilt file metadata")
   parser.add_argument('--list', action='store_true', help='Print metadata')
   parser.add_argument('--author', action='append', type=as_unicode, help='Set author (may be passed multiple times)',
@@ -51,6 +53,7 @@ def main(args=None):
         meta['Authors'] = args.author
       if args.list:
         pprint.pprint(meta)
+
 
 if __name__ == '__main__':
   main()

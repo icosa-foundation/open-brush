@@ -20,7 +20,7 @@ try:
 except ImportError:
   print("You need the Tilt Brush Toolkit (https://github.com/googlevr/tilt-brush-toolkit)")
   print("and then put its Python directory in your PYTHONPATH.")
-  sys.exit(1)
+  raise
 
 
 def main():
@@ -48,6 +48,7 @@ def main():
       print(filename)
       print('Moved by %.3f' % delta)
       tilt.write_sketch()
+
 
 if __name__ == '__main__':
   main()
