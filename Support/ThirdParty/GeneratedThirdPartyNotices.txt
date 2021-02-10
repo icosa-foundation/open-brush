@@ -9,7 +9,7 @@ https://www.geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf
 
 
 === FluxJpeg.Core ===
-Copyright (c) 2008-2009 Occipital Open Source
+﻿Copyright (c) 2008-2009 Occipital Open Source
 
 Partial derivations: See IJG.txt and JAI.txt.
 
@@ -104,12 +104,6 @@ THE SOFTWARE.
 
 
 
-=== GraphicsAnton ===
-This product includes software developed by Anton Kirczenow.
-https://www.shadertoy.com/view/ldsGWX
-
-
-
 === Ionic.Zip ===
 DotNetZip - Copyright (c) 2006 - 2011 Dino Chiesa 
 DotNetZip - Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation. 
@@ -170,3 +164,9 @@ All rights reserved.
 This product includes software developed at:
        
 Pixar (http://www.pixar.com/).
+
+
+=== GraphicsAnton ===
+This product includes software developed by Anton Kirczenow.
+https://www.shadertoy.com/view/ldsGWX
+

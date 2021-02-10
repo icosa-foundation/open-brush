@@ -1,0 +1,2 @@
+[MESSAGES CONTROL]
+disable=bad-indentation,missing-class-docstring,missing-module-docstring,missing-function-docstring,invalid-name,fixme,line-too-long
