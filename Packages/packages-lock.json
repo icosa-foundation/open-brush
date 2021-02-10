@@ -43,7 +43,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.multiplayer-hlapi": {
-      "version": "1.0.6",
+      "version": "1.0.8",
       "depth": 0,
       "source": "registry",
       "dependencies": {
