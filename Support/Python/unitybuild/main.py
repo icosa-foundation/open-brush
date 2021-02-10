@@ -810,14 +810,18 @@ def main(args=None):  # pylint: disable=too-many-statements,too-many-branches,to
       print("Building %s %s %s exp:%d signed:%d il2cpp:%d" % (
           platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp))
 
-      tags = [platform, vrsdk, config]
-      if args.experimental:
-        tags.append('Exp')
-      if args.for_distribution and platform != 'Windows':
-        tags.append('Signed')
-      if args.il2cpp:
-        tags.append('Il2cpp')
-      dirname = '_'.join(tags)
+      sdk = vrsdk
+      if sdk == "Oculus" and platform == "Android":
+          sdk = "OculusMobile"
+      dirname = "%s_%s_%s%s%s%s%s_FromCli" % (
+              sdk,
+              "Release",
+              EXE_BASE_NAME,
+              "_Experimental" if args.experimental else "",
+              "_Il2cpp" if args.il2cpp else "",
+              "", # GuiAutoProfile
+              "_signed" if args.for_distribution and platform != "Windows" else ""
+              )
 
       tmp_dir = os.path.join(build_dir, 'tmp_' + dirname)
       output_dir = os.path.join(build_dir, dirname)
