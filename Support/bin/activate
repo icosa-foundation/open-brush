@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+(return 0 2>/dev/null) || (echo "Please source this: . activate"; exit 1)
+
+export PATH=$PATH:$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
+
+export UNITY_ROOT="C:\Unity\2019.4.18f1"
+export PATH=$PATH:"$(cygpath -u "$UNITY_ROOT\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools")"
+

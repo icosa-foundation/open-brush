@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# OpenBrush Quest support
+# Cygwin script to run Quest app and capture the log.
+# ADB docs: https://developer.android.com/studio/command-line/adb
+
+usage () {
+	echo "quest [-hbsiulr]"
+	echo "	-h           : help"
+	echo "	quest -rl  : log, run"
+	exit 0
+}
+
+LOGFILE=${WORK_DIR:+$WORK_DIR/}adblog.txt
+PACKAGE=com.Icosa.OpenBrush
+
+if [ ! -f $PACKAGE.apk ]; then
+	echo "Package $PACKAGE not found"
+	exit 1
+fi
+
+ADB=adb
+$ADB devices
+
+while getopts "hbsiulr" options; do
+	case "$options" in
+	h)	usage ;;
+	s)  ADB=$(cygpath -u "$HOMEPATH\AppData\Roaming\SideQuest\platform-tools\adb.exe")
+		echo "Use SideQuest ADB"
+		;;
+	i)	echo "Installing $PACKAGE..."
+		$ADB shell am force-stop $PACKAGE
+		$ADB install -r $PACKAGE.apk
+		shift
+		;;
+	u)	echo "Uninstall $PACKAGE..."
+		$ADB shell am force-stop $PACKAGE
+		$ADB uninstall $PACKAGE.apk
+		shift
+		;;
+	r) 	echo "Running $PACKAGE..."
+		$ADB shell am force-stop $PACKAGE
+		sleep 1
+		$ADB shell am start -n $PACKAGE/com.unity3d.player.UnityPlayerActivity
+		;;
+	l)	echo "Capture log"
+		$ADB logcat -s Unity > $LOGFILE
+		;;
+	b)	echo "Starting Baretail..."
+		exec baretail $(cygpath -w $LOGFILE) &  # https://baremetalsoft.com/baretail/
+		;;
+	*) 	echo "Unknown option"
+	  	exit 2
+	  	;;
+	esac
+done
