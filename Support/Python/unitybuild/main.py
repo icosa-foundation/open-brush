@@ -67,6 +67,7 @@ from unitybuild.credentials import get_credential, TB_OCULUS_QUEST_APP_ID
 from unitybuild.vcs import create as vcs_create
 
 
+VENDOR_NAME = "Icosa"
 EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
@@ -448,18 +449,19 @@ def build(stamp, output_dir, project_dir, exe_base_name,  # pylint: disable=too-
   Returns:
     the actual output directory used
   """
-  def get_exe_suffix(platform):
+  def get_exe_name(platform, exe_base_name):
+    # This is a manually maintained duplicate of App.cs
     if 'Windows' in platform:
-      return '.exe'
+      return '%s.exe' % exe_base_name
     if 'OSX' in platform:
-      return '.app'
+      return '%s.app' % exe_base_name
     if 'Linux' in platform:
-      return ''
+      return '%s' %exe_base_name
     if 'Android' in platform:
-      return '.apk'
+      return 'com.%s.%s.apk' % (VENDOR_NAME, exe_base_name)
     if 'iOS' in platform:
-      return ''
-    raise InternalError("Don't know executable suffix for %s" % platform)
+      return '%s' % exe_base_name
+    raise InternalError("Don't know executable name for %s" % platform)
 
   try:
     unitybuild.utils.destroy(output_dir)
@@ -471,7 +473,7 @@ def build(stamp, output_dir, project_dir, exe_base_name,  # pylint: disable=too-
   os.makedirs(output_dir)
   logfile = os.path.join(output_dir, 'build_log.txt')
 
-  exe_name = os.path.join(output_dir, exe_base_name + get_exe_suffix(platform))
+  exe_name = os.path.join(output_dir, get_exe_name(platform, exe_base_name))
   cmd_env = os.environ.copy()
   cmdline = [get_unity_exe(get_project_unity_version(project_dir),
                            lenient=is_jenkins),
