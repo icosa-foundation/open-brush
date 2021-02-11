@@ -1008,13 +1008,6 @@ static class BuildTiltBrush {
       // XXX: This does _not_ do anything in Unity 2017+, because config is a scene object
       EditorUtility.SetDirty(config);
 
-      // Copy USD plugins over. Not needed for Android (and won't work, since
-      // TiltBrush_Data doesn't exist)
-      string relativeDataDir = Path.GetFileNameWithoutExtension(location) + "_Data";
-      copyRequests.Add(new CopyRequest(
-        "Assets/ThirdParty/Usd/Plugins/x86_64/share",
-        $"{relativeDataDir}/Plugins/share") { omitForAndroid=true });
-
       // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
       // to be run at build-time (ie when nobody has called Start(), Awake()).
       // TempHookupSingletons() has done just enough initialization to make it happy.
