@@ -607,8 +607,10 @@ public class App : MonoBehaviour {
       m_RoomRadius = Mathf.Min(Mathf.Abs(extents.x), Mathf.Abs(extents.z));
     }
 
+#if USD_SUPPORTED
     // Load the Usd Plugins
     InitUsd.Initialize();
+#endif
 
     foreach (string s in Config.m_SketchFiles) {
       // Assume all relative paths are relative to the Sketches directory.
