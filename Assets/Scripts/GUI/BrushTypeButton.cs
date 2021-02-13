@@ -36,6 +36,9 @@ namespace TiltBrush
 
         override protected void Awake()
         {
+#if VARIANT_BRUSHES
+            m_AtlasTexture = false;
+#endif
             base.Awake();
             m_AudioReactiveIconRenderer = m_AudioReactiveIcon.GetComponent<Renderer>();
             m_ExperimentalIconRenderer = m_ExperimentalIcon.GetComponent<Renderer>();
@@ -95,7 +98,7 @@ namespace TiltBrush
                 SetDescriptionText(rBrush.m_Description);
             }
 #else
-            SetDescriptionText(rBrush.m_Description);
+    SetDescriptionText(rBrush.m_Description);
 #endif
             m_AudioReactiveIcon.SetActive(rBrush.m_AudioReactive &&
                 VisualizerManager.m_Instance.VisualsRequested);
@@ -203,4 +206,4 @@ namespace TiltBrush
             m_ExperimentalIconRenderer.material.SetColor("_Color", rColor);
         }
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush
