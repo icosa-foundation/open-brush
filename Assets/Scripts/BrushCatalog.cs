@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
 using Brush = TiltBrush.BrushDescriptor;
 
 namespace TiltBrush
@@ -44,7 +45,7 @@ namespace TiltBrush
             // rather than just a subset of them that are in a manifest.
             m_Instance.m_GuidToBrush = UnityEditor.AssetDatabase.FindAssets("t:BrushDescriptor")
                 .Select(name => UnityEditor.AssetDatabase.LoadAssetAtPath<BrushDescriptor>(
-                    UnityEditor.AssetDatabase.GUIDToAssetPath(name)))
+                            UnityEditor.AssetDatabase.GUIDToAssetPath(name)))
                 .ToDictionary(desc => (Guid)desc.m_Guid);
         }
 
@@ -105,7 +106,7 @@ namespace TiltBrush
             for (int i = 0; i < m_BlocksMaterials.Length; ++i)
             {
                 m_MaterialToBrush.Add(m_BlocksMaterials[i].brushDescriptor.Material,
-                    m_BlocksMaterials[i].brushDescriptor);
+                                      m_BlocksMaterials[i].brushDescriptor);
             }
 
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
@@ -218,7 +219,10 @@ namespace TiltBrush
                     output.Add(desc);
                 }
             }
+
+            // Add user variant brushes
+            output.AddRange(manifest.UserVariantBrushes);
             return output;
         }
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush

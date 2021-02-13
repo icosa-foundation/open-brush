@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -28,6 +30,13 @@ namespace TiltBrush
         public BrushDescriptor[] Brushes;
         public Environment[] Environments;
         public BrushDescriptor[] CompatibilityBrushes;
+
+        public IEnumerable<BrushDescriptor> UserVariantBrushes
+        {
+            get { return m_UserVariantBrushes.Select(x => x.Descriptor); }
+        }
+
+        private List<UserVariantBrush> m_UserVariantBrushes = new List<UserVariantBrush>();
 
         // lhs = lhs + rhs, with duplicates removed.
         // The leading portion of the returned array will be == lhs.
@@ -47,7 +56,7 @@ namespace TiltBrush
 
         private IEnumerable<BrushDescriptor> AllBrushesAndAncestors()
         {
-            foreach (var brush in Brushes.Concat(CompatibilityBrushes))
+            foreach (var brush in Brushes.Concat(CompatibilityBrushes).Concat(UserVariantBrushes))
             {
                 for (var current = brush; current != null; current = current.m_Supersedes)
                 {
@@ -76,6 +85,19 @@ namespace TiltBrush
             System.IO.File.WriteAllLines(path, guids);
 #endif
         }
-    } // TiltBrushManifest
 
-} // namespace TiltBrush
+        public void LoadUserBrushes()
+        {
+            m_UserVariantBrushes = new List<UserVariantBrush>();
+            foreach (var folder in Directory.GetDirectories(App.UserBrushesPath()))
+            {
+                var userBrush = UserVariantBrush.Create(folder);
+                if (userBrush != null)
+                {
+                    m_UserVariantBrushes.Add(userBrush);
+                }
+            }
+        }
+    }  // TiltBrushManifest
+
+}  // namespace TiltBrush

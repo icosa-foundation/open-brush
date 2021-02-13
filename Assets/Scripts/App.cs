@@ -21,10 +21,13 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+
 using Newtonsoft.Json;
+
 #if USD_SUPPORTED
 using Unity.Formats.USD;
 #endif
+
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
@@ -526,7 +529,7 @@ namespace TiltBrush
             // in an additive scene.
             // Don't do this in the editor, because it mutates the asset on disk!
 #if !UNITY_EDITOR
-            PlatformConfig.IntroSketchPrefab = null;
+    PlatformConfig.IntroSketchPrefab = null;
 #endif
             Resources.UnloadUnusedAssets();
         }
@@ -601,6 +604,7 @@ namespace TiltBrush
             }
 
             m_Manifest = GetMergedManifest(consultUserConfig: true);
+            m_Manifest.LoadUserBrushes();
 
             m_HttpServer = GetComponentInChildren<HttpServer>();
             if (!Config.IsMobileHardware)
@@ -663,7 +667,7 @@ namespace TiltBrush
             else
             {
                 Debug.LogFormat("Sdk mode: {0} XRDevice.model: {1}",
-                    App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
+                                App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
@@ -734,32 +738,32 @@ namespace TiltBrush
                 cam.CollapseIpd = Config.m_OdsCollapseIpd;
                 cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
                 Debug.LogFormat("Configuring ODS:{0}" +
-                    "Frames: {1}{0}" +
-                    "FPS: {8}{0}" +
-                    "TurnTable: {2}{0}" +
-                    "Output: {3}{0}" +
-                    "Basename: {4}{0}" +
-                    "QuickLoad: {5}{0}" +
-                    "CollapseIPD: {6}{0}" +
-                    "ImageWidth: {7}{0}",
-                    System.Environment.NewLine,
-                    driver.FramesToCapture,
-                    driver.TurnTableRotation,
-                    driver.OutputFolder,
-                    driver.OutputBasename,
-                    Config.m_QuickLoad,
-                    cam.CollapseIpd,
-                    cam.imageWidth,
-                    driver.m_fps);
+                                "Frames: {1}{0}" +
+                                "FPS: {8}{0}" +
+                                "TurnTable: {2}{0}" +
+                                "Output: {3}{0}" +
+                                "Basename: {4}{0}" +
+                                "QuickLoad: {5}{0}" +
+                                "CollapseIPD: {6}{0}" +
+                                "ImageWidth: {7}{0}",
+                                System.Environment.NewLine,
+                                driver.FramesToCapture,
+                                driver.TurnTableRotation,
+                                driver.OutputFolder,
+                                driver.OutputBasename,
+                                Config.m_QuickLoad,
+                                cam.CollapseIpd,
+                                cam.imageWidth,
+                                driver.m_fps);
             }
 
             //these guys don't need to be alive just yet
             PointerManager.m_Instance.EnablePointerStrokeGeneration(false);
 
             Console.WriteLine("RenderODS: {0}, numFrames: {1}",
-                m_OdsPivot != null,
-                m_OdsPivot ? m_OdsPivot.GetComponent<OdsDriver>().FramesToCapture
-                    : 0);
+                              m_OdsPivot != null,
+                              m_OdsPivot ? m_OdsPivot.GetComponent<OdsDriver>().FramesToCapture
+                                          : 0);
 
             if (!AppAllowsCreation())
             {
@@ -786,16 +790,16 @@ namespace TiltBrush
                 case TiltBrush.VrSdk.DoF.Six:
                     // Vive, Rift + Touch
                     SketchControlsScript.m_Instance.ActiveControlsType =
-                        SketchControlsScript.ControlsType.SixDofControllers;
+                                                      SketchControlsScript.ControlsType.SixDofControllers;
                     break;
                 case TiltBrush.VrSdk.DoF.None:
                     SketchControlsScript.m_Instance.ActiveControlsType =
-                        SketchControlsScript.ControlsType.ViewingOnly;
+                                                      SketchControlsScript.ControlsType.ViewingOnly;
                     break;
                 case TiltBrush.VrSdk.DoF.Two:
                     // Monoscopic
                     SketchControlsScript.m_Instance.ActiveControlsType =
-                        SketchControlsScript.ControlsType.KeyboardMouse;
+                                                      SketchControlsScript.ControlsType.KeyboardMouse;
                     break;
             }
 
@@ -877,7 +881,7 @@ namespace TiltBrush
                 && !m_OdsPivot.activeInHierarchy
                 && !SceneSettings.m_Instance.IsTransitioning
                 && ((m_CurrentAppState == AppState.Loading && !Config.m_QuickLoad)
-                || m_CurrentAppState == AppState.Standard))
+                    || m_CurrentAppState == AppState.Standard))
             {
                 try
                 {
@@ -895,8 +899,8 @@ namespace TiltBrush
                         var head = TrTransform.identity;
                         var scene = TrTransform.identity;
                         if (SaveLoadScript.m_Instance.LoadTransformsForOds(new DiskSceneFileInfo(sketch),
-                            ref head,
-                            ref scene))
+                          ref head,
+                          ref scene))
                         {
                             OdsHeadSecondary = head;
                             OdsSceneSecondary = scene;
@@ -910,13 +914,13 @@ namespace TiltBrush
                     if (driver.OutputBasename == null || driver.OutputBasename == "")
                     {
                         driver.OutputBasename =
-                            FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.SceneFile.HumanName);
+                          FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.SceneFile.HumanName);
                         if (driver.OutputBasename == null || driver.OutputBasename == "")
                         {
                             if (Config.m_SketchFiles.Length > 0)
                             {
                                 driver.OutputBasename = System.IO.Path.GetFileNameWithoutExtension(
-                                    Config.m_SketchFiles[0]);
+                                  Config.m_SketchFiles[0]);
                             }
                             else
                             {
@@ -976,7 +980,7 @@ namespace TiltBrush
                             {
                                 m_DesiredAppState = AppState.Standard;
                                 SketchControlsScript.m_Instance.IssueGlobalCommand(
-                                    SketchControlsScript.GlobalCommands.ExportListed);
+                                  SketchControlsScript.GlobalCommands.ExportListed);
                             }
                             else if (Config.OfflineRender)
                             {
@@ -1110,9 +1114,9 @@ namespace TiltBrush
                         {
                             FinishLoading();
                             InputManager.m_Instance.TriggerHapticsPulse(
-                                InputManager.ControllerName.Brush, 4, 0.15f, 0.1f);
+                              InputManager.ControllerName.Brush, 4, 0.15f, 0.1f);
                             InputManager.m_Instance.TriggerHapticsPulse(
-                                InputManager.ControllerName.Wand, 4, 0.15f, 0.1f);
+                              InputManager.ControllerName.Wand, 4, 0.15f, 0.1f);
                         }
                         break;
                     }
@@ -1319,7 +1323,7 @@ namespace TiltBrush
             else
             {
                 OutputWindowScript.m_Instance.AddNewLine(
-                    OutputWindowScript.LineType.Special, "Sketch Loaded!");
+                  OutputWindowScript.LineType.Special, "Sketch Loaded!");
             }
 
             OnPlaybackComplete();
@@ -1329,7 +1333,7 @@ namespace TiltBrush
             TutorialManager.m_Instance.EnableQuickLoadTutorial(false);
 
             AudioManager.m_Instance.PlaySketchLoadedSound(
-                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
+              InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
 
             SketchControlsScript.m_Instance.RequestPanelsVisibility(true);
             if (VideoRecorderUtils.ActiveVideoRecording == null)
@@ -1354,7 +1358,7 @@ namespace TiltBrush
             if (Config.OfflineRender)
             {
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.RenderCameraPath);
+                  SketchControlsScript.GlobalCommands.RenderCameraPath);
             }
         }
 
@@ -1536,10 +1540,10 @@ namespace TiltBrush
             {
                 string dstFilename = Path.GetFileName(path);
                 if (Path.GetFullPath(Path.GetDirectoryName(path)) != Path.GetFullPath(UserSketchPath()) &&
-                    SaveLoadScript.Md5Suffix(dstFilename) == null)
+                  SaveLoadScript.Md5Suffix(dstFilename) == null)
                 {
                     dstFilename = SaveLoadScript.AddMd5Suffix(dstFilename,
-                        SaveLoadScript.GetMd5(path));
+                      SaveLoadScript.GetMd5(path));
                 }
                 string dstPath = Path.Combine(UserSketchPath(), dstFilename);
                 if (!File.Exists(dstPath))
@@ -1547,7 +1551,7 @@ namespace TiltBrush
                     File.Copy(path, dstPath);
                 }
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: dstPath);
+                  SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: dstPath);
             }
             catch (FileNotFoundException)
             {
@@ -1914,8 +1918,8 @@ namespace TiltBrush
                 case RuntimePlatform.LinuxEditor:
                     // user Documents folder
                     m_UserPath = Path.Combine(System.Environment.GetFolderPath(
-                            System.Environment.SpecialFolder.Personal),
-                        "Documents");
+                                            System.Environment.SpecialFolder.Personal),
+                                        "Documents");
                     break;
                 case RuntimePlatform.Android:
                     m_UserPath = "/sdcard/";
@@ -2010,7 +2014,7 @@ namespace TiltBrush
             if (!InitDirectoryAtPath(mediaLibraryPath)) { return false; }
             string readmeFile = Path.Combine(mediaLibraryPath, Config.m_MediaLibraryReadme);
             FileUtils.WriteTextFromResources(Config.m_MediaLibraryReadme,
-                Path.ChangeExtension(readmeFile, ".txt"));
+                                             Path.ChangeExtension(readmeFile, ".txt"));
             return true;
         }
 
@@ -2025,15 +2029,15 @@ namespace TiltBrush
             foreach (string fileName in defaultModels)
             {
                 string[] path = fileName.Split(
-                    new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
+                  new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
                 string newModel = Path.Combine(modelsDirectory, path[1]);
                 if (!Directory.Exists(newModel))
                 {
                     Directory.CreateDirectory(newModel);
                 }
                 if (Path.GetExtension(fileName) == ".png" ||
-                    Path.GetExtension(fileName) == ".jpeg" ||
-                    Path.GetExtension(fileName) == ".jpg")
+                  Path.GetExtension(fileName) == ".jpeg" ||
+                  Path.GetExtension(fileName) == ".jpg")
                 {
                     FileUtils.WriteTextureFromResources(fileName, Path.Combine(newModel, path[2]));
                 }
@@ -2066,7 +2070,7 @@ namespace TiltBrush
                 foreach (string fileName in defaultImages)
                 {
                     FileUtils.WriteTextureFromResources(fileName,
-                        Path.Combine(path, Path.GetFileName(fileName)));
+                                                        Path.Combine(path, Path.GetFileName(fileName)));
                 }
                 PlayerPrefs.SetInt(kReferenceImagesSeeded, 1);
             }
@@ -2151,6 +2155,11 @@ namespace TiltBrush
         static public string VrVideosPath()
         {
             return Path.Combine(UserPath(), "VRVideos");
+        }
+
+        static public string UserBrushesPath()
+        {
+            return Path.Combine(UserPath(), "Brushes");
         }
 
         void OnApplicationQuit()
@@ -2300,7 +2309,7 @@ namespace TiltBrush
                         {
                             // Create the directory if needed.
                             string fullPath = Path.Combine(App.SupportPath(),
-                                entry.Name.Substring(supportBeginning.Length));
+                                                           entry.Name.Substring(supportBeginning.Length));
                             string directory = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(directory))
                             {
@@ -2339,5 +2348,5 @@ namespace TiltBrush
             }
         }
 
-    } // class App
-}     // namespace TiltBrush
+    }  // class App
+}  // namespace TiltBrush

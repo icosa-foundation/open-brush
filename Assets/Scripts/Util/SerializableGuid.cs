@@ -22,7 +22,7 @@ namespace TiltBrush
 {
 
 #if UNITY_EDITOR
-// See http://docs.unity3d.com/ScriptReference/PropertyDrawer.html
+    // See http://docs.unity3d.com/ScriptReference/PropertyDrawer.html
     [CustomPropertyDrawer(typeof(SerializableGuid))]
     public class SerializableGuidDrawer : PropertyDrawer
     {
@@ -67,6 +67,16 @@ namespace TiltBrush
         [SerializeField]
         private string m_storage;
 
+        public SerializableGuid(string guid)
+        {
+            m_storage = guid;
+        }
+
+        public SerializableGuid(System.Guid guid)
+        {
+            m_storage = guid.ToString();
+        }
+
         public static implicit operator SerializableGuid(System.Guid rhs)
         {
             return new SerializableGuid { m_storage = rhs.ToString("D") };
@@ -100,4 +110,4 @@ namespace TiltBrush
         }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush
