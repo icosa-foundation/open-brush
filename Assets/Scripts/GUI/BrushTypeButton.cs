@@ -33,6 +33,9 @@ public class BrushTypeButton : BaseButton {
   private Texture2D m_BrushIconTexture;
 
   override protected void Awake() {
+#if VARIANT_BRUSHES
+    m_AtlasTexture = false;
+#endif
     base.Awake();
     m_AudioReactiveIconRenderer = m_AudioReactiveIcon.GetComponent<Renderer>();
     m_ExperimentalIconRenderer = m_ExperimentalIcon.GetComponent<Renderer>();
