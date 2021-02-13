@@ -277,6 +277,8 @@ public class BrushDescriptor : ScriptableObject, IExportableMaterial {
   // END IExportableMaterial interface
   // ===============================================================================================
 
+  public bool IsUserVariant { get; set; } = false;
+  
   public bool NeedsStraightEdgeProxy {
     get {
       // Why is this a virtual API instead of data on the descriptor?
@@ -290,9 +292,8 @@ public class BrushDescriptor : ScriptableObject, IExportableMaterial {
 
   /// Return non-instantiated material
   public Material Material {
-    get {
-      return m_Material;
-    }
+    get { return m_Material; }
+    set { m_Material = value; }
   }
 
   public override string ToString() {

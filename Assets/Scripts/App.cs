@@ -546,6 +546,7 @@ public class App : MonoBehaviour {
     }
 
     m_Manifest = GetMergedManifest(consultUserConfig: true);
+    m_Manifest.LoadUserBrushes();
 
     m_HttpServer = GetComponentInChildren<HttpServer>();
     if (!Config.IsMobileHardware) {
@@ -1836,6 +1837,10 @@ public class App : MonoBehaviour {
 
   static public string VrVideosPath() {
     return Path.Combine(UserPath(), "VRVideos");
+  }
+
+  static public string UserBrushesPath() {
+    return Path.Combine(UserPath(), "Brushes");
   }
 
   void OnApplicationQuit() {
