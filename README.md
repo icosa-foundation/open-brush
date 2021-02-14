@@ -128,6 +128,14 @@ open-source licensing issues. These are:
     Unity. These have been replaced with a modified version of
     [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
 
+## Generating Secrets file
+Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
+
+1.  Right click in the root `/Assets` folder in Unity's project window. 
+    Select `Create`, then `Secrets Config`. This will create `Secrets.asset` in the Asset folder.
+1.  In `Scenes/Main.unity` go to **App > Config** and replace `SecretsExample` 
+    with the newly generated `Secrets.asset`.
+
 ## Google service API support
 
 Set up Google API support to access Google services in the app.
@@ -183,9 +191,9 @@ steps to create an OAuth credential:
 
 Follow these steps to store the Google API Key and credential data:
 
-1.  There is an asset in the `Assets/` directory called `Secrets` that contains
-    a `Secrets` field. Add a new item to this field.
-2.  Select `Google` as the service. Paste in the API key, client ID, and client
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Select `Google` as the service. Paste in the API key, client ID, and client
     secret that were generated earlier.
 
 ## Enabling native Oculus support
@@ -232,6 +240,8 @@ Follow these steps to publish to Oculus stores:
 
 1.  Get an application ID from Oculus. The desktop and quest versions of each
     application need separate IDs.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add 2 new items to the **Secrets** field.
 1.  Add these IDs to the `Secrets` file. Both `Oculus` and `OculusMobile` should
     have their own entries.
 1.  Put the app IDs in the `Client ID` field for each.
@@ -286,7 +296,9 @@ Follow these steps to enable Sketchfab support:
 
 1.  [Contact Sketchfab](https://sketchfab.com/developers/oauth) for a client ID
     and secret before you can upload to their service.
-1.  Add the client ID and secret to the `Secrets` file.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Add the client ID and secret to the field.
 1.  Set the service as **Sketchfab**. Leave the API key blank.
 
 ## FBX file support
