@@ -84,6 +84,12 @@ public class TiltBrushManifest : ScriptableObject {
         m_UserVariantBrushes.Add(userBrush);
       }
     }
+    foreach (var file in Directory.GetFiles(App.UserBrushesPath(), "*.brush")) {
+      var userBrush = UserVariantBrush.Create(file);
+      if (userBrush != null) {
+        m_UserVariantBrushes.Add(userBrush);
+      }
+    }
   }
 }  // TiltBrushManifest
 
