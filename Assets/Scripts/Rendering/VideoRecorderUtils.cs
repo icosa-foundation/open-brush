@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -153,7 +154,7 @@ static public class VideoRecorderUtils {
                   Path.ChangeExtension(filePath, "usda") : null;
       m_RecordingStopwatch = new System.Diagnostics.Stopwatch();
       m_RecordingStopwatch.Start();
-      if (!m_UsdPathSerializer.StartRecording()) {
+      if (!m_UsdPathSerializer.StartRecording(m_UsdPath)) {
         UnityEngine.Object.Destroy(m_UsdPathSerializer);
         m_UsdPathSerializer = null;
       }
@@ -193,7 +194,7 @@ static public class VideoRecorderUtils {
         m_RecordingStopwatch.Stop();
         if (!string.IsNullOrEmpty(m_UsdPath)) {
           if (App.UserConfig.Video.SaveCameraPath && saveCapture) {
-            m_UsdPathSerializer.Save(m_UsdPath);
+            m_UsdPathSerializer.Save();
             CreateOfflineRenderBatchFile(SaveLoadScript.m_Instance.SceneFile.FullPath, m_UsdPath);
           }
         }
@@ -215,16 +216,9 @@ static public class VideoRecorderUtils {
     var pathSections = Application.dataPath.Split('/').ToArray();
     var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
 
-    // For the reader:
-    // In order for this function to generate a functional .bat file, this string needs to be
-    // updated to reflect the path to the application. For example, if you've distributed your
-    // app to Steam, this might be:
-    //   "C:/Program Files (x86)/Steam/steamapps/common/Tilt Brush/TiltBrush.exe"
-    // But if you're building locally, this should point to your standalone executable that you
-    // created, something like:
-    //   "C:/src/Builds/Windows_SteamVR_Release/TiltBrush.exe"
-    string offlineRenderExePath = "Change me to the path to the .exe";
-
+    // It would be nice to think of a way to get this to do something sensible in the editor!
+    string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
+    
     string batText = string.Format(
         "@\"{0}/Support/bin/renderVideo.cmd\" ^\n\t\"{1}\" ^\n\t\"{2}\" ^\n\t\"{3}\"",
         exePath, sketchFile, usdaFile, offlineRenderExePath);

@@ -26,6 +26,15 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.formats.usd": {
+      "version": "1.0.3-preview.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.ide.rider": {
       "version": "1.1.4",
       "depth": 0,
