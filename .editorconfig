@@ -1,0 +1,9 @@
+
+# https://EditorConfig.org
+
+root = true
+
+[*.{cs,py,json,cfg}]
+indent_style = space
+indent_size = 2
+
