@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
+[CreateAssetMenu(fileName="Secrets", menuName="Secrets Config")]
 public class SecretsConfig : ScriptableObject {
   public enum Service {
     Google = 0,

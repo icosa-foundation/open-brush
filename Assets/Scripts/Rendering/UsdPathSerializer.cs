@@ -17,6 +17,7 @@ using UnityEngine;
 using System;
 using USD.NET;
 using USD.NET.Unity;
+using Unity.Formats.USD;
 #endif
 
 namespace TiltBrush {
@@ -70,9 +71,9 @@ public class UsdPathSerializer : MonoBehaviour {
   }
 
   /// Starts recording the transform to a named transform in a new usd file given by the path.
-  public bool StartRecording(string sketchName = "/Sketch", string xformName = "/VideoCamera") {
+  public bool StartRecording(string path, string sketchName = "/Sketch", string xformName = "/VideoCamera") {
     m_xformName = sketchName + xformName;
-    if (!App.InitializeUsd()) {
+    if (!InitUsd.Initialize() || string.IsNullOrEmpty(path)) {
       return false;
     }
 
@@ -90,9 +91,9 @@ public class UsdPathSerializer : MonoBehaviour {
     var sketchRoot = ExportUsd.CreateSketchRoot();
     m_UsdCamera = new UsdCameraXformSample();
     try {
-      m_Scene = USD.NET.Scene.Create();
+      m_Scene = USD.NET.Scene.Create(path);
     } catch (ApplicationException e) {
-      Debug.LogError("USD library could not be loaded!");
+      Debug.LogError("Error creating usda file!");
       return false;
     }
 
@@ -128,12 +129,12 @@ public class UsdPathSerializer : MonoBehaviour {
     }
   }
 
-  public void Save(string path) {
-    m_Scene.SaveAs(path);
+  public void Save() {
+    m_Scene.Save();
   }
 
   public bool Load(string path) {
-    if (!App.InitializeUsd()) {
+    if (!InitUsd.Initialize()) {
       return false;
     }
     m_Scene = Scene.Open(path);

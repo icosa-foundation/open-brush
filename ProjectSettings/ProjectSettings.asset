@@ -726,7 +726,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLWasmStreaming: 0
   scriptingDefineSymbols:
-    1: UNITY_HAS_GOOGLEVR;TILT_BRUSH
+    1: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
     7: TILT_BRUSH;OCULUS_SUPPORTED
     14: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
   platformArchitecture:
