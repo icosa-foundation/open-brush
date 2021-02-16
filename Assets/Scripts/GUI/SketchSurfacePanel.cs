@@ -323,9 +323,10 @@ public class SketchSurfacePanel : BasePanel {
     ActiveTool.UpdateTool();
     if (ActiveTool.ExitRequested()) {
       // Requesting a tool exit puts us back at our default tool.
+      ActiveTool.EnableTool(false); // clean up current tool
       EnableDefaultTool();
       ActiveTool.EatInput();
-
+      
       // If we're currently loading, hide our default tool.
       if (App.Instance.IsLoading()) {
         PointerManager.m_Instance.RequestPointerRendering(false);

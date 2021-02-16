@@ -111,7 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c94cee59aeb87c4b8738f004b002294, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ControllerName: 0
+  m_ControllerName: 1
   m_ControllerGeometryPrefab: {fileID: 114000011295956858, guid: 5dc4999f1746f8a4296af50951bb394c,
     type: 3}
   m_GeometryOffset: {x: 0, y: 0, z: 0}
