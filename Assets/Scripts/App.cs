@@ -465,10 +465,6 @@ public class App : MonoBehaviour {
         m_IntroSketchRenderers[i].material.SetFloat("_GreyScale", 0);
       }
     }
-    else
-    {
-      Debug.Log("No intro sketch prefab");
-    }
   }
 
   void DestroyIntroSketch() {
