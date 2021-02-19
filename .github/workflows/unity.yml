@@ -18,6 +18,8 @@ jobs:
         targetPlatform: [StandaloneWindows64, StandaloneLinux64]
         vrsdk: [SteamVR, Monoscopic]
         include:
+          - targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
+            vrsdk: Monoscopic
           - targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc
@@ -102,6 +104,11 @@ jobs:
         run:
           echo "filename=OpenBrush-github" >> $GITHUB_ENV
 
+      - name: Set filename (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run:
+          echo "filename=OpenBrush-github.app" >> $GITHUB_ENV
+
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
         run:
@@ -115,6 +122,14 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ matrix.extraoptions }}
           buildMethod: BuildTiltBrush.CommandLine
+
+      - name: Set executable permissions (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
+          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
