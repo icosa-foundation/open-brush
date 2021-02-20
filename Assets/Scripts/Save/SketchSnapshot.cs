@@ -172,7 +172,7 @@ public class SketchSnapshot {
   /// returns their messages. Should not normally raise exceptions.
   public string WriteSnapshotToFile(string path) {
     try {
-      using (var tiltWriter = new TiltFile.AtomicWriter(path)) {
+      using (var tiltWriter = new TiltFile.TiltAtomicWriter(path)) {
         if (m_ThumbnailBytes != null) {
           using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_THUMBNAIL)) {
             stream.Write(m_ThumbnailBytes, 0, m_ThumbnailBytes.Length);
