@@ -586,8 +586,12 @@ public class SaveLoadScript : MonoBehaviour {
       // Load sketch
       using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH)) {
         Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
+        Guid[] fallbackGuids = jsonData.FallbackBrushIndex == null
+                               ? new Guid[0]
+                               : jsonData.FallbackBrushIndex.Select(GetForceSupersededBy).ToArray();
         bool legacySketch;
-        bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch);
+        bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive,
+            out legacySketch);
         m_LastSceneIsLegacy |= legacySketch;
         if (!success) {
           OutputWindowScript.m_Instance.AddNewLine(
@@ -596,7 +600,14 @@ public class SaveLoadScript : MonoBehaviour {
           m_LastSceneIsLegacy = false;
           return false;
         }
+        // Create fallback brush descriptors if we don't have the right brushes.
+        if (CreateMissingBrushes(brushGuids, fallbackGuids)) {
+          // Notify if any were missing
+          OutputWindowScript.m_Instance.AddNewLine(
+            OutputWindowScript.LineType.Special, "Some brushes in the sketch could not be found.");
+        }
       }
+      
 
       ModelCatalog.m_Instance.ClearMissingModels();
       SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
@@ -643,6 +654,32 @@ public class SaveLoadScript : MonoBehaviour {
     }
 
     return true;
+  }
+
+  /// <summary>
+  /// Given an array of brush Guids, and an array of fallback brush Guids, will create any brushes
+  /// missing from the BrushCatalog by duplicating the appropriate fallback brush.
+  /// </summary>
+  /// <param name="brushes">Guids of the required brushes.</param>
+  /// <param name="fallbacks">Guids of the brushes to fall back to if a brush is missing.</param>
+  /// <returns>Returns true if a creation took place; otherwise false.</returns>
+  private bool CreateMissingBrushes(Guid[] brushes, Guid[] fallbacks) {
+    bool brushesDuplicated = false;
+    for (int i = 0; i < brushes.Length; ++i) {
+      var brush = BrushCatalog.m_Instance.GetBrush(brushes[i]);
+      if (!brush) {
+        if (i >= fallbacks.Length) {
+          Debug.LogWarning(
+            $"Brush {brushes[i]} cannot be found but there is no fallback specified in the sketch.");
+          return true;
+        }
+        BrushCatalog.m_Instance.DuplicateBrush(fallbacks[i], brushes[i]);
+        ControllerConsoleScript.m_Instance.AddNewLine(
+          $"Brush {brushes[i]} is used in the sketch but cannot be found.");
+        brushesDuplicated = true;
+      }
+    }
+    return brushesDuplicated;
   }
 
   public SketchMetadata DeserializeMetadata(JsonTextReader jsonReader) {

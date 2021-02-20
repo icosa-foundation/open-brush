@@ -148,7 +148,8 @@ public static class SketchWriter {
   /// While writing out the strokes we adjust the stroke flags to take into account the effect
   /// of inactive items on grouping.
   public static void WriteMemory(Stream stream, IList<AdjustedMemoryBrushStroke> strokeCopies,
-                                 GroupIdMapping groupIdMapping, out List<Guid> brushList){
+                                 GroupIdMapping groupIdMapping, out List<Guid> brushList,
+                                 out List<Guid> fallbackBrushList){
     bool allowFastPath = BitConverter.IsLittleEndian;
     var writer = new TiltBrush.SketchBinaryWriter(stream);
 
@@ -160,6 +161,7 @@ public static class SketchWriter {
 
     var brushMap = new Dictionary<Guid, int>();  // map from GUID to index
     brushList = new List<Guid>();  // GUID's by index
+    fallbackBrushList = new List<Guid>(); // Fallback GUIDs
 
     // strokes
     writer.Int32(strokeCopies.Count);
@@ -171,6 +173,7 @@ public static class SketchWriter {
         brushIndex = brushList.Count;
         brushMap[brushGuid] = brushIndex;
         brushList.Add(brushGuid);
+        fallbackBrushList.Add(BrushCatalog.m_Instance.GetBrush(brushGuid).BaseGuid);
       }
 
       writer.Int32(brushIndex);
@@ -275,8 +278,7 @@ public static class SketchWriter {
 
   /// Parses a binary file into List of MemoryBrushStroke.
   /// Returns null on parse error.
-  public static List<Stroke> GetStrokes(
-      Stream stream, Guid[] brushList, bool allowFastPath) {
+  public static List<Stroke> GetStrokes(Stream stream, Guid[] brushList, bool allowFastPath) {
     var reader = new TiltBrush.SketchBinaryReader(stream);
 
     uint sentinel = reader.UInt32();

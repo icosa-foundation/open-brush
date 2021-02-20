@@ -295,6 +295,15 @@ InSet is converted to a pinned model with identity transform.
 
 PathKnots, RotationKnots, and SpeedKnots may all have 0 elements.  RotationKnots and SpeedKnots
 will not have >0 elements if PathKnots has 0 elements.
+
+== OpenBrush v.0.3? v.0.4? Adds fallback Guids for all brushes used in the sketch. These are used if
+   a sketch is loaded that contains brush strokes for a brush that we do not have.
+
+  "FallbackBrushIndex": [
+    "7a1c8107-50c5-4b70-9a39-421576d6617e",
+    "2241cd32-8ba2-48a5-9ee7-2caef7e9ed62"
+  ],
+   
  */
 
 
@@ -599,9 +608,11 @@ public class TiltVideo {
 [Serializable]
 // Serializable protects data members obfuscator, but we need to also protect
 // method names like ShouldSerializeXxx(...) that are used by Json.NET
+//
+// Version 3 adds FallbackBrushIndex array.
 [System.Reflection.Obfuscation(Exclude = true)]
 public class SketchMetadata {
-  static public int kSchemaVersion = 2;
+  static public int kSchemaVersion = 3;
 
   // Reference to environment GUID.
   public string EnvironmentPreset;
@@ -611,6 +622,8 @@ public class SketchMetadata {
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   public string[] Authors { get; set; }
   public Guid[] BrushIndex { get; set; }
+  [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+  public Guid[] FallbackBrushIndex { get; set; }
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
   public string[] RequiredCapabilities { get; set; }
   public TrTransform ThumbnailCameraTransformInRoomSpace = TrTransform.identity;

@@ -100,6 +100,7 @@ public class UserVariantBrush {
     Descriptor.m_DurableName = m_Config.Name;
     Descriptor.m_Description = m_Config.Name;
     Descriptor.m_Guid = new SerializableGuid(m_Config.GUID);
+    Descriptor.BaseGuid = baseBrush.m_Guid;
     Descriptor.name = m_Config.Name;
     Descriptor.IsUserVariant = true;
     Descriptor.m_Supersedes = null;

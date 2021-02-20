@@ -191,5 +191,22 @@ public class BrushCatalog : MonoBehaviour {
     output.AddRange(manifest.UserVariantBrushes);
     return output;
   }
+
+  public void DuplicateBrush(Guid fromGuid, Guid toGuid) {
+    BrushDescriptor from = GetBrush(fromGuid);
+    if (!from) {
+      Debug.LogWarning($"Error! Brush {from} not found!");
+      from = m_DefaultBrush;
+    }
+
+    BrushDescriptor to = Instantiate(from);
+    to.m_Guid = toGuid;
+    to.BaseGuid = fromGuid;
+    to.m_Supersedes = null;
+    to.m_SupersededBy = null;
+    m_GuidToBrush[toGuid] = to;
+    m_AllBrushes.Add(to);
+    // Do not add to the Gui brushes, as this is used for missing brushes.
+  }
 }
 }  // namespace TiltBrush

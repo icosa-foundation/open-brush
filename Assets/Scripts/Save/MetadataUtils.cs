@@ -219,6 +219,10 @@ public static class MetadataUtils {
     if (data.SchemaVersion < 2) {
       UpgradeSchema_1to2(data);
     }
+
+    if (data.SchemaVersion < 3) {
+      UpgradeSchema_2to3(data);
+    }
   }
 
   // Converts data.Set_deprecated[] to data.ModelIndex[].InSet
@@ -315,6 +319,13 @@ public static class MetadataUtils {
       tm75.PinStates = SafeAppend(tm75.PinStates, true);
     }
     data.SchemaVersion = 2;
+  }
+
+  // SchemaVersion 3: OpenBrush
+  // This is effectively a no-op - it just fills in the fallback brush Guids with the brush ones.
+  static void UpgradeSchema_2to3(SketchMetadata data) {
+    Debug.Assert(data.SchemaVersion == 2);
+    data.FallbackBrushIndex = data.BrushIndex.ToArray();
   }
 }
 } // namespace TiltBrush
