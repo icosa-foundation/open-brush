@@ -72,11 +72,11 @@ namespace TiltBrush
         {
             string md5 = BitConverter.ToString(hash).Replace("-", null).ToLower();
             return filename.Replace(
-                TILT_SUFFIX,
-                String.Format(" ({0}-{1}){2}",
-                    md5.Substring(md5.Length - 8, 4),
-                    md5.Substring(md5.Length - 4, 4),
-                    TILT_SUFFIX));
+              TILT_SUFFIX,
+              String.Format(" ({0}-{1}){2}",
+                md5.Substring(md5.Length - 8, 4),
+                md5.Substring(md5.Length - 4, 4),
+                TILT_SUFFIX));
         }
 
         /// Returns MD5 hash computed via blocking read of entire file.
@@ -94,13 +94,13 @@ namespace TiltBrush
             // 2018 doesn't include ANSICodePage any more -- or maybe it's only if we use .net 4.6?
             ICSharpCode.SharpZipLibUnityPort.Zip.ZipConstants.DefaultCodePage = kAsciiCodePage;
 #else
-            // There's an ancient mono bug (that Unity inherits) that prevents builds
-            // from including the proper set of code pages, causing runtime errors when
-            // SharpZipLib tries to use one. We only ever write ASCII filenames, so
-            // the choice here is arbitrary. It just needs to be something that is
-            // guaranteed to be included in the build.
-            ICSharpCode.SharpZipLibUnityPort.Zip.ZipConstants.DefaultCodePage =
-                System.Globalization.CultureInfo.InvariantCulture.TextInfo.ANSICodePage;
+    // There's an ancient mono bug (that Unity inherits) that prevents builds
+    // from including the proper set of code pages, causing runtime errors when
+    // SharpZipLib tries to use one. We only ever write ASCII filenames, so
+    // the choice here is arbitrary. It just needs to be something that is
+    // guaranteed to be included in the build.
+    ICSharpCode.SharpZipLibUnityPort.Zip.ZipConstants.DefaultCodePage =
+        System.Globalization.CultureInfo.InvariantCulture.TextInfo.ANSICodePage;
 #endif
         }
 
@@ -156,8 +156,8 @@ namespace TiltBrush
             get
             {
                 return !m_AutosaveFailed &&
-                    App.PlatformConfig.EnableAutosave &&
-                    !App.UserConfig.Flags.DisableAutosave;
+                  App.PlatformConfig.EnableAutosave &&
+                  !App.UserConfig.Flags.DisableAutosave;
             }
         }
 
@@ -225,7 +225,7 @@ namespace TiltBrush
 
             // Create hi-res save icon render texture.
             m_SaveIconHiResRenderTexture = new RenderTexture(m_SaveIconHiResWidth, m_SaveIconHiResHeight,
-                0, RenderTextureFormat.ARGB32);
+                                                             0, RenderTextureFormat.ARGB32);
 
             // Guarantee we've got an odd, >0 number of gif render textures.
             Debug.Assert((m_SaveGifTextureCount % 2) == 1);
@@ -235,10 +235,10 @@ namespace TiltBrush
             for (int i = 0; i < m_SaveGifTextureCount; ++i)
             {
                 m_SaveGifRenderTextures[i] = new RenderTexture(m_SaveGifWidth, m_SaveGifHeight, 0,
-                    RenderTextureFormat.ARGB32);
+                                                               RenderTextureFormat.ARGB32);
             }
             m_SaveIconRenderTexture = new RenderTexture(m_SaveGifWidth, m_SaveGifHeight, 0,
-                RenderTextureFormat.ARGB32);
+                                                        RenderTextureFormat.ARGB32);
 
             m_SaveDir = App.UserSketchPath();
             FileUtils.InitializeDirectoryWithUserError(m_SaveDir);
@@ -555,14 +555,14 @@ namespace TiltBrush
                 if (jsonData.RequiredCapabilities != null)
                 {
                     var missingCapabilities = jsonData.RequiredCapabilities.Except(
-                        Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
+                      Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
                     if (missingCapabilities.Length > 0)
                     {
                         Debug.LogFormat("Lacking playback capabilities: {0}",
-                            String.Join(", ", missingCapabilities));
+                          String.Join(", ", missingCapabilities));
                         OutputWindowScript.m_Instance.AddNewLine(
-                            $"Lacking a capability to load {fileInfo.HumanName}. " +
-                            $"Upgrade {App.kAppDisplayName}?");
+                          $"Lacking a capability to load {fileInfo.HumanName}. " +
+                          $"Upgrade {App.kAppDisplayName}?");
                         return false;
                     }
                 }
@@ -619,22 +619,22 @@ namespace TiltBrush
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(
                         string.Format("Error detected in sketch '{0}'.\nSuggest re-saving.",
-                            fileInfo.HumanName));
+                                                                                     fileInfo.HumanName));
                     Debug.LogWarning(string.Format("Error reading meteadata for {0}.\n{1}",
-                        fileInfo.FullPath,
-                        SaveLoadScript.m_Instance.LastMetadataError));
+                                                   fileInfo.FullPath,
+                                                   SaveLoadScript.m_Instance.LastMetadataError));
                 }
                 if (jsonData.RequiredCapabilities != null)
                 {
                     var missingCapabilities = jsonData.RequiredCapabilities.Except(
-                        Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
+                      Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
                     if (missingCapabilities.Length > 0)
                     {
                         Debug.LogFormat("Lacking playback capabilities: {0}",
-                            String.Join(", ", missingCapabilities));
+                          String.Join(", ", missingCapabilities));
                         OutputWindowScript.m_Instance.AddNewLine(
-                            "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
-                            fileInfo.HumanName);
+                          "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
+                          fileInfo.HumanName);
                         return false;
                     }
                 }
@@ -651,16 +651,16 @@ namespace TiltBrush
                     SceneSettings.m_Instance.SetDesiredPreset(
                         environment, forceTransition: true,
                         keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                    );
+                        );
                 }
                 else
                 {
                     Debug.LogWarningFormat("Unknown environment preset {0}",
-                        jsonData.EnvironmentPreset);
+                                           jsonData.EnvironmentPreset);
                 }
 
                 App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
-                    jsonData.SceneTransformInRoomSpace);
+                                                    jsonData.SceneTransformInRoomSpace);
                 App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                 Coords.CanvasLocalPose = TrTransform.identity;
                 if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
@@ -674,7 +674,7 @@ namespace TiltBrush
 #endif
                 }
                 LastThumbnail_SS = App.Scene.Pose.inverse *
-                    jsonData.ThumbnailCameraTransformInRoomSpace;
+                                   jsonData.ThumbnailCameraTransformInRoomSpace;
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
@@ -683,8 +683,12 @@ namespace TiltBrush
                 using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
+                    Guid[] fallbackGuids = jsonData.FallbackBrushIndex == null
+                                           ? new Guid[0]
+                                           : jsonData.FallbackBrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive,
+                        out legacySketch);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -694,7 +698,15 @@ namespace TiltBrush
                         m_LastSceneIsLegacy = false;
                         return false;
                     }
+                    // Create fallback brush descriptors if we don't have the right brushes.
+                    if (CreateMissingBrushes(brushGuids, fallbackGuids))
+                    {
+                        // Notify if any were missing
+                        OutputWindowScript.m_Instance.AddNewLine(
+                          OutputWindowScript.LineType.Special, "Some brushes in the sketch could not be found.");
+                    }
                 }
+
 
                 ModelCatalog.m_Instance.ClearMissingModels();
                 SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
@@ -752,6 +764,36 @@ namespace TiltBrush
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Given an array of brush Guids, and an array of fallback brush Guids, will create any brushes
+        /// missing from the BrushCatalog by duplicating the appropriate fallback brush.
+        /// </summary>
+        /// <param name="brushes">Guids of the required brushes.</param>
+        /// <param name="fallbacks">Guids of the brushes to fall back to if a brush is missing.</param>
+        /// <returns>Returns true if a creation took place; otherwise false.</returns>
+        private bool CreateMissingBrushes(Guid[] brushes, Guid[] fallbacks)
+        {
+            bool brushesDuplicated = false;
+            for (int i = 0; i < brushes.Length; ++i)
+            {
+                var brush = BrushCatalog.m_Instance.GetBrush(brushes[i]);
+                if (!brush)
+                {
+                    if (i >= fallbacks.Length)
+                    {
+                        Debug.LogWarning(
+                          $"Brush {brushes[i]} cannot be found but there is no fallback specified in the sketch.");
+                        return true;
+                    }
+                    BrushCatalog.m_Instance.DuplicateBrush(fallbacks[i], brushes[i]);
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                      $"Brush {brushes[i]} is used in the sketch but cannot be found.");
+                    brushesDuplicated = true;
+                }
+            }
+            return brushesDuplicated;
         }
 
         public SketchMetadata DeserializeMetadata(JsonTextReader jsonReader)
@@ -900,8 +942,8 @@ namespace TiltBrush
                     Directory.CreateDirectory(App.AutosavePath());
                 }
                 var files = new DirectoryInfo(App.AutosavePath()).GetFiles()
-                    .Where(x => x.Name.StartsWith(autosaveStart))
-                    .OrderBy(x => x.LastWriteTimeUtc).ToArray();
+                                              .Where(x => x.Name.StartsWith(autosaveStart))
+                                              .OrderBy(x => x.LastWriteTimeUtc).ToArray();
                 if (files.Length >= m_AutosaveFileCount)
                 {
                     for (int i = files.Length - m_AutosaveFileCount; i >= 0; i--)
@@ -923,7 +965,7 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(exception.Message);
                 Debug.LogWarningFormat("{0}\n{1}", exception.Message, exception.StackTrace);
                 if (!(exception is IOException || exception is AccessViolationException ||
-                    exception is UnauthorizedAccessException))
+                      exception is UnauthorizedAccessException))
                 {
                     throw;
                 }
@@ -937,7 +979,8 @@ namespace TiltBrush
             {
                 return null;
             }
-            var lastFile = Directory.GetFiles(autosaveDir, "*.tilt").Select(x => new FileInfo(x)).OrderByDescending(x => x.CreationTimeUtc).FirstOrDefault();
+            var lastFile = Directory.GetFiles(autosaveDir, "*.tilt").Select(x => new FileInfo(x)).
+              OrderByDescending(x => x.CreationTimeUtc).FirstOrDefault();
 
             return lastFile.FullName;
         }
@@ -952,7 +995,7 @@ namespace TiltBrush
         public async Task<SketchSnapshot> CreateSnapshotWithIconsAsync()
         {
             var snapshot = CreateSnapshotWithIcons(out var coroutine);
-            await coroutine; // finishes off the snapshot
+            await coroutine;  // finishes off the snapshot
             return snapshot;
         }
 
@@ -973,4 +1016,4 @@ namespace TiltBrush
         }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush

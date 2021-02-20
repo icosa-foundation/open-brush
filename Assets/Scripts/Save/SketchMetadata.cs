@@ -296,6 +296,15 @@ namespace TiltBrush
 
     PathKnots, RotationKnots, and SpeedKnots may all have 0 elements.  RotationKnots and SpeedKnots
     will not have >0 elements if PathKnots has 0 elements.
+
+    == OpenBrush v.0.3? v.0.4? Adds fallback Guids for all brushes used in the sketch. These are used if
+       a sketch is loaded that contains brush strokes for a brush that we do not have.
+
+      "FallbackBrushIndex": [
+        "7a1c8107-50c5-4b70-9a39-421576d6617e",
+        "2241cd32-8ba2-48a5-9ee7-2caef7e9ed62"
+      ],
+
      */
 
 
@@ -357,9 +366,9 @@ namespace TiltBrush
         // Added in M13 in 97e210f041e20b87c72c87bafb71d7d399d46c13. Never released to public.
         // Turned into RawTransforms in M19.
         [JsonProperty(
-            PropertyName = "InSet",                            // Used to be called InSet
-            DefaultValueHandling = DefaultValueHandling.Ignore // Don't write "false" values into the .tilt any more
-        )]
+            PropertyName = "InSet",  // Used to be called InSet
+            DefaultValueHandling = DefaultValueHandling.Ignore  // Don't write "false" values into the .tilt any more
+            )]
         [System.ComponentModel.DefaultValue(false)]
         public bool InSet_deprecated { get; set; }
 
@@ -400,7 +409,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    return new Model.Location(); // invalid location
+                    return new Model.Location();  // invalid location
                 }
             }
             set
@@ -473,15 +482,9 @@ namespace TiltBrush
                     // Support the 8.x names for these
                     switch (value)
                     {
-                        case kHashedCube:
-                            Type = StencilType.Cube;
-                            break;
-                        case kHashedSphere:
-                            Type = StencilType.Sphere;
-                            break;
-                        case kHashedCapsule:
-                            Type = StencilType.Capsule;
-                            break;
+                        case kHashedCube: Type = StencilType.Cube; break;
+                        case kHashedSphere: Type = StencilType.Sphere; break;
+                        case kHashedCapsule: Type = StencilType.Capsule; break;
                         default:
                             // TODO: log a user visible warning?
                             Debug.LogException(e);
@@ -655,10 +658,12 @@ namespace TiltBrush
     [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
+    //
+    // Version 3 adds FallbackBrushIndex array.
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
-        static public int kSchemaVersion = 2;
+        static public int kSchemaVersion = 3;
 
         // Reference to environment GUID.
         public string EnvironmentPreset;
@@ -668,6 +673,8 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string[] Authors { get; set; }
         public Guid[] BrushIndex { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Guid[] FallbackBrushIndex { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string[] RequiredCapabilities { get; set; }
         public TrTransform ThumbnailCameraTransformInRoomSpace = TrTransform.identity;
@@ -770,4 +777,4 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
     }
-} // namespace TiltBrush
+}// namespace TiltBrush

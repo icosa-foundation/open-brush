@@ -308,6 +308,17 @@ namespace TiltBrush
 
         public bool IsUserVariant { get; set; } = false;
 
+        /// <summary>
+        /// Guid of the built-in brush this brush is based upon. Used for variant brushes.
+        /// If this is not set (Which is the case for built-in brushes), it will return its own Guid.
+        /// </summary>
+        public Guid BaseGuid
+        {
+            get { return m_BaseGuid.HasValue ? m_BaseGuid.Value : (Guid)m_Guid; }
+            set { m_BaseGuid = value; }
+        }
+        private Guid? m_BaseGuid;
+
         public bool NeedsStraightEdgeProxy
         {
             get

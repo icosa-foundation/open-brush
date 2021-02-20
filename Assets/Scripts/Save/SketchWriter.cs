@@ -69,11 +69,11 @@ namespace TiltBrush
         {
             MaskSingleWord = 0xffff,
             None = 0,
-            Flags = 1 << 0, // uint32, bitfield
-            Scale = 1 << 1, // float, 1.0 is nominal
-            Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
-            // we don't save out the group.
-            Seed = 1 << 3, // int32; if not found then you get a random int.
+            Flags = 1 << 0,     // uint32, bitfield
+            Scale = 1 << 1,     // float, 1.0 is nominal
+            Group = 1 << 2,     // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
+                                // we don't save out the group.
+            Seed = 1 << 3,      // int32; if not found then you get a random int.
         }
 
         [Flags]
@@ -81,7 +81,7 @@ namespace TiltBrush
         {
             None = 0,
             Pressure = 1 << 0,  // float, 1.0 is nominal
-            Timestamp = 1 << 1, // uint32, milliseconds
+            Timestamp = 1 << 1,  // uint32, milliseconds
         }
 
         public struct AdjustedMemoryBrushStroke
@@ -92,9 +92,9 @@ namespace TiltBrush
 
         private const int REQUIRED_SKETCH_VERSION_MIN = 5;
         private const int REQUIRED_SKETCH_VERSION_MAX = 6;
-        private static readonly uint SKETCH_SENTINEL = 0xc576a5cd; // introduced at v5
-        // 5: added sketch sentinel, explicit version
-        // 6: reserved for when we add a length-prefixed stroke extension, or more header data
+        private static readonly uint SKETCH_SENTINEL = 0xc576a5cd;  // introduced at v5
+                                                                    // 5: added sketch sentinel, explicit version
+                                                                    // 6: reserved for when we add a length-prefixed stroke extension, or more header data
         private static readonly int SKETCH_VERSION = 5;
 
         static public void RuntimeSelfCheck()
@@ -163,19 +163,21 @@ namespace TiltBrush
         /// While writing out the strokes we adjust the stroke flags to take into account the effect
         /// of inactive items on grouping.
         public static void WriteMemory(Stream stream, IList<AdjustedMemoryBrushStroke> strokeCopies,
-                                       GroupIdMapping groupIdMapping, out List<Guid> brushList)
+                                       GroupIdMapping groupIdMapping, out List<Guid> brushList,
+                                       out List<Guid> fallbackBrushList)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             var writer = new TiltBrush.SketchBinaryWriter(stream);
 
             writer.UInt32(SKETCH_SENTINEL);
             writer.Int32(SKETCH_VERSION);
-            writer.Int32(0); // reserved for header: must be 0
-            // Bump SKETCH_VERSION to >= 6 and remove this comment if non-zero data is written here
-            writer.UInt32(0); // additional data size
+            writer.Int32(0);  // reserved for header: must be 0
+                              // Bump SKETCH_VERSION to >= 6 and remove this comment if non-zero data is written here
+            writer.UInt32(0);  // additional data size
 
-            var brushMap = new Dictionary<Guid, int>(); // map from GUID to index
-            brushList = new List<Guid>();               // GUID's by index
+            var brushMap = new Dictionary<Guid, int>();  // map from GUID to index
+            brushList = new List<Guid>();  // GUID's by index
+            fallbackBrushList = new List<Guid>(); // Fallback GUIDs
 
             // strokes
             writer.Int32(strokeCopies.Count);
@@ -189,6 +191,7 @@ namespace TiltBrush
                     brushIndex = brushList.Count;
                     brushMap[brushGuid] = brushIndex;
                     brushList.Add(brushGuid);
+                    fallbackBrushList.Add(BrushCatalog.m_Instance.GetBrush(brushGuid).BaseGuid);
                 }
 
                 writer.Int32(brushIndex);
@@ -309,8 +312,7 @@ namespace TiltBrush
 
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
-        public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath)
+        public static List<Stroke> GetStrokes(Stream stream, Guid[] brushList, bool allowFastPath)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -335,8 +337,8 @@ namespace TiltBrush
                 return null;
             }
 
-            reader.Int32();                    // reserved for header: must be 0
-            uint moreHeader = reader.UInt32(); // additional data size
+            reader.Int32();  // reserved for header: must be 0
+            uint moreHeader = reader.UInt32();  // additional data size
             if (!reader.Skip(moreHeader)) { return null; }
 
             // strokes
@@ -348,7 +350,7 @@ namespace TiltBrush
 
                 var brushIndex = reader.Int32();
                 stroke.m_BrushGuid = (brushIndex < brushList.Length) ?
-                    brushList[brushIndex] : Guid.Empty;
+                  brushList[brushIndex] : Guid.Empty;
                 stroke.m_Color = reader.Color();
                 stroke.m_BrushSize = reader.Float();
                 stroke.m_BrushScale = 1f;

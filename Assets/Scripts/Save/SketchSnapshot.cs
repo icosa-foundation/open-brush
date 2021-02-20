@@ -210,11 +210,14 @@ namespace TiltBrush
                     }
 
                     List<Guid> brushGuids;
+                    List<Guid> fallbackGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
-                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
+                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids,
+                          out fallbackGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+                    m_Metadata.FallbackBrushIndex = fallbackGuids.Select(GetForcePrecededBy).ToArray();
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
