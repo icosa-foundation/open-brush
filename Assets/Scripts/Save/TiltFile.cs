@@ -16,6 +16,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
+
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
@@ -30,12 +31,12 @@ namespace TiltBrush
     public class TiltFile
     {
 
-        private const uint TILT_SENTINEL = 0x546c6974; // 'tilT'
+        private const uint TILT_SENTINEL = 0x546c6974;   // 'tilT'
         private const uint PKZIP_SENTINEL = 0x04034b50;
 
         // These are the only valid subfile names for GetStream()
         public const string FN_METADATA = "metadata.json";
-        public const string FN_METADATA_LEGACY = "main.json"; // used pre-release only
+        public const string FN_METADATA_LEGACY = "main.json";  // used pre-release only
         public const string FN_SKETCH = "data.sketch";
         public const string FN_THUMBNAIL = "thumbnail.png";
         public const string FN_HI_RES = "hires.png";
@@ -57,67 +58,24 @@ namespace TiltBrush
 
         /// Writes .tilt files and directories in as atomic a fashion as possible.
         /// Use in a using() block, and call Commit() or Rollback() when done.
-        sealed public class AtomicWriter : IDisposable
+        sealed public class TiltAtomicWriter : AtomicWriter
         {
             private string m_destination;
             private string m_temporaryPath;
-            private bool m_finished = false;
 
-            private ZipLibrary.ZipOutputStream m_zipstream = null;
-
-            public AtomicWriter(string path)
+            public TiltAtomicWriter(string path) : base(path, DevOptions.I.PreferredTiltFormat)
             {
-                m_destination = path;
-                m_temporaryPath = path + "_part";
-                Destroy(m_temporaryPath);
 
-                bool useZip;
-                switch (DevOptions.I.PreferredTiltFormat)
-                {
-                    case TiltFormat.Directory:
-                        useZip = false;
-                        break;
-                    case TiltFormat.Inherit:
-                        useZip = !Directory.Exists(path);
-                        break;
-                    default:
-                    case TiltFormat.Zip:
-                        useZip = true;
-                        break;
-                }
-                if (useZip)
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(m_temporaryPath));
-                    FileStream tmpfs = new FileStream(m_temporaryPath, FileMode.Create, FileAccess.Write);
-                    var header = new TiltZipHeader
-                    {
-                        sentinel = TILT_SENTINEL,
-                        headerSize = HEADER_SIZE,
-                        headerVersion = HEADER_VERSION,
-                    };
-                    WriteTiltZipHeader(tmpfs, header);
-                    m_zipstream = new ZipLibrary.ZipOutputStream(tmpfs);
-#if USE_DOTNETZIP
-        // Ionic.Zip documentation says that using compression level None produces
-        // zip files that cannot be opened with the default OSX zip reader.
-        // But compression _method_ none seems fine?
-        m_zipstream.CompressionMethod = ZipLibrary.CompressionMethod.None;
-        m_zipstream.EnableZip64 = ZipLibrary.Zip64Option.Never;
-#else
-                    m_zipstream.SetLevel(0); // no compression
-                    // Since we don't have size info up front, it conservatively assumes 64-bit.
-                    // We turn it off to maximize compatibility with wider ecosystem (eg, osx unzip).
-                    m_zipstream.UseZip64 = ZipLibrary.UseZip64.Off;
-#endif
-                }
-                else
-                {
-                    Directory.CreateDirectory(m_temporaryPath);
-                }
             }
 
-            private static void WriteTiltZipHeader(Stream s, TiltZipHeader header)
+            protected override void WriteHeader(Stream s)
             {
+                var header = new TiltZipHeader
+                {
+                    sentinel = TILT_SENTINEL,
+                    headerSize = HEADER_SIZE,
+                    headerVersion = HEADER_VERSION,
+                };
                 unsafe
                 {
                     // This doesn't work because we need a byte[] to pass to Stream
@@ -141,119 +99,6 @@ namespace TiltBrush
                         // there are other complications (like demarshaling)
                         // Marshal.DestroyStructure(bufip, typeof(TiltZipHeader));
                     }
-                }
-            }
-
-            /// Returns a writable stream to an empty subfile.
-            public Stream GetWriteStream(string subfileName)
-            {
-                Debug.Assert(!m_finished);
-                if (m_zipstream != null)
-                {
-#if USE_DOTNETZIP
-        var entry = m_zipstream.PutNextEntry(subfileName);
-        entry.LastModified = System.DateTime.Now;
-        // entry.CompressionMethod = DotNetZip.CompressionMethod.None; no need; use the default
-        return new ZipOutputStreamWrapper_DotNetZip(m_zipstream);
-#else
-                    var entry = new ZipLibrary.ZipEntry(subfileName);
-                    entry.DateTime = System.DateTime.Now;
-                    // There is such a thing as "Deflated, compression level 0".
-                    // Explicitly use "Stored".
-                    entry.CompressionMethod = (m_zipstream.GetLevel() == 0)
-                        ? ZipLibrary.CompressionMethod.Stored
-                        : ZipLibrary.CompressionMethod.Deflated;
-                    return new ZipOutputStreamWrapper_SharpZipLib(m_zipstream, entry);
-#endif
-                }
-                else
-                {
-                    Directory.CreateDirectory(m_temporaryPath);
-                    string fullPath = Path.Combine(m_temporaryPath, subfileName);
-                    return new FileStream(fullPath, FileMode.Create, FileAccess.Write);
-                }
-            }
-
-            /// Raises exception on failure.
-            /// On failure, existing file is untouched.
-            public void Commit()
-            {
-                if (m_finished) { return; }
-                m_finished = true;
-
-                if (m_zipstream != null)
-                {
-                    m_zipstream.Dispose();
-                    m_zipstream = null;
-                }
-
-                string previous = m_destination + "_previous";
-                Destroy(previous);
-                // Don't destroy previous version until we know the new version is in place.
-                try { Rename(m_destination, previous); }
-                // The *NotFound exceptions are benign; they happen when writing a new file.
-                // Let the other IOExceptions bubble up; they probably indicate some problem
-                catch (FileNotFoundException) { }
-                catch (DirectoryNotFoundException) { }
-                Rename(m_temporaryPath, m_destination);
-                Destroy(previous);
-            }
-
-            public void Rollback()
-            {
-                if (m_finished) { return; }
-                m_finished = true;
-
-                if (m_zipstream != null)
-                {
-                    m_zipstream.Dispose();
-                    m_zipstream = null;
-                }
-
-                Destroy(m_temporaryPath);
-            }
-
-            // IDisposable support
-
-            ~AtomicWriter() { Dispose(); }
-            public void Dispose()
-            {
-                if (!m_finished) { Rollback(); }
-                GC.SuppressFinalize(this);
-            }
-
-            // Static API
-
-            // newpath must not already exist
-            private static void Rename(string oldpath, string newpath)
-            {
-                Directory.Move(oldpath, newpath);
-            }
-
-            // Handles directories, files, and read-only flags.
-            private static void Destroy(string path)
-            {
-                if (File.Exists(path))
-                {
-                    File.SetAttributes(path, FileAttributes.Normal);
-                    File.Delete(path);
-                }
-                else if (Directory.Exists(path))
-                {
-                    RecursiveUnsetReadOnly(path);
-                    Directory.Delete(path, true);
-                }
-            }
-
-            private static void RecursiveUnsetReadOnly(string directory)
-            {
-                foreach (string sub in Directory.GetFiles(directory))
-                {
-                    File.SetAttributes(Path.Combine(directory, sub), FileAttributes.Normal);
-                }
-                foreach (string sub in Directory.GetDirectories(directory))
-                {
-                    RecursiveUnsetReadOnly(Path.Combine(directory, sub));
                 }
             }
         }
@@ -362,12 +207,12 @@ namespace TiltBrush
                 // Directories don't have a header but we can do some roughly-equivalent
                 // sanity-checking
                 return (File.Exists(Path.Combine(m_Fullpath, FN_METADATA)) &&
-                    File.Exists(Path.Combine(m_Fullpath, FN_SKETCH)) &&
-                    File.Exists(Path.Combine(m_Fullpath, FN_THUMBNAIL)));
+                        File.Exists(Path.Combine(m_Fullpath, FN_SKETCH)) &&
+                        File.Exists(Path.Combine(m_Fullpath, FN_THUMBNAIL)));
             }
             return false;
         }
 
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush

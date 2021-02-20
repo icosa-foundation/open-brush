@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+
 using Newtonsoft.Json;
 
 namespace TiltBrush
@@ -111,7 +112,7 @@ namespace TiltBrush
                 SceneTransformInRoomSpace = Coords.AsRoom[App.Instance.m_SceneTransform],
                 CanvasTransformInSceneSpace = App.Scene.AsScene[App.Instance.m_CanvasTransform],
                 SourceId =
-                    SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
+                  SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
@@ -121,7 +122,7 @@ namespace TiltBrush
         }
 
         public IEnumerator<Timeslice> CreateSnapshotIcons(RenderTexture saveIconTexture,
-                                                          RenderTexture hiResTexture, RenderTexture[] gifTextures)
+            RenderTexture hiResTexture, RenderTexture[] gifTextures)
         {
             var tool = SketchControlsScript.m_Instance.GetSaveIconTool();
             var iconXform = tool.LastSaveCameraRigState;
@@ -190,7 +191,7 @@ namespace TiltBrush
         {
             try
             {
-                using (var tiltWriter = new TiltFile.AtomicWriter(path))
+                using (var tiltWriter = new TiltFile.TiltAtomicWriter(path))
                 {
                     if (m_ThumbnailBytes != null)
                     {
@@ -237,4 +238,4 @@ namespace TiltBrush
 
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush
