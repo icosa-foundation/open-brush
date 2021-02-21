@@ -225,6 +225,12 @@ namespace TiltBrush
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
+                    // write out user invariant brushes
+                    foreach (var brush in App.Instance.m_Manifest.UserVariantBrushes)
+                    {
+                        brush.Save(tiltWriter, Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
+                    }
+
                     tiltWriter.Commit();
                 }
             }
@@ -238,7 +244,6 @@ namespace TiltBrush
             }
             return null;
         }
-
     }
 
 }  // namespace TiltBrush

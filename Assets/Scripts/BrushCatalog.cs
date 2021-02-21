@@ -221,7 +221,7 @@ namespace TiltBrush
             }
 
             // Add user variant brushes
-            output.AddRange(manifest.UserVariantBrushes);
+            output.AddRange(manifest.UserVariantBrushDescriptors);
             return output;
         }
 
