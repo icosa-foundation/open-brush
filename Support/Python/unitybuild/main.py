@@ -423,8 +423,8 @@ def make_unused_directory_name(directory_name):
 
 PLATFORM_TO_UNITYTARGET = {
     'Windows': 'StandaloneWindows64',
-    'OSX': 'StandaloneOSXIntel',
-    'Linux': 'StandaloneLinuxUniversal',
+    'OSX': 'StandaloneOSX',
+    'Linux': 'StandaloneLinux64',
     'Android': 'Android',
     'iOS': 'iOS',
 }
