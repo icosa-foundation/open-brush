@@ -188,7 +188,7 @@ public class BrushCatalog : MonoBehaviour {
     }
     
     // Add user variant brushes
-    output.AddRange(manifest.UserVariantBrushes);
+    output.AddRange(manifest.UserVariantBrushDescriptors);
     return output;
   }
 

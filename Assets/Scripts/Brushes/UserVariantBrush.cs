@@ -48,6 +48,9 @@ public class UserVariantBrush {
 
   private const string kNormalMapName = "_BumpMap";
   private Config m_Config;
+  private string m_ConfigData;
+  private Dictionary<string, byte[]> m_FileData;
+  private string m_Location;
   
   private UserVariantBrush() {}
 
@@ -60,6 +63,8 @@ public class UserVariantBrush {
   }
 
   private bool Initialize(string sourceFolder) {
+    m_Location = Path.GetFileName(sourceFolder);
+    m_FileData = new Dictionary<string, byte[]>();
     FileOrZip brushFile = new FileOrZip(sourceFolder);
     if (!brushFile.Exists(kConfigFile)) {
       return false;
@@ -68,7 +73,8 @@ public class UserVariantBrush {
     string warning;
     try {
       var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile));
-      m_Config = App.DeserializeObjectWithWarning<Config>(fileReader.ReadToEnd(), out warning);
+      m_ConfigData = fileReader.ReadToEnd();
+      m_Config = App.DeserializeObjectWithWarning<Config>(m_ConfigData, out warning);
     } catch (JsonReaderException e) {
       Debug.Log($"Error reading {sourceFolder}/{kConfigFile}: {e.Message}");
       return false;
@@ -138,12 +144,28 @@ public class UserVariantBrush {
         Texture2D texture = new Texture2D(16, 16);
         var buffer = new MemoryStream();
         brushFile.GetReadStream(filename).CopyTo(buffer);
-        if (ImageConversion.LoadImage(texture, buffer.ToArray(), true)) {
+        byte[] data = buffer.ToArray();
+        m_FileData[filename] = data;
+        if (ImageConversion.LoadImage(texture, data, true)) {
           return texture;
         }
       }
     }
     return null;
+  }
+
+  public void Save(AtomicWriter writer, string subfolder) {
+    string configPath = Path.Combine(subfolder, Path.Combine(m_Location, kConfigFile));
+    using (var configStream = new StreamWriter(writer.GetWriteStream(configPath))) {
+      configStream.Write(m_ConfigData);
+    }
+
+    foreach (var item in m_FileData) {
+      string path = Path.Combine(subfolder, Path.Combine(m_Location, item.Key));
+      using (var dataWriter = writer.GetWriteStream(path)) {
+        dataWriter.Write(item.Value, 0, item.Value.Length);
+      }
+    }
   }
   
   

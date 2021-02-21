@@ -29,11 +29,13 @@ public class TiltBrushManifest : ScriptableObject {
   public Environment[] Environments;
   public BrushDescriptor[] CompatibilityBrushes;
 
-  public IEnumerable<BrushDescriptor> UserVariantBrushes {
+  public IEnumerable<BrushDescriptor> UserVariantBrushDescriptors {
     get { return m_UserVariantBrushes.Select(x => x.Descriptor); }
   }
 
-  private List<UserVariantBrush> m_UserVariantBrushes = new List<UserVariantBrush>();
+  public IEnumerable<UserVariantBrush> UserVariantBrushes => m_UserVariantBrushes;
+
+  public List<UserVariantBrush> m_UserVariantBrushes = new List<UserVariantBrush>();
 
   // lhs = lhs + rhs, with duplicates removed.
   // The leading portion of the returned array will be == lhs.
@@ -50,7 +52,7 @@ public class TiltBrushManifest : ScriptableObject {
   }
 
   private IEnumerable<BrushDescriptor> AllBrushesAndAncestors() {
-    foreach (var brush in Brushes.Concat(CompatibilityBrushes).Concat(UserVariantBrushes)) {
+    foreach (var brush in Brushes.Concat(CompatibilityBrushes).Concat(UserVariantBrushDescriptors)) {
       for (var current = brush; current != null; current = current.m_Supersedes) {
         yield return current;
       }

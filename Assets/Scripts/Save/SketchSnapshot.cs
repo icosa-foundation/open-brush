@@ -198,6 +198,11 @@ public class SketchSnapshot {
             tiltWriter.GetWriteStream(TiltFile.FN_METADATA)))) {
           m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
         }
+        
+        // write out user invariant brushes
+        foreach (var brush in App.Instance.m_Manifest.UserVariantBrushes) {
+          brush.Save(tiltWriter, Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
+        }
 
         tiltWriter.Commit();
       }
@@ -208,7 +213,6 @@ public class SketchSnapshot {
     }
     return null;
   }
-
 }
 
 }  // namespace TiltBrush
