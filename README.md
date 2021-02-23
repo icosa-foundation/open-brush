@@ -1,24 +1,39 @@
-# Open Brush - A fork of Tilt Brush.
+# Open Brush - A Tilt Brush fork
+
+![GitHub all releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)
+[![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
+[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+[![Open Collective backers and sponsors](https://img.shields.io/opencollective/all/icosa?logo=open-collective)](https://opencollective.com/icosa)
+
+## Current Version: `0.2.0`
 
 We hope to help maintain Tilt Brush.  
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
 
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
-[Trello Here](https://trello.com/b/jItetqYe/open-brush)  
-[List of Tutorials, Write ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
-[Taking donations through open collective](https://opencollective.com/icosa)  
+[Trello](https://trello.com/b/jItetqYe/open-brush)  
+[List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
+[Support us on Open Collective](https://opencollective.com/icosa)  
+
+## Downloads
+
+- [Itch.io Store](https://openbrush.itch.io/openbrush)
+- [SideQuest](https://sidequestvr.com/app/2852/open-brush)
+- [GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
 
 ### Currently we are:
 * Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
-* Looking at modding support. 
+* Looking at modding support (custom brushes!)
 * Re-enabling the additional features.
 
-## Thank you 
-* Tilt Brush developers for your amazing work! 
-* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
-* The [SideQuest](https://sidequestvr.com/) team for your support. 
+See our [Trello](https://trello.com/b/jItetqYe/open-brush) board for more information.
 
-Note: we are using Unity 2019.4.18f1.
+
+
+## Acknowledgements
+* Thank you to the Tilt Brush developers for your amazing work! 
+* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
+* The [SideQuest](https://sidequestvr.com/) team for your support.
 
 # Tilt Brush README
 
