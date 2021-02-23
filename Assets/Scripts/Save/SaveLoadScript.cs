@@ -582,6 +582,13 @@ public class SaveLoadScript : MonoBehaviour {
 
       SketchControlsScript.m_Instance.SketchPlaybackMode =
           SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
+      
+      // Load User Variant Brushes
+      foreach (var brushName in m_LastSceneFile.GetContentsAt("Brushes")) {
+        Debug.Log($"Brush found at {brushName}");
+        var brush = UserVariantBrush.Create(m_LastSceneFile, Path.Combine("Brushes", brushName));
+        App.Instance.m_Manifest.AddUserVariantBrush(brush);
+      }
 
       // Load sketch
       using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH)) {

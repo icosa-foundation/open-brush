@@ -56,17 +56,38 @@ public class UserVariantBrush {
 
   public static UserVariantBrush Create(string sourceFolder) {
     var brush = new UserVariantBrush();
-    if (brush.Initialize(sourceFolder)) {
+    brush.m_Location = Path.GetFileName(sourceFolder);
+    FileOrZip brushFile = new FileOrZip(sourceFolder);
+    string configDir = brushFile.Find(kConfigFile);
+    if (configDir == null) {
+      return null;
+    }
+    brushFile.SetRootFolder(Path.GetDirectoryName(configDir));
+    if (brush.Initialize(brushFile)) {
       return brush;
     }
     return null;
   }
 
-  private bool Initialize(string sourceFolder) {
-    m_Location = Path.GetFileName(sourceFolder);
+  public static UserVariantBrush Create(SceneFileInfo fileInfo, string subfolder) {
+    var brush = new UserVariantBrush();
+    brush.m_Location = fileInfo.FullPath;
+    FileOrZip brushFile = new FileOrZip(fileInfo.FullPath);
+    brushFile.SetRootFolder(subfolder);
+    string configDir = brushFile.Find(kConfigFile);
+    if (configDir == null) {
+      return null;
+    }
+    brushFile.SetRootFolder(Path.GetDirectoryName(configDir));
+    if (brush.Initialize(brushFile)) {
+      return brush;
+    }
+    return null;
+  }
+
+  private bool Initialize(FileOrZip brushFile) {
     m_FileData = new Dictionary<string, byte[]>();
-    FileOrZip brushFile = new FileOrZip(sourceFolder);
-    if (!brushFile.Exists(kConfigFile)) {
+     if (!brushFile.Exists(kConfigFile)) {
       return false;
     }
 
@@ -76,12 +97,12 @@ public class UserVariantBrush {
       m_ConfigData = fileReader.ReadToEnd();
       m_Config = App.DeserializeObjectWithWarning<Config>(m_ConfigData, out warning);
     } catch (JsonReaderException e) {
-      Debug.Log($"Error reading {sourceFolder}/{kConfigFile}: {e.Message}");
+      Debug.Log($"Error reading {m_Location}/{kConfigFile}: {e.Message}");
       return false;
     }
 
     if (!string.IsNullOrEmpty(warning)) {
-      Debug.Log($"Could not load brush at {sourceFolder}\n{warning}");
+      Debug.Log($"Could not load brush at {m_Location}\n{warning}");
       return false;
     }
 
@@ -94,12 +115,12 @@ public class UserVariantBrush {
 
     if (baseBrush == null) {
       Debug.Log(
-        $"In brush at {sourceFolder}, no brush named {m_Config.VariantOf} could be found.");
+        $"In brush at {m_Location}, no brush named {m_Config.VariantOf} could be found.");
     }
 
     if (App.Instance.m_Manifest.UniqueBrushes().Any(x => x.m_Guid.ToString() == m_Config.GUID)) {
       Debug.Log(
-        $"Cannot load brush at {sourceFolder} because its GUID matches {baseBrush.name}.");
+        $"Cannot load brush at {m_Location} because its GUID matches {baseBrush.name}.");
     }
 
     Descriptor = UnityEngine.Object.Instantiate(baseBrush);
@@ -114,7 +135,7 @@ public class UserVariantBrush {
 
     Texture2D icon = LoadTexture(brushFile, kIconTexture);
     if (icon == null) {
-      Debug.Log($"Brush at {sourceFolder} has no icon texture.");
+      Debug.Log($"Brush at {m_Location} has no icon texture.");
       return false;
     }
 
@@ -167,6 +188,5 @@ public class UserVariantBrush {
       }
     }
   }
-  
-  
+
 }

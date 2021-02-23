@@ -145,6 +145,11 @@ public class GoogleDriveSketchSet : SketchSet {
       File.SetLastWriteTime(m_FileName, m_File.ModifiedTime.Value);
       m_TiltFile = new TiltFile(m_FileName);
     }
+
+    public IEnumerable<string> GetContentsAt(string path) {
+      return new string[] { };
+    }
+
   }
 
 

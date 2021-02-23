@@ -750,5 +750,9 @@ public class PolySceneFileInfo : SceneFileInfo {
 
   // Not part of the interface
   public int GltfTriangleCount => m_GltfTriangleCount;
+
+  public IEnumerable<string> GetContentsAt(string path) {
+    return new string[] { };
+  }
 }
 }  // namespace TiltBrush

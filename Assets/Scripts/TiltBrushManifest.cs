@@ -93,6 +93,11 @@ public class TiltBrushManifest : ScriptableObject {
       }
     }
   }
+
+  public void AddUserVariantBrush(UserVariantBrush brush) {
+    m_UserVariantBrushes.Add(brush);
+    BrushCatalog.m_Instance.AddBrush(brush.Descriptor);
+  }
 }  // TiltBrushManifest
 
 }  // namespace TiltBrush

@@ -208,5 +208,11 @@ public class BrushCatalog : MonoBehaviour {
     m_AllBrushes.Add(to);
     // Do not add to the Gui brushes, as this is used for missing brushes.
   }
+
+  public void AddBrush(BrushDescriptor brush) {
+    m_GuidToBrush[brush.m_Guid] = brush;
+    m_AllBrushes.Add(brush);
+    m_GuiBrushList.Add(brush);
+  }
 }
 }  // namespace TiltBrush
