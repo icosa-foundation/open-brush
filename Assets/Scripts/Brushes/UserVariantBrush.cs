@@ -57,7 +57,7 @@ public class UserVariantBrush {
   public static UserVariantBrush Create(string sourceFolder) {
     var brush = new UserVariantBrush();
     brush.m_Location = Path.GetFileName(sourceFolder);
-    FileOrZip brushFile = new FileOrZip(sourceFolder);
+    FolderOrZipReader brushFile = new FolderOrZipReader(sourceFolder);
     string configDir = brushFile.Find(kConfigFile);
     if (configDir == null) {
       return null;
@@ -72,7 +72,7 @@ public class UserVariantBrush {
   public static UserVariantBrush Create(SceneFileInfo fileInfo, string subfolder) {
     var brush = new UserVariantBrush();
     brush.m_Location = fileInfo.FullPath;
-    FileOrZip brushFile = new FileOrZip(fileInfo.FullPath);
+    FolderOrZipReader brushFile = new FolderOrZipReader(fileInfo.FullPath);
     brushFile.SetRootFolder(subfolder);
     string configDir = brushFile.Find(kConfigFile);
     if (configDir == null) {
@@ -85,7 +85,7 @@ public class UserVariantBrush {
     return null;
   }
 
-  private bool Initialize(FileOrZip brushFile) {
+  private bool Initialize(FolderOrZipReader brushFile) {
     m_FileData = new Dictionary<string, byte[]>();
      if (!brushFile.Exists(kConfigFile)) {
       return false;
@@ -158,7 +158,7 @@ public class UserVariantBrush {
     return true;
   }
 
-  private Texture2D LoadTexture(FileOrZip brushFile, string baseName) {
+  private Texture2D LoadTexture(FolderOrZipReader brushFile, string baseName) {
     foreach (var extension in kSupportedImageTypes) {
       string filename = $"{baseName}.{extension}";
       if (brushFile.Exists(filename)) {
