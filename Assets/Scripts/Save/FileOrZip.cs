@@ -34,12 +34,13 @@ public class FileOrZip {
   private bool m_Exists;
   private string m_RootPath;
   private Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
-  private string m_ZipName;
+  private string m_subfolder;
 
   public delegate void ReadHeaderDelegate(Stream s);
   
   public FileOrZip(string path, ReadHeaderDelegate header = null) {
     m_RootPath = path;
+    m_subfolder = "";
     bool fileExists = File.Exists(path);
     bool dirExists = Directory.Exists(path);
     m_Exists = fileExists || dirExists;
@@ -52,17 +53,28 @@ public class FileOrZip {
       }
     } else {
       if (m_IsFile) {
-        using (var zipFile = new ZipLibrary.ZipFile(path)) {
-          m_ZipName = zipFile[0].Name;
-          int initialPathLength = m_ZipName.Length;
-          foreach (ZipLibrary.ZipEntry entry in zipFile) {
-            if (entry.Name.Length > initialPathLength) {
-              m_ZipEntryMap[entry.Name.Substring(initialPathLength).ToLowerInvariant()] = entry.Name;
-            }
-          }
-          zipFile.Close();
+        SetRootFolder("");
+      }
+    }
+  }
+
+  public void SetRootFolder(string subfolder) {
+    if (!m_Exists || !m_IsFile) {
+      return;
+    }
+    m_subfolder = subfolder.Replace('\\', '/');
+    if (!string.IsNullOrEmpty(m_subfolder) && !m_subfolder.EndsWith("/")) {
+      m_subfolder += '/';
+    };
+    using (var zipFile = new ZipLibrary.ZipFile(m_RootPath)) {
+      foreach (ZipLibrary.ZipEntry entry in zipFile) {
+        string name = entry.Name;
+        if (string.IsNullOrEmpty(m_subfolder) || name.StartsWith(m_subfolder)) {
+          name = name.Substring(m_subfolder.Length);
+          m_ZipEntryMap[name.ToLowerInvariant()] = entry.Name;
         }
       }
+      zipFile.Close();
     }
   }
 
@@ -75,12 +87,20 @@ public class FileOrZip {
     return File.Exists(path);
   }
 
+  public string Find(string filename) {
+    string key = m_ZipEntryMap.Keys.FirstOrDefault(x => x.EndsWith(filename.ToLowerInvariant()));
+    if (key != null) {
+      return m_ZipEntryMap[key];
+    }
+    return null;
+  }
+
   public Stream GetReadStream(string filename) {
     if (!m_Exists) {
       return null;
     }
     if (m_IsFile) {
-      string filenameLower = filename.ToLowerInvariant();
+      string filenameLower = Path.Combine(m_subfolder, filename).ToLowerInvariant();
       if (!m_ZipEntryMap.ContainsKey(filenameLower)) {
         return null;
       }

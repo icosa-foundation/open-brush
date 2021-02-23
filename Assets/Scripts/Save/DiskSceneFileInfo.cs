@@ -14,7 +14,9 @@
 
 using System;
 using System.IO;
+using System.Collections.Generic;
 using UnityEngine;
+
 using Newtonsoft.Json;
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
@@ -37,7 +39,7 @@ namespace TiltBrush
         private bool m_embedded;
         private string m_humanName;
         private string m_AssetId;
-        private string m_SourceId; // If this is a derivative work of a poly asset, that asset id
+        private string m_SourceId;  // If this is a derivative work of a poly asset, that asset id
         private bool m_readOnly;
         private DateTime? m_creationTime;
 
@@ -359,6 +361,53 @@ namespace TiltBrush
                 return null;
             }
         }
+
+        public IEnumerable<string> GetContentsAt(string path)
+        {
+            string[] empty = { };
+            if (m_embedded)
+            {
+                Debug.LogError($"Cannot get contents of an embedded sketch! {path}");
+                return empty;
+            }
+            if (File.Exists(m_fullpath))
+            {
+                // It's a zip file
+                if (!IsHeaderValid())
+                {
+                    return empty;
+                }
+
+                var entries = new HashSet<string>();
+                using (var zipFile = new ZipLibrary.ZipFile(m_fullpath))
+                {
+                    foreach (ZipLibrary.ZipEntry entry in zipFile)
+                    {
+                        if (entry == null)
+                        {
+                            continue;
+                        }
+
+                        if (entry.Name.StartsWith(path))
+                        {
+                            string subpart = Path.GetDirectoryName(entry.Name.Substring(path.Length));
+                            if (subpart[0] == '/' || subpart[0] == '\\')
+                            {
+                                subpart = subpart.Substring(1);
+                            }
+                            entries.Add(subpart);
+                        }
+                    }
+                }
+                return entries;
+            }
+            else
+            {
+                // It's a folder 
+                string folderPath = Path.Combine(m_fullpath, path);
+                return Directory.GetFiles(folderPath);
+            }
+        }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush

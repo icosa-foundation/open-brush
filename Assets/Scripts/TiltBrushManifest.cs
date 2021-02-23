@@ -108,6 +108,12 @@ namespace TiltBrush
                 }
             }
         }
+
+        public void AddUserVariantBrush(UserVariantBrush brush)
+        {
+            m_UserVariantBrushes.Add(brush);
+            BrushCatalog.m_Instance.AddBrush(brush.Descriptor);
+        }
     }  // TiltBrushManifest
 
 }  // namespace TiltBrush
