@@ -44,17 +44,12 @@ public class FolderOrZipReader {
     bool fileExists = File.Exists(path);
     bool dirExists = Directory.Exists(path);
     m_Exists = fileExists || dirExists;
-    m_IsFile = (fileExists || Path.HasExtension(path)) && !dirExists;
     if (!m_Exists) {
-      if (m_IsFile) {
-        
-      } else {
-        Directory.CreateDirectory(path);
-      }
-    } else {
-      if (m_IsFile) {
-        SetRootFolder("");
-      }
+      return;
+    }
+    m_IsFile = Path.HasExtension(path) && !dirExists;
+    if (m_IsFile) {
+      SetRootFolder("");
     }
   }
 
@@ -88,6 +83,9 @@ public class FolderOrZipReader {
   }
 
   public string Find(string filename) {
+    if (!m_Exists) {
+      return null;
+    }
     string key = m_ZipEntryMap.Keys.FirstOrDefault(x => x.EndsWith(filename.ToLowerInvariant()));
     if (key != null) {
       return m_ZipEntryMap[key];
