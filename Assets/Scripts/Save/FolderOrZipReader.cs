@@ -47,24 +47,14 @@ namespace TiltBrush
             bool fileExists = File.Exists(path);
             bool dirExists = Directory.Exists(path);
             m_Exists = fileExists || dirExists;
-            m_IsFile = (fileExists || Path.HasExtension(path)) && !dirExists;
             if (!m_Exists)
             {
-                if (m_IsFile)
-                {
-
-                }
-                else
-                {
-                    Directory.CreateDirectory(path);
-                }
+                return;
             }
-            else
+            m_IsFile = Path.HasExtension(path) && !dirExists;
+            if (m_IsFile)
             {
-                if (m_IsFile)
-                {
-                    SetRootFolder("");
-                }
+                SetRootFolder("");
             }
         }
 
@@ -107,6 +97,10 @@ namespace TiltBrush
 
         public string Find(string filename)
         {
+            if (!m_Exists)
+            {
+                return null;
+            }
             string key = m_ZipEntryMap.Keys.FirstOrDefault(x => x.EndsWith(filename.ToLowerInvariant()));
             if (key != null)
             {
