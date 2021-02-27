@@ -58,8 +58,8 @@ import unitybuild.utils
 import unitybuild.push
 from unitybuild.constants import *
 
-BUILD_OUT = 'TiltBrush'
-EXE_BASE_NAME = 'TiltBrush'
+BUILD_OUT = 'OpenBrush'
+EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
 # Build logic
@@ -113,9 +113,9 @@ class LogTailer(threading.Thread):
             time.sleep(self.POLL_TIME)
             inf.seek(where)
           elif progress_pat.match(line):
-            print 'Unity> %-70s\r' % progress_pat.match(line).group(2)[-70:],
+            print('Unity> %-70s\r' % progress_pat.match(line).group(2)[-70:], end=' ')
           elif munge_pat.match(line):
-            print 'Munge> %-70s\r' % munge_pat.match(line).group(1)[-70:],
+            print('Munge> %-70s\r' % munge_pat.match(line).group(1)[-70:], end=' ')
         except IOError:
           # The "print" can raise IOError
           pass
@@ -139,7 +139,8 @@ def get_unity_exe(version, lenient=True):
       def int_version(version):
         (major, minor, micro) = version
         return (int(major), int(minor), int(micro))
-      def by_int_version((exe, ver)):
+      def by_int_version(xxx_todo_changeme):
+        (exe, ver) = xxx_todo_changeme
         return (int_version(ver), exe)
       found_exe, found_version = max(compatible, key=by_int_version)
       if int_version(found_version) >= int_version(version):
@@ -198,11 +199,11 @@ def iter_editors_and_versions():
           if os.path.exists(exe):
             yield (exe, get_editor_unity_version(exe, editor_data_dir))
           else:
-            print 'WARN: Missing executable %s' % exe
+            print('WARN: Missing executable %s' % exe)
         except LookupError as e:
-          print e
+          print(e)
         except Exception as e:
-          print 'WARN: Cannot find version of %s: %s' % (editor_dir, e)
+          print('WARN: Cannot find version of %s: %s' % (editor_dir, e))
   elif sys.platform == 'darwin':
     # Kind of a hacky way of detecting the Daydream build machine
     is_build_machine = os.path.exists('/Users/jenkins/JenkinsCommon/Unity')
@@ -211,6 +212,9 @@ def iter_editors_and_versions():
     else:
       # TODO: make it work with Unity hub?
       app_list = ['/Applications/Unity/Unity.app']
+      # Since we don't have Unity hub support (commented out above because headless isn't 
+      # headless), look for where it installs directly
+      app_list.extend(glob.glob('/Applications/Unity/*/Unity.app'))
     for editor_dir in app_list:
       exe = os.path.join(editor_dir, 'Contents/MacOS/Unity')
       editor_data_dir = os.path.join(editor_dir, 'Contents')
@@ -236,7 +240,7 @@ def get_editor_unity_version(editor_app, editor_data_dir):
   packagemanager_dir = os.path.join(editor_data_dir, 'PackageManager/Unity/PackageManager')
   if os.path.exists(packagemanager_dir):
     # The package manager has names like "5.6.3".
-    _, dirs, _ = os.walk(packagemanager_dir).next()
+    _, dirs, _ = next(os.walk(packagemanager_dir))
     if len(dirs) > 0:
       return parse_version(dirs[0])
 
@@ -261,11 +265,11 @@ def get_editor_unity_version(editor_app, editor_data_dir):
 
   # I can't find a way to get the version out of 2019.x.
   # This is pretty janky so only use for Jenkins and 2019.
-  for m in re.finditer(r'/Users/jenkins/JenkinsCommon/Unity/Unity_(2019)\.(\d+)\.(\d+)',
+  for m in re.finditer(r'Unity/(Unity_)?(2019)\.(\d+)\.(\d+)',
                        editor_data_dir):
-    major, minor, point = m.groups()
+    _, major, minor, point = m.groups()
     ret = (major, minor, point)
-    print "WARNING: %s using fallback to determine Unity version %s" % (editor_data_dir, ret)
+    print("WARNING: %s using fallback to determine Unity version %s" % (editor_data_dir, ret))
     return ret
 
   raise LookupError('%s: Cannot determine Unity version' % editor_data_dir)
@@ -325,7 +329,7 @@ def check_compile_output(log):
     # through Unity's log file.
     raise BuildFailed('Compile\n%s' % indent('| ', compiler_output))
   elif compiler_output != '':
-    print >>sys.stderr, 'Compile warnings:\n%s' % indent('| ', compiler_output)
+    print('Compile warnings:\n%s' % indent('| ', compiler_output), file=sys.stderr)
 
 
 def search_backwards(text, start_point, limit, pattern):
@@ -438,9 +442,9 @@ def build(stamp, output_dir, project_dir, exe_base_name,
   try:
     unitybuild.utils.destroy(output_dir)
   except Exception as e:
-    print 'WARN: could not use %s: %s' % (output_dir, e)
+    print('WARN: could not use %s: %s' % (output_dir, e))
     output_dir = make_unused_directory_name(output_dir)
-    print 'WARN: using %s intead' % output_dir
+    print('WARN: using %s intead' % output_dir)
     unitybuild.utils.destroy(output_dir)
   os.makedirs(output_dir)
   logfile = os.path.join(output_dir, 'build_log.txt')
@@ -543,7 +547,7 @@ def finalize_build(project_dir, src_dir, dst_dir):
   try:
     unitybuild.utils.destroy(dst_dir)
   except OSError as e:
-    print 'WARN: Cannot remove %s; putting output in %s' % (dst_dir, src_dir)
+    print('WARN: Cannot remove %s; putting output in %s' % (dst_dir, src_dir))
     return src_dir
 
   try: os.makedirs(os.path.dirname(dst_dir))
@@ -557,7 +561,7 @@ def finalize_build(project_dir, src_dir, dst_dir):
     # On Jon's computer, Android builds always leave behind a Java.exe process that
     # holds onto the directory and prevents its rename.
     # raise InternalError("Can't rename %s to %s: %s" % (src_dir, dst_dir, e))
-    print 'WARN: Cannot rename %s; leaving it as-is' % (src_dir,)
+    print('WARN: Cannot rename %s; leaving it as-is' % (src_dir,))
     return src_dir
 
 
@@ -585,8 +589,8 @@ def create_notice_file(project_dir):
             yield (name, os.path.join(r, f))
 
   import codecs
-  import StringIO
-  tmpf = StringIO.StringIO()
+  import io
+  tmpf = io.StringIO()
   tmpf.write('''This file is automatically generated.
 This software makes use of third-party software with the following notices.
 ''')
@@ -594,7 +598,7 @@ This software makes use of third-party software with the following notices.
     tmpf.write('\n\n=== %s ===\n' % library_name)
     with open(notice_file) as inf:
       contents = inf.read()
-      if contents.startswith(codecs.BOM_UTF8):
+      if contents.startswith(str(codecs.BOM_UTF8)):
         contents = contents[len(codecs.BOM_UTF8):]
     tmpf.write(contents)
     tmpf.write('\n')
@@ -610,7 +614,7 @@ This software makes use of third-party software with the following notices.
 
 def parse_args(args):
   import argparse
-  parser = argparse.ArgumentParser(description="Make Tilt Brush builds")
+  parser = argparse.ArgumentParser(description="Make Open Brush builds")
   parser.add_argument('--vrsdk',
                       action='append', dest='vrsdks',
                       choices=['Monoscopic', 'Oculus', 'SteamVR'],
@@ -723,15 +727,15 @@ def maybe_prompt_and_set_version_code(project_dir):
   existing_code = get_android_version_code(project_dir)
   uri = 'https://dashboard.oculus.com/application/%s/build/' % TB_OCULUS_QUEST_APP_ID
   webbrowser.open(uri)
-  print 'Currently building version code %s' % existing_code
-  print 'Please enter the highest version code you see on this web page,'
-  print 'or hit enter to skip.'
-  highest_seen = raw_input('Code > ')
+  print('Currently building version code %s' % existing_code)
+  print('Please enter the highest version code you see on this web page,')
+  print('or hit enter to skip.')
+  highest_seen = input('Code > ')
   if highest_seen.strip() == '': return
   highest_seen = int(highest_seen)
   if existing_code <= highest_seen:
     set_android_version_code(project_dir, highest_seen+1)
-    print 'Now building version code %s' % get_android_version_code(project_dir)
+    print('Now building version code %s' % get_android_version_code(project_dir))
 
 
 def sanity_check_build(build_dir):
@@ -758,7 +762,7 @@ def main(args=None):
   import unitybuild.vcs as vcs
   vcs = vcs.create()
   project_dir = find_project_dir()
-  print "Project dir:", os.path.normpath(project_dir)
+  print("Project dir:", os.path.normpath(project_dir))
 
   if args.jenkins:
     # Jenkins does not allow building outside of the source tree.
@@ -775,8 +779,8 @@ def main(args=None):
     try:
       revision = vcs.get_build_stamp(project_dir)
     except LookupError as e:
-      print 'WARN: no build stamp (%s). Continue?' % (e,)
-      if not raw_input('(y/n) > ').strip().lower().startswith('y'):
+      print('WARN: no build stamp (%s). Continue?' % (e,))
+      if not input('(y/n) > ').strip().lower().startswith('y'):
         raise UserError('Aborting: no stamp')
       revision = 'nostamp'
 
@@ -784,8 +788,8 @@ def main(args=None):
 
     for (platform, vrsdk, config) in iter_builds(args):
       stamp = revision + ('-exp' if args.experimental else '')
-      print "Building %s %s %s exp:%d signed:%d il2cpp:%d" % (
-        platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp)
+      print("Building %s %s %s exp:%d signed:%d il2cpp:%d" % (
+        platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp))
 
       tags = [platform, vrsdk, config]
       if args.experimental:     tags.append('Exp')
@@ -799,7 +803,7 @@ def main(args=None):
       if args.for_distribution and platform == 'Android' and sys.stdin.isatty():
         try: maybe_prompt_and_set_version_code(project_dir)
         except Exception as e:
-          print 'Error prompting for version code: %s' % e
+          print('Error prompting for version code: %s' % e)
 
       tmp_dir = build(stamp, tmp_dir, project_dir, EXE_BASE_NAME,
             experimental=args.experimental,
@@ -821,17 +825,17 @@ def main(args=None):
             if f.endswith('.pdb'):
               to_remove.append(os.path.join(r, f))
         if to_remove:
-          print 'Removing from submission:\n%s' % ('\n'.join(
-            os.path.relpath(f, output_dir) for f in to_remove))
-          map(os.unlink, to_remove)
+          print('Removing from submission:\n%s' % ('\n'.join(
+            os.path.relpath(f, output_dir) for f in to_remove)))
+          list(map(os.unlink, to_remove))
 
       if platform == 'iOS':
         # TODO: for iOS, invoke xcode to create ipa.  E.g.:
         # $ cd tmp_dir/TiltBrush
         # $ xcodebuild -scheme Unity-iPhone archive -archivePath ARCHIVE_DIR
         # $ xcodebuild -exportArchive -exportFormat ipa -archivePath ARCHIVE_DIR -exportPath IPA
-        print 'iOS build must be completed from Xcode (%s)' % (
-          os.path.join(output_dir, EXE_BASE_NAME, 'Unity-iPhone.xcodeproj'))
+        print('iOS build must be completed from Xcode (%s)' % (
+          os.path.join(output_dir, EXE_BASE_NAME, 'Unity-iPhone.xcodeproj')))
         continue
 
       if args.push:
@@ -855,19 +859,19 @@ def main(args=None):
           release_channel = args.branch
           if release_channel is None:
             release_channel = 'ALPHA'
-            print("No release channel specified for Oculus: using %s" % release_channel)
+            print(("No release channel specified for Oculus: using %s" % release_channel))
           unitybuild.push.push_tilt_brush_to_oculus(output_dir, release_channel, description)
   except Error as e:
-    print "\n%s: %s" % ('ERROR', e)
+    print("\n%s: %s" % ('ERROR', e))
     if isinstance(e, BadVersionCode):
       set_android_version_code(project_dir, e.desired_version_code)
-      print("\n\nVersion code has been auto-updated to %s.\nPlease retry your build." %
-            e.desired_version_code)
+      print(("\n\nVersion code has been auto-updated to %s.\nPlease retry your build." %
+            e.desired_version_code))
     if tmp_dir:
-      print "\nSee %s" % os.path.join(tmp_dir, 'build_log.txt')
+      print("\nSee %s" % os.path.join(tmp_dir, 'build_log.txt'))
     sys.exit(1)
   except KeyboardInterrupt:
-    print "Aborted."
+    print("Aborted.")
     sys.exit(2)
 
 
@@ -876,8 +880,8 @@ def main(args=None):
 def test_get_unity_exe():
   global iter_editors_and_versions
   def iter_editors_and_versions():
-    return map(lambda s: ("Unity_%s.exe" % s, tuple(s.split('.'))), [
-      "2017.1.2", "2017.1.3", "2017.4.3", "2017.4.10", "2017.4.9"])
+    return [("Unity_%s.exe" % s, tuple(s.split('.'))) for s in [
+      "2017.1.2", "2017.1.3", "2017.4.3", "2017.4.10", "2017.4.9"]]
   assert get_unity_exe(('2017', '4', '8'), True) == 'Unity_2017.4.10.exe'
   try:   get_unity_exe(('2017', '4', '8'), False)
   except BuildFailed as e: pass
@@ -885,7 +889,7 @@ def test_get_unity_exe():
 
 def test_iter_editors():
   for tup in iter_editors_and_versions():
-    print tup
+    print(tup)
 
 if __name__ == '__main__':
   maybe_prompt_and_set_version_code(os.getcwd())

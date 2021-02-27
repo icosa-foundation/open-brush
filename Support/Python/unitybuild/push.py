@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2020 The Tilt Brush Authors
 #
@@ -88,9 +88,9 @@ def get_build_stamp(directory):
     with file(filename, 'rb') as inf:
       return inf.read().strip()
   except IOError:
-    print "WARN: Build stamp not found with this build."
-    print "Supply one manually, or leave empty to abort this push."
-    stamp = raw_input("Stamp: ").strip()
+    print("WARN: Build stamp not found with this build.")
+    print("Supply one manually, or leave empty to abort this push.")
+    stamp = input("Stamp: ").strip()
     if not stamp:
       raise BuildFailed("Aborted: no build stamp")
 
@@ -139,7 +139,7 @@ def create_from_template(input_file, variables, tmp_dir):
   return output_file
 
 
-def push_tilt_brush_to_steam(source_dir, description, steam_user, steam_branch=None):
+def push_open_brush_to_steam(source_dir, description, steam_user, steam_branch=None):
   try:
     steamcmd('+exit')
   except subprocess.CalledProcessError:
@@ -163,7 +163,7 @@ def push_tilt_brush_to_steam(source_dir, description, steam_user, steam_branch=N
   app_vdf = create_from_template(
     os.path.join(support_dir, 'steam/app_template.vdf'), variables, tmp_steam_dir)
 
-  print "Pushing %s to Steam" % (variables['CONTENT_ROOT'], )
+  print("Pushing %s to Steam" % (variables['CONTENT_ROOT'], ))
   steamcmd('+login', steam_user,
            '+run_app_build', app_vdf,
            '+quit')
@@ -182,10 +182,10 @@ def quote_oculus_release_notes(txt):
   return txt.replace('\r', '').replace('\n', '\\n')
 
 
-def get_oculus_tiltbrush_exe(directory):
+def get_oculus_openbrush_exe(directory):
   files = os.listdir(directory)
-  # Might be named TiltBrush_oculus.exe?
-  files = [f for f in files if f.endswith('.exe') and f.lower().startswith('tiltbrush')]
+  # Might be named OpenBrush_oculus.exe?
+  files = [f for f in files if f.endswith('.exe') and f.lower().startswith('openbrush')]
   if len(files) == 0:
     raise BuildFailed("Can't find launch executable")
   elif len(files) == 1:
@@ -243,7 +243,7 @@ def get_secret(env_var_name, credential_name):
   return get_credential(credential_name).get_secret()
 
 
-def push_tilt_brush_to_oculus(
+def push_open_brush_to_oculus(
     build_path,
     release_channel,
     release_notes):
@@ -264,7 +264,7 @@ def push_tilt_brush_to_oculus(
       '--channel', release_channel,
       '--version', get_build_stamp(build_path),
       '--notes', quote_oculus_release_notes(release_notes),
-      '--launch_file', get_oculus_tiltbrush_exe(build_path),
+      '--launch_file', get_oculus_openbrush_exe(build_path),
       '--redistributables', ','.join(OCULUS_RIFT_REDISTS),
       '--firewall_exceptions', 'true'
     ]
@@ -311,7 +311,7 @@ def push_tilt_brush_to_oculus(
     sys.stdout.write(line)
     # The request will be retried indefinitely, so stall it out
     if 'error occurred. The request will be retried.' in line:
-      print
+      print()
       get_credential(app_id).delete_secret()
       # Maybe the secret changed; ask user to re-enter it
       raise BuildFailed("Your App Secret might be incorrect. Try again.")
@@ -345,14 +345,14 @@ def main(args=None):
   parser = argparse.ArgumentParser(
     description="(deprecated) Upload a build directory to Steam or Oculus.")
 
-  parser.add_argument('--user', type=str, default='tiltbrush_build',
+  parser.add_argument('--user', type=str, default='openbrush_build',
                       help='(Steam only) User to authenticate as. (default: %(default)s)')
   parser.add_argument('--desc',
                       help="Optional description of this build.")
   parser.add_argument('--branch',
                       help='Steam Branch or Oculus Release Channel to set live.')
   parser.add_argument('--what', required=True, metavar='DIR',
-                      help='Path to a Tilt Brush build folder')
+                      help='Path to a Open Brush build folder')
   parser.add_argument('--where', metavar='SERVICE', required=True, choices=['Oculus', 'SteamVR'],
                       help='Oculus or SteamVR')
 
@@ -367,10 +367,10 @@ def main(args=None):
   if args.where == 'Oculus':
     if args.branch == '' or args.branch is None:
       raise UserError("For Oculus, you must specify a --branch")
-    push_tilt_brush_to_oculus(args.what, args.branch, "No release notes")
+    push_open_brush_to_oculus(args.what, args.branch, "No release notes")
   elif args.where == 'SteamVR':
     description = 'Manual: %s | %s' % (get_build_stamp(args.what), args.desc)
-    push_tilt_brush_to_steam(args.what, description, args.user, steam_branch=None)
+    push_open_brush_to_steam(args.what, description, args.user, steam_branch=None)
   else:
     raise BuildFailed("Don't know how to push %s" % args.display)
 
@@ -379,4 +379,4 @@ if __name__ == '__main__':
   try:
     main()
   except BuildFailed as e:
-    print "ERROR: %s" % e
+    print("ERROR: %s" % e)

@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using pxr;
 using UnityEngine;
+using Unity.Formats.USD;
 
 namespace TiltBrush {
   public class ImportUsd : MonoBehaviour {
@@ -226,7 +227,7 @@ namespace TiltBrush {
 
       // Would be nice to find a way to kick this off automatically.
       // Redundant calls are ignored.
-      if (!App.InitializeUsd()) {
+      if (!InitUsd.Initialize()) {
         return null;
       }
 

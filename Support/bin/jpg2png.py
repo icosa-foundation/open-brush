@@ -36,9 +36,9 @@ def convert(infile):
   outfile = get_alt_file(infile)
   if not os.path.exists(outfile):
     Image.open(infile).save(outfile)
-    print "Saved ", outfile
+    print("Saved ", outfile)
   else:
-    print "%s already exists" % outfile
+    print("%s already exists" % outfile)
 
 def main():
   import argparse

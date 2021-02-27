@@ -524,8 +524,13 @@ namespace TiltBrush {
 
     public static string[] RunAdb(params string[] arguments) {
       var process = new System.Diagnostics.Process();
+#if UNITY_EDITOR_WIN
       process.StartInfo =
           new System.Diagnostics.ProcessStartInfo("adb.exe", String.Join(" ", arguments));
+#else
+      process.StartInfo =
+          new System.Diagnostics.ProcessStartInfo("adb", String.Join(" ", arguments));
+#endif
       process.StartInfo.UseShellExecute = false;
       process.StartInfo.CreateNoWindow = true;
       process.StartInfo.RedirectStandardOutput = true;

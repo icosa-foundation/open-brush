@@ -1,24 +1,39 @@
-# Open Brush - A fork of Tilt Brush.
+# Open Brush - A Tilt Brush fork
+
+![GitHub all releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)
+[![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
+[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+[![Open Collective backers and sponsors](https://img.shields.io/opencollective/all/icosa?logo=open-collective)](https://opencollective.com/icosa)
+
+## Current Version: `0.2.0`
 
 We hope to help maintain Tilt Brush.  
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
 
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
-[Trello Here](https://trello.com/b/jItetqYe/open-brush)  
-[List of Tutorials, Write ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
-[Taking donations through open collective](https://opencollective.com/icosa)  
+[Trello](https://trello.com/b/jItetqYe/open-brush)  
+[List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
+[Support us on Open Collective](https://opencollective.com/icosa)  
+
+## Downloads
+
+- [Itch.io Store](https://openbrush.itch.io/openbrush)
+- [SideQuest](https://sidequestvr.com/app/2852/open-brush)
+- [GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
 
 ### Currently we are:
 * Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
-* Looking at modding support. 
+* Looking at modding support (custom brushes!)
 * Re-enabling the additional features.
 
-## Thank you 
-* Tilt Brush developers for your amazing work! 
-* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
-* The [SideQuest](https://sidequestvr.com/) team for your support. 
+See our [Trello](https://trello.com/b/jItetqYe/open-brush) board for more information.
 
-Note: we are using Unity 2019.4.18f1.
+
+
+## Acknowledgements
+* Thank you to the Tilt Brush developers for your amazing work! 
+* [SiMonk0](http://www.furjandesign.com/) for the great new logo!
+* The [SideQuest](https://sidequestvr.com/) team for your support.
 
 # Tilt Brush README
 
@@ -44,8 +59,9 @@ Get the Tilt Brush open-source application running on your own devices.
 
 *   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea) (Unity 2019.4.18f1 for this fork)
 *   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
-*   [Python 2.7.0](https://www.python.org/download/releases/2.7/) (Optional —
+*   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
+    Tested with Python 3.8.
 
 ### Changing the application name
 
@@ -127,6 +143,14 @@ open-source licensing issues. These are:
     Unity. These have been replaced with a modified version of
     [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
 
+## Generating Secrets file
+Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
+
+1.  Right click in the root `/Assets` folder in Unity's project window. 
+    Select `Create`, then `Secrets Config`. This will create `Secrets.asset` in the Asset folder.
+1.  In `Scenes/Main.unity` go to **App > Config** and replace `SecretsExample` 
+    with the newly generated `Secrets.asset`.
+
 ## Google service API support
 
 Set up Google API support to access Google services in the app.
@@ -182,9 +206,9 @@ steps to create an OAuth credential:
 
 Follow these steps to store the Google API Key and credential data:
 
-1.  There is an asset in the `Assets/` directory called `Secrets` that contains
-    a `Secrets` field. Add a new item to this field.
-2.  Select `Google` as the service. Paste in the API key, client ID, and client
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Select `Google` as the service. Paste in the API key, client ID, and client
     secret that were generated earlier.
 
 ## Enabling native Oculus support
@@ -199,11 +223,9 @@ enable native Oculus support:
 
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/1.41.0/).
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
 
-**Note:** The above link goes to version 1.41, which the official version of
-Tilt Brush was built with. Later versions have not been tested. You only need to
-include the `Platform` and `VR` subdirectories when you import.
+**Note:** The above link goes to version 23.1 which is the current latest version. Tilt Brush was formerly built with 1.41, but appears to function well with 23.1. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.
@@ -216,10 +238,6 @@ include the `Platform` and `VR` subdirectories when you import.
 
 Follow these steps to build your app for Oculus Quest:
 
-1.  Define `OCULUS_SUPPORTED` in **Scripting Define Symbols** in the **Android**
-    tab of **Player Settings**, under **Other Settings**. Add it to the end of
-    the list and use a semicolon to separate it from the previous define
-    command.
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
@@ -228,8 +246,8 @@ Follow these steps to build your app for Oculus Quest:
     *   **Tilt** > **Build** > **Runtime: Mono**
 1.  Navigate to **Tilt** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
-    `Builds/OculusMobile_Release_TiltBrush_FromGui/`.
-1.  Run `adb install com.google.tiltbrush.apk`.
+    `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
+1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
 ### Publishing to Oculus stores
 
@@ -237,6 +255,8 @@ Follow these steps to publish to Oculus stores:
 
 1.  Get an application ID from Oculus. The desktop and quest versions of each
     application need separate IDs.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add 2 new items to the **Secrets** field.
 1.  Add these IDs to the `Secrets` file. Both `Oculus` and `OculusMobile` should
     have their own entries.
 1.  Put the app IDs in the `Client ID` field for each.
@@ -291,7 +311,9 @@ Follow these steps to enable Sketchfab support:
 
 1.  [Contact Sketchfab](https://sketchfab.com/developers/oauth) for a client ID
     and secret before you can upload to their service.
-1.  Add the client ID and secret to the `Secrets` file.
+1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
+    Add a new item to the **Secrets** field.
+1.  Add the client ID and secret to the field.
 1.  Set the service as **Sketchfab**. Leave the API key blank.
 
 ## FBX file support

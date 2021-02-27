@@ -49,7 +49,7 @@ class BrushLookup(object):
     self.guid_to_name = dict(self.iter_brush_guid_and_name(tilt_brush_dir))
     # Maps name -> list of guids
     self.name_to_guids = defaultdict(list)
-    for guid, name in self.guid_to_name.iteritems():
+    for guid, name in self.guid_to_name.items():
       self.name_to_guids[name].append(guid)
     self.name_to_guids = dict(self.name_to_guids)
 

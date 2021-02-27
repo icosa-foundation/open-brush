@@ -87,8 +87,8 @@ def animate(stage):
     worldCenter = Gf.Vec3f(0.73135, 19.92212, 33.2210311)
   worldCenter[1] = worldBounds.GetRange().min[1]
 
-  print "World Center:", worldCenter
-  print "Max Radius:", maxRadius
+  print("World Center:", worldCenter)
+  print("Max Radius:", maxRadius)
 
   # Visualize the radius.
   debugSphere = UsdGeom.Sphere(stage.DefinePrim("/debug", "Sphere"))
@@ -125,8 +125,8 @@ def animate(stage):
 
   # Main animation loop.
   for time in range(0, numFrames):
-    print
-    print "Time:", time, height, radius, smoothstep(1.0, float(numFrames), time)
+    print()
+    print("Time:", time, height, radius, smoothstep(1.0, float(numFrames), time))
     curActive = 0
     
     if len(activeStrokes) < maxActive:
@@ -155,7 +155,7 @@ def animate(stage):
           # Mark the stroke as dirty to save its initial state.
           ss.stroke.dirty = True
           ss.SetRadius(radius, time)
-          print "+",
+          print("+", end=' ')
       if not didAddStroke:
         # We didn't add any strokes, which means the radius needs to increase.
         # Grow the activation volumes (increase sphere size, raise floor plane height).
@@ -176,7 +176,7 @@ def animate(stage):
     # Update stroke animation.
     remove = []
     for ss in activeSubstrokes:
-      print ".",
+      print(".", end=' ')
       if not ss.Update(dRadius, smoothstep(1.0, float(numFrames), time)):
         if ss.indicesWritten != ss.indexCount:
           raise "Fail"
@@ -373,12 +373,12 @@ def MakeSubstrokes(strokes):
 
 def MakeStrokes(stage):
   ret = []
-  print "Reading strokes..."
+  print("Reading strokes...")
   for p in stage.Traverse():
     if not p.IsA(UsdGeom.Mesh):
       continue
 
-    print ".",
+    print(".", end=' ')
     ret.append(Stroke(p,
                       p.GetAttribute("points").Get(0),
                       p.GetAttribute("faceVertexIndices").Get(0),
@@ -396,5 +396,5 @@ if __name__ == "__main__":
   try:
     animate(stage)
   finally:
-    print "Saving..."
+    print("Saving...")
     stage.Export(outputFile)

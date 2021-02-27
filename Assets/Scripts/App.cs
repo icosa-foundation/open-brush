@@ -24,6 +24,10 @@ using System.Runtime.CompilerServices;
 
 using Newtonsoft.Json;
 
+#if USD_SUPPORTED
+using Unity.Formats.USD;
+#endif
+
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
@@ -67,11 +71,14 @@ public class App : MonoBehaviour {
   public const string kGuiBuildExecutableName = "OpenBrush";
   // Windows Executable
   public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
+  // Linux Executable
+  public const string kGuiBuildLinuxExecutableName = kGuiBuildExecutableName;
   // OSX Executable
   public const string kGuiBuildOSXExecutableName = kGuiBuildExecutableName + ".app";
+  // Android Application Identifier
+  public const string kGuiBuildAndroidApplicationIdentifier = "com." + kVendorName + "." + kGuiBuildExecutableName;
   // Android Executable
-  public const string kGuiBuildAndroidExecutableName =
-      "com." + kVendorName + "." + kGuiBuildExecutableName + ".apk";
+  public const string kGuiBuildAndroidExecutableName = kGuiBuildAndroidApplicationIdentifier + ".apk";
 
   public const string kPlayerPrefHasPlayedBefore = "Has played before";
   public const string kReferenceImagesSeeded = "Reference Images seeded";
@@ -600,8 +607,10 @@ public class App : MonoBehaviour {
       m_RoomRadius = Mathf.Min(Mathf.Abs(extents.x), Mathf.Abs(extents.z));
     }
 
+#if USD_SUPPORTED
     // Load the Usd Plugins
-    InitializeUsd();
+    InitUsd.Initialize();
+#endif
 
     foreach (string s in Config.m_SketchFiles) {
       // Assume all relative paths are relative to the Sketches directory.
@@ -1596,6 +1605,7 @@ public class App : MonoBehaviour {
     case RuntimePlatform.OSXPlayer:
     case RuntimePlatform.OSXEditor:
     case RuntimePlatform.LinuxPlayer:
+    case RuntimePlatform.LinuxEditor:
       return System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
     case RuntimePlatform.Android:
     case RuntimePlatform.IPhonePlayer:
@@ -1625,6 +1635,7 @@ public class App : MonoBehaviour {
     case RuntimePlatform.OSXPlayer:
     case RuntimePlatform.OSXEditor:
     case RuntimePlatform.LinuxPlayer:
+    case RuntimePlatform.LinuxEditor:
       // user Documents folder
       m_UserPath = Path.Combine(System.Environment.GetFolderPath(
                               System.Environment.SpecialFolder.Personal),
@@ -1863,13 +1874,6 @@ public class App : MonoBehaviour {
     return manifest;
   }
 
-  public static bool InitializeUsd() {
-    if (!UsdUtils.InitializeUsd()) {
-      return false;
-    }
-    return true;
-  }
-
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
   public bool IsBrushExperimental(BrushDescriptor brush) {
     return m_ManifestExperimental.Brushes.Contains(brush);
@@ -1918,12 +1922,15 @@ public class App : MonoBehaviour {
       Application.OpenURL(url);
     }
 #else
-    // Something about the url makes OpenURL() not work on OSX, so use a workaround
-    if (Application.platform == RuntimePlatform.OSXEditor ||
-        Application.platform == RuntimePlatform.OSXPlayer) {
-      System.Diagnostics.Process.Start(url);
-    } else {
-      Application.OpenURL(url);
+    switch (Application.platform)
+    {
+      case RuntimePlatform.OSXEditor:
+      case RuntimePlatform.OSXPlayer:
+        System.Diagnostics.Process.Start(url);
+        break;
+      default:
+        Application.OpenURL(url);
+        break;
     }
 #endif
   }
