@@ -284,7 +284,7 @@ class SketchfabService {
 
     var moreParams = new List<(string, string)> {
         ("name", name),
-        ("source", "tilt-brush"),
+        ("source", "open-brush"),
         ("private", "true"),  // TODO: remove when this feature is not secret
         // https://docs.sketchfab.com/data-api/v3/index.html#!/models/post_v3_models
         // "Enables 2D view in model inspector. All downloadable models must have isInspectable
@@ -294,7 +294,7 @@ class SketchfabService {
         ("license", "by-sa"),
         // This is how you specify multiple tags:
         // ("tags", "[\"tiltbrush\", \"some-other-tag\"]"),
-        ("tags", "tiltbrush"),
+        ("tags", "[\"openbrush\", \"tiltbrush\"]"),
         ("isPublished", "false"),
         // ("description", "Dummy description"),
     };
