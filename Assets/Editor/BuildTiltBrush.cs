@@ -612,7 +612,9 @@ static class BuildTiltBrush {
     string keyaliasName = null;
 
 #if OCULUS_SUPPORTED
-    // Call these once to create the files. Normally (i.e., in a GUI build), they're created with [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're there!
+    // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
+    // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
+    // there!
     OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
     string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
 #endif
@@ -665,10 +667,15 @@ static class BuildTiltBrush {
           // Don't restore this, because user might want to check in this change?
           PlayerSettings.Android.bundleVersionCode += 1;
         } else if (args[i] == "-buildVersion") {
-          // TODO: do we want to do anything with this? Can we use it instead of the version string set externally?
+          // TODO: do we want to do anything with this? Can we use it instead of the version string
+          // set externally?
           i++;
-        } else if (args[i] == "-androidVersionCode" || args[i] == "-androidKeystoreName" || args[i] == "-androidKeystorePass" || args[i] == "-androidKeyaliasName" || args[i] == "-androidKeyaliasPass") {
-          // TODO: do we want to do anything with these? 
+        } else if (args[i] == "-androidVersionCode" ||
+            args[i] == "-androidKeystoreName" ||
+            args[i] == "-androidKeystorePass" ||
+            args[i] == "-androidKeyaliasName" ||
+            args[i] == "-androidKeyaliasPass") {
+          // TODO: do we want to do anything with these?
           i++;
         } else if (args[i] == "-setDefaultPlatformTextureFormat") {
           i++;
