@@ -132,5 +132,39 @@ namespace TiltBrush
             }
             return null;
         }
+
+        virtual public IEnumerable<string> GetContentsAt(string path)
+        {
+            if (m_IsFile)
+            {
+                var entries = new HashSet<string>();
+                using (var zipFile = new ZipLibrary.ZipFile(m_RootPath))
+                {
+                    foreach (ZipLibrary.ZipEntry entry in zipFile)
+                    {
+                        if (entry == null)
+                        {
+                            continue;
+                        }
+
+                        if (entry.Name.StartsWith(path))
+                        {
+                            string subpart = Path.GetDirectoryName(entry.Name.Substring(path.Length));
+                            if (subpart[0] == '/' || subpart[0] == '\\')
+                            {
+                                subpart = subpart.Substring(1);
+                            }
+                            entries.Add(subpart);
+                        }
+                    }
+                }
+                return entries;
+            }
+            else
+            {
+                string folderPath = Path.Combine(m_RootPath, path);
+                return Directory.GetFiles(folderPath);
+            }
+        }
     }
 }

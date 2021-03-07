@@ -913,6 +913,7 @@ namespace TiltBrush
 
         public IEnumerable<string> GetContentsAt(string path)
         {
+            // This is only required for accessing custom brushes, which aren't supported by Poly.
             return new string[] { };
         }
     }

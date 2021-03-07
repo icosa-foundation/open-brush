@@ -53,7 +53,9 @@ namespace TiltBrush
 
             public bool Available => m_TiltFile != null;
 
-            public string FullPath => Path.Combine(App.UserSketchPath(), HumanName);
+            public string FullPath => m_FileName;
+
+            public string OriginalPath => Path.Combine(App.UserSketchPath(), HumanName);
 
             public bool Exists => true;
 
@@ -174,7 +176,7 @@ namespace TiltBrush
 
             public IEnumerable<string> GetContentsAt(string path)
             {
-                return new string[] { };
+                return m_TiltFile.GetContentsAt(path);
             }
 
         }
@@ -362,7 +364,7 @@ namespace TiltBrush
                 {
                     if (deviceFolders[i].Id == App.DriveAccess.DeviceFolder)
                     {
-                        sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.FullPath)));
+                        sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.OriginalPath)));
                     }
                     else
                     {
