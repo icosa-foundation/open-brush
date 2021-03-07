@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -118,6 +119,15 @@ public class TiltFile : FolderOrZipReader {
       }
     }
     return base.GetReadStream(subfileName);
+  }
+
+  override public IEnumerable<string> GetContentsAt(string path) {
+    if (m_Exists && m_IsFile) {
+      if (! IsHeaderValid()) {
+        return null;
+      }
+    }
+    return base.GetContentsAt(path);
   }
 
   public bool IsHeaderValid() {

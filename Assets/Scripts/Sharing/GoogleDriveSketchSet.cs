@@ -50,7 +50,9 @@ public class GoogleDriveSketchSet : SketchSet {
 
     public bool Available => m_TiltFile != null;
 
-    public string FullPath => Path.Combine(App.UserSketchPath(), HumanName);
+    public string FullPath => m_FileName;
+    
+    public string OriginalPath => Path.Combine(App.UserSketchPath(), HumanName);
 
     public bool Exists => true;
 
@@ -147,7 +149,7 @@ public class GoogleDriveSketchSet : SketchSet {
     }
 
     public IEnumerable<string> GetContentsAt(string path) {
-      return new string[] { };
+      return m_TiltFile.GetContentsAt(path);
     }
 
   }
@@ -301,7 +303,7 @@ public class GoogleDriveSketchSet : SketchSet {
       var sketchList = new List<GoogleDriveFileInfo>();
       for (int i = 0; i < deviceFolders.Count; ++i) {
         if (deviceFolders[i].Id == App.DriveAccess.DeviceFolder) {
-          sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.FullPath)));
+          sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.OriginalPath)));
         } else {
           sketchList.AddRange(sketchTasks[i].Result);
         }
