@@ -44,26 +44,35 @@
 #    StandaloneLinuxUniversal      Build a Linux universal standalone.
 #    StandaloneOSXIntel64          Build an OSX Intel 64-bit standalone.
 
+import argparse
+import codecs
+import getpass
+import glob
+import io
 import itertools
+import json
 import os
 import re
+import subprocess  # Currently disabled with an if False below
 import sys
-import time
-import glob
-import shutil
 import threading
-import subprocess
+import time
+import webbrowser
+from platform import node as platform_node  # Don't overwrite 'platform' local var!
 
 import unitybuild.utils
 import unitybuild.push
-from unitybuild.constants import *
+from unitybuild.constants import Error, UserError, BuildFailed, BadVersionCode, InternalError
+from unitybuild.credentials import get_credential, TB_OCULUS_QUEST_APP_ID
+from unitybuild.vcs import create as vcs_create
 
-BUILD_OUT = 'OpenBrush'
+
 EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
 # Build logic
 # ----------------------------------------------------------------------
+
 
 class LogTailer(threading.Thread):
   """Copy interesting lines from Unity's logfile to stdout.
@@ -72,8 +81,9 @@ class LogTailer(threading.Thread):
   When used in a "with" block, *logfile* is guaranteed to be closed
   after the block exits."""
   POLL_TIME = 0.5
+
   def __init__(self, logfile, disabled=False):
-    super(LogTailer, self).__init__()
+    super().__init__()
     self.daemon = True
     self.logfile = logfile
     # It's not very easy to have optional context managers in Python,
@@ -97,7 +107,8 @@ class LogTailer(threading.Thread):
   def run(self):
     # Wait for file to be created
     while not os.access(self.logfile, os.R_OK):
-      if self.should_exit: return
+      if self.should_exit:
+        return
       time.sleep(self.POLL_TIME)
 
     # All of BuildTiltBrush.CommandLine()'s output is prefixed with _btb_
@@ -109,7 +120,8 @@ class LogTailer(threading.Thread):
         line = inf.readline()
         try:
           if not line:
-            if self.should_exit: return
+            if self.should_exit:
+              return
             time.sleep(self.POLL_TIME)
             inf.seek(where)
           elif progress_pat.match(line):
@@ -119,6 +131,7 @@ class LogTailer(threading.Thread):
         except IOError:
           # The "print" can raise IOError
           pass
+
 
 def get_unity_exe(version, lenient=True):
   """Returns a Unity executable of the same major version.
@@ -139,6 +152,7 @@ def get_unity_exe(version, lenient=True):
       def int_version(version):
         (major, minor, micro) = version
         return (int(major), int(minor), int(micro))
+
       def by_int_version(xxx_todo_changeme):
         (exe, ver) = xxx_todo_changeme
         return (int_version(ver), exe)
@@ -159,17 +173,16 @@ def iter_possible_windows_editor_locations():
     yield editor_dir
   # Check to see if UnityHub has a secondary install path defined.
   install_config_file_path = os.path.join(
-    os.getenv('APPDATA'),
-    r'UnityHub\secondaryInstallPath.json')
+      os.getenv('APPDATA'),
+      r'UnityHub\secondaryInstallPath.json')
   if os.path.exists(install_config_file_path):
     with open(install_config_file_path, 'r') as install_config_file:
-      import json
       install_dir = json.load(install_config_file)
       for editor_dir in glob.glob(install_dir + r'\*\Editor'):
         yield editor_dir
 
 
-def iter_editors_and_versions():
+def iter_editors_and_versions():  # pylint: disable=too-many-branches
   """Yields (exe_path, (major, minor, micro)) tuples.
   All elements are strings."""
   hub_exe = None
@@ -202,7 +215,7 @@ def iter_editors_and_versions():
             print('WARN: Missing executable %s' % exe)
         except LookupError as e:
           print(e)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
           print('WARN: Cannot find version of %s: %s' % (editor_dir, e))
   elif sys.platform == 'darwin':
     # Kind of a hacky way of detecting the Daydream build machine
@@ -212,7 +225,7 @@ def iter_editors_and_versions():
     else:
       # TODO: make it work with Unity hub?
       app_list = ['/Applications/Unity/Unity.app']
-      # Since we don't have Unity hub support (commented out above because headless isn't 
+      # Since we don't have Unity hub support (commented out above because headless isn't
       # headless), look for where it installs directly
       app_list.extend(glob.glob('/Applications/Unity/*/Unity.app'))
     for editor_dir in app_list:
@@ -225,7 +238,8 @@ def iter_editors_and_versions():
 def parse_version(txt):
   txt = txt.strip()
   major, minor, point = re.match(r'(\d+)\.(\d+)\.?(\d+)?', txt).groups()
-  if point is None: point = 0
+  if point is None:
+    point = 0
   return (major, minor, point)
 
 
@@ -328,7 +342,7 @@ def check_compile_output(log):
     # get the compiler failures from the build report instead of this ugly parsing
     # through Unity's log file.
     raise BuildFailed('Compile\n%s' % indent('| ', compiler_output))
-  elif compiler_output != '':
+  if compiler_output != '':
     print('Compile warnings:\n%s' % indent('| ', compiler_output), file=sys.stderr)
 
 
@@ -337,11 +351,10 @@ def search_backwards(text, start_point, limit, pattern):
   Returns the one closest to |start_point|.
   Returns |limit| if none are found."""
   assert limit < start_point
-  matches = list(pattern.finditer(text[limit : start_point]))
+  matches = list(pattern.finditer(text[limit: start_point]))
   if len(matches) == 0:
     return limit
-  else:
-    return limit + matches[-1].start(0)
+  return limit + matches[-1].start(0)
 
 
 def analyze_unity_failure(exitcode, log):
@@ -363,8 +376,8 @@ def analyze_unity_failure(exitcode, log):
         indent('| ', m.group('description').strip())))
 
   internal_error_pat = re.compile(
-    r'^executeMethod method (?P<methodname>.*) threw exception\.',
-    re.MULTILINE)
+      r'^executeMethod method (?P<methodname>.*) threw exception\.',
+      re.MULTILINE)
   m = internal_error_pat.search(log)
   if m is not None:
     exception_pat = re.compile(r'^[A-Z][A-Za-z0-9]+(Exception|Error):', re.MULTILINE)
@@ -373,11 +386,11 @@ def analyze_unity_failure(exitcode, log):
     suspicious_portion = log[start:end]
     raise BuildFailed("""Build script '%s' had an internal error.
 Suspect log portion:
-%s""" % (m.group('methodname'), indent('| ', log[start:end])))
+%s""" % (m.group('methodname'), indent('| ', suspicious_portion)))
 
   # Check for BuildTiltBrush.Die()
   btb_die_pat = re.compile(
-    r'_btb_ Abort <<(?P<description>.*?)>>', re.DOTALL | re.MULTILINE)
+      r'_btb_ Abort <<(?P<description>.*?)>>', re.DOTALL | re.MULTILINE)
   m = btb_die_pat.search(log)
   if m is not None:
     raise BuildFailed("C# called Die %s '%s'" % (exitcode, m.group('description')))
@@ -403,16 +416,20 @@ def make_unused_directory_name(directory_name):
     prospective_name = os.path.join(dirname, '%d_%s' % (i, filename))
     if not os.path.exists(prospective_name):
       return prospective_name
+  # TODO: find a better way to come up wit h a unique directory name (probably mktemp), but for now, assert, since the caller can't handle this
+  raise AssertionError("No usable directory found")
 
 
 PLATFORM_TO_UNITYTARGET = {
-  'Windows': 'StandaloneWindows64',
-  'OSX':     'StandaloneOSXIntel',
-  'Linux':   'StandaloneLinuxUniversal',
-  'Android': 'Android',
-  'iOS':     'iOS',
+    'Windows': 'StandaloneWindows64',
+    'OSX': 'StandaloneOSXIntel',
+    'Linux': 'StandaloneLinuxUniversal',
+    'Android': 'Android',
+    'iOS': 'iOS',
 }
-def build(stamp, output_dir, project_dir, exe_base_name,
+
+
+def build(stamp, output_dir, project_dir, exe_base_name,  # pylint: disable=too-many-statements,too-many-branches,too-many-locals,too-many-arguments
           experimental, platform, il2cpp, vrsdk, config, for_distribution,
           is_jenkins):
   """Create a build of Tilt Brush.
@@ -432,16 +449,21 @@ def build(stamp, output_dir, project_dir, exe_base_name,
     the actual output directory used
   """
   def get_exe_suffix(platform):
-    if 'Windows' in platform: return '.exe'
-    if 'OSX' in platform: return '.app'
-    if 'Linux' in platform: return ''
-    if 'Android' in platform: return '.apk'
-    if 'iOS' in platform: return ''
+    if 'Windows' in platform:
+      return '.exe'
+    if 'OSX' in platform:
+      return '.app'
+    if 'Linux' in platform:
+      return ''
+    if 'Android' in platform:
+      return '.apk'
+    if 'iOS' in platform:
+      return ''
     raise InternalError("Don't know executable suffix for %s" % platform)
 
   try:
     unitybuild.utils.destroy(output_dir)
-  except Exception as e:
+  except Exception as e:  # pylint: disable=broad-except
     print('WARN: could not use %s: %s' % (output_dir, e))
     output_dir = make_unused_directory_name(output_dir)
     print('WARN: using %s intead' % output_dir)
@@ -458,9 +480,9 @@ def build(stamp, output_dir, project_dir, exe_base_name,
              # '-nographics',   Might be needed on OSX if running w/o window server?
              '-projectPath', project_dir,
              '-executeMethod', 'BuildTiltBrush.CommandLine',
-               '-btb-target', PLATFORM_TO_UNITYTARGET[platform],
-               '-btb-out', exe_name,
-               '-btb-display', vrsdk]
+             '-btb-target', PLATFORM_TO_UNITYTARGET[platform],
+             '-btb-out', exe_name,
+             '-btb-display', vrsdk]
   if experimental:
     cmdline.append('-btb-experimental')
 
@@ -481,18 +503,18 @@ def build(stamp, output_dir, project_dir, exe_base_name,
       raise BuildFailed("To sign you need %s.\n" % keystore)
 
     cmdline.extend([
-      '-btb-keystore-name', keystore,
-      '-btb-keyalias-name', 'oculusquest',
+        '-btb-keystore-name', keystore,
+        '-btb-keyalias-name', 'oculusquest',
     ])
     required_credentials.extend([
-      ('BTB_KEYSTORE_PASS', 'Tilt Brush keystore password'),
-      ('BTB_KEYALIAS_PASS', 'Tilt Brush Oculus Quest signing key password')])
+        ('BTB_KEYSTORE_PASS', 'Tilt Brush keystore password'),
+        ('BTB_KEYALIAS_PASS', 'Tilt Brush Oculus Quest signing key password')])
   cmdline.extend(['-btb-stamp', stamp])
 
   if config == 'Debug':
     cmdline.extend([
-      '-btb-bopt', 'Development',
-      '-btb-bopt', 'AllowDebugging',
+        '-btb-bopt', 'Development',
+        '-btb-bopt', 'AllowDebugging',
     ])
 
   cmdline.append('-quit')
@@ -505,10 +527,8 @@ def build(stamp, output_dir, project_dir, exe_base_name,
       if is_jenkins:
         # TODO(pld): Look into Jenkins plugins to get at these credentials
         raise BuildFailed(
-          'Credential "%s" is missing from Jenkins build environment' % env_var)
-      else:
-        from unitybuild.credentials import get_credential
-        cmd_env[env_var] = get_credential(credential_name).get_secret().encode('ascii')
+            'Credential "%s" is missing from Jenkins build environment' % env_var)
+      cmd_env[env_var] = get_credential(credential_name).get_secret().encode('ascii')
   proc = subprocess.Popen(cmdline, stdout=sys.stdout, stderr=sys.stderr, env=cmd_env)
   del cmd_env
 
@@ -540,23 +560,25 @@ over and over again until it works""" % f)
   return output_dir
 
 
-def finalize_build(project_dir, src_dir, dst_dir):
+def finalize_build(src_dir, dst_dir):
   """Attempts to move *src_dir* to *dst_dir*.
   Return *dst_dir* on success, or some other directory name if there was some problem.
   This should be as close to atomic as possible."""
   try:
     unitybuild.utils.destroy(dst_dir)
-  except OSError as e:
+  except OSError:
     print('WARN: Cannot remove %s; putting output in %s' % (dst_dir, src_dir))
     return src_dir
 
-  try: os.makedirs(os.path.dirname(dst_dir))
-  except OSError: pass
+  try:
+    os.makedirs(os.path.dirname(dst_dir))
+  except OSError:
+    pass
 
   try:
     os.rename(src_dir, dst_dir)
     return dst_dir
-  except OSError as e:
+  except OSError:
     # TODO(pld): Try to do something better
     # On Jon's computer, Android builds always leave behind a Java.exe process that
     # holds onto the directory and prevents its rename.
@@ -571,25 +593,23 @@ def create_notice_file(project_dir):
     root = os.path.join(project_dir, 'Assets/ThirdParty')
     if not os.path.exists(root):
       raise BuildFailed("Cannot generate NOTICE: missing %s" % root)
-    for r, ds, fs in os.walk(root):
+    for r, _, fs in os.walk(root):
       for f in fs:
         if f.lower() in ('notice', 'notice.txt', 'notice.tiltbrush', 'notice.md'):
           yield (os.path.basename(r), os.path.join(r, f))
     root = os.path.join(project_dir, 'Assets/ThirdParty/NuGet/Packages')
     if not os.path.exists(root):
       raise BuildFailed("Cannot generate NOTICE: missing %s" % root)
-    for r, ds, fs in os.walk(root):
+    for r, _, fs in os.walk(root):
       for f in fs:
         if f.lower() in ('notice', 'notice.md', 'notice.txt'):
-          m = re.match('\D+', os.path.basename(r))
+          m = re.match(r'\D+', os.path.basename(r))
           if m:
             name = m.group(0).rstrip('.')
             if (name[-2:] == '.v' or name[-2:] == '.V'):
               name = name[:-2]
             yield (name, os.path.join(r, f))
 
-  import codecs
-  import io
   tmpf = io.StringIO()
   tmpf.write('''This file is automatically generated.
 This software makes use of third-party software with the following notices.
@@ -612,8 +632,8 @@ This software makes use of third-party software with the following notices.
 # Front-end
 # ----------------------------------------------------------------------
 
+
 def parse_args(args):
-  import argparse
   parser = argparse.ArgumentParser(description="Make Open Brush builds")
   parser.add_argument('--vrsdk',
                       action='append', dest='vrsdks',
@@ -627,15 +647,15 @@ def parse_args(args):
                       action='append', dest='configs',
                       choices=['Debug', 'Release'],
                       help='Can pass multiple times; defaults to Release. Controls the ability to profile, the ability to debug scripts, and generation of debug symbols.')
-  parser.add_argument(
-    '--experimental', action='store_true', default=False,
-    help='Include experimental features in the build')
-  parser.add_argument(
-    '--il2cpp', action='store_true', default=False,
-    help='Build using il2cpp as the runtime instead of Mono')
-  parser.add_argument(
-    '--for-distribution', dest='for_distribution', action='store_true', default=False,
-    help='Implicitly set when the build is being pushed; use explicitly if you want a signed build but do not want to push it yet')
+  parser.add_argument('--experimental',
+                      action='store_true', default=False,
+                      help='Include experimental features in the build')
+  parser.add_argument('--il2cpp',
+                      action='store_true', default=False,
+                      help='Build using il2cpp as the runtime instead of Mono')
+  parser.add_argument('--for-distribution',
+                      dest='for_distribution', action='store_true', default=False,
+                      help='Implicitly set when the build is being pushed; use explicitly if you want a signed build but do not want to push it yet')
 
   # TODO(pld): update docs to talk about Oculus Home?
   grp = parser.add_argument_group('Pushing to Steam/Oculus')
@@ -671,17 +691,16 @@ def parse_args(args):
 
 
 def find_project_dir():
-  def search_upwards_from(dir):
+  def search_upwards_from(d):
     # Search upwards for root of unity project
-    from os.path import exists, join
-    dir = os.path.abspath(dir)
+    d = os.path.abspath(d)
     while True:
-      if exists(join(dir, 'Assets')) and exists(join(dir, 'ProjectSettings')):
-        return dir
-      parent = os.path.dirname(dir)
-      if parent == dir:
+      if os.path.exists(os.path.join(d, 'Assets')) and os.path.exists(os.path.join(d, 'ProjectSettings')):
+        return d
+      parent = os.path.dirname(d)
+      if parent == d:
         return None
-      dir = parent
+      d = parent
   return search_upwards_from('.') or search_upwards_from(__file__)
 
 
@@ -699,8 +718,10 @@ def get_android_version_code(project_dir):
   contents = open(filename, 'rb').read()
   m = re.search(r'(?<=AndroidBundleVersionCode: )(?P<code>\d+)', contents)
   if m is not None:
-    try: return int(m.group('code'))
-    except: pass
+    try:
+      return int(m.group('code'))
+    except:  # pylint: disable=bare-except
+      pass
   raise LookupError('code')
 
 
@@ -708,11 +729,11 @@ def set_android_version_code(project_dir, code):
   """If *code* is 'increment', increments the existing code."""
   filename = os.path.join(project_dir, 'ProjectSettings/ProjectSettings.asset')
   contents = open(filename, 'rb').read()
+
   def replacement(match):
     if code == 'increment':
       return str(int(match.group('code')) + 1)
-    else:
-      return str(code)
+    return str(code)
   new_contents, n = re.subn(r'(?<=AndroidBundleVersionCode: )(?P<code>\d+)',
                             replacement, contents)
   if n < 1:
@@ -722,8 +743,6 @@ def set_android_version_code(project_dir, code):
 
 
 def maybe_prompt_and_set_version_code(project_dir):
-  import webbrowser
-  from unitybuild.credentials import TB_OCULUS_QUEST_APP_ID
   existing_code = get_android_version_code(project_dir)
   uri = 'https://dashboard.oculus.com/application/%s/build/' % TB_OCULUS_QUEST_APP_ID
   webbrowser.open(uri)
@@ -731,10 +750,11 @@ def maybe_prompt_and_set_version_code(project_dir):
   print('Please enter the highest version code you see on this web page,')
   print('or hit enter to skip.')
   highest_seen = input('Code > ')
-  if highest_seen.strip() == '': return
+  if highest_seen.strip() == '':
+    return
   highest_seen = int(highest_seen)
   if existing_code <= highest_seen:
-    set_android_version_code(project_dir, highest_seen+1)
+    set_android_version_code(project_dir, highest_seen + 1)
     print('Now building version code %s' % get_android_version_code(project_dir))
 
 
@@ -747,7 +767,7 @@ def sanity_check_build(build_dir):
     raise BuildFailed("Cannot find any executables in %s" % build_dir)
 
 
-def main(args=None):
+def main(args=None):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
   unitybuild.utils.msys_control_c_workaround()
 
   if sys.platform == 'cygwin':
@@ -759,8 +779,7 @@ def main(args=None):
     if num != 1:
       raise UserError('Must specify exactly one build to push')
 
-  import unitybuild.vcs as vcs
-  vcs = vcs.create()
+  vcs = vcs_create()
   project_dir = find_project_dir()
   print("Project dir:", os.path.normpath(project_dir))
 
@@ -781,7 +800,7 @@ def main(args=None):
     except LookupError as e:
       print('WARN: no build stamp (%s). Continue?' % (e,))
       if not input('(y/n) > ').strip().lower().startswith('y'):
-        raise UserError('Aborting: no stamp')
+        raise UserError('Aborting: no stamp') from e
       revision = 'nostamp'
 
     create_notice_file(project_dir)
@@ -789,29 +808,33 @@ def main(args=None):
     for (platform, vrsdk, config) in iter_builds(args):
       stamp = revision + ('-exp' if args.experimental else '')
       print("Building %s %s %s exp:%d signed:%d il2cpp:%d" % (
-        platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp))
+          platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp))
 
       tags = [platform, vrsdk, config]
-      if args.experimental:     tags.append('Exp')
-      if args.for_distribution and platform != 'Windows': tags.append('Signed')
-      if args.il2cpp:           tags.append('Il2cpp')
+      if args.experimental:
+        tags.append('Exp')
+      if args.for_distribution and platform != 'Windows':
+        tags.append('Signed')
+      if args.il2cpp:
+        tags.append('Il2cpp')
       dirname = '_'.join(tags)
 
       tmp_dir = os.path.join(build_dir, 'tmp_' + dirname)
       output_dir = os.path.join(build_dir, dirname)
 
       if args.for_distribution and platform == 'Android' and sys.stdin.isatty():
-        try: maybe_prompt_and_set_version_code(project_dir)
-        except Exception as e:
+        try:
+          maybe_prompt_and_set_version_code(project_dir)
+        except Exception as e:  # pylint: disable=broad-except
           print('Error prompting for version code: %s' % e)
 
       tmp_dir = build(stamp, tmp_dir, project_dir, EXE_BASE_NAME,
-            experimental=args.experimental,
-            platform=platform,
-            il2cpp=args.il2cpp, vrsdk=vrsdk, config=config,
-            for_distribution=args.for_distribution,
-            is_jenkins=args.jenkins)
-      output_dir = finalize_build(project_dir, tmp_dir, output_dir)
+                      experimental=args.experimental,
+                      platform=platform,
+                      il2cpp=args.il2cpp, vrsdk=vrsdk, config=config,
+                      for_distribution=args.for_distribution,
+                      is_jenkins=args.jenkins)
+      output_dir = finalize_build(tmp_dir, output_dir)
       sanity_check_build(output_dir)
 
       if args.for_distribution and platform == 'Android':
@@ -820,13 +843,13 @@ def main(args=None):
       if args.for_distribution and vrsdk == 'Oculus':
         # .pdb files violate VRC.PC.Security.3 and ovr-platform-utils rejects the submission
         to_remove = []
-        for (r, ds, fs) in os.walk(output_dir):
+        for (r, _, fs) in os.walk(output_dir):
           for f in fs:
             if f.endswith('.pdb'):
               to_remove.append(os.path.join(r, f))
         if to_remove:
           print('Removing from submission:\n%s' % ('\n'.join(
-            os.path.relpath(f, output_dir) for f in to_remove)))
+                os.path.relpath(f, output_dir) for f in to_remove)))
           list(map(os.unlink, to_remove))
 
       if platform == 'iOS':
@@ -835,24 +858,22 @@ def main(args=None):
         # $ xcodebuild -scheme Unity-iPhone archive -archivePath ARCHIVE_DIR
         # $ xcodebuild -exportArchive -exportFormat ipa -archivePath ARCHIVE_DIR -exportPath IPA
         print('iOS build must be completed from Xcode (%s)' % (
-          os.path.join(output_dir, EXE_BASE_NAME, 'Unity-iPhone.xcodeproj')))
+            os.path.join(output_dir, EXE_BASE_NAME, 'Unity-iPhone.xcodeproj')))
         continue
 
       if args.push:
-        with open(output_dir+'/build_stamp.txt') as inf:
+        with open(os.path.join(output_dir, 'build_stamp.txt')) as inf:
           embedded_stamp = inf.read().strip()
-        import getpass
-        from platform import node as platform_node  # Don't overwrite 'platform' local var!
         description = '%s %s | %s@%s' % (
-          config, embedded_stamp, getpass.getuser(), platform_node())
+            config, embedded_stamp, getpass.getuser(), platform_node())
         if args.branch is not None:
           description += ' to %s' % args.branch
 
         if vrsdk == 'SteamVR':
           if platform not in ('Windows',):
             raise BuildFailed("Unsupported platform for push to Steam: %s" % platform)
-          unitybuild.push.push_tilt_brush_to_steam(
-            output_dir, description, args.user or 'tiltbrush_build', args.branch)
+          unitybuild.push.push_open_brush_to_steam(
+              output_dir, description, args.user or 'tiltbrush_build', args.branch)
         elif vrsdk == 'Oculus':
           if platform not in ('Windows', 'Android'):
             raise BuildFailed("Unsupported platform for push to Oculus: %s" % platform)
@@ -860,13 +881,17 @@ def main(args=None):
           if release_channel is None:
             release_channel = 'ALPHA'
             print(("No release channel specified for Oculus: using %s" % release_channel))
-          unitybuild.push.push_tilt_brush_to_oculus(output_dir, release_channel, description)
-  except Error as e:
-    print("\n%s: %s" % ('ERROR', e))
+          unitybuild.push.push_open_brush_to_oculus(output_dir, release_channel, description)
+  except BadVersionCode as e:
     if isinstance(e, BadVersionCode):
       set_android_version_code(project_dir, e.desired_version_code)
       print(("\n\nVersion code has been auto-updated to %s.\nPlease retry your build." %
             e.desired_version_code))
+    if tmp_dir:
+      print("\nSee %s" % os.path.join(tmp_dir, 'build_log.txt'))
+    sys.exit(1)
+  except Error as e:
+    print("\n%s: %s" % ('ERROR', e))
     if tmp_dir:
       print("\nSee %s" % os.path.join(tmp_dir, 'build_log.txt'))
     sys.exit(1)
@@ -877,6 +902,9 @@ def main(args=None):
 
 # Tests
 
+# This code seems rather temporary; ignore any and all warnings
+# pylint: disable=all
+# flake8: noqa
 def test_get_unity_exe():
   global iter_editors_and_versions
   def iter_editors_and_versions():

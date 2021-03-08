@@ -14,24 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
 import os
 import re
 
+
 # Stolen from unitybuild/main.py
 def find_project_dir():
-  def search_upwards_from(dir):
+  def search_upwards_from(dirname):
     # Search upwards for root of unity project
-    from os.path import exists, join
-    dir = os.path.abspath(dir)
+    dirname = os.path.abspath(dirname)
     while True:
-      if exists(join(dir, 'Assets')) and exists(join(dir, 'ProjectSettings')):
-        return dir
-      parent = os.path.dirname(dir)
-      if parent == dir:
+      if os.path.exists(os.path.join(dirname, 'Assets')) and os.path.exists(os.path.join(dirname, 'ProjectSettings')):
+        return dirname
+      parent = os.path.dirname(dirname)
+      if parent == dirname:
         return None
-      dir = parent
+      dirname = parent
   return search_upwards_from('.') or search_upwards_from(__file__)
 
 

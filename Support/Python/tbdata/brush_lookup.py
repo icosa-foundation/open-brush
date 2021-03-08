@@ -16,18 +16,20 @@ import os
 import re
 from collections import defaultdict
 
-class BrushLookup(object):
+
+class BrushLookup():
   """Helper for doing name <-> guid conversions for brushes."""
   @staticmethod
   def iter_brush_guid_and_name(tilt_brush_dir):
     for brush_dir in ("Assets/Resources/Brushes", "Assets/Resources/X/Brushes"):
-      for r, ds, fs in os.walk(os.path.join(tilt_brush_dir, brush_dir)):
+      for r, _, fs in os.walk(os.path.join(tilt_brush_dir, brush_dir)):
         for f in fs:
           if f.lower().endswith('.asset'):
             fullf = os.path.join(r, f)
-            data = file(fullf).read()
+            with open(fullf) as f:
+              data = f.read()
             guid = re.search('m_storage: (.*)$', data, re.M).group(1)
-            name = re.search('m_Name: (.*)$', data, re.M).group(1)
+            # name = re.search('m_Name: (.*)$', data, re.M).group(1)
 
             yield guid, f[:-6]
 
@@ -48,10 +50,10 @@ class BrushLookup(object):
     self.initialized = True
     self.guid_to_name = dict(self.iter_brush_guid_and_name(tilt_brush_dir))
     # Maps name -> list of guids
-    self.name_to_guids = defaultdict(list)
+    name_to_guids = defaultdict(list)
     for guid, name in self.guid_to_name.items():
-      self.name_to_guids[name].append(guid)
-    self.name_to_guids = dict(self.name_to_guids)
+      name_to_guids[name].append(guid)
+    self.name_to_guids = dict(name_to_guids)
 
   def get_unique_guid(self, name):
     lst = self.name_to_guids[name]

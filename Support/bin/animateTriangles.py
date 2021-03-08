@@ -12,42 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys,math,random
-from pxr import Usd,Sdf,UsdGeom,Tf,Gf,Vt
+import sys
+import random
+from pxr import Usd, UsdGeom, Gf, Vt  # pylint: disable=import-error
 
 # Offset to a point of interest.
 worldCenter = Gf.Vec3f(0, 0, 0)
 
+
 def clamp(x, lowerlimit, upperlimit):
-  if x < lowerlimit: x = lowerlimit
-  if x > upperlimit: x = upperlimit
+  if x < lowerlimit:
+    x = lowerlimit
+  if x > upperlimit:
+    x = upperlimit
   return x
 
+
 def smoothstep(edge0, edge1, x):
-  x = clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0)
-  return x*x*(3 - 2*x)
+  x = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+  return x * x * (3 - 2 * x)
+
 
 def smootherstep(edge0, edge1, x):
-  x = clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0)
-  return x*x*x*(x*(x*6 - 15) + 10)
+  x = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+  return x * x * x * (x * (x * 6 - 15) + 10)
+
 
 #
 # Filters dictate when a stroke becomes active, i.e. predicates for activation.
 #
 def isHigherVert(vertPos, height, radius):
-  l = Gf.Vec2f(vertPos[0], vertPos[2]).GetLength()
-  return vertPos[1] < height and l < radius
+  length = Gf.Vec2f(vertPos[0], vertPos[2]).GetLength()
+  return vertPos[1] < height and length < radius
+
 
 def isHigher(substroke, height, radius):
   return substroke.avgHeight < height and substroke.minLen < radius
 
+
 def isInRadius(vert, radius):
-  return (vert - worldCenter).GetLength() < radius 
+  return (vert - worldCenter).GetLength() < radius
+
 
 #
 # Animation Algorithm Starts Here, animate().
 #
-def animate(stage):
+def animate(stage):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
   """The output from Tilt Brush is strokes with a growth velocity.
   This could be authored per vertex later (e.g. for easing).
   """
@@ -58,29 +68,30 @@ def animate(stage):
   maxActive = 30
 
   # Filters dictate when a stroke becomes active, i.e. predicates for activation.
-  activeFilter = isInRadius 
-  activeFilterVert = isHigherVert
-  
+  activeFilter = isInRadius
+  # TODO is this needed?
+  activeFilterVert = isHigherVert  # noqa: F841 pylint: disable=unused-variable
+
   # The target length of the animation.
-  lengthInSeconds = 30 
+  lengthInSeconds = 30
   # The playback framerate.
-  framesPerSecond = 30 
+  framesPerSecond = 30
   # The number of frames we will generate based on target time and rate.
   numFrames = lengthInSeconds * framesPerSecond
 
   # Boundaries for activation.
-  minHeight = 0 
-  maxHeight = 20 
-  radius = 17.0 
+  minHeight = 0
+  maxHeight = 20
+  radius = 17.0
   maxRadius = 100.
   height = minHeight
- 
+
   # Compute the actual radius of the world bounds.
   worldBounds = UsdGeom.Xform(stage.GetPrimAtPath("/")).ComputeWorldBound(0, "default")
   maxRadius = (worldBounds.GetRange().max - worldBounds.GetRange().min).GetLength()
 
   # Compute the centroid of the world.
-  global worldCenter
+  global worldCenter  # pylint: disable=global-statement
   worldCenter = Gf.Vec3f(worldBounds.ComputeCentroid())
   # Just for newIntroSketch.tilt
   if "NewIntroSketch" in stage.GetRootLayer().identifier:
@@ -98,7 +109,6 @@ def animate(stage):
   attr.Set([0.125])
   attr.SetMetadata("interpolation", "constant")
   UsdGeom.Xform(attr.GetPrim()).AddTranslateOp().Set(worldCenter)
- 
 
   # Initialize data structures.
   #   - strokes are Unity meshes (or Tilt Brush batches).
@@ -109,10 +119,10 @@ def animate(stage):
   substrokes = MakeSubstrokes(strokes)
   activeStrokes = set()
   activeSubstrokes = set()
-  completeSubstrokes = set() 
+  completeSubstrokes = set()
 
   # Compute step sizes based on target animation length.
-  dRadius = (maxRadius - radius) / float(numFrames) / 1.5 
+  dRadius = (maxRadius - radius) / float(numFrames) / 1.5
   dHeight = (maxHeight - minHeight) / float(numFrames)
 
   # Set USD animation start/end times.
@@ -127,14 +137,13 @@ def animate(stage):
   for time in range(0, numFrames):
     print()
     print("Time:", time, height, radius, smoothstep(1.0, float(numFrames), time))
-    curActive = 0
-    
+
     if len(activeStrokes) < maxActive:
       # On the final frame, increase activation volumes to "infinity" (and beyond ;)
       if time == numFrames - 1:
         height = 10000000
-        radius = 10000000
-      
+        radius = 10000000.
+
       # Search for strokes to be activated.
       didAddStroke = 0
       for ss in substrokes:
@@ -151,7 +160,7 @@ def animate(stage):
         if activeFilter(ss.minPoint, radius):
           didAddStroke = 1
           activeSubstrokes.add(ss)
-          activeStrokes.add(ss.stroke)        
+          activeStrokes.add(ss.stroke)
           # Mark the stroke as dirty to save its initial state.
           ss.stroke.dirty = True
           ss.SetRadius(radius, time)
@@ -159,10 +168,8 @@ def animate(stage):
       if not didAddStroke:
         # We didn't add any strokes, which means the radius needs to increase.
         # Grow the activation volumes (increase sphere size, raise floor plane height).
-        height += dHeight 
+        height += dHeight
         radius += dRadius * smoothstep(1.0, float(numFrames), time)
-
-
 
     # Update debug vis.
     debugSphere.GetRadiusAttr().Set(radius, time)
@@ -170,8 +177,8 @@ def animate(stage):
     # Call save on everything, but only dirty strokes will actually write data.
     # Save a key at the previous frame here so that when a stroke starts animating, when linearly
     # interpolated, it will not start animating from frame zero to the first key frame.
-    #for s in strokes:
-    #  s.Save(time - 1)
+    # for s in strokes:
+    #   s.Save(time - 1)
 
     # Update stroke animation.
     remove = []
@@ -181,7 +188,7 @@ def animate(stage):
         if ss.indicesWritten != ss.indexCount:
           raise "Fail"
         remove.append(ss)
-    
+
     # Remove all the completed strokes.
     for ss in remove:
       activeSubstrokes.remove(ss)
@@ -215,11 +222,12 @@ def animate(stage):
     for s in strokes:
       s.Save(time)
 
-class Substroke(object):
-  def __init__(self, stroke, startVert, vertCount, startIndex, indexCount):
+
+class Substroke():  # pylint: disable=too-many-instance-attributes
+  def __init__(self, stroke, startVert, vertCount, startIndex, indexCount):  # pylint: disable=too-many-arguments
     self.stroke = stroke
     self.startVert = startVert
-    self.vertCount = vertCount 
+    self.vertCount = vertCount
     self.startIndex = startIndex
     self.indexCount = indexCount
     self.i = startVert
@@ -227,26 +235,26 @@ class Substroke(object):
     self.radius = 0
     self.indicesWritten = 0
     self.growthVel = 1
-    self.minHeight = self.GetVertex(0)[2] 
-    self.maxHeight = self.GetVertex(0)[2] 
-    self.avgHeight = self.GetVertex(0)[2] 
+    self.minHeight = self.GetVertex(0)[2]
+    self.maxHeight = self.GetVertex(0)[2]
+    self.avgHeight = self.GetVertex(0)[2]
     self.minLen = 10000000
     self.minPoint = self.GetVertex(0)
 
     minVal = (self.minPoint - worldCenter).GetLength()
     for i in range(vertCount):
       v = self.GetVertex(i)
-      l = (v - worldCenter).GetLength()
-      if l < minVal:
-        minVal = l
-        self.minPoint = v 
+      length = (v - worldCenter).GetLength()
+      if length < minVal:
+        minVal = length
+        self.minPoint = v
       if Gf.IsClose(v, Gf.Vec3f(), 1e-7):
         continue
-      l = Gf.Vec2f(v[0], v[2]).GetLength()
+      length = Gf.Vec2f(v[0], v[2]).GetLength()
       self.minHeight = min(self.minHeight, v[1])
       self.maxHeight = max(self.minHeight, v[1])
       self.avgHeight = (self.maxHeight - self.minHeight) / 2.0
-      self.minLen = min(self.minLen, l)
+      self.minLen = min(self.minLen, length)
 
     # Debug visualization.
     self.minPtDebug = UsdGeom.Sphere.Define(stroke.prim.GetStage(), str(stroke.prim.GetPath()) + "/minPt" + str(startIndex))
@@ -266,15 +274,15 @@ class Substroke(object):
   def SetRadius(self, radius, time):
     self.radius = radius
     attr = self.minPtDebug.GetPrim().GetAttribute("primvars:displayColor")
-    attr.Set([Gf.Vec3f(1, 1, 1)], time-1)
+    attr.Set([Gf.Vec3f(1, 1, 1)], time - 1)
     attr.Set([Gf.Vec3f(0, .5, .5)], time)
     attr.SetMetadata("interpolation", "constant")
- 
-  def SetStep(targetFrameCount, strokeCount, maxActiveStrokes):
+
+  def SetStep(self, targetFrameCount, strokeCount, maxActiveStrokes):
+    # b = strokeCount / maxActiveStrokes
+    # strokeLength = targetFrameCount / b
+    # self.step = self.vertCount / strokeLength
     pass
-    #b = strokeCount / maxActiveStrokes
-    #strokeLength = targetFrameCount / b
-    #self.step = self.vertCount / strokeLength
 
   def GetVertex(self, i):
     return self.stroke.points[i + self.startVert]
@@ -291,8 +299,8 @@ class Substroke(object):
     return self._GrowByTopology(t)
 
   def _GrowByTopology(self, t):
-    for j in range(self.growthVel + int((t+.6) * 10)):
-      for i in range(0, min(6, self.indexCount - self.indicesWritten), 1):
+    for _ in range(self.growthVel + int((t + .6) * 10)):
+      for __ in range(0, min(6, self.indexCount - self.indicesWritten), 1):
         self.SetIndex(self.indicesWritten, self.GetIndex(self.indicesWritten))
         self.indicesWritten += 1
       self.stroke.dirty = True
@@ -300,7 +308,6 @@ class Substroke(object):
     return self.indicesWritten < self.indexCount
 
   def _GrowByRadius(self):
-    x = 0
     for vi in range(0, self.indexCount, 3):
       # Skip strokes that have already been processed.
       if self.stroke.maskIndices[vi + self.startIndex] != 0:
@@ -317,9 +324,10 @@ class Substroke(object):
           break
     return self.indicesWritten < self.indexCount
 
-class Stroke(object):
-  def __init__(self, prim, points, indices, vertOffsets, vertCounts, indexOffsets, indexCounts, displayOpacity):
-    self.dirty = True 
+
+class Stroke():  # pylint: disable=too-many-instance-attributes
+  def __init__(self, prim, points, indices, vertOffsets, vertCounts, indexOffsets, indexCounts, displayOpacity):  # pylint: disable=too-many-arguments
+    self.dirty = True
     self.adj = 2 * random.random()
     self.prim = prim
     self.points = points
@@ -335,7 +343,7 @@ class Stroke(object):
     self.originalOpacity = Vt.FloatArray(displayOpacity)
     self.substrokes = self._GetSubstrokes()
     self.adjs = []
-    for i in range(len(displayOpacity)):
+    for i in enumerate(displayOpacity):
       displayOpacity[i] = 0
     for i in self.vertOffsets:
       self.adjs.append(random.random() - 1)
@@ -343,18 +351,18 @@ class Stroke(object):
 
   def _GetSubstrokes(self):
     ret = []
-    for i,offset in enumerate(self.vertOffsets):
+    for i, offset in enumerate(self.vertOffsets):
       ret.append(Substroke(self, offset, self.vertCounts[i], self.indexOffsets[i], self.indexCounts[i]))
     return ret
- 
+
   def GetSubstroke(self, vertexIndex):
-    for i,offset in enumerate(self.vertOffsets):
-      if vertIndex >= offset:
-        return (offset, self.vertCounts[i]) 
+    for i, offset in enumerate(self.vertOffsets):
+      if vertexIndex >= offset:
+        return (offset, self.vertCounts[i])
     raise "Vertex not found"
 
   def GetAdj(self, vertIndex):
-    for i,offset in enumerate(self.vertOffsets):
+    for i, offset in enumerate(self.vertOffsets):
       if vertIndex >= offset:
         return 3.0 * self.adjs[i]
     raise "Vertex not found"
@@ -365,11 +373,13 @@ class Stroke(object):
     self.prim.GetAttribute("faceVertexIndices").Set(self.indices, time)
     self.dirty = False
 
+
 def MakeSubstrokes(strokes):
   ret = []
   for stroke in strokes:
     ret.extend(stroke.substrokes)
   return ret
+
 
 def MakeStrokes(stage):
   ret = []
@@ -389,12 +399,13 @@ def MakeStrokes(stage):
                       p.GetAttribute("primvars:displayOpacity").Get(0)))
   return ret
 
+
 if __name__ == "__main__":
   usdFile = sys.argv[1]
   outputFile = usdFile.replace(".usd", "--animated.usd")
-  stage = Usd.Stage.Open(usdFile)
+  stg = Usd.Stage.Open(usdFile)
   try:
-    animate(stage)
+    animate(stg)
   finally:
     print("Saving...")
-    stage.Export(outputFile)
+    stg.Export(outputFile)

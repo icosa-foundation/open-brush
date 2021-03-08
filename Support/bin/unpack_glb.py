@@ -15,14 +15,14 @@
 # limitations under the License.
 
 
-
 import argparse
 import json
 import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Python')))
-from tbdata.glb import BaseGlb
+# TODO -- this doesn't exist in tbdata.glb!
+from tbdata.glb import BaseGlb  # noqa: E402 pylint: disable=no-name-in-module,import-error,wrong-import-position
 
 
 def unpack_glb(glb_file):
@@ -32,9 +32,9 @@ def unpack_glb(glb_file):
 
   glb = BaseGlb.create(glb_file)
   glb.json["buffers"][0]["uri"] = os.path.basename(bin_file)
-  with file(gltf_file, 'wb') as outf:
+  with open(gltf_file, 'wb') as outf:
     json.dump(glb.json, outf, indent=2)
-  with file(bin_file, 'wb') as outf:
+  with open(bin_file, 'wb') as outf:
     outf.write(glb.bin_chunk)
   return (gltf_file, bin_file)
 

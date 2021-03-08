@@ -26,7 +26,8 @@ from subprocess import Popen, PIPE
 # Common 11-letter words that shouldn't be interpreted as obfuscated symbols
 COMMON_WORDS_11 = set(['initializer'])
 
-class ObfuscationSection(object):
+
+class ObfuscationSection():
   def __init__(self, name):
     self.name = name
     self.sym_to_ob = {}
@@ -57,9 +58,8 @@ class ObfuscationSection(object):
     syms = self.ob_to_syms.setdefault(ob, set())
     if sym in syms:
       return False
-    else:
-      syms.add(sym)
-      return True
+    syms.add(sym)
+    return True
 
   @staticmethod
   def shorten(symbol):
@@ -77,7 +77,7 @@ class ObfuscationSection(object):
     return short
 
 
-class ObfuscationMap(object):
+class ObfuscationMap():
   def __init__(self):
     self.sections_by_name = {}
     # A dict that maps obfuscated symbol to a user-friendly, short symbol
@@ -90,7 +90,8 @@ class ObfuscationMap(object):
     """Additively loads entries from the given file.
     Returns True on success."""
     if os.path.exists(filename):
-      self._load_from_text(file(filename).read())
+      with open(filename) as f:
+        self._load_from_text(f.read())
       return True
     return False
 
@@ -134,15 +135,15 @@ class ObfuscationMap(object):
   def _create_ob_to_syms(self):
     # Create a simple aggregation of the lookup table
     ob_to_syms = defaultdict(set)
-    for (name, section) in sorted(self.sections_by_name.items()):
+    for (_, section) in sorted(self.sections_by_name.items()):
       for (ob, syms) in section.ob_to_syms.items():
         ob_to_syms[ob] |= syms
     self.ob_to_syms = dict(ob_to_syms)
 
   def deobfuscate(self, text):
-    import re
     if self.ob_to_syms is None:
       self._create_ob_to_syms()
+
     def lookup(match):
       ob = match.group(0)
       try:
@@ -152,7 +153,7 @@ class ObfuscationMap(object):
           return ob
         return '<? %s ?>' % ob
       else:
-        short_syms = set(map(ObfuscationSection.shorten, syms))
+        short_syms = {ObfuscationSection.shorten(s) for s in syms}
         if len(short_syms) == 1:
           return short_syms.pop()
         return '< ' + ' or '.join(sorted(syms)) + ' >'
@@ -162,7 +163,7 @@ class ObfuscationMap(object):
 
 def get_client_root():
   proc = Popen(['git', 'rev-parse', '--show-toplevel'], stdout=PIPE, stderr=PIPE)
-  stdout, stderr = proc.communicate()
+  stdout, _ = proc.communicate()
   assert proc.returncode == 0, "Couldn't determine git client root"
   return stdout.strip()
 
@@ -181,44 +182,41 @@ def format_nicely(txt, verbose):
     line = ignore_pat.sub('', line)
     line = ignore_pat2.sub('', line)
     return line
-  lines = list(map(remove_instruction_pointer, lines))
+  lines = [remove_instruction_pointer(line) for line in lines]
 
   # Exception lines have a stack frame stuck onto them; move those frames to the next line.
   # Also clean up tabs and other junk that comes in when you copy/paste from the analytics table.
   def move_trailing_stack_frame(line):
-    exception_pat = re.compile('^\t?(\d+\.\t)?(?P<exc>[A-Za-z0-9]+Exception:)')
+    exception_pat = re.compile(r'^\t?(\d+\.\t)?(?P<exc>[A-Za-z0-9]+Exception:)')
     if line.startswith(' Rethrow as'):
       # Insert a newline before the stack frame
       line = line.replace(' Rethrow as', '\nRethrow as')
       return frame_pat.sub(r'\n\1', line)
-    elif exception_pat.match(line):
+    if exception_pat.match(line):
       m = exception_pat.match(line)
       line = line[m.start('exc'):]
       # Insert a newline before the stack frame
       return frame_pat.sub(r'\n\1', line)
-    else:
-      return line
-  lines = list(map(move_trailing_stack_frame, lines))
+    return line
+  lines = [move_trailing_stack_frame(line) for line in lines]
 
   if not verbose:
     def remove_arglist(line):
       m = frame_pat.match(line)
       if m is None:
         return line
-      else:
-        name = m.group('name')
-        args = m.group('args')
-        if len(name) + len(args) < 70:
-          return ' %s%s' % (name, args)
-        else:
-          return ' %s(...)' % (name,)
-    lines = [line for line in lines if line != " (wrapper remoting-invoke-with-check)"]
-    lines = list(map(remove_arglist, lines))
+      name = m.group('name')
+      args = m.group('args')
+      if len(name) + len(args) < 70:
+        return ' %s%s' % (name, args)
+      return ' %s(...)' % (name,)
+    lines = [remove_arglist(line) for line in lines if line != " (wrapper remoting-invoke-with-check)"]
 
     def demangle_coroutine(line):
       # TiltBrush.<RunInCompositor>d__38:MoveNext()
       # Google.Apis.Requests.ClientServiceRequest`1+<ExecuteUnparsedAsync>d__30[TResponse].MoveNext ()
-      def repl(m): return '[co] %(class)s.%(coroutine)s' % m.groupdict()
+      def repl(m):
+        return '[co] %(class)s.%(coroutine)s' % m.groupdict()
       ret, n = re.subn(
         r'(?P<class>[a-zA-Z0-9_.`]+)[+.]<(?P<coroutine>[^>]+)>d_+\d+(?:\[[^\]]+\])?[:.]MoveNext', repl, line)
       if n == 0:
@@ -227,15 +225,16 @@ def format_nicely(txt, verbose):
           r'(?P<class>[a-zA-Z0-9_.`]+)[+.]<(?P<coroutine><[^>]+>[^>]+)>d_*\d*[:.]MoveNext',
           repl, line)
       return ret
-    lines = list(map(demangle_coroutine, lines))
+    lines = [demangle_coroutine(line) for line in lines]
 
     lines = elide_async_frames(lines)
 
     def demangle_lambda(line):
       # TiltBrush.SketchControlsScript+<>c.<ExportCoroutine>b__307_0()
-      def repl(m): return '%(prefix)s.%(owner)s.[lambda %(id)s]' % m.groupdict()
+      def repl(m):
+        return '%(prefix)s.%(owner)s.[lambda %(id)s]' % m.groupdict()
       return re.sub(r'(?P<prefix>[a-zA-Z0-9_.]+)\+<>c\.<(?P<owner>[a-zA-Z0-9_]+)>b__(?P<id>[0-9_]+)', repl, line)
-    lines = list(map(demangle_lambda, lines))
+    lines = [demangle_lambda(line) for line in lines]
 
   return '\n'.join(lines)
 
@@ -243,7 +242,7 @@ def format_nicely(txt, verbose):
 def elide_async_frames(lines):
   def list_to_pat(lst):
     """Returns a pattern that matches any of the items in lst"""
-    return '(?:' + '|'.join(map(re.escape, lst)) + ')'
+    return '(?:' + '|'.join([re.escape(i) for i in lst]) + ')'
 
   # Gets rid of uninteresting stack frames that have to do with the C# async machinery,
   # to show more clearly the frames that are awaiting each other.
@@ -267,8 +266,9 @@ def elide_async_frames(lines):
     'System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1+ConfiguredTaskAwaiter[TResult].GetResult',
     'System.Runtime.CompilerServices.AsyncMethodBuilderCore+<>c.<ThrowAsync>',
     'System.Runtime.CompilerServices.AsyncMethodBuilderCore.ThrowAsync',
-    #'--- End of stack trace from previous location where exception was thrown ---',
+    # '--- End of stack trace from previous location where exception was thrown ---',
   ]))
+
   def elide_frame(line):
     if task_execute_pat.match(line):
       return '<task exec>'
@@ -278,7 +278,7 @@ def elide_async_frames(lines):
       return '<task await>'
     return line
 
-  txt = '\n'.join(map(elide_frame, lines))
+  txt = '\n'.join([elide_frame(line) for line in lines])
   txt = re.sub(r'(<task exec>\n)*--- End of stack trace from previous location where exception was thrown ---\n(<task (throw|await)>\n)* ?', '  [await]', txt)
   return txt.split('\n')
 
@@ -286,8 +286,7 @@ def elide_async_frames(lines):
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('-r', dest='releases', action='append', default=[],
-                      help="Add symbols from specified release branch (eg 1.4, 5). " +
-                      '(Shortcut for Tilt Brush release-N naming format.)')
+                      help="Add symbols from specified release branch (eg 1.4, 5). (Shortcut for Tilt Brush release-N naming format.)")
   parser.add_argument('-m', '--map_file', dest='map_file', action='store',
                       default='Support/obfuscation_map.txt',
                       help='Path of obfuscation map relative to client root')

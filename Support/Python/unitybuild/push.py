@@ -18,16 +18,21 @@
 #   https://partner.steamgames.com/documentation/steampipe
 #   https://dashboard.oculus.com/tools/cli
 
+import argparse
+import glob
 import os
 import re
 import sys
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 
-from unitybuild.constants import *
+from unitybuild.constants import UserError, BuildFailed, BadVersionCode
 from unitybuild.credentials import get_credential, TB_OCULUS_RIFT_APP_ID, TB_OCULUS_QUEST_APP_ID
 
-class ExpansionError(LookupError): pass
+
+class ExpansionError(LookupError):
+  pass
+
 
 def steamcmd(*args):
   args = list(args)
@@ -66,10 +71,9 @@ def get_support_dir():
     parent, name = os.path.split(cur_dir)
     if parent == cur_dir:
       raise LookupError("Can't find Support/ directory from %s" % start_dir)
-    elif name.lower() == 'support':
+    if name.lower() == 'support':
       return cur_dir
-    else:
-      cur_dir = parent
+    cur_dir = parent
 
 
 def get_tmp_steam_dir():
@@ -85,23 +89,25 @@ def get_tmp_steam_dir():
 def get_build_stamp(directory):
   filename = os.path.join(directory, 'build_stamp.txt')
   try:
-    with file(filename, 'rb') as inf:
+    with open(filename, 'rb') as inf:
       return inf.read().strip()
-  except IOError:
+  except IOError as e:
     print("WARN: Build stamp not found with this build.")
     print("Supply one manually, or leave empty to abort this push.")
     stamp = input("Stamp: ").strip()
     if not stamp:
-      raise BuildFailed("Aborted: no build stamp")
+      raise BuildFailed("Aborted: no build stamp") from e
 
 
 VDF_ESCAPES = {
-  '\r': '_',
-  '\n': '\\n',
-  '\t': '\\t',
-  '\\': '\\\\',
-  '"' : '\\"'
+    '\r': '_',
+    '\n': '\\n',
+    '\t': '\\t',
+    '\\': '\\\\',
+    '"': '\\"'
 }
+
+
 def vdf_quote(txt):
   # See https://developer.valvesoftware.com/wiki/KeyValues
   def quote_char(match):
@@ -116,8 +122,8 @@ def expand_vdf_template(input_text, variables):
   def expand_and_quote(match):
     try:
       expansion = variables[match.group(1)]
-    except KeyError:
-      raise ExpansionError("unknown variable %s" % (match.group(0),))
+    except KeyError as e:
+      raise ExpansionError("unknown variable %s" % (match.group(0),)) from e
     return vdf_quote(expansion)
 
   return re.sub(r'\$\{(.*?)\}', expand_and_quote, input_text)
@@ -125,16 +131,16 @@ def expand_vdf_template(input_text, variables):
 
 def create_from_template(input_file, variables, tmp_dir):
   # Returns the name of an output file
-  with file(input_file, 'rb') as inf:
+  with open(input_file, 'rb') as inf:
     data = inf.read()
 
   try:
     expanded = expand_vdf_template(data, variables)
   except ExpansionError as e:
-    raise BuildFailed("%s: %s" % (input_file, e))
+    raise BuildFailed("%s: %s" % (input_file, e)) from e
 
   output_file = os.path.join(tmp_dir, os.path.basename(input_file).replace('_template', ''))
-  with file(output_file, 'wb') as outf:
+  with open(output_file, 'wb') as outf:
     outf.write(expanded)
   return output_file
 
@@ -142,26 +148,26 @@ def create_from_template(input_file, variables, tmp_dir):
 def push_open_brush_to_steam(source_dir, description, steam_user, steam_branch=None):
   try:
     steamcmd('+exit')
-  except subprocess.CalledProcessError:
-    raise BuildFailed("You don't seem to have steamcmd installed")
+  except subprocess.CalledProcessError as e:
+    raise BuildFailed("You don't seem to have steamcmd installed") from e
 
   support_dir = get_support_dir()
   tmp_steam_dir = get_tmp_steam_dir()
 
   variables = {
-    'DESC': description,
-    'TMP_STEAM': tmp_steam_dir,
-    'CONTENT_ROOT': os.path.abspath(source_dir).replace('\\', '/'),
-    'STEAM_BRANCH': '' if steam_branch is None else steam_branch,
+      'DESC': description,
+      'TMP_STEAM': tmp_steam_dir,
+      'CONTENT_ROOT': os.path.abspath(source_dir).replace('\\', '/'),
+      'STEAM_BRANCH': '' if steam_branch is None else steam_branch,
   }
   # This file has no variables that need expanding, but steamcmd.exe
   # mutates it to add a digital signature so we should copy it off to a temp file.
   variables['INSTALLSCRIPT_WIN'] = create_from_template(
-    os.path.join(support_dir, 'steam/installscript_win.vdf'), {}, tmp_steam_dir)
+      os.path.join(support_dir, 'steam/installscript_win.vdf'), {}, tmp_steam_dir)
   variables['MAIN_DEPOT_VDF'] = create_from_template(
-    os.path.join(support_dir, 'steam/main_depot_template.vdf'), variables, tmp_steam_dir)
+      os.path.join(support_dir, 'steam/main_depot_template.vdf'), variables, tmp_steam_dir)
   app_vdf = create_from_template(
-    os.path.join(support_dir, 'steam/app_template.vdf'), variables, tmp_steam_dir)
+      os.path.join(support_dir, 'steam/app_template.vdf'), variables, tmp_steam_dir)
 
   print("Pushing %s to Steam" % (variables['CONTENT_ROOT'], ))
   steamcmd('+login', steam_user,
@@ -174,9 +180,10 @@ def push_open_brush_to_steam(source_dir, description, steam_user, steam_branch=N
 # ----------------------------------------------------------------------
 
 OCULUS_RIFT_REDISTS = [
-  '1675031999409058',           # Visual C++ 2013
-  '1183534128364060',           # Visual C++ 2015
+    '1675031999409058',           # Visual C++ 2013
+    '1183534128364060',           # Visual C++ 2015
 ]
+
 
 def quote_oculus_release_notes(txt):
   return txt.replace('\r', '').replace('\n', '\\n')
@@ -188,17 +195,17 @@ def get_oculus_openbrush_exe(directory):
   files = [f for f in files if f.endswith('.exe') and f.lower().startswith('openbrush')]
   if len(files) == 0:
     raise BuildFailed("Can't find launch executable")
-  elif len(files) == 1:
+  if len(files) == 1:
     return files[0]
-  else:
-    raise BuildFailed("Ambiguous launch executable: %s" % (files,))
+  raise BuildFailed("Ambiguous launch executable: %s" % (files,))
 
 
 def unbuffered_reads(inf):
   """Yields unbuffered reads from file, until eof."""
   while True:
     data = inf.read(1)
-    if data == '': break
+    if data == '':
+      break
     yield data
 
 
@@ -208,14 +215,14 @@ def group_into_lines(iterable):
   terminator = re.compile(r'^([^\r\n]*[\r\n]+)(.*)$', re.MULTILINE)
   for data in iterable:
     # Deal with any line terminators in the data
-    #print "IN %r" % data
+    # print "IN %r" % data
     while True:
       m = terminator.match(data)
       if m is None:
         break
 
       eol, data = m.groups()
-      #print " match %r %r" % (eol, data)
+      # print " match %r %r" % (eol, data)
       current.append(eol)
       yield ''.join(current)
       current = []
@@ -229,10 +236,9 @@ def get_oculus_build_type(build_path):
   files = os.listdir(build_path)
   if any(f.endswith('.apk') for f in files):
     return 'quest'
-  elif any(f.endswith('.exe') for f in files):
+  if any(f.endswith('.exe') for f in files):
     return 'rift'
-  else:
-    raise BuildFailed("Don't know what kind of build is in %s" % build_path)
+  raise BuildFailed("Don't know what kind of build is in %s" % build_path)
 
 
 def get_secret(env_var_name, credential_name):
@@ -243,10 +249,7 @@ def get_secret(env_var_name, credential_name):
   return get_credential(credential_name).get_secret()
 
 
-def push_open_brush_to_oculus(
-    build_path,
-    release_channel,
-    release_notes):
+def push_open_brush_to_oculus(build_path, release_channel, release_notes):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
   assert os.path.isabs(build_path)
   assert os.path.exists(build_path)
   assert release_channel is not None, "You must pass a release channel to push to Oculus Home"
@@ -256,20 +259,19 @@ def push_open_brush_to_oculus(
   if build_type == 'rift':
     app_id = TB_OCULUS_RIFT_APP_ID
     args = [
-      'ovr-platform-util',
-      'upload-rift-build',
-      '--app_id', app_id,
-      '--build_dir', build_path,
-      '--app_secret', get_secret('APP_SECRET_FOR_' + app_id, app_id),
-      '--channel', release_channel,
-      '--version', get_build_stamp(build_path),
-      '--notes', quote_oculus_release_notes(release_notes),
-      '--launch_file', get_oculus_openbrush_exe(build_path),
-      '--redistributables', ','.join(OCULUS_RIFT_REDISTS),
-      '--firewall_exceptions', 'true'
+        'ovr-platform-util',
+        'upload-rift-build',
+        '--app_id', app_id,
+        '--build_dir', build_path,
+        '--app_secret', get_secret('APP_SECRET_FOR_' + app_id, app_id),
+        '--channel', release_channel,
+        '--version', get_build_stamp(build_path),
+        '--notes', quote_oculus_release_notes(release_notes),
+        '--launch_file', get_oculus_openbrush_exe(build_path),
+        '--redistributables', ','.join(OCULUS_RIFT_REDISTS),
+        '--firewall_exceptions', 'true'
     ]
   elif build_type == 'quest':
-    import glob
     apks = glob.glob(build_path + '/*.apk')
     if len(apks) != 1:
       raise BuildFailed("No or too many APKs in %s: %s" % (build_path, apks))
@@ -277,16 +279,16 @@ def push_open_brush_to_oculus(
     # This requires a recent build of ovr-platform-util
     app_id = TB_OCULUS_QUEST_APP_ID
     args = [
-      'ovr-platform-util',
-      'upload-quest-build',
-      '--app_id', app_id,
-      '--app_secret', get_secret('APP_SECRET_FOR_' + app_id, app_id),
-      '--apk', apk,
-      # --assets-dir
-      # --assets-file-iap-configs-file
-      # --obb
-      '--channel', release_channel,
-      '--notes', quote_oculus_release_notes(release_notes),
+        'ovr-platform-util',
+        'upload-quest-build',
+        '--app_id', app_id,
+        '--app_secret', get_secret('APP_SECRET_FOR_' + app_id, app_id),
+        '--apk', apk,
+        # --assets-dir
+        # --assets-file-iap-configs-file
+        # --obb
+        '--channel', release_channel,
+        '--notes', quote_oculus_release_notes(release_notes),
     ]
   else:
     raise BuildFailed("Internal error: %s" % build_type)
@@ -297,11 +299,10 @@ def push_open_brush_to_oculus(
   except OSError as e:
     # Probably "cannot find the file specified"
     if 'cannot find the file' in str(e):
-      raise BuildFailed("You don't seem to have ovr-platform-util installed.\nDownload it at https://dashboard.oculus.com/tools/cli")
-    else:
-      raise
+      raise BuildFailed("You don't seem to have ovr-platform-util installed.\nDownload it at https://dashboard.oculus.com/tools/cli") from e
+    raise
   except subprocess.CalledProcessError as e:
-    raise BuildFailed("ovr-platform-util failed: %s" % e)
+    raise BuildFailed("ovr-platform-util failed: %s" % e) from e
 
   saw_output = False
   desired_version_code = None
@@ -329,8 +330,7 @@ def push_open_brush_to_oculus(
     message = 'ovr-platform-util failed with code %s' % proc.wait()
     if desired_version_code is not None:
       raise BadVersionCode(message, desired_version_code)
-    else:
-      raise BuildFailed(message)
+    raise BuildFailed(message)
   if not saw_output:
     raise BuildFailed('ovr-platform-util seemed to do nothing.\nYou probably need a newer version.\nDownload it at https://dashboard.oculus.com/tools/cli')
 
@@ -340,10 +340,7 @@ def push_open_brush_to_oculus(
 # ----------------------------------------------------------------------
 
 def main(args=None):
-  import argparse
-
-  parser = argparse.ArgumentParser(
-    description="(deprecated) Upload a build directory to Steam or Oculus.")
+  parser = argparse.ArgumentParser(description="(deprecated) Upload a build directory to Steam or Oculus.")
 
   parser.add_argument('--user', type=str, default='openbrush_build',
                       help='(Steam only) User to authenticate as. (default: %(default)s)')

@@ -18,16 +18,21 @@ import argparse
 import csv
 import itertools
 import json
-import io
+
 
 def iter_words_and_categories(filename):
-  with file(filename) as inf:
+  with open(filename) as inf:
     reader = csv.reader(inf)
     it = iter(reader)
-    next(it)   # Skip first row
+    try:
+      next(it)   # Skip first row
+    except StopIteration:
+      # This should never happen; this code is to meet PEP479 by returning instead of raising
+      return
     for row in it:
       if len(row) == 2 and row[0] != '' and row[1] != '':
         yield row
+
 
 def main():
   parser = argparse.ArgumentParser("Converts google docs .csv to tiltasaurus.json")
@@ -39,13 +44,11 @@ def main():
   categories = []
   for _, group in itertools.groupby(data, key=lambda word_category: word_category[1].lower()):
     group = list(group)
-    category = { "Name": group[0][1],
-                 "Words": sorted(set(pair[0] for pair in group)) }
+    category = {"Name": group[0][1], "Words": sorted(set(pair[0] for pair in group))}
     categories.append(category)
-  data = json.dumps({"Categories": categories}, indent=2)
 
-  with file('tiltasaurus.json', 'w') as outf:
-    outf.write(data)
+  with open('tiltasaurus.json', 'w') as outf:
+    outf.write(json.dumps({"Categories": categories}, indent=2))
   print("Wrote tiltasaurus.json")
 
 

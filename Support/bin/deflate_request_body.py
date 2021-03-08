@@ -16,21 +16,23 @@
 
 """Script to check the validity of Requests/NNN_form.file by deflating it."""
 
-import os
 import re
+import zlib
 
 
 class Error(Exception):
   pass
 
 
-class DebugHeaders(object):
+class DebugHeaders():  # pylint: disable=too-few-public-methods
   """Parses the NNN_headers.txt file"""
   def __init__(self, filename):
     self.headers = {}
-    txt = file(filename, 'rb').read()
+    with open(filename, 'rb') as f:
+      txt = f.read()
     m = re.search(r'-- Headers follow --', txt)
-    if m is None: raise ValueError("No headers in %r" % txt)
+    if m is None:
+      raise ValueError("No headers in %r" % txt)
     for line in txt[m.end():].lstrip().split('\r\n'):
       if ':' in line:
         key, val = line.split(':', 1)
@@ -42,17 +44,15 @@ class DebugHeaders(object):
 
 def decode_body_part_gzip(body_encoded):
   # https://stackoverflow.com/a/2695575/194921
-  import zlib
   return zlib.decompress(body_encoded, 16 + zlib.MAX_WBITS)
 
 
 def decode_body_part_deflate(body_encoded):
   # https://stackoverflow.com/a/2695466/194921
-  import zlib
   # this works for incorrect implementations of deflated content
   try:
     return zlib.decompress(body_encoded, -15)
-  except Exception:
+  except:  # pylint: disable=bare-except
     # this works for correct implementations of deflated content
     return zlib.decompress(body_encoded, +15)
 
@@ -63,7 +63,8 @@ def print_request(headers_file, body_file):
     body_file - the log file containing the body, usually 'NNN_form.file'
   """
   headers = DebugHeaders(headers_file).headers
-  body_encoded = file(body_file, 'rb').read()
+  with open(body_file, 'rb') as f:
+    body_encoded = f.read()
   encoding = headers.get('Content-Encoding')
   try:
     if encoding is None:
@@ -75,7 +76,7 @@ def print_request(headers_file, body_file):
     else:
       raise ValueError("Unknown encoding")
   except Exception as e:
-    raise Error("Decode %s %s" % (body_file, encoding), e)
+    raise Error("Decode %s %s" % (body_file, encoding), e) from e
 
   print(headers)
   print(body_decoded)
@@ -90,4 +91,5 @@ if __name__ == '__main__':
   try:
     quick_print_request(440)
   except Error as e:
-    for x in e.args: print(x)
+    for x in e.args:
+      print(x)

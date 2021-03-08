@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
-from PIL import Image
+from PIL import Image  # pylint: disable=import-error
+
 
 class InvalidFile(Exception):
   pass
@@ -26,10 +28,9 @@ def get_alt_file(infile):
   ext = ext.lower()
   if ext in ('.jpg', '.jpeg'):
     return f + '.png'
-  elif ext == '.png':
+  if ext == '.png':
     return f + '.jpg'
-  else:
-    raise InvalidFile("Can't do anything with %s" % infile)
+  raise InvalidFile("Can't do anything with %s" % infile)
 
 
 def convert(infile):
@@ -40,8 +41,8 @@ def convert(infile):
   else:
     print("%s already exists" % outfile)
 
+
 def main():
-  import argparse
   parser = argparse.ArgumentParser(description="Convert files between jpg and png")
   parser.add_argument('--all-jpg', help="Recursively convert all jpg files to png",
                       action='store_true')
@@ -53,11 +54,12 @@ def main():
     convert(arg)
 
   if args.all_jpg:
-    for (r, ds, fs) in os.walk('.'):
+    for (r, _, fs) in os.walk('.'):
       for f in fs:
         if f.endswith('.jpg'):
           fullf = os.path.join(r, f)
           if not os.path.exists(get_alt_file(fullf)):
             convert(fullf)
+
 
 main()
