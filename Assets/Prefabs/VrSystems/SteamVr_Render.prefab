@@ -44,4 +44,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   externalCamera: {fileID: 0}
-  externalCameraConfigPath: externalcamera.cfg
+  externalCameraConfigPath: externalcamera-legacy.cfg

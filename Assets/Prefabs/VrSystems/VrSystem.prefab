@@ -674,6 +674,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4000013585580318}
+  - component: {fileID: 2050387273726649813}
   m_Layer: 0
   m_Name: VrSystem
   m_TagString: Untagged
@@ -697,3 +698,31 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2050387273726649813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000014130305538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 419ad76f2ffc722478bc67f61f9c32e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stage: {fileID: 4000013585580318}
+  _stageTransform: {fileID: 0}
+  _HMDCamera: {fileID: 20000011692615516}
+  _MRCameraPrefab: {fileID: 55574840757722984, guid: ec4aae6658ccfed4a9d715849c84003e,
+    type: 3}
+  _disableStandardAssets: 0
+  _spectatorLayerMask:
+    serializedVersion: 2
+    m_Bits: 33422903
+  _excludeBehaviours:
+  - AudioListener
+  - Collider
+  - SteamVR_Camera
+  - SteamVR_Fade
+  - SteamVR_ExternalCamera
+  _fixPostEffectsAlpha: 0
