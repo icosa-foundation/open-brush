@@ -168,7 +168,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.gallery.icosa.openbrush
+    Android: com.icosa.openbrush
     Standalone: com.yourcompany.yourproduct
     Tizen: com.yourcompany.yourproduct
     WebGL: com.yourcompany.yourproduct
