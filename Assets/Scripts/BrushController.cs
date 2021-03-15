@@ -38,6 +38,11 @@ namespace TiltBrush
             m_Instance = this;
         }
 
+        void Start()
+        {
+            BrushCatalog.m_Instance.BrushCatalogChanged += CheckSelectedBrushExists;
+        }
+
         public void SetActiveBrush(BrushDescriptor brush)
         {
             PointerManager.m_Instance.SetBrushForAllPointers(brush);
@@ -84,5 +89,13 @@ namespace TiltBrush
                 StrokeSelected(stroke);
             }
         }
+
+        public void CheckSelectedBrushExists()
+        {
+            if (m_ActiveBrush != null && BrushCatalog.m_Instance.GetBrush(m_ActiveBrush.m_Guid) == null)
+            {
+                SetActiveBrush(BrushCatalog.m_Instance.DefaultBrush);
+            }
+        }
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush
