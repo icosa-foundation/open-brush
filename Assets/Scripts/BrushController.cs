@@ -35,6 +35,10 @@ public class BrushController : MonoBehaviour {
     m_Instance = this;
   }
 
+  void Start() {
+    BrushCatalog.m_Instance.BrushCatalogChanged += CheckSelectedBrushExists;
+  }
+
   public void SetActiveBrush(BrushDescriptor brush) {
     PointerManager.m_Instance.SetBrushForAllPointers(brush);
     AudioClip buttonAudio = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ButtonAudio;
@@ -70,6 +74,12 @@ public class BrushController : MonoBehaviour {
 
     if (StrokeSelected != null) {
       StrokeSelected(stroke);
+    }
+  }
+
+  public void CheckSelectedBrushExists() {
+    if (m_ActiveBrush != null && BrushCatalog.m_Instance.GetBrush(m_ActiveBrush.m_Guid) == null) {
+      SetActiveBrush(BrushCatalog.m_Instance.DefaultBrush);
     }
   }
 }

@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using pxr;
 using UnityEngine;
 
 using Brush = TiltBrush.BrushDescriptor;
@@ -60,27 +61,27 @@ public class BrushCatalog : MonoBehaviour {
   private Dictionary<Guid, Brush> m_GuidToBrush;
   private HashSet<Brush> m_AllBrushes;
   private List<Brush> m_GuiBrushList;
+  private Dictionary<Guid, Brush> m_SceneBrushes;
 
   [SerializeField] public BlocksMaterial[] m_BlocksMaterials;
   private Dictionary<Material, Brush> m_MaterialToBrush;
 
   public bool IsLoading { get { return m_IsLoading; } }
   public Brush GetBrush(Guid guid) {
-    try {
-      return m_GuidToBrush[guid];
-    } catch (KeyNotFoundException) {
-      return null;
+    Brush brush;
+    if (m_GuidToBrush.TryGetValue(guid, out brush)) {
+      return brush;
     }
+    if (m_SceneBrushes.TryGetValue(guid, out brush)) {
+      return brush;
+    }
+    return null;
   }
-  public Brush DefaultBrush {
-    get { return m_DefaultBrush; }
-  }
-  public IEnumerable<Brush> AllBrushes {
-    get { return m_AllBrushes; }
-  }
-  public List<Brush> GuiBrushList {
-    get { return m_GuiBrushList; }
-  }
+  public Brush DefaultBrush => m_DefaultBrush;
+
+  public IEnumerable<Brush> AllBrushes => m_AllBrushes;
+  
+  public List<Brush> GuiBrushList => m_GuiBrushList;
 
   void Awake() {
     m_Instance = this;
@@ -88,6 +89,7 @@ public class BrushCatalog : MonoBehaviour {
     m_MaterialToBrush = new Dictionary<Material, Brush>();
     m_AllBrushes = new HashSet<Brush>();
     m_GuiBrushList = new List<Brush>();
+    m_SceneBrushes = new Dictionary<Guid, BrushDescriptor>();
 
     // Move blocks materials in to a dictionary for quick lookup.
     for (int i = 0; i < m_BlocksMaterials.Length; ++i) {
@@ -148,13 +150,7 @@ public class BrushCatalog : MonoBehaviour {
     }
 
     // Postprocess: put brushes into parse-friendly list
-
-    foreach (var brush in m_GuidToBrush.Values) {
-      if (brush.m_HiddenInGui) {
-        continue;
-      }
-      m_GuiBrushList.Add(brush);
-    }
+    m_GuiBrushList = m_GuidToBrush.Values.Where(x => !x.m_HiddenInGui).ToList();
   }
 
   void Update() {
@@ -216,5 +212,24 @@ public class BrushCatalog : MonoBehaviour {
     m_AllBrushes.Add(brush);
     m_GuiBrushList.Add(brush);
   }
+
+  public void AddSceneBrush(BrushDescriptor brush) {
+    m_AllBrushes.RemoveWhere(x => x.m_Guid == brush.m_Guid);
+    m_GuiBrushList.RemoveAll(x => x.m_Guid == brush.m_Guid);
+    m_SceneBrushes[brush.m_Guid] = brush;
+    m_AllBrushes.Add(brush);
+    m_GuiBrushList.Add(brush);
+    m_IsLoading = true;
+  }
+  
+  public void ClearSceneBrushes() {
+    m_SceneBrushes.Clear();
+    m_AllBrushes.Clear();
+    m_AllBrushes.UnionWith(m_GuidToBrush.Values);
+    m_GuiBrushList = m_GuidToBrush.Values.Where(x => !x.m_HiddenInGui).ToList();
+    Resources.UnloadUnusedAssets();
+    m_IsLoading = true;
+  }
+  
 }
 }  // namespace TiltBrush

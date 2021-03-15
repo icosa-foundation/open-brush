@@ -3476,6 +3476,7 @@ public class SketchControlsScript : MonoBehaviour {
   }
 
   private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false) {
+    App.Instance.m_Manifest.ClearSceneBrushes();
     LightsControlScript.m_Instance.DiscoMode = false;
     m_WidgetManager.FollowingPath = false;
     m_WidgetManager.CameraPathsVisible = false;
@@ -4178,6 +4179,7 @@ public class SketchControlsScript : MonoBehaviour {
   }
 
   public void NewSketch(bool fade) {
+    App.Instance.m_Manifest.ClearSceneBrushes();
     LightsControlScript.m_Instance.DiscoMode = false;
     m_WidgetManager.FollowingPath = false;
     SketchMemoryScript.m_Instance.ClearMemory();

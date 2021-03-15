@@ -587,7 +587,7 @@ public class SaveLoadScript : MonoBehaviour {
       foreach (var brushName in m_LastSceneFile.GetContentsAt("Brushes")) {
         Debug.Log($"Brush found at {brushName}");
         var brush = UserVariantBrush.Create(m_LastSceneFile, Path.Combine("Brushes", brushName));
-        App.Instance.m_Manifest.AddUserVariantBrush(brush);
+        App.Instance.m_Manifest.AddSceneUserVariantBrush(brush);
       }
 
       // Load sketch
