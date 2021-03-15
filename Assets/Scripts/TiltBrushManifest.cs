@@ -111,6 +111,7 @@ namespace TiltBrush
 
         public void AddUserVariantBrush(UserVariantBrush brush)
         {
+            m_UserVariantBrushes.RemoveAll(x => x.Descriptor.m_Guid == brush.Descriptor.m_Guid);
             m_UserVariantBrushes.Add(brush);
             BrushCatalog.m_Instance.AddBrush(brush.Descriptor);
         }

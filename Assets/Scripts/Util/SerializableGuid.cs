@@ -108,6 +108,25 @@ namespace TiltBrush
         {
             return ((System.Guid)this).ToString(format);
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+            return m_storage.Equals(obj.ToString());
+        }
+
+        public static bool operator ==(SerializableGuid lhs, SerializableGuid rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(SerializableGuid lhs, SerializableGuid rhs)
+        {
+            return !lhs.Equals(rhs);
+        }
     }
 
 }  // namespace TiltBrush

@@ -246,6 +246,8 @@ namespace TiltBrush
 
         public void AddBrush(BrushDescriptor brush)
         {
+            m_AllBrushes.RemoveWhere(x => x.m_Guid == brush.m_Guid);
+            m_GuiBrushList.RemoveAll(x => x.m_Guid == brush.m_Guid);
             m_GuidToBrush[brush.m_Guid] = brush;
             m_AllBrushes.Add(brush);
             m_GuiBrushList.Add(brush);
