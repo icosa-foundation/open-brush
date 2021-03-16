@@ -90,7 +90,6 @@ public class CameraPathCaptureRig : MonoBehaviour {
 
   public void RecordPath() {
     // See README.md section # Video support and # Camera path support.
-    /*
     m_Widget.ResetToPathStart();
     m_Widget.TintForRecording(true);
     UpdateCameraTransform(m_Widget.transform);
@@ -104,7 +103,6 @@ public class CameraPathCaptureRig : MonoBehaviour {
         MultiCamTool.GetSaveName(MultiCamStyle.Video),
         m_Manager.GetComponent<VideoRecorder>(),
         m_VideoUsdSerializer);
-    */
   }
 
   public void StopRecordingPath(bool saveCapture) {

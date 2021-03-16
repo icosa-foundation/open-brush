@@ -322,13 +322,6 @@ You will need to build C# wrappers for the Autodesk FBX (the Autodesk filebox
 format) SDK in order to import or export FBX and OBJ files in the app. See
 [Support/fbx/README.md](Support/fbx/README.md) for details.
 
-## Camera path support
-
-Follow these steps to enable camera path support:
-
-1.  Enable video support.
-1.  Uncomment the code in `CameraPathCaptureRig.RecordPath()`.
-
 ## Video support
 
 To get video support you will need to put an ffmpeg.exe binary in to 
