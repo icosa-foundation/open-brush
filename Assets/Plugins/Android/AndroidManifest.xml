@@ -10,7 +10,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="false"
-        tools:replace="android:allowBackup">
+        tools:replace="android:allowBackup"
+		android:requestLegacyExternalStorage="true">
         <activity
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
             android:configChanges="locale|fontScale|keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"

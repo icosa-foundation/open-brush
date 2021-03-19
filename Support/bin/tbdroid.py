@@ -15,48 +15,48 @@
 # limitations under the License.
 
 # A tool for doing various operations on Tilt Brush when its running on an android device.
-import subprocess
-import os
-import os.path
-import sys
-import signal
-import tempfile
-import re
+import argparse
 import glob
+import os
+import re
+import signal
+import subprocess
+import sys
+import tempfile
 import time
 
 FNULL = open(os.devnull, 'w')
-printInfo = True;
+printInfo = True
 tbdir = "/storage/emulated/0/Android/data/com.google.tiltbrush/files/"
-tiltbrushcfg = tbdir + """Tilt\ Brush/Tilt\ Brush.cfg"""
+tiltbrushcfg = tbdir + "Tilt\\ Brush/Tilt\\ Brush.cfg"
 tiltbrushcfgunescaped = tbdir + "Tilt Brush/Tilt Brush.cfg"
 sketchpath = tbdir + "Tilt Brush/Sketches"
-configcopy=None
+configcopy = None
 defaulttemplate = os.path.realpath(os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../TiltBrushCfgTemplate.cfg"))
 screenshotnum = 1
 
+
 def run():
-  info ("Running Tilt Brush...")
-  #subprocess.check_call(
-  #  "adb shell monkey -p com.google.tiltbrush -c android.intent.category.LAUNCHER 1", stdout=FNULL,
-  #  stderr=FNULL)
+  info("Running Tilt Brush...")
   subprocess.check_call(
       "adb shell am start com.google.tiltbrush/com.unity3d.player.UnityPlayerActivity",
       stdout=FNULL, stderr=FNULL)
   info("Done.")
+
 
 def kill():
   info("Killing any existing tilt Brush...")
   subprocess.check_call("adb shell am force-stop com.google.tiltbrush", stdout=FNULL)
   info("Done.")
 
+
 def get_profile_data():
   subprocess.check_call("adb logcat -c")
   proc = subprocess.Popen("adb logcat -v raw", stdout=subprocess.PIPE)
   started = False
   finished = False
-  while(not finished):
+  while not finished:
     line = proc.stdout.readline()
     if line.startswith('TBProfile:'):
       if started:
@@ -69,10 +69,12 @@ def get_profile_data():
           started = True
   proc.terminate()
 
+
 def clear_config():
   info("Deleting Tilt Brush.cfg file")
   subprocess.call('adb shell rm -f "%s"' % (tiltbrushcfg), stdout=FNULL)
   info("Done.")
+
 
 def create_config(sketchname, csv, template, lod):
   if not os.path.exists(template):
@@ -89,23 +91,25 @@ def create_config(sketchname, csv, template, lod):
   upload_config(temp.name)
   os.remove(temp.name)
 
+
 def upload_sketch(sketchname):
   sketchFullPath = "%s/%s" % (sketchpath, os.path.basename(sketchname))
   subprocess.check_call('adb push "%s" "%s"' % (sketchname, sketchFullPath), stdout=FNULL)
 
-def profile_sketches(sketches, reps, csv, configtemplate, lod, skip):
+
+def profile_sketches(sketches, reps, csv, configtemplate, lod, skip):  # pylint: disable=too-many-arguments
   try:
     enable_powersaving(False)
     save_config()
     signal.signal(signal.SIGINT, sigint_handler)
-    if (csv):
+    if csv:
       print('Sketch, Num Frames, Min ms, Median ms, Max ms, StdDev, StdDev %, Batches, Triangles, 90fps+, 75fps, 60fps, Sub-60fps')
     for sketch in sketches[skip:]:
       clear_config()
       create_config(sketch, csv, configtemplate, lod)
       upload_sketch(sketch)
       print_header(sketch, csv)
-      for i in range(0, reps):
+      for _ in range(0, reps):
         kill()
         run()
         get_profile_data()
@@ -115,14 +119,17 @@ def profile_sketches(sketches, reps, csv, configtemplate, lod, skip):
   finally:
     cleanup()
 
+
 def upload_config(configFile):
   subprocess.check_call('adb push "%s" "%s"' % (configFile, tiltbrushcfgunescaped), stdout=FNULL)
+
 
 def upload_config_text(configText):
   temp = tempfile.NamedTemporaryFile(mode='w', delete=False)
   temp.write(configText)
   temp.close()
   subprocess.check_call('adb push "%s" "%s"' % (temp.name, tiltbrushcfgunescaped), stdout=FNULL)
+
 
 def profile_configs(configs, reps, csv, skip):
   try:
@@ -139,7 +146,7 @@ def profile_configs(configs, reps, csv, skip):
         match = None
         newText = ""
         for line in configFile.readlines():
-          match = re.match("""\s*\"SketchToLoad\"\s*\:\s*\"([^\"]+)\"""", line)
+          match = re.match(r"\s*\"SketchToLoad\"\s*\:\s*\"([^\"]+)\"", line)
           if match:
             sketchName = match.group(1)
             sketchFullPath = "%s/%s" % (sketchpath, os.path.basename(sketchName))
@@ -147,7 +154,7 @@ def profile_configs(configs, reps, csv, skip):
           newText += line
         if not sketchName:
           sys.stderr.write("Could not file SketchToLoad in %s\n" % (config))
-          continue;
+          continue
         sketch = find_sketch(sketchName)
         if not sketch:
           sys.stderr.write("Could not load %s" % (os.path.basename(match.group(1))))
@@ -156,7 +163,7 @@ def profile_configs(configs, reps, csv, skip):
         upload_config_text(newText)
         upload_sketch(sketch)
         print_header(sketch, csv)
-        for i in range(0, reps):
+        for _ in range(0, reps):
           kill()
           run()
           get_profile_data()
@@ -167,18 +174,21 @@ def profile_configs(configs, reps, csv, skip):
   finally:
     cleanup()
 
-def sigint_handler(signal, frame):
-  print("SIGINT caught - cleaning up.")
+
+def sigint_handler(sig, frame):
+  print("Signal %s caught from %s - cleaning up." % (sig, frame))
   cleanup()
   sys.exit(0)
+
 
 def cleanup():
   restore_config()
   enable_powersaving(True)
 
+
 def print_header(sketch, csv):
   sketch = os.path.basename(sketch)
-  if (not csv):
+  if not csv:
     print(('Sketch, %s' % (sketch)))
 
 
@@ -192,11 +202,13 @@ def find_sketch(sketch):
       return os.path.realpath(file)
   return None
 
+
 def expand_globs(globList):
   files = []
   for item in globList:
     files.extend(glob.glob(item))
   return files
+
 
 def enable_powersaving(enable):
   try:
@@ -206,37 +218,42 @@ def enable_powersaving(enable):
   except subprocess.CalledProcessError as err:
     print(('Failed to set power saving mode:', err))
 
+
 def save_config():
   temp = tempfile.NamedTemporaryFile(mode='w', delete=False)
   temp.close()
-  os.remove(temp.name);
+  os.remove(temp.name)
   subprocess.call('adb pull "%s" "%s"' % (tiltbrushcfgunescaped, temp.name), stdout=FNULL)
+  global configcopy  # pylint: disable=global-statement
   if os.path.exists(temp.name):
     configcopy = temp.name
 
+
 def restore_config():
+  global configcopy  # pylint: disable=global-statement
   if configcopy:
     upload_config(configcopy)
   else:
     clear_config()
 
+
 def get_screenshot(filename):
-  global screenshotnum
+  global screenshotnum  # pylint: disable=global-statement
   screenshotFilename = os.path.splitext(os.path.basename(filename))[0] + ".jpg"
   try:
-    subprocess.check_call('adb pull "%sTilt Brush/%s" sshot_%d_%s"' %
-        (tbdir, screenshotFilename, screenshotnum, screenshotFilename), stdout=FNULL);
+    subprocess.check_call('adb pull "%sTilt Brush/%s" sshot_%d_%s"' % (tbdir, screenshotFilename, screenshotnum, screenshotFilename), stdout=FNULL)
     screenshotnum += 1
-  except subprocess.CalledProcessError as err:
+  except subprocess.CalledProcessError:
     # Do nothing on error
     pass
 
+
 def info(message):
-  if (printInfo):
-    print (message)
+  if printInfo:
+    print(message)
+
 
 def main():
-  import argparse
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--run', help='Run Tilt Brush on the remote device.', action='store_true')
@@ -255,7 +272,7 @@ def main():
   parser.add_argument('--csv', help='Output profile information as csv.', action='store_true',
                       default=False)
   parser.add_argument('--uploadconfig', metavar='CONFIGFILE', help='Upload a config file to device',
-                     nargs=1)
+                      nargs=1)
   parser.add_argument('--profileconfigs', metavar='CONFIGFILES',
                       help='Profile using a set of config files.', nargs='*')
   parser.add_argument('--powersaving', metavar='ON/OFF',
@@ -264,11 +281,11 @@ def main():
                       default=defaulttemplate, help='A template to use for the Tilt Brush.cfg')
   parser.add_argument('--lod', metavar="CONFIG TEMPLATE", nargs='?',
                       default=99999, help='Global maximum level of detail.')
-  parser.add_argument('--skip', metavar="ITEMS TO SKIP", nargs='?', default = 0,
-                      help = 'Number of items to skip.')
+  parser.add_argument('--skip', metavar="ITEMS TO SKIP", nargs='?', default=0,
+                      help='Number of items to skip.')
 
   args = parser.parse_args()
-  global printInfo
+  global printInfo  # pylint: disable=global-statement
   printInfo = not args.quiet
   skip = int(args.skip)
 
@@ -297,6 +314,7 @@ def main():
     run()
   if args.getprofile:
     get_profile_data()
+
 
 if __name__ == '__main__':
   main()

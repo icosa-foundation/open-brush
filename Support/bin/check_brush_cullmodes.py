@@ -20,6 +20,7 @@ geometry and also use double-sided (ie, non-culling) shaders.
 
 Also useful as sample code for working with the refgraph."""
 
+import collections
 import os
 import re
 import sys
@@ -28,14 +29,14 @@ import sys
 sys.path.append(
   os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Python'))
 
-import unitybuild.refgraph
+import unitybuild.refgraph  # noqa: E402 pylint: disable=import-error,wrong-import-position
 
-BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+
 
 def dfs_iter(graph, guid):
   """graph: networkx.DiGraph
   guid: node name"""
-  import collections
   seen = set()
   q = collections.deque()
   q.append(guid)
@@ -70,39 +71,50 @@ def cullmodes_for_brush(rg, g_brush):
   return sorted(modes, key=lambda m: m.lower)
 
 
-def cullmodes_for_shader(shader, memo={}):
+def cullmodes_for_shader(shader, memo=None):
   """shader: name of shader asset
   Returns list of culling modes used by the shader."""
-  try: return memo[shader]
-  except KeyError: pass
-  txt = file(os.path.join(BASE, shader)).read()
+  # This is to replace a risky default value, but it looks like this needed a parameter from the caller, or, failing that, a global. FIXME
+  if memo is None:
+    memo = {}
+  try:
+    return memo[shader]
+  except KeyError:
+    pass
+  with open(os.path.join(BASE, shader)) as f:
+    txt = f.read()
   culls = [m.group(1) for m in
-           re.finditer(r'cull\s+(\w+)', txt, re.I|re.M)]
+           re.finditer(r'cull\s+(\w+)', txt, re.I | re.M)]
   memo[shader] = culls
   return culls
 
 
-def is_brush_doublesided(rg, g_brush, memo={}):
+def is_brush_doublesided(rg, g_brush):
   """rg: unitybuild.refgraph.ReferenceGraph
   g_brush: node (brush guid)
   Returns True if brush generates doublesided geometry."""
   filename = rg.guid_to_name[g_brush]
-  txt = file(os.path.join(BASE, filename)).read()
+  with open(os.path.join(BASE, filename)) as f:
+      txt = f.read()
   return int(re.search(r'm_RenderBackfaces: (.)', txt).group(1))
 
 
 def main():
   rg = unitybuild.refgraph.ReferenceGraph(BASE)
   g2n = rg.guid_to_name
+
   def is_brush(guid):
-    try: name = g2n[guid]
-    except KeyError: return False
+    try:
+      name = g2n[guid]
+    except KeyError:
+      return False
     return re.search(r'Brush.*asset$', name) is not None
-  brushes = filter(is_brush, rg.g.nodes_iter())
+  brushes = [node for node in rg.g.nodes_iter() if is_brush(node)]
   for g_brush in sorted(brushes, key=g2n.get):
       culls = cullmodes_for_brush(rg, g_brush)
       if len(culls) > 0 and is_brush_doublesided(rg, g_brush):
-        print "Brush %s\n is double-sided but has cull %s" % (g2n[g_brush], culls)
+        print("Brush %s\n is double-sided but has cull %s" % (g2n[g_brush], culls))
+
 
 if __name__ == '__main__':
   main()

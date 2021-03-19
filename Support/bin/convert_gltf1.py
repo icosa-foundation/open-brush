@@ -22,17 +22,19 @@ This was written to help scope out the work required to convert
 Tilt Brush gltf1 to gltf2."""
 
 
-
+import argparse
 import collections
 import json
 import os
 import re
+import sys
 
 # (Brush guid, gltf alphaMode)
 PBR_BRUSH_DESCRIPTORS = [
   ('f86a096c-2f4f-4f9d-ae19-81b99f2944e0', 'OPAQUE'),
   ("19826f62-42ac-4a9e-8b77-4231fbd0cfbf", 'BLEND')
 ]
+
 
 def convert_to_array_helper(dct, name_to_index, key):
   if key not in dct:
@@ -56,25 +58,25 @@ def convert_to_index(container, key, name_to_index, required_object_type):
   name = container[key]
   try:
     index, object_type = name_to_index[name]
-  except KeyError:
-    raise LookupError("No %s named %s" % (required_object_type, name))
+  except KeyError as e:
+    raise LookupError("No %s named %s" % (required_object_type, name)) from e
   assert object_type == required_object_type
   container[key] = index
 
 
 def convert_to_indices(dct, key, name_to_index, required_object_type):
   lst = dct[key]
-  assert type(lst) is list
+  assert isinstance(lst, list)
   for i in range(len(lst)):
     convert_to_index(lst, i, name_to_index, required_object_type)
 
 
 COMPONENT_SIZES = {
-  5120: 1, # byte
-  5121: 1, # unsigned byte
-  5122: 2, # short
-  5123: 2, # unsigned short
-  5126: 4, # float
+  5120: 1,  # byte
+  5121: 1,  # unsigned byte
+  5122: 2,  # short
+  5123: 2,  # unsigned short
+  5126: 4,  # float
 }
 NUM_COMPONENTS = {
   'SCALAR': 1,
@@ -82,6 +84,8 @@ NUM_COMPONENTS = {
   'VEC3': 3,
   'VEC4': 4
 }
+
+
 def pop_explicit_byte_stride(accessor):
   """Removes and returns a byteStride to move from the accessor to the bufferVies.
   Returns None to mean "bufferView should not define it".
@@ -98,17 +102,17 @@ def pop_explicit_byte_stride(accessor):
     # - Values must be multiple of 4, and > 0
     # Thus sometimes we have to use the implicit version
     return None
-  elif stride is None:
+  if stride is None:
     return None
-  elif stride == 0:
+  if stride == 0:
     return calculated_stride
-  else:
-    # It would be surprising if the calculated stride differed from the tightly-packed stride,
-    # at least for Tilt Brush files
-    if calculated_stride != stride:
-      print('WARN: strange stride %s vs %s for accessor %s' % (
-        calculated_stride, stride, accessor['name']))
-    return stride
+
+  # It would be surprising if the calculated stride differed from the tightly-packed stride,
+  # at least for Tilt Brush files
+  if calculated_stride != stride:
+    print('WARN: strange stride %s vs %s for accessor %s' % (
+      calculated_stride, stride, accessor['name']))
+  return stride
 
 
 def pop_non_gltf2_property(thing, property_name, gltf1_default):
@@ -119,7 +123,7 @@ def pop_non_gltf2_property(thing, property_name, gltf1_default):
     value, thing['name'], property_name)
 
 
-def convert(filename):
+def convert(filename):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
   txt = open(filename).read()
   txt = re.sub('// [^\"\n]*\n', '\n', txt)
 
@@ -141,8 +145,10 @@ def convert(filename):
 
   # If there was a buffers['binary_glTF'], make sure it is now at buffers[0]
   # This is required by the binary gltf spec.
-  try: assert name_to_index['binary_glTF'] == (0, 'buffers')
-  except KeyError: pass
+  try:
+    assert name_to_index['binary_glTF'] == (0, 'buffers')
+  except KeyError:
+    pass
 
   # Don't need these things in gltf 2
   for key in ('shaders', 'programs', 'techniques'):
@@ -167,7 +173,7 @@ def convert(filename):
     buffer_view = gltf['bufferViews'][accessor['bufferView']]
     byte_stride = pop_explicit_byte_stride(accessor)
     assert buffer_view.get('byteStride', byte_stride) == byte_stride, \
-      "byteStride conflict: %s vs %s" % (buffer_view.get('byteStride'), byte_stride)
+        "byteStride conflict: %s vs %s" % (buffer_view.get('byteStride'), byte_stride)
     if byte_stride is not None:
       buffer_view['byteStride'] = byte_stride
 
@@ -192,7 +198,7 @@ def convert(filename):
         'baseColorFactor': values['BaseColorFactor'],
         'baseColorTexture': {
           'index': values['BaseColorTex'],
-          'texCoord' : 0    # ???
+          'texCoord': 0    # ???
         },
         'metallicFactor': values['MetallicFactor'],
         'roughnessFactor': values['RoughnessFactor']
@@ -246,14 +252,16 @@ def convert(filename):
   return json.dumps(gltf, indent=2)
 
 
-def check_for_forbidden_values(value, forbidden, primitives=set([int, int, float, str, str])):
+def check_for_forbidden_values(value, forbidden, primitives=None):
   """Recursively check that value does not contain any values in forbidden."""
+  if primitives is None:
+    primitives = set([int, int, float, str, str])
   if type(value) in (dict, collections.OrderedDict):
     for (k, v) in value.items():
       # It's okay for the name to be in the forbidden list
       if k != 'name':
         check_for_forbidden_values(v, forbidden)
-  elif type(value) is list:
+  elif isinstance(value, list):
     if len(value) > 0 and type(value[0]) in (int, float, int):
       # Don't bother
       return
@@ -277,7 +285,6 @@ def write_if_different(filename, contents):
 
 
 def main(args):
-  import argparse
   parser = argparse.ArgumentParser()
   parser.add_argument('files', nargs=1, help="File to convert")
   parser.add_argument('--stdout', action='store_true')
@@ -293,8 +300,5 @@ def main(args):
       write_if_different(dst, gltf2)
 
 
-
-
 if __name__ == '__main__':
-  import sys
   main(sys.argv[1:])

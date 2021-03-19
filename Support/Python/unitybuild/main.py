@@ -67,6 +67,7 @@ from unitybuild.credentials import get_credential, TB_OCULUS_QUEST_APP_ID
 from unitybuild.vcs import create as vcs_create
 
 
+VENDOR_NAME = "Icosa"
 EXE_BASE_NAME = 'OpenBrush'
 
 # ----------------------------------------------------------------------
@@ -422,8 +423,8 @@ def make_unused_directory_name(directory_name):
 
 PLATFORM_TO_UNITYTARGET = {
     'Windows': 'StandaloneWindows64',
-    'OSX': 'StandaloneOSXIntel',
-    'Linux': 'StandaloneLinuxUniversal',
+    'OSX': 'StandaloneOSX',
+    'Linux': 'StandaloneLinux64',
     'Android': 'Android',
     'iOS': 'iOS',
 }
@@ -448,18 +449,19 @@ def build(stamp, output_dir, project_dir, exe_base_name,  # pylint: disable=too-
   Returns:
     the actual output directory used
   """
-  def get_exe_suffix(platform):
+  def get_exe_name(platform, exe_base_name):
+    # This is a manually maintained duplicate of App.cs
     if 'Windows' in platform:
-      return '.exe'
+      return '%s.exe' % exe_base_name
     if 'OSX' in platform:
-      return '.app'
+      return '%s.app' % exe_base_name
     if 'Linux' in platform:
-      return ''
+      return '%s' %exe_base_name
     if 'Android' in platform:
-      return '.apk'
+      return 'com.%s.%s.apk' % (VENDOR_NAME, exe_base_name)
     if 'iOS' in platform:
-      return ''
-    raise InternalError("Don't know executable suffix for %s" % platform)
+      return '%s' % exe_base_name
+    raise InternalError("Don't know executable name for %s" % platform)
 
   try:
     unitybuild.utils.destroy(output_dir)
@@ -471,7 +473,7 @@ def build(stamp, output_dir, project_dir, exe_base_name,  # pylint: disable=too-
   os.makedirs(output_dir)
   logfile = os.path.join(output_dir, 'build_log.txt')
 
-  exe_name = os.path.join(output_dir, exe_base_name + get_exe_suffix(platform))
+  exe_name = os.path.join(output_dir, get_exe_name(platform, exe_base_name))
   cmd_env = os.environ.copy()
   cmdline = [get_unity_exe(get_project_unity_version(project_dir),
                            lenient=is_jenkins),
@@ -810,14 +812,18 @@ def main(args=None):  # pylint: disable=too-many-statements,too-many-branches,to
       print("Building %s %s %s exp:%d signed:%d il2cpp:%d" % (
           platform, vrsdk, config, args.experimental, args.for_distribution, args.il2cpp))
 
-      tags = [platform, vrsdk, config]
-      if args.experimental:
-        tags.append('Exp')
-      if args.for_distribution and platform != 'Windows':
-        tags.append('Signed')
-      if args.il2cpp:
-        tags.append('Il2cpp')
-      dirname = '_'.join(tags)
+      sdk = vrsdk
+      if sdk == "Oculus" and platform == "Android":
+          sdk = "OculusMobile"
+      dirname = "%s_%s_%s%s%s%s%s_FromCli" % (
+              sdk,
+              "Release",
+              EXE_BASE_NAME,
+              "_Experimental" if args.experimental else "",
+              "_Il2cpp" if args.il2cpp else "",
+              "", # GuiAutoProfile
+              "_signed" if args.for_distribution and platform != "Windows" else ""
+              )
 
       tmp_dir = os.path.join(build_dir, 'tmp_' + dirname)
       output_dir = os.path.join(build_dir, dirname)

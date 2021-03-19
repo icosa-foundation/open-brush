@@ -14,18 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
 import re
 import sys
-import pickle
 
-import networkx as nx
+import networkx as nx  # pylint: disable=import-error
 
 # Add ../Python to sys.path
 sys.path.append(
   os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Python'))
 
-import unitybuild.refgraph
+import unitybuild.refgraph  # noqa: E402 pylint: disable=import-error,wrong-import-position
 
 
 def find_project_dir(start=None):
@@ -33,25 +33,24 @@ def find_project_dir(start=None):
   while True:
     if os.path.isdir(os.path.join(cur, 'Assets')):
       return cur
-    next = os.path.dirname(cur)
-    if cur == next:
+    next_dir = os.path.dirname(cur)
+    if cur == next_dir:
       raise LookupError("Cannot find project dir")
-    cur = next
+    cur = next_dir
 
 
 def filter_case_folded_duplicates(lst):
-  def iter():
+  def iterate():
     seen = set()
     for elt in lst:
       lowered = elt.lower()
       if lowered not in seen:
         seen.add(lowered)
         yield elt
-  return list(iter())
+  return list(iterate())
 
 
 def main(args):
-  import argparse
   parser = argparse.ArgumentParser()
   parser.add_argument('--recreate', action='store_true', default=False,
                       help="Recreate the cached graph and DummyCommandRefs.cs")
@@ -83,16 +82,15 @@ def main(args):
     if re.match(r'^[a-f0-9]{32}$', asset):
       return [asset]
     # Exhaustive search
-    possibilities = [name for name in rg.name_to_guid.keys() if asset in name]
+    possibilities = [name for name in rg.name_to_guid if asset in name]
     # name_to_guid contains duplicate lowercased names; don't consider that ambiguous
     possibilities = filter_case_folded_duplicates(possibilities)
     if len(possibilities) == 0:
       raise LookupError("Cannot find any asset matching %s" % asset)
-    else:
-      if len(possibilities) > 1 and not args.all:
-        print("Ambiguous:\n  %s" % '\n  '.join(possibilities))
-        possibilities = [possibilities[0]]
-      return list(map(rg.name_to_guid.get, possibilities))
+    if len(possibilities) > 1 and not args.all:
+      print("Ambiguous:\n  %s" % '\n  '.join(possibilities))
+      possibilities = [possibilities[0]]
+    return [rg.name_to_guid.get(p) for p in possibilities]
 
   def iter_desired_guids():
     if len(args.asset) == 0 and not args.recreate:

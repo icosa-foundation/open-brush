@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, sys
+import os
+import sys
 
 # Add ../Python to sys.path
 sys.path.append(
   os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Python'))
 
-import unitybuild.main
+import unitybuild.main  # noqa: E402 pylint: disable=import-error,wrong-import-position
 unitybuild.main.main()

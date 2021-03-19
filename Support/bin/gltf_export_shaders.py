@@ -33,9 +33,9 @@ import json
 import os
 import platform
 import re
-import shutil
 import stat
-import sys
+import shutil
+from subprocess import Popen, PIPE
 
 
 # Fill this out to help copy shaders from previous versions of brushes
@@ -47,15 +47,15 @@ UPDATED_GUIDS_BY_NAME = {
 # Utilities
 # ---------------------------------------------------------------------------
 
+
 def destroy(file_or_dir):
   """Ensure that *file_or_dir* does not exist in the filesystem,
   deleting it if necessary."""
-  import stat
   if os.path.isfile(file_or_dir):
     os.chmod(file_or_dir, stat.S_IWRITE)
     os.unlink(file_or_dir)
   elif os.path.isdir(file_or_dir):
-    for r,ds,fs in os.walk(file_or_dir, topdown=False):
+    for r, ds, fs in os.walk(file_or_dir, topdown=False):
       for f in fs:
         os.chmod(os.path.join(r, f), stat.S_IWRITE)
         os.unlink(os.path.join(r, f))
@@ -68,7 +68,6 @@ def destroy(file_or_dir):
 
 class PreprocessException(Exception):
   """Exception raised by preprocess_lite() and preprocess()"""
-  pass
 
 
 def preprocess_lite(input_file, defines, include_dirs):
@@ -77,6 +76,7 @@ defines is a dict of #defines.
 include_dirs is a list of directories.
 Raises PreprocessException on error."""
   include_pat = re.compile(r'^[ \t]*#[ \t]*include[ \t]+([<"])(.*)[">].*$\n?', re.MULTILINE)
+
   def expand_include(include, current_file, is_quote):
     """Given the body of an #include, returns replacement text."""
     # https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html
@@ -94,11 +94,12 @@ Raises PreprocessException on error."""
             candidate_text += '\n'
           # uncomment for debugging
           # candidate_text = '// %s\n%s' % (candidate, candidate_text)
+
         def expand_include_match(match):
           char, body = match.groups()
-          return expand_include(body, candidate, char == '"')
+          # This has a pylint warning which I don't know how to fix, but I suspect that candidate isn't updated
+          return expand_include(body, candidate, char == '"')  # pylint: disable=cell-var-from-loop
         return include_pat.sub(expand_include_match, candidate_text)
-    else:
       raise PreprocessException("%s : fatal error: Cannot open include file: '%s'" % (
         current_file, include))
 
@@ -107,7 +108,7 @@ Raises PreprocessException on error."""
   defines = ["#define %s %s\n" % (k, v)
              for (k, v) in sorted(defines.items())
              if k in contents
-            ]
+             ]
   return ''.join(defines) + contents
 
 
@@ -125,10 +126,7 @@ Raises PreprocessException on error."""
   return stdout
 
 
-def preprocess_msvc(input_file, defines, include_dirs):
-  # Windows-specific helper for preprocess()
-  from subprocess import Popen, PIPE, CalledProcessError
-
+def preprocess_msvc(input_file, defines, include_dirs):  # pylint: disable=too-many-locals
   def find_cpp_exe():
     for release in ('12.0', '13.0', '14.0'):
       exe = r'C:\Program Files (x86)\Microsoft Visual Studio %s\VC\bin\cl.exe' % release
@@ -164,17 +162,19 @@ def preprocess_msvc(input_file, defines, include_dirs):
       cmd, proc.returncode, stderr))
   return stdout.replace('\r\n', '\n')
 
+
 # ---------------------------------------------------------------------------
 # Generation
 # ---------------------------------------------------------------------------
-
 def get_defines(brush):
   """Returns a dict of cpp #defines for the specified brush."""
   float_params = brush['floatParams']
   defines = {}
 
-  try: defines['TB_EMISSION_GAIN'] = str(float_params['EmissionGain'])
-  except KeyError: pass
+  try:
+    defines['TB_EMISSION_GAIN'] = str(float_params['EmissionGain'])
+  except KeyError:
+    pass
 
   try:
     defines['TB_ALPHA_CUTOFF'] = str(float_params['Cutoff'])
@@ -184,7 +184,7 @@ def get_defines(brush):
   return defines
 
 
-class Generator(object):
+class Generator():
   """Instantiate this class to run generate()."""
   def __init__(self, input_dir, include_dirs, brush_manifest_file):
     self.input_dir = input_dir
@@ -203,29 +203,29 @@ class Generator(object):
     full_name = os.path.join(self.input_dir, os.path.basename(shader_name))
     return full_name
 
-  def get_frag_template(self, brush):
+  @staticmethod
+  def get_frag_template(brush):
     """Given a brush, returns the path to a fragment shader template."""
     # Figure out the template -- should probably be replaced with explicit #includes
     if int(brush["blendMode"]) == 2:
       # Additive blending.
       return "FragAdditive.glsl"
-    elif "OutlineMax" in brush['floatParams']:
+    if "OutlineMax" in brush['floatParams']:
       # For now, this is the best available mapping.
       return "FragDiffuse.glsl"
-    elif "Color" not in brush['colorParams']:
+    if "Color" not in brush['colorParams']:
       # The absence of a Color field here indicates this should be an unlit
       # shader. Maybe there's a better test?
       return "FragUnlit.glsl"
-    elif "Shininess" not in brush['floatParams']:
+    if "Shininess" not in brush['floatParams']:
       return "FragDiffuse.glsl"
-    else:
-      # Unity Standard Diffuse + Specular.
-      return "FragStandard.glsl"
+    # Unity Standard Diffuse + Specular.
+    return "FragStandard.glsl"
 
   def generate(self, out_root):
     """Generate output for all brushes in the manifest."""
     brushes = self.brush_manifest["brushes"]
-    for guid, brush in brushes.items():
+    for _, brush in brushes.items():
       self.generate_brush(brush, out_root)
 
   def copy_from_prev_brush(self, brush, out_dir):
@@ -243,9 +243,11 @@ class Generator(object):
       old_hc = self.get_handcrafted_shader(os.path.join(out_dir, old_brush[shader_type]))
       new_hc = self.get_handcrafted_shader(os.path.join(out_dir, new_brush[shader_type]))
       if os.path.exists(old_hc) and not os.path.exists(new_hc):
-        txt = file(old_hc).read()
+        with open(old_hc) as f:
+          txt = f.read()
         txt = "// Auto-copied from %s\n%s" % (os.path.basename(old_hc), txt)
-        file(new_hc, 'w').write(txt)
+        with open(new_hc, 'w') as f:
+          f.write(txt)
         print('copy %s -> %s' % (os.path.basename(old_hc), os.path.basename(new_hc)))
 
     maybe_copy('vertexShader')
@@ -254,13 +256,13 @@ class Generator(object):
   def generate_brush(self, brush, out_root):
     """Generate output for a single brush in the manifest.
     Pass the manifest entry."""
-    name = brush["name"]
-    version = brush["shaderVersion"]
-    guid = brush["guid"]
+    # name = brush["name"]
+    # version = brush["shaderVersion"]
+    # guid = brush["guid"]
     out_dir = os.path.join(out_root, brush['folderName'])
 
-    float_params = brush["floatParams"]
-    color_params = brush["colorParams"]
+    # float_params = brush["floatParams"]
+    # color_params = brush["colorParams"]
 
     defines = get_defines(brush)
 
@@ -272,7 +274,8 @@ class Generator(object):
       self.copy_from_prev_brush(brush, out_dir)
     if not os.path.exists(vert_input):
       print("Auto-creating %s" % os.path.basename(vert_input))
-      file(vert_input, 'w').write('#include "VertDefault.glsl"\n')
+      with open(vert_input, 'w') as f:
+        f.write('#include "VertDefault.glsl"\n')
     self.preprocess(vert_input, vert_output, defines, self.include_dirs)
 
     # Fragment shader
@@ -281,10 +284,12 @@ class Generator(object):
     frag_input = self.get_handcrafted_shader(frag_output)
     if not os.path.exists(frag_input):
       print("Auto-creating %s" % os.path.basename(frag_input))
-      file(frag_input, 'w').write('#include "%s"\n' % self.get_frag_template(brush))
+      with open(frag_input, 'w') as f:
+        f.write('#include "%s"\n' % self.get_frag_template(brush))
     self.preprocess(frag_input, frag_output, defines, self.include_dirs)
 
-  def preprocess(self, input_file, output_file, defines, include_dirs):
+  @staticmethod
+  def preprocess(input_file, output_file, defines, include_dirs):
     """Wrapper around global preprocess that does some massaging of
     the input and output."""
     output_data = preprocess_lite(input_file, defines, include_dirs)
@@ -292,7 +297,7 @@ class Generator(object):
       os.makedirs(os.path.dirname(output_file))
     except OSError:
       pass
-    with file(output_file, 'w') as outf:
+    with open(output_file, 'w') as outf:
       outf.write(output_data)
 
 
@@ -302,14 +307,13 @@ def finalize_dir(tmp_dir, out_dir):
   Avoids touching timestamp if file not changed."""
   # Could handle this case, but it's unexpepcted
   assert not os.path.isfile(out_dir), "Unexpected: %s is a file" % out_dir
-  try: os.makedirs(out_dir)
-  except OSError: pass
+  try:
+    os.makedirs(out_dir)
+  except OSError:
+    pass
 
   tmp_files = set(os.listdir(tmp_dir))
   out_files = set(os.listdir(out_dir))
-
-  new_files = tmp_files - out_files
-  orphan_files = out_files - tmp_files
 
   for filename in tmp_files:
     tmp_file = os.path.join(tmp_dir, filename)
@@ -321,15 +325,15 @@ def finalize_dir(tmp_dir, out_dir):
     elif filename not in out_files:
       shutil.copyfile(tmp_file, out_file)
       print('+', out_file)
-    elif file(tmp_file,'rb').read() != file(out_file,'rb').read():
-      shutil.copyfile(tmp_file, out_file)
-      print('~', out_file)
     else:
-      # identical; ignore
-      pass
+      with open(tmp_file, 'rb') as tmp:
+        with open(out_file, "rb") as out:
+          if tmp.read() != out.read():
+            shutil.copyfile(tmp_file, out_file)
+            print('~', out_file)
 
   # Cannot remove unwanted files (yet); output directory contains input files also
-  if False:
+  if False:  # pylint: disable=using-constant-test
     for filename in out_files - tmp_files:
       out_file = os.path.join(out_dir, filename)
       if not os.path.isfile(out_file):
