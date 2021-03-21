@@ -1,0 +1,153 @@
+---
+name: Builds
+
+on:
+  pull_request: {}
+  push: {branches: [main]}
+
+env:
+  #UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  UNITY_LICENSE: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"b24e2ad2b9d60ad5aace4fde9911fc1c1f659e36\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFQ1ktRDhXTS01OTRHLUU5UlctQ0FYOA==\"/>\n        <SerialMasked Value=\"F4-DECY-D8WM-594G-E9RW-XXXX\"/>\n        <StartDate Value=\"2021-02-07T00:00:00\"/>\n        <UpdateDate Value=\"2021-03-10T23:13:19\"/>\n        <InitialActivationDate Value=\"2021-02-07T12:51:19\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.18f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>EQ57QnLpZQy5Ft2KgPCV+PcFuPg=</DigestValue></Reference></SignedInfo><SignatureValue>z+iLsAtgjx6jf0J41On79ErzFJdljmwNPvvBUEMpsdzf4E6GjFZIzpUfn1BA5livZmnmWTI3eF1V\nJ+0aIjkVfAIo0M8yhKcM1vj4+mUMhO7xZh3ipDtlnakdATvWrOBBFWLQO4rYADdkfvmIG1uLaadq\nGiTsxaXA/Vap2ffI+ECeUqtBdIwHLON4vEL6p1VKyUfbtAoafxnr9d1+kQaH0TAe60/J1Z8D6kmP\n5M/iCoWQaFq+Zo+0ACiXQikPt17lIhlwX0be+FuSa0WOwOBSnJyuzy+cpsd4ZQi724rQKbNtOx7M\nxq+FlamO+TPP26L6zIes+zfHCa/WD1+d9r1kuQ==</SignatureValue></Signature></root>"
+
+jobs:
+  build:
+    name: Build ${{ matrix.targetPlatform }} with ${{ matrix.vrsdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform: [StandaloneWindows64, StandaloneLinux64]
+        vrsdk: [SteamVR, Monoscopic]
+        include:
+          - targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
+            vrsdk: Monoscopic
+          - targetPlatform: Android
+            vrsdk: Oculus
+            extraoptions: -setDefaultPlatformTextureFormat astc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Used for finding the tag for git describe
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+
+      - name: Install Oculus unity package
+        if: matrix.vrsdk == 'Oculus'
+        run: |
+          # version 23.1
+          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
+          wget -q https://securecdn.oculus.com/binaries/download/?id=3884880558189851 -O package.tmp
+          mkdir tmp
+          tar -C tmp -xzf package.tmp
+          find tmp -type f | xargs chmod a-x
+          for pn in tmp/*/pathname; do
+            id=${pn%/*}
+            id=${id#*/}
+            p=$(head -1 $pn)
+            d=${p%/*}
+            mkdir -p "tmp/$d"
+            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
+            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
+          done
+          mkdir -p Assets/Oculus
+          cp -R tmp/Assets/Oculus/VR Assets/Oculus/
+          cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
+          rm -rf tmp package.tmp
+          ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
+
+      - name: Install TextMesh Pro package
+        run: |
+          # version 2.0.1; must be updated if the version changes
+          # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
+          mkdir tmp.plugin
+          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.0.1.tgz -O tmp.plugin/plugin.tgz
+          tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
+          mkdir tmp.package
+          tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
+          for pn in tmp.package/*/pathname; do
+            id=${pn%/*}
+            id=${id#*/}
+            p=$(head -1 $pn)
+            d=${p%/*}
+            mkdir -p "tmp.package/$d"
+            [ -f "tmp.package/$id/asset" ] && cp -v "tmp.package/$id/asset" "tmp.package/$p"
+            cp "tmp.package/$id/asset.meta" "tmp.package/${p}.meta"
+          done
+          mkdir -p 'Assets/TextMesh Pro'
+          cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
+          rm -rf tmp.plugin tmp.package
+
+      - uses: actions/cache@v2
+        with:
+          path: Library
+          # Adding the sha ensures that we always save it (by default cache hits are not saved, even if it's just a base and it's updated, which is not what we want)
+          key: Library-${{ matrix.targetPlatform }}-${{ github.sha }}
+          # When we load, take the 'latest' one that matches. Worst case, it's slightly out of date. Still better than nothing.
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+            Library-
+
+      - name: Update Oculus OVR Plugin
+        uses: game-ci/unity-builder@v2.0-alpha-6
+        if: matrix.vrsdk == 'Oculus'
+        with:
+          unityVersion: 2019.4.18f1
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildMethod: OVRPluginUpdater.BatchmodePluginUpdate  # We created this symlink above
+
+      - name: Set filename (for Windows)
+        if: matrix.targetPlatform == 'StandaloneWindows64'
+        run:
+          echo "filename=OpenBrush-github.exe" >> $GITHUB_ENV
+
+      - name: Set filename (for Linux)
+        if: matrix.targetPlatform == 'StandaloneLinux64'
+        run:
+          echo "filename=OpenBrush-github" >> $GITHUB_ENV
+
+      - name: Set filename (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run:
+          echo "filename=OpenBrush-github.app" >> $GITHUB_ENV
+
+      - name: Set filename (for Android)
+        if: matrix.targetPlatform == 'Android'
+        run:
+          echo "filename=com.Icosa.OpenBrushgithub.apk" >> $GITHUB_ENV
+
+      - name: Set build stamp
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          # We checkout the merge commit, but for the purpose of the tag, use the version from the PR, not the merge commit, which is rather hard to find later. We skip the version tag, since this comes from the code and can't be easily overwritten
+          GIT_DESCRIBE=$(git describe --tags ${{ github.event.pull_request.head.sha }} || true)
+          if [ ! -z $GIT_DESCRIBE ]
+          then
+            echo "stamp=-btb-stamp $(echo $GIT_DESCRIBE | cut -d'-' -f2-)" >> $GITHUB_ENV
+          else
+            echo "No value for git describe found!"
+          fi
+
+      - name: Build project
+        uses: game-ci/unity-builder@v2.0-alpha-6
+        with:
+          allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
+          unityVersion: 2019.4.18f1
+          targetPlatform: ${{ matrix.targetPlatform }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ env.stamp }} ${{ matrix.extraoptions }}
+          buildMethod: BuildTiltBrush.CommandLine
+
+      - name: Set executable permissions (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
+          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+
+      - name: Upload build/
+        uses: actions/upload-artifact@v2
+        with:
+          name: Build-${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}
+          path: build
+
