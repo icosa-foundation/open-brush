@@ -1,5 +1,5 @@
 ---
-name: Unity tests
+name: Builds
 
 on:
   pull_request: {}
@@ -131,7 +131,7 @@ jobs:
       - name: Build project
         uses: game-ci/unity-builder@v2.0-alpha-6
         with:
-          allowDirtyBuild: true
+          allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: 2019.4.18f1
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ env.stamp }} ${{ matrix.extraoptions }}
@@ -151,13 +151,3 @@ jobs:
           name: Build-${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}
           path: build
 
-      - name: Upload the full tree for debugging
-        uses: actions/upload-artifact@v2
-        if: false
-        with:
-          name: Tree-${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}
-          path: |
-            .
-            !Library
-            !build
-            !.git
