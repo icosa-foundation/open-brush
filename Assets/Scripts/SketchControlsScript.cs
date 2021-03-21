@@ -3925,8 +3925,8 @@ namespace TiltBrush
             return OverlayManager.m_Instance.RunInCompositor(
                 OverlayType.Export, () =>
                 {
-            // Sort of a kludge: put stuff back into the main canvas
-            SelectionManager.m_Instance.ClearActiveSelection();
+                    // Sort of a kludge: put stuff back into the main canvas
+                    SelectionManager.m_Instance.ClearActiveSelection();
                     Export.ExportScene();
                 }, 0.25f, false, true);
         }

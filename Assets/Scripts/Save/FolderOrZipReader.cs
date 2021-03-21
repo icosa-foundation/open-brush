@@ -38,6 +38,8 @@ namespace TiltBrush
         protected Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
         protected string m_subfolder;
 
+        public bool IsZip => m_IsFile;
+
         public FolderOrZipReader(string path)
         {
             m_RootPath = path;
