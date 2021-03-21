@@ -85,5 +85,8 @@
 /Assets/Oculus
 /Assets/Oculus.meta
 
+# In CI, this symlink is created to allow the updater to run. It should never go into source control
+/Assets/Editor/OVRPluginUpdater.cs
+
 # Cache files
 *.cache
