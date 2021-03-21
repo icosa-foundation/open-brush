@@ -28,6 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
+          fetch-depth: 0  # Used for finding the tag for git describe
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
       - name: Install Oculus unity package
@@ -114,13 +115,25 @@ jobs:
         run:
           echo "filename=com.Icosa.OpenBrushgithub.apk" >> $GITHUB_ENV
 
+      - name: Set build stamp
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          # We checkout the merge commit, but for the purpose of the tag, use the version from the PR, not the merge commit, which is rather hard to find later. We skip the version tag, since this comes from the code and can't be easily overwritten
+          GIT_DESCRIBE=$(git describe --tags ${{ github.event.pull_request.head.sha }} || true)
+          if [ ! -z $GIT_DESCRIBE ]
+          then
+            echo "stamp=-btb-stamp $(echo $GIT_DESCRIBE | cut -d'-' -f2-)" >> $GITHUB_ENV
+          else
+            echo "No value for git describe found!"
+          fi
+
       - name: Build project
         uses: game-ci/unity-builder@v2.0-alpha-6
         with:
           allowDirtyBuild: true
           unityVersion: 2019.4.18f1
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ env.stamp }} ${{ matrix.extraoptions }}
           buildMethod: BuildTiltBrush.CommandLine
 
       - name: Set executable permissions (for OSX)
