@@ -33,11 +33,6 @@ using UnityEngine;
 public class UserVariantBrush
 {
     public const string kConfigFile = "Brush.cfg";
-    public const string kIconTexture = "icon";
-    public const string kMainTexture = "main";
-    public const string kNormalTexture = "normal";
-    public readonly string[] kSupportedImageTypes = { "png", "jpg" };
-    public readonly string kSoundFile = "sound.wav";
 
     public class MapTo : Attribute
     {
@@ -57,12 +52,12 @@ public class UserVariantBrush
     [Serializable]
     public class BrushProperties
     {
-        public string VariantOf;
-        public string GUID;
-        [MapTo("m_DurableName")] public string Name;
-        [MapTo("m_Description")] public string Description;
+        [JsonProperty(Required = Required.Always)] public string VariantOf;
+        [JsonProperty(Required = Required.Always)] public string GUID;
+        [JsonProperty(Required = Required.Always)] public string ButtonIcon;
+        [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
+        [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
         [MapTo("m_DescriptionExtra")] [CanBeNull] public string ExtraDescription;
-        public string ButtonTexture;
 
         [Serializable]
         public class AudioProperties
@@ -83,7 +78,10 @@ public class UserVariantBrush
         {
             [CanBeNull] public string Material;
             [CanBeNull] public string Shader;
-            public Dictionary<string, object> Properties;
+            public Dictionary<string, int> IntProperties;
+            public Dictionary<string, float> FloatProperties;
+            public Dictionary<string, Color> ColorProperties;
+            public Dictionary<string, string> TextureProperties;
             [MapTo("m_TextureAtlasV")] public int? TextureAtlasV;
             [MapTo("m_TileRate")] public float? TileRate;
             [MapTo("m_UseBloomSwatchOnColorPicker")] public int? UseBloomSwatchOnColorPicker;
@@ -236,7 +234,7 @@ public class UserVariantBrush
             m_ConfigData = fileReader.ReadToEnd();
             m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(m_ConfigData, out warning);
         }
-        catch (JsonReaderException e)
+        catch (JsonException e)
         {
             Debug.Log($"Error reading {m_Location}/{kConfigFile}: {e.Message}");
             return false;
@@ -276,36 +274,21 @@ public class UserVariantBrush
         Descriptor.m_Supersedes = null;
         Descriptor.m_SupersededBy = null;
 
-        CopyConfigToDescriptor(m_BrushProperties, Descriptor);
-
-        Texture2D icon = LoadTexture(brushFile, kIconTexture);
+        Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
         if (icon == null)
         {
             Debug.Log($"Brush at {m_Location} has no icon texture.");
             return false;
         }
-
         Descriptor.m_ButtonTexture = icon;
 
-        Descriptor.Material = new Material(Descriptor.Material);
-
-        Texture2D main = LoadTexture(brushFile, kMainTexture);
-        if (main)
-        {
-            Descriptor.Material.mainTexture = main;
-        }
-
-        Texture2D normal = LoadTexture(brushFile, kNormalTexture);
-        if (normal)
-        {
-            if (Descriptor.Material.HasProperty(kNormalMapName))
-            {
-                Descriptor.Material.SetTexture(kNormalMapName, normal);
-            }
-        }
+        CopyConfigToDescriptor(m_BrushProperties, Descriptor);
+        ApplyMaterialProperties(brushFile, m_BrushProperties.Material);
 
         return true;
     }
+
+
 
     private void CopyConfigToDescriptor(System.Object propertiesObject, BrushDescriptor descriptor)
     {
@@ -338,22 +321,90 @@ public class UserVariantBrush
         }
     }
 
-    private Texture2D LoadTexture(FolderOrZipReader brushFile, string baseName)
+    private void ApplyMaterialProperties(FolderOrZipReader brushFile,
+        BrushProperties.MaterialProperties properties)
     {
-        foreach (var extension in kSupportedImageTypes)
+        // TODO : Support different material
+        // TODO : Support different shader
+
+        Descriptor.Material = new Material(Descriptor.Material);
+
+        if (properties.IntProperties != null)
         {
-            string filename = $"{baseName}.{extension}";
-            if (brushFile.Exists(filename))
+            foreach (var item in properties.IntProperties)
             {
-                Texture2D texture = new Texture2D(16, 16);
-                var buffer = new MemoryStream();
-                brushFile.GetReadStream(filename).CopyTo(buffer);
-                byte[] data = buffer.ToArray();
-                m_FileData[filename] = data;
-                if (ImageConversion.LoadImage(texture, data, true))
+                if (!Descriptor.Material.HasProperty(item.Key))
                 {
-                    return texture;
+                    Debug.LogError($"Material does not have property ${item.Key}.");
+                    continue;
                 }
+
+                Descriptor.Material.SetInt(item.Key, item.Value);
+            }
+        }
+
+        if (properties.FloatProperties != null)
+        {
+            foreach (var item in properties.FloatProperties)
+            {
+                if (!Descriptor.Material.HasProperty(item.Key))
+                {
+                    Debug.LogError($"Material does not have property ${item.Key}.");
+                    continue;
+                }
+
+                Descriptor.Material.SetFloat(item.Key, item.Value);
+            }
+        }
+
+        if (properties.ColorProperties != null)
+        {
+            foreach (var item in properties.ColorProperties)
+            {
+                if (!Descriptor.Material.HasProperty(item.Key))
+                {
+                    Debug.LogError($"Material does not have property ${item.Key}.");
+                    continue;
+                }
+
+                Descriptor.Material.SetColor(item.Key, item.Value);
+            }
+        }
+
+        if (properties.TextureProperties != null)
+        {
+            foreach (var item in properties.TextureProperties)
+            {
+                if (!Descriptor.Material.HasProperty(item.Key))
+                {
+                    Debug.LogError($"Material does not have property ${item.Key}.");
+                    continue;
+                }
+                Texture2D texture = LoadTexture(brushFile, item.Value);
+                if (texture != null)
+                {
+                    Descriptor.Material.SetTexture(item.Key, texture);
+                }
+                else
+                {
+                    Debug.LogError($"Couldn't load texture {item.Value} for material property {item.Key}.");
+                }
+            }
+        }
+    }
+
+    private Texture2D LoadTexture(FolderOrZipReader brushFile, string filename)
+    {
+        if (brushFile.Exists(filename))
+        {
+            Texture2D texture = new Texture2D(16, 16);
+            var buffer = new MemoryStream();
+            brushFile.GetReadStream(filename).CopyTo(buffer);
+            byte[] data = buffer.ToArray();
+            m_FileData[filename] = data;
+            if (ImageConversion.LoadImage(texture, data, true))
+            {
+                return texture;
             }
         }
         return null;
