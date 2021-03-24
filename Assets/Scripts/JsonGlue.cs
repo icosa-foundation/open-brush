@@ -126,11 +126,11 @@ public class CustomJsonWriter : JsonTextWriter {
 public class JsonVectorConverter : JsonConverter {
 
   public override bool CanConvert(Type objectType) {
-    return (objectType == typeof(Vector3)
-            || objectType == typeof(Vector2)
-            || objectType == typeof(Color)
-            || objectType == typeof(Color32)
-            || objectType == typeof(Quaternion));
+    return (objectType == typeof(Vector3) || objectType == typeof(Vector3?)
+            || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
+            || objectType == typeof(Color) || objectType == typeof(Color?)
+            || objectType == typeof(Color32) || objectType == typeof(Color32?)
+            || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?));
   }
 
   private static float ReadFloat(JsonReader reader) {
@@ -147,28 +147,28 @@ public class JsonVectorConverter : JsonConverter {
       throw new TiltBrush.BadJson("Expected array");
     }
     object result;
-    if (objectType == typeof(Vector3)) {
+    if (objectType == typeof(Vector3) || objectType == typeof(Vector3?)) {
       result = new Vector3(
           ReadFloat(reader),
           ReadFloat(reader),
           ReadFloat(reader));
-    } else if (objectType == typeof(Vector2)) {
+    } else if (objectType == typeof(Vector2) || objectType == typeof(Vector2?)) {
       result = new Vector2(
           ReadFloat(reader),
           ReadFloat(reader));
-    } else if (objectType == typeof(Color)) {
+    } else if (objectType == typeof(Color) || objectType == typeof(Color?)) {
       result = new Color(
           ReadFloat(reader),
           ReadFloat(reader),
           ReadFloat(reader),
           ReadFloat(reader));
-    } else if (objectType == typeof(Color32)) {
+    } else if (objectType == typeof(Color32) || objectType == typeof(Color32?)) {
       result = new Color32(
           (byte)ReadFloat(reader),
           (byte)ReadFloat(reader),
           (byte)ReadFloat(reader),
           (byte)ReadFloat(reader));
-    } else if (objectType == typeof(Quaternion)) {
+    } else if (objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)) {
       result = new Quaternion(
         ReadFloat(reader),
         ReadFloat(reader),
@@ -188,15 +188,15 @@ public class JsonVectorConverter : JsonConverter {
   public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
     var customWriter = writer as CustomJsonWriter;
     var objectType = value.GetType();
-    if (objectType == typeof(Vector3)) {
+    if (objectType == typeof(Vector3) || objectType == typeof(Vector3?)) {
       customWriter.WriteValue((Vector3)value);
-    } else if (objectType == typeof(Vector2)) {
+    } else if (objectType == typeof(Vector2) || objectType == typeof(Vector2?)) {
       customWriter.WriteValue((Vector2)value);
-    } else if (objectType == typeof(Color)) {
+    } else if (objectType == typeof(Color) || objectType == typeof(Color?)) {
       customWriter.WriteValue((Color)value);
-    } else if (objectType == typeof(Color32)) {
+    } else if (objectType == typeof(Color32) || objectType == typeof(Color32?)) {
       customWriter.WriteValue((Color32)value);
-    } else if (objectType == typeof(Quaternion)) {
+    } else if (objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)) {
       customWriter.WriteValue((Quaternion)value);
     } else {
       Debug.Assert(false, "Converter registered with bad type");
@@ -273,11 +273,11 @@ public class CustomJsonContractResolver : DefaultContractResolver {
   // results are cached
   protected override JsonContract CreateContract(Type objectType) {
     JsonContract contract = base.CreateContract(objectType);
-    if (objectType == typeof(Vector3)
-        || objectType == typeof(Vector2)
-        || objectType == typeof(Color)
-        || objectType == typeof(Color32)
-        || objectType == typeof(Quaternion)) {
+    if (objectType == typeof(Vector3) || objectType == typeof(Vector3?)
+        || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
+        || objectType == typeof(Color) || objectType == typeof(Color?)
+        || objectType == typeof(Color32) || objectType == typeof(Color32?)
+        || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)) {
       contract.Converter = new JsonVectorConverter();
     } else if (objectType == typeof(Guid)) {
       contract.Converter = new JsonGuidConverter();
