@@ -449,6 +449,6 @@ To download a build from the "tip", go to [commits](https://github.com/icosa-gal
 
 These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
 
-Note that the "experimental" builds (Windows/SteamVR and Android/Oculus only!) contain experimental brushes, and save files created using the experimental brushes cannot be loaded in the official build of Open Brush! Please do not use an "experiemntal" build unless you are aware of this restriction! 
+Note that the "experimental" builds (Windows/SteamVR and Android/Oculus only!) contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
 
 Note that if you download a Mac OS X build, you'll need to run `xattr -d com.apple.quarantine /path/to/OpenBrush-github.app` prior to be able to launch the app, as it is not signed with Apple developer keys.
