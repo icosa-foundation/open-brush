@@ -77,6 +77,11 @@ namespace TiltBrush
             m_storage = guid.ToString();
         }
 
+        public override int GetHashCode()
+        {
+            return m_storage.GetHashCode();
+        }
+
         public static implicit operator SerializableGuid(System.Guid rhs)
         {
             return new SerializableGuid { m_storage = rhs.ToString("D") };
