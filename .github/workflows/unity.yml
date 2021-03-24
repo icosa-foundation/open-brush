@@ -127,6 +127,10 @@ jobs:
           else
             echo "No value for git describe found!"
           fi
+      - name: Enable the use of a custom keystore
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
         uses: game-ci/unity-builder@v2.0-alpha-6
@@ -136,6 +140,11 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} -btb-github ${{ env.stamp }} ${{ matrix.extraoptions }}
           buildMethod: BuildTiltBrush.CommandLine
+          androidKeystoreName: openbrush.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
       - name: Set executable permissions (for OSX)
         if: matrix.targetPlatform == 'StandaloneOSX'

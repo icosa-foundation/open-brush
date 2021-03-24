@@ -610,6 +610,9 @@ static class BuildTiltBrush {
     };
     string keystoreName = null;
     string keyaliasName = null;
+    string keystorePass = Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS");
+    string keyaliasPass = Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS");
+
 
 #if OCULUS_SUPPORTED
     // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
@@ -670,13 +673,16 @@ static class BuildTiltBrush {
           // TODO: do we want to do anything with this? Can we use it instead of the version string
           // set externally?
           i++;
-        } else if (args[i] == "-androidVersionCode" ||
-            args[i] == "-androidKeystoreName" ||
-            args[i] == "-androidKeystorePass" ||
-            args[i] == "-androidKeyaliasName" ||
-            args[i] == "-androidKeyaliasPass") {
-          // TODO: do we want to do anything with these?
+        } else if (args[i] == "-androidVersionCode") {
           i++;
+        } else if (args[i] == "-androidKeystoreName") {
+          keystoreName = args[++i];
+        } else if (args[i] == "-androidKeystorePass") {
+          keystorePass = args[++i];
+        } else if (args[i] == "-androidKeyaliasName") {
+          keyaliasName = args[++i];
+        } else if (args[i] == "-androidKeyaliasPass") {
+          keyaliasPass = args[++i];
         } else if (args[i] == "-setDefaultPlatformTextureFormat") {
           i++;
         } else {
@@ -698,8 +704,8 @@ static class BuildTiltBrush {
     }
     tiltOptions.Target = target.Value;
     using (var unused = new TempSetCommandLineOnlyPlayerSettings(
-               keystoreName, Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS"),
-               keyaliasName, Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS"))) {
+               keystoreName, keystorePass,
+               keyaliasName, keyaliasPass)) {
       DoBuild(tiltOptions);
     }
   }
