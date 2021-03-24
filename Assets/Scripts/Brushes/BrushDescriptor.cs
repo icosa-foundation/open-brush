@@ -111,7 +111,7 @@ public class BrushDescriptor : ScriptableObject, IExportableMaterial {
   [DisabledProperty]
   [Vec2AsRange(LowerBound=0, Slider=false, HideMax=true)]
   [SerializeField]
-  private Vector2 m_PressureSizeRange = new Vector2(.1f, 1f);
+  public Vector2 m_PressureSizeRange = new Vector2(.1f, 1f);
   public float m_SizeVariance; // Used by particle and spray brushes.
   [Range(.001f, 1)]
   public float m_PreviewPressureSizeMin = .001f;

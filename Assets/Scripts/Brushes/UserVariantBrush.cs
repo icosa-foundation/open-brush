@@ -22,6 +22,13 @@ using Newtonsoft.Json;
 using TiltBrush;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine.Analytics;
+using UnityEngine.Animations;
+
+#endif
+
 /// <summary>
 /// A variant Brush based on an existing brush, but with different:
 /// * Texture
@@ -63,7 +70,7 @@ public class UserVariantBrush {
       [MapTo("m_BrushVolumeUpSpeed")] public float? VolumeUpSpeed;
       [MapTo("m_BrushVolumeDownSpeed")] public float? VolumeDownSpeed;
       [MapTo("m_VolumeVelocityRangeMultiplier")] public float? VolumeVelocityRangeMultiplier;
-      [MapTo("m_AudioReactive")] public float? IsAudioReactive;
+      [MapTo("m_AudioReactive")] public bool? IsAudioReactive;
       [CanBeNull] private string ButtonAudio;
     }
     [CanBeNull] [SubSection] public AudioProperties Audio;
@@ -78,7 +85,7 @@ public class UserVariantBrush {
       public Dictionary<string, string> TextureProperties;
       [MapTo("m_TextureAtlasV")] public int? TextureAtlasV;
       [MapTo("m_TileRate")] public float? TileRate;
-      [MapTo("m_UseBloomSwatchOnColorPicker")] public int? UseBloomSwatchOnColorPicker;
+      [MapTo("m_UseBloomSwatchOnColorPicker")] public bool? UseBloomSwatchOnColorPicker;
     }
     [CanBeNull] [SubSection] public MaterialProperties Material;
 
@@ -95,8 +102,8 @@ public class UserVariantBrush {
     public class ColorProperties {
       [MapTo("m_Opacity")] public float? Opacity;
       [MapTo("m_PressureOpacityRange")] public Vector2? PressureOpacityRange;
-      [MapTo("m_ColorLuminanceMin")] public Vector2? LuminanceMin;
-      [MapTo("m_ColorSaturationMax")] public Vector2? SaturationMax;
+      [MapTo("m_ColorLuminanceMin")] public float? LuminanceMin;
+      [MapTo("m_ColorSaturationMax")] public float? SaturationMax;
     }
     [CanBeNull] [SubSection] public ColorProperties Color;
 
@@ -251,7 +258,7 @@ public class UserVariantBrush {
     }
     Descriptor.m_ButtonTexture = icon;
 
-    CopyConfigToDescriptor(m_BrushProperties, Descriptor);
+    CopyPropertiesToDescriptor(m_BrushProperties, Descriptor);
     ApplyMaterialProperties(brushFile, m_BrushProperties.Material);
 
     return true;
@@ -259,7 +266,7 @@ public class UserVariantBrush {
   
   
 
-  private void CopyConfigToDescriptor(System.Object propertiesObject, BrushDescriptor descriptor) {
+  private void CopyPropertiesToDescriptor(System.Object propertiesObject, BrushDescriptor descriptor) {
     foreach (FieldInfo field in propertiesObject.GetType().GetFields()) {
       object fieldValue = field.GetValue(propertiesObject);
       if (fieldValue == null) {
@@ -276,7 +283,7 @@ public class UserVariantBrush {
         descriptorField.SetValue(descriptor, fieldValue);
       } else {
         if (field.GetCustomAttributes<SubSection>(true).Any()) {
-          CopyConfigToDescriptor(fieldValue, descriptor);
+          CopyPropertiesToDescriptor(fieldValue, descriptor);
         }
       }
     }
@@ -365,5 +372,77 @@ public class UserVariantBrush {
       }
     }
   }
+  
+#if UNITY_EDITOR  
+  [MenuItem("Tilt/Brushes/Export Standard Brush Properties")]
+  public static void ExportDescriptorDetails() {
+    TiltBrushManifest manifest =
+      AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
 
+    string destination = Path.GetFullPath(
+      Path.Combine(Application.dataPath, "../Support/Brushes/Examples"));
+    if (!Directory.Exists(destination)) {
+      Directory.CreateDirectory(destination);
+    }
+
+    foreach (var brush in manifest.Brushes) {
+      ExportDescriptor(brush, Path.Combine(destination, brush.name + ".txt"));
+    }
+  }
+  
+  public static void ExportDescriptor(BrushDescriptor brush, string filename) {
+    BrushProperties properties = new BrushProperties();
+    properties.VariantOf = brush.m_Guid.ToString();
+    properties.GUID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+    properties.ButtonIcon = "blank.png";
+
+    CopyDescriptorToProperties(brush, properties);
+    
+    try {
+      var serializer = JsonSerializer.Create(new JsonSerializerSettings() { 
+          ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        });
+      serializer.ContractResolver = new CustomJsonContractResolver();
+      using (var writer = new CustomJsonWriter(new StreamWriter(filename))) {
+        writer.Formatting = Formatting.Indented;
+        serializer.Serialize(writer, properties);
+      }
+    } catch (JsonException e) {
+      Debug.LogWarning(e.Message);
+    }
+  }
+  
+  private static void CopyDescriptorToProperties(BrushDescriptor descriptor, 
+                                                 System.Object propertiesObject) {
+    foreach (FieldInfo field in propertiesObject.GetType().GetFields()) {
+      try {
+        MapTo mapTo = field.GetCustomAttributes<MapTo>(true).FirstOrDefault();
+        if (mapTo != null) {
+          FieldInfo descriptorField = typeof(BrushDescriptor).GetField(mapTo.FieldName);
+          if (descriptorField == null) {
+            Debug.LogError(
+              $"Tried to set a value {mapTo.FieldName} on BrushDescriptor, but it doesn't exist!");
+            continue;
+          }
+
+          System.Object fieldValue = descriptorField.GetValue(descriptor);
+          field.SetValue(propertiesObject, fieldValue);
+        } else {
+          if (field.GetCustomAttributes<SubSection>(true).Any()) {
+            System.Object fieldValue = field.GetValue(propertiesObject);
+            if (fieldValue == null) {
+              fieldValue = Activator.CreateInstance(field.FieldType);
+              field.SetValue(propertiesObject, fieldValue);
+            }
+
+            CopyDescriptorToProperties(descriptor, fieldValue);
+          }
+        }
+      } catch (ArgumentException e) {
+        Debug.LogError($"Trying to convert ${field.Name}. {e.Message}");
+        throw;
+      }
+    }
+  }
+#endif
 }
