@@ -111,7 +111,7 @@ quickly. The following features will take a little more time.
 *   [Google service API support](#google-service-api-support)
 *   [Enabling native Oculus support](#enabling-native-oculus-support)
 *   [Sketchfab support](#sketchfab-support)
-*   [*.fbx file support](#fbx-file-support)
+*   [\*.fbx file support](#fbx-file-support)
 *   [Camera path support](#camera-path-support)
 *   [Video recording for the camera](#video-support)
 *   [Offline rendering support](#offline-rendering-support)
