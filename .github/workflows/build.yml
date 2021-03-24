@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.targetPlatform }} with ${{ matrix.vrsdk }}
+    name: ${{ matrix.targetPlatform }} with ${{ matrix.vrsdk }} ${{ matrix.experimental }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,6 +24,14 @@ jobs:
           - targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc
+          - targetPlatform: Android
+            vrsdk: Oculus
+            experimental: Experimental
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-experimental
+          - targetPlatform: StandaloneWindows64
+            vrsdk: SteamVR
+            experimental: Experimental
+            extraoptions: -btb-experimental
 
     steps:
       - name: Checkout repository
