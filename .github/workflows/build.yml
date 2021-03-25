@@ -11,27 +11,43 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.targetPlatform }} with ${{ matrix.vrsdk }} ${{ matrix.experimental }}
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        targetPlatform: [StandaloneWindows64, StandaloneLinux64]
-        vrsdk: [SteamVR, Monoscopic]
+        # We don't use an actual matrix because there's more exceptions than actual cases!
         include:
-          - targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
+          - name: Windows SteamVR
+            targetPlatform: StandaloneWindows64
+            vrsdk: SteamVR
+          - name: Windows SteamVR Experimental
+            targetPlatform: StandaloneWindows64
+            vrsdk: SteamVR
+            extraoptions: -btb-experimental
+          - name: Windows Monoscopic
+            targetPlatform: StandaloneWindows64
             vrsdk: Monoscopic
-          - targetPlatform: Android
+            extraoptions:
+          - name: Linux SteamVR
+            targetPlatform: StandaloneLinux64
+            vrsdk: SteamVR
+          - name: Linux Monoscopic
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic
+            extraoptions:
+          - name: OSX Monoscopic
+            targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
+            vrsdk: Monoscopic
+          - name: Oculus Quest
+            targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc
-          - targetPlatform: Android
+          - name: Oculus Quest Experimental
+            targetPlatform: Android
             vrsdk: Oculus
-            experimental: Experimental
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-experimental
-          - targetPlatform: StandaloneWindows64
-            vrsdk: SteamVR
-            experimental: Experimental
-            extraoptions: -btb-experimental
+
 
     steps:
       - name: Checkout repository
@@ -165,6 +181,6 @@ jobs:
       - name: Upload build/
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.targetPlatform }}-${{ matrix.vrsdk }} ${{ matrix.experimental }}
+          name: ${{ matrix.name }}
           path: build
 
