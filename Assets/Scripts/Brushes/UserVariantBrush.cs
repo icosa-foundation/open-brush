@@ -21,7 +21,7 @@ using JetBrains.Annotations;
 using Newtonsoft.Json;
 using TiltBrush;
 using UnityEngine;
-
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine.Analytics;
@@ -61,10 +61,10 @@ public class UserVariantBrush
     {
         [JsonProperty(Required = Required.Always)] public string VariantOf;
         [JsonProperty(Required = Required.Always)] public string GUID;
-        [JsonProperty(Required = Required.Always)] public string ButtonIcon;
         [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
         [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
         [MapTo("m_DescriptionExtra")] [CanBeNull] public string ExtraDescription;
+        [JsonProperty(Required = Required.Always)] public string ButtonIcon;
 
         [Serializable]
         public class AudioProperties
@@ -83,11 +83,10 @@ public class UserVariantBrush
         [Serializable]
         public class MaterialProperties
         {
-            [CanBeNull] public string Material;
             [CanBeNull] public string Shader;
-            public Dictionary<string, int> IntProperties;
             public Dictionary<string, float> FloatProperties;
             public Dictionary<string, Color> ColorProperties;
+            public Dictionary<string, Vector4> VectorProperties;
             public Dictionary<string, string> TextureProperties;
             [MapTo("m_TextureAtlasV")] public int? TextureAtlasV;
             [MapTo("m_TileRate")] public float? TileRate;
@@ -336,20 +335,6 @@ public class UserVariantBrush
 
         Descriptor.Material = new Material(Descriptor.Material);
 
-        if (properties.IntProperties != null)
-        {
-            foreach (var item in properties.IntProperties)
-            {
-                if (!Descriptor.Material.HasProperty(item.Key))
-                {
-                    Debug.LogError($"Material does not have property ${item.Key}.");
-                    continue;
-                }
-
-                Descriptor.Material.SetInt(item.Key, item.Value);
-            }
-        }
-
         if (properties.FloatProperties != null)
         {
             foreach (var item in properties.FloatProperties)
@@ -375,6 +360,20 @@ public class UserVariantBrush
                 }
 
                 Descriptor.Material.SetColor(item.Key, item.Value);
+            }
+        }
+
+        if (properties.VectorProperties != null)
+        {
+            foreach (var item in properties.VectorProperties)
+            {
+                if (!Descriptor.Material.HasProperty(item.Key))
+                {
+                    Debug.LogError($"Material does not have property ${item.Key}.");
+                    continue;
+                }
+
+                Descriptor.Material.SetVector(item.Key, item.Value);
             }
         }
 
@@ -443,7 +442,7 @@ public class UserVariantBrush
           AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
 
         string destination = Path.GetFullPath(
-          Path.Combine(Application.dataPath, "../Support/Brushes/Examples"));
+          Path.Combine(Application.dataPath, "../Support/Brushes/ExportedProperties"));
         if (!Directory.Exists(destination))
         {
             Directory.CreateDirectory(destination);
@@ -453,6 +452,8 @@ public class UserVariantBrush
         {
             ExportDescriptor(brush, Path.Combine(destination, brush.name + ".txt"));
         }
+
+        Debug.Log($"Exported {manifest.Brushes.Length} brushes.");
     }
 
     public static void ExportDescriptor(BrushDescriptor brush, string filename)
@@ -463,6 +464,7 @@ public class UserVariantBrush
         properties.ButtonIcon = "blank.png";
 
         CopyDescriptorToProperties(brush, properties);
+        CopyMaterialToProperties(brush, properties);
 
         try
         {
@@ -523,6 +525,44 @@ public class UserVariantBrush
             {
                 Debug.LogError($"Trying to convert ${field.Name}. {e.Message}");
                 throw;
+            }
+        }
+    }
+
+    private static void CopyMaterialToProperties(BrushDescriptor descriptor,
+       BrushProperties properties)
+    {
+        Material material = descriptor.Material;
+        properties.Material.Shader = material.shader.name;
+
+        properties.Material.FloatProperties = new Dictionary<string, float>();
+        properties.Material.ColorProperties = new Dictionary<string, Color>();
+        properties.Material.VectorProperties = new Dictionary<string, Vector4>();
+        properties.Material.TextureProperties = new Dictionary<string, string>();
+
+        Shader shader = material.shader;
+
+        for (int i = 0; i < shader.GetPropertyCount(); ++i)
+        {
+            string name = shader.GetPropertyName(i);
+            switch (shader.GetPropertyType(i))
+            {
+                case ShaderPropertyType.Float:
+                case ShaderPropertyType.Range:
+                    properties.Material.FloatProperties.Add(name, material.GetFloat(name));
+                    break;
+                case ShaderPropertyType.Color:
+                    properties.Material.ColorProperties.Add(name, material.GetColor(name));
+                    break;
+                case ShaderPropertyType.Vector:
+                    properties.Material.VectorProperties.Add(name, material.GetVector(name));
+                    break;
+                case ShaderPropertyType.Texture:
+                    properties.Material.TextureProperties.Add(name, "");
+                    break;
+                default:
+                    Debug.LogWarning($"Shader {shader.name} from material {material.name} has property {name} of unsupported type {shader.GetPropertyType(i)}.");
+                    break;
             }
         }
     }
