@@ -290,10 +290,17 @@ public class UserVariantBrush {
 
   private void ApplyMaterialProperties(FolderOrZipReader brushFile,
       BrushProperties.MaterialProperties properties) {
-    // TODO : Support different material
-    // TODO : Support different shader
-    
-    Descriptor.Material = new Material(Descriptor.Material);
+    if (properties.Shader != null) {
+      Shader shader = Shader.Find(properties.Shader);
+      if (shader != null) {
+        Descriptor.Material = new Material(shader);
+      } else {
+        Debug.LogError($"Cannot find shader {properties.Shader}.");
+      }
+    } 
+    if (Descriptor.Material == null) {
+      Descriptor.Material = new Material(Descriptor.Material);
+    }
 
     if (properties.FloatProperties != null) {
       foreach (var item in properties.FloatProperties) {
