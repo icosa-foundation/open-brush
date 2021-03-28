@@ -12,6 +12,7 @@ env:
 jobs:
   build:
     name: ${{ matrix.name }}
+    if: github.repository == 'icosa-gallery/open-brush'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
