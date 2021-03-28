@@ -12,7 +12,6 @@ env:
 jobs:
   build:
     name: ${{ matrix.name }}
-    if: github.repository == 'icosa-gallery/open-brush'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -153,7 +152,17 @@ jobs:
             echo "No value for git describe found!"
           fi
       - name: Enable the use of a custom keystore
-        if: ${{ github.event_name == 'push' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+        if: |
+          github.event_name == 'push' &&
+          env.ANDROID_KEYSTORE_BASE64 != null &&
+          env.ANDROID_KEYSTORE_PASS != null &&
+          env.ANDROID_KEYALIAS_NAME != null &&
+          env.ANDROID_KEYALIAS_PASS != null
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
