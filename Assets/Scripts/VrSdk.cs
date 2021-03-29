@@ -175,6 +175,7 @@ public class VrSdk : MonoBehaviour {
       // ---------------------------------------------------------------------------------------- //
       // OculusVR
       // ---------------------------------------------------------------------------------------- //
+
       OVRManager manager = gameObject.AddComponent<OVRManager>();
       manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
       manager.useRecommendedMSAALevel = false;
@@ -183,6 +184,9 @@ public class VrSdk : MonoBehaviour {
       // adding components to the VR Camera needed for fading view and getting controller poses.
       m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
       m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
+
+      // Adding mixed reality camera server
+      gameObject.AddComponent<MRCCameraServer>();
 #endif // OCULUS_SUPPORTED
     } else if (App.Config.m_SdkMode == SdkMode.SteamVR) {
       // ---------------------------------------------------------------------------------------- //
