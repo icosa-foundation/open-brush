@@ -219,6 +219,19 @@ jobs:
           sed -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" -i Assets/Scenes/Main.unity
           sed -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" -i ProjectSettings/ProjectSettings.asset
 
+      - name: Add secure secrets file
+        env:
+          SECRETS_ASSET: ${{ secrets.SECRETS_ASSET }}
+          SECRETS_ASSET_META: ${{ secrets.SECRETS_ASSET_META }}
+        if: |
+          env.SECRETS_ASSET != null &&
+          env.SECRETS_ASSET_META != null
+        run: |
+          echo "$SECRETS_ASSET" > Assets/Secrets.asset
+          echo "$SECRETS_ASSET_META" > Assets/Secrets.asset.meta
+          SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
+          sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
+
       - name: Enable the use of a custom keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
