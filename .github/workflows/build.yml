@@ -308,9 +308,13 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-          zip -r releases/OpenBrush_Desktop_$VERSION.zip build_windows_steamvr/
-          zip -r releases/OpenBrush_Desktop_Experimental_$VERSION.zip build_windows_steamvr_experimental/
-
+          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          cd releases
+          zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
+          zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
+          rm -rf OpenBrush_Desktop_$VERSION
+          rm -rf OpenBrush_Desktop_Experimental_$VERSION
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
