@@ -11,7 +11,7 @@
     <application
         android:allowBackup="false"
         tools:replace="android:allowBackup"
-		android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true">
         <activity
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
             android:configChanges="locale|fontScale|keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
@@ -29,4 +29,5 @@
         android:name="android.hardware.vr.headtracking"
         android:version="1"
         android:required="true" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
 </manifest>
