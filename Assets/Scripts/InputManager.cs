@@ -84,7 +84,8 @@ public class InputManager : MonoBehaviour {
     Confirm,
     Cancel,
     Trash,
-    Share
+    Share,
+    Fly,
   }
 
   /// WARNING: do not arbitrarily rename these enum values.
@@ -617,7 +618,10 @@ public class InputManager : MonoBehaviour {
     case SketchCommands.Undo:
     case SketchCommands.Redo:
       return Wand.GetCommand(rCommand);
+    case SketchCommands.Fly:
+      return Brush.GetCommand(rCommand);
     }
+    
 
     return false;
   }
