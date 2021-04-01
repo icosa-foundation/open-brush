@@ -100,6 +100,10 @@ jobs:
           - name: Linux SteamVR
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
+          - name: Linux SteamVR Experimental
+            targetPlatform: StandaloneLinux64
+            vrsdk: SteamVR
+            extraoptions: -btb-experimental
           - name: Linux Monoscopic
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
