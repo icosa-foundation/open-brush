@@ -100,6 +100,10 @@ jobs:
           - name: Linux SteamVR
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
+          - name: Linux SteamVR Experimental
+            targetPlatform: StandaloneLinux64
+            vrsdk: SteamVR
+            extraoptions: -btb-experimental
           - name: Linux Monoscopic
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
@@ -305,6 +309,18 @@ jobs:
           name: Windows SteamVR Experimental
           path: build_windows_steamvr_experimental
 
+      - name: Download Build Artifacts (Linux SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR
+          path: build_linux_steamvr
+
+      - name: Download Build Artifacts (Linux SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR Experimental
+          path: build_linux_steamvr_experimental
+
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v2
         with:
@@ -326,11 +342,19 @@ jobs:
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
+          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_$VERSION/OpenBrush-github
+          tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush-github
+          tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
+          rm -rf OpenBrush_Linux_$VERSION
+          rm -rf OpenBrush_Linux_Experimental_$VERSION
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
