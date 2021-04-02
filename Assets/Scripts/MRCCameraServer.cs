@@ -82,16 +82,19 @@ public class MRCCameraServer: MonoBehaviour {
         tcpListenerThread.Start();     
     }
 
-    public void Update()
-    {
-        if (!calibratedCameraPose.HasValue)
-        {
+    public void Update() {
+        if (!calibratedCameraPose.HasValue) {
             if (!OVRPlugin.Media.GetInitialized())
                 return;
+
             OVRPlugin.CameraIntrinsics cameraIntrinsics;
             OVRPlugin.CameraExtrinsics cameraExtrinsics;
-            OVRPlugin.GetMixedRealityCameraInfo(0, out cameraExtrinsics, out cameraIntrinsics);
-            calibratedCameraPose = cameraExtrinsics.RelativePose.ToOVRPose();
+
+            if (OVRPlugin.GetMixedRealityCameraInfo(0, out cameraExtrinsics, out cameraIntrinsics)) {
+                calibratedCameraPose = cameraExtrinsics.RelativePose.ToOVRPose();
+            } else {
+                return;
+            }
         }
 
         // The receivedCameraPose is relative to the original calibrated pose, which is itself expressed in stage space.
