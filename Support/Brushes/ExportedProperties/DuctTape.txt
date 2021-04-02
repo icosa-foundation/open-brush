@@ -1,9 +1,11 @@
 {
   "VariantOf": "d0262945-853c-4481-9cbd-88586bed93cb",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "DuctTape",
   "Description": "Duct Tape",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

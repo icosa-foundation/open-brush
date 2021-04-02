@@ -1,9 +1,11 @@
 {
   "VariantOf": "44bb800a-fbc3-4592-8426-94ecb05ddec3",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Streamers",
   "Description": "Streamers",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

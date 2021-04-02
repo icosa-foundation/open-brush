@@ -1,9 +1,11 @@
 {
   "VariantOf": "b2ffef01-eaaa-4ab5-aa64-95a2c4f5dbc6",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "NeonPulse",
   "Description": "Neon Pulse",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

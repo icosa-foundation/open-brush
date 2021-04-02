@@ -1,9 +1,11 @@
 {
   "VariantOf": "d902ed8b-d0d1-476c-a8de-878a79e3a34c",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Snow",
   "Description": "Snow",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,
@@ -25,30 +27,7 @@
       "_TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
     },
     "VectorProperties": {
-      "_ScrollDistance": {
-        "x": 0.0,
-        "y": -3.0,
-        "z": 0.0,
-        "w": 1.0,
-        "normalized": {
-          "x": 0.0,
-          "y": -0.948683262,
-          "z": 0.0,
-          "w": 0.316227764,
-          "normalized": {
-            "x": 0.0,
-            "y": -0.9486833,
-            "z": 0.0,
-            "w": 0.3162278,
-            "magnitude": 1.0,
-            "sqrMagnitude": 1.00000012
-          },
-          "magnitude": 0.99999994,
-          "sqrMagnitude": 0.99999994
-        },
-        "magnitude": 3.1622777,
-        "sqrMagnitude": 10.0
-      }
+      "_ScrollDistance": [ 0.0, -3.0, 0.0, 1.0 ]
     },
     "TextureProperties": {
       "_MainTex": ""

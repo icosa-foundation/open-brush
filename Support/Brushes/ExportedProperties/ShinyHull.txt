@@ -1,9 +1,11 @@
 {
   "VariantOf": "faaa4d44-fcfb-4177-96be-753ac0421ba3",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "ShinyHull",
   "Description": "Shiny Hull",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

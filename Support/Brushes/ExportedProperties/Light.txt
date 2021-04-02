@@ -1,9 +1,11 @@
 {
   "VariantOf": "2241cd32-8ba2-48a5-9ee7-2caef7e9ed62",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Light",
   "Description": "Light",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

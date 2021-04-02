@@ -1,9 +1,11 @@
 {
   "VariantOf": "d229d335-c334-495a-a801-660ac8a87360",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "VelvetInk",
   "Description": "Velvet Ink",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

@@ -1,9 +1,11 @@
 {
   "VariantOf": "dce872c2-7b49-4684-b59b-c45387949c5c",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Hypercolor",
   "Description": "Hypercolor",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

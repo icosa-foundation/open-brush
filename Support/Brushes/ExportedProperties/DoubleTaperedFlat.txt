@@ -1,9 +1,11 @@
 {
   "VariantOf": "0d3889f3-3ede-470c-8af4-f44813306126",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "DoubleTaperedFlat",
   "Description": "Pinched Flat",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

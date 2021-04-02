@@ -1,9 +1,11 @@
 {
   "VariantOf": "d381e0f5-3def-4a0d-8853-31e9200bcbda",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Lofted",
   "Description": "Lofted",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.02,
