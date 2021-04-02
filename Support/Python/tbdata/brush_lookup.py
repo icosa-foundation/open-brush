@@ -26,12 +26,12 @@ class BrushLookup():
         for f in fs:
           if f.lower().endswith('.asset'):
             fullf = os.path.join(r, f)
-            with open(fullf) as f:
-              data = f.read()
+            with open(fullf) as inf:
+              data = inf.read()
             guid = re.search('m_storage: (.*)$', data, re.M).group(1)
             # name = re.search('m_Name: (.*)$', data, re.M).group(1)
-
-            yield guid, f[:-6]
+            name = f[:-6]
+            yield guid, name
 
   _instances = {}
 
