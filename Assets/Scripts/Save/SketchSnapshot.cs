@@ -226,7 +226,8 @@ namespace TiltBrush
                     }
 
                     // write out user invariant brushes
-                    foreach (var brush in App.Instance.m_Manifest.UserVariantBrushes)
+                    foreach (var brush in
+                        App.Instance.m_Manifest.UserVariantBrushes.Where(x => x.EmbedInSketch))
                     {
                         brush.Save(tiltWriter, Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
                     }
