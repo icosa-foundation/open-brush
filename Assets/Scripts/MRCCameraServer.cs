@@ -63,7 +63,7 @@ public class MRCCameraServer: MonoBehaviour {
     private OVRPose cameraPose = OVRPose.identity;
 
     public void Start() {
-        tcpListenerThread = new Thread (new ThreadStart(ListenForIncommingRequests));         
+        tcpListenerThread = new Thread (new ThreadStart(ListenForIncomingRequests));         
         tcpListenerThread.IsBackground = true;         
         tcpListenerThread.Start();     
     }
@@ -114,7 +114,7 @@ public class MRCCameraServer: MonoBehaviour {
     }  
 
     public const int MaxBufferLength = 65536;
-    private void ListenForIncommingRequests () {         
+    private void ListenForIncomingRequests () {         
         try {                        
             tcpListener = new TcpListener(IPAddress.Any, 1337);             
             tcpListener.Start();              
