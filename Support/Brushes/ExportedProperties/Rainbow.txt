@@ -1,9 +1,11 @@
 {
   "VariantOf": "ad1ad437-76e2-450d-a23a-e17f8310b960",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Rainbow",
   "Description": "Rainbow",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0025,

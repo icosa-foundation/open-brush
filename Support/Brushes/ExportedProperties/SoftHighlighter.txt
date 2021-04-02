@@ -1,9 +1,11 @@
 {
   "VariantOf": "accb32f5-4509-454f-93f8-1df3fd31df1b",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "SoftHighlighter",
   "Description": "Soft Highlighter",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.1,

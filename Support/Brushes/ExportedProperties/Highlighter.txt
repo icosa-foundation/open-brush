@@ -1,9 +1,11 @@
 {
   "VariantOf": "cf019139-d41c-4eb0-a1d0-5cf54b0a42f3",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Highlighter",
   "Description": "Highlighter",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

@@ -1,9 +1,11 @@
 {
   "VariantOf": "f72ec0e7-a844-4e38-82e3-140c44772699",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "OilPaint",
   "Description": "Oil Paint",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,
@@ -20,7 +22,7 @@
       "_Cutoff": 0.5
     },
     "ColorProperties": {
-      "_Color": [ 1.0, 1.0, 1.0, 1.0 ],
+      "_Color": [ 1.0, 0.5, 0.5, 1.0 ],
       "_SpecColor": [ 0.235294119, 0.235294119, 0.235294119, 1.0 ]
     },
     "VectorProperties": {},

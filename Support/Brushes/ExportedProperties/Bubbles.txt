@@ -1,9 +1,11 @@
 {
   "VariantOf": "89d104cd-d012-426b-b5b3-bbaee63ac43c",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Bubbles",
   "Description": "Bubbles",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

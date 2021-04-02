@@ -1,9 +1,11 @@
 {
   "VariantOf": "f5c336cf-5108-4b40-ade9-c687504385ab",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Ink",
   "Description": "Ink",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

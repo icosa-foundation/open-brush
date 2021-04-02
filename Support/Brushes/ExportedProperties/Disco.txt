@@ -1,9 +1,11 @@
 {
   "VariantOf": "4391aaaa-df73-4396-9e33-31e4e4930b27",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Disco",
   "Description": "Disco",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.01,

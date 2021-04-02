@@ -1,9 +1,11 @@
 {
   "VariantOf": "10201aa3-ebc2-42d8-84b7-2e63f6eeb8ab",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Waveform",
   "Description": "Waveform",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

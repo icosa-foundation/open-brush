@@ -1,9 +1,11 @@
 {
   "VariantOf": "e0abbc80-0f80-e854-4970-8924a0863dcc",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Petal",
   "Description": "Petal",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

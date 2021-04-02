@@ -1,9 +1,11 @@
 {
   "VariantOf": "a8fea537-da7c-4d4b-817f-24f074725d6d",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "UnlitHull",
   "Description": "Unlit Hull",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

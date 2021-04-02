@@ -1,9 +1,11 @@
 {
   "VariantOf": "f1114e2e-eb8d-4fde-915a-6e653b54e9f5",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Paper",
   "Description": "Paper",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.04,

@@ -1,9 +1,11 @@
 {
   "VariantOf": "02ffb866-7fb2-4d15-b761-1012cefb1360",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Embers",
   "Description": "Embers",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.03,
@@ -25,30 +27,7 @@
       "_TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
     },
     "VectorProperties": {
-      "_ScrollDistance": {
-        "x": 2.0,
-        "y": 6.0,
-        "z": 0.0,
-        "w": 1.0,
-        "normalized": {
-          "x": 0.312347531,
-          "y": 0.937042534,
-          "z": 0.0,
-          "w": 0.156173766,
-          "normalized": {
-            "x": 0.312347561,
-            "y": 0.9370426,
-            "z": 0.0,
-            "w": 0.156173781,
-            "magnitude": 1.0,
-            "sqrMagnitude": 1.00000012
-          },
-          "magnitude": 0.99999994,
-          "sqrMagnitude": 0.99999994
-        },
-        "magnitude": 6.40312433,
-        "sqrMagnitude": 41.0
-      }
+      "_ScrollDistance": [ 2.0, 6.0, 0.0, 1.0 ]
     },
     "TextureProperties": {
       "_MainTex": ""

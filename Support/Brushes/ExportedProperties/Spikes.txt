@@ -1,9 +1,11 @@
 {
   "VariantOf": "cf7f0059-7aeb-53a4-2b67-c83d863a9ffa",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Spikes",
   "Description": "Spikes",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

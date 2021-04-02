@@ -1,9 +1,11 @@
 {
   "VariantOf": "0f0ff7b2-a677-45eb-a7d6-0cd7206f4816",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "ChromaticWave",
   "Description": "Chromatic Wave",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

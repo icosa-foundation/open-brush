@@ -1,9 +1,11 @@
 {
   "VariantOf": "70d79cca-b159-4f35-990c-f02193947fe8",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Smoke",
   "Description": "Smoke",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

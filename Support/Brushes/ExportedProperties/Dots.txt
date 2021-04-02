@@ -1,9 +1,11 @@
 {
   "VariantOf": "6a1cf9f9-032c-45ec-9b1d-a6680bee30f7",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Dots",
   "Description": "Dots",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,
@@ -24,22 +26,7 @@
       "_TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
     },
     "VectorProperties": {
-      "_WaveformIntensity": {
-        "x": 0.0,
-        "y": 15.0,
-        "z": 0.0,
-        "w": 0.0,
-        "normalized": {
-          "x": 0.0,
-          "y": 1.0,
-          "z": 0.0,
-          "w": 0.0,
-          "magnitude": 1.0,
-          "sqrMagnitude": 1.0
-        },
-        "magnitude": 15.0,
-        "sqrMagnitude": 225.0
-      }
+      "_WaveformIntensity": [ 0.0, 15.0, 0.0, 0.0 ]
     },
     "TextureProperties": {
       "_MainTex": ""

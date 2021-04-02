@@ -1,9 +1,11 @@
 {
   "VariantOf": "8dc4a70c-d558-4efd-a5ed-d4e860f40dc3",
   "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "Author": "",
   "Name": "Splatter",
   "Description": "Splatter",
   "ExtraDescription": "",
+  "CopyRestrictions": 0,
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.05,
