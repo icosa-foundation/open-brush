@@ -119,6 +119,14 @@ public class CustomJsonWriter : JsonTextWriter {
     }
     WriteEndArray();
   }
+  
+  public void WriteValue(float[] v) {
+    WriteStartArray(true);
+    for (var i = 0; i < v.Length; ++i) {
+      WriteValue(v[i]);
+    }
+    WriteEndArray();
+  }
 }
 
 // Supports Unity vectors represented as arrays.
@@ -198,6 +206,8 @@ public class JsonVectorConverter : JsonConverter {
       customWriter.WriteValue((Color32)value);
     } else if (objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)) {
       customWriter.WriteValue((Quaternion)value);
+    } else if (objectType == typeof(float[])) {
+      customWriter.WriteValue((float[])value);
     } else {
       Debug.Assert(false, "Converter registered with bad type");
       throw new TiltBrush.BadJson("Internal error");
@@ -277,7 +287,8 @@ public class CustomJsonContractResolver : DefaultContractResolver {
         || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
         || objectType == typeof(Color) || objectType == typeof(Color?)
         || objectType == typeof(Color32) || objectType == typeof(Color32?)
-        || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)) {
+        || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)
+        || objectType == typeof(float[])) {
       contract.Converter = new JsonVectorConverter();
     } else if (objectType == typeof(Guid)) {
       contract.Converter = new JsonGuidConverter();
