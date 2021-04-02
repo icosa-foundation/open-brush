@@ -24,8 +24,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine.Analytics;
-using UnityEngine.Animations;
 
 #endif
 
@@ -85,8 +83,8 @@ public class UserVariantBrush
         {
             [CanBeNull] public string Shader;
             public Dictionary<string, float> FloatProperties;
-            public Dictionary<string, Color> ColorProperties;
-            public Dictionary<string, Vector4> VectorProperties;
+            public Dictionary<string, float[]> ColorProperties;
+            public Dictionary<string, float[]> VectorProperties;
             public Dictionary<string, string> TextureProperties;
             [MapTo("m_TextureAtlasV")] public int? TextureAtlasV;
             [MapTo("m_TileRate")] public float? TileRate;
@@ -97,8 +95,8 @@ public class UserVariantBrush
         [Serializable]
         public class SizeProperties
         {
-            [MapTo("m_BrushSizeRange")] public Vector2? BrushSizeRange;
-            [MapTo("m_PressureSizeRange")] public Vector2? PressureSizeRange;
+            [MapTo("m_BrushSizeRange")] public float[] BrushSizeRange;
+            [MapTo("m_PressureSizeRange")] public float[] PressureSizeRange;
             [MapTo("m_SizeVariance")] public float? SizeVariance;
             [MapTo("m_PreviewPressureSizeMin")] public float? PreviewPressureSizeMin;
         }
@@ -108,7 +106,7 @@ public class UserVariantBrush
         public class ColorProperties
         {
             [MapTo("m_Opacity")] public float? Opacity;
-            [MapTo("m_PressureOpacityRange")] public Vector2? PressureOpacityRange;
+            [MapTo("m_PressureOpacityRange")] public float[] PressureOpacityRange;
             [MapTo("m_ColorLuminanceMin")] public float? LuminanceMin;
             [MapTo("m_ColorSaturationMax")] public float? SaturationMax;
         }
@@ -130,7 +128,7 @@ public class UserVariantBrush
             [MapTo("m_SprayRateMultiplier")] public float? SprayRateMultiplier;
             [MapTo("m_RotationVariance")] public float? RotationVariance;
             [MapTo("m_PositionVariance")] public float? PositionVariance;
-            [MapTo("m_SizeRatio")] public Vector2? SizeRatio;
+            [MapTo("m_SizeRatio")] public float[] SizeRatio;
         }
         [CanBeNull] [SubSection] public QuadBatchProperties QuadBatch;
 
@@ -315,7 +313,17 @@ public class UserVariantBrush
                       $"Tried to set a value {mapTo.FieldName} on BrushDescriptor, but it doesn't exist!");
                     continue;
                 }
-                descriptorField.SetValue(descriptor, fieldValue);
+
+                if (descriptorField.FieldType == typeof(Vector2))
+                {
+                    float[] floatArray = fieldValue as float[];
+                    Vector2 vector = new Vector2(floatArray[0], floatArray[1]);
+                    descriptorField.SetValue(descriptor, vector);
+                }
+                else
+                {
+                    descriptorField.SetValue(descriptor, fieldValue);
+                }
             }
             else
             {
@@ -371,7 +379,13 @@ public class UserVariantBrush
                     continue;
                 }
 
-                Descriptor.Material.SetColor(item.Key, item.Value);
+                if (item.Value.Length != 4)
+                {
+                    Debug.LogError($"Color value {item.Key} in Material does not have four values.");
+                    continue;
+                }
+                Color color = new Color(item.Value[0], item.Value[1], item.Value[2], item.Value[3]);
+                Descriptor.Material.SetColor(item.Key, color);
             }
         }
 
@@ -385,7 +399,13 @@ public class UserVariantBrush
                     continue;
                 }
 
-                Descriptor.Material.SetVector(item.Key, item.Value);
+                if (item.Value.Length != 4)
+                {
+                    Debug.LogError($"Vector value {item.Key} in Material does not have four values.");
+                    continue;
+                }
+                Vector4 vector = new Vector4(item.Value[0], item.Value[1], item.Value[2], item.Value[3]);
+                Descriptor.Material.SetVector(item.Key, vector);
             }
         }
 
@@ -497,6 +517,22 @@ public class UserVariantBrush
         }
     }
 
+    private static System.Object ConvertStructsToArrays(System.Object obj)
+    {
+        if (obj.GetType() == typeof(Vector2))
+        {
+            Vector2 vector = (Vector2)obj;
+            obj = new[] { vector.x, vector.y };
+        }
+        else if (obj.GetType() == typeof(Color))
+        {
+            Color color = (Color)obj;
+            obj = new[] { color.r, color.g, color.b, color.a };
+        }
+
+        return obj;
+    }
+
     private static void CopyDescriptorToProperties(BrushDescriptor descriptor,
                                                    System.Object propertiesObject)
     {
@@ -515,7 +551,7 @@ public class UserVariantBrush
                         continue;
                     }
 
-                    System.Object fieldValue = descriptorField.GetValue(descriptor);
+                    System.Object fieldValue = ConvertStructsToArrays(descriptorField.GetValue(descriptor));
                     field.SetValue(propertiesObject, fieldValue);
                 }
                 else
@@ -525,7 +561,7 @@ public class UserVariantBrush
                         System.Object fieldValue = field.GetValue(propertiesObject);
                         if (fieldValue == null)
                         {
-                            fieldValue = Activator.CreateInstance(field.FieldType);
+                            fieldValue = ConvertStructsToArrays(Activator.CreateInstance(field.FieldType));
                             field.SetValue(propertiesObject, fieldValue);
                         }
 
@@ -548,8 +584,8 @@ public class UserVariantBrush
         properties.Material.Shader = material.shader.name;
 
         properties.Material.FloatProperties = new Dictionary<string, float>();
-        properties.Material.ColorProperties = new Dictionary<string, Color>();
-        properties.Material.VectorProperties = new Dictionary<string, Vector4>();
+        properties.Material.ColorProperties = new Dictionary<string, float[]>();
+        properties.Material.VectorProperties = new Dictionary<string, float[]>();
         properties.Material.TextureProperties = new Dictionary<string, string>();
 
         Shader shader = material.shader;
@@ -564,10 +600,14 @@ public class UserVariantBrush
                     properties.Material.FloatProperties.Add(name, material.GetFloat(name));
                     break;
                 case ShaderPropertyType.Color:
-                    properties.Material.ColorProperties.Add(name, material.GetColor(name));
+                    Color color = material.GetColor(name);
+                    float[] colorArray = { color.r, color.g, color.b, color.a };
+                    properties.Material.ColorProperties.Add(name, colorArray);
                     break;
                 case ShaderPropertyType.Vector:
-                    properties.Material.VectorProperties.Add(name, material.GetVector(name));
+                    Vector4 vector = material.GetVector(name);
+                    float[] floatArray = { vector.x, vector.y, vector.z, vector.w };
+                    properties.Material.VectorProperties.Add(name, floatArray);
                     break;
                 case ShaderPropertyType.Texture:
                     properties.Material.TextureProperties.Add(name, "");

@@ -140,6 +140,16 @@ namespace TiltBrush
             }
             WriteEndArray();
         }
+
+        public void WriteValue(float[] v)
+        {
+            WriteStartArray(true);
+            for (var i = 0; i < v.Length; ++i)
+            {
+                WriteValue(v[i]);
+            }
+            WriteEndArray();
+        }
     }
 
     // Supports Unity vectors represented as arrays.
@@ -248,6 +258,10 @@ namespace TiltBrush
             {
                 customWriter.WriteValue((Quaternion)value);
             }
+            else if (objectType == typeof(float[]))
+            {
+                customWriter.WriteValue((float[])value);
+            }
             else
             {
                 Debug.Assert(false, "Converter registered with bad type");
@@ -343,7 +357,8 @@ namespace TiltBrush
                 || objectType == typeof(Vector2) || objectType == typeof(Vector2?)
                 || objectType == typeof(Color) || objectType == typeof(Color?)
                 || objectType == typeof(Color32) || objectType == typeof(Color32?)
-                || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?))
+                || objectType == typeof(Quaternion) || objectType == typeof(Quaternion?)
+                || objectType == typeof(float[]))
             {
                 contract.Converter = new JsonVectorConverter();
             }
