@@ -45,6 +45,12 @@ public class UserVariantBrush {
     }
   }
 
+  public enum CopyRestrictions {
+    EmbedAndShare,
+    EmbedAndDoNotShare,
+    DoNotEmbed
+  }
+
   public class SubSection : Attribute {}
 
   /// <summary>
@@ -55,10 +61,12 @@ public class UserVariantBrush {
   public class BrushProperties {
     [JsonProperty(Required = Required.Always)] public string VariantOf;
     [JsonProperty(Required = Required.Always)] public string GUID;
+    public string Author;
     [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
     [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
     [MapTo("m_DescriptionExtra")] [CanBeNull] public string ExtraDescription;
-    [JsonProperty(Required = Required.Always)] public string ButtonIcon;
+    public CopyRestrictions CopyRestrictions;
+    public string ButtonIcon;
 
     [Serializable]
     public class AudioProperties {
@@ -159,12 +167,16 @@ public class UserVariantBrush {
   }
 
   public BrushDescriptor Descriptor { get; private set; } = null;
+  public bool ShowInGUI => m_ShowInGUI;
+  public bool EmbedInSketch => m_EmbedInSketch;
 
   private const string kNormalMapName = "_BumpMap";
   private BrushProperties m_BrushProperties;
   private string m_ConfigData;
   private Dictionary<string, byte[]> m_FileData;
   private string m_Location;
+  private bool m_ShowInGUI;
+  private bool m_EmbedInSketch;
   
   private UserVariantBrush() {}
 
@@ -180,7 +192,7 @@ public class UserVariantBrush {
 
       brushFile.SetRootFolder(Path.GetDirectoryName(configDir));
     }
-    if (brush.Initialize(brushFile)) {
+    if (brush.Initialize(brushFile, forceInGui: true)) {
       return brush;
     }
     return null;
@@ -202,7 +214,7 @@ public class UserVariantBrush {
     return null;
   }
 
-  private bool Initialize(FolderOrZipReader brushFile) {
+  private bool Initialize(FolderOrZipReader brushFile, bool forceInGui = false) {
     m_FileData = new Dictionary<string, byte[]>();
      if (!brushFile.Exists(kConfigFile)) {
       return false;
@@ -247,21 +259,24 @@ public class UserVariantBrush {
     Descriptor.IsUserVariant = true;
     Descriptor.m_Supersedes = null;
     Descriptor.m_SupersededBy = null;
+    Descriptor.m_HiddenInGui = !forceInGui &&
+                               m_BrushProperties.CopyRestrictions != CopyRestrictions.EmbedAndShare;
+    m_EmbedInSketch = m_BrushProperties.CopyRestrictions != CopyRestrictions.DoNotEmbed;
 
-    Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
-    if (icon == null) {
-      Debug.Log($"Brush at {m_Location} has no icon texture.");
-      return false;
+    if (m_BrushProperties.ButtonIcon != null) {
+      Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
+      if (icon == null) {
+        Debug.Log($"Brush at {m_Location} has no icon texture.");
+        return false;
+      }
+      Descriptor.m_ButtonTexture = icon;
     }
-    Descriptor.m_ButtonTexture = icon;
 
     CopyPropertiesToDescriptor(m_BrushProperties, Descriptor);
     ApplyMaterialProperties(brushFile, m_BrushProperties.Material);
 
     return true;
   }
-  
-  
 
   private void CopyPropertiesToDescriptor(System.Object propertiesObject, BrushDescriptor descriptor) {
     foreach (FieldInfo field in propertiesObject.GetType().GetFields()) {
@@ -418,10 +433,12 @@ public class UserVariantBrush {
     properties.VariantOf = brush.m_Guid.ToString();
     properties.GUID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
     properties.ButtonIcon = "blank.png";
+    properties.Author = "";
+    properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
 
     CopyDescriptorToProperties(brush, properties);
     CopyMaterialToProperties(brush, properties);
-    
+
     try {
       var serializer = JsonSerializer.Create(new JsonSerializerSettings() { 
           ReferenceLoopHandling = ReferenceLoopHandling.Ignore
