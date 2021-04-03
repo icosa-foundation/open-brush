@@ -41,20 +41,15 @@ def create(args):
   os.makedirs(dst_folder, exist_ok = True)
   with open(properties_filename, "r") as properties_file:
     src_brush_data = json.load(properties_file)
-    brush_data = {
-      "VariantOf" : src_brush_data["GUID"],
-      "GUID" : str(uuid.uuid4()),
-      "Name" : args.name,
-      "Description" : args.name,
-      "CopyRestrictions" : "EmbedAndShare",
-      "Author" : "",
-      "Comments" : "",
-      "Instructions_1" : "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
-      "Instructions_2" : f"The 'Original' section below contains the original properties and values valid for the {args.brush} base brush.",
-      "Instructions_3" : f"You can copy them out of the 'Original' block and put them above to override the values in your {args.name} brush.",
-      "Instructions_4" : "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
-      "Original" : src_brush_data
-    }
+    brush_data = src_brush_data.copy()
+    brush_data["VariantOf"] = src_brush_data["GUID"]
+    brush_data["GUID"] = str(uuid.uuid4())
+    brush_data["Name"] = args.name
+    brush_data["Description"] = args.name
+    brush_data["Author"] = ""
+    brush_data["ButtonIcon"] = ""
+    brush_data["Comments"] = ""
+    brush_data["Original_Base_Brush_Values"] = src_brush_data
 
     with open(dst_cfg, "w") as config_file:
       json.dump(brush_data, config_file, indent=4)
