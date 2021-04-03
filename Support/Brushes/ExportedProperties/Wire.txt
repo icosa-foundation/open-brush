@@ -1,11 +1,11 @@
 {
-  "VariantOf": "4391385a-cf83-4396-9e33-31e4e4930b27",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "4391385a-cf83-4396-9e33-31e4e4930b27",
+  "Author": "Open Brush",
   "Name": "Wire",
   "Description": "Wire",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

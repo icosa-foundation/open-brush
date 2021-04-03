@@ -1,11 +1,11 @@
 {
-  "VariantOf": "700f3aa8-9a7c-2384-8b8a-ea028905dd8c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "700f3aa8-9a7c-2384-8b8a-ea028905dd8c",
+  "Author": "Open Brush",
   "Name": "CelVinyl",
   "Description": "Cel Vinyl",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

@@ -1,11 +1,11 @@
 {
-  "VariantOf": "1161af82-50cf-47db-9706-0c3576d43c43",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "1161af82-50cf-47db-9706-0c3576d43c43",
+  "Author": "Open Brush",
   "Name": "CoarseBristles",
   "Description": "Coarse Bristles",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.09,

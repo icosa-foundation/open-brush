@@ -1,11 +1,11 @@
 {
-  "VariantOf": "5347acf0-a8e2-47b6-8346-30c70719d763",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "5347acf0-a8e2-47b6-8346-30c70719d763",
+  "Author": "Open Brush",
   "Name": "WigglyGraphite",
   "Description": "Dr. Wigglez",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

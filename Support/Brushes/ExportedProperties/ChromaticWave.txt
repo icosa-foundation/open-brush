@@ -1,11 +1,11 @@
 {
-  "VariantOf": "0f0ff7b2-a677-45eb-a7d6-0cd7206f4816",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "0f0ff7b2-a677-45eb-a7d6-0cd7206f4816",
+  "Author": "Open Brush",
   "Name": "ChromaticWave",
   "Description": "Chromatic Wave",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

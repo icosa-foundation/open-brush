@@ -1,11 +1,11 @@
 {
-  "VariantOf": "b67c0e81-ce6d-40a8-aeb0-ef036b081aa3",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "b67c0e81-ce6d-40a8-aeb0-ef036b081aa3",
+  "Author": "Open Brush",
   "Name": "WetPaint",
   "Description": "Wet Paint",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.07,

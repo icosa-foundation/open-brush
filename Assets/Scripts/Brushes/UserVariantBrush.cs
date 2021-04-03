@@ -19,6 +19,7 @@ using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -70,7 +71,7 @@ public class UserVariantBrush
         [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
         [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
         [MapTo("m_DescriptionExtra")] [CanBeNull] public string ExtraDescription;
-        public CopyRestrictions CopyRestrictions;
+        [JsonConverter(typeof(StringEnumConverter))] public CopyRestrictions CopyRestrictions;
         public string ButtonIcon;
 
         [Serializable]
@@ -508,10 +509,10 @@ public class UserVariantBrush
     public static void ExportDescriptor(BrushDescriptor brush, string filename)
     {
         BrushProperties properties = new BrushProperties();
-        properties.VariantOf = brush.m_Guid.ToString();
-        properties.GUID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+        properties.VariantOf = "";
+        properties.GUID = brush.m_Guid.ToString();
         properties.ButtonIcon = "blank.png";
-        properties.Author = "";
+        properties.Author = "Open Brush";
         properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
 
         CopyDescriptorToProperties(brush, properties);

@@ -1,11 +1,11 @@
 {
-  "VariantOf": "1caa6d7d-f015-3f54-3a4b-8b5354d39f81",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "1caa6d7d-f015-3f54-3a4b-8b5354d39f81",
+  "Author": "Open Brush",
   "Name": "Comet",
   "Description": "Comet",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.09,

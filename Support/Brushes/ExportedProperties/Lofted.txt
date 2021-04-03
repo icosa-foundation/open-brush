@@ -1,11 +1,11 @@
 {
-  "VariantOf": "d381e0f5-3def-4a0d-8853-31e9200bcbda",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "d381e0f5-3def-4a0d-8853-31e9200bcbda",
+  "Author": "Open Brush",
   "Name": "Lofted",
   "Description": "Lofted",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.02,

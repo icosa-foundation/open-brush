@@ -1,11 +1,11 @@
 {
-  "VariantOf": "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "d90c6ad8-af0f-4b54-b422-e0f92abe1b3c",
+  "Author": "Open Brush",
   "Name": "TaperedMarker",
   "Description": "Tapered Marker",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.02,

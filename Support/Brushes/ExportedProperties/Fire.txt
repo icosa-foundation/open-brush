@@ -1,11 +1,11 @@
 {
-  "VariantOf": "cb92b597-94ca-4255-b017-0e3f42f12f9e",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "cb92b597-94ca-4255-b017-0e3f42f12f9e",
+  "Author": "Open Brush",
   "Name": "Fire",
   "Description": "Fire",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

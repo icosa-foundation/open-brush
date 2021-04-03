@@ -1,11 +1,11 @@
 {
-  "VariantOf": "0eb4db27-3f82-408d-b5a1-19ebd7d5b711",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "0eb4db27-3f82-408d-b5a1-19ebd7d5b711",
+  "Author": "Open Brush",
   "Name": "Stars",
   "Description": "Stars",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

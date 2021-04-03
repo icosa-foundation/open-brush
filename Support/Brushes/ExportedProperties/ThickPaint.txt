@@ -1,11 +1,11 @@
 {
-  "VariantOf": "75b32cf0-fdd6-4d89-a64b-e2a00b247b0f",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "75b32cf0-fdd6-4d89-a64b-e2a00b247b0f",
+  "Author": "Open Brush",
   "Name": "ThickPaint",
   "Description": "Thick Paint",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.07,

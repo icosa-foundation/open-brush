@@ -1,11 +1,11 @@
 {
-  "VariantOf": "b468c1fb-f254-41ed-8ec9-57030bc5660c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "b468c1fb-f254-41ed-8ec9-57030bc5660c",
+  "Author": "Open Brush",
   "Name": "TaperedFlat",
   "Description": "Tapered Flat",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

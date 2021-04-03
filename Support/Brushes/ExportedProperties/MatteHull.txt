@@ -1,11 +1,11 @@
 {
-  "VariantOf": "79348357-432d-4746-8e29-0e25c112e3aa",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "79348357-432d-4746-8e29-0e25c112e3aa",
+  "Author": "Open Brush",
   "Name": "MatteHull",
   "Description": "Matte Hull",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

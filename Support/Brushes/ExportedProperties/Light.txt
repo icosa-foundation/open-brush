@@ -1,11 +1,11 @@
 {
-  "VariantOf": "2241cd32-8ba2-48a5-9ee7-2caef7e9ed62",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "2241cd32-8ba2-48a5-9ee7-2caef7e9ed62",
+  "Author": "Open Brush",
   "Name": "Light",
   "Description": "Light",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

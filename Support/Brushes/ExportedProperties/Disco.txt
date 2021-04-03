@@ -1,11 +1,11 @@
 {
-  "VariantOf": "4391aaaa-df73-4396-9e33-31e4e4930b27",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "4391aaaa-df73-4396-9e33-31e4e4930b27",
+  "Author": "Open Brush",
   "Name": "Disco",
   "Description": "Disco",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.01,

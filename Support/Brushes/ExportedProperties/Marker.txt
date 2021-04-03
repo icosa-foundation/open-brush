@@ -1,11 +1,11 @@
 {
-  "VariantOf": "429ed64a-4e97-4466-84d3-145a861ef684",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "429ed64a-4e97-4466-84d3-145a861ef684",
+  "Author": "Open Brush",
   "Name": "Marker",
   "Description": "Marker",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,
