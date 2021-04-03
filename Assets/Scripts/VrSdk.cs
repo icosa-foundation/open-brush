@@ -184,7 +184,7 @@ public class VrSdk : MonoBehaviour {
       m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
       m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
 
-      gameObject.AddComponent<MRCCameraUpdate>();
+      gameObject.AddComponent<OculusMRCCameraUpdate>();
 #endif // OCULUS_SUPPORTED
     } else if (App.Config.m_SdkMode == SdkMode.SteamVR) {
       // ---------------------------------------------------------------------------------------- //
