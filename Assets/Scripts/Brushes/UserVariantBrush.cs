@@ -250,7 +250,8 @@ public class UserVariantBrush
         {
             var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile));
             m_ConfigData = fileReader.ReadToEnd();
-            m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(m_ConfigData, out warning);
+            m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(
+                m_ConfigData, out warning, ignoreMissingMember: true);
         }
         catch (JsonException e)
         {
@@ -295,7 +296,7 @@ public class UserVariantBrush
                                    m_BrushProperties.CopyRestrictions != CopyRestrictions.EmbedAndShare;
         m_EmbedInSketch = m_BrushProperties.CopyRestrictions != CopyRestrictions.DoNotEmbed;
 
-        if (m_BrushProperties.ButtonIcon != null)
+        if (!string.IsNullOrEmpty(m_BrushProperties.ButtonIcon))
         {
             Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
             if (icon == null)
@@ -356,7 +357,9 @@ public class UserVariantBrush
     private void ApplyMaterialProperties(FolderOrZipReader brushFile,
         BrushProperties.MaterialProperties properties)
     {
-        if (properties.Shader != null)
+        Descriptor.Material = new Material(Descriptor.Material);
+        if (!string.IsNullOrEmpty(properties.Shader)
+              && properties.Shader != Descriptor.Material.shader.name)
         {
             Shader shader = Shader.Find(properties.Shader);
             if (shader != null)
@@ -367,10 +370,6 @@ public class UserVariantBrush
             {
                 Debug.LogError($"Cannot find shader {properties.Shader}.");
             }
-        }
-        if (Descriptor.Material == null)
-        {
-            Descriptor.Material = new Material(Descriptor.Material);
         }
 
         if (properties.FloatProperties != null)
@@ -436,14 +435,17 @@ public class UserVariantBrush
                     Debug.LogError($"Material does not have property ${item.Key}.");
                     continue;
                 }
-                Texture2D texture = LoadTexture(brushFile, item.Value);
-                if (texture != null)
+                if (!string.IsNullOrEmpty(item.Value))
                 {
-                    Descriptor.Material.SetTexture(item.Key, texture);
-                }
-                else
-                {
-                    Debug.LogError($"Couldn't load texture {item.Value} for material property {item.Key}.");
+                    Texture2D texture = LoadTexture(brushFile, item.Value);
+                    if (texture != null)
+                    {
+                        Descriptor.Material.SetTexture(item.Key, texture);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Couldn't load texture {item.Value} for material property {item.Key}.");
+                    }
                 }
             }
         }

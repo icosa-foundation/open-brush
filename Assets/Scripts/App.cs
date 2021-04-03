@@ -1749,7 +1749,8 @@ namespace TiltBrush
             }
         }
 
-        public static T DeserializeObjectWithWarning<T>(string text, out string warning)
+        public static T DeserializeObjectWithWarning<T>(string text, out string warning,
+              bool ignoreMissingMember = false)
         {
             // Try twice, once to catch "unknown key" warnings, once to actually get a result.
             warning = null;
@@ -1757,7 +1758,8 @@ namespace TiltBrush
             {
                 return JsonConvert.DeserializeObject<T>(text, new JsonSerializerSettings
                 {
-                    MissingMemberHandling = MissingMemberHandling.Error
+                    MissingMemberHandling =
+                      ignoreMissingMember ? MissingMemberHandling.Ignore : MissingMemberHandling.Error
                 });
             }
             catch (JsonSerializationException e)
