@@ -1,11 +1,11 @@
 {
-  "VariantOf": "a8fea537-da7c-4d4b-817f-24f074725d6d",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "a8fea537-da7c-4d4b-817f-24f074725d6d",
+  "Author": "Open Brush",
   "Name": "UnlitHull",
   "Description": "Unlit Hull",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

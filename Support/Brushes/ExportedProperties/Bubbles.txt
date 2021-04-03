@@ -1,11 +1,11 @@
 {
-  "VariantOf": "89d104cd-d012-426b-b5b3-bbaee63ac43c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "89d104cd-d012-426b-b5b3-bbaee63ac43c",
+  "Author": "Open Brush",
   "Name": "Bubbles",
   "Description": "Bubbles",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.05,

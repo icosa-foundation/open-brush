@@ -1,11 +1,11 @@
 {
-  "VariantOf": "44bb800a-fbc3-4592-8426-94ecb05ddec3",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "44bb800a-fbc3-4592-8426-94ecb05ddec3",
+  "Author": "Open Brush",
   "Name": "Streamers",
   "Description": "Streamers",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

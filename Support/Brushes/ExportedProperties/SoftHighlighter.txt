@@ -1,11 +1,11 @@
 {
-  "VariantOf": "accb32f5-4509-454f-93f8-1df3fd31df1b",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "accb32f5-4509-454f-93f8-1df3fd31df1b",
+  "Author": "Open Brush",
   "Name": "SoftHighlighter",
   "Description": "Soft Highlighter",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.1,

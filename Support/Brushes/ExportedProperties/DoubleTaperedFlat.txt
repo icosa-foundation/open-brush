@@ -1,11 +1,11 @@
 {
-  "VariantOf": "0d3889f3-3ede-470c-8af4-f44813306126",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "0d3889f3-3ede-470c-8af4-f44813306126",
+  "Author": "Open Brush",
   "Name": "DoubleTaperedFlat",
   "Description": "Pinched Flat",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.03,

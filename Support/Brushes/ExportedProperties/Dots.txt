@@ -1,11 +1,11 @@
 {
-  "VariantOf": "6a1cf9f9-032c-45ec-9b1d-a6680bee30f7",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "6a1cf9f9-032c-45ec-9b1d-a6680bee30f7",
+  "Author": "Open Brush",
   "Name": "Dots",
   "Description": "Dots",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

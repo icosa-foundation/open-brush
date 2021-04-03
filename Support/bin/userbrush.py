@@ -16,6 +16,7 @@
 
 
 import argparse
+import json
 import os
 import uuid
 import sys
@@ -27,8 +28,8 @@ def list(args):
     print(os.path.splitext(file)[0])
     
 def create(args):
-  properties_file = os.path.join(properties_dir, args.brush + ".txt")
-  if (not os.path.exists(properties_file)):
+  properties_filename = os.path.join(properties_dir, args.brush + ".txt")
+  if (not os.path.exists(properties_filename)):
     print(f"Error - '{args.brush}' is not a valid base brush - use userbrush list to list valid brushes.")
     exit
   dst_folder = os.path.join(os.path.join(os.path.join(os.path.expanduser('~'), 'Documents\\Open Brush\\Brushes'), args.name))
@@ -38,25 +39,27 @@ def create(args):
     if (answer != 'y' and answer !='Y'):
       sys.exit()
   os.makedirs(dst_folder, exist_ok = True)
-  src = open(properties_file, 'r')
-  dst = open(dst_cfg, 'w')
-  for line in src:
-    stripline = line.strip()
-    if (stripline.endswith('{') or stripline.endswith('}') or stripline.endswith('},')):
-      dst.write(line)
-    elif (stripline.startswith('"VariantOf"')):
-      dst.write(line)
-    elif (stripline.startswith('"GUID"')):
-      dst.write(f'  "GUID": "{uuid.uuid4()}",\n')
-    elif (stripline.startswith('"Name"')):
-      dst.write(f'  "Name": "{args.name}",\n')
-    elif (stripline.startswith('"Description"')):
-      dst.write(f'  "Description": "{args.name}",\n')
-    else:
-      dst.write(f'//{line[2:]}')
-  dst.close()
-  src.close()
-  print (f'Created brush config at {dst_cfg}.')
+  with open(properties_filename, "r") as properties_file:
+    src_brush_data = json.load(properties_file)
+    brush_data = {
+      "VariantOf" : src_brush_data["GUID"],
+      "GUID" : str(uuid.uuid4()),
+      "Name" : args.name,
+      "Description" : args.name,
+      "CopyRestrictions" : "EmbedAndShare",
+      "Author" : "",
+      "Comments" : "",
+      "Instructions_1" : "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+      "Instructions_2" : f"The 'Original' section below contains the original properties and values valid for the {args.brush} base brush.",
+      "Instructions_3" : f"You can copy them out of the 'Original' block and put them above to override the values in your {args.name} brush.",
+      "Instructions_4" : "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+      "Original" : src_brush_data
+    }
+
+    with open(dst_cfg, "w") as config_file:
+      json.dump(brush_data, config_file, indent=4)
+  
+      print (f'Created brush config at {dst_cfg}.')
   
 
 def main():

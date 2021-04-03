@@ -1,11 +1,11 @@
 {
-  "VariantOf": "2f212815-f4d3-c1a4-681a-feeaf9c6dc37",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "2f212815-f4d3-c1a4-681a-feeaf9c6dc37",
+  "Author": "Open Brush",
   "Name": "Icing",
   "Description": "Icing",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.06,

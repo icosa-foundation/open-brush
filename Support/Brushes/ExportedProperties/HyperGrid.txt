@@ -1,11 +1,11 @@
 {
-  "VariantOf": "6a1cf9f9-032c-45ec-9b6e-a6680bee32e9",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "6a1cf9f9-032c-45ec-9b6e-a6680bee32e9",
+  "Author": "Open Brush",
   "Name": "HyperGrid",
   "Description": "Hyper Grid",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

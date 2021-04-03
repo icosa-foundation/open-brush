@@ -1,11 +1,11 @@
 {
-  "VariantOf": "dce872c2-7b49-4684-b59b-c45387949c5c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "dce872c2-7b49-4684-b59b-c45387949c5c",
+  "Author": "Open Brush",
   "Name": "Hypercolor",
   "Description": "Hypercolor",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

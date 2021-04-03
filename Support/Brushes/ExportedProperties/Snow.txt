@@ -1,11 +1,11 @@
 {
-  "VariantOf": "d902ed8b-d0d1-476c-a8de-878a79e3a34c",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "d902ed8b-d0d1-476c-a8de-878a79e3a34c",
+  "Author": "Open Brush",
   "Name": "Snow",
   "Description": "Snow",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

@@ -1,11 +1,11 @@
 {
-  "VariantOf": "02ffb866-7fb2-4d15-b761-1012cefb1360",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "02ffb866-7fb2-4d15-b761-1012cefb1360",
+  "Author": "Open Brush",
   "Name": "Embers",
   "Description": "Embers",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.03,

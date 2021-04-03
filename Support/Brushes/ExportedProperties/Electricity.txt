@@ -1,11 +1,11 @@
 {
-  "VariantOf": "f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51",
+  "Author": "Open Brush",
   "Name": "Electricity",
   "Description": "Electricity",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.0,

@@ -1,11 +1,11 @@
 {
-  "VariantOf": "2d35bcf0-e4d8-452c-97b1-3311be063130",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "2d35bcf0-e4d8-452c-97b1-3311be063130",
+  "Author": "Open Brush",
   "Name": "Flat",
   "Description": "Flat",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": 0.04,

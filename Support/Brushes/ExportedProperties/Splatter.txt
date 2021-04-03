@@ -1,11 +1,11 @@
 {
-  "VariantOf": "8dc4a70c-d558-4efd-a5ed-d4e860f40dc3",
-  "GUID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "Author": "",
+  "VariantOf": "",
+  "GUID": "8dc4a70c-d558-4efd-a5ed-d4e860f40dc3",
+  "Author": "Open Brush",
   "Name": "Splatter",
   "Description": "Splatter",
   "ExtraDescription": "",
-  "CopyRestrictions": 0,
+  "CopyRestrictions": "EmbedAndShare",
   "ButtonIcon": "blank.png",
   "Audio": {
     "MaxPitchShift": -0.05,
