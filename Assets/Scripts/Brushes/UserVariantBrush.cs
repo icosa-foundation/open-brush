@@ -296,22 +296,19 @@ public class UserVariantBrush
 
         var baseBrush = App.Instance.m_Manifest.Brushes.FirstOrDefault(
           x => x.m_Guid.ToString() == m_BrushProperties.VariantOf);
-        if (baseBrush == null)
-        {
-            baseBrush = App.Instance.m_Manifest.Brushes.FirstOrDefault(
-              x => x.m_Description == m_BrushProperties.VariantOf);
-        }
 
         if (baseBrush == null)
         {
             Debug.Log(
               $"In brush at {m_Location}, no brush named {m_BrushProperties.VariantOf} could be found.");
+            return false;
         }
 
         if (App.Instance.m_Manifest.UniqueBrushes().Any(x => x.m_Guid.ToString() == m_BrushProperties.GUID))
         {
             Debug.Log(
               $"Cannot load brush at {m_Location} because its GUID matches {baseBrush.name}.");
+            return false;
         }
 
         Descriptor = UnityEngine.Object.Instantiate(baseBrush);
