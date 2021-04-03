@@ -39,20 +39,31 @@ using UnityEditor;
 public class UserVariantBrush {
   public const string kConfigFile = "Brush.cfg";
 
+  /// <summary>
+  /// Used to map fields in the BrushProperties to BrushDescriptor fields.
+  /// </summary>
   public class MapTo : Attribute {
     public string FieldName { get; set; }
     public MapTo(string fieldName) {
       FieldName = fieldName;
     }
   }
+  
+  /// <summary>
+  /// Used to mark a subclass of BrushProperties as a subsection.
+  /// </summary>
+  public class SubSection : Attribute {}
 
+  /// <summary>
+  /// How a brush may be shared.
+  /// This controls whether a brush will be saved in to any sketches that use it, as well as whether
+  /// the brush may be used or saved from a sketch.
+  /// </summary>
   public enum CopyRestrictions {
     EmbedAndShare,
     EmbedAndDoNotShare,
     DoNotEmbed
   }
-
-  public class SubSection : Attribute {}
 
   /// <summary>
   /// This class is used to serialize in the brush data. Most of the fields have MapTo attributes
@@ -171,7 +182,6 @@ public class UserVariantBrush {
   public bool ShowInGUI => m_ShowInGUI;
   public bool EmbedInSketch => m_EmbedInSketch;
 
-  private const string kNormalMapName = "_BumpMap";
   private BrushProperties m_BrushProperties;
   private string m_ConfigData;
   private Dictionary<string, byte[]> m_FileData;
@@ -181,6 +191,12 @@ public class UserVariantBrush {
   
   private UserVariantBrush() {}
 
+  /// <summary>
+  /// Creates a User Variant Brush from a given source file or folder. Used for creating brushes
+  /// from the user's Open Brush/Brushes folder.
+  /// </summary>
+  /// <param name="sourceFolder">Pathname of a folder or zip file containing the brush.</param>
+  /// <returns>A created UserVariantBrush, or null if it couldn't be created.</returns>
   public static UserVariantBrush Create(string sourceFolder) {
     var brush = new UserVariantBrush();
     brush.m_Location = Path.GetFileName(sourceFolder);
@@ -199,6 +215,13 @@ public class UserVariantBrush {
     return null;
   }
 
+  /// <summary>
+  /// Creates a user variant brush from a SceneFileInfo object. This is used to load a brush from
+  /// inside a tilt file.
+  /// </summary>
+  /// <param name="fileInfo">The tile file.</param>
+  /// <param name="subfolder">The folder within the tilt file containing the brush data</param>
+  /// <returns>A created UserVariantBrush, or null if it couldn't be created.</returns>
   public static UserVariantBrush Create(SceneFileInfo fileInfo, string subfolder) {
     var brush = new UserVariantBrush();
     brush.m_Location = fileInfo.FullPath;
@@ -215,6 +238,12 @@ public class UserVariantBrush {
     return null;
   }
 
+  /// <summary>
+  /// Initialize a brush from a file or folder.
+  /// </summary>
+  /// <param name="brushFile">The FolderOrZipReader used to read the brush.</param>
+  /// <param name="forceInGui">Whether to force inclusion of the brush into the brushes panel.</param>
+  /// <returns>Success or failure.</returns>
   private bool Initialize(FolderOrZipReader brushFile, bool forceInGui = false) {
     m_FileData = new Dictionary<string, byte[]>();
      if (!brushFile.Exists(kConfigFile)) {
@@ -280,6 +309,12 @@ public class UserVariantBrush {
     return true;
   }
 
+  /// <summary>
+  /// Copies the fields in an object into a BrushDescriptor.
+  /// This is primarily managed by whether or not the fields have a MapTo attribute.
+  /// </summary>
+  /// <param name="propertiesObject">An object to be copied from.</param>
+  /// <param name="descriptor">The destination BrushDescriptor.</param>
   private void CopyPropertiesToDescriptor(System.Object propertiesObject, BrushDescriptor descriptor) {
     foreach (FieldInfo field in propertiesObject.GetType().GetFields()) {
       object fieldValue = field.GetValue(propertiesObject);
@@ -310,6 +345,11 @@ public class UserVariantBrush {
     }
   }
 
+  /// <summary>
+  /// Applies material properties from BrushProperties to the User Brush.
+  /// </summary>
+  /// <param name="brushFile">FileOrZipReader to load textures from.</param>
+  /// <param name="properties">Material properties to read from.</param>
   private void ApplyMaterialProperties(FolderOrZipReader brushFile,
       BrushProperties.MaterialProperties properties) {
     Descriptor.Material = new Material(Descriptor.Material);
@@ -384,6 +424,12 @@ public class UserVariantBrush {
     }
   }
 
+  /// <summary>
+  /// Loads a texture from a FolderOrZipReader.
+  /// </summary>
+  /// <param name="brushFile">FolderOrZipReader to load the texture from.</param>
+  /// <param name="filename">Texture filename.</param>
+  /// <returns>A Texture2D, or null if it could not be loaded.</returns>
   private Texture2D LoadTexture(FolderOrZipReader brushFile, string filename) {
     if (brushFile.Exists(filename)) {
       Texture2D texture = new Texture2D(16, 16);
@@ -398,6 +444,11 @@ public class UserVariantBrush {
     return null;
   }
 
+  /// <summary>
+  /// Saves the UserVariantBrush.
+  /// </summary>
+  /// <param name="writer">AtomicWriter to write to.</param>
+  /// <param name="subfolder">Subfolder within the writer to write to.</param>
   public void Save(AtomicWriter writer, string subfolder) {
     string configPath = Path.Combine(subfolder, Path.Combine(m_Location, kConfigFile));
     using (var configStream = new StreamWriter(writer.GetWriteStream(configPath))) {
@@ -413,6 +464,10 @@ public class UserVariantBrush {
   }
   
 #if UNITY_EDITOR  
+  /// <summary>
+  /// Static function to export all the standard Brush Descriptors to
+  /// Support/Brush/ExportedProperties.
+  /// </summary>
   [MenuItem("Tilt/Brushes/Export Standard Brush Properties")]
   public static void ExportDescriptorDetails() {
     TiltBrushManifest manifest =
@@ -431,6 +486,11 @@ public class UserVariantBrush {
     Debug.Log($"Exported {manifest.Brushes.Length} brushes.");
   }
   
+  /// <summary>
+  /// Exports a single descriptor to a file.
+  /// </summary>
+  /// <param name="brush">The BrushDescriptor.</param>
+  /// <param name="filename">Destination file path.</param>
   public static void ExportDescriptor(BrushDescriptor brush, string filename) {
     BrushProperties properties = new BrushProperties();
     properties.VariantOf = "";
@@ -456,6 +516,12 @@ public class UserVariantBrush {
     }
   }
   
+  /// <summary>
+  /// Converts a Vector2 or Color struct to an array of floats.
+  /// If the object is not a Vector2 or Color, it will return itself.
+  /// </summary>
+  /// <param name="obj">Object to convert.</param>
+  /// <returns>The possibly-converted object.</returns>
   private static System.Object ConvertStructsToArrays(System.Object obj) {
     if (obj.GetType() == typeof(Vector2)) {
       Vector2 vector = (Vector2)obj;
@@ -468,6 +534,11 @@ public class UserVariantBrush {
     return obj;
   }
   
+  /// <summary>
+  /// Copies the details of a BrushDescriptor to an object.
+  /// </summary>
+  /// <param name="descriptor">The BrushDescriptor.</param>
+  /// <param name="propertiesObject">The destination object.</param>
   private static void CopyDescriptorToProperties(BrushDescriptor descriptor, 
                                                  System.Object propertiesObject) {
     foreach (FieldInfo field in propertiesObject.GetType().GetFields()) {
@@ -501,6 +572,11 @@ public class UserVariantBrush {
     }
   }
 
+  /// <summary>
+  /// Copies material properties from a BrushDescriptor to properties object.
+  /// </summary>
+  /// <param name="descriptor">The BrushDescriptor.</param>
+  /// <param name="properties">Target object.</param>
   private static void CopyMaterialToProperties(BrushDescriptor descriptor,
      BrushProperties properties) {
     Material material = descriptor.Material;
