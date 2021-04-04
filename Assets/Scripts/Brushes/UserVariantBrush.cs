@@ -39,6 +39,7 @@ using UnityEditor;
 public class UserVariantBrush
 {
     public const string kConfigFile = "Brush.cfg";
+    public const int kBrushDescriptionVersion = 1;
 
     /// <summary>
     /// Used to map fields in the BrushProperties to BrushDescriptor fields.
@@ -191,6 +192,7 @@ public class UserVariantBrush
             [MapTo("m_MiddlePointStep")] public int? MiddlePointStep;
         }
         [CanBeNull] [SubSection] public SimplificationProperties Simplification;
+        public int BrushDescriptionVersion = kBrushDescriptionVersion;
     }
 
     public BrushDescriptor Descriptor { get; private set; } = null;
@@ -286,6 +288,13 @@ public class UserVariantBrush
         {
             Debug.Log($"Error reading {m_Location}/{kConfigFile}: {e.Message}");
             return false;
+        }
+
+        if (m_BrushProperties.BrushDescriptionVersion > kBrushDescriptionVersion)
+        {
+            Debug.LogError($"WARNING! This version of Open Brush supports version {kBrushDescriptionVersion} of User Brushes. " +
+                           $"User Brush {m_BrushProperties} was made with version {m_BrushProperties.BrushDescriptionVersion}, " +
+                           $"and may not work properly.");
         }
 
         if (!string.IsNullOrEmpty(warning))
