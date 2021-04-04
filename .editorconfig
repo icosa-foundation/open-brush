@@ -7,3 +7,6 @@ root = true
 indent_style = space
 indent_size = 2
 
+# Based on Google's C# style guide
+[*.cs]
+indent_size = 4
