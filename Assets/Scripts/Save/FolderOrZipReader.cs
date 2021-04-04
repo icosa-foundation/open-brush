@@ -30,15 +30,13 @@ namespace TiltBrush {
 /// Class used to read from a zipped file or a folder.
 /// </summary>
 public class FolderOrZipReader {
-  private bool m_IsFile;
-  private bool m_Exists;
-  private string m_RootPath;
-  private Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
-  private string m_subfolder;
-
-  public delegate void ReadHeaderDelegate(Stream s);
+  protected bool m_IsFile;
+  protected bool m_Exists;
+  protected string m_RootPath;
+  protected Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
+  protected string m_subfolder;
   
-  public FolderOrZipReader(string path, ReadHeaderDelegate header = null) {
+  public FolderOrZipReader(string path) {
     m_RootPath = path;
     m_subfolder = "";
     bool fileExists = File.Exists(path);
@@ -93,7 +91,7 @@ public class FolderOrZipReader {
     return null;
   }
 
-  public Stream GetReadStream(string filename) {
+  virtual public Stream GetReadStream(string filename) {
     if (!m_Exists) {
       return null;
     }
