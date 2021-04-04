@@ -5,7 +5,7 @@ on:
   pull_request: {}
   push:
     branches:
-      - main
+      - "*"
     tags:
       - "v*"
 
@@ -18,6 +18,16 @@ env:
 
 jobs:
   configuration:
+    if: |
+      (github.event_name == 'pull_request') ||
+      (
+        github.event_name == 'push' &&
+        (
+        github.ref == 'refs/heads/main' ||
+        contains(github.ref, 'refs/tags/v') ||
+        contains(github.event.head_commit.message, '[CI BUILD]')
+        )
+      )
     name: Configure Build Parameters
     runs-on: ubuntu-latest
     outputs:
@@ -292,7 +302,9 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush'
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
     strategy:
       fail-fast: false
 
