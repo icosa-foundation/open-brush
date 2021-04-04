@@ -32,15 +32,13 @@ namespace TiltBrush
     /// </summary>
     public class FolderOrZipReader
     {
-        private bool m_IsFile;
-        private bool m_Exists;
-        private string m_RootPath;
-        private Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
-        private string m_subfolder;
+        protected bool m_IsFile;
+        protected bool m_Exists;
+        protected string m_RootPath;
+        protected Dictionary<string, string> m_ZipEntryMap = new Dictionary<string, string>();
+        protected string m_subfolder;
 
-        public delegate void ReadHeaderDelegate(Stream s);
-
-        public FolderOrZipReader(string path, ReadHeaderDelegate header = null)
+        public FolderOrZipReader(string path)
         {
             m_RootPath = path;
             m_subfolder = "";
@@ -109,7 +107,7 @@ namespace TiltBrush
             return null;
         }
 
-        public Stream GetReadStream(string filename)
+        virtual public Stream GetReadStream(string filename)
         {
             if (!m_Exists)
             {

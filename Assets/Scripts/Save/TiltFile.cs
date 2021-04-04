@@ -16,7 +16,6 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
-
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
@@ -28,7 +27,7 @@ using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
 namespace TiltBrush
 {
 
-    public class TiltFile
+    public class TiltFile : FolderOrZipReader
     {
 
         private const uint TILT_SENTINEL = 0x546c6974;   // 'tilT'
@@ -103,11 +102,8 @@ namespace TiltBrush
             }
         }
 
-        private string m_Fullpath;
-
-        public TiltFile(string fullpath)
+        public TiltFile(string fullpath) : base(fullpath)
         {
-            m_Fullpath = fullpath;
         }
 
         private static TiltZipHeader ReadTiltZipHeader(Stream s)
@@ -126,9 +122,9 @@ namespace TiltBrush
         /// Returns a readable stream to a pre-existing subfile,
         /// or null if the subfile does not exist,
         /// or null if the file format is invalid.
-        public Stream GetReadStream(string subfileName)
+        override public Stream GetReadStream(string subfileName)
         {
-            if (File.Exists(m_Fullpath))
+            if (m_Exists && m_IsFile)
             {
                 // It takes a long time to figure out a file isn't a .zip, so it's worth the
                 // price of a quick check up-front
@@ -136,55 +132,33 @@ namespace TiltBrush
                 {
                     return null;
                 }
-                try
-                {
-                    return new ZipSubfileReader(m_Fullpath, subfileName);
-                }
-                catch (ZipLibrary.ZipException e)
-                {
-                    Debug.LogFormat("{0}", e);
-                    return null;
-                }
-                catch (FileNotFoundException)
-                {
-                    return null;
-                }
             }
-
-            string fullPath = Path.Combine(m_Fullpath, subfileName);
-            try
-            {
-                return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
-            }
-            catch (FileNotFoundException)
-            {
-                return null;
-            }
+            return base.GetReadStream(subfileName);
         }
 
         public bool IsHeaderValid()
         {
-            if (File.Exists(m_Fullpath))
+            if (m_Exists && m_IsFile)
             {
                 try
                 {
-                    using (var stream = new FileStream(m_Fullpath, FileMode.Open, FileAccess.Read))
+                    using (var stream = new FileStream(m_RootPath, FileMode.Open, FileAccess.Read))
                     {
                         var header = ReadTiltZipHeader(stream);
                         if (header.sentinel != TILT_SENTINEL || header.headerVersion != HEADER_VERSION)
                         {
-                            Debug.LogFormat("Bad .tilt sentinel or header: {0}", m_Fullpath);
+                            Debug.LogFormat("Bad .tilt sentinel or header: {0}", m_RootPath);
                             return false;
                         }
                         if (header.headerSize < HEADER_SIZE)
                         {
-                            Debug.LogFormat("Unexpected header length: {0}", m_Fullpath);
+                            Debug.LogFormat("Unexpected header length: {0}", m_RootPath);
                             return false;
                         }
                         stream.Seek(header.headerSize - HEADER_SIZE, SeekOrigin.Current);
                         if ((new BinaryReader(stream)).ReadUInt32() != PKZIP_SENTINEL)
                         {
-                            Debug.LogFormat("Zip sentinel not found: {0}", m_Fullpath);
+                            Debug.LogFormat("Zip sentinel not found: {0}", m_RootPath);
                             return false;
                         }
                         return true;
@@ -192,7 +166,7 @@ namespace TiltBrush
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Debug.LogFormat("File does not have read permissions: {0}", m_Fullpath);
+                    Debug.LogFormat("File does not have read permissions: {0}", m_RootPath);
                     return false;
                 }
                 catch (IOException)
@@ -202,13 +176,13 @@ namespace TiltBrush
                 }
             }
 
-            if (Directory.Exists(m_Fullpath))
+            if (Directory.Exists(m_RootPath))
             {
                 // Directories don't have a header but we can do some roughly-equivalent
                 // sanity-checking
-                return (File.Exists(Path.Combine(m_Fullpath, FN_METADATA)) &&
-                        File.Exists(Path.Combine(m_Fullpath, FN_SKETCH)) &&
-                        File.Exists(Path.Combine(m_Fullpath, FN_THUMBNAIL)));
+                return (File.Exists(Path.Combine(m_RootPath, FN_METADATA)) &&
+                        File.Exists(Path.Combine(m_RootPath, FN_SKETCH)) &&
+                        File.Exists(Path.Combine(m_RootPath, FN_THUMBNAIL)));
             }
             return false;
         }
