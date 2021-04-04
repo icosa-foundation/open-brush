@@ -78,5 +78,6 @@
     "TailMinPoints": 1,
     "TailPointStep": 1,
     "MiddlePointStep": 0
-  }
+  },
+  "BrushDescriptionVersion": 1
 }
