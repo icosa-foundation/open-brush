@@ -22,7 +22,7 @@
       "_Cutoff": 0.5
     },
     "ColorProperties": {
-      "_Color": [ 1.0, 0.5, 0.5, 1.0 ],
+      "_Color": [ 1.0, 1.0, 1.0, 1.0 ],
       "_SpecColor": [ 0.235294119, 0.235294119, 0.235294119, 1.0 ]
     },
     "VectorProperties": {},
