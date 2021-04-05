@@ -282,13 +282,17 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
-      - name: Set executable permissions (for OSX)
+      - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
           # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
           docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
           chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
