@@ -99,10 +99,11 @@ make a *Snake* brush based off the *Icing* brush:
 
 ```
 > python userbrush.py create Snake Icing
-Created brush config at C:\Users\Tim\Documents\Open Brush\Brushes\Snake\Brush.cfg.
+Created brush config at C:\Users\Tim\Documents\Open Brush\Brushes\Snake_9f78ecb3-ba5a-4f91-8484-b03944998f8e\Brush.cfg.
 ```
-This creates a new folder called *Snake* in the *Open Brush\Brushes* folder, and puts a file
-called *Brush.cfg* in there.
+This creates a new folder called *Snake_9f78ecb3-ba5a-4f91-8484-b03944998f8e* in the
+*Open Brush\Brushes* folder, and puts a file called *Brush.cfg* in there. I know the folder name is
+cumbersome, but it prevents problems if two people both make a brush called *Snake*.
 
 ## The Brush.cfg file
 Brush.cfg is a JSON file that contains all the settings for your brush. It starts off containing
