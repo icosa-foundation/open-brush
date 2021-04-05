@@ -119,7 +119,6 @@ Here is an outline of the *Brush.cfg* for our Snake brush, with some sections tr
     "Author": "",
     "Name": "Snake",
     "Description": "Snake",
-    "ExtraDescription": "",
     "CopyRestrictions": "EmbedAndShare",
     "ButtonIcon": "",
     "Audio": { ... },
@@ -145,7 +144,6 @@ Here is an outline of the *Brush.cfg* for our Snake brush, with some sections tr
 * **Author** is not currently used, but you can put your name in there.
 * **Name** the name of the brush.
 * **Description** often the same as *Name* - displayed on the brush panel.
-* **Extra Description** An extra line also sometimes(?) displayed on the brush panel.
 * **CopyRestrictions** should either be `EmbedAndShare`, `EmbedAndDoNotShare`, or `DoNotEmbed`.
            These control whether a brush will be included in a sketch that uses it, and whether
            the brush will be available to use or save if it is embedded in a sketch.
