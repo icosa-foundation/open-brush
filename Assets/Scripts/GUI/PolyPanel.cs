@@ -36,6 +36,7 @@ public class PolyPanel : ModalPanel {
   [SerializeField] private GameObject m_NoLikesMessage;
   [SerializeField] private GameObject m_NotLoggedInMessage;
   [SerializeField] private GameObject m_OutOfDateMessage;
+  [SerializeField] private GameObject m_NotSupportedMessage;
   [SerializeField] private GameObject m_NoPolyConnectionMessage;
 
   private PolySetType m_CurrentSet;
@@ -64,6 +65,7 @@ public class PolyPanel : ModalPanel {
     m_NoLikesMessage.SetActive(false);
     m_NotLoggedInMessage.SetActive(false);
     m_OutOfDateMessage.SetActive(false);
+    m_NotSupportedMessage.SetActive(false);
     m_NoPolyConnectionMessage.SetActive(false);
   }
 
@@ -118,6 +120,15 @@ public class PolyPanel : ModalPanel {
       base.RefreshPage();
       return;
     }
+
+#if UNITY_ANDROID && OCULUS_SUPPORTED
+    if (OVRPlugin.GetSystemHeadsetType() == OVRPlugin.SystemHeadset.Oculus_Quest) {
+      m_NotSupportedMessage.SetActive(true);
+      RefreshPanelText();
+      base.RefreshPage();
+      return;
+    }
+#endif
 
     m_NumPages = ((App.PolyAssetCatalog.NumCloudModels(m_CurrentSet) - 1) / Icons.Count) + 1;
     int numCloudModels = App.PolyAssetCatalog.NumCloudModels(m_CurrentSet);
