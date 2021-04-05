@@ -35,7 +35,8 @@ jobs:
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       changelog: ${{ steps.changelog.outputs.changelog }}
-      btbgithub: ${{ steps.btbgithub.outputs.btbgithub }}
+      btbgithub: ${{ steps.github.outputs.btbgithub }}
+      basename: ${{ steps.github.outputs.basename }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -76,16 +77,18 @@ jobs:
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
           echo "::set-output name=changelog::$CHANGELOG"
-      - name: Set -btb-github if relevant
-        id: btbgithub
+      - name: Set github suffix if relevant
+        id: github
         run: |
           MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
           PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
           if [ $PATCH_VERSION == $MAJOR_MINOR ]
           then
             echo "::set-output name=btbgithub::"
+            echo "::set-output name=basename::OpenBrush"
           else
             echo "::set-output name=btbgithub::-btb-github"
+            echo "::set-output name=basename::OpenBrush-github"
           fi
   build:
     name: ${{ matrix.name }}
@@ -205,23 +208,31 @@ jobs:
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github.exe" >> $GITHUB_ENV
+          echo "filename=$BASENAME.exe" >> $GITHUB_ENV
 
       - name: Set filename (for Linux)
         if: matrix.targetPlatform == 'StandaloneLinux64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github" >> $GITHUB_ENV
+          echo "filename=$BASENAME" >> $GITHUB_ENV
 
       - name: Set filename (for OSX)
         if: matrix.targetPlatform == 'StandaloneOSX'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github.app" >> $GITHUB_ENV
+          echo "filename=$BASENAME.app" >> $GITHUB_ENV
 
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=com.Icosa.OpenBrushgithub.apk" >> $GITHUB_ENV
+          echo "filename=com.Icosa.$(echo $BASENAME | sed -e 's/-//g').apk" >> $GITHUB_ENV
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
@@ -282,13 +293,17 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
-      - name: Set executable permissions (for OSX)
+      - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
           # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
           docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
           chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
