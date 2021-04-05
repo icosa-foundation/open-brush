@@ -21,24 +21,27 @@ import os
 import uuid
 import sys
 
-properties_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Brushes\\ExportedProperties')
+properties_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), os.path.join('Brushes', 'ExportedProperties'))
 
-def list(args):
+
+def list_brushes(args):
+  # pylint: disable=unused-argument
   for file in os.listdir(properties_dir):
     print(os.path.splitext(file)[0])
-    
+
+
 def create(args):
   properties_filename = os.path.join(properties_dir, args.brush + ".txt")
-  if (not os.path.exists(properties_filename)):
+  if not os.path.exists(properties_filename):
     print(f"Error - '{args.brush}' is not a valid base brush - use userbrush list to list valid brushes.")
-    exit
-  dst_folder = os.path.join(os.path.join(os.path.join(os.path.expanduser('~'), 'Documents\\Open Brush\\Brushes'), args.name))
+    sys.exit()
+  dst_folder = os.path.join(os.path.expanduser('~'), 'Documents', 'Open Brush', 'Brushes', args.name)
   dst_cfg = os.path.join(dst_folder, "Brush.cfg")
-  if (os.path.exists(dst_cfg)):
+  if os.path.exists(dst_cfg):
     answer = str(input("Brush already exists! Are you sure you want to overwrite it? (Y/N)"))
-    if (answer != 'y' and answer !='Y'):
+    if answer not in ('y', 'Y'):
       sys.exit()
-  os.makedirs(dst_folder, exist_ok = True)
+  os.makedirs(dst_folder, exist_ok=True)
   with open(properties_filename, "r") as properties_file:
     src_brush_data = json.load(properties_file)
     brush_data = src_brush_data.copy()
@@ -53,23 +56,22 @@ def create(args):
 
     with open(dst_cfg, "w") as config_file:
       json.dump(brush_data, config_file, indent=4)
-  
-      print (f'Created brush config at {dst_cfg}.')
-  
+
+      print(f'Created brush config at {dst_cfg}.')
+
 
 def main():
   parser = argparse.ArgumentParser()
   parser.set_defaults(func=lambda x: parser.parse_args(['--help']))
-  subparser_name = None
   subparsers = parser.add_subparsers(help='command help', dest='subparser_name')
   parser_list = subparsers.add_parser('list', help='List available base brushes')
-  parser_list.set_defaults(func=list)
+  parser_list.set_defaults(func=list_brushes)
   parser_create = subparsers.add_parser('create', help='Create a new user brush')
   parser_create.add_argument('name', help='Name of the new brush')
   parser_create.add_argument('brush', help='Brush to base the new one off')
   parser_create.set_defaults(func=create)
   args = parser.parse_args()
-  
+
   args.func(args)
 
 
