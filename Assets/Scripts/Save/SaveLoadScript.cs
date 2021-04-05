@@ -684,7 +684,10 @@ namespace TiltBrush
                 {
                     Debug.Log($"Brush found at {brushName}");
                     var brush = UserVariantBrush.Create(m_LastSceneFile, Path.Combine("Brushes", brushName));
-                    App.Instance.m_Manifest.AddSceneUserVariantBrush(brush);
+                    if (brush != null)
+                    {
+                        App.Instance.m_Manifest.AddSceneUserVariantBrush(brush);
+                    }
                 }
 
                 // Load sketch
