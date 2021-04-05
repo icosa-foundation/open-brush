@@ -35,18 +35,15 @@ def create(args):
   if not os.path.exists(properties_filename):
     print(f"Error - '{args.brush}' is not a valid base brush - use userbrush list to list valid brushes.")
     sys.exit()
-  dst_folder = os.path.join(os.path.expanduser('~'), 'Documents', 'Open Brush', 'Brushes', args.name)
+  guid = str(uuid.uuid4())
+  dst_folder = os.path.join(os.path.expanduser('~'), 'Documents', 'Open Brush', 'Brushes', args.name + "_" + guid)
   dst_cfg = os.path.join(dst_folder, "Brush.cfg")
-  if os.path.exists(dst_cfg):
-    answer = str(input("Brush already exists! Are you sure you want to overwrite it? (Y/N)"))
-    if answer not in ('y', 'Y'):
-      sys.exit()
   os.makedirs(dst_folder, exist_ok=True)
   with open(properties_filename, "r") as properties_file:
     src_brush_data = json.load(properties_file)
     brush_data = src_brush_data.copy()
     brush_data["VariantOf"] = src_brush_data["GUID"]
-    brush_data["GUID"] = str(uuid.uuid4())
+    brush_data["GUID"] = guid
     brush_data["Name"] = args.name
     brush_data["Description"] = args.name
     brush_data["Author"] = ""
