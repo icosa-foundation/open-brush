@@ -77,7 +77,6 @@ public class UserVariantBrush {
     public string Author;
     [JsonProperty(Required = Required.Always)] [MapTo("m_DurableName")] public string Name;
     [JsonProperty(Required = Required.Always)] [MapTo("m_Description")] public string Description;
-    [MapTo("m_DescriptionExtra")] [CanBeNull] public string ExtraDescription;
     [JsonConverter(typeof(StringEnumConverter))] public CopyRestrictions CopyRestrictions;
     public string ButtonIcon;
 
