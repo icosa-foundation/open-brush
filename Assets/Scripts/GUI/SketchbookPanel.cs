@@ -294,7 +294,9 @@ public class SketchbookPanel : ModalPanel {
     
     bool notSupported = false;
 #if UNITY_ANDROID && OCULUS_SUPPORTED
-    notSupported = !polyDown && !outOfDate && OVRPlugin.GetSystemHeadsetType() == OVRPlugin.SystemHeadset.Oculus_Quest;
+    notSupported = !polyDown && !outOfDate && OVRPlugin.GetSystemHeadsetType() == OVRPlugin.SystemHeadset.Oculus_Quest
+        && (m_CurrentSketchSet == SketchSetType.Curated
+        || m_CurrentSketchSet == SketchSetType.Liked);
     m_NotSupportedMessage.SetActive(notSupported);
 #endif
 
