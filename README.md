@@ -19,7 +19,8 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 
 - [Itch.io Store](https://openbrush.itch.io/openbrush)
 - [SideQuest](https://sidequestvr.com/app/2852/open-brush)
-- [GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
+- [Formal GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
+- [Bleeding Edge GitHub Releases](#bleeding-edge-releases)
 
 ### Currently we are:
 * Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
@@ -111,7 +112,7 @@ quickly. The following features will take a little more time.
 *   [Google service API support](#google-service-api-support)
 *   [Enabling native Oculus support](#enabling-native-oculus-support)
 *   [Sketchfab support](#sketchfab-support)
-*   [*.fbx file support](#fbx-file-support)
+*   [\*.fbx file support](#fbx-file-support)
 *   [Camera path support](#camera-path-support)
 *   [Video recording for the camera](#video-support)
 *   [Offline rendering support](#offline-rendering-support)
@@ -439,3 +440,13 @@ executable.
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
 folder. They are not included in non-experimental builds.
+
+## Bleeding Edge Releases
+
+Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-gallery/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
+
+These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
+
+Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
+
+In addition, there are also versions created for Linux (SteamVR and Monoscopic), OS X (Monoscopic only), and Windows Monoscopic that are listed as "Artifacts" of the Github Actions, however, these are intended only for developers, and should not be used by general users. You can find them by browsing to the [commit list](https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts (6)** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop SteamVR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. Note that if you download a Mac OS X build, you'll need to run `xattr -d com.apple.quarantine /path/to/OpenBrush-github.app` prior to be able to launch the app, as it is not signed with Apple developer keys.

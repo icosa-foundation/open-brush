@@ -47,6 +47,7 @@ static class BuildTiltBrush {
     public string Location;
     public string Stamp;
     public BuildOptions UnityOptions;
+    public bool Github;
   }
 
   [Serializable()]
@@ -264,6 +265,7 @@ static class BuildTiltBrush {
       UnityOptions = GuiDevelopment
         ? (BuildOptions.AllowDebugging | BuildOptions.Development)
         : BuildOptions.None,
+      Github = false,
     };
   }
 
@@ -608,6 +610,18 @@ static class BuildTiltBrush {
     };
     string keystoreName = null;
     string keyaliasName = null;
+    string keystorePass = Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS");
+    string keyaliasPass = Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS");
+
+
+#if OCULUS_SUPPORTED
+    // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
+    // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
+    // there!
+    OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
+    string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
+#endif
+
     {
       string[] args = Environment.GetCommandLineArgs();
       int i = 0;
@@ -628,12 +642,16 @@ static class BuildTiltBrush {
           tiltOptions.VrSdk = AsEnum(mode, tiltOptions.VrSdk);
         } else if (args[i] == "-btb-experimental") {
           tiltOptions.Experimental = true;
+        } else if (args[i] == "-btb-github") {
+          tiltOptions.Github = true;
         } else if (args[i] == "-btb-il2cpp") {
           tiltOptions.Il2Cpp = true;
         } else if (args[i] == "-btb-bopt") {
           tiltOptions.UnityOptions |= AsEnum(args[++i], BuildOptions.None);
         } else if (args[i] == "-btb-target") {
           target = AsEnum<BuildTarget>(args[++i]);
+        } else if (args[i] == "-customBuildPath") {
+          tiltOptions.Location = args[++i];
         } else if (args[i] == "-btb-out") {
           tiltOptions.Location = args[++i];
         } else if (args[i] == "-btb-stamp") {
@@ -651,6 +669,22 @@ static class BuildTiltBrush {
         } else if (args[i] == "-btb-increment-bundle-version") {
           // Don't restore this, because user might want to check in this change?
           PlayerSettings.Android.bundleVersionCode += 1;
+        } else if (args[i] == "-buildVersion") {
+          // TODO: do we want to do anything with this? Can we use it instead of the version string
+          // set externally?
+          i++;
+        } else if (args[i] == "-androidVersionCode") {
+          PlayerSettings.Android.bundleVersionCode = Int32.Parse(args[++i]);
+        } else if (args[i] == "-androidKeystoreName") {
+          keystoreName = args[++i];
+        } else if (args[i] == "-androidKeystorePass") {
+          keystorePass = args[++i];
+        } else if (args[i] == "-androidKeyaliasName") {
+          keyaliasName = args[++i];
+        } else if (args[i] == "-androidKeyaliasPass") {
+          keyaliasPass = args[++i];
+        } else if (args[i] == "-setDefaultPlatformTextureFormat") {
+          i++;
         } else {
           Die(3, "Unknown argument {0}", args[i]);
           EditorApplication.Exit(3);
@@ -670,8 +704,8 @@ static class BuildTiltBrush {
     }
     tiltOptions.Target = target.Value;
     using (var unused = new TempSetCommandLineOnlyPlayerSettings(
-               keystoreName, Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS"),
-               keyaliasName, Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS"))) {
+               keystoreName, keystorePass,
+               keyaliasName, keyaliasPass)) {
       DoBuild(tiltOptions);
     }
   }
@@ -746,16 +780,21 @@ static class BuildTiltBrush {
     private string m_name;
     private string m_company;
     private bool m_isAndroid;
-    public TempSetAppNames(bool isAndroid) {
+    public TempSetAppNames(bool isAndroid, bool isGithub) {
       m_isAndroid = isAndroid;
       m_identifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
       m_name = PlayerSettings.productName;
       m_company = PlayerSettings.companyName;
-      if (m_isAndroid) {
-        PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android,
-                                                App.kGuiBuildAndroidApplicationIdentifier);
+      string new_name = App.kAppDisplayName;
+      string new_identifier = App.kGuiBuildAndroidApplicationIdentifier;
+      if (isGithub) {
+        new_name += " (Github)";
+        new_identifier += "-github";
       }
-      PlayerSettings.productName = App.kAppDisplayName;
+      if (m_isAndroid) {
+        PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, new_identifier);
+      }
+      PlayerSettings.productName = new_name;
       PlayerSettings.companyName = App.kDisplayVendorName;
     }
 
@@ -992,7 +1031,7 @@ static class BuildTiltBrush {
     using (var unused4 = new TempHookUpSingletons())
     using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
     using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
-    using (var unused10 = new TempSetAppNames(target == BuildTarget.Android))
+    using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Github))
     using (var unused7 = new RestoreVrSdks())
     using (var unused9 = new RestoreFileContents(
                Path.Combine(Path.GetDirectoryName(Application.dataPath),
