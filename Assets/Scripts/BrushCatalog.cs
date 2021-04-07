@@ -232,6 +232,10 @@ namespace TiltBrush
         static private List<Brush> LoadUserLibraryBrushes()
         {
             List<Brush> output = new List<Brush>();
+            if (!Directory.Exists(App.UserBrushesPath()))
+            {
+                Directory.CreateDirectory(App.UserBrushesPath());
+            }
             foreach (var folder in Directory.GetDirectories(App.UserBrushesPath()))
             {
                 var userBrush = UserVariantBrush.Create(folder);
