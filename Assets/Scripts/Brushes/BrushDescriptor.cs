@@ -306,7 +306,7 @@ namespace TiltBrush
         // END IExportableMaterial interface
         // ===============================================================================================
 
-        public bool IsUserVariant { get; set; } = false;
+        public UserVariantBrush UserVariantBrush { get; set; }
 
         /// <summary>
         /// Guid of the built-in brush this brush is based upon. Used for variant brushes.

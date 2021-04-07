@@ -3925,8 +3925,8 @@ namespace TiltBrush
             return OverlayManager.m_Instance.RunInCompositor(
                 OverlayType.Export, () =>
                 {
-                    // Sort of a kludge: put stuff back into the main canvas
-                    SelectionManager.m_Instance.ClearActiveSelection();
+            // Sort of a kludge: put stuff back into the main canvas
+            SelectionManager.m_Instance.ClearActiveSelection();
                     Export.ExportScene();
                 }, 0.25f, false, true);
         }
@@ -4064,7 +4064,7 @@ namespace TiltBrush
 
         private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
         {
-            App.Instance.m_Manifest.ClearSceneBrushes();
+            BrushCatalog.m_Instance.ClearSceneBrushes();
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
             m_WidgetManager.CameraPathsVisible = false;
@@ -4873,7 +4873,7 @@ m_WidgetManager.CameraPathsVisible;
 
         public void NewSketch(bool fade)
         {
-            App.Instance.m_Manifest.ClearSceneBrushes();
+            BrushCatalog.m_Instance.ClearSceneBrushes();
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
             SketchMemoryScript.m_Instance.ClearMemory();

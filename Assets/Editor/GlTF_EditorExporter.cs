@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Text;
+
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -54,13 +55,9 @@ namespace TiltBrush
         class ExportException : Exception
         {
             public ExportException(string message)
-                : base(message)
-            {
-            }
+              : base(message) { }
             public ExportException(string fmt, params object[] args)
-                : base(string.Format(fmt, args))
-            {
-            }
+              : base(string.Format(fmt, args)) { }
         }
 
         private static string GetExportBaseName()
@@ -207,6 +204,12 @@ namespace TiltBrush
                 cat.Add(desc.m_Guid, desc);
             }
 
+            foreach (BrushDescriptor desc in
+              BrushCatalog.m_Instance.AllBrushes.Where(x => x.UserVariantBrush != null))
+            {
+                cat.Add(desc.m_Guid, desc);
+            }
+
             return cat;
         }
 
@@ -268,7 +271,7 @@ namespace TiltBrush
             {
                 EditorUtility.DisplayDialog(
                     "Command Failed", string.Format("Command: {1} {2}\n\nExit code: {0}\n\nOutput: {3}",
-                        proc.ExitCode, command, string.Join(" ", commandArgs), err), "OK");
+                    proc.ExitCode, command, string.Join(" ", commandArgs), err), "OK");
             }
             return proc.ExitCode;
         }
@@ -492,7 +495,7 @@ namespace TiltBrush
                 if (expectCutoff)
                 {
                     Debug.LogWarning($"{descriptor.m_DurableName}: missing cutoff (or shouldn't be AlphaMask)",
-                        descriptor);
+                                     descriptor);
                 }
                 else
                 {
@@ -544,8 +547,7 @@ namespace TiltBrush
                 brushes = GetBrushes();
             }
 
-            foreach (KeyValuePair<Guid, BrushDescriptor> kvp in brushes)
-                try
+            foreach (KeyValuePair<Guid, BrushDescriptor> kvp in brushes) try
                 {
                     BrushDescriptor descriptor = kvp.Value;
                     var exp = ExportBrush(exportRequests, descriptor, exportRoot);

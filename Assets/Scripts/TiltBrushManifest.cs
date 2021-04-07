@@ -31,17 +31,6 @@ namespace TiltBrush
         public Environment[] Environments;
         public BrushDescriptor[] CompatibilityBrushes;
 
-        public IEnumerable<BrushDescriptor> UserVariantBrushDescriptors
-        {
-            get { return m_UserVariantBrushes.Concat(m_SceneUserVariantBrushes).Select(x => x.Descriptor); }
-        }
-
-        public IEnumerable<UserVariantBrush> UserVariantBrushes => m_UserVariantBrushes;
-        public IEnumerable<UserVariantBrush> SceneUserVariantBrushes => m_SceneUserVariantBrushes;
-
-        private List<UserVariantBrush> m_UserVariantBrushes = new List<UserVariantBrush>();
-        private List<UserVariantBrush> m_SceneUserVariantBrushes = new List<UserVariantBrush>();
-
         // lhs = lhs + rhs, with duplicates removed.
         // The leading portion of the returned array will be == lhs.
         void AppendUnique<T>(ref T[] lhs, T[] rhs) where T : class
@@ -60,7 +49,7 @@ namespace TiltBrush
 
         private IEnumerable<BrushDescriptor> AllBrushesAndAncestors()
         {
-            foreach (var brush in Brushes.Concat(CompatibilityBrushes).Concat(UserVariantBrushDescriptors))
+            foreach (var brush in Brushes.Concat(CompatibilityBrushes))
             {
                 for (var current = brush; current != null; current = current.m_Supersedes)
                 {
@@ -88,47 +77,6 @@ namespace TiltBrush
                 Brushes.Select(x => string.Format("{0},{1}", x.m_Guid.ToString(), x.DurableName)).ToArray();
             System.IO.File.WriteAllLines(path, guids);
 #endif
-        }
-
-        public void LoadUserBrushes()
-        {
-            m_UserVariantBrushes = new List<UserVariantBrush>();
-            foreach (var folder in Directory.GetDirectories(App.UserBrushesPath()))
-            {
-                var userBrush = UserVariantBrush.Create(folder);
-                if (userBrush != null)
-                {
-                    m_UserVariantBrushes.Add(userBrush);
-                }
-            }
-            foreach (var file in Directory.GetFiles(App.UserBrushesPath(), "*.brush"))
-            {
-                var userBrush = UserVariantBrush.Create(file);
-                if (userBrush != null)
-                {
-                    m_UserVariantBrushes.Add(userBrush);
-                }
-            }
-        }
-
-        public void AddUserVariantBrush(UserVariantBrush brush)
-        {
-            m_UserVariantBrushes.RemoveAll(x => x.Descriptor.m_Guid == brush.Descriptor.m_Guid);
-            m_UserVariantBrushes.Add(brush);
-            BrushCatalog.m_Instance.AddBrush(brush.Descriptor);
-        }
-
-        public void AddSceneUserVariantBrush(UserVariantBrush brush)
-        {
-            m_SceneUserVariantBrushes.RemoveAll(x => x.Descriptor.m_Guid == brush.Descriptor.m_Guid);
-            m_SceneUserVariantBrushes.Add(brush);
-            BrushCatalog.m_Instance.AddSceneBrush(brush.Descriptor);
-        }
-
-        public void ClearSceneBrushes()
-        {
-            m_SceneUserVariantBrushes.Clear();
-            BrushCatalog.m_Instance.ClearSceneBrushes();
         }
     }  // TiltBrushManifest
 

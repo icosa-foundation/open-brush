@@ -225,11 +225,13 @@ namespace TiltBrush
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
-                    // write out user invariant brushes
-                    foreach (var brush in
-                        App.Instance.m_Manifest.UserVariantBrushes.Where(x => x.EmbedInSketch))
+                    // write out any user brushes in the sketch
+                    var userBrushes = brushGuids.Select(x => BrushCatalog.m_Instance.GetBrush(x))
+                      .Where(x => x.UserVariantBrush != null && x.UserVariantBrush.EmbedInSketch);
+                    foreach (var brush in userBrushes)
                     {
-                        brush.Save(tiltWriter, Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
+                        brush.UserVariantBrush.Save(tiltWriter,
+                          Path.GetFileNameWithoutExtension(App.UserBrushesPath()));
                     }
 
                     tiltWriter.Commit();

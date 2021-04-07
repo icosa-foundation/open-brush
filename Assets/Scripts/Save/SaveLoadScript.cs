@@ -686,7 +686,7 @@ namespace TiltBrush
                     var brush = UserVariantBrush.Create(m_LastSceneFile, Path.Combine("Brushes", brushName));
                     if (brush != null)
                     {
-                        App.Instance.m_Manifest.AddSceneUserVariantBrush(brush);
+                        BrushCatalog.m_Instance.AddSceneBrush(brush.Descriptor);
                     }
                 }
 
@@ -786,7 +786,7 @@ namespace TiltBrush
         /// <returns>Returns true if a creation took place; otherwise false.</returns>
         private bool CreateMissingBrushes(Guid[] brushes, Guid[] fallbacks)
         {
-            bool brushesDuplicated = false;
+            bool brushesMissing = false;
             for (int i = 0; i < brushes.Length; ++i)
             {
                 var brush = BrushCatalog.m_Instance.GetBrush(brushes[i]);
@@ -798,13 +798,13 @@ namespace TiltBrush
                           $"Brush {brushes[i]} cannot be found but there is no fallback specified in the sketch.");
                         return true;
                     }
-                    BrushCatalog.m_Instance.DuplicateBrush(fallbacks[i], brushes[i]);
+                    BrushCatalog.m_Instance.AddMissingSceneBrushFromBase(brushes[i], fallbacks[i]);
                     ControllerConsoleScript.m_Instance.AddNewLine(
                       $"Brush {brushes[i]} is used in the sketch but cannot be found.");
-                    brushesDuplicated = true;
+                    brushesMissing = true;
                 }
             }
-            return brushesDuplicated;
+            return brushesMissing;
         }
 
         public SketchMetadata DeserializeMetadata(JsonTextReader jsonReader)
