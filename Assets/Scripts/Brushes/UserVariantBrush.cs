@@ -289,10 +289,10 @@ public class UserVariantBrush {
     }
 
     Descriptor = UnityEngine.Object.Instantiate(baseBrush);
+    Descriptor.UserVariantBrush = this;
     Descriptor.m_Guid = new SerializableGuid(m_BrushProperties.GUID);
     Descriptor.BaseGuid = baseBrush.m_Guid;
     Descriptor.name = m_BrushProperties.Name;
-    Descriptor.IsUserVariant = true;
     Descriptor.m_Supersedes = null;
     Descriptor.m_SupersededBy = null;
     Descriptor.m_HiddenInGui = !forceInGui &&

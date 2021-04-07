@@ -546,7 +546,6 @@ public class App : MonoBehaviour {
     }
 
     m_Manifest = GetMergedManifest(consultUserConfig: true);
-    m_Manifest.LoadUserBrushes();
 
     m_HttpServer = GetComponentInChildren<HttpServer>();
     if (!Config.IsMobileHardware) {

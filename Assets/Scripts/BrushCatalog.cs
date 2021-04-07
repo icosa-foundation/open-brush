@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -39,7 +40,7 @@ public class BrushCatalog : MonoBehaviour {
 
     // For unit testing, probably best to have all the descriptors available,
     // rather than just a subset of them that are in a manifest.
-    m_Instance.m_GuidToBrush = UnityEditor.AssetDatabase.FindAssets("t:BrushDescriptor")
+    m_Instance.m_BuiltinBrushes = UnityEditor.AssetDatabase.FindAssets("t:BrushDescriptor")
         .Select(name => UnityEditor.AssetDatabase.LoadAssetAtPath<BrushDescriptor>(
                     UnityEditor.AssetDatabase.GUIDToAssetPath(name)))
         .ToDictionary(desc => (Guid)desc.m_Guid);
@@ -56,19 +57,32 @@ public class BrushCatalog : MonoBehaviour {
   public Texture2D m_GlobalNoiseTexture;
 
   [SerializeField] private Brush m_DefaultBrush;
-  private bool m_IsLoading;
-  private Dictionary<Guid, Brush> m_GuidToBrush;
-  private HashSet<Brush> m_AllBrushes;
+  private bool m_CatalogChanged;
   private List<Brush> m_GuiBrushList;
+
+  private Dictionary<Guid, Brush> m_BuiltinBrushes;
+  private Dictionary<Guid, Brush> m_LibraryBrushes;
   private Dictionary<Guid, Brush> m_SceneBrushes;
 
   [SerializeField] public BlocksMaterial[] m_BlocksMaterials;
   private Dictionary<Material, Brush> m_MaterialToBrush;
 
-  public bool IsLoading { get { return m_IsLoading; } }
+  public bool IsLoading { get { return m_CatalogChanged; } }
+
+  /// <summary>
+  /// GetBrush Looks in the following places for brushes, in order:
+  /// 1) Built-in brushes
+  /// 2) Brushes in the Brush Library
+  /// 3) Brushes in the Scene.
+  /// </summary>
+  /// <param name="guid">Guid of the brush to seach for.</param>
+  /// <returns>The brush, if it can be found. Otherwise, null.</returns>
   public Brush GetBrush(Guid guid) {
     Brush brush;
-    if (m_GuidToBrush.TryGetValue(guid, out brush)) {
+    if (m_BuiltinBrushes.TryGetValue(guid, out brush)) {
+      return brush;
+    }
+    if (m_LibraryBrushes.TryGetValue(guid, out brush)) {
       return brush;
     }
     if (m_SceneBrushes.TryGetValue(guid, out brush)) {
@@ -78,17 +92,17 @@ public class BrushCatalog : MonoBehaviour {
   }
   public Brush DefaultBrush => m_DefaultBrush;
 
-  public IEnumerable<Brush> AllBrushes => m_AllBrushes;
-  
+  public IEnumerable<Brush> AllBrushes => KeepOrderDistinct(
+    m_BuiltinBrushes.Values.Concat(m_LibraryBrushes.Values.Concat(m_SceneBrushes.Values)));
+
   public List<Brush> GuiBrushList => m_GuiBrushList;
 
   void Awake() {
     m_Instance = this;
-    m_GuidToBrush = new Dictionary<Guid, Brush>();
+    m_BuiltinBrushes = new Dictionary<Guid, Brush>();
+    m_LibraryBrushes = new Dictionary<Guid, Brush>();
+    m_SceneBrushes = new Dictionary<Guid, Brush>();
     m_MaterialToBrush = new Dictionary<Material, Brush>();
-    m_AllBrushes = new HashSet<Brush>();
-    m_GuiBrushList = new List<Brush>();
-    m_SceneBrushes = new Dictionary<Guid, BrushDescriptor>();
 
     // Move blocks materials in to a dictionary for quick lookup.
     for (int i = 0; i < m_BlocksMaterials.Length; ++i) {
@@ -99,37 +113,39 @@ public class BrushCatalog : MonoBehaviour {
     Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
   }
 
+  private static IEnumerable<Brush> KeepOrderDistinct(IEnumerable<Brush> brushes) {
+   var alreadyFound = new HashSet<string>();
+   foreach (var brush in brushes) {
+     string guid = brush.m_Guid.ToString();
+     if (!alreadyFound.Contains(guid)) {
+       alreadyFound.Add(guid);
+       yield return brush;
+     }
+   }
+  }
+
   /// Begins reloading any brush assets that come from loose files.
   /// The "BrushCatalogChanged" event will be fired when this is complete.
   public void BeginReload() {
-    m_IsLoading = true;
+    m_CatalogChanged = true;
 
     // Recreate m_GuidToBrush
     {
-      var manifestBrushes = LoadBrushesInManifest();
-      manifestBrushes.Add(DefaultBrush);
-
-      m_GuidToBrush.Clear();
-      m_AllBrushes = null;
-
-      foreach (var brush in manifestBrushes) {
-        Brush tmp;
-        if (m_GuidToBrush.TryGetValue(brush.m_Guid, out tmp) && tmp != brush) {
-          Debug.LogErrorFormat("Guid collision: {0}, {1}", tmp, brush);
-          continue;
-        }
-        m_GuidToBrush[brush.m_Guid] = brush;
-      }
+      var builtinBrushes = LoadBrushesInManifest();
+      builtinBrushes.Add(DefaultBrush);
+      m_BuiltinBrushes = KeepOrderDistinct(builtinBrushes).ToDictionary<Brush, Guid>(x => x.m_Guid);
+      m_LibraryBrushes = KeepOrderDistinct(LoadUserLibraryBrushes())
+          .ToDictionary<Brush, Guid>(x => x.m_Guid);
 
       // Add reverse links to the brushes
       // Auto-add brushes as compat brushes
-      foreach (var brush in manifestBrushes) { brush.m_SupersededBy = null; }
-      foreach (var brush in manifestBrushes) {
+      foreach (var brush in builtinBrushes) { brush.m_SupersededBy = null; }
+      foreach (var brush in builtinBrushes) {
         var older = brush.m_Supersedes;
         if (older == null) { continue; }
         // Add as compat
-        if (!m_GuidToBrush.ContainsKey(older.m_Guid)) {
-          m_GuidToBrush[older.m_Guid] = older;
+        if (!m_BuiltinBrushes.ContainsKey(older.m_Guid)) {
+          m_BuiltinBrushes[older.m_Guid] = older;
           older.m_HiddenInGui = true;
         }
         // Set reverse link
@@ -144,17 +160,16 @@ public class BrushCatalog : MonoBehaviour {
           older.m_SupersededBy = brush;
         }
       }
-
-      m_AllBrushes = new HashSet<Brush>(m_GuidToBrush.Values);
     }
 
     // Postprocess: put brushes into parse-friendly list
-    m_GuiBrushList = m_GuidToBrush.Values.Where(x => !x.m_HiddenInGui).ToList();
+    m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
   }
 
   void Update() {
-    if (m_IsLoading) {
-      m_IsLoading = false;
+    if (m_CatalogChanged) {
+      m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
+      m_CatalogChanged = false;
       Resources.UnloadUnusedAssets();
       if (BrushCatalogChanged != null) {
         BrushCatalogChanged();
@@ -181,53 +196,53 @@ public class BrushCatalog : MonoBehaviour {
         output.Add(desc);
       }
     }
-    
-    // Add user variant brushes
-    output.AddRange(manifest.UserVariantBrushDescriptors);
+
     return output;
   }
 
-  public void DuplicateBrush(Guid fromGuid, Guid toGuid) {
-    BrushDescriptor from = GetBrush(fromGuid);
-    if (!from) {
-      Debug.LogWarning($"Error! Brush {from} not found!");
-      from = m_DefaultBrush;
+  static private List<Brush> LoadUserLibraryBrushes() {
+    List<Brush> output = new List<Brush>();
+    foreach (var folder in Directory.GetDirectories(App.UserBrushesPath())) {
+      var userBrush = UserVariantBrush.Create(folder);
+      if (userBrush != null) {
+        output.Add(userBrush.Descriptor);
+      }
     }
-
-    BrushDescriptor to = Instantiate(from);
-    to.m_Guid = toGuid;
-    to.BaseGuid = fromGuid;
-    to.m_Supersedes = null;
-    to.m_SupersededBy = null;
-    m_GuidToBrush[toGuid] = to;
-    m_AllBrushes.Add(to);
-    // Do not add to the Gui brushes, as this is used for missing brushes.
-  }
-
-  public void AddBrush(BrushDescriptor brush) {
-    m_AllBrushes.RemoveWhere(x => x.m_Guid == brush.m_Guid);
-    m_GuiBrushList.RemoveAll(x => x.m_Guid == brush.m_Guid);
-    m_GuidToBrush[brush.m_Guid] = brush;
-    m_AllBrushes.Add(brush);
-    m_GuiBrushList.Add(brush);
+    foreach (var file in Directory.GetFiles(App.UserBrushesPath(), "*.brush")) {
+      var userBrush = UserVariantBrush.Create(file);
+      if (userBrush != null) {
+        output.Add(userBrush.Descriptor);
+      }
+    }
+    return output;
   }
 
   public void AddSceneBrush(BrushDescriptor brush) {
-    m_AllBrushes.RemoveWhere(x => x.m_Guid == brush.m_Guid);
-    m_GuiBrushList.RemoveAll(x => x.m_Guid == brush.m_Guid);
     m_SceneBrushes[brush.m_Guid] = brush;
-    m_AllBrushes.Add(brush);
-    m_GuiBrushList.Add(brush);
-    m_IsLoading = true;
+    m_CatalogChanged = true;
   }
-  
+
+  public void AddMissingSceneBrushFromBase(Guid missingGuid, Guid baseGuid) {
+    BrushDescriptor baseBrush = GetBrush(baseGuid);
+    if (!baseBrush) {
+      Debug.LogWarning($"Error! Brush {baseBrush} not found!");
+      baseBrush = m_DefaultBrush;
+    }
+
+    BrushDescriptor missingBrush = Instantiate(baseBrush);
+    missingBrush.m_Guid = missingGuid;
+    missingBrush.BaseGuid = baseGuid;
+    missingBrush.m_Supersedes = null;
+    missingBrush.m_SupersededBy = null;
+    missingBrush.m_HiddenInGui = true;
+    m_SceneBrushes[missingGuid] = missingBrush;
+    m_CatalogChanged = true;
+  }
+
   public void ClearSceneBrushes() {
     m_SceneBrushes.Clear();
-    m_AllBrushes.Clear();
-    m_AllBrushes.UnionWith(m_GuidToBrush.Values);
-    m_GuiBrushList = m_GuidToBrush.Values.Where(x => !x.m_HiddenInGui).ToList();
     Resources.UnloadUnusedAssets();
-    m_IsLoading = true;
+    m_CatalogChanged = true;
   }
   
 }
