@@ -60,7 +60,7 @@ public class CanvasScript : MonoBehaviour {
   /// This helper gives you a canvas-relative view of the transform.
   /// The syntax is a slight abuse of C#:
   ///
-  ///   TrTranform xf_CS = myCanvas.AsCanvas[gameobj.transform];
+  ///   TrTransform xf_CS = myCanvas.AsCanvas[gameobj.transform];
   ///   myCanvas.AsCanvas[gameobj.transform] = xf_CS;
   ///
   /// Safe to use during Awake()

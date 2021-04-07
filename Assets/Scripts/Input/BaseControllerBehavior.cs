@@ -17,7 +17,7 @@ using UnityEngine.Serialization;
 
 namespace TiltBrush {
 
-// Basic controller behaviors shared between the Wand and the Brush, both of which directly derrive
+// Basic controller behaviors shared between the Wand and the Brush, both of which directly derive
 // directly from BaseControllerBehavior.
 public class BaseControllerBehavior : MonoBehaviour {
 
