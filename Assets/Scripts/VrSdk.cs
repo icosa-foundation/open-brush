@@ -183,6 +183,8 @@ public class VrSdk : MonoBehaviour {
       // adding components to the VR Camera needed for fading view and getting controller poses.
       m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
       m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
+
+      gameObject.AddComponent<OculusMRCCameraUpdate>();
 #endif // OCULUS_SUPPORTED
     } else if (App.Config.m_SdkMode == SdkMode.SteamVR) {
       // ---------------------------------------------------------------------------------------- //
