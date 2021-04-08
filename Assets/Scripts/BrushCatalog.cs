@@ -69,8 +69,12 @@ namespace TiltBrush
         private Dictionary<Guid, Brush> m_LibraryBrushes;
         private Dictionary<Guid, Brush> m_SceneBrushes;
 
+        private List<string> m_ChangedBrushes;
+
         [SerializeField] public BlocksMaterial[] m_BlocksMaterials;
         private Dictionary<Material, Brush> m_MaterialToBrush;
+
+        private FileWatcher m_FileWatcher;
 
         public bool IsLoading { get { return m_CatalogChanged; } }
 
@@ -113,6 +117,7 @@ namespace TiltBrush
             m_LibraryBrushes = new Dictionary<Guid, Brush>();
             m_SceneBrushes = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
+            m_ChangedBrushes = new List<string>();
 
             // Move blocks materials in to a dictionary for quick lookup.
             for (int i = 0; i < m_BlocksMaterials.Length; ++i)
@@ -122,6 +127,21 @@ namespace TiltBrush
             }
 
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
+
+            if (Directory.Exists(App.UserBrushesPath()))
+            {
+                m_FileWatcher = new FileWatcher(App.UserBrushesPath(), includeSubdirectories: true);
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.FileChanged += OnDirectoryChanged;
+                m_FileWatcher.FileCreated += OnDirectoryChanged;
+                m_FileWatcher.FileDeleted += OnDirectoryChanged;
+                m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            m_FileWatcher.EnableRaisingEvents = false;
         }
 
         private static IEnumerable<Brush> KeepOrderDistinct(IEnumerable<Brush> brushes)
@@ -149,8 +169,7 @@ namespace TiltBrush
                 var builtinBrushes = LoadBrushesInManifest();
                 builtinBrushes.Add(DefaultBrush);
                 m_BuiltinBrushes = KeepOrderDistinct(builtinBrushes).ToDictionary<Brush, Guid>(x => x.m_Guid);
-                m_LibraryBrushes = KeepOrderDistinct(LoadUserLibraryBrushes())
-                    .ToDictionary<Brush, Guid>(x => x.m_Guid);
+                LoadUserLibraryBrushes();
 
                 // Add reverse links to the brushes
                 // Auto-add brushes as compat brushes
@@ -189,6 +208,15 @@ namespace TiltBrush
 
         void Update()
         {
+            if (m_ChangedBrushes.Count > 0)
+            {
+                foreach (var path in m_ChangedBrushes)
+                {
+                    LoadUserLibraryBrush(path);
+                }
+                m_ChangedBrushes.Clear();
+                m_CatalogChanged = true;
+            }
             if (m_CatalogChanged)
             {
                 m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
@@ -229,30 +257,48 @@ namespace TiltBrush
             return output;
         }
 
-        static private List<Brush> LoadUserLibraryBrushes()
+        private void LoadUserLibraryBrushes()
         {
-            List<Brush> output = new List<Brush>();
-            if (!Directory.Exists(App.UserBrushesPath()))
-            {
-                Directory.CreateDirectory(App.UserBrushesPath());
-            }
+            FileUtils.InitializeDirectoryWithUserError(App.UserBrushesPath());
             foreach (var folder in Directory.GetDirectories(App.UserBrushesPath()))
             {
-                var userBrush = UserVariantBrush.Create(folder);
-                if (userBrush != null)
-                {
-                    output.Add(userBrush.Descriptor);
-                }
+                LoadUserLibraryBrush(folder);
             }
             foreach (var file in Directory.GetFiles(App.UserBrushesPath(), "*.brush"))
             {
-                var userBrush = UserVariantBrush.Create(file);
-                if (userBrush != null)
-                {
-                    output.Add(userBrush.Descriptor);
-                }
+                LoadUserLibraryBrush(file);
             }
-            return output;
+        }
+
+        private void LoadUserLibraryBrush(string path)
+        {
+            string brushObject = Path.GetFileName(path);
+            BrushDescriptor existingBrush =
+              m_LibraryBrushes.Values.FirstOrDefault(x => x.UserVariantBrush.Location == brushObject);
+            var userBrush = UserVariantBrush.Create(path);
+            if (userBrush == null)
+            {
+                return;
+            }
+            if (m_LibraryBrushes.ContainsKey(userBrush.Descriptor.m_Guid) && existingBrush == null)
+            {
+                Debug.LogError(
+                  $"New brush at {path} has a guid already used.");
+                return;
+            }
+            if (userBrush != null)
+            {
+                m_LibraryBrushes[userBrush.Descriptor.m_Guid] = userBrush.Descriptor;
+                if (existingBrush != null)
+                {
+                    if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
+                    {
+                        BrushController.m_Instance.SetBrushToDefault();
+                        BrushController.m_Instance.SetActiveBrush(userBrush.Descriptor);
+                    }
+                }
+                m_CatalogChanged = true;
+            }
         }
 
         public void AddSceneBrush(BrushDescriptor brush)
@@ -285,6 +331,22 @@ namespace TiltBrush
             m_SceneBrushes.Clear();
             Resources.UnloadUnusedAssets();
             m_CatalogChanged = true;
+        }
+
+        private void OnDirectoryChanged(object source, FileSystemEventArgs e)
+        {
+            if (e.FullPath.StartsWith(App.UserBrushesPath()))
+            {
+                int brushPathLength = App.UserBrushesPath().Length + 1;
+                var end = e.FullPath.Substring(brushPathLength, e.FullPath.Length - brushPathLength);
+                var parts = end.Split(Path.DirectorySeparatorChar);
+                string brush = parts.FirstOrDefault();
+                if (brush == null)
+                {
+                    return;
+                }
+                m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
+            }
         }
 
     }

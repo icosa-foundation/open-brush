@@ -198,6 +198,8 @@ public class UserVariantBrush
     public bool ShowInGUI => m_ShowInGUI;
     public bool EmbedInSketch => m_EmbedInSketch;
 
+    public string Location => m_Location;
+
     private BrushProperties m_BrushProperties;
     private string m_ConfigData;
     private Dictionary<string, byte[]> m_FileData;
@@ -278,10 +280,12 @@ public class UserVariantBrush
         string warning;
         try
         {
-            var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile));
-            m_ConfigData = fileReader.ReadToEnd();
-            m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(
-                m_ConfigData, out warning, ignoreMissingMember: true);
+            using (var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile)))
+            {
+                m_ConfigData = fileReader.ReadToEnd();
+                m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(
+                  m_ConfigData, out warning, ignoreMissingMember: true);
+            }
         }
         catch (JsonException e)
         {
@@ -508,7 +512,10 @@ public class UserVariantBrush
         {
             Texture2D texture = new Texture2D(16, 16);
             var buffer = new MemoryStream();
-            brushFile.GetReadStream(filename).CopyTo(buffer);
+            using (var bufferStream = brushFile.GetReadStream(filename))
+            {
+                bufferStream.CopyTo(buffer);
+            }
             byte[] data = buffer.ToArray();
             m_FileData[filename] = data;
             if (ImageConversion.LoadImage(texture, data, true))

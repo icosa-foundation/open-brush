@@ -25,20 +25,22 @@ namespace TiltBrush
     {
         private System.IO.FileSystemWatcher m_InternalFileWatcher;
 
-        public FileWatcher(string path)
+        public FileWatcher(string path, bool includeSubdirectories = false)
         {
             if (App.PlatformConfig.UseFileSystemWatcher)
             {
                 m_InternalFileWatcher = new FileSystemWatcher(path);
+                m_InternalFileWatcher.IncludeSubdirectories = includeSubdirectories;
                 AddEventsToInternalFileWatcher();
             }
         }
 
-        public FileWatcher(string path, string filter)
+        public FileWatcher(string path, string filter, bool includeSubdirectories = false)
         {
             if (App.PlatformConfig.UseFileSystemWatcher)
             {
                 m_InternalFileWatcher = new FileSystemWatcher(path, filter);
+                m_InternalFileWatcher.IncludeSubdirectories = includeSubdirectories;
                 AddEventsToInternalFileWatcher();
             }
         }
