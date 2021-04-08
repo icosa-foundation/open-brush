@@ -42,6 +42,7 @@ public class SketchbookPanel : ModalPanel {
   [SerializeField] private GameObject m_NoShowcaseMessage;
   [SerializeField] private GameObject m_ContactingServerMessage;
   [SerializeField] private GameObject m_OutOfDateMessage;
+  [SerializeField] private GameObject m_NotSupportedMessage;
   [SerializeField] private GameObject m_NoPolyConnectionMessage;
   [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
   [SerializeField] private GameObject[] m_IconsOnFirstPage;
@@ -290,8 +291,16 @@ public class SketchbookPanel : ModalPanel {
         && (m_CurrentSketchSet == SketchSetType.Curated
         || m_CurrentSketchSet == SketchSetType.Liked);
     m_OutOfDateMessage.SetActive(outOfDate);
+    
+    bool notSupported = false;
+#if UNITY_ANDROID && OCULUS_SUPPORTED
+    notSupported = !polyDown && !outOfDate && OVRPlugin.GetSystemHeadsetType() == OVRPlugin.SystemHeadset.Oculus_Quest
+        && (m_CurrentSketchSet == SketchSetType.Curated
+        || m_CurrentSketchSet == SketchSetType.Liked);
+    m_NotSupportedMessage.SetActive(notSupported);
+#endif
 
-    if (outOfDate || polyDown) {
+    if (outOfDate || polyDown || notSupported) {
       m_NoSketchesMessage.SetActive(false);
       m_NoDriveSketchesMessage.SetActive(false);
       m_NotLoggedInMessage.SetActive(false);
