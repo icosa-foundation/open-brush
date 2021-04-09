@@ -674,7 +674,7 @@ static class BuildTiltBrush {
           // set externally?
           i++;
         } else if (args[i] == "-androidVersionCode") {
-          i++;
+          PlayerSettings.Android.bundleVersionCode = Int32.Parse(args[++i]);
         } else if (args[i] == "-androidKeystoreName") {
           keystoreName = args[++i];
         } else if (args[i] == "-androidKeystorePass") {

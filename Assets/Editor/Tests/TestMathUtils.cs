@@ -810,5 +810,15 @@ internal class TestMathUtils : MathTestUtils {
     Assert.AreEqual(floats[0], floats1000[0]);
     Assert.AreEqual(floats[floats.Length-1], floats1000[floats1000.Length-1]);
   }
+
+  [Test]
+  public void TestLinearResampleOne() {
+    // https://github.com/icosa-gallery/open-brush/issues/77
+    // LinearResample was breaking on arrays of length 1
+    float[] floats1 = new float[] { 3.5f };
+    float[] floats4 = MathUtils.LinearResampleCurve(floats1, 4).ToArray();
+    Assert.AreEqual(floats1[0], floats4[0]);
+    Assert.AreEqual(floats1[0], floats4[3]);
+  }
 }
 }
