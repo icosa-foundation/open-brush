@@ -35,7 +35,6 @@ using UnityEditor;
 /// * Name
 /// * (Optional) Sound
 /// </summary>
-[Serializable]
 public class UserVariantBrush {
   public const string kConfigFile = "Brush.cfg";
   public const int kBrushDescriptionVersion = 1;

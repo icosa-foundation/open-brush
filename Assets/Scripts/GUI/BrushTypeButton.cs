@@ -14,22 +14,25 @@
 
 using UnityEngine;
 using System;
+using UnityEngine.Serialization;
 
 namespace TiltBrush {
 
 public class BrushTypeButton : BaseButton {
   [SerializeField] private Texture2D m_PreviewBGTexture;
   [SerializeField] private GameObject m_AudioReactiveIcon;
-  [SerializeField] private GameObject m_ExperimentalIcon;
+  [FormerlySerializedAs("m_ExperimentalIcon")] [SerializeField] private GameObject m_BrushTypeIcon;
+  [SerializeField] private Material m_ExperimentalMaterial;
+  [SerializeField] private Material m_LibraryMaterial;
 
   [NonSerialized] public BrushDescriptor m_Brush;
   [NonSerialized] public Vector3 m_OriginPosition;
 
   protected PreviewCubeScript m_PreviewCubeScript;
   private Renderer m_AudioReactiveIconRenderer;
-  private Renderer m_ExperimentalIconRenderer;
+  private Renderer m_BrushTypeIconRenderer;
   private Vector3 m_AudioReactiveIconBaseLocalPos;
-  private Vector3 m_ExperimentalIconBaseLocalPos;
+  private Vector3 m_BrushTypeIconBaseLocalPos;
   private Texture2D m_BrushIconTexture;
 
   override protected void Awake() {
@@ -38,7 +41,7 @@ public class BrushTypeButton : BaseButton {
 #endif
     base.Awake();
     m_AudioReactiveIconRenderer = m_AudioReactiveIcon.GetComponent<Renderer>();
-    m_ExperimentalIconRenderer = m_ExperimentalIcon.GetComponent<Renderer>();
+    m_BrushTypeIconRenderer = m_BrushTypeIcon.GetComponent<Renderer>();
     m_OriginPosition = transform.localPosition;
   }
 
@@ -50,7 +53,7 @@ public class BrushTypeButton : BaseButton {
   override protected void OnRegisterComponent() {
     base.OnRegisterComponent();
     m_AudioReactiveIconBaseLocalPos = m_AudioReactiveIcon.transform.localPosition;
-    m_ExperimentalIconBaseLocalPos = m_ExperimentalIcon.transform.localPosition;
+    m_BrushTypeIconBaseLocalPos = m_BrushTypeIcon.transform.localPosition;
   }
 
   override protected void ConfigureTextureAtlas() {
@@ -90,9 +93,20 @@ public class BrushTypeButton : BaseButton {
         VisualizerManager.m_Instance.VisualsRequested);
     // Play standard click sound if brush doesn't have a custom button sound
     m_ButtonHasPressedAudio = (rBrush.m_ButtonAudio == null);
+
+    if (rBrush.UserVariantBrush != null) {
+      m_BrushTypeIconRenderer.material = m_LibraryMaterial;
+      m_BrushTypeIcon.SetActive(true);
+    }
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-    m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
+    else if (App.Instance.IsBrushExperimental(rBrush)) {
+      m_BrushTypeIconRenderer.material = m_ExperimentalMaterial;
+      m_BrushTypeIcon.SetActive(true);
+    }
 #endif
+    else {
+      m_BrushTypeIcon.SetActive(false);
+    }
   }
 
   override protected void OnDescriptionActivated() {
@@ -120,10 +134,10 @@ public class BrushTypeButton : BaseButton {
     base.SetButtonSelected(bSelected);
     if (bSelected) {
       m_AudioReactiveIconRenderer.material.SetFloat("_Activated", 1.0f);
-      m_ExperimentalIconRenderer.material.SetFloat("_Activated", 1.0f);
+      m_BrushTypeIconRenderer.material.SetFloat("_Activated", 1.0f);
     } else {
       m_AudioReactiveIconRenderer.material.SetFloat("_Activated", 0.0f);
-      m_ExperimentalIconRenderer.material.SetFloat("_Activated", 0.0f);
+      m_BrushTypeIconRenderer.material.SetFloat("_Activated", 0.0f);
     }
     //only set our texture if we're deactivated-- otherwise we'll get it when we turn off the preview
     if (m_DescriptionState == DescriptionState.Deactivated) {
@@ -161,15 +175,15 @@ public class BrushTypeButton : BaseButton {
     localPos.z -= offset;
     m_AudioReactiveIcon.transform.localPosition = localPos;
 
-    localPos = m_ExperimentalIconBaseLocalPos;
+    localPos = m_BrushTypeIconBaseLocalPos;
     localPos.z -= offset;
-    m_ExperimentalIcon.transform.localPosition = localPos;
+    m_BrushTypeIcon.transform.localPosition = localPos;
   }
 
   override public void SetColor(Color rColor) {
     base.SetColor(rColor);
     m_AudioReactiveIconRenderer.material.SetColor("_Color", rColor);
-    m_ExperimentalIconRenderer.material.SetColor("_Color", rColor);
+    m_BrushTypeIconRenderer.material.SetColor("_Color", rColor);
   }
 }
 }  // namespace TiltBrush
