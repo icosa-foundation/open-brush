@@ -58,7 +58,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a44ecbd1f2c3647a3b768c0170fb98b9, type: 2}
+  - {fileID: 2100000, guid: c00a9124cb8f22c4a82f32064974ea6f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -192,7 +192,10 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_PreviewBGTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b, type: 3}
   m_AudioReactiveIcon: {fileID: 8145981955289720272}
-  m_ExperimentalIcon: {fileID: 8145362942664174142}
+  m_BrushTypeIcon: {fileID: 8145362942664174142}
+  m_ExperimentalMaterial: {fileID: 2100000, guid: a44ecbd1f2c3647a3b768c0170fb98b9,
+    type: 2}
+  m_LibraryMaterial: {fileID: 2100000, guid: c00a9124cb8f22c4a82f32064974ea6f, type: 2}
 --- !u!65 &8205928198768957834
 BoxCollider:
   m_ObjectHideFlags: 0
