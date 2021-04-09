@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace TiltBrush {
-  public class BuildWindow : EditorWindow {
-
+  public class BuildWindow : EditorWindow
+  {
     private class HeaderedHorizontalLayout : GUI.Scope {
       public HeaderedHorizontalLayout(string header, params GUILayoutOption[] options) {
         GUILayout.BeginVertical(new GUIContent(header), EditorStyles.helpBox, options);
@@ -188,6 +188,7 @@ namespace TiltBrush {
     private int? m_buildLogPosition;
     private System.IntPtr m_hwnd;
     private DateTime m_buildCompleteTime;
+    private static string m_adbPath;  
 
     private bool AndroidConnected {
       get {
@@ -417,6 +418,11 @@ namespace TiltBrush {
     private void BuildActionsGui() {
       using (var builds = new HeaderedVerticalLayout("Build")) {
         EditorGUILayout.LabelField("Build Path", m_currentBuildPath);
+        if (!String.IsNullOrEmpty(m_adbPath)) {
+          EditorGUILayout.LabelField("Adb Path", m_adbPath);
+          if (!File.Exists(m_adbPath))
+            EditorGUILayout.LabelField("Adb status", "ADB not found in expected path.");
+        }
         if (m_currentBuildTime.HasValue) {
           TimeSpan age = DateTime.Now - m_currentBuildTime.Value;
           EditorGUILayout.LabelField("Creation Time",  m_currentBuildTime.Value.ToString());
@@ -463,7 +469,18 @@ namespace TiltBrush {
       }
     }
 
-    private void OnBuildSettingsChanged() {
+    private void OnBuildSettingsChanged()
+    {
+#if UNITY_EDITOR_WIN
+      string adbExe = "adb.exe";
+#else
+      string adbExe = "adb";
+#endif
+      // If we're on Android cache the path to adb as it used during building. Need to do it pre-work so on main thread.
+      m_adbPath = BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android
+        ? Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", adbExe)
+        : null;
+
       m_currentBuildPath = BuildTiltBrush.GetAppPathForGuiBuild();
       if (File.Exists(m_currentBuildPath)) {
         m_currentBuildTime = File.GetLastWriteTime(m_currentBuildPath);
@@ -524,13 +541,8 @@ namespace TiltBrush {
 
     public static string[] RunAdb(params string[] arguments) {
       var process = new System.Diagnostics.Process();
-#if UNITY_EDITOR_WIN
       process.StartInfo =
-          new System.Diagnostics.ProcessStartInfo("adb.exe", String.Join(" ", arguments));
-#else
-      process.StartInfo =
-          new System.Diagnostics.ProcessStartInfo("adb", String.Join(" ", arguments));
-#endif
+          new System.Diagnostics.ProcessStartInfo(m_adbPath, String.Join(" ", arguments));
       process.StartInfo.UseShellExecute = false;
       process.StartInfo.CreateNoWindow = true;
       process.StartInfo.RedirectStandardOutput = true;
@@ -540,7 +552,6 @@ namespace TiltBrush {
       return process.StandardOutput.ReadToEnd().Split('\n').
           Concat(process.StandardError.ReadToEnd().Split('\n')).ToArray();
     }
-
 
     private void Update() {
       if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android) {
