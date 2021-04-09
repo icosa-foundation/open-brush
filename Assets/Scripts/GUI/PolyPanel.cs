@@ -65,7 +65,8 @@ public class PolyPanel : ModalPanel {
     m_NoLikesMessage.SetActive(false);
     m_NotLoggedInMessage.SetActive(false);
     m_OutOfDateMessage.SetActive(false);
-    m_NotSupportedMessage.SetActive(false);
+    if(m_NotSupportedMessage)
+      m_NotSupportedMessage.SetActive(false);
     m_NoPolyConnectionMessage.SetActive(false);
   }
 
