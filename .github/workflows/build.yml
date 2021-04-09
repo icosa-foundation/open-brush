@@ -106,10 +106,10 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Windows Monoscopic
+          - name: Windows Monoscopic Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: Monoscopic
-            extraoptions:
+            extraoptions: -btb-experimental
           - name: Linux SteamVR
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
@@ -117,13 +117,14 @@ jobs:
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Linux Monoscopic
+          - name: Linux Monoscopic Experimental
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
-            extraoptions:
-          - name: OSX Monoscopic
+            extraoptions: -btb-experimental
+          - name: OSX Monoscopic Experimental
             targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
             vrsdk: Monoscopic
+            extraoptions: -btb-experimental
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
