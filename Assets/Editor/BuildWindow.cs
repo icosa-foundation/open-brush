@@ -471,6 +471,8 @@ namespace TiltBrush {
 
     private void OnBuildSettingsChanged()
     {
+      // Only set this if supporting SDK that needs Android (and is installed!).
+#if OCULUS_SUPPORTED
 #if UNITY_EDITOR_WIN
       string adbExe = "adb.exe";
 #else
@@ -480,6 +482,7 @@ namespace TiltBrush {
       m_adbPath = BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android
         ? Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", adbExe)
         : null;
+#endif
 
       m_currentBuildPath = BuildTiltBrush.GetAppPathForGuiBuild();
       if (File.Exists(m_currentBuildPath)) {
