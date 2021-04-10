@@ -1235,6 +1235,7 @@ static class BuildTiltBrush
             ? StereoRenderingPath.SinglePass : StereoRenderingPath.MultiPass))
         using (var unused3 = new TempDefineSymbols(
             target,
+            tiltOptions.VrSdk == SdkMode.Oculus ? "OCULUS_SUPPORTED" : null,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
             tiltOptions.Experimental ? "EXPERIMENTAL_ENABLED" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
