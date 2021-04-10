@@ -10,6 +10,7 @@ on:
       - "v*"
 
 env:
+  UNITY_VERSION: "2019.4.18f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -189,18 +190,16 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: Library
-          # Adding the sha ensures that we always save it (by default cache hits are not saved, even if it's just a base and it's updated, which is not what we want)
-          key: Library-${{ matrix.targetPlatform }}-${{ github.sha }}
-          # When we load, take the 'latest' one that matches. Worst case, it's slightly out of date. Still better than nothing.
+          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
+          key: Library-${{ matrix.targetPlatform }}-${{ env.UNITY_VERSION }}
           restore-keys: |
             Library-${{ matrix.targetPlatform }}-
-            Library-
 
       - name: Update Oculus OVR Plugin
         uses: game-ci/unity-builder@v2.0-alpha-6
         if: matrix.vrsdk == 'Oculus'
         with:
-          unityVersion: 2019.4.18f1
+          unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
@@ -281,7 +280,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
-          unityVersion: 2019.4.18f1
+          unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
           customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.btbgithub }} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
