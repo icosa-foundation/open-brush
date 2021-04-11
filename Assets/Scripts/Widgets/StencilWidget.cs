@@ -144,6 +144,7 @@ public abstract class StencilWidget : GrabWidget {
     clone.transform.parent = transform.parent;
     clone.Show(true, false);
     clone.SetSignedWidgetSize(this.m_Size);
+    clone.CloneInitialMaterials(this);
     clone.Extents = this.Extents;
     HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
 
