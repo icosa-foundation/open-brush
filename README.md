@@ -1,11 +1,11 @@
 # Open Brush - A Tilt Brush fork
 
-![GitHub all releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)
+[![All GitHub releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-gallery/open-brush/releases/latest)
 [![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
 [![Open Collective backers and sponsors](https://img.shields.io/opencollective/all/icosa?logo=open-collective)](https://opencollective.com/icosa)
 
-## Current Version: `0.2.0`
+## Current Version: `0.3.0`
 
 We hope to help maintain Tilt Brush.  
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
@@ -25,16 +25,15 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 ### Currently we are:
 * Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
 * Looking at modding support (custom brushes!)
-* Re-enabling the additional features.
 
 See our [Trello](https://trello.com/b/jItetqYe/open-brush) board for more information.
-
-
 
 ## Acknowledgements
 * Thank you to the Tilt Brush developers for your amazing work! 
 * [SiMonk0](http://www.furjandesign.com/) for the great new logo!
 * The [SideQuest](https://sidequestvr.com/) team for your support.
+
+---
 
 # Tilt Brush README
 
@@ -113,10 +112,7 @@ quickly. The following features will take a little more time.
 *   [Enabling native Oculus support](#enabling-native-oculus-support)
 *   [Sketchfab support](#sketchfab-support)
 *   [\*.fbx file support](#fbx-file-support)
-*   [Camera path support](#camera-path-support)
-*   [Video recording for the camera](#video-support)
 *   [Offline rendering support](#offline-rendering-support)
-*   [GIF support for the camera](#gif-support)
 
 **Note:** Uploading to Poly has been removed completely and cannot be added back
 in, because it uses an internal Google API. Download from Poly can still be
@@ -323,20 +319,6 @@ You will need to build C# wrappers for the Autodesk FBX (the Autodesk filebox
 format) SDK in order to import or export FBX and OBJ files in the app. See
 [Support/fbx/README.md](Support/fbx/README.md) for details.
 
-## Video support
-
-To get video support you will need to put an ffmpeg.exe binary in to 
-`/Support/ThirdParty/ffmpeg/bin`. We have created a script to build one for
-you - it temporarily requires around 2GB of space to build but will clear up
-after itself.
-
-Follow these steps to get video support:
-
-1. Find '/Support/ThirdParty/ffmpeg/BuildFfmpeg.ps1', right-click on it in explorer and select
-   'Run with Powershell'. It will take some time to build.
-2. In Unity, modify `/Assets/PlatformConfigPC` and add 'Video' to 'Enabled Multicam Styles'.
-   'Snapshot' should always be enabled.
-
 ### Video support bug fix
 
 If you add video support, you may encounter a bug where the "Looking for audio"
@@ -372,28 +354,6 @@ Follow these steps to restore the path:
 1.  In the function, find the comments on how to modify the string to point to
     the executable path.
 1.  Update the string to point to the correct path.
-
-## GIF support
-
-GIF support was removed for licensing reasons. To get GIF support, integrate
-your own system by following these steps:
-
-1.  Add the encoding code in around lines 129 - 148 of `Assets/Scripts/Gif
-    Creation/GifEncodeTask.cs`.
-1.  Modify `Assets/PlatformConfigPC` and `Assets/PlatformConfigMobile`. Add
-    **Auto GIF** and/or **Time GIF** to **Enabled Multicam Styles**.
-
-The released PC build had the following settings:
-
-*   Snapshot
-*   Auto GIF
-*   Time GIF
-*   Video
-
-The released Quest build had the following settings:
-
-*   Snapshot
-*   Time GIF
 
 ## Experimental mode
 
