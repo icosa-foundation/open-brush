@@ -101,6 +101,20 @@ public class BrushCatalog : MonoBehaviour {
 
   public List<Brush> GuiBrushList => m_GuiBrushList;
 
+  public bool IsBrushBuiltIn(BrushDescriptor brush) {
+    return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
+  }
+  public bool IsBrushInLibrary(BrushDescriptor brush) {
+    return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
+           m_LibraryBrushes.ContainsKey(brush.m_Guid);
+  }
+
+  public bool IsBrushInSketch(BrushDescriptor brush) {
+    return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
+           !m_LibraryBrushes.ContainsKey(brush.m_Guid) &&
+           m_SceneBrushes.ContainsKey(brush.m_Guid);
+  }
+
   void Awake() {
     m_Instance = this;
     m_BuiltinBrushes = new Dictionary<Guid, Brush>();

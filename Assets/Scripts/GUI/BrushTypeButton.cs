@@ -69,6 +69,19 @@ public class BrushTypeButton : BaseButton {
   public void SetButtonProperties(BrushDescriptor rBrush) {
     m_Brush = rBrush;
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+    if (Config.IsExperimental && App.Instance.IsBrushExperimental(rBrush)) {
+      SetDescriptionText(rBrush.m_Description, rBrush.m_DescriptionExtra);
+    } else
+#endif
+    if (BrushCatalog.m_Instance.IsBrushInLibrary(rBrush)) {
+      SetDescriptionText(rBrush.m_Description, $"By {rBrush.UserVariantBrush.Author} (In Library)");
+    } else if (BrushCatalog.m_Instance.IsBrushInSketch(rBrush)) {
+      SetDescriptionText(rBrush.m_Description, $"By {rBrush.UserVariantBrush.Author} (In Sketch)");
+    } else {
+      SetDescriptionText(rBrush.m_Description);
+    }
+
     Texture2D buttonTexture = rBrush.m_ButtonTexture;
     if (buttonTexture == null) {
       Debug.LogWarningFormat(
@@ -80,15 +93,6 @@ public class BrushTypeButton : BaseButton {
     m_PreviewCubeScript.SetSampleQuadTexture(buttonTexture);
     SetButtonTexture(buttonTexture);
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-    if (Config.IsExperimental) {
-      SetDescriptionText(rBrush.m_Description, rBrush.m_DescriptionExtra);
-    } else {
-      SetDescriptionText(rBrush.m_Description);
-    }
-#else
-    SetDescriptionText(rBrush.m_Description);
-#endif
     m_AudioReactiveIcon.SetActive(rBrush.m_AudioReactive &&
         VisualizerManager.m_Instance.VisualsRequested);
     // Play standard click sound if brush doesn't have a custom button sound

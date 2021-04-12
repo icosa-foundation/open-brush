@@ -178,7 +178,8 @@ public class UserVariantBrush {
     public int BrushDescriptionVersion = kBrushDescriptionVersion;
   }
 
-  public BrushDescriptor Descriptor { get; private set; } = null;
+  public BrushDescriptor Descriptor { get; private set; }
+  public string Author { get; set; }
   public bool ShowInGUI => m_ShowInGUI;
   public bool EmbedInSketch => m_EmbedInSketch;
 
@@ -300,6 +301,7 @@ public class UserVariantBrush {
     Descriptor.m_HiddenInGui = !forceInGui &&
                                m_BrushProperties.CopyRestrictions != CopyRestrictions.EmbedAndShare;
     m_EmbedInSketch = m_BrushProperties.CopyRestrictions != CopyRestrictions.DoNotEmbed;
+    Author = m_BrushProperties.Author;
 
     if (!string.IsNullOrEmpty(m_BrushProperties.ButtonIcon)) {
       Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
