@@ -3294,7 +3294,7 @@ MonoBehaviour:
   m_OdsOutputPrefix: 
   m_ControlsPrefabOverrideOvr: {fileID: 0}
   m_ControlsPrefabOverrideSteamVr: {fileID: 0}
-  m_VersionNumber: 0.2.0
+  m_VersionNumber: 0.3.0
   m_BuildStamp: 
   m_SteamVrRenderPrefab: {fileID: 1000010802110602, guid: 80670fed37dd0364db7c72ccc9fb3a8f,
     type: 3}
