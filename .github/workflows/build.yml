@@ -59,7 +59,7 @@ jobs:
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "::set-output name=prerelease::false"
           else
-            echo "Prerelease version $MAJOR_MINOR.PATCH_VERSION $STAMP"
+            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
             echo "::set-output name=prerelease::true"
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
