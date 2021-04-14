@@ -92,7 +92,7 @@ public class UsdPathSerializer : MonoBehaviour {
     m_UsdCamera = new UsdCameraXformSample();
     try {
       m_Scene = USD.NET.Scene.Create(path);
-    } catch (ApplicationException e) {
+    } catch (ApplicationException /*e*/) {
       Debug.LogError("Error creating usda file!");
       return false;
     }

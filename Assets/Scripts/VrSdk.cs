@@ -620,7 +620,7 @@ public class VrSdk : MonoBehaviour {
 
   // Stitches together these things:
   // - Behavior, which encapsulates Wand and Brush
-  // - Geometry, which encapsulates phsyical controller appearance (Touch, Knuckles, ...)
+  // - Geometry, which encapsulates physical controller appearance (Touch, Knuckles, ...)
   // - Info, which encapsulates VR APIs (OVR, SteamVR, GVR, ...)
   public ControllerInfo CreateControllerInfo(BaseControllerBehavior behavior, bool isLeftHand) {
     if (App.Config.m_SdkMode == SdkMode.SteamVR) {
