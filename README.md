@@ -48,6 +48,13 @@ If you already made any commits without having the pre-commit hook installed, yo
 
 There is also an extensive `.editorconfig` file which will configure many editors' formatting tools properly.
 
+### Git history
+As the addition of the coding style above changed almost every single file, you may want to ignore these changes when looking at `git blame`. You can do this by running:
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+within your clone. The `.git-blame-ignore-revs` file lists the (squashed) commits in which only formatting changes were made, and which should be ignored by git by default. Unfortunately, the Github UI does not support the use of this file.
+
 ## Bleeding Edge Releases
 
 Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-gallery/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
