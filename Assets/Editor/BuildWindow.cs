@@ -571,7 +571,7 @@ namespace TiltBrush
         private void OnBuildSettingsChanged()
         {
             // Only set this if supporting SDK that needs Android (and is installed!).
-#if OCULUS_SUPPORTED
+#if UNITY_ANDROID
 #if UNITY_EDITOR_WIN
       string adbExe = "adb.exe";
 #else
