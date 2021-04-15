@@ -14,13 +14,17 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class ExperimentalOnly : MonoBehaviour {
-  [SerializeField] private bool m_ExperimentalOnly = true;
-  void Awake() {
-    if (m_ExperimentalOnly) {
-      gameObject.SetActive(App.Config.m_IsExperimental);
+namespace TiltBrush
+{
+    public class ExperimentalOnly : MonoBehaviour
+    {
+        [SerializeField] private bool m_ExperimentalOnly = true;
+        void Awake()
+        {
+            if (m_ExperimentalOnly)
+            {
+                gameObject.SetActive(App.Config.m_IsExperimental);
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

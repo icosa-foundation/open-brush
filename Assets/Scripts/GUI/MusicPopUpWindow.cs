@@ -14,31 +14,38 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class MusicPopUpWindow : PagingPopUpWindow {
-    protected override int m_DataCount {
-      get { return AudioManager.m_Instance.NumGameMusics(); }
+    public class MusicPopUpWindow : PagingPopUpWindow
+    {
+        protected override int m_DataCount
+        {
+            get { return AudioManager.m_Instance.NumGameMusics(); }
+        }
+
+        protected override void InitIcon(ImageIcon icon)
+        {
+            icon.m_Valid = true;
+        }
+
+        protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int index)
+        {
+            MusicButton iconButton = icon.m_IconScript as MusicButton;
+            iconButton.SetPreset(index);
+            iconButton.SetButtonSelected(AudioManager.m_Instance.GetActiveGameMusic() == index);
+        }
+
+        override public void Init(GameObject rParent, string sText)
+        {
+            // Find the active audio.
+            int activeIndex = AudioManager.m_Instance.GetActiveGameMusic();
+            if (activeIndex >= 0)
+            {
+                m_RequestedPageIndex = activeIndex / m_IconCountNavPage;
+            }
+
+            base.Init(rParent, sText);
+        }
     }
-
-    protected override void InitIcon(ImageIcon icon) {
-      icon.m_Valid = true;
-    }
-
-    protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int index) {
-      MusicButton iconButton = icon.m_IconScript as MusicButton;
-      iconButton.SetPreset(index);
-      iconButton.SetButtonSelected(AudioManager.m_Instance.GetActiveGameMusic() == index);
-    }
-
-    override public void Init(GameObject rParent, string sText) {
-      // Find the active audio.
-      int activeIndex = AudioManager.m_Instance.GetActiveGameMusic();
-      if (activeIndex >= 0) {
-        m_RequestedPageIndex = activeIndex / m_IconCountNavPage;
-      }
-
-      base.Init(rParent, sText);
-    }
-  }
-}  // namespace TiltBrush
+} // namespace TiltBrush

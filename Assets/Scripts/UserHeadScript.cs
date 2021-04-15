@@ -14,16 +14,19 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class UserHeadScript : MonoBehaviour {
-  [SerializeField] private Renderer m_HeadMesh;
-  [SerializeField] private DropCamWidget m_DropCam;
-  [SerializeField] private GameObject m_MultiCam;
+    public class UserHeadScript : MonoBehaviour
+    {
+        [SerializeField] private Renderer m_HeadMesh;
+        [SerializeField] private DropCamWidget m_DropCam;
+        [SerializeField] private GameObject m_MultiCam;
 
-  void Update() {
-    m_HeadMesh.enabled = m_MultiCam.activeSelf || m_DropCam.ShouldHmdBeVisible();
-  }
-}
+        void Update()
+        {
+            m_HeadMesh.enabled = m_MultiCam.activeSelf || m_DropCam.ShouldHmdBeVisible();
+        }
+    }
 
 } // namespace TiltBrush

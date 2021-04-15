@@ -17,43 +17,55 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace TiltBrush {
-/// This is a replacement for Unity's DownloadHandlerFile class. DownloadHandlerFile is designed to
-/// stream downloaded files directly to disk, but on 2017.4 at least, it seems to have a really
-/// small disk buffer, so downloads take *ages*.
-/// With this download handler, you can pass through the buffer you wish to use (which determines
-/// the maximum that can be downloaded every frame).
-public class DownloadHandlerFastFile : DownloadHandlerScript {
-  private FileStream m_File;
-  private string m_Filename;
+namespace TiltBrush
+{
+    /// This is a replacement for Unity's DownloadHandlerFile class. DownloadHandlerFile is designed to
+    /// stream downloaded files directly to disk, but on 2017.4 at least, it seems to have a really
+    /// small disk buffer, so downloads take *ages*.
+    /// With this download handler, you can pass through the buffer you wish to use (which determines
+    /// the maximum that can be downloaded every frame).
+    public class DownloadHandlerFastFile : DownloadHandlerScript
+    {
+        private FileStream m_File;
+        private string m_Filename;
 
-  public DownloadHandlerFastFile(string filename, byte[] buffer)  : base(buffer) {
-    m_Filename = filename;
-    m_File = File.Create(filename);
-  }
+        public DownloadHandlerFastFile(string filename, byte[] buffer) : base(buffer)
+        {
+            m_Filename = filename;
+            m_File = File.Create(filename);
+        }
 
-  protected override void CompleteContent() {
-    m_File?.Close();
-  }
+        protected override void CompleteContent()
+        {
+            m_File?.Close();
+        }
 
-  protected override bool ReceiveData(byte[] data, int dataLength) {
-    try {
-      m_File?.Write(data, 0, dataLength);
-    } catch (Exception ex) {
-      if (ex is IOException) {
-        Debug.unityLogger.Log(LogType.Exception,
-            $"Info: Cannot write file to disk ({ex.GetType()}), probably out of disk space.\n" +
-            $"{ex.Message}");
-      } else {
-        Debug.LogException(ex);
-      }
-      if (m_File != null) {
-        m_File.Close();
-        File.Delete(m_Filename);
-      }
-      return false;
+        protected override bool ReceiveData(byte[] data, int dataLength)
+        {
+            try
+            {
+                m_File?.Write(data, 0, dataLength);
+            }
+            catch (Exception ex)
+            {
+                if (ex is IOException)
+                {
+                    Debug.unityLogger.Log(LogType.Exception,
+                        $"Info: Cannot write file to disk ({ex.GetType()}), probably out of disk space.\n" +
+                        $"{ex.Message}");
+                }
+                else
+                {
+                    Debug.LogException(ex);
+                }
+                if (m_File != null)
+                {
+                    m_File.Close();
+                    File.Delete(m_Filename);
+                }
+                return false;
+            }
+            return true;
+        }
     }
-    return true;
-  }
-}
 } // namespace TiltBrush

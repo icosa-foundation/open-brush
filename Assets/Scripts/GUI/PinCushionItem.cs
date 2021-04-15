@@ -14,55 +14,66 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class PinCushionItem : MonoBehaviour {
-  [SerializeField] public string m_ToolName;
-  [SerializeField] public TMPro.TextMeshPro m_PanelText;
+namespace TiltBrush
+{
+    public class PinCushionItem : MonoBehaviour
+    {
+        [SerializeField] public string m_ToolName;
+        [SerializeField] public TMPro.TextMeshPro m_PanelText;
 
-  [SerializeField] private Texture m_Icon;
-  [SerializeField] private BaseTool.ToolType m_Tool;
-  [SerializeField] private float m_HighlightScale;
-  [SerializeField] private float m_MinAngle;
-  [SerializeField] private float m_MaxAngle;
-  [SerializeField] private Renderer m_ButtonRenderer;
-  [SerializeField] private Renderer m_Border;
+        [SerializeField] private Texture m_Icon;
+        [SerializeField] private BaseTool.ToolType m_Tool;
+        [SerializeField] private float m_HighlightScale;
+        [SerializeField] private float m_MinAngle;
+        [SerializeField] private float m_MaxAngle;
+        [SerializeField] private Renderer m_ButtonRenderer;
+        [SerializeField] private Renderer m_Border;
 
-  private Vector3 m_BaseScale;
+        private Vector3 m_BaseScale;
 
-  public BaseTool.ToolType Tool {
-    get { return m_Tool; }
-  }
+        public BaseTool.ToolType Tool
+        {
+            get { return m_Tool; }
+        }
 
-  public float MinAngle {
-    get { return m_MinAngle; }
-  }
+        public float MinAngle
+        {
+            get { return m_MinAngle; }
+        }
 
-  public float MaxAngle {
-    get { return m_MaxAngle; }
-  }
+        public float MaxAngle
+        {
+            get { return m_MaxAngle; }
+        }
 
-  void Awake() {
-    m_BaseScale = transform.localScale;
-  }
+        void Awake()
+        {
+            m_BaseScale = transform.localScale;
+        }
 
-  void Start() {
-    GetComponent<Renderer>().material.mainTexture = m_Icon;
-  }
+        void Start()
+        {
+            GetComponent<Renderer>().material.mainTexture = m_Icon;
+        }
 
-  public void Highlight(bool highlight) {
-    if (highlight) {
-      var currentColor = PointerManager.m_Instance.MainPointer.GetCurrentColor();
-      transform.localScale = m_BaseScale * m_HighlightScale;
-      m_ButtonRenderer.material.SetColor("_ActivatedColor", currentColor);
-      m_ButtonRenderer.material.SetFloat("_Activated", 0.0f);
-      m_Border.material.SetColor("_Color", Color.white);
-      m_PanelText.text = m_ToolName;
-    } else {
-      transform.localScale = m_BaseScale;
-      m_ButtonRenderer.material.SetColor("_ActivatedColor", Color.white);
-      m_ButtonRenderer.material.SetFloat("_Activated", 1.0f);
-      m_Border.material.SetColor("_Color", Color.gray);
+        public void Highlight(bool highlight)
+        {
+            if (highlight)
+            {
+                var currentColor = PointerManager.m_Instance.MainPointer.GetCurrentColor();
+                transform.localScale = m_BaseScale * m_HighlightScale;
+                m_ButtonRenderer.material.SetColor("_ActivatedColor", currentColor);
+                m_ButtonRenderer.material.SetFloat("_Activated", 0.0f);
+                m_Border.material.SetColor("_Color", Color.white);
+                m_PanelText.text = m_ToolName;
+            }
+            else
+            {
+                transform.localScale = m_BaseScale;
+                m_ButtonRenderer.material.SetColor("_ActivatedColor", Color.white);
+                m_ButtonRenderer.material.SetFloat("_Activated", 1.0f);
+                m_Border.material.SetColor("_Color", Color.gray);
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

@@ -13,21 +13,26 @@
 // limitations under the License.
 using CSCore.DSP;
 
-namespace TiltBrush {
-  /// Wrapper for CSCore.DSP.FftProvider
-  public class VisualizerCSCoreFft : VisualizerManager.Fft {
-    private FftProvider m_Fft;
-    public VisualizerCSCoreFft(int channels, int fftSize) {
-      FftSize size = (FftSize) fftSize;
-      m_Fft = new FftProvider(channels, size);
-    }
+namespace TiltBrush
+{
+    /// Wrapper for CSCore.DSP.FftProvider
+    public class VisualizerCSCoreFft : VisualizerManager.Fft
+    {
+        private FftProvider m_Fft;
+        public VisualizerCSCoreFft(int channels, int fftSize)
+        {
+            FftSize size = (FftSize)fftSize;
+            m_Fft = new FftProvider(channels, size);
+        }
 
-    public override void Add(float[] samples, int count) {
-      m_Fft.Add(samples, count);
-    }
+        public override void Add(float[] samples, int count)
+        {
+            m_Fft.Add(samples, count);
+        }
 
-    public override void GetFftData(float[] resultBuffer) {
-      m_Fft.GetFftData(resultBuffer);
+        public override void GetFftData(float[] resultBuffer)
+        {
+            m_Fft.GetFftData(resultBuffer);
+        }
     }
-  }
 }

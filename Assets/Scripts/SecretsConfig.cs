@@ -16,26 +16,30 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-[CreateAssetMenu(fileName="Secrets", menuName="Secrets Config")]
-public class SecretsConfig : ScriptableObject {
-  public enum Service {
-    Google = 0,
-    Sketchfab = 1,
-    Oculus = 2,
-    OculusMobile = 3,
-  }
-  
-  [Serializable]
-  public class ServiceAuthData {
-    public Service Service;
-    public string ApiKey;
-    public string ClientId;
-    public string ClientSecret;
-  }
+[CreateAssetMenu(fileName = "Secrets", menuName = "Secrets Config")]
+public class SecretsConfig : ScriptableObject
+{
+    public enum Service
+    {
+        Google = 0,
+        Sketchfab = 1,
+        Oculus = 2,
+        OculusMobile = 3,
+    }
 
-  public ServiceAuthData[] Secrets;
+    [Serializable]
+    public class ServiceAuthData
+    {
+        public Service Service;
+        public string ApiKey;
+        public string ClientId;
+        public string ClientSecret;
+    }
 
-  public ServiceAuthData this[Service service] {
-    get => Secrets.FirstOrDefault(x => x.Service == service);
-  }
+    public ServiceAuthData[] Secrets;
+
+    public ServiceAuthData this[Service service]
+    {
+        get => Secrets.FirstOrDefault(x => x.Service == service);
+    }
 }

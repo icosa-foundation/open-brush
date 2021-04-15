@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class UnlockSkyboxCommand : BaseCommand {
+namespace TiltBrush
+{
+    public class UnlockSkyboxCommand : BaseCommand
+    {
 
-  public override bool NeedsSave { get { return base.NeedsSave; } }
+        public override bool NeedsSave { get { return base.NeedsSave; } }
 
-  protected override void OnRedo() {
-    SceneSettings.m_Instance.InGradient = true;
-  }
+        protected override void OnRedo()
+        {
+            SceneSettings.m_Instance.InGradient = true;
+        }
 
-  protected override void OnUndo() {
-    SceneSettings.m_Instance.InGradient = false;
-  }
-}
+        protected override void OnUndo()
+        {
+            SceneSettings.m_Instance.InGradient = false;
+        }
+    }
 } // namespace TiltBrush

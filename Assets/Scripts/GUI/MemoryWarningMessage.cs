@@ -14,31 +14,36 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class MemoryWarningMessage : UIComponent {
-  [SerializeField] private GameObject m_ExceededMessage;
-  [SerializeField] private GameObject m_WarningMessage;
+    public class MemoryWarningMessage : UIComponent
+    {
+        [SerializeField] private GameObject m_ExceededMessage;
+        [SerializeField] private GameObject m_WarningMessage;
 
-  override protected void Awake() {
-    base.Awake();
-    App.Switchboard.MemoryExceededChanged += OnMemoryStateChanged;
-    App.Switchboard.MemoryWarningAcceptedChanged += OnMemoryStateChanged;
-    OnMemoryStateChanged();
-  }
+        override protected void Awake()
+        {
+            base.Awake();
+            App.Switchboard.MemoryExceededChanged += OnMemoryStateChanged;
+            App.Switchboard.MemoryWarningAcceptedChanged += OnMemoryStateChanged;
+            OnMemoryStateChanged();
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    App.Switchboard.MemoryExceededChanged -= OnMemoryStateChanged;
-    App.Switchboard.MemoryWarningAcceptedChanged -= OnMemoryStateChanged;
-  }
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.MemoryExceededChanged -= OnMemoryStateChanged;
+            App.Switchboard.MemoryWarningAcceptedChanged -= OnMemoryStateChanged;
+        }
 
-  void OnMemoryStateChanged() {
-    bool memExceeded = (SketchMemoryScript.m_Instance != null) ?
-        SketchMemoryScript.m_Instance.MemoryExceeded : false;
-    m_ExceededMessage.SetActive(memExceeded);
-    m_WarningMessage.SetActive(!memExceeded);
-  }
-}
+        void OnMemoryStateChanged()
+        {
+            bool memExceeded = (SketchMemoryScript.m_Instance != null) ?
+                SketchMemoryScript.m_Instance.MemoryExceeded : false;
+            m_ExceededMessage.SetActive(memExceeded);
+            m_WarningMessage.SetActive(!memExceeded);
+        }
+    }
 
 } // namespace TiltBrush

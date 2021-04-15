@@ -14,31 +14,38 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class MonoCameraControlScript : MonoBehaviour {
-  private float m_xScale = 5f;
-  private float m_yScale = 2.4f;
-  private float m_yClamp = 85f;
-  private Vector3 m_cameraRotation;
+    public class MonoCameraControlScript : MonoBehaviour
+    {
+        private float m_xScale = 5f;
+        private float m_yScale = 2.4f;
+        private float m_yClamp = 85f;
+        private Vector3 m_cameraRotation;
 
-  void Update() {
-    // Use mouse position to control camera rotation.
-    if (InputManager.m_Instance.GetKeyboardShortcut(
-            InputManager.KeyboardShortcut.PositionMonoCamera)) {
-      // Mouse's x coordinate corresponds to camera's rotation around y axis.
-      m_cameraRotation.y += Input.GetAxis("Mouse X") * m_xScale;
-      if (m_cameraRotation.y <= -180) {
-        m_cameraRotation.y += 360;
-      } else if (m_cameraRotation.y > 180) {
-        m_cameraRotation.y -= 360;
-      }
+        void Update()
+        {
+            // Use mouse position to control camera rotation.
+            if (InputManager.m_Instance.GetKeyboardShortcut(
+                InputManager.KeyboardShortcut.PositionMonoCamera))
+            {
+                // Mouse's x coordinate corresponds to camera's rotation around y axis.
+                m_cameraRotation.y += Input.GetAxis("Mouse X") * m_xScale;
+                if (m_cameraRotation.y <= -180)
+                {
+                    m_cameraRotation.y += 360;
+                }
+                else if (m_cameraRotation.y > 180)
+                {
+                    m_cameraRotation.y -= 360;
+                }
 
-      // Mouse's y coordinate corresponds to camera's rotation around x axis.
-      m_cameraRotation.x -= Input.GetAxis("Mouse Y") * m_yScale;
-      m_cameraRotation.x = Mathf.Clamp(m_cameraRotation.x, -m_yClamp, m_yClamp);
+                // Mouse's y coordinate corresponds to camera's rotation around x axis.
+                m_cameraRotation.x -= Input.GetAxis("Mouse Y") * m_yScale;
+                m_cameraRotation.x = Mathf.Clamp(m_cameraRotation.x, -m_yClamp, m_yClamp);
+            }
+            transform.localEulerAngles = m_cameraRotation;
+        }
     }
-    transform.localEulerAngles = m_cameraRotation;
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

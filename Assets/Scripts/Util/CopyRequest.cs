@@ -15,28 +15,32 @@
 using System.IO;
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-// This can't be defined in an Editor/ directory because it needs to be accessible by
-// BrushDescriptor. It's still only used at build time.
+    // This can't be defined in an Editor/ directory because it needs to be accessible by
+    // BrushDescriptor. It's still only used at build time.
 #if UNITY_EDITOR
-public struct CopyRequest {
-  public string source;
-  public string dest;
-  public bool omitForAndroid;
+    public struct CopyRequest
+    {
+        public string source;
+        public string dest;
+        public bool omitForAndroid;
 
-  public CopyRequest(string s) : this(s, s) {}
+        public CopyRequest(string s) : this(s, s) { }
 
-  public CopyRequest(string s, string d) {
-    if (Path.IsPathRooted(d)) {
-      Debug.LogWarning(
-          $"CopyRequest {s} -> {d} is invalid. Destinations must be relative");
+        public CopyRequest(string s, string d)
+        {
+            if (Path.IsPathRooted(d))
+            {
+                Debug.LogWarning(
+                    $"CopyRequest {s} -> {d} is invalid. Destinations must be relative");
+            }
+            source = s;
+            dest = d;
+            omitForAndroid = false;
+        }
     }
-    source = s;
-    dest = d;
-    omitForAndroid = false;
-  }
-}
 #endif
 
 } // namespace TiltBrush

@@ -14,26 +14,32 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class FloatPropertySlider : BaseSlider {
+namespace TiltBrush
+{
+    public class FloatPropertySlider : BaseSlider
+    {
 
-  [SerializeField] private SerializedPropertyReferenceFloat m_Property;
-  [Vec2AsRange] [SerializeField] private Vector2 m_Range = Vector2.up;
-  [Tooltip("Values < 1 will bias the low end - Values > 1 will bias the high end.")]
-  [SerializeField] private float m_PowerCurve = 1;
+        [SerializeField] private SerializedPropertyReferenceFloat m_Property;
+        [Vec2AsRange] [SerializeField] private Vector2 m_Range = Vector2.up;
+        [Tooltip("Values < 1 will bias the low end - Values > 1 will bias the high end.")]
+        [SerializeField] private float m_PowerCurve = 1;
 
-  public override void UpdateValue(float value) {
-    if (m_Property.HasValue) {
-      float iLerped = Mathf.InverseLerp(m_Range.x, m_Range.y, value);
-      m_Property.Value = Mathf.Pow(iLerped, 1f / m_PowerCurve);
+        public override void UpdateValue(float value)
+        {
+            if (m_Property.HasValue)
+            {
+                float iLerped = Mathf.InverseLerp(m_Range.x, m_Range.y, value);
+                m_Property.Value = Mathf.Pow(iLerped, 1f / m_PowerCurve);
+            }
+        }
+
+        protected virtual void Update()
+        {
+            if (m_Property.HasValue)
+            {
+                m_CurrentValue = Mathf.Lerp(m_Range.x, m_Range.y, Mathf.Pow(m_Property.Value, m_PowerCurve));
+                SetSliderPositionToReflectValue();
+            }
+        }
     }
-  }
-
-  protected virtual void Update() {
-    if (m_Property.HasValue) {
-      m_CurrentValue = Mathf.Lerp(m_Range.x, m_Range.y, Mathf.Pow(m_Property.Value, m_PowerCurve));
-      SetSliderPositionToReflectValue();
-    }
-  }
-}
 } // namespace TiltBrush

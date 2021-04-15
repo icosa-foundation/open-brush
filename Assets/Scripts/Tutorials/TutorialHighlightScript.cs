@@ -14,55 +14,62 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class TutorialHighlightScript : MonoBehaviour {
+namespace TiltBrush
+{
+    public class TutorialHighlightScript : MonoBehaviour
+    {
 
-  enum HighlightState {
-    NoGrab,
-    MoveIn,
-    Activate,
-    MoveOut
-  }
+        enum HighlightState
+        {
+            NoGrab,
+            MoveIn,
+            Activate,
+            MoveOut
+        }
 
-  [SerializeField] private float m_StateDuration = 1f;
-  [SerializeField] private GameObject m_Highlight;
-  [SerializeField] private Transform m_Controller;
-  [SerializeField] private Vector3 m_StartPos;
-  [SerializeField] private Vector3 m_EndPos;
-  private HighlightState m_State;
-  private float m_Timer;
+        [SerializeField] private float m_StateDuration = 1f;
+        [SerializeField] private GameObject m_Highlight;
+        [SerializeField] private Transform m_Controller;
+        [SerializeField] private Vector3 m_StartPos;
+        [SerializeField] private Vector3 m_EndPos;
+        private HighlightState m_State;
+        private float m_Timer;
 
-  void Update() {
-    m_Timer += Time.deltaTime;
-    if (m_Timer > m_StateDuration) {
-      switch (m_State) {
-      case HighlightState.NoGrab:
-        m_State = HighlightState.MoveIn;
-        break;
-      case HighlightState.MoveIn:
-        m_Highlight.SetActive(true);
-        m_Controller.localPosition = m_EndPos;
-        m_State = HighlightState.Activate;
-        break;
-      case HighlightState.Activate:
-        m_Highlight.SetActive(false);
-        m_State = HighlightState.MoveOut;
-        break;
-      case HighlightState.MoveOut:
-        m_Controller.localPosition = m_StartPos;
-        m_State = HighlightState.NoGrab;
-        break;
-      }
-      m_Timer = 0;
+        void Update()
+        {
+            m_Timer += Time.deltaTime;
+            if (m_Timer > m_StateDuration)
+            {
+                switch (m_State)
+                {
+                    case HighlightState.NoGrab:
+                        m_State = HighlightState.MoveIn;
+                        break;
+                    case HighlightState.MoveIn:
+                        m_Highlight.SetActive(true);
+                        m_Controller.localPosition = m_EndPos;
+                        m_State = HighlightState.Activate;
+                        break;
+                    case HighlightState.Activate:
+                        m_Highlight.SetActive(false);
+                        m_State = HighlightState.MoveOut;
+                        break;
+                    case HighlightState.MoveOut:
+                        m_Controller.localPosition = m_StartPos;
+                        m_State = HighlightState.NoGrab;
+                        break;
+                }
+                m_Timer = 0;
+            }
+            switch (m_State)
+            {
+                case HighlightState.MoveIn:
+                    m_Controller.localPosition = Vector3.Lerp(m_StartPos, m_EndPos, m_Timer / m_StateDuration);
+                    break;
+                case HighlightState.MoveOut:
+                    m_Controller.localPosition = Vector3.Lerp(m_EndPos, m_StartPos, m_Timer / m_StateDuration);
+                    break;
+            }
+        }
     }
-    switch (m_State) {
-    case HighlightState.MoveIn:
-      m_Controller.localPosition = Vector3.Lerp(m_StartPos, m_EndPos, m_Timer / m_StateDuration);
-      break;
-    case HighlightState.MoveOut:
-      m_Controller.localPosition = Vector3.Lerp(m_EndPos, m_StartPos, m_Timer / m_StateDuration);
-      break;
-    }
-  }
-}
 } // namespace TiltBrush

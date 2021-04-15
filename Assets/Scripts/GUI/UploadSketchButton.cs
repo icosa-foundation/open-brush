@@ -14,31 +14,42 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class UploadSketchButton : OptionButton {
-  override protected void OnButtonPressed() {
-    // Our manager should be the UploadPopUpWindow.  If it's not, no biggie, just warn.
-    UploadPopUpWindow popup = (m_Manager != null) ?
-        m_Manager.GetComponent<UploadPopUpWindow>() : null;
-    if (popup != null) {
-      if (m_Command == SketchControlsScript.GlobalCommands.LoginToGenericCloud) {
-        popup.UserPressedLoginButton(m_CommandParam);
-      } else if (m_Command == SketchControlsScript.GlobalCommands.UploadToGenericCloud) {
-        // We can't tell if it's safe to upload yet, so pass on responsibility for calling the base
-        // class (which would start the actual upload).
-        popup.UserPressedUploadButton((Cloud) m_CommandParam, base.OnButtonPressed);
-        return;
-      } else {
-        // This button should be either set to login or upload. If not, just warn.
-        Debug.LogWarning("UploadSketchButton command should be either " +
-                         "LoginToGenericCloud or UploadToGenericCloud.");
-      }
-    } else {
-      Debug.LogWarning("UploadSketchButton on a panel or popup that isn't UploadPopUpWindow.");
+    public class UploadSketchButton : OptionButton
+    {
+        override protected void OnButtonPressed()
+        {
+            // Our manager should be the UploadPopUpWindow.  If it's not, no biggie, just warn.
+            UploadPopUpWindow popup = (m_Manager != null) ?
+                m_Manager.GetComponent<UploadPopUpWindow>() : null;
+            if (popup != null)
+            {
+                if (m_Command == SketchControlsScript.GlobalCommands.LoginToGenericCloud)
+                {
+                    popup.UserPressedLoginButton(m_CommandParam);
+                }
+                else if (m_Command == SketchControlsScript.GlobalCommands.UploadToGenericCloud)
+                {
+                    // We can't tell if it's safe to upload yet, so pass on responsibility for calling the base
+                    // class (which would start the actual upload).
+                    popup.UserPressedUploadButton((Cloud)m_CommandParam, base.OnButtonPressed);
+                    return;
+                }
+                else
+                {
+                    // This button should be either set to login or upload. If not, just warn.
+                    Debug.LogWarning("UploadSketchButton command should be either " +
+                        "LoginToGenericCloud or UploadToGenericCloud.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("UploadSketchButton on a panel or popup that isn't UploadPopUpWindow.");
+            }
+
+            base.OnButtonPressed();
+        }
     }
-
-    base.OnButtonPressed();
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

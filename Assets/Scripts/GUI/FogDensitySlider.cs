@@ -15,54 +15,65 @@
 using UnityEngine;
 using System;
 
-namespace TiltBrush {
-public class FogDensitySlider : BaseSlider {
-  [SerializeField] private Renderer m_FogDensity;
-  [SerializeField] private float m_MaxFogDensity = 0.04f;
+namespace TiltBrush
+{
+    public class FogDensitySlider : BaseSlider
+    {
+        [SerializeField] private Renderer m_FogDensity;
+        [SerializeField] private float m_MaxFogDensity = 0.04f;
 
-  void OnEnable() {
-    SceneSettings.m_Instance.FogDensityChanged += OnFogDensityChanged;
-  }
+        void OnEnable()
+        {
+            SceneSettings.m_Instance.FogDensityChanged += OnFogDensityChanged;
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    SceneSettings.m_Instance.FogDensityChanged -= OnFogDensityChanged;
-  }
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            SceneSettings.m_Instance.FogDensityChanged -= OnFogDensityChanged;
+        }
 
-  override public void UpdateValue(float value) {
-    base.UpdateValue(value);
-    SetSliderPositionToReflectValue();
-    m_FogDensity.material.SetFloat("_FogDensity", value);
+        override public void UpdateValue(float value)
+        {
+            base.UpdateValue(value);
+            SetSliderPositionToReflectValue();
+            m_FogDensity.material.SetFloat("_FogDensity", value);
 
-    SetDescriptionText(m_DescriptionText, String.Format("{0:0}%", value * 100));
-  }
+            SetDescriptionText(m_DescriptionText, String.Format("{0:0}%", value * 100));
+        }
 
-  override protected void OnPositionSliderNobUpdated() {
-    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-        new ModifyFogCommand(SceneSettings.m_Instance.FogColor,
-        GetCurrentValue() * m_MaxFogDensity));
-  }
+        override protected void OnPositionSliderNobUpdated()
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyFogCommand(SceneSettings.m_Instance.FogColor,
+                    GetCurrentValue() * m_MaxFogDensity));
+        }
 
-  override public void ButtonReleased() {
-    base.ButtonReleased();
-    EndModifyCommand();
-  }
+        override public void ButtonReleased()
+        {
+            base.ButtonReleased();
+            EndModifyCommand();
+        }
 
-  override public void ResetState() {
-    if (m_HadButtonPress) {
-      EndModifyCommand();
+        override public void ResetState()
+        {
+            if (m_HadButtonPress)
+            {
+                EndModifyCommand();
+            }
+            base.ResetState();
+        }
+
+        void OnFogDensityChanged()
+        {
+            UpdateValue(SceneSettings.m_Instance.FogDensity / m_MaxFogDensity);
+        }
+
+        void EndModifyCommand()
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyFogCommand(SceneSettings.m_Instance.FogColor,
+                    SceneSettings.m_Instance.FogDensity, final: true));
+        }
     }
-    base.ResetState();
-  }
-
-  void OnFogDensityChanged() {
-    UpdateValue(SceneSettings.m_Instance.FogDensity / m_MaxFogDensity);
-  }
-
-  void EndModifyCommand() {
-    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-        new ModifyFogCommand(SceneSettings.m_Instance.FogColor,
-        SceneSettings.m_Instance.FogDensity, final: true));
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -13,12 +13,10 @@
 // limitations under the License.
 
 using UnityEngine;
-
 using Node = UnityEngine.XR.XRNode;
 using NodeState = UnityEngine.XR.XRNodeState;
 
 #if OCULUS_SUPPORTED
-
 namespace TiltBrush {
 
 public class OculusMRCCameraUpdate : MonoBehaviour {

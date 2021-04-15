@@ -14,88 +14,108 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class EraserTool : StrokeModificationTool {
-  public float m_MaxSpinSpeed;
-  public float m_SpinSpeedAcceleration;
-  public float m_SpinSpeedDecay;
-  private float m_SpinSpeed;
-  private float m_SpinSpeedVel;
-  private float m_SpinAmount;
+    public class EraserTool : StrokeModificationTool
+    {
+        public float m_MaxSpinSpeed;
+        public float m_SpinSpeedAcceleration;
+        public float m_SpinSpeedDecay;
+        private float m_SpinSpeed;
+        private float m_SpinSpeedVel;
+        private float m_SpinAmount;
 
-  override public void HideTool(bool bHide) {
-    base.HideTool(bHide);
-    if (m_SketchSurface.IsInFreePaintMode()) {
-      m_ToolTransform.GetComponent<Renderer>().enabled = !bHide;
+        override public void HideTool(bool bHide)
+        {
+            base.HideTool(bHide);
+            if (m_SketchSurface.IsInFreePaintMode())
+            {
+                m_ToolTransform.GetComponent<Renderer>().enabled = !bHide;
+            }
+        }
+
+        override protected void UpdateAudioVisuals()
+        {
+            bool bToolHot = IsHot;
+            if (bToolHot != m_ToolWasHot)
+            {
+                m_ToolTransform.GetComponent<Renderer>().material =
+                    bToolHot ? m_ToolHotMaterial : m_ToolColdMaterial;
+                RequestPlayAudio(bToolHot);
+            }
+
+            if (bToolHot)
+            {
+                m_SpinSpeedVel += (m_SpinSpeedAcceleration * Time.deltaTime);
+                m_SpinSpeed = Mathf.Min(m_SpinSpeed + m_SpinSpeedVel * Time.deltaTime, m_MaxSpinSpeed);
+            }
+            else
+            {
+                m_SpinSpeed = Mathf.Max(m_SpinSpeed - m_SpinSpeedDecay * Time.deltaTime, 0.0f);
+                m_SpinSpeedVel = 0.0f;
+            }
+            m_SpinAmount += m_SpinSpeed * Time.deltaTime;
+        }
+
+        override protected void SnapIntersectionObjectToController()
+        {
+            if (m_LockToController)
+            {
+                Vector3 toolPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
+                    InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
+                m_ToolTransform.position = toolPos;
+                m_ToolTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation *
+                    Quaternion.AngleAxis(m_SpinAmount, Vector3.forward);
+            }
+            else
+            {
+                transform.position = SketchSurfacePanel.m_Instance.transform.position;
+                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+            }
+        }
+
+        override public void IntersectionHappenedThisFrame()
+        {
+            InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
+        }
+
+        override protected bool HandleIntersectionWithWidget(GrabWidget widget)
+        {
+            return false;
+        }
+
+        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
+        {
+            if (!rGroup.m_Active)
+            {
+                // Subset has already been deleted.
+                // Collision detection is async and has latency, so theoretically we should expect this case.
+                // However, in practice it's currently not possible; so flag it as unexpected.
+                Debug.LogWarningFormat(
+                    "{0}: Unexpected: deleting already-deleted stroke @ {1}",
+                    rGroup.m_ParentBatch.ParentPool.Name, Time.frameCount);
+                return false;
+            }
+            SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGroup.m_Stroke);
+            PlayModifyStrokeSound();
+            return true;
+        }
+
+        override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject)
+        {
+            SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGameObject);
+            PlayModifyStrokeSound();
+            return true;
+        }
+
+        override public void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller == InputManager.ControllerName.Brush)
+            {
+                InputManager.Brush.Geometry.ShowBrushSizer();
+            }
+        }
+
     }
-  }
-
-  override protected void UpdateAudioVisuals() {
-    bool bToolHot = IsHot;
-    if (bToolHot != m_ToolWasHot) {
-      m_ToolTransform.GetComponent<Renderer>().material =
-          bToolHot ? m_ToolHotMaterial : m_ToolColdMaterial;
-      RequestPlayAudio(bToolHot);
-    }
-
-    if (bToolHot) {
-      m_SpinSpeedVel += (m_SpinSpeedAcceleration * Time.deltaTime);
-      m_SpinSpeed = Mathf.Min(m_SpinSpeed + m_SpinSpeedVel * Time.deltaTime, m_MaxSpinSpeed);
-    } else {
-      m_SpinSpeed = Mathf.Max(m_SpinSpeed - m_SpinSpeedDecay * Time.deltaTime, 0.0f);
-      m_SpinSpeedVel = 0.0f;
-    }
-    m_SpinAmount += m_SpinSpeed * Time.deltaTime;
-  }
-
-  override protected void SnapIntersectionObjectToController() {
-    if (m_LockToController) {
-      Vector3 toolPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
-        InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
-      m_ToolTransform.position = toolPos;
-      m_ToolTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation *
-          Quaternion.AngleAxis(m_SpinAmount, Vector3.forward);
-    } else {
-      transform.position = SketchSurfacePanel.m_Instance.transform.position;
-      transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
-    }
-  }
-
-  override public void IntersectionHappenedThisFrame() {
-    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
-  }
-
-  override protected bool HandleIntersectionWithWidget(GrabWidget widget) {
-    return false;
-  }
-
-  override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
-    if (! rGroup.m_Active) {
-      // Subset has already been deleted.
-      // Collision detection is async and has latency, so theoretically we should expect this case.
-      // However, in practice it's currently not possible; so flag it as unexpected.
-      Debug.LogWarningFormat(
-          "{0}: Unexpected: deleting already-deleted stroke @ {1}",
-          rGroup.m_ParentBatch.ParentPool.Name, Time.frameCount);
-      return false;
-    }
-    SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGroup.m_Stroke);
-    PlayModifyStrokeSound();
-    return true;
-  }
-
-  override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject) {
-    SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGameObject);
-    PlayModifyStrokeSound();
-    return true;
-  }
-
-  override public void AssignControllerMaterials(InputManager.ControllerName controller) {
-    if (controller == InputManager.ControllerName.Brush) {
-      InputManager.Brush.Geometry.ShowBrushSizer();
-    }
-  }
-
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

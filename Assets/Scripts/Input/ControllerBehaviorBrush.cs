@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class ControllerBehaviorBrush : BaseControllerBehavior {
-  public void EnablePointAtPanelsHintObject(bool bEnable) {
-    ControllerGeometry.PointAtPanelsHintObject.Activate(bEnable);
-    if (bEnable) {
-      AudioManager.m_Instance.PlayHintAnimateSound(
-          ControllerGeometry.PointAtPanelsHintObject.transform.position);
-    }
-  }
+namespace TiltBrush
+{
+    public class ControllerBehaviorBrush : BaseControllerBehavior
+    {
+        public void EnablePointAtPanelsHintObject(bool bEnable)
+        {
+            ControllerGeometry.PointAtPanelsHintObject.Activate(bEnable);
+            if (bEnable)
+            {
+                AudioManager.m_Instance.PlayHintAnimateSound(
+                    ControllerGeometry.PointAtPanelsHintObject.transform.position);
+            }
+        }
 
-  override public void ActivateHint(bool bActivate) {
-    ControllerGeometry.PaintHintObject.Activate(bActivate);
-  }
-}
-}  // namespace TiltBrush
+        override public void ActivateHint(bool bActivate)
+        {
+            ControllerGeometry.PaintHintObject.Activate(bActivate);
+        }
+    }
+} // namespace TiltBrush

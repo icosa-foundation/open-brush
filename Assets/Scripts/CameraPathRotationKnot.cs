@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class CameraPathRotationKnot : CameraPathKnot {
-  override protected void Awake() {
-    base.Awake();
-    m_Type = Type.Rotation;
-  }
+    public class CameraPathRotationKnot : CameraPathKnot
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            m_Type = Type.Rotation;
+        }
 
-  public CameraPathRotationKnotMetadata AsSerializable() { 
-    return new CameraPathRotationKnotMetadata {
-      Xf = TrTransform.FromTransform(transform),
-      PathTValue = PathT.T,
-    };
-  }
-}
+        public CameraPathRotationKnotMetadata AsSerializable()
+        {
+            return new CameraPathRotationKnotMetadata
+            {
+                Xf = TrTransform.FromTransform(transform),
+                PathTValue = PathT.T,
+            };
+        }
+    }
 
 } // namespace TiltBrush

@@ -14,45 +14,53 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class TutorialScaleScript : MonoBehaviour {
-  [SerializeField] private Transform m_LeftController;
-  [SerializeField] private Transform m_RightController;
-  [SerializeField] private Transform m_Mesh;
-  [SerializeField] private float m_StateDuration;
-  private bool m_AnimatingIn;
-  private float m_Timer;
-  private Vector3 m_StartPos;
-  private float m_StartSize;
+namespace TiltBrush
+{
+    public class TutorialScaleScript : MonoBehaviour
+    {
+        [SerializeField] private Transform m_LeftController;
+        [SerializeField] private Transform m_RightController;
+        [SerializeField] private Transform m_Mesh;
+        [SerializeField] private float m_StateDuration;
+        private bool m_AnimatingIn;
+        private float m_Timer;
+        private Vector3 m_StartPos;
+        private float m_StartSize;
 
-  void Awake() {
-    m_StartPos = m_RightController.transform.localPosition;
-    m_StartSize = m_Mesh.transform.localScale.x;
-  }
+        void Awake()
+        {
+            m_StartPos = m_RightController.transform.localPosition;
+            m_StartSize = m_Mesh.transform.localScale.x;
+        }
 
-  void Update() {
-    m_Timer += Time.deltaTime;
-    if (m_Timer > m_StateDuration) {
-      m_Timer = 0;
-      m_AnimatingIn = !m_AnimatingIn;
+        void Update()
+        {
+            m_Timer += Time.deltaTime;
+            if (m_Timer > m_StateDuration)
+            {
+                m_Timer = 0;
+                m_AnimatingIn = !m_AnimatingIn;
+            }
+            if (m_AnimatingIn)
+            {
+                m_LeftController.localPosition =
+                    new Vector3(-1 * (m_StartPos.x + m_StartPos.x * (1 - m_Timer / m_StateDuration)),
+                        m_StartPos.y, m_StartPos.z);
+                m_RightController.localPosition =
+                    new Vector3(m_StartPos.x + m_StartPos.x * (1 - m_Timer / m_StateDuration),
+                        m_StartPos.y, m_StartPos.z);
+                m_Mesh.transform.localScale = (2 - m_Timer / m_StateDuration) * m_StartSize * Vector3.one;
+            }
+            else
+            {
+                m_LeftController.localPosition =
+                    new Vector3(-1 * (m_StartPos.x + m_StartPos.x * m_Timer / m_StateDuration),
+                        m_StartPos.y, m_StartPos.z);
+                m_RightController.localPosition =
+                    new Vector3(m_StartPos.x + m_StartPos.x * m_Timer / m_StateDuration,
+                        m_StartPos.y, m_StartPos.z);
+                m_Mesh.transform.localScale = (1 + m_Timer / m_StateDuration) * m_StartSize * Vector3.one;
+            }
+        }
     }
-    if (m_AnimatingIn) {
-      m_LeftController.localPosition =
-        new Vector3(-1 * (m_StartPos.x + m_StartPos.x * (1 - m_Timer / m_StateDuration)),
-          m_StartPos.y, m_StartPos.z);
-      m_RightController.localPosition =
-        new Vector3(m_StartPos.x + m_StartPos.x * (1 - m_Timer / m_StateDuration),
-          m_StartPos.y, m_StartPos.z);
-      m_Mesh.transform.localScale = (2 - m_Timer / m_StateDuration) * m_StartSize * Vector3.one;
-    } else {
-      m_LeftController.localPosition =
-        new Vector3(-1 * (m_StartPos.x + m_StartPos.x * m_Timer / m_StateDuration),
-          m_StartPos.y, m_StartPos.z);
-      m_RightController.localPosition =
-        new Vector3(m_StartPos.x + m_StartPos.x * m_Timer / m_StateDuration,
-          m_StartPos.y, m_StartPos.z);
-      m_Mesh.transform.localScale = (1 + m_Timer / m_StateDuration) * m_StartSize * Vector3.one;
-    }
-  }
-}
 } // namespace TiltBrush

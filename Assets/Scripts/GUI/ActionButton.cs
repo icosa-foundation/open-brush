@@ -14,12 +14,15 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-  public class ActionButton : BaseButton {
-    [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
+namespace TiltBrush
+{
+    public class ActionButton : BaseButton
+    {
+        [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
 
-    protected override void OnButtonPressed() {
-      m_Action.Invoke();
+        protected override void OnButtonPressed()
+        {
+            m_Action.Invoke();
+        }
     }
-  }
 } // namespace TiltBrush
