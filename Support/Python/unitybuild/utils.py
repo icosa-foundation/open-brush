@@ -24,107 +24,120 @@ import threading
 import subprocess
 from unitybuild.constants import InternalError
 
-if platform.system() == 'Windows':
-  import win32api  # pylint: disable=import-error
+if platform.system() == "Windows":
+    import win32api  # pylint: disable=import-error
 
 
-if os.getenv('MSYSTEM'):
-  import msvcrt  # pylint: disable=import-error
-  import ctypes
-  from ctypes.wintypes import HANDLE, DWORD
-  from _subprocess import WaitForSingleObject, WAIT_OBJECT_0  # pylint: disable=import-error
+if os.getenv("MSYSTEM"):
+    import msvcrt  # pylint: disable=import-error
+    import ctypes
+    from ctypes.wintypes import HANDLE, DWORD
+    from _subprocess import (  # pylint: disable=import-error
+        WaitForSingleObject,
+        WAIT_OBJECT_0,
+    )
 
 
 @contextlib.contextmanager
 def ensure_terminate(proc):
-  """Ensure that *proc* is dead upon exiting the block."""
-  try:
-    yield
-  finally:
+    """Ensure that *proc* is dead upon exiting the block."""
     try:
-      # Windows raises WindowsError if the process is already dead.
-      if proc.poll() is None:
-        proc.terminate()
-    except Exception as e:  # pylint: disable=broad-except
-      print("WARN: Could not kill process: %s" % (e,))
+        yield
+    finally:
+        try:
+            # Windows raises WindowsError if the process is already dead.
+            if proc.poll() is None:
+                proc.terminate()
+        except Exception as e:  # pylint: disable=broad-except
+            print("WARN: Could not kill process: %s" % (e,))
 
 
 def destroy(file_or_dir):
-  """Ensure that *file_or_dir* does not exist in the filesystem,
-  deleting it if necessary."""
-  if os.path.isfile(file_or_dir):
-    os.chmod(file_or_dir, stat.S_IWRITE)
-    os.unlink(file_or_dir)
-  elif os.path.isdir(file_or_dir):
-    for r, ds, fs in os.walk(file_or_dir, topdown=False):
-      for f in fs:
-        os.chmod(os.path.join(r, f), stat.S_IWRITE)
-        os.unlink(os.path.join(r, f))
-      for d in ds:
-        os.rmdir(os.path.join(r, d))
-    os.rmdir(file_or_dir)
-  if os.path.exists(file_or_dir):
-    raise InternalError("Temp build location '%s' is not empty" % file_or_dir)
+    """Ensure that *file_or_dir* does not exist in the filesystem,
+    deleting it if necessary."""
+    if os.path.isfile(file_or_dir):
+        os.chmod(file_or_dir, stat.S_IWRITE)
+        os.unlink(file_or_dir)
+    elif os.path.isdir(file_or_dir):
+        for r, ds, fs in os.walk(file_or_dir, topdown=False):
+            for f in fs:
+                os.chmod(os.path.join(r, f), stat.S_IWRITE)
+                os.unlink(os.path.join(r, f))
+            for d in ds:
+                os.rmdir(os.path.join(r, d))
+        os.rmdir(file_or_dir)
+    if os.path.exists(file_or_dir):
+        raise InternalError("Temp build location '%s' is not empty" % file_or_dir)
 
 
 def msys_control_c_workaround():
-  """Turn off console Ctrl-c support and implement it ourselves."""
-  # Used to work around a bug in msys where control-c kills the process
-  # abruptly ~100ms after the process receives SIGINT. This prevents us
-  # from running cleanup handlers, like the one that kills the Unity.exe
-  # subprocess.
-  if not os.getenv('MSYSTEM'):
-    return
+    """Turn off console Ctrl-c support and implement it ourselves."""
+    # Used to work around a bug in msys where control-c kills the process
+    # abruptly ~100ms after the process receives SIGINT. This prevents us
+    # from running cleanup handlers, like the one that kills the Unity.exe
+    # subprocess.
+    if not os.getenv("MSYSTEM"):
+        return
 
-  kernel32 = ctypes.windll.kernel32
-  kernel32.GetStdHandle.restype = HANDLE
-  kernel32.GetStdHandle.argtypes = (DWORD,)
-  # kernel32.GetConsoleMode.restype = BOOL
-  kernel32.GetConsoleMode.argtypes = (HANDLE, ctypes.POINTER(DWORD))
-  # kernel32.SetConsoleMode.restype = BOOL
-  kernel32.SetConsoleMode.argtypes = (HANDLE, DWORD)
-  STD_INPUT_HANDLE = DWORD(-10)
-  ENABLE_PROCESSED_INPUT = DWORD(1)
+    kernel32 = ctypes.windll.kernel32
+    kernel32.GetStdHandle.restype = HANDLE
+    kernel32.GetStdHandle.argtypes = (DWORD,)
+    # kernel32.GetConsoleMode.restype = BOOL
+    kernel32.GetConsoleMode.argtypes = (HANDLE, ctypes.POINTER(DWORD))
+    # kernel32.SetConsoleMode.restype = BOOL
+    kernel32.SetConsoleMode.argtypes = (HANDLE, DWORD)
+    STD_INPUT_HANDLE = DWORD(-10)
+    ENABLE_PROCESSED_INPUT = DWORD(1)
 
-  stdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
-  mode = DWORD()
-  kernel32.GetConsoleMode(stdin, ctypes.byref(mode))
-  mode.value = mode.value & ~(ENABLE_PROCESSED_INPUT.value)
-  kernel32.SetConsoleMode(stdin, mode)
+    stdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
+    mode = DWORD()
+    kernel32.GetConsoleMode(stdin, ctypes.byref(mode))
+    mode.value = mode.value & ~(ENABLE_PROCESSED_INPUT.value)
+    kernel32.SetConsoleMode(stdin, mode)
 
-  # interrupt_main won't interrupt WaitForSingleObject, so monkey-patch
-  def polling_wait(self):
-    while WaitForSingleObject(self._handle, 3000) != WAIT_OBJECT_0:  # pylint: disable=protected-access
-      continue
-    return self.poll()
-  subprocess.Popen.wait = polling_wait
+    # interrupt_main won't interrupt WaitForSingleObject, so monkey-patch
+    def polling_wait(self):
+        while (
+            WaitForSingleObject(self._handle, 3000)  # pylint: disable=protected-access
+            != WAIT_OBJECT_0
+        ):
+            continue
+        return self.poll()
 
-  def look_for_control_c():
-    while msvcrt.getch() != '\x03':
-      continue
-    _thread.interrupt_main()
-  t = threading.Thread(target=look_for_control_c)
-  t.daemon = True
-  t.start()
+    subprocess.Popen.wait = polling_wait
+
+    def look_for_control_c():
+        while msvcrt.getch() != "\x03":
+            continue
+        _thread.interrupt_main()
+
+    t = threading.Thread(target=look_for_control_c)
+    t.daemon = True
+    t.start()
 
 
 def get_file_version(filename):
-  """Raises LookupError if file has no version.
-  Returns (major, minor, micro)"""
-  if platform.system() == 'Windows':
-    ffi = win32api.GetFileVersionInfo(filename, "\\")
-    # I don't know the difference between ProductVersion and FileVersion
+    """Raises LookupError if file has no version.
+    Returns (major, minor, micro)"""
+    if platform.system() == "Windows":
+        ffi = win32api.GetFileVersionInfo(filename, "\\")
+        # I don't know the difference between ProductVersion and FileVersion
 
-    def extract_16s(i32):
-      return ((i32 >> 16) & 0xffff), i32 & 0xffff
-    file_version = extract_16s(ffi['FileVersionMS']) + extract_16s(ffi['FileVersionLS'])
-    return file_version[0:3]
-  raise LookupError("Not supported yet on macOS")
+        def extract_16s(i32):
+            return ((i32 >> 16) & 0xFFFF), i32 & 0xFFFF
 
-  # Untested -- get it from the property list
-  # pylint: disable=unreachable
-  plist_file = os.path.join(filename, 'Contents', 'Info.plist')
-  plist_json = subprocess.check_output(['plutil', '-convert', 'json', '-o', '-', '-s', '--', plist_file])
-  plist = json.loads(plist_json)
-  # XXX: need to parse this out but I don't know the format
-  return plist['CFBundleShortVersionString']
+        file_version = extract_16s(ffi["FileVersionMS"]) + extract_16s(
+            ffi["FileVersionLS"]
+        )
+        return file_version[0:3]
+    raise LookupError("Not supported yet on macOS")
+
+    # Untested -- get it from the property list
+    # pylint: disable=unreachable
+    plist_file = os.path.join(filename, "Contents", "Info.plist")
+    plist_json = subprocess.check_output(
+        ["plutil", "-convert", "json", "-o", "-", "-s", "--", plist_file]
+    )
+    plist = json.loads(plist_json)
+    # XXX: need to parse this out but I don't know the format
+    return plist["CFBundleShortVersionString"]
