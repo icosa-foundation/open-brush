@@ -7,7 +7,9 @@ root = true
 indent_style = space
 indent_size = 2
 
-# Based on Google's C# style guide
+[*.py]
+indent_size = 4
+
 [*.cs]
 indent_size = 4
 

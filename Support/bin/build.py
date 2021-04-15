@@ -19,7 +19,9 @@ import sys
 
 # Add ../Python to sys.path
 sys.path.append(
-  os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Python'))
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Python")
+)
 
 import unitybuild.main  # noqa: E402 pylint: disable=import-error,wrong-import-position
+
 unitybuild.main.main()

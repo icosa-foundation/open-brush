@@ -28,14 +28,14 @@ import os
 import sys
 
 try:
-  import PIL
-  import PIL.Image
-  import PIL.ImageFilter
+    import PIL
+    import PIL.Image
+    import PIL.ImageFilter
 
 except ImportError as e:
-  print(e)
-  print("You need to 'pip install pillow' to run this script")
-  sys.exit(1)
+    print(e)
+    print("You need to 'pip install pillow' to run this script")
+    sys.exit(1)
 
 
 MEG = 1024.0 * 1024.0
@@ -43,61 +43,68 @@ BLUR_RADIUS_TEXELS = 1.0
 
 
 def process_request(request):
-  """Process a single downsample-and-copy request"""
-  im = PIL.Image.open(request['source'])
-  if 'P' in im.mode:
-    assert False, "Unexpected: png with indexed color"
-    # Un-palettize
-    im = im.convert()
+    """Process a single downsample-and-copy request"""
+    im = PIL.Image.open(request["source"])
+    if "P" in im.mode:
+        assert False, "Unexpected: png with indexed color"
+        # Un-palettize
+        im = im.convert()
 
-  # Don't upsample! Only downsample
-  desired_width = int(request['desiredWidth'])
-  assert desired_width == request['desiredWidth']
-  desired_height = int(request['desiredHeight'])
-  assert desired_height == request['desiredHeight']
+    # Don't upsample! Only downsample
+    desired_width = int(request["desiredWidth"])
+    assert desired_width == request["desiredWidth"]
+    desired_height = int(request["desiredHeight"])
+    assert desired_height == request["desiredHeight"]
 
-  assert im.width >= desired_width
-  assert im.height >= desired_height
+    assert im.width >= desired_width
+    assert im.height >= desired_height
 
-  bpp = {'RGBA': 4, 'RGB': 3}[im.mode]
-  request['input_bytes'] = im.width * im.height * bpp
-  request['output_bytes'] = desired_width * desired_height * bpp
+    bpp = {"RGBA": 4, "RGB": 3}[im.mode]
+    request["input_bytes"] = im.width * im.height * bpp
+    request["output_bytes"] = desired_width * desired_height * bpp
 
-  if request['isBump']:
-    im = im.filter(PIL.ImageFilter.GaussianBlur(radius=BLUR_RADIUS_TEXELS))
+    if request["isBump"]:
+        im = im.filter(PIL.ImageFilter.GaussianBlur(radius=BLUR_RADIUS_TEXELS))
 
-  desired_size = (desired_width, desired_height)
-  if im.size != desired_size:
-    im = im.resize(desired_size, resample=PIL.Image.BILINEAR)
+    desired_size = (desired_width, desired_height)
+    if im.size != desired_size:
+        im = im.resize(desired_size, resample=PIL.Image.BILINEAR)
 
-  outdir = os.path.dirname(request['destination'])
-  if not os.path.isdir(outdir):
-    os.makedirs(outdir)
+    outdir = os.path.dirname(request["destination"])
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
 
-  im.save(request['destination'])
+    im.save(request["destination"])
 
 
 def main():
-  project_root = os.path.normpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
+    project_root = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
+    )
 
-  parser = argparse.ArgumentParser()
-  parser.add_argument('requests', nargs='?', default=None,
-                      help='Path to a json containing export requests')
-  args = parser.parse_args()
-  if args.requests is None:
-    args.requests = os.path.join(project_root, 'Temp', 'ExportRequests.json')
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "requests",
+        nargs="?",
+        default=None,
+        help="Path to a json containing export requests",
+    )
+    args = parser.parse_args()
+    if args.requests is None:
+        args.requests = os.path.join(project_root, "Temp", "ExportRequests.json")
 
-  with open(args.requests) as inf:
-    requests = json.load(inf)
+    with open(args.requests) as inf:
+        requests = json.load(inf)
 
-  for request in requests['exports']:
-    process_request(request)
+    for request in requests["exports"]:
+        process_request(request)
 
-  input_bytes = sum(r['input_bytes'] for r in requests['exports'])
-  output_bytes = sum(r['output_bytes'] for r in requests['exports'])
-  print("Input: %.2f MiB   Output: %.2f MiB" % (input_bytes / MEG, output_bytes / MEG))
+    input_bytes = sum(r["input_bytes"] for r in requests["exports"])
+    output_bytes = sum(r["output_bytes"] for r in requests["exports"])
+    print(
+        "Input: %.2f MiB   Output: %.2f MiB" % (input_bytes / MEG, output_bytes / MEG)
+    )
 
 
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()
