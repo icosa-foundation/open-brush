@@ -14,22 +14,23 @@
 
 using System.Collections;
 using UnityEngine;
-
 #if !OCULUS_SUPPORTED
-  using OVRInput_Controller = System.Int32;
+using OVRInput_Controller = System.Int32;
 #else // !OCULUS_SUPPORTED
   using OVRInput_Controller = OVRInput.Controller;
 #endif // OCULUS_SUPPORTED
 
-namespace TiltBrush{
+namespace TiltBrush
+{
 
-public class OculusControllerInfo : ControllerInfo {
-  private bool m_IsValid = false;
-  private Coroutine m_VibrationCoroutine = null;
+    public class OculusControllerInfo : ControllerInfo
+    {
+        private bool m_IsValid = false;
+        private Coroutine m_VibrationCoroutine = null;
 
-  public override bool IsTrackedObjectValid { get { return m_IsValid; } set { m_IsValid = value; } }
+        public override bool IsTrackedObjectValid { get { return m_IsValid; } set { m_IsValid = value; } }
 
-  public OVRInput_Controller m_ControllerType = 0;
+        public OVRInput_Controller m_ControllerType = 0;
 
 #if OCULUS_SUPPORTED
   public OculusControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
@@ -198,51 +199,66 @@ public class OculusControllerInfo : ControllerInfo {
   }
 
 #else // OCULUS_SUPPORTED
-  public OculusControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
-      : base(behavior) {
-  }
-  public void UpdatePosesAndValidity() {
-  }
-  public override float GetTriggerRatio() {
-    return 0;
-  }
-  public override Vector2 GetPadValue() {
-    return GetThumbStickValue();
-  }
-  public override Vector2 GetThumbStickValue() {
-    return Vector2.zero;
-  }
-  public override Vector2 GetPadValueDelta() {
-    return new Vector2(GetScrollXDelta(), GetScrollYDelta());
-  }
-  public override float GetGripValue() {
-    return 0;
-  }
-  public override float GetTriggerValue() {
-    return 0;
-  }
-  public override float GetScrollXDelta() {
-    return 0.0f;
-  }
-  public override float GetScrollYDelta() {
-    return 0.0f;
-  }
-  public override bool GetVrInput(VrInput input) {
-    return false;
-  }
-  public override bool GetVrInputDown(VrInput input) {
-    return false;
-  }
-  public override bool GetVrInputTouch(VrInput input) {
-    return false;
-  }
-  public override void TriggerControllerHaptics(float seconds) {
-  }
-  private IEnumerator DoVibration(OVRInput_Controller controller, float duration) {
-    yield break;
-  }
+        public OculusControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
+            : base(behavior)
+        {
+        }
+        public void UpdatePosesAndValidity()
+        {
+        }
+        public override float GetTriggerRatio()
+        {
+            return 0;
+        }
+        public override Vector2 GetPadValue()
+        {
+            return GetThumbStickValue();
+        }
+        public override Vector2 GetThumbStickValue()
+        {
+            return Vector2.zero;
+        }
+        public override Vector2 GetPadValueDelta()
+        {
+            return new Vector2(GetScrollXDelta(), GetScrollYDelta());
+        }
+        public override float GetGripValue()
+        {
+            return 0;
+        }
+        public override float GetTriggerValue()
+        {
+            return 0;
+        }
+        public override float GetScrollXDelta()
+        {
+            return 0.0f;
+        }
+        public override float GetScrollYDelta()
+        {
+            return 0.0f;
+        }
+        public override bool GetVrInput(VrInput input)
+        {
+            return false;
+        }
+        public override bool GetVrInputDown(VrInput input)
+        {
+            return false;
+        }
+        public override bool GetVrInputTouch(VrInput input)
+        {
+            return false;
+        }
+        public override void TriggerControllerHaptics(float seconds)
+        {
+        }
+        private IEnumerator DoVibration(OVRInput_Controller controller, float duration)
+        {
+            yield break;
+        }
 #endif // OCULUS_SUPPORTED
 
-}
+    }
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

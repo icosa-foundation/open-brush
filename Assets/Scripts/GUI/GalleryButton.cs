@@ -12,27 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class GalleryButton : ModeButton {
-  public enum Type {
-    Delete,     // Deprecated
-    Selection,  // Deprecated
-    LogOut,
-    Liked,
-    Exit,
-    Showcase,
-    Local,
-    Drive,
-  }
+    public class GalleryButton : ModeButton
+    {
+        public enum Type
+        {
+            Delete,    // Deprecated
+            Selection, // Deprecated
+            LogOut,
+            Liked,
+            Exit,
+            Showcase,
+            Local,
+            Drive,
+        }
 
-  public Type m_ButtonType;
+        public Type m_ButtonType;
 
-  override protected void OnButtonPressed() {
-    SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
-    if (panel) {
-      panel.ButtonPressed(m_ButtonType, this);
+        override protected void OnButtonPressed()
+        {
+            SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
+            if (panel)
+            {
+                panel.ButtonPressed(m_ButtonType, this);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

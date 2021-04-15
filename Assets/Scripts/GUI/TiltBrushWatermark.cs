@@ -14,45 +14,54 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public enum WatermarkStyle {
-  Standard,
-  Labs,
-  None
-}
+    public enum WatermarkStyle
+    {
+        Standard,
+        Labs,
+        None
+    }
 
-// Handles displaying watermark.
-public class TiltBrushWatermark : MonoBehaviour {
-  [SerializeField] private GameObject m_Watermark;
-  [SerializeField] private GameObject m_WatermarkLabs;
+    // Handles displaying watermark.
+    public class TiltBrushWatermark : MonoBehaviour
+    {
+        [SerializeField] private GameObject m_Watermark;
+        [SerializeField] private GameObject m_WatermarkLabs;
 
-  private WatermarkStyle m_WatermarkStyle;
+        private WatermarkStyle m_WatermarkStyle;
 
-  void Awake() {
-    CameraConfig.WatermarkChanged += Refresh;
-    Refresh();
-  }
-
-  void Refresh() {
-    m_WatermarkStyle = WatermarkStyle.None;
-    if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None) {
-      if (CameraConfig.Watermark && !App.Config.IsMobileHardware) {
-        m_WatermarkStyle = WatermarkStyle.Standard;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-        if (Config.IsExperimental) {
-          m_WatermarkStyle = WatermarkStyle.Labs;
+        void Awake()
+        {
+            CameraConfig.WatermarkChanged += Refresh;
+            Refresh();
         }
-#endif
-      }
-    }
 
-    m_Watermark.SetActive(m_WatermarkStyle == WatermarkStyle.Standard);
-    m_WatermarkLabs.SetActive(m_WatermarkStyle == WatermarkStyle.Labs);
-    if (!App.Config.OfflineRender) {
-      Debug.Assert(transform.parent.GetComponent<Canvas>() != null);
-      transform.parent.gameObject.SetActive(m_WatermarkStyle != WatermarkStyle.None);
+        void Refresh()
+        {
+            m_WatermarkStyle = WatermarkStyle.None;
+            if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None)
+            {
+                if (CameraConfig.Watermark && !App.Config.IsMobileHardware)
+                {
+                    m_WatermarkStyle = WatermarkStyle.Standard;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                    if (Config.IsExperimental)
+                    {
+                        m_WatermarkStyle = WatermarkStyle.Labs;
+                    }
+#endif
+                }
+            }
+
+            m_Watermark.SetActive(m_WatermarkStyle == WatermarkStyle.Standard);
+            m_WatermarkLabs.SetActive(m_WatermarkStyle == WatermarkStyle.Labs);
+            if (!App.Config.OfflineRender)
+            {
+                Debug.Assert(transform.parent.GetComponent<Canvas>() != null);
+                transform.parent.gameObject.SetActive(m_WatermarkStyle != WatermarkStyle.None);
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

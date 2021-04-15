@@ -14,43 +14,50 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-///
-/// PbrBrushScript purely exists to provide a vertex layout.
-///
-public class PbrBrushScript : BaseBrushScript {
+namespace TiltBrush
+{
+    ///
+    /// PbrBrushScript purely exists to provide a vertex layout.
+    ///
+    public class PbrBrushScript : BaseBrushScript
+    {
 
-  protected PbrBrushScript() : base(bCanBatch: true) {
-  }
+        protected PbrBrushScript() : base(bCanBatch: true)
+        {
+        }
 
-  public override GeometryPool.VertexLayout GetVertexLayout(BrushDescriptor desc) {
-    return new GeometryPool.VertexLayout {
-      uv0Size = 2,
-      uv0Semantic = GeometryPool.Semantic.XyIsUv,
-      bUseNormals = true,
-      bUseColors = true,
-      bUseTangents = false
-    };
-  }
+        public override GeometryPool.VertexLayout GetVertexLayout(BrushDescriptor desc)
+        {
+            return new GeometryPool.VertexLayout
+            {
+                uv0Size = 2,
+                uv0Semantic = GeometryPool.Semantic.XyIsUv,
+                bUseNormals = true,
+                bUseColors = true,
+                bUseTangents = false
+            };
+        }
 
-  // -------------------------------------------------------------------------------------------- //
-  // No-op overrides.
-  // -------------------------------------------------------------------------------------------- //
-  // This is OK because this isn't a real brush, yet required because these functions are abstract.
-  //
-  override protected bool UpdatePositionImpl(Vector3 vPos, Quaternion ori, float fPressure) {
-    return true;
-  }
-  override public BatchSubset FinalizeBatchedBrush() {
-    return null;
-  }
-  override public int GetNumUsedVerts() { return 0; }
-  override public float GetSpawnInterval(float pressure01) { return 0f; }
-  override protected void InitUndoClone(GameObject clone) { }
-  override public void FinalizeSolitaryBrush() { }
+        // -------------------------------------------------------------------------------------------- //
+        // No-op overrides.
+        // -------------------------------------------------------------------------------------------- //
+        // This is OK because this isn't a real brush, yet required because these functions are abstract.
+        //
+        override protected bool UpdatePositionImpl(Vector3 vPos, Quaternion ori, float fPressure)
+        {
+            return true;
+        }
+        override public BatchSubset FinalizeBatchedBrush()
+        {
+            return null;
+        }
+        override public int GetNumUsedVerts() { return 0; }
+        override public float GetSpawnInterval(float pressure01) { return 0f; }
+        override protected void InitUndoClone(GameObject clone) { }
+        override public void FinalizeSolitaryBrush() { }
 
-  override public void ApplyChangesToVisuals() { }
-  // -------------------------------------------------------------------------------------------- //
-}
+        override public void ApplyChangesToVisuals() { }
+        // -------------------------------------------------------------------------------------------- //
+    }
 
 } // namespace TiltBrush

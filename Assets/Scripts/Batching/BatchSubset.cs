@@ -14,27 +14,31 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class BatchSubset {
-  public Stroke m_Stroke;
-  public Batch m_ParentBatch;
+namespace TiltBrush
+{
+    public class BatchSubset
+    {
+        public Stroke m_Stroke;
+        public Batch m_ParentBatch;
 
-  public Bounds m_Bounds;
-  public int m_StartVertIndex;
-  public int m_VertLength;
-  /// First entry in index-buffer. Always a multiple of 3.
-  public int m_iTriIndex;
-  /// Number of index-buffer entries.
-  public int m_nTriIndex;
-  public bool m_Active;
-  /// Lazily-created
-  public ushort[] m_TriangleBackup;
+        public Bounds m_Bounds;
+        public int m_StartVertIndex;
+        public int m_VertLength;
+        /// First entry in index-buffer. Always a multiple of 3.
+        public int m_iTriIndex;
+        /// Number of index-buffer entries.
+        public int m_nTriIndex;
+        public bool m_Active;
+        /// Lazily-created
+        public ushort[] m_TriangleBackup;
 
-  /// The canvas associated with this stroke
-  public CanvasScript Canvas {
-    get {
-      return m_ParentBatch.ParentPool.Owner.Canvas;
+        /// The canvas associated with this stroke
+        public CanvasScript Canvas
+        {
+            get
+            {
+                return m_ParentBatch.ParentPool.Owner.Canvas;
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

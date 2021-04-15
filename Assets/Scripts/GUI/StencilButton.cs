@@ -14,18 +14,22 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class StencilButton : BaseButton {
-  [SerializeField] private StencilType m_Type;
+namespace TiltBrush
+{
+    public class StencilButton : BaseButton
+    {
+        [SerializeField] private StencilType m_Type;
 
-  override protected void OnButtonPressed() {
-    if (WidgetManager.m_Instance.StencilsDisabled) {
-      WidgetManager.m_Instance.StencilsDisabled = false;
+        override protected void OnButtonPressed()
+        {
+            if (WidgetManager.m_Instance.StencilsDisabled)
+            {
+                WidgetManager.m_Instance.StencilsDisabled = false;
+            }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new CreateWidgetCommand(
+                WidgetManager.m_Instance.GetStencilPrefab(m_Type), TrTransform.FromTransform(transform)));
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
     }
-    SketchMemoryScript.m_Instance.PerformAndRecordCommand(new CreateWidgetCommand(
-        WidgetManager.m_Instance.GetStencilPrefab(m_Type), TrTransform.FromTransform(transform)));
-    SketchControlsScript.m_Instance.EatGazeObjectInput();
-    SelectionManager.m_Instance.RemoveFromSelection(false);
-  }
-}
 } // namespace TiltBrush

@@ -14,46 +14,50 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class AmbientGrid : MonoBehaviour {
-  [SerializeField] private GameObject m_GridBig;
-  [SerializeField] private GameObject m_GridSmall;
-  [SerializeField] private Color m_GridBaseColor = new Color(.0235f, .0235f, .0235f);
-  [SerializeField] private float m_GridSpacing = 10;
+    public class AmbientGrid : MonoBehaviour
+    {
+        [SerializeField] private GameObject m_GridBig;
+        [SerializeField] private GameObject m_GridSmall;
+        [SerializeField] private Color m_GridBaseColor = new Color(.0235f, .0235f, .0235f);
+        [SerializeField] private float m_GridSpacing = 10;
 
-  private Transform m_CameraTransform;
-  private Material m_MaterialBig;
-  private Material m_MaterialSmall;
+        private Transform m_CameraTransform;
+        private Material m_MaterialBig;
+        private Material m_MaterialSmall;
 
-  void Start () {
-    m_CameraTransform = App.VrSdk.GetVrCamera().transform;
-    m_MaterialBig = m_GridBig.GetComponentInChildren<MeshRenderer>().material;
-    m_MaterialSmall = m_GridSmall.GetComponentInChildren<MeshRenderer>().material;
-  }
+        void Start()
+        {
+            m_CameraTransform = App.VrSdk.GetVrCamera().transform;
+            m_MaterialBig = m_GridBig.GetComponentInChildren<MeshRenderer>().material;
+            m_MaterialSmall = m_GridSmall.GetComponentInChildren<MeshRenderer>().material;
+        }
 
-  void Update () {
-    // Figure out the nearest power of two scales above and below the scene scale.
-    float sceneScale = App.Scene.Pose.scale;
-    float sceneScaleLogBaseTwo = Mathf.Log(sceneScale) / Mathf.Log(2);
-    float scaleFraction = sceneScaleLogBaseTwo - Mathf.Floor(sceneScaleLogBaseTwo);
-    float sceneScaleBig = Mathf.Pow(.5f, Mathf.Floor(sceneScaleLogBaseTwo));
-    float sceneScaleSmall = 0.5f * sceneScaleBig;
+        void Update()
+        {
+            // Figure out the nearest power of two scales above and below the scene scale.
+            float sceneScale = App.Scene.Pose.scale;
+            float sceneScaleLogBaseTwo = Mathf.Log(sceneScale) / Mathf.Log(2);
+            float scaleFraction = sceneScaleLogBaseTwo - Mathf.Floor(sceneScaleLogBaseTwo);
+            float sceneScaleBig = Mathf.Pow(.5f, Mathf.Floor(sceneScaleLogBaseTwo));
+            float sceneScaleSmall = 0.5f * sceneScaleBig;
 
-    // Offset the grid by the grid spacing closest to the camera.
-    TrTransform xfCamera_SS = App.Scene.AsScene[m_CameraTransform];
-    Vector3 vCameraPosition = xfCamera_SS.translation;
-    float cameraNearestX = Mathf.Floor(vCameraPosition.x / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
-    float cameraNearestY = Mathf.Floor(vCameraPosition.y / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
-    float cameraNearestZ = Mathf.Floor(vCameraPosition.z / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
-    Vector3 vCameraOffset = new Vector3(cameraNearestX, cameraNearestY, cameraNearestZ);
-    m_GridBig.transform.localPosition = vCameraOffset;
-    m_GridSmall.transform.localPosition = vCameraOffset;
+            // Offset the grid by the grid spacing closest to the camera.
+            TrTransform xfCamera_SS = App.Scene.AsScene[m_CameraTransform];
+            Vector3 vCameraPosition = xfCamera_SS.translation;
+            float cameraNearestX = Mathf.Floor(vCameraPosition.x / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
+            float cameraNearestY = Mathf.Floor(vCameraPosition.y / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
+            float cameraNearestZ = Mathf.Floor(vCameraPosition.z / m_GridSpacing / sceneScaleBig) * m_GridSpacing * sceneScaleBig;
+            Vector3 vCameraOffset = new Vector3(cameraNearestX, cameraNearestY, cameraNearestZ);
+            m_GridBig.transform.localPosition = vCameraOffset;
+            m_GridSmall.transform.localPosition = vCameraOffset;
 
-    m_GridBig.transform.localScale = new Vector3(sceneScaleBig, sceneScaleBig, sceneScaleBig);
-    m_GridSmall.transform.localScale = new Vector3(sceneScaleSmall, sceneScaleSmall, sceneScaleSmall);
-    m_MaterialBig.SetColor("_Color", m_GridBaseColor * (1 - scaleFraction));
-    m_MaterialSmall.SetColor("_Color", m_GridBaseColor * scaleFraction);
-  }
-}
-}  // namespace TiltBrush
+            m_GridBig.transform.localScale = new Vector3(sceneScaleBig, sceneScaleBig, sceneScaleBig);
+            m_GridSmall.transform.localScale = new Vector3(sceneScaleSmall, sceneScaleSmall, sceneScaleSmall);
+            m_MaterialBig.SetColor("_Color", m_GridBaseColor * (1 - scaleFraction));
+            m_MaterialSmall.SetColor("_Color", m_GridBaseColor * scaleFraction);
+        }
+    }
+} // namespace TiltBrush

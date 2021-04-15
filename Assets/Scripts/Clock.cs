@@ -15,22 +15,31 @@
 using UnityEngine;
 using System;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class Clock : MonoBehaviour {
-  [SerializeField] private TMPro.TextMeshPro m_Text;
+    public class Clock : MonoBehaviour
+    {
+        [SerializeField] private TMPro.TextMeshPro m_Text;
 
-  void Update() {
-    if (DemoManager.m_Instance.ShouldUseCountdownTimer) {
-      m_Text.text = DemoManager.m_Instance.TimeRemaining + " Remaining";
-    } else {
-      DateTime time = DateTime.Now;
-      if (time.Second % 2 == 0) {
-        m_Text.text = time.ToString("h mmtt");
-      } else {
-        m_Text.text = time.ToString("h:mmtt");
-      }
+        void Update()
+        {
+            if (DemoManager.m_Instance.ShouldUseCountdownTimer)
+            {
+                m_Text.text = DemoManager.m_Instance.TimeRemaining + " Remaining";
+            }
+            else
+            {
+                DateTime time = DateTime.Now;
+                if (time.Second % 2 == 0)
+                {
+                    m_Text.text = time.ToString("h mmtt");
+                }
+                else
+                {
+                    m_Text.text = time.ToString("h:mmtt");
+                }
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

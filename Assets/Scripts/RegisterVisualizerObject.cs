@@ -14,17 +14,21 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class RegisterVisualizerObject : MonoBehaviour {
-  public bool m_ShowInReactorModeOnly = false;
+    public class RegisterVisualizerObject : MonoBehaviour
+    {
+        public bool m_ShowInReactorModeOnly = false;
 
-  void Awake() {
-    VisualizerManager.m_Instance.RegisterVisualizerObject(this.gameObject);
-  }
+        void Awake()
+        {
+            VisualizerManager.m_Instance.RegisterVisualizerObject(this.gameObject);
+        }
 
-  void OnDestroy() {
-    VisualizerManager.m_Instance.UnregisterVisualizerObject(this.gameObject);
-  }
-}
-}  // namespace tiltBrush
+        void OnDestroy()
+        {
+            VisualizerManager.m_Instance.UnregisterVisualizerObject(this.gameObject);
+        }
+    }
+} // namespace tiltBrush

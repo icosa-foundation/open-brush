@@ -15,47 +15,55 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-static class NormalMapExporter {
-  [MenuItem("Tilt/Export Normal Map...")]
-  private static void ExportNormalMap() {
-    var tex = Selection.activeObject as Texture2D;
-    if (tex == null) {
-      EditorUtility.DisplayDialog("No texture selected", "Please select a texture.",
-                                  "Cancel");
-      return;
-    }
+    static class NormalMapExporter
+    {
+        [MenuItem("Tilt/Export Normal Map...")]
+        private static void ExportNormalMap()
+        {
+            var tex = Selection.activeObject as Texture2D;
+            if (tex == null)
+            {
+                EditorUtility.DisplayDialog("No texture selected", "Please select a texture.",
+                    "Cancel");
+                return;
+            }
 
-    // Force the texture to be readable and uncompressed so that we can access its pixels.
-    var texPath = AssetDatabase.GetAssetPath(tex);
-    TextureImporter texImport = (TextureImporter) AssetImporter.GetAtPath(texPath);
-    if (!texImport.isReadable) {
-      texImport.isReadable = true;
-    }
-    if (texImport.textureCompression != TextureImporterCompression.Uncompressed) {
-      texImport.textureCompression = TextureImporterCompression.Uncompressed;
-    }
-    AssetDatabase.ImportAsset(texPath, ImportAssetOptions.ForceUpdate);
+            // Force the texture to be readable and uncompressed so that we can access its pixels.
+            var texPath = AssetDatabase.GetAssetPath(tex);
+            TextureImporter texImport = (TextureImporter)AssetImporter.GetAtPath(texPath);
+            if (!texImport.isReadable)
+            {
+                texImport.isReadable = true;
+            }
+            if (texImport.textureCompression != TextureImporterCompression.Uncompressed)
+            {
+                texImport.textureCompression = TextureImporterCompression.Uncompressed;
+            }
+            AssetDatabase.ImportAsset(texPath, ImportAssetOptions.ForceUpdate);
 
-    // Bytes seem to come in as BGGR, so reorder them.
-    Debug.Log($"formatC: {tex.format.ToString()}");
-    Color32[] colors = tex.GetPixels32();
-    for (int i = 0; i < colors.Length; i++) {
-      byte r = colors[i].r;
-      byte g = colors[i].g;
-      // byte b = colors[i].b;
-      byte a = colors[i].a;
-      colors[i] = new Color32(a, g, r, 0);
-    }
-    tex.SetPixels32(colors);
-    var bytes = tex.EncodeToPNG();
+            // Bytes seem to come in as BGGR, so reorder them.
+            Debug.Log($"formatC: {tex.format.ToString()}");
+            Color32[] colors = tex.GetPixels32();
+            for (int i = 0; i < colors.Length; i++)
+            {
+                byte r = colors[i].r;
+                byte g = colors[i].g;
+                // byte b = colors[i].b;
+                byte a = colors[i].a;
+                colors[i] = new Color32(a, g, r, 0);
+            }
+            tex.SetPixels32(colors);
+            var bytes = tex.EncodeToPNG();
 
-    var path = EditorUtility.SaveFilePanel("Save Texture", "", tex.name + "_normal.png", "png");
-    if (path != "") {
-      System.IO.File.WriteAllBytes(path, bytes);
-      AssetDatabase.Refresh(); // In case it was saved to the Assets folder
+            var path = EditorUtility.SaveFilePanel("Save Texture", "", tex.name + "_normal.png", "png");
+            if (path != "")
+            {
+                System.IO.File.WriteAllBytes(path, bytes);
+                AssetDatabase.Refresh(); // In case it was saved to the Assets folder
+            }
+        }
     }
-  }
-}
 }

@@ -12,23 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public abstract class ModeButton : BaseButton {
-  override public void UpdateVisuals() {
-    base.UpdateVisuals();
-    // Toggle buttons poll for status.
-    if (m_ToggleButton) {
-      bool bWasToggleActive = m_ToggleActive;
+namespace TiltBrush
+{
+    public abstract class ModeButton : BaseButton
+    {
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            // Toggle buttons poll for status.
+            if (m_ToggleButton)
+            {
+                bool bWasToggleActive = m_ToggleActive;
 
-      ModalPanel modalParent = m_Manager.GetComponent<ModalPanel>();
-      if (modalParent) {
-        m_ToggleActive = modalParent.IsInButtonMode(this);
-      }
+                ModalPanel modalParent = m_Manager.GetComponent<ModalPanel>();
+                if (modalParent)
+                {
+                    m_ToggleActive = modalParent.IsInButtonMode(this);
+                }
 
-      if (bWasToggleActive != m_ToggleActive) {
-        SetButtonActivated(m_ToggleActive);
-      }
+                if (bWasToggleActive != m_ToggleActive)
+                {
+                    SetButtonActivated(m_ToggleActive);
+                }
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

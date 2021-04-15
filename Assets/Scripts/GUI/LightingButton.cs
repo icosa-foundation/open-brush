@@ -12,39 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class LightingButton : BaseButton {
-  private TiltBrush.Environment m_Preset;
+    public class LightingButton : BaseButton
+    {
+        private TiltBrush.Environment m_Preset;
 
-  override protected void ConfigureTextureAtlas() {
-    if (SketchControlsScript.m_Instance.AtlasIconTextures) {
-      // Lighting icons are assigned later.  We want atlasing on all our
-      // buttons, so just set it to the default for now.
-      RefreshAtlasedMaterial();
-    } else {
-      base.ConfigureTextureAtlas();
+        override protected void ConfigureTextureAtlas()
+        {
+            if (SketchControlsScript.m_Instance.AtlasIconTextures)
+            {
+                // Lighting icons are assigned later.  We want atlasing on all our
+                // buttons, so just set it to the default for now.
+                RefreshAtlasedMaterial();
+            }
+            else
+            {
+                base.ConfigureTextureAtlas();
+            }
+        }
+
+        public void SetPreset(TiltBrush.Environment rPreset)
+        {
+            m_Preset = rPreset;
+
+            SetButtonTexture(m_Preset.m_IconTexture);
+            SetDescriptionText(m_Preset.m_Description);
+        }
+
+        override protected void OnButtonPressed()
+        {
+            if (SceneSettings.m_Instance.IsTransitioning &&
+                SceneSettings.m_Instance.GetDesiredPreset() == m_Preset)
+            {
+                return;
+            }
+            if (LightsControlScript.m_Instance.LightsChanged ||
+                SceneSettings.m_Instance.EnvironmentChanged ||
+                SceneSettings.m_Instance.CurrentEnvironment != m_Preset)
+            {
+                SceneSettings.m_Instance.RecordSkyColorsForFading();
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SwitchEnvironmentCommand(m_Preset));
+            }
+        }
     }
-  }
-
-  public void SetPreset(TiltBrush.Environment rPreset) {
-    m_Preset = rPreset;
-
-    SetButtonTexture(m_Preset.m_IconTexture);
-    SetDescriptionText(m_Preset.m_Description);
-  }
-
-  override protected void OnButtonPressed() {
-    if (SceneSettings.m_Instance.IsTransitioning &&
-        SceneSettings.m_Instance.GetDesiredPreset() == m_Preset) {
-      return;
-    }
-    if (LightsControlScript.m_Instance.LightsChanged ||
-        SceneSettings.m_Instance.EnvironmentChanged ||
-        SceneSettings.m_Instance.CurrentEnvironment != m_Preset) {
-      SceneSettings.m_Instance.RecordSkyColorsForFading();
-      SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SwitchEnvironmentCommand(m_Preset));
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

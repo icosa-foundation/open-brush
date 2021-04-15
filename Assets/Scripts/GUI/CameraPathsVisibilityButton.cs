@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class CameraPathsVisibilityButton : OptionButton {
-  override protected void Awake() {
-    base.Awake();
-    App.Switchboard.CameraPathVisibilityChanged += UpdateVisuals;
-  }
+    public class CameraPathsVisibilityButton : OptionButton
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            App.Switchboard.CameraPathVisibilityChanged += UpdateVisuals;
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    App.Switchboard.CameraPathVisibilityChanged -= UpdateVisuals;
-  }
-}
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.CameraPathVisibilityChanged -= UpdateVisuals;
+        }
+    }
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

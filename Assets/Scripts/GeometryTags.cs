@@ -14,16 +14,18 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class GeometryTags : MonoBehaviour {
-    [SerializeField] private bool m_HighLod;
-    [SerializeField] private bool m_LowLod;
-    [SerializeField] private bool m_ExcludeFromPolyExport;
+    public class GeometryTags : MonoBehaviour
+    {
+        [SerializeField] private bool m_HighLod;
+        [SerializeField] private bool m_LowLod;
+        [SerializeField] private bool m_ExcludeFromPolyExport;
 
-    public bool IsHighLod { get { return m_HighLod; } }
-    public bool IsLowLod { get { return m_LowLod; } }
-    public bool ExcludeFromPolyExport { get { return m_ExcludeFromPolyExport || m_LowLod; } }
-  }
+        public bool IsHighLod { get { return m_HighLod; } }
+        public bool IsLowLod { get { return m_LowLod; } }
+        public bool ExcludeFromPolyExport { get { return m_ExcludeFromPolyExport || m_LowLod; } }
+    }
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

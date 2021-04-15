@@ -14,14 +14,18 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class BuildVersionScript : MonoBehaviour {
-  void Start () {
-    TextMesh rTest = GetComponent<TextMesh>();
-    if (rTest) {
-      rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";
+    public class BuildVersionScript : MonoBehaviour
+    {
+        void Start()
+        {
+            TextMesh rTest = GetComponent<TextMesh>();
+            if (rTest)
+            {
+                rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

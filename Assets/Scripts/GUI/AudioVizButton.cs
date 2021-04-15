@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class AudioVizButton : OptionButton {
-  override protected void OnButtonPressed() {
-    if (m_Manager) {
-      BasePanel panel = m_Manager.GetPanelForPopUps();
-      // If we haven't requested visuals, show the popup.
-      if (!App.Instance.RequestingAudioReactiveMode) {
-        panel.CreatePopUp(m_Command, m_CommandParam, -1, m_PopupText);
-        ResetState();
-      }
-      App.Instance.ToggleAudioReactiveBrushesRequest();
+    public class AudioVizButton : OptionButton
+    {
+        override protected void OnButtonPressed()
+        {
+            if (m_Manager)
+            {
+                BasePanel panel = m_Manager.GetPanelForPopUps();
+                // If we haven't requested visuals, show the popup.
+                if (!App.Instance.RequestingAudioReactiveMode)
+                {
+                    panel.CreatePopUp(m_Command, m_CommandParam, -1, m_PopupText);
+                    ResetState();
+                }
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

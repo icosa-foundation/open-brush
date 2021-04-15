@@ -15,36 +15,43 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TiltBrush {
-/// A class for containing a task and its cancellation token source.
-public class TaskAndCts {
-  public Task Task;
-  public CancellationTokenSource Cts;
+namespace TiltBrush
+{
+    /// A class for containing a task and its cancellation token source.
+    public class TaskAndCts
+    {
+        public Task Task;
+        public CancellationTokenSource Cts;
 
-  public CancellationToken Token => Cts.Token;
+        public CancellationToken Token => Cts.Token;
 
-  public TaskAndCts() {
-    Cts = new CancellationTokenSource();
-  }
+        public TaskAndCts()
+        {
+            Cts = new CancellationTokenSource();
+        }
 
-  public void Cancel() {
-    Cts.Cancel();
-  }
-}
+        public void Cancel()
+        {
+            Cts.Cancel();
+        }
+    }
 
-/// A class for containing a task and its cancellation token source.
-public class TaskAndCts<T> {
-  public Task<T> Task;
-  public CancellationTokenSource Cts;
+    /// A class for containing a task and its cancellation token source.
+    public class TaskAndCts<T>
+    {
+        public Task<T> Task;
+        public CancellationTokenSource Cts;
 
-  public CancellationToken Token => Cts.Token;
+        public CancellationToken Token => Cts.Token;
 
-  public TaskAndCts() {
-    Cts = new CancellationTokenSource();
-  }
+        public TaskAndCts()
+        {
+            Cts = new CancellationTokenSource();
+        }
 
-  public void Cancel() {
-    Cts.Cancel();
-  }
-}
+        public void Cancel()
+        {
+            Cts.Cancel();
+        }
+    }
 } // namespace TiltBrush

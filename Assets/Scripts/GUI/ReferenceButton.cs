@@ -12,23 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ReferenceButton : ModeButton {
-  public enum Type {
-    Images,
-    Models,
-    AddAssets,
-    Videos,
-  }
+    public class ReferenceButton : ModeButton
+    {
+        public enum Type
+        {
+            Images,
+            Models,
+            AddAssets,
+            Videos,
+        }
 
-  public Type m_ButtonType;
+        public Type m_ButtonType;
 
-  override protected void OnButtonPressed() {
-    ReferencePanel referencePanel = m_Manager.GetComponent<ReferencePanel>();
-    if (referencePanel) {
-      referencePanel.ButtonPressed(m_ButtonType);
+        override protected void OnButtonPressed()
+        {
+            ReferencePanel referencePanel = m_Manager.GetComponent<ReferencePanel>();
+            if (referencePanel)
+            {
+                referencePanel.ButtonPressed(m_ButtonType);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

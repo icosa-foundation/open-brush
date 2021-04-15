@@ -12,25 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class InspectSketchButton : BaseButton {
-    private int m_SketchIndex;
-    private SketchSetType m_SketchSetType;
+    public class InspectSketchButton : BaseButton
+    {
+        private int m_SketchIndex;
+        private SketchSetType m_SketchSetType;
 
-    public void SetSketchDetails(int index, SketchSetType type) {
-      m_SketchIndex = index;
-      m_SketchSetType = type;
+        public void SetSketchDetails(int index, SketchSetType type)
+        {
+            m_SketchIndex = index;
+            m_SketchSetType = type;
+        }
+
+        override protected void OnButtonPressed()
+        {
+            BasePanel panel = m_Manager.GetPanelForPopUps();
+            panel.CreatePopUp(SketchControlsScript.GlobalCommands.SketchbookMenu,
+                m_SketchIndex, (int)m_SketchSetType);
+
+            // Position popup next to button.
+            panel.PositionPopUp(transform.position);
+        }
     }
 
-    override protected void OnButtonPressed() {
-      BasePanel panel = m_Manager.GetPanelForPopUps();
-      panel.CreatePopUp(SketchControlsScript.GlobalCommands.SketchbookMenu,
-          m_SketchIndex, (int)m_SketchSetType);
-
-      // Position popup next to button.
-      panel.PositionPopUp(transform.position);
-    }
-  }
-
-}  // namespace TiltBrush
+} // namespace TiltBrush

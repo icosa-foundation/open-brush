@@ -14,17 +14,21 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class DriveSyncProgress : MonoBehaviour {
-  private Material m_Material;
+namespace TiltBrush
+{
+    public class DriveSyncProgress : MonoBehaviour
+    {
+        private Material m_Material;
 
-  private void Awake() {
-    m_Material = GetComponent<Renderer>().material;
-  }
+        private void Awake()
+        {
+            m_Material = GetComponent<Renderer>().material;
+        }
 
-  private void Update() {
-    float progress = Mathf.Clamp(App.DriveSync.Progress, 0.01f, 0.99f);
-    m_Material.SetFloat("_Progress", progress);
-  }
-}
+        private void Update()
+        {
+            float progress = Mathf.Clamp(App.DriveSync.Progress, 0.01f, 0.99f);
+            m_Material.SetFloat("_Progress", progress);
+        }
+    }
 } // namespace TiltBrush

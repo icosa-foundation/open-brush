@@ -14,10 +14,12 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class StencilRaycastHint : MonoBehaviour {
-  // Used to help identify collision surfaces
-  public Vector3 m_RaycastHint;
-}
-}  // namespace TiltBrush
+    public class StencilRaycastHint : MonoBehaviour
+    {
+        // Used to help identify collision surfaces
+        public Vector3 m_RaycastHint;
+    }
+} // namespace TiltBrush

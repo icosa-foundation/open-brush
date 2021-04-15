@@ -14,48 +14,62 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PanelButton : BaseButton {
-  public BasePanel.PanelType m_Type;
-  [SerializeField] protected bool m_AlwaysSpawn;
+    public class PanelButton : BaseButton
+    {
+        public BasePanel.PanelType m_Type;
+        [SerializeField] protected bool m_AlwaysSpawn;
 
-  override protected void Awake() {
-    base.Awake();
-    // Panel Buttons need to be toggles if they're not alwaysspawn.
-    Debug.Assert(m_AlwaysSpawn || m_ToggleButton);
-    App.Switchboard.PanelDismissed += UpdateVisuals;
-  }
+        override protected void Awake()
+        {
+            base.Awake();
+            // Panel Buttons need to be toggles if they're not alwaysspawn.
+            Debug.Assert(m_AlwaysSpawn || m_ToggleButton);
+            App.Switchboard.PanelDismissed += UpdateVisuals;
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    App.Switchboard.PanelDismissed -= UpdateVisuals;
-  }
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.PanelDismissed -= UpdateVisuals;
+        }
 
-  override public void UpdateVisuals() {
-    base.UpdateVisuals();
-    // Poll for status.
-    if (IsAvailable() && m_ToggleButton) {
-      bool bWasToggleActive = m_ToggleActive;
-      m_ToggleActive = PanelManager.m_Instance.IsPanelOpen(m_Type);
-      if (bWasToggleActive != m_ToggleActive) {
-        SetButtonActivated(m_ToggleActive);
-      }
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            // Poll for status.
+            if (IsAvailable() && m_ToggleButton)
+            {
+                bool bWasToggleActive = m_ToggleActive;
+                m_ToggleActive = PanelManager.m_Instance.IsPanelOpen(m_Type);
+                if (bWasToggleActive != m_ToggleActive)
+                {
+                    SetButtonActivated(m_ToggleActive);
+                }
+            }
+        }
+
+        override protected void OnButtonPressed()
+        {
+            // If we're flagged as 'always spawn', make sure we're hidden and always spawn.
+            if (m_AlwaysSpawn)
+            {
+                PanelManager.m_Instance.DismissNonCorePanel(m_Type);
+                SketchControlsScript.m_Instance.OpenPanelOfType(m_Type, TrTransform.FromTransform(transform));
+            }
+            else
+            {
+                if (m_ToggleActive)
+                {
+                    PanelManager.m_Instance.DismissNonCorePanel(m_Type);
+                }
+                else
+                {
+                    SketchControlsScript.m_Instance.OpenPanelOfType(m_Type, TrTransform.FromTransform(transform));
+                }
+            }
+        }
     }
-  }
-
-  override protected void OnButtonPressed() {
-    // If we're flagged as 'always spawn', make sure we're hidden and always spawn.
-    if (m_AlwaysSpawn) {
-      PanelManager.m_Instance.DismissNonCorePanel(m_Type);
-      SketchControlsScript.m_Instance.OpenPanelOfType(m_Type, TrTransform.FromTransform(transform));
-    } else {
-      if (m_ToggleActive) {
-        PanelManager.m_Instance.DismissNonCorePanel(m_Type);
-      } else {
-        SketchControlsScript.m_Instance.OpenPanelOfType(m_Type, TrTransform.FromTransform(transform));
-      }
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -14,13 +14,15 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ColorPickerPopUpWindow : PopUpWindow {
-  [SerializeField] private ColorPicker m_ColorPicker;
-  [SerializeField] private CustomColorPalette m_CustomColorPalette;
-  public ColorPicker ColorPicker { get { return m_ColorPicker; } }
-  public CustomColorPalette CustomColorPalette { get { return m_CustomColorPalette; } }
-}
+    public class ColorPickerPopUpWindow : PopUpWindow
+    {
+        [SerializeField] private ColorPicker m_ColorPicker;
+        [SerializeField] private CustomColorPalette m_CustomColorPalette;
+        public ColorPicker ColorPicker { get { return m_ColorPicker; } }
+        public CustomColorPalette CustomColorPalette { get { return m_CustomColorPalette; } }
+    }
 
 } // namespace TiltBrush

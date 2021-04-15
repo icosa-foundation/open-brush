@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class TwitchChat : BaseChatScript {
-  void Start() {
-    ClearChatLines();
-    AddLine("Twitch IRC not supported", "<color=red><i>", "</i></color>");
-    RefreshChatText();
-  }
-}
-}  // namespace TiltBrush
+namespace TiltBrush
+{
+    public class TwitchChat : BaseChatScript
+    {
+        void Start()
+        {
+            ClearChatLines();
+            AddLine("Twitch IRC not supported", "<color=red><i>", "</i></color>");
+            RefreshChatText();
+        }
+    }
+} // namespace TiltBrush

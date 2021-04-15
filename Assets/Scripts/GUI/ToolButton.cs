@@ -14,44 +14,56 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ToolButton : BaseButton {
-  [SerializeField] private BaseTool.ToolType m_Tool;
-  [SerializeField] private bool m_EatGazeInputOnPress = false;
+    public class ToolButton : BaseButton
+    {
+        [SerializeField] private BaseTool.ToolType m_Tool;
+        [SerializeField] private bool m_EatGazeInputOnPress = false;
 
-  override protected void Awake() {
-    base.Awake();
-    App.Switchboard.ToolChanged += UpdateVisuals;
-  }
+        override protected void Awake()
+        {
+            base.Awake();
+            App.Switchboard.ToolChanged += UpdateVisuals;
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    App.Switchboard.ToolChanged -= UpdateVisuals;
-  }
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.ToolChanged -= UpdateVisuals;
+        }
 
-  override public void UpdateVisuals() {
-    base.UpdateVisuals();
-    // Toggle buttons poll for status.
-    if (m_ToggleButton) {
-      bool bWasToggleActive = m_ToggleActive;
-      m_ToggleActive = SketchSurfacePanel.m_Instance.GetCurrentToolType() == m_Tool;
-      if (bWasToggleActive != m_ToggleActive) {
-        SetButtonActivated(m_ToggleActive);
-      }
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            // Toggle buttons poll for status.
+            if (m_ToggleButton)
+            {
+                bool bWasToggleActive = m_ToggleActive;
+                m_ToggleActive = SketchSurfacePanel.m_Instance.GetCurrentToolType() == m_Tool;
+                if (bWasToggleActive != m_ToggleActive)
+                {
+                    SetButtonActivated(m_ToggleActive);
+                }
+            }
+        }
+
+        override protected void OnButtonPressed()
+        {
+            if (m_ToggleActive)
+            {
+                SketchSurfacePanel.m_Instance.DisableSpecificTool(m_Tool);
+            }
+            else
+            {
+                if (m_EatGazeInputOnPress)
+                {
+                    SketchControlsScript.m_Instance.EatGazeObjectInput();
+                }
+                SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(m_Tool);
+            }
+        }
     }
-  }
-
-  override protected void OnButtonPressed() {
-    if (m_ToggleActive) {
-      SketchSurfacePanel.m_Instance.DisableSpecificTool(m_Tool);
-    } else {
-      if (m_EatGazeInputOnPress) {
-        SketchControlsScript.m_Instance.EatGazeObjectInput();
-      }
-      SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
-      SketchSurfacePanel.m_Instance.EnableSpecificTool(m_Tool);
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

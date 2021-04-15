@@ -11,38 +11,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-namespace TiltBrush {
-public class VideoButton : BaseButton {
-  private ReferenceVideo m_Video;
+namespace TiltBrush
+{
+    public class VideoButton : BaseButton
+    {
+        private ReferenceVideo m_Video;
 
-  override protected void OnButtonPressed() {
-    base.OnButtonPressed();
-    CreateWidgetCommand createCommand = new CreateWidgetCommand(
-        WidgetManager.m_Instance.VideoWidgetPrefab, TrTransform.FromTransform(transform));
-    SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+        override protected void OnButtonPressed()
+        {
+            base.OnButtonPressed();
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.VideoWidgetPrefab, TrTransform.FromTransform(transform));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
 
-    VideoWidget videoWidget = createCommand.Widget as VideoWidget;
-    videoWidget.SetVideo(m_Video);
-    videoWidget.Show(true);
-    createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
+            VideoWidget videoWidget = createCommand.Widget as VideoWidget;
+            videoWidget.SetVideo(m_Video);
+            videoWidget.Show(true);
+            createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
 
-    WidgetManager.m_Instance.WidgetsDormant = false;
-    SketchControlsScript.m_Instance.EatGazeObjectInput();
-    SelectionManager.m_Instance.RemoveFromSelection(false);
-  }
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
 
-  public void RefreshDescription() {
-    if (m_Video != null) {
-      SetDescriptionText(m_Video.HumanName);
+        public void RefreshDescription()
+        {
+            if (m_Video != null)
+            {
+                SetDescriptionText(m_Video.HumanName);
+            }
+        }
+
+        public ReferenceVideo Video
+        {
+            get { return m_Video; }
+            set
+            {
+                m_Video = value;
+                SetButtonTexture(m_Video.Thumbnail);
+            }
+        }
     }
-  }
-
-  public ReferenceVideo Video {
-    get { return m_Video; }
-    set {
-      m_Video = value;
-      SetButtonTexture(m_Video.Thumbnail);
-    }
-  }
-}
 }

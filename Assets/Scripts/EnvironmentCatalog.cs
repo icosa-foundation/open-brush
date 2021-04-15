@@ -16,76 +16,94 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class EnvironmentCatalog : MonoBehaviour {
-  static public EnvironmentCatalog m_Instance;
+    public class EnvironmentCatalog : MonoBehaviour
+    {
+        static public EnvironmentCatalog m_Instance;
 
-  public event Action EnvironmentsChanged;
-  public Material m_SkyboxMaterial;
+        public event Action EnvironmentsChanged;
+        public Material m_SkyboxMaterial;
 
-  [SerializeField] private TiltBrush.Environment m_DefaultEnvironment;
-  private bool m_IsLoading;
-  private Dictionary<Guid, Environment> m_GuidToEnvironment;
+        [SerializeField] private TiltBrush.Environment m_DefaultEnvironment;
+        private bool m_IsLoading;
+        private Dictionary<Guid, Environment> m_GuidToEnvironment;
 
-  public IEnumerable<Environment> AllEnvironments {
-    get { return m_GuidToEnvironment.Values; }
-  }
-  public Environment DefaultEnvironment {
-    get { return m_DefaultEnvironment; }
-  }
+        public IEnumerable<Environment> AllEnvironments
+        {
+            get { return m_GuidToEnvironment.Values; }
+        }
+        public Environment DefaultEnvironment
+        {
+            get { return m_DefaultEnvironment; }
+        }
 
-  void Awake() {
-    m_Instance = this;
-    m_GuidToEnvironment = new Dictionary<Guid, Environment>();
-  }
+        void Awake()
+        {
+            m_Instance = this;
+            m_GuidToEnvironment = new Dictionary<Guid, Environment>();
+        }
 
-  public bool IsLoading { get { return m_IsLoading; } }
+        public bool IsLoading { get { return m_IsLoading; } }
 
-  public void BeginReload() {
-    var newEnvironments = new List<Environment>();
-    LoadEnvironmentsInManifest(newEnvironments);
-    newEnvironments.Add(DefaultEnvironment);
+        public void BeginReload()
+        {
+            var newEnvironments = new List<Environment>();
+            LoadEnvironmentsInManifest(newEnvironments);
+            newEnvironments.Add(DefaultEnvironment);
 
-    m_GuidToEnvironment.Clear();
-    foreach (var env in newEnvironments) {
-      Environment tmp;
-      if (m_GuidToEnvironment.TryGetValue(env.m_Guid, out tmp) && tmp != env) {
-        Debug.LogErrorFormat("Guid collision: {0}, {1}", tmp, env);
-        continue;
-      }
-      m_GuidToEnvironment[env.m_Guid] = env;
+            m_GuidToEnvironment.Clear();
+            foreach (var env in newEnvironments)
+            {
+                Environment tmp;
+                if (m_GuidToEnvironment.TryGetValue(env.m_Guid, out tmp) && tmp != env)
+                {
+                    Debug.LogErrorFormat("Guid collision: {0}, {1}", tmp, env);
+                    continue;
+                }
+                m_GuidToEnvironment[env.m_Guid] = env;
+            }
+
+            Resources.UnloadUnusedAssets();
+            m_IsLoading = true;
+        }
+
+        public Environment GetEnvironment(Guid guid)
+        {
+            try
+            {
+                return m_GuidToEnvironment[guid];
+            }
+            catch (KeyNotFoundException)
+            {
+                return null;
+            }
+        }
+
+        void Update()
+        {
+            if (m_IsLoading)
+            {
+                m_IsLoading = false;
+                Resources.UnloadUnusedAssets();
+                if (EnvironmentsChanged != null)
+                {
+                    EnvironmentsChanged();
+                }
+            }
+        }
+
+        static void LoadEnvironmentsInManifest(List<Environment> output)
+        {
+            var manifest = App.Instance.m_Manifest;
+            foreach (var asset in manifest.Environments)
+            {
+                if (asset != null)
+                {
+                    output.Add(asset);
+                }
+            }
+        }
     }
-
-    Resources.UnloadUnusedAssets();
-    m_IsLoading = true;
-  }
-
-  public Environment GetEnvironment(Guid guid) {
-    try {
-      return m_GuidToEnvironment[guid];
-    } catch (KeyNotFoundException) {
-      return null;
-    }
-  }
-
-  void Update() {
-    if (m_IsLoading) {
-      m_IsLoading = false;
-      Resources.UnloadUnusedAssets();
-      if (EnvironmentsChanged != null) {
-        EnvironmentsChanged();
-      }
-    }
-  }
-
-  static void LoadEnvironmentsInManifest(List<Environment> output) {
-    var manifest = App.Instance.m_Manifest;
-    foreach (var asset in manifest.Environments) {
-      if (asset != null) {
-        output.Add(asset);
-      }
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -14,58 +14,68 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class DrivePopUpWindow : OptionsPopUpWindow {
-  [SerializeField] private GameObject m_DriveLinkEnabledElements;
-  [SerializeField] private GameObject m_DriveLinkDisabledElements;
-  [SerializeField] private GameObject m_DriveFullElements;
-  [SerializeField] private GameObject m_BackupCompleteElements;
-  [SerializeField] private GameObject m_BackingUpElements;
-  [SerializeField] private TextMesh m_BackingUpProgress;
+    public class DrivePopUpWindow : OptionsPopUpWindow
+    {
+        [SerializeField] private GameObject m_DriveLinkEnabledElements;
+        [SerializeField] private GameObject m_DriveLinkDisabledElements;
+        [SerializeField] private GameObject m_DriveFullElements;
+        [SerializeField] private GameObject m_BackupCompleteElements;
+        [SerializeField] private GameObject m_BackingUpElements;
+        [SerializeField] private TextMesh m_BackingUpProgress;
 
-  private bool m_DriveSyncing = false;
+        private bool m_DriveSyncing = false;
 
-  private void Start() {
-    App.DriveSync.SyncEnabledChanged += RefreshObjects;
-  }
+        private void Start()
+        {
+            App.DriveSync.SyncEnabledChanged += RefreshObjects;
+        }
 
-  void OnDestroy() {
-    App.DriveSync.SyncEnabledChanged -= RefreshObjects;
-  }
+        void OnDestroy()
+        {
+            App.DriveSync.SyncEnabledChanged -= RefreshObjects;
+        }
 
-  override public void Init(GameObject rParent, string sText) {
-    base.Init(rParent, sText);
-    RefreshObjects();
-    App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
-  }
+        override public void Init(GameObject rParent, string sText)
+        {
+            base.Init(rParent, sText);
+            RefreshObjects();
+            App.DriveAccess.RefreshFreeSpaceAsync().AsAsyncVoid();
+        }
 
-  override protected void BaseUpdate() {
-    base.BaseUpdate();
-    if (App.DriveSync.Syncing != m_DriveSyncing) {
-      RefreshObjects();
+        override protected void BaseUpdate()
+        {
+            base.BaseUpdate();
+            if (App.DriveSync.Syncing != m_DriveSyncing)
+            {
+                RefreshObjects();
+            }
+            RefreshBackupProgressText();
+        }
+
+        void RefreshObjects()
+        {
+            bool driveFull = App.DriveSync.DriveIsLowOnSpace;
+            bool driveSyncEnabled = App.DriveSync.SyncEnabled;
+            bool driveSyncing = App.DriveSync.Syncing;
+            m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
+            m_DriveLinkEnabledElements.SetActive(!driveFull && driveSyncEnabled);
+            m_DriveLinkDisabledElements.SetActive(!driveSyncEnabled);
+            m_BackupCompleteElements.SetActive(!driveSyncing);
+            m_BackingUpElements.SetActive(driveSyncing);
+            m_DriveSyncing = driveSyncing;
+            RefreshBackupProgressText();
+        }
+
+        void RefreshBackupProgressText()
+        {
+            if (m_BackingUpElements.activeSelf)
+            {
+                m_BackingUpProgress.text = string.Format("Backing Up... {0}",
+                    Mathf.Clamp(App.DriveSync.Progress, 0.01f, 0.99f).ToString("P0"));
+            }
+        }
     }
-    RefreshBackupProgressText();
-  }
-
-  void RefreshObjects() {
-    bool driveFull = App.DriveSync.DriveIsLowOnSpace;
-    bool driveSyncEnabled = App.DriveSync.SyncEnabled;
-    bool driveSyncing = App.DriveSync.Syncing;
-    m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
-    m_DriveLinkEnabledElements.SetActive(!driveFull && driveSyncEnabled);
-    m_DriveLinkDisabledElements.SetActive(!driveSyncEnabled);
-    m_BackupCompleteElements.SetActive(!driveSyncing);
-    m_BackingUpElements.SetActive(driveSyncing);
-    m_DriveSyncing = driveSyncing;
-    RefreshBackupProgressText();
-  }
-
-  void RefreshBackupProgressText() {
-    if (m_BackingUpElements.activeSelf) {
-      m_BackingUpProgress.text = string.Format("Backing Up... {0}",
-          Mathf.Clamp(App.DriveSync.Progress, 0.01f, 0.99f).ToString("P0"));
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

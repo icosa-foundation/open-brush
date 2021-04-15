@@ -14,13 +14,16 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class CameraProjection : MonoBehaviour {
-  void Update() {
-    Shader.SetGlobalMatrix("_CameraProjection", GetComponent<Camera>().projectionMatrix);
-    Shader.SetGlobalMatrix("_CameraToWorldMatrix", GetComponent<Camera>().cameraToWorldMatrix);
-    Shader.SetGlobalMatrix("_WorldToCameraMatrix", GetComponent<Camera>().worldToCameraMatrix);
-  }
-}
-}  // namespace TiltBrush
+    public class CameraProjection : MonoBehaviour
+    {
+        void Update()
+        {
+            Shader.SetGlobalMatrix("_CameraProjection", GetComponent<Camera>().projectionMatrix);
+            Shader.SetGlobalMatrix("_CameraToWorldMatrix", GetComponent<Camera>().cameraToWorldMatrix);
+            Shader.SetGlobalMatrix("_WorldToCameraMatrix", GetComponent<Camera>().worldToCameraMatrix);
+        }
+    }
+} // namespace TiltBrush

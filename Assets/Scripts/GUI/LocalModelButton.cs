@@ -14,21 +14,25 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class LocalModelButton : ModelButton {
-  // ReSharper disable once NotAccessedField.Local
-  // Buttons in the prefab still have a "..." menu, but it's currently unused
-  [SerializeField] private BaseButton m_MenuButton;
+    public class LocalModelButton : ModelButton
+    {
+        // ReSharper disable once NotAccessedField.Local
+        // Buttons in the prefab still have a "..." menu, but it's currently unused
+        [SerializeField] private BaseButton m_MenuButton;
 
-  override protected void RequestModelPreloadInternal(string reason) {
-    StartCoroutine(m_Model.LoadFullyCoroutine(reason));
-  }
+        override protected void RequestModelPreloadInternal(string reason)
+        {
+            StartCoroutine(m_Model.LoadFullyCoroutine(reason));
+        }
 
-  /// We don't want the preload any more; try to tear it down.
-  override protected void CancelRequestModelPreload() {
-    // Unlike Poly's loads, these loads aren't queued and so can't be just plucked from the queue.
-    // So just let it keep going.
-  }
-}
-}  // namespace TiltBrush
+        /// We don't want the preload any more; try to tear it down.
+        override protected void CancelRequestModelPreload()
+        {
+            // Unlike Poly's loads, these loads aren't queued and so can't be just plucked from the queue.
+            // So just let it keep going.
+        }
+    }
+} // namespace TiltBrush
