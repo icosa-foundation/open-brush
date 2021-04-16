@@ -14,13 +14,16 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class SliderEndCapScript : MonoBehaviour {
-  public Texture2D m_Icon;
+    public class SliderEndCapScript : MonoBehaviour
+    {
+        public Texture2D m_Icon;
 
-  void Start() {
-    GetComponent<Renderer>().material.mainTexture = m_Icon;
-  }
-}
-}  // namespace TiltBrush
+        void Start()
+        {
+            GetComponent<Renderer>().material.mainTexture = m_Icon;
+        }
+    }
+} // namespace TiltBrush

@@ -14,34 +14,41 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class TransformGizmoScript : MonoBehaviour {
-  public Color[] m_AxesColors;
-  public GameObject[] m_Axes;
-  public Color m_ActiveAxisColor;
-  public Color m_InactiveAxisColor;
+    public class TransformGizmoScript : MonoBehaviour
+    {
+        public Color[] m_AxesColors;
+        public GameObject[] m_Axes;
+        public Color m_ActiveAxisColor;
+        public Color m_InactiveAxisColor;
 
-  void Awake() {
-    ResetTransform();
-  }
+        void Awake()
+        {
+            ResetTransform();
+        }
 
-  public void SetTransformForPushPull() {
-    m_Axes[0].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
-    m_Axes[1].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
-    m_Axes[2].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
-  }
+        public void SetTransformForPushPull()
+        {
+            m_Axes[0].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
+            m_Axes[1].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
+            m_Axes[2].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
+        }
 
-  public void SetTransformForPan() {
-    m_Axes[0].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
-    m_Axes[1].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
-    m_Axes[2].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
-  }
+        public void SetTransformForPan()
+        {
+            m_Axes[0].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
+            m_Axes[1].GetComponent<Renderer>().material.SetColor("_Color", m_ActiveAxisColor);
+            m_Axes[2].GetComponent<Renderer>().material.SetColor("_Color", m_InactiveAxisColor);
+        }
 
-  public void ResetTransform() {
-    for (int i = 0; i < Mathf.Min(m_Axes.Length, m_AxesColors.Length); ++i) {
-      m_Axes[i].GetComponent<Renderer>().material.SetColor("_Color", m_AxesColors[i]);
+        public void ResetTransform()
+        {
+            for (int i = 0; i < Mathf.Min(m_Axes.Length, m_AxesColors.Length); ++i)
+            {
+                m_Axes[i].GetComponent<Renderer>().material.SetColor("_Color", m_AxesColors[i]);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

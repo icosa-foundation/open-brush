@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class SaveAndOptionButton : OptionButton {
-  override protected void OnButtonPressed() {
-    SaveLoadScript.m_Instance.SuppressSaveNotifcation = true;
-    SaveLoadScript.m_Instance.SaveOverwriteOrNewIfNotAllowed();
-    base.OnButtonPressed();
-  }
-}
-}  // namespace TiltBrush
+    public class SaveAndOptionButton : OptionButton
+    {
+        override protected void OnButtonPressed()
+        {
+            SaveLoadScript.m_Instance.SuppressSaveNotifcation = true;
+            SaveLoadScript.m_Instance.SaveOverwriteOrNewIfNotAllowed();
+            base.OnButtonPressed();
+        }
+    }
+} // namespace TiltBrush

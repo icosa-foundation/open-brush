@@ -20,46 +20,50 @@ from PIL import Image  # pylint: disable=import-error
 
 
 class InvalidFile(Exception):
-  pass
+    pass
 
 
 def get_alt_file(infile):
-  f, ext = os.path.splitext(infile)
-  ext = ext.lower()
-  if ext in ('.jpg', '.jpeg'):
-    return f + '.png'
-  if ext == '.png':
-    return f + '.jpg'
-  raise InvalidFile("Can't do anything with %s" % infile)
+    f, ext = os.path.splitext(infile)
+    ext = ext.lower()
+    if ext in (".jpg", ".jpeg"):
+        return f + ".png"
+    if ext == ".png":
+        return f + ".jpg"
+    raise InvalidFile("Can't do anything with %s" % infile)
 
 
 def convert(infile):
-  outfile = get_alt_file(infile)
-  if not os.path.exists(outfile):
-    Image.open(infile).save(outfile)
-    print("Saved ", outfile)
-  else:
-    print("%s already exists" % outfile)
+    outfile = get_alt_file(infile)
+    if not os.path.exists(outfile):
+        Image.open(infile).save(outfile)
+        print("Saved ", outfile)
+    else:
+        print("%s already exists" % outfile)
 
 
 def main():
-  parser = argparse.ArgumentParser(description="Convert files between jpg and png")
-  parser.add_argument('--all-jpg', help="Recursively convert all jpg files to png",
-                      action='store_true')
-  parser.add_argument('files', type=str, nargs='*',
-                      help="Files to convert to the other format")
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Convert files between jpg and png")
+    parser.add_argument(
+        "--all-jpg",
+        help="Recursively convert all jpg files to png",
+        action="store_true",
+    )
+    parser.add_argument(
+        "files", type=str, nargs="*", help="Files to convert to the other format"
+    )
+    args = parser.parse_args()
 
-  for arg in args.files:
-    convert(arg)
+    for arg in args.files:
+        convert(arg)
 
-  if args.all_jpg:
-    for (r, _, fs) in os.walk('.'):
-      for f in fs:
-        if f.endswith('.jpg'):
-          fullf = os.path.join(r, f)
-          if not os.path.exists(get_alt_file(fullf)):
-            convert(fullf)
+    if args.all_jpg:
+        for (r, _, fs) in os.walk("."):
+            for f in fs:
+                if f.endswith(".jpg"):
+                    fullf = os.path.join(r, f)
+                    if not os.path.exists(get_alt_file(fullf)):
+                        convert(fullf)
 
 
 main()

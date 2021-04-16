@@ -14,58 +14,71 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public static class HierarchyUtils {
-  /// Sets object and all children to a layer.
-  public static void RecursivelySetLayer(Transform obj, int layer) {
-    if (obj == null) { return; }
-    obj.gameObject.layer = layer;
-    for (int i = 0; i < obj.childCount; ++i) {
-      RecursivelySetLayer(obj.GetChild(i), layer);
-    }
-  }
+    public static class HierarchyUtils
+    {
+        /// Sets object and all children to a layer.
+        public static void RecursivelySetLayer(Transform obj, int layer)
+        {
+            if (obj == null) { return; }
+            obj.gameObject.layer = layer;
+            for (int i = 0; i < obj.childCount; ++i)
+            {
+                RecursivelySetLayer(obj.GetChild(i), layer);
+            }
+        }
 
-  /// Disables object and all children's shadow casting and receiving.
-  public static void RecursivelyDisableShadows(Transform obj) {
-    if (obj == null) { return; }
-    Renderer r = obj.GetComponent<Renderer>();
-    if (r) {
-      r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-      r.receiveShadows = false;
-    }
-    for (int i = 0; i < obj.childCount; ++i) {
-      RecursivelyDisableShadows(obj.GetChild(i));
-    }
-  }
+        /// Disables object and all children's shadow casting and receiving.
+        public static void RecursivelyDisableShadows(Transform obj)
+        {
+            if (obj == null) { return; }
+            Renderer r = obj.GetComponent<Renderer>();
+            if (r)
+            {
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+            }
+            for (int i = 0; i < obj.childCount; ++i)
+            {
+                RecursivelyDisableShadows(obj.GetChild(i));
+            }
+        }
 
-  /// Sets material on object and all children.
-  public static void RecursivelySetMaterial(Transform obj, Material mat) {
-    if (obj == null) { return; }
-    Renderer r = obj.GetComponent<Renderer>();
-    if (r) {
-      r.material = mat;
-    }
-    for (int i = 0; i < obj.childCount; ++i) {
-      RecursivelySetMaterial(obj.GetChild(i), mat);
-    }
-  }
+        /// Sets material on object and all children.
+        public static void RecursivelySetMaterial(Transform obj, Material mat)
+        {
+            if (obj == null) { return; }
+            Renderer r = obj.GetComponent<Renderer>();
+            if (r)
+            {
+                r.material = mat;
+            }
+            for (int i = 0; i < obj.childCount; ++i)
+            {
+                RecursivelySetMaterial(obj.GetChild(i), mat);
+            }
+        }
 
-  /// Sets material batchId for GPU intersection on object and all children.
-  public static void RecursivelySetMaterialBatchID(Transform obj, float batchId) {
-    if (obj == null) { return; }
+        /// Sets material batchId for GPU intersection on object and all children.
+        public static void RecursivelySetMaterialBatchID(Transform obj, float batchId)
+        {
+            if (obj == null) { return; }
 
-    Renderer r = obj.GetComponent<Renderer>();
-    if (r) {
-      var propertyBlock = new MaterialPropertyBlock();
-      r.GetPropertyBlock(propertyBlock);
-      propertyBlock.SetFloat("_BatchID", batchId);
-      r.SetPropertyBlock(propertyBlock);
+            Renderer r = obj.GetComponent<Renderer>();
+            if (r)
+            {
+                var propertyBlock = new MaterialPropertyBlock();
+                r.GetPropertyBlock(propertyBlock);
+                propertyBlock.SetFloat("_BatchID", batchId);
+                r.SetPropertyBlock(propertyBlock);
+            }
+            for (int i = 0; i < obj.childCount; ++i)
+            {
+                RecursivelySetMaterialBatchID(obj.GetChild(i), batchId);
+            }
+        }
     }
-    for (int i = 0; i < obj.childCount; ++i) {
-      RecursivelySetMaterialBatchID(obj.GetChild(i), batchId);
-    }
-  }
-}
 
 } // namespace TiltBrush

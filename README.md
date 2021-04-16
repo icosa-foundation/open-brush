@@ -220,9 +220,9 @@ enable native Oculus support:
 
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/27.0/).
 
-**Note:** The above link goes to version 23.1 which is the current latest version. Tilt Brush was formerly built with 1.41, but appears to function well with 23.1. You only need to include the `Platform` and `VR` subdirectories when you import.
+**Note:** The above link goes to version 27.0 which is the current latest version. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.

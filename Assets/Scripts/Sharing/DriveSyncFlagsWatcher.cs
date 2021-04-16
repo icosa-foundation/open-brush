@@ -14,30 +14,38 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-/// Triggers a drive reinitialize when drive sync flags. Should be added to popups that can
-/// change drive sync settings so that the change only happens once the popup closes.
-public class DriveSyncFlagsWatcher : MonoBehaviour {
+namespace TiltBrush
+{
+    /// Triggers a drive reinitialize when drive sync flags. Should be added to popups that can
+    /// change drive sync settings so that the change only happens once the popup closes.
+    public class DriveSyncFlagsWatcher : MonoBehaviour
+    {
 
-  private bool[] m_Flags;
+        private bool[] m_Flags;
 
-  private void Awake() {
-    m_Flags = new bool[(int)DriveSync.SyncedFolderType.Num];
-  }
+        private void Awake()
+        {
+            m_Flags = new bool[(int)DriveSync.SyncedFolderType.Num];
+        }
 
-  private void OnEnable() {
-    for (int i = 0; i < (int) DriveSync.SyncedFolderType.Num; ++i) {
-      m_Flags[i] = App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType)i);
+        private void OnEnable()
+        {
+            for (int i = 0; i < (int)DriveSync.SyncedFolderType.Num; ++i)
+            {
+                m_Flags[i] = App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType)i);
+            }
+        }
+
+        private void OnDisable()
+        {
+            for (int i = 0; i < (int)DriveSync.SyncedFolderType.Num; ++i)
+            {
+                if (m_Flags[i] != App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType)i))
+                {
+                    App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+                    break;
+                }
+            }
+        }
     }
-  }
-
-  private void OnDisable() {
-    for (int i = 0; i < (int) DriveSync.SyncedFolderType.Num; ++i) {
-      if (m_Flags[i] != App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType) i)) {
-        App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
-        break;
-      }
-    }
-  }
-}
 } // namespace TiltBrush

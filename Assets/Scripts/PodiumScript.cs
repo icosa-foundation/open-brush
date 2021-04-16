@@ -14,10 +14,12 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PodiumScript : MonoBehaviour {
-  public Transform m_Base;
-  public Transform m_Stand;
-}
-}  // namespace TiltBrush
+    public class PodiumScript : MonoBehaviour
+    {
+        public Transform m_Base;
+        public Transform m_Stand;
+    }
+} // namespace TiltBrush

@@ -12,27 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// Capabilities of our player implementation.  Should a .tilt file specifiy a
-/// capability not listed here, we deny loading the sketch.
-public enum PlaybackCapabilities {
-  /// playback supports use of stroke decay data
-  //STROKE_DECAY,
-  /// playback supports bypass of pressure smoothing and final width clamping
-  //PRESSURE_BYPASS,
-}
+    /// Capabilities of our player implementation.  Should a .tilt file specifiy a
+    /// capability not listed here, we deny loading the sketch.
+    public enum PlaybackCapabilities
+    {
+        /// playback supports use of stroke decay data
+        //STROKE_DECAY,
+        /// playback supports bypass of pressure smoothing and final width clamping
+        //PRESSURE_BYPASS,
+    }
 
-// Manages playback of an in-memory scene
-public interface IScenePlayback {
-  bool Update();
-  void QuickLoadRemaining();
-  // Add/Remove are used for reconciling edits while playback is in progress.
-  void AddStroke(Stroke stroke);
-  void RemoveStroke(Stroke stroke);
-  // Max pointer deficiency encountered during playback
-  int MaxPointerUnderrun { get; }
-  int MemoryObjectsDrawn { get; }
-}
+    // Manages playback of an in-memory scene
+    public interface IScenePlayback
+    {
+        bool Update();
+        void QuickLoadRemaining();
+        // Add/Remove are used for reconciling edits while playback is in progress.
+        void AddStroke(Stroke stroke);
+        void RemoveStroke(Stroke stroke);
+        // Max pointer deficiency encountered during playback
+        int MaxPointerUnderrun { get; }
+        int MemoryObjectsDrawn { get; }
+    }
 
 } // namespace TiltBrush

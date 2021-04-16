@@ -14,10 +14,12 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class OculusAuth : MonoBehaviour {
-  #if OCULUS_SUPPORTED
+    public class OculusAuth : MonoBehaviour
+    {
+#if OCULUS_SUPPORTED
   private bool m_authenticated = false;
   // The App ID is a public identifier for the Tilt Brush app on the Oculus platform. It is
   // analogous to Apple's App ID, which shows up in URLs related to the app.
@@ -62,6 +64,6 @@ public class OculusAuth : MonoBehaviour {
       Application.Quit();
     }
   }
-  #endif // OCULUS_SUPPORTED
-}
+#endif // OCULUS_SUPPORTED
+    }
 } // namespace TiltBrush

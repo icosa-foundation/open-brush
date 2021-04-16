@@ -14,28 +14,33 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PanelSweetSpotScript : MonoBehaviour {
-  public float m_PanelAttachRadius;
-  public float m_MeshRadius;
-  public Renderer m_BorderSphere;
-  private Vector4 m_BorderSphereHighlightPos;
+    public class PanelSweetSpotScript : MonoBehaviour
+    {
+        public float m_PanelAttachRadius;
+        public float m_MeshRadius;
+        public Renderer m_BorderSphere;
+        private Vector4 m_BorderSphereHighlightPos;
 
-  void Awake() {
-    Vector3 vScale = transform.localScale;
-    vScale.Set(m_MeshRadius, m_MeshRadius, m_MeshRadius);
-    transform.localScale = vScale;
-  }
+        void Awake()
+        {
+            Vector3 vScale = transform.localScale;
+            vScale.Set(m_MeshRadius, m_MeshRadius, m_MeshRadius);
+            transform.localScale = vScale;
+        }
 
-  public void EnableBorderSphere(bool bEnable, Vector3 vHightlightPos, float fHighlightRadius) {
-    m_BorderSphere.enabled = bEnable;
-    if (bEnable) {
-      m_BorderSphereHighlightPos = new Vector4(
-          vHightlightPos.x, vHightlightPos.y, vHightlightPos.z, 1.0f);
-      m_BorderSphere.material.SetVector("_HighlightCenter", m_BorderSphereHighlightPos);
-      m_BorderSphere.material.SetFloat("_HighlightRadius", fHighlightRadius);
+        public void EnableBorderSphere(bool bEnable, Vector3 vHightlightPos, float fHighlightRadius)
+        {
+            m_BorderSphere.enabled = bEnable;
+            if (bEnable)
+            {
+                m_BorderSphereHighlightPos = new Vector4(
+                    vHightlightPos.x, vHightlightPos.y, vHightlightPos.z, 1.0f);
+                m_BorderSphere.material.SetVector("_HighlightCenter", m_BorderSphereHighlightPos);
+                m_BorderSphere.material.SetFloat("_HighlightRadius", fHighlightRadius);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -14,19 +14,23 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class AppAudioMonitor : MonoBehaviour {
-    private float[] m_WaveformFloats;
+    public class AppAudioMonitor : MonoBehaviour
+    {
+        private float[] m_WaveformFloats;
 
-    void Start() {
-      m_WaveformFloats = new float[VisualizerManager.m_Instance.FFTSize];
+        void Start()
+        {
+            m_WaveformFloats = new float[VisualizerManager.m_Instance.FFTSize];
+        }
+
+        void Update()
+        {
+            AudioListener.GetOutputData(m_WaveformFloats, 0);
+            VisualizerManager.m_Instance.ProcessAudio(m_WaveformFloats, AudioSettings.outputSampleRate);
+        }
     }
-
-    void Update() {
-      AudioListener.GetOutputData(m_WaveformFloats, 0);
-      VisualizerManager.m_Instance.ProcessAudio(m_WaveformFloats, AudioSettings.outputSampleRate);
-    }
-  }
 
 }

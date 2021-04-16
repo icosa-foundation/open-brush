@@ -14,24 +14,29 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public static class Vector3Extensions {
+    public static class Vector3Extensions
+    {
 
-  /// Returns the component-wise Min() of the vector.
-  public static float Min(this Vector3 v) {
-    return Mathf.Min(v.x, Mathf.Min(v.y, v.z));
-  }
+        /// Returns the component-wise Min() of the vector.
+        public static float Min(this Vector3 v)
+        {
+            return Mathf.Min(v.x, Mathf.Min(v.y, v.z));
+        }
 
-  /// Returns the component-wise Max() of the vector.
-  public static float Max(this Vector3 v) {
-    return Mathf.Max(v.x, Mathf.Max(v.y, v.z));
-  }
+        /// Returns the component-wise Max() of the vector.
+        public static float Max(this Vector3 v)
+        {
+            return Mathf.Max(v.x, Mathf.Max(v.y, v.z));
+        }
 
-  /// Returns the component-wise Abs() of the vector.
-  public static Vector3 Abs(this Vector3 v) {
-    return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
-  }
-}
+        /// Returns the component-wise Abs() of the vector.
+        public static Vector3 Abs(this Vector3 v)
+        {
+            return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
+        }
+    }
 
 } // namespace TiltBrush

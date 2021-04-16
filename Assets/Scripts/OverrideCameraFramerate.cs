@@ -14,27 +14,32 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class OverrideCameraFramerate : MonoBehaviour {
+    public class OverrideCameraFramerate : MonoBehaviour
+    {
 
-  // Set frames to skip to "2" in order to render at 30FPS in VR (which is 90FPS)
-  public int m_FramesToSkip = 0;
-  private Camera m_Camera;
-  private int frameCount = 0;
-  // Use this for initialization
-  void Start () {
-    m_Camera = GetComponent<Camera>();
-    m_Camera.enabled = false;
-  }
+        // Set frames to skip to "2" in order to render at 30FPS in VR (which is 90FPS)
+        public int m_FramesToSkip = 0;
+        private Camera m_Camera;
+        private int frameCount = 0;
+        // Use this for initialization
+        void Start()
+        {
+            m_Camera = GetComponent<Camera>();
+            m_Camera.enabled = false;
+        }
 
-  // Update is called once per frame
-  void Update () {
-    if (frameCount > m_FramesToSkip) {
-      m_Camera.Render();
-      frameCount = 0;
+        // Update is called once per frame
+        void Update()
+        {
+            if (frameCount > m_FramesToSkip)
+            {
+                m_Camera.Render();
+                frameCount = 0;
+            }
+            frameCount++;
+        }
     }
-    frameCount++;
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

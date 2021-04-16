@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ConfirmationButton : BaseButton {
-  public bool m_Confirm = true;
-  public bool m_KeepParentOpen;
+    public class ConfirmationButton : BaseButton
+    {
+        public bool m_Confirm = true;
+        public bool m_KeepParentOpen;
 
-  override protected void OnButtonPressed() {
-    BasePanel parentPanel = m_Manager.GetPanelForPopUps();
-    if (parentPanel) {
-      parentPanel.ResolveDelayedButtonCommand(m_Confirm, m_KeepParentOpen);
+        override protected void OnButtonPressed()
+        {
+            BasePanel parentPanel = m_Manager.GetPanelForPopUps();
+            if (parentPanel)
+            {
+                parentPanel.ResolveDelayedButtonCommand(m_Confirm, m_KeepParentOpen);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

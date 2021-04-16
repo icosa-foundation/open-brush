@@ -14,30 +14,36 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class TestingButton : BaseButton {
-  [SerializeField] string m_ResultText;
+    public class TestingButton : BaseButton
+    {
+        [SerializeField] string m_ResultText;
 
-  public enum Type {
-    Back,
-    Next,
-    Result
-  }
+        public enum Type
+        {
+            Back,
+            Next,
+            Result
+        }
 
-  public Type m_Type;
+        public Type m_Type;
 
-  public string ResultText { get { return m_ResultText; } }
+        public string ResultText { get { return m_ResultText; } }
 
-  override protected void OnButtonPressed() {
-    TestingPanel testingParent = m_Manager.GetComponent<TestingPanel>();
-    if (testingParent != null) {
-      testingParent.OnButtonPressed(m_Type, m_ResultText);
+        override protected void OnButtonPressed()
+        {
+            TestingPanel testingParent = m_Manager.GetComponent<TestingPanel>();
+            if (testingParent != null)
+            {
+                testingParent.OnButtonPressed(m_Type, m_ResultText);
+            }
+        }
+
+        public void ToggleActive(bool active)
+        {
+            SetButtonActivated(active);
+        }
     }
-  }
-
-  public void ToggleActive(bool active) {
-    SetButtonActivated(active);
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

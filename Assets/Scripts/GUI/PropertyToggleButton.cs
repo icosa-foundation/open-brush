@@ -14,37 +14,45 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-  /// Allows the button to be connected to a bool property on a component, and automatically
-  /// reflect its value as well as toggling its value when the button in pressed. An option
-  /// to inverse sign on the highlight is included.
-  public class PropertyToggleButton : BaseButton {
+namespace TiltBrush
+{
+    /// Allows the button to be connected to a bool property on a component, and automatically
+    /// reflect its value as well as toggling its value when the button in pressed. An option
+    /// to inverse sign on the highlight is included.
+    public class PropertyToggleButton : BaseButton
+    {
 
-    [SerializeField] private SerializedPropertyReferenceBool m_Property;
-    [SerializeField] private bool m_InverseHighlight;
+        [SerializeField] private SerializedPropertyReferenceBool m_Property;
+        [SerializeField] private bool m_InverseHighlight;
 
-    protected override void Start() {
-      base.Start();
-      HighlightButton();
+        protected override void Start()
+        {
+            base.Start();
+            HighlightButton();
+        }
+
+        protected override void OnButtonPressed()
+        {
+            if (m_Property.HasValue)
+            {
+                m_Property.Value = !m_Property.Value;
+                HighlightButton();
+            }
+        }
+
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            HighlightButton();
+        }
+
+        protected void HighlightButton()
+        {
+            if (m_Property.HasValue)
+            {
+                bool value = m_Property.Value ^ m_InverseHighlight;
+                SetButtonActivated(value);
+            }
+        }
     }
-
-    protected override void OnButtonPressed() {
-      if (m_Property.HasValue) {
-        m_Property.Value = !m_Property.Value;
-        HighlightButton();
-      }
-    }
-
-    override public void UpdateVisuals() {
-      base.UpdateVisuals();
-      HighlightButton();
-    }
-
-    protected void HighlightButton() {
-      if (m_Property.HasValue) {
-        bool value = m_Property.Value ^ m_InverseHighlight;
-        SetButtonActivated(value);
-      }
-    }
-  }
 } // namespace TiltBrush

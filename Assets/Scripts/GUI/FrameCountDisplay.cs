@@ -15,19 +15,23 @@
 using TMPro;
 using UnityEngine;
 
-namespace TiltBrush {
-  public class FrameCountDisplay : MonoBehaviour {
+namespace TiltBrush
+{
+    public class FrameCountDisplay : MonoBehaviour
+    {
 
-    [SerializeField] private TextMeshProUGUI m_text;
-    private int m_numFrames;
+        [SerializeField] private TextMeshProUGUI m_text;
+        private int m_numFrames;
 
-    public void SetFramesTotal(int frames) {
-      m_numFrames = frames;
-      m_text.text = string.Format("0/{0}", m_numFrames);
+        public void SetFramesTotal(int frames)
+        {
+            m_numFrames = frames;
+            m_text.text = string.Format("0/{0}", m_numFrames);
+        }
+
+        public void SetCurrentFrame(int frame)
+        {
+            m_text.text = string.Format("{0}/{1}", frame, m_numFrames);
+        }
     }
-
-    public void SetCurrentFrame(int frame) {
-      m_text.text = string.Format("{0}/{1}", frame, m_numFrames);
-    }
-  }
 } // namespace TiltBrush

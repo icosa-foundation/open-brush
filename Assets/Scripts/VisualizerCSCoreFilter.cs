@@ -13,35 +13,45 @@
 // limitations under the License.
 using CSCore.DSP;
 
-namespace TiltBrush {
-  /// Wrapper for CSCore.DSP.HighpassFilter and LowpassFilter
-  public class VisualizerCSCoreFilter : VisualizerManager.Filter {
-    public enum FilterType {
-      Low,
-      High,
-    }
+namespace TiltBrush
+{
+    /// Wrapper for CSCore.DSP.HighpassFilter and LowpassFilter
+    public class VisualizerCSCoreFilter : VisualizerManager.Filter
+    {
+        public enum FilterType
+        {
+            Low,
+            High,
+        }
 
-    private BiQuad m_Filter;
-    private double m_Frequency;
+        private BiQuad m_Filter;
+        private double m_Frequency;
 
-    public VisualizerCSCoreFilter(FilterType type, int sampleRate, double frequency) {
-      if (type == FilterType.High) {
-        m_Filter = new HighpassFilter(sampleRate, frequency);
-      } else {
-        m_Filter = new LowpassFilter(sampleRate, frequency);
-      }
-    }
+        public VisualizerCSCoreFilter(FilterType type, int sampleRate, double frequency)
+        {
+            if (type == FilterType.High)
+            {
+                m_Filter = new HighpassFilter(sampleRate, frequency);
+            }
+            else
+            {
+                m_Filter = new LowpassFilter(sampleRate, frequency);
+            }
+        }
 
-    public override void Process(float[] samples) {
-        m_Filter.Process(samples);
-    }
+        public override void Process(float[] samples)
+        {
+            m_Filter.Process(samples);
+        }
 
-    public override double Frequency {
-      get { return m_Frequency; }
-      set {
-        m_Frequency = value;
-        m_Filter.Frequency = value;
-      }
+        public override double Frequency
+        {
+            get { return m_Frequency; }
+            set
+            {
+                m_Frequency = value;
+                m_Filter.Frequency = value;
+            }
+        }
     }
-  }
 }

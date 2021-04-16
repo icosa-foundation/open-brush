@@ -14,25 +14,31 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PostEffectsToggle : MonoBehaviour {
-  private void Toggle<T>(bool enabled) {
-    MonoBehaviour t = GetComponent<T>() as MonoBehaviour;
-    if (t != null) {
-      t.enabled = enabled;
+    public class PostEffectsToggle : MonoBehaviour
+    {
+        private void Toggle<T>(bool enabled)
+        {
+            MonoBehaviour t = GetComponent<T>() as MonoBehaviour;
+            if (t != null)
+            {
+                t.enabled = enabled;
+            }
+        }
+
+        void Awake()
+        {
+            CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
+            OnPostEffectsChanged();
+        }
+
+        void OnPostEffectsChanged()
+        {
+            Toggle<TiltShift>(CameraConfig.PostEffects);
+            Toggle<Kino.Vignette>(CameraConfig.PostEffects);
+        }
     }
-  }
 
-  void Awake() {
-    CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
-    OnPostEffectsChanged();
-  }
-
-  void OnPostEffectsChanged() {
-    Toggle<TiltShift>(CameraConfig.PostEffects);
-    Toggle<Kino.Vignette>(CameraConfig.PostEffects);
-  }
-}
-
-}  // namespace TiltBrush
+} // namespace TiltBrush

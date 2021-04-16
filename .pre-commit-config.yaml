@@ -4,13 +4,19 @@ repos:
     rev: v1.17.0
     hooks:
       - id: yamllint
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.0.0
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+      - id: black
+        files: ^Support/
+        language_version: python3
+  - repo: https://github.com/pycqa/flake8
+    rev: 3.9.0
     hooks:
       - id: flake8
         files: ^Support/
   - repo: https://github.com/PyCQA/pylint.git
-    rev: pylint-2.6.0
+    rev: pylint-2.7.4
     hooks:
       - id: pylint
         name: pylint
@@ -18,3 +24,11 @@ repos:
         language_version: python3
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
+  - repo: https://github.com/dotnet/format
+    rev: "7e343070a0355c86f72bdee226b5e19ffcbac931"  # "v5.0.211103"
+    hooks:
+      - id: dotnet-format
+        exclude: ^Assets/ThirdParty
+        args:
+          - --folder
+          - --include

@@ -14,60 +14,78 @@
 
 using System.Collections.Generic;
 
-namespace TiltBrush {
-public class ColorSpaceToggle : MultistateButton {
-  override protected void Awake() {
-    base.Awake();
-    CustomColorPaletteStorage.m_Instance.ModeChanged += OnModeChanged;
-  }
+namespace TiltBrush
+{
+    public class ColorSpaceToggle : MultistateButton
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            CustomColorPaletteStorage.m_Instance.ModeChanged += OnModeChanged;
+        }
 
-  override protected void OnStart() {
-    base.OnStart();
-    RefreshOptions();
-  }
+        override protected void OnStart()
+        {
+            base.OnStart();
+            RefreshOptions();
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    CustomColorPaletteStorage.m_Instance.ModeChanged -= OnModeChanged;
-  }
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            CustomColorPaletteStorage.m_Instance.ModeChanged -= OnModeChanged;
+        }
 
-  public void RefreshOptions() {
-    var pickers = App.Instance.GetComponent<CustomColorPaletteStorage>();
-    List<Option> options = new List<Option>();
-    foreach (var modeAndInfo in pickers.ModeToPickerInfo) {
-      if (ColorPickerUtils.ModeIsValid(modeAndInfo.mode)) {
-        options.Add(new Option {
-            m_Description = modeAndInfo.mode.ToString(),
-            m_Texture = modeAndInfo.info.icon
-        });
-      }
+        public void RefreshOptions()
+        {
+            var pickers = App.Instance.GetComponent<CustomColorPaletteStorage>();
+            List<Option> options = new List<Option>();
+            foreach (var modeAndInfo in pickers.ModeToPickerInfo)
+            {
+                if (ColorPickerUtils.ModeIsValid(modeAndInfo.mode))
+                {
+                    options.Add(new Option
+                    {
+                        m_Description = modeAndInfo.mode.ToString(),
+                        m_Texture = modeAndInfo.info.icon
+                    });
+                }
+            }
+
+            m_Options = options.ToArray();
+            if (m_Options.Length < 2)
+            {
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                CreateOptionSides();
+                ColorPickerMode initialMode = CustomColorPaletteStorage.m_Instance.Mode;
+                if (ColorPickerUtils.ModeIsValid(initialMode))
+                {
+                    ForceSelectedOption((int)initialMode);
+                }
+                else
+                {
+                    ColorPickerUtils.GoToNextMode();
+                }
+            }
+        }
+
+        override protected void OnButtonPressed()
+        {
+            ColorPickerUtils.GoToNextMode();
+        }
+
+        void OnModeChanged()
+        {
+            ColorPickerInfo info =
+                ColorPickerUtils.GetInfoForMode(CustomColorPaletteStorage.m_Instance.Mode);
+            if (!m_AtlasTexture)
+            {
+                m_ButtonRenderer.material.mainTexture = info.icon;
+            }
+            SetSelectedOption((int)CustomColorPaletteStorage.m_Instance.Mode);
+        }
     }
-
-    m_Options = options.ToArray();
-    if (m_Options.Length < 2) {
-      gameObject.SetActive(false);
-    } else {
-      CreateOptionSides();
-      ColorPickerMode initialMode = CustomColorPaletteStorage.m_Instance.Mode;
-      if (ColorPickerUtils.ModeIsValid(initialMode)) {
-        ForceSelectedOption((int)initialMode);
-      } else {
-        ColorPickerUtils.GoToNextMode();
-      }
-    }
-  }
-
-  override protected void OnButtonPressed() {
-    ColorPickerUtils.GoToNextMode();
-  }
-
-  void OnModeChanged() {
-    ColorPickerInfo info =
-        ColorPickerUtils.GetInfoForMode(CustomColorPaletteStorage.m_Instance.Mode);
-    if (!m_AtlasTexture) {
-      m_ButtonRenderer.material.mainTexture = info.icon;
-    }
-    SetSelectedOption((int)CustomColorPaletteStorage.m_Instance.Mode);
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

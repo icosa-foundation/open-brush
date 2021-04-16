@@ -14,54 +14,63 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class SketchSurfaceTool : BaseTool {
-  public GameObject m_FrontSide;
-  public GameObject m_BackSide;
-  public Color m_FrontSideColor;
-  public Color m_BackSideColor;
-  public float m_AdjustBrushSizeScalar;
+    public class SketchSurfaceTool : BaseTool
+    {
+        public GameObject m_FrontSide;
+        public GameObject m_BackSide;
+        public Color m_FrontSideColor;
+        public Color m_BackSideColor;
+        public float m_AdjustBrushSizeScalar;
 
-  override public void Init() {
-    base.Init();
+        override public void Init()
+        {
+            base.Init();
 
-    Renderer rFrontRenderer = m_FrontSide.GetComponent<Renderer>();
-    rFrontRenderer.material.color = m_FrontSideColor;
+            Renderer rFrontRenderer = m_FrontSide.GetComponent<Renderer>();
+            rFrontRenderer.material.color = m_FrontSideColor;
 
-    Renderer rBackRenderer = m_BackSide.GetComponent<Renderer>();
-    rBackRenderer.material.color = m_BackSideColor;
-  }
+            Renderer rBackRenderer = m_BackSide.GetComponent<Renderer>();
+            rBackRenderer.material.color = m_BackSideColor;
+        }
 
-  public override bool ShouldShowPointer() {
-    return true;
-  }
+        public override bool ShouldShowPointer()
+        {
+            return true;
+        }
 
-  override public void EnableTool(bool bEnable) {
-    base.EnableTool(bEnable);
-    if (!bEnable) {
-      PointerManager.m_Instance.EnableLine(false);
+        override public void EnableTool(bool bEnable)
+        {
+            base.EnableTool(bEnable);
+            if (!bEnable)
+            {
+                PointerManager.m_Instance.EnableLine(false);
+            }
+        }
+
+        override public void UpdateTool()
+        {
+            base.UpdateTool();
+
+            bool bEnableLine = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
+            bEnableLine = bEnableLine && !m_EatInput && m_AllowDrawing && m_SketchSurface.IsSurfaceDrawable();
+
+            PointerManager.m_Instance.EnableLine(bEnableLine);
+            PointerManager.m_Instance.PointerPressure = 1.0f;
+        }
+
+        override public void UpdateSize(float fAdjustAmount)
+        {
+            PointerManager.m_Instance.AdjustAllPointersBrushSize01(m_AdjustBrushSizeScalar * fAdjustAmount);
+            PointerManager.m_Instance.MarkAllBrushSizeUsed();
+        }
+
+        override public void BacksideActive(bool bActive)
+        {
+            m_FrontSide.SetActive(!bActive);
+            m_BackSide.SetActive(bActive);
+        }
     }
-  }
-
-  override public void UpdateTool() {
-    base.UpdateTool();
-
-    bool bEnableLine = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
-    bEnableLine = bEnableLine && !m_EatInput && m_AllowDrawing && m_SketchSurface.IsSurfaceDrawable();
-
-    PointerManager.m_Instance.EnableLine(bEnableLine);
-    PointerManager.m_Instance.PointerPressure = 1.0f;
-  }
-
-  override public void UpdateSize(float fAdjustAmount) {
-    PointerManager.m_Instance.AdjustAllPointersBrushSize01(m_AdjustBrushSizeScalar * fAdjustAmount);
-    PointerManager.m_Instance.MarkAllBrushSizeUsed();
-  }
-
-  override public void BacksideActive(bool bActive) {
-    m_FrontSide.SetActive(!bActive);
-    m_BackSide.SetActive(bActive);
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush
