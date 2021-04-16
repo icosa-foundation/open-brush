@@ -106,6 +106,9 @@ jobs:
           - name: Windows SteamVR
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
+          - name: Windows Rift
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
           - name: Windows SteamVR Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
