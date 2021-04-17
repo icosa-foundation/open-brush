@@ -346,6 +346,18 @@ jobs:
           name: Windows SteamVR Experimental
           path: build_windows_steamvr_experimental
 
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+
+      - name: Download Build Artifacts (Windows Rift Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift Experimental
+          path: build_windows_rift_experimental
+
       - name: Download Build Artifacts (Linux SteamVR)
         uses: actions/download-artifact@v2
         with:
@@ -379,17 +391,23 @@ jobs:
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
           mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
           mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
           chmod a+x OpenBrush_Linux_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_$VERSION/OpenBrush-github
           tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
           chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush-github
           tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
+          rm -rf OpenBrush_Rift_$VERSION
+          rm -rf OpenBrush_Rift_Experimental_$VERSION
           rm -rf OpenBrush_Linux_$VERSION
           rm -rf OpenBrush_Linux_Experimental_$VERSION
       - name: Publish
