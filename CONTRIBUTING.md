@@ -11,6 +11,8 @@ git commit ...
 ```
 If you already made any commits without having the pre-commit hook installed, you can manually run the checkers / formatters via `pre-commit run -a`. If any changes are made, please commit them.
 
+If you use Windows, you may want to use [Scoop](https://scoop.sh) to easily install python and dotnet. After installing the Scoop installer, simply run `scoop install dotnet dotnet-sdk python`.
+
 There is also an extensive `.editorconfig` file which will configure many editors' formatting tools properly.
 
 ## Git history
