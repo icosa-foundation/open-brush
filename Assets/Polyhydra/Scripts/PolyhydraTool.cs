@@ -57,7 +57,7 @@ namespace TiltBrush.AndyB
         //All input handling should be done here
         override public void UpdateTool()
         {
-            
+
             base.UpdateTool();
 
             // Angle the pointer according to the user-defined pointer angle.
@@ -67,7 +67,7 @@ namespace TiltBrush.AndyB
 
             //keep the tool angle correct
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
-            
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 VrUiPoly uiPoly = FindObjectOfType<VrUiPoly>();
@@ -79,9 +79,9 @@ namespace TiltBrush.AndyB
                 uint time = 0;
                 float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
                 float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
-                
+
                 var strokes = new List<Stroke>();
-                
+
                 foreach (var (face, faceIndex) in poly.Faces.WithIndex())
                 {
                     float lineLength = 0;
@@ -134,10 +134,10 @@ namespace TiltBrush.AndyB
                         lineLength,
                         123
                     );
-                    
+
                     strokes.Add(stroke);
                 }
-                
+
                 // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 //     new SelectCommand(
                 //         strokes,

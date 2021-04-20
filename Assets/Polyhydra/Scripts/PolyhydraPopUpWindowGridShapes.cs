@@ -16,25 +16,27 @@ using System;
 using System.Linq;
 
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PolyhydraPopUpWindowGridShapes : PolyhydraPopUpWindowBase {
-
-  protected override string[] GetButtonList()
-  {
-    return Enum.GetNames(typeof(PolyHydraEnums.GridShapes)).ToArray();
-  }
-
-    protected override string GetButtonTexturePath(int i)
+    public class PolyhydraPopUpWindowGridShapes : PolyhydraPopUpWindowBase
     {
-      return $"ShapeButtons/poly_gridshape_{(PolyHydraEnums.GridShapes) i}";
+
+        protected override string[] GetButtonList()
+        {
+            return Enum.GetNames(typeof(PolyHydraEnums.GridShapes)).ToArray();
+        }
+
+        protected override string GetButtonTexturePath(int i)
+        {
+            return $"ShapeButtons/poly_gridshape_{(PolyHydraEnums.GridShapes)i}";
+        }
+
+        public override void HandleButtonPress(int buttonIndex)
+        {
+            ParentPanel.PolyhydraModel.GridShape = (PolyHydraEnums.GridShapes)buttonIndex;
+            ParentPanel.ButtonGridShape.SetButtonTexture(GetButtonTexture(buttonIndex));
+        }
+
     }
-
-    public override void HandleButtonPress(int buttonIndex)
-  {
-    ParentPanel.PolyhydraModel.GridShape = (PolyHydraEnums.GridShapes)buttonIndex;
-    ParentPanel.ButtonGridShape.SetButtonTexture(GetButtonTexture(buttonIndex));
-  }
-
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

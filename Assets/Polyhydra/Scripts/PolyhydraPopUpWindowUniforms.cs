@@ -19,52 +19,53 @@ using UnityEngine;
 using Wythoff;
 
 
-namespace TiltBrush {
-
-public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
+namespace TiltBrush
 {
 
-  private Uniform[] GetCurrentUniformList(VrUi.ShapeCategories shapeCategory)
-  {
-    switch (shapeCategory)
+    public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
     {
-      case VrUi.ShapeCategories.Platonic:
-        return Uniform.Platonic;
-      case VrUi.ShapeCategories.Archimedean:
-        return Uniform.Archimedean;
-      case VrUi.ShapeCategories.Prisms:
-        return Uniform.Prismatic;
-      case VrUi.ShapeCategories.KeplerPoinsot:
-        return Uniform.KeplerPoinsot;
-      // case VrUi.ShapeCategories.UniformConvex:
-      //   return Uniform.Convex;
-      // case VrUi.ShapeCategories.UniformStar:
-      //   return Uniform.Star;
+
+        private Uniform[] GetCurrentUniformList(VrUi.ShapeCategories shapeCategory)
+        {
+            switch (shapeCategory)
+            {
+                case VrUi.ShapeCategories.Platonic:
+                    return Uniform.Platonic;
+                case VrUi.ShapeCategories.Archimedean:
+                    return Uniform.Archimedean;
+                case VrUi.ShapeCategories.Prisms:
+                    return Uniform.Prismatic;
+                case VrUi.ShapeCategories.KeplerPoinsot:
+                    return Uniform.KeplerPoinsot;
+                // case VrUi.ShapeCategories.UniformConvex:
+                //   return Uniform.Convex;
+                // case VrUi.ShapeCategories.UniformStar:
+                //   return Uniform.Star;
+            }
+
+            return null;
+        }
+        protected override string[] GetButtonList()
+        {
+            return GetCurrentUniformList(ParentPanel.CurrentShapeCategory).Select(x => x.Name).ToArray();
+        }
+
+        protected override string GetButtonTexturePath(int i)
+        {
+            string name = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[i].Name;
+            return $"ShapeButtons/poly_uniform_{name}".Replace(" ", "_");
+        }
+
+        public override void HandleButtonPress(int buttonIndex)
+        {
+            var enumName = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[buttonIndex].Name;
+            enumName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(enumName.ToLower());
+            enumName = enumName.Replace(" ", "_");
+            PolyTypes polyType = (PolyTypes)Enum.Parse(typeof(PolyTypes), enumName);
+            ParentPanel.PolyhydraModel.UniformPolyType = polyType;
+            ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.SetSliderConfiguration();
+        }
+
     }
-
-    return null;
-  }
-  protected override string[] GetButtonList()
-  {
-    return GetCurrentUniformList(ParentPanel.CurrentShapeCategory).Select(x=>x.Name).ToArray();
-  }
-
-  protected override string GetButtonTexturePath(int i)
-  {
-    string name = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[i].Name;
-    return $"ShapeButtons/poly_uniform_{name}".Replace(" ", "_");
-  }
-
-  public override void HandleButtonPress(int buttonIndex)
-  {
-    var enumName = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[buttonIndex].Name;
-    enumName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(enumName.ToLower());
-    enumName = enumName.Replace(" ", "_");
-    PolyTypes polyType = (PolyTypes)Enum.Parse(typeof(PolyTypes), enumName);
-    ParentPanel.PolyhydraModel.UniformPolyType = polyType;
-    ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(buttonIndex));
-    ParentPanel.SetSliderConfiguration();
-  }
-
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

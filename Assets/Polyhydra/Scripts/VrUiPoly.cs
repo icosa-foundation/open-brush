@@ -20,7 +20,7 @@ public class VrUiPoly : MonoBehaviour
     public PolyHydraEnums.GridShapes GridShape;
     public int PrismP;
     public int PrismQ;
-    
+
     public Gradient colors;
 
     public ConwayPoly _conwayPoly;
@@ -42,14 +42,15 @@ public class VrUiPoly : MonoBehaviour
     void Init()
     {
         meshFilter = gameObject.GetComponent<MeshFilter>();
-        int maxColors = 6;  // TODO what should this really be?
-        previewColors = Enumerable.Range(0, maxColors).Select(x=> colors.Evaluate((float)x / maxColors)).ToArray();
+        int maxColors = 6; // TODO what should this really be?
+        previewColors = Enumerable.Range(0, maxColors).Select(x => colors.Evaluate((float)x / maxColors)).ToArray();
         MakePolyhedron();
     }
 
 
     [Serializable]
-    public struct ConwayOperator {
+    public struct ConwayOperator
+    {
         public Ops opType;
         public FaceSelections faceSelections;
         public bool randomize;
@@ -57,7 +58,7 @@ public class VrUiPoly : MonoBehaviour
         public float amount2;
         public bool disabled;
 
-        public ConwayOperator ClampAmount(PolyHydraEnums.OpConfig config, bool safe=false)
+        public ConwayOperator ClampAmount(PolyHydraEnums.OpConfig config, bool safe = false)
         {
             float min = safe ? config.amountSafeMin : config.amountMin;
             float max = safe ? config.amountSafeMax : config.amountMax;
@@ -65,7 +66,7 @@ public class VrUiPoly : MonoBehaviour
             return this;
         }
 
-        public ConwayOperator ClampAmount2(PolyHydraEnums.OpConfig config, bool safe=false)
+        public ConwayOperator ClampAmount2(PolyHydraEnums.OpConfig config, bool safe = false)
         {
             float min = safe ? config.amount2SafeMin : config.amount2Min;
             float max = safe ? config.amount2SafeMax : config.amount2Max;
@@ -86,20 +87,20 @@ public class VrUiPoly : MonoBehaviour
         public ConwayOperator ChangeOpType(int val)
         {
             opType += val;
-            opType = (Ops) Mathf.Clamp(
-                (int) opType, 1, Enum.GetNames(typeof(Ops)).Length - 1
+            opType = (Ops)Mathf.Clamp(
+                (int)opType, 1, Enum.GetNames(typeof(Ops)).Length - 1
             );
             return this;
         }
         public ConwayOperator ChangeFaceSelection(int val)
         {
             faceSelections += val;
-            faceSelections = (FaceSelections) Mathf.Clamp(
-                (int) faceSelections, 0, Enum.GetNames(typeof(FaceSelections)).Length - 1
+            faceSelections = (FaceSelections)Mathf.Clamp(
+                (int)faceSelections, 0, Enum.GetNames(typeof(FaceSelections)).Length - 1
             );
             return this;
         }
-        
+
         public ConwayOperator SetDefaultValues(PolyHydraEnums.OpConfig config)
         {
             amount = config.amountDefault;
@@ -113,7 +114,7 @@ public class VrUiPoly : MonoBehaviour
     {
         if (ShapeType == PolyHydraEnums.ShapeTypes.Uniform)
         {
-            if (PrismP < 3) {PrismP = 3;}
+            if (PrismP < 3) { PrismP = 3; }
             if (PrismP > 16) PrismP = 16;
             if (PrismQ > PrismP - 2) PrismQ = PrismP - 2;
             if (PrismQ < 2) PrismQ = 2;
@@ -153,14 +154,14 @@ public class VrUiPoly : MonoBehaviour
 
     public bool SafeLimits;
     private ConwayPoly stashed;
-    
+
     public Color GetFaceColor(int faceIndex)
     {
         return colors.Evaluate((float)faceIndex / _conwayPoly.Faces.Count);
     }
-    
+
     public void MakePolyhedron()
-	{
+    {
         switch (ShapeType)
         {
             case PolyHydraEnums.ShapeTypes.Uniform:
@@ -181,64 +182,64 @@ public class VrUiPoly : MonoBehaviour
                 _conwayPoly = JohnsonPoly.BuildOther(OtherPolyType, PrismP, PrismQ);
                 break;
         }
-        _conwayPoly.basePolyhedraInfo = new ConwayPoly.BasePolyhedraInfo{P = PrismP, Q = PrismQ};
+        _conwayPoly.basePolyhedraInfo = new ConwayPoly.BasePolyhedraInfo { P = PrismP, Q = PrismQ };
 
         foreach (var op in ConwayOperators.ToList())
-	    {
-		    if (op.disabled || op.opType==Ops.Identity) continue;
+        {
+            if (op.disabled || op.opType == Ops.Identity) continue;
             _conwayPoly = ApplyOp(_conwayPoly, ref stashed, op);
-            _conwayPoly.basePolyhedraInfo = new ConwayPoly.BasePolyhedraInfo{P = PrismP, Q = PrismQ};
-	    }
-        
+            _conwayPoly.basePolyhedraInfo = new ConwayPoly.BasePolyhedraInfo { P = PrismP, Q = PrismQ };
+        }
+
         var mesh = PolyMeshBuilder.BuildMeshFromConwayPoly(_conwayPoly, GenerateSubmeshes, previewColors, PreviewColorMethod);
         AssignFinishedMesh(mesh);
     }
 
-        public void AssignFinishedMesh(Mesh mesh)
-        {
-        
-            if (Rescale)
-            {
-                var size = mesh.bounds.size;
-                var maxDimension = Mathf.Max(size.x, size.y, size.z);
-                var scale = (1f / maxDimension) * 2f;
-                if (scale > 0 && scale != Mathf.Infinity)
-                {
-                    transform.localScale = new Vector3(scale, scale, scale);
-                }
-                else
-                {
-                    Debug.LogError("Failed to rescale");
-                }
-            }
-        
-            if (meshFilter != null)
-            {
-                if (Application.isPlaying) {meshFilter.mesh = mesh;}
-                else {meshFilter.sharedMesh = mesh;}
-            }
-        }
-        
-        public static ConwayPoly ApplyOp(ConwayPoly conway, ref ConwayPoly stash, ConwayOperator op)
-        {
+    public void AssignFinishedMesh(Mesh mesh)
+    {
 
-            float amount = op.amount;
-            var opParams = new OpParams
-            {
-                valueA = amount,
-                valueB = op.amount2,
-                randomize = op.randomize,
-                facesel = op.faceSelections
-            };
-            conway = conway.ApplyOp(op.opType, opParams);
-            return conway;
-        }
-        void OnDrawGizmos ()
+        if (Rescale)
         {
-        
-            if (_conwayPoly == null) return;
-            #if UNITY_EDITOR
-                GizmoHelper.DrawGizmos(_conwayPoly, transform, vertexGizmos, faceGizmos, edgeGizmos, faceCenterGizmos, false, 0.3f);
-            #endif
+            var size = mesh.bounds.size;
+            var maxDimension = Mathf.Max(size.x, size.y, size.z);
+            var scale = (1f / maxDimension) * 2f;
+            if (scale > 0 && scale != Mathf.Infinity)
+            {
+                transform.localScale = new Vector3(scale, scale, scale);
+            }
+            else
+            {
+                Debug.LogError("Failed to rescale");
+            }
         }
+
+        if (meshFilter != null)
+        {
+            if (Application.isPlaying) { meshFilter.mesh = mesh; }
+            else { meshFilter.sharedMesh = mesh; }
+        }
+    }
+
+    public static ConwayPoly ApplyOp(ConwayPoly conway, ref ConwayPoly stash, ConwayOperator op)
+    {
+
+        float amount = op.amount;
+        var opParams = new OpParams
+        {
+            valueA = amount,
+            valueB = op.amount2,
+            randomize = op.randomize,
+            facesel = op.faceSelections
+        };
+        conway = conway.ApplyOp(op.opType, opParams);
+        return conway;
+    }
+    void OnDrawGizmos()
+    {
+
+        if (_conwayPoly == null) return;
+            #if UNITY_EDITOR
+        GizmoHelper.DrawGizmos(_conwayPoly, transform, vertexGizmos, faceGizmos, edgeGizmos, faceCenterGizmos, false, 0.3f);
+            #endif
+    }
 }

@@ -19,7 +19,7 @@ public class VrUi : MonoBehaviour
     private int _ShapeIndex;
     private int _PanelWidgetIndex;
     private VrUiPoly _Poly;
-    
+
     public float axisThreshold = 0.5f;
 
     public int FrameSkip = 3;
@@ -30,7 +30,7 @@ public class VrUi : MonoBehaviour
     public Transform TextButtonPrefab;
     public Transform ValueButtonPrefab;
     public Transform ImagePanelPrefab;
-  
+
     private List<VrUiPoly.ConwayOperator> _Stack;
     private List<List<Transform>> Widgets;
     private List<List<ButtonType>> ButtonTypeMapping;
@@ -53,7 +53,8 @@ public class VrUi : MonoBehaviour
         Other
     }
 
-    private enum ButtonType {
+    private enum ButtonType
+    {
         ShapeCategory, GridType, UniformType, JohnsonType, WatermanType, OtherType,
         PolyTypeCategory, GridShape, PolyP, PolyQ,
         OpType, Amount, Amount2, FaceSelection, Tags,
@@ -99,7 +100,7 @@ public class VrUi : MonoBehaviour
                 var img = Instantiate(ImagePanelPrefab, panelContainer);
                 var icon = Resources.Load<Sprite>("Icons/" + _Stack[stackIndex].opType);
                 img.GetChild(0).GetComponent<Image>().sprite = icon;
-                
+
             }
             else if (buttonType == ButtonType.Amount || buttonType == ButtonType.Amount2)
             {
@@ -148,7 +149,7 @@ public class VrUi : MonoBehaviour
         {
             scrolledXlastFrame = false;
         }
-        
+
         if (InputManager.Brush.GetScrollYDelta() > -axisThreshold &&
             InputManager.Brush.GetScrollYDelta() < axisThreshold)
         {
@@ -273,7 +274,7 @@ public class VrUi : MonoBehaviour
         }
 
     }
-    
+
     private void ChangeValue(int direction)
     {
         if (_PanelIndex == 0)
@@ -324,7 +325,7 @@ public class VrUi : MonoBehaviour
 
     void ChangeValueOnPolyPanel(int direction)
     {
-        (int minPrismPValue, int maxPrismPValue, int minPrismQValue, int maxPrismQValue) =  GetPQRanges((ShapeCategories) _ShapeCategoryIndex);
+        (int minPrismPValue, int maxPrismPValue, int minPrismQValue, int maxPrismQValue) = GetPQRanges((ShapeCategories)_ShapeCategoryIndex);
 
         // GetKey brought us here but we only want GetKeyDown in this case
         switch (_PanelWidgetIndex)
@@ -425,13 +426,13 @@ public class VrUi : MonoBehaviour
                         break;
                 }
                 break;
-            case 2:  // PrismP
+            case 2: // PrismP
                 int p = _Poly.PrismP;
                 p += direction;
                 p = Mathf.Clamp(p, minPrismPValue, maxPrismPValue);
                 _Poly.PrismP = p;
                 break;
-            case 3:  // PrismQ
+            case 3: // PrismQ
                 int q = _Poly.PrismQ;
                 q += direction;
                 q = Mathf.Clamp(q, minPrismQValue, maxPrismQValue);
@@ -498,18 +499,18 @@ public class VrUi : MonoBehaviour
 
 
         if (
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Uniform && (int)_Poly.UniformPolyType < 5) ||
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Other && (int)_Poly.OtherPolyType == 0) ||
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Johnson)
-            )
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Uniform && (int)_Poly.UniformPolyType < 5) ||
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Other && (int)_Poly.OtherPolyType == 0) ||
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Johnson)
+        )
         {
             polyBtnCount = 3;
         }
         else if (
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Uniform && (int)_Poly.UniformPolyType < 5) ||
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Other && (int)_Poly.OtherPolyType < 4) ||
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Grid) ||
-            (_Poly.ShapeType==PolyHydraEnums.ShapeTypes.Waterman)
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Uniform && (int)_Poly.UniformPolyType < 5) ||
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Other && (int)_Poly.OtherPolyType < 4) ||
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Grid) ||
+            (_Poly.ShapeType == PolyHydraEnums.ShapeTypes.Waterman)
         )
         {
             polyBtnCount = 4;
@@ -520,26 +521,26 @@ public class VrUi : MonoBehaviour
             polyButton = Instantiate(TextButtonPrefab, polyPanel);
             // if (i == 1)  // Add image panel after 2nd text button
             // {
-                // var polyPrefab = Instantiate(ImagePanelPrefab, polyPanel);
-                // var polyImg = polyPrefab.GetComponentInChildren<Image>();
-                // string shapeName = "";
-                // switch (_Poly.ShapeType)
-                // {
-                //     case PolyHydraEnums.ShapeTypes.Uniform:
-                //         shapeName = $"uniform_{_Poly.UniformPolyType}";
-                //         break;
-                //     case PolyHydraEnums.ShapeTypes.Johnson:
-                //         shapeName = $"johnson_{_Poly.JohnsonPolyType}";
-                //         break;
-                //     case PolyHydraEnums.ShapeTypes.Grid:
-                //         shapeName = $"grid_{_Poly.GridType}";
-                //         break;
-                //     case PolyHydraEnums.ShapeTypes.Other:
-                //         shapeName = $"other_{_Poly.OtherPolyType}";
-                //         break;
-                // }
-                //polyImg.sprite = Resources.Load<Sprite>($"BaseShapes/poly_{shapeName}");
-                // polyImg.GetComponentInChildren<RectTransform>().sizeDelta = new Vector2(110, 110);
+            // var polyPrefab = Instantiate(ImagePanelPrefab, polyPanel);
+            // var polyImg = polyPrefab.GetComponentInChildren<Image>();
+            // string shapeName = "";
+            // switch (_Poly.ShapeType)
+            // {
+            //     case PolyHydraEnums.ShapeTypes.Uniform:
+            //         shapeName = $"uniform_{_Poly.UniformPolyType}";
+            //         break;
+            //     case PolyHydraEnums.ShapeTypes.Johnson:
+            //         shapeName = $"johnson_{_Poly.JohnsonPolyType}";
+            //         break;
+            //     case PolyHydraEnums.ShapeTypes.Grid:
+            //         shapeName = $"grid_{_Poly.GridType}";
+            //         break;
+            //     case PolyHydraEnums.ShapeTypes.Other:
+            //         shapeName = $"other_{_Poly.OtherPolyType}";
+            //         break;
+            // }
+            //polyImg.sprite = Resources.Load<Sprite>($"BaseShapes/poly_{shapeName}");
+            // polyImg.GetComponentInChildren<RectTransform>().sizeDelta = new Vector2(110, 110);
             // }
 
             (string label, ButtonType buttonType) = GetButton(0, i);
@@ -560,7 +561,7 @@ public class VrUi : MonoBehaviour
             ButtonTypeMapping.Add(panelWidgetTypes);
         }
 
-        for (int panelIndex=0; panelIndex < Widgets.Count; panelIndex++)
+        for (int panelIndex = 0; panelIndex < Widgets.Count; panelIndex++)
         {
 
             Color normalColor = panelIndex == 0 ? ShapeButtonColor : Color.white;
@@ -605,26 +606,33 @@ public class VrUi : MonoBehaviour
                     {
                         case PolyHydraEnums.ShapeTypes.Uniform:
                             string uniformName = _Poly.UniformPolyType.ToString().Replace("_", " ");
-                            label = $"{uniformName}"; break;
+                            label = $"{uniformName}";
+                            break;
                             buttonType = ButtonType.UniformType;
                         case PolyHydraEnums.ShapeTypes.Grid:
-                            label = $"{_Poly.GridType}"; break;
+                            label = $"{_Poly.GridType}";
+                            break;
                             buttonType = ButtonType.GridType;
                         case PolyHydraEnums.ShapeTypes.Johnson:
-                            label = $"{_Poly.JohnsonPolyType}"; break;
+                            label = $"{_Poly.JohnsonPolyType}";
+                            break;
                             buttonType = ButtonType.JohnsonType;
                         case PolyHydraEnums.ShapeTypes.Waterman:
-                            label = $""; break;
+                            label = $"";
+                            break;
                             buttonType = ButtonType.WatermanType;
                         case PolyHydraEnums.ShapeTypes.Other:
-                            label = $"{_Poly.OtherPolyType}"; break;
+                            label = $"{_Poly.OtherPolyType}";
+                            break;
                             buttonType = ButtonType.OtherType;
                     }
                     break;
                 case 2:
-                    label = $"{_Poly.PrismP}"; break;
+                    label = $"{_Poly.PrismP}";
+                    break;
                 case 3:
-                    label = $"{_Poly.PrismQ}"; break;
+                    label = $"{_Poly.PrismQ}";
+                    break;
             }
         }
         else
@@ -639,35 +647,35 @@ public class VrUi : MonoBehaviour
             // Handle all the permutations of config, column and button type
             var logicTable = new Dictionary<(bool, bool, bool, int), ButtonType>
             {
-                {(false, false, false, 1), ButtonType.Unknown},
-                {(false, false, false, 2), ButtonType.Unknown},
-                {(false, false, false, 3), ButtonType.Unknown},
-                {(false, false, false, 4), ButtonType.Unknown},
+                { (false, false, false, 1), ButtonType.Unknown },
+                { (false, false, false, 2), ButtonType.Unknown },
+                { (false, false, false, 3), ButtonType.Unknown },
+                { (false, false, false, 4), ButtonType.Unknown },
 
-                {(false, false, true, 1), ButtonType.FaceSelection},
-                {(false, false, true, 2), ButtonType.Tags},
-                {(false, false, true, 3), ButtonType.Unknown},
-                {(false, false, true, 4), ButtonType.Unknown},
+                { (false, false, true, 1), ButtonType.FaceSelection },
+                { (false, false, true, 2), ButtonType.Tags },
+                { (false, false, true, 3), ButtonType.Unknown },
+                { (false, false, true, 4), ButtonType.Unknown },
 
-                {(true, false, false, 1), ButtonType.Amount},
-                {(true, false, false, 2), ButtonType.Unknown},
-                {(true, false, false, 3), ButtonType.Unknown},
-                {(true, false, false, 4), ButtonType.Unknown},
+                { (true, false, false, 1), ButtonType.Amount },
+                { (true, false, false, 2), ButtonType.Unknown },
+                { (true, false, false, 3), ButtonType.Unknown },
+                { (true, false, false, 4), ButtonType.Unknown },
 
-                {(true, false, true, 1), ButtonType.Amount},
-                {(true, false, true, 2), ButtonType.FaceSelection},
-                {(true, false, true, 3), ButtonType.Tags},
-                {(true, false, true, 4), ButtonType.Unknown},
+                { (true, false, true, 1), ButtonType.Amount },
+                { (true, false, true, 2), ButtonType.FaceSelection },
+                { (true, false, true, 3), ButtonType.Tags },
+                { (true, false, true, 4), ButtonType.Unknown },
 
-                {(true, true, false, 1), ButtonType.Amount},
-                {(true, true, false, 2), ButtonType.Amount2},
-                {(true, true, false, 3), ButtonType.Unknown},
-                {(true, true, false, 4), ButtonType.Unknown},
+                { (true, true, false, 1), ButtonType.Amount },
+                { (true, true, false, 2), ButtonType.Amount2 },
+                { (true, true, false, 3), ButtonType.Unknown },
+                { (true, true, false, 4), ButtonType.Unknown },
 
-                {(true, true, true, 1), ButtonType.Amount},
-                {(true, true, true, 2), ButtonType.Amount2},
-                {(true, true, true, 3), ButtonType.FaceSelection},
-                {(true, true, true, 4), ButtonType.Tags},
+                { (true, true, true, 1), ButtonType.Amount },
+                { (true, true, true, 2), ButtonType.Amount2 },
+                { (true, true, true, 3), ButtonType.FaceSelection },
+                { (true, true, true, 4), ButtonType.Tags },
             };
 
 
@@ -677,17 +685,25 @@ public class VrUi : MonoBehaviour
             }
             else
             {
-                if (_Stack[stackIndex].opType == Ops.TagFaces)  // Special case
+                if (_Stack[stackIndex].opType == Ops.TagFaces) // Special case
                 {
                     switch (widgetIndex)
                     {
-                        case 1: buttonType = ButtonType.Tags; break;
-                        case 2: buttonType = ButtonType.FaceSelection; break;
-                        case 3: buttonType = ButtonType.Unknown; break;
-                        case 4: buttonType = ButtonType.Unknown; break;
+                        case 1:
+                            buttonType = ButtonType.Tags;
+                            break;
+                        case 2:
+                            buttonType = ButtonType.FaceSelection;
+                            break;
+                        case 3:
+                            buttonType = ButtonType.Unknown;
+                            break;
+                        case 4:
+                            buttonType = ButtonType.Unknown;
+                            break;
                     }
                 }
-                else  // Use normal lookup
+                else // Use normal lookup
                 {
                     buttonType = logicTable[lookup];
                 }
@@ -698,13 +714,17 @@ public class VrUi : MonoBehaviour
             switch (buttonType)
             {
                 case ButtonType.OpType:
-                    label =  $"{_Stack[stackIndex].opType}"; break;
+                    label = $"{_Stack[stackIndex].opType}";
+                    break;
                 case ButtonType.Amount:
-                    label = $"{amount}%"; break;
+                    label = $"{amount}%";
+                    break;
                 case ButtonType.Amount2:
-                    label = $"{amount2}%"; break;
+                    label = $"{amount2}%";
+                    break;
                 case ButtonType.FaceSelection:
-                    label =  $"{_Stack[stackIndex].faceSelections}"; break;
+                    label = $"{_Stack[stackIndex].faceSelections}";
+                    break;
             }
         }
 
@@ -725,6 +745,6 @@ public class VrUi : MonoBehaviour
         return (
             Mathf.Floor(Mathf.InverseLerp(minVal, maxVal, rawVal) * 100f),
             Mathf.Floor(Mathf.InverseLerp(minVal2, maxVal2, rawVal2) * 100f)
-        );
+            );
     }
 }

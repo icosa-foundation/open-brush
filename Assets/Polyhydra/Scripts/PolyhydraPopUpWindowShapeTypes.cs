@@ -17,37 +17,38 @@ using System.Linq;
 using UnityEngine;
 
 
-namespace TiltBrush {
-
-public class PolyhydraPopUpWindowShapeTypes : PolyhydraPopUpWindowBase
+namespace TiltBrush
 {
 
-    protected override string[] GetButtonList()
+    public class PolyhydraPopUpWindowShapeTypes : PolyhydraPopUpWindowBase
     {
-        var names = Enum.GetNames(typeof(VrUi.ShapeCategories)).ToArray();
-        for (var i = 0; i < names.Length; i++)
+
+        protected override string[] GetButtonList()
         {
-          // Not really Johnson Polyhedra, are they?
-          names[i] = names[i]=="Johnson" ? "Radial" : names[i];
+            var names = Enum.GetNames(typeof(VrUi.ShapeCategories)).ToArray();
+            for (var i = 0; i < names.Length; i++)
+            {
+                // Not really Johnson Polyhedra, are they?
+                names[i] = names[i] == "Johnson" ? "Radial" : names[i];
+            }
+
+            return names;
         }
 
-        return names;
+        protected override string GetButtonTexturePath(int i)
+        {
+            return $"ShapeTypeButtons/{(VrUi.ShapeCategories)i}";
+        }
+
+        public override void HandleButtonPress(int buttonIndex)
+        {
+            var shapeCategory = (VrUi.ShapeCategories)buttonIndex;
+            ParentPanel.CurrentShapeCategory = shapeCategory;
+            ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.SetPanelButtonVisibility();
+            ParentPanel.ConfigureGeometry();
+            ParentPanel.SetSliderConfiguration();
+        }
+
     }
-
-  protected override string GetButtonTexturePath(int i)
-  {
-      return $"ShapeTypeButtons/{(VrUi.ShapeCategories) i}";
-  }
-
-  public override void HandleButtonPress(int buttonIndex)
-  {
-    var shapeCategory = (VrUi.ShapeCategories) buttonIndex;
-    ParentPanel.CurrentShapeCategory = shapeCategory;
-    ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(buttonIndex));
-    ParentPanel.SetPanelButtonVisibility();
-    ParentPanel.ConfigureGeometry();
-    ParentPanel.SetSliderConfiguration();
-  }
-  
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

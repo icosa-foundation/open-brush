@@ -16,27 +16,29 @@ using System;
 using System.Linq;
 
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PolyhydraPopUpWindowJohnsonTypes : PolyhydraPopUpWindowBase {
+    public class PolyhydraPopUpWindowJohnsonTypes : PolyhydraPopUpWindowBase
+    {
 
-  protected override string[] GetButtonList()
-  {
-    return Enum.GetNames(typeof(PolyHydraEnums.JohnsonPolyTypes)).ToArray();
-  }
+        protected override string[] GetButtonList()
+        {
+            return Enum.GetNames(typeof(PolyHydraEnums.JohnsonPolyTypes)).ToArray();
+        }
 
-  protected override string GetButtonTexturePath(int i)
-  {
-    return $"ShapeButtons/poly_johnson_{(PolyHydraEnums.JohnsonPolyTypes) i}";
+        protected override string GetButtonTexturePath(int i)
+        {
+            return $"ShapeButtons/poly_johnson_{(PolyHydraEnums.JohnsonPolyTypes)i}";
 
-  }
+        }
 
-  public override void HandleButtonPress(int buttonIndex)
-  {
-    ParentPanel.PolyhydraModel.JohnsonPolyType = (PolyHydraEnums.JohnsonPolyTypes)buttonIndex;
-    ParentPanel.ButtonJohnsonType.SetButtonTexture(GetButtonTexture(buttonIndex));
-    ParentPanel.SetSliderConfiguration();
-  }
+        public override void HandleButtonPress(int buttonIndex)
+        {
+            ParentPanel.PolyhydraModel.JohnsonPolyType = (PolyHydraEnums.JohnsonPolyTypes)buttonIndex;
+            ParentPanel.ButtonJohnsonType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.SetSliderConfiguration();
+        }
 
-}
-}  // namespace TiltBrush
+    }
+} // namespace TiltBrush

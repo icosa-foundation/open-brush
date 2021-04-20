@@ -16,25 +16,27 @@ using System;
 using System.Linq;
 
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PolyhydraPopUpWindowOtherPolyTypes : PolyhydraPopUpWindowBase {
+    public class PolyhydraPopUpWindowOtherPolyTypes : PolyhydraPopUpWindowBase
+    {
 
-  protected override string[] GetButtonList()
-  {
-    return Enum.GetNames(typeof(PolyHydraEnums.OtherPolyTypes)).ToArray();
-  }
+        protected override string[] GetButtonList()
+        {
+            return Enum.GetNames(typeof(PolyHydraEnums.OtherPolyTypes)).ToArray();
+        }
 
-  protected override string GetButtonTexturePath(int i)
-  {
-    return $"ShapeButtons/poly_other_{(PolyHydraEnums.OtherPolyTypes) i}";
-  }
+        protected override string GetButtonTexturePath(int i)
+        {
+            return $"ShapeButtons/poly_other_{(PolyHydraEnums.OtherPolyTypes)i}";
+        }
 
-  public override void HandleButtonPress(int buttonIndex)
-  {
-    ParentPanel.PolyhydraModel.OtherPolyType = (PolyHydraEnums.OtherPolyTypes)buttonIndex;
-    ParentPanel.ButtonOtherPolyType.SetButtonTexture(GetButtonTexture(buttonIndex));
-    ParentPanel.SetSliderConfiguration();
-  }
-}
-}  // namespace TiltBrush
+        public override void HandleButtonPress(int buttonIndex)
+        {
+            ParentPanel.PolyhydraModel.OtherPolyType = (PolyHydraEnums.OtherPolyTypes)buttonIndex;
+            ParentPanel.ButtonOtherPolyType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.SetSliderConfiguration();
+        }
+    }
+} // namespace TiltBrush
