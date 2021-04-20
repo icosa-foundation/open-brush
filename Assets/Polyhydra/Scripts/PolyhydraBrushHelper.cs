@@ -6,7 +6,7 @@ using UnityEngine;
 public class PolyhydraBrushHelper : MonoBehaviour
 {
 
-    
+
     [Space]
     public bool Canonicalize;
     public Vector3 Position = Vector3.zero;
@@ -16,14 +16,15 @@ public class PolyhydraBrushHelper : MonoBehaviour
     public Gradient colors;
 
     [NonSerialized] public ConwayPoly poly;
-    
+
 
     public Color GetFaceColor(int faceIndex)
     {
         return colors.Evaluate((float)faceIndex / (poly.Faces.Count - 1));
     }
 
-    void OnDrawGizmos () {
+    void OnDrawGizmos()
+    {
         // GizmoHelper.DrawGizmos(poly, transform, true, false, false, false);
     }
 
