@@ -18,6 +18,14 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+using System.Linq;
+using Conway;
+using Wythoff;
+using Face = Conway.Face;
+using Random = UnityEngine.Random;
+#endif
+
 namespace TiltBrush
 {
 
@@ -40,6 +48,9 @@ namespace TiltBrush
             SinglePlane,
             FourAroundY,
             DebugMultiple,
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            CustomSymmetryMode,
+#endif
         }
 
         // Modifying this struct has implications for binary compatibility.
@@ -160,6 +171,10 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        // Used for Polyhydra Symmetry
+        private TrTransform m_bestface_OS;
+#endif
         // ---- events
 
         public event Action<TiltBrush.BrushDescriptor> OnMainPointerBrushChange
@@ -440,6 +455,13 @@ namespace TiltBrush
                         m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
                         m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
                     }
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                    else if (m_CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
+                    {
+                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
+                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                    }
+#endif                    
                 }
             }
 
@@ -674,6 +696,9 @@ namespace TiltBrush
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            VrUiPoly vrPoly = null;
+#endif
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -686,6 +711,12 @@ namespace TiltBrush
                 case SymmetryMode.FourAroundY:
                     active = 4;
                     break;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                case SymmetryMode.CustomSymmetryMode:
+                    vrPoly = (VrUiPoly) FindObjectOfType(typeof(VrUiPoly));
+                    active = vrPoly._conwayPoly.Faces.Count;
+                    break;
+#endif
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
@@ -705,7 +736,16 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.RecordCommand(
                     new SymmetryWidgetVisibleCommand(m_SymmetryWidgetScript));
             }
-
+            
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            // Get a max face size to use as a scaling factor later.
+            // float faceMax = 1;
+            // if (vrPoly != null && vrPoly._conwayPoly!=null)
+            // {
+            //   var faceSizes = vrPoly._conwayPoly.Faces.Select(x => (x.Centroid - x.GetBestEdge().Midpoint).magnitude);
+            //   faceMax = Mathf.Max(faceSizes.ToArray());
+            // }
+#endif
             for (int i = 1; i < m_Pointers.Length; ++i)
             {
                 var pointer = m_Pointers[i];
@@ -717,6 +757,19 @@ namespace TiltBrush
                 {
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                if (vrPoly != null && vrPoly._conwayPoly!=null)
+                {
+                    if (i < vrPoly._conwayPoly.Faces.Count)
+                    {
+                        var face = vrPoly._conwayPoly.Faces[i];
+                        // We could scale brushes by face size?
+                        // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
+                        if (vrPoly)
+                            pointer.m_Script.SetColor(MainPointer.GetCurrentColor() + new Color(Random.value,Random.value,Random.value));
+                    }
+                }
+#endif                
             }
 
             App.Switchboard.TriggerMirrorVisibilityChanged();
@@ -766,7 +819,24 @@ namespace TiltBrush
                         }
                         return aboutY * xfMain;
                     }
-
+                
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)                
+                case SymmetryMode.CustomSymmetryMode:
+                    {
+                        var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
+      
+                        TrTransform aboutY; {
+                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                            var face =  vrPoly._conwayPoly.Faces[child];
+                            TrTransform foo = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(33, Vector3.up));
+                            aboutY = TrTransform.TR(face.Centroid, Quaternion.AngleAxis(0, Vector3.up));
+                            // convert from widget-local coords to world coords
+                            aboutY = aboutY.TransformBy(xfWidget);
+                        }
+                        return aboutY * xfMain;
+                    }
+#endif
+                
                 case SymmetryMode.DebugMultiple:
                     {
                         var xfLift = TrTransform.T(m_SymmetryDebugMultipleOffset * child);
@@ -823,6 +893,79 @@ namespace TiltBrush
                         }
                         break;
                     }
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                    // Converts a Face to a coordinate frame:
+                    // - origin at the centroid
+                    // - forward sticking out of the face
+                    // - scale == 1 (-1 is also useful and fun, but for the moment always uses 1)
+                    TrTransform asFrame(Face face)
+                    {
+                        Vector3 pos = face.Centroid;
+                        //var faceVector = face.GetBestEdge().Midpoint - pos;
+                        var faceVector = face.GetVertices()[0].Position - pos;
+                        return TrTransform.TRS(
+                            pos,
+                            // halfedge.midpoint could be any arbitrary point in the plane of the face
+                            // Use something principled here instead of midpoint, to give interesting symmetries
+                            Quaternion.LookRotation(face.Normal, faceVector),
+                            // faceVector.magnitude // Approximate measure of face size
+                            1f
+                        );
+                    }
+
+                    Face getBestFace(Vector3 pos, MeshFaceList faces)
+                    {
+                        int best = -1;
+                        float bestScore = 10000;
+                        for (int i = 0; i < faces.Count; ++i)
+                        {
+                            float thisScore = (pos - faces[i].Centroid).sqrMagnitude;
+                            if (thisScore < bestScore)
+                            {
+                                best = i;
+                                bestScore = thisScore;
+                            }
+                        }
+                        return faces[best];
+                    }
+
+                case SymmetryMode.CustomSymmetryMode:
+                    {
+                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                        // Transform of pointer 0 in global space
+                        var xf0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                        var xf0_OS = xfWidget.inverse * xf0_GS;
+
+                        var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
+                        if (vrPoly == null || vrPoly._conwayPoly == null) return;
+                        var faces = vrPoly._conwayPoly.Faces;
+
+                        if (!m_Instance.MainPointer.IsCreatingStroke())
+                        {
+                            // pose of best face, in object space from pointer position
+                            m_bestface_OS = asFrame(getBestFace(xf0_OS.translation, faces));
+                        }
+
+                        for (int i = 0; i < faces.Count; i++)
+                        {
+                            // Pose of face i, in object space
+                            TrTransform face_i_OS = asFrame(faces[i]);
+                            // Active transform from face 0 to face i; acts on object-space things
+                            TrTransform face_i_from_bestface_OS = face_i_OS * m_bestface_OS.inverse;
+                            // Active transform from face 0 to face i; acts on global-space things
+                            TrTransform face_i_from_bestface_GS = xfWidget * face_i_from_bestface_OS * xfWidget.inverse;
+                            // apply face 0->face i transform to pointer 0 to get pointer i
+                            TrTransform xf_i_GS = face_i_from_bestface_GS * xf0_GS;
+                            // TODO - how to scale strokes in the plane of each face?
+                            // var faceScalingFactor = (faces[i].GetBestEdge().Midpoint - faces[i].Centroid).magnitude;
+                            // var trScale = TrTransform.S(faceScalingFactor);
+                            // xf_i_GS *= trScale;
+                            xf_i_GS.ToTransform(m_Pointers[i].m_Script.transform);
+                        }
+                        break;
+                    }
+#endif
 
                 case SymmetryMode.DebugMultiple:
                     {

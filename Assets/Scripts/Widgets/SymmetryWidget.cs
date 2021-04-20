@@ -35,6 +35,9 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_TitleText;
         [SerializeField] private GameObject m_HintText;
         [SerializeField] private GrabWidgetHome m_Home;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        [SerializeField] public MeshRenderer m_SymmetryGuidePoly;
+#endif
 
         public enum BeamDirection
         {
@@ -108,6 +111,9 @@ namespace TiltBrush
             {
                 case PointerManager.SymmetryMode.SinglePlane:
                     m_LeftRightMesh.enabled = false;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                    m_SymmetryGuidePoly.enabled = false;
+#endif
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
@@ -116,12 +122,28 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.FourAroundY:
                     m_LeftRightMesh.enabled = true;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                    m_SymmetryGuidePoly.enabled = false;
+#endif
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&
                             (m_GuideBeams[i].m_Direction != BeamDirection.Down));
                     }
                     break;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    m_LeftRightMesh.enabled = false;
+                    m_SymmetryGuidePoly.enabled = true;
+                    var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
+                    m_SymmetryGuidePoly.GetComponent<MeshFilter>().mesh = vrPoly.GetComponent<MeshFilter>().mesh;
+                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    {
+                        m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&
+                            (m_GuideBeams[i].m_Direction != BeamDirection.Down));
+                    }
+                    break;
+#endif                
             }
         }
 

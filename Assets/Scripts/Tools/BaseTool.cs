@@ -47,6 +47,9 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            PolyhydraTool
+#endif
         }
         public ToolType m_Type;
 

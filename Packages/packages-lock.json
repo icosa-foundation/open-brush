@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.ixxy.polyhydra": {
+      "version": "file:../../polyhydra-upm/packages/Polyhydra",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
