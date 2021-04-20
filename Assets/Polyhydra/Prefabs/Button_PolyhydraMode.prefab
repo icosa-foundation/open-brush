@@ -122,6 +122,6 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 25
+  m_Tool: 26
   m_EatGazeInputOnPress: 0
   m_Type: 34
