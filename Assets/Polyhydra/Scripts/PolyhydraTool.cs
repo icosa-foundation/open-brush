@@ -109,7 +109,7 @@ namespace TiltBrush.AndyB
             {
                 
                 m_ClickedLastUpdate = true;
-
+ 
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                 var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
