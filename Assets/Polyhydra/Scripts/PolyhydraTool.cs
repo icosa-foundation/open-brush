@@ -75,8 +75,11 @@ namespace TiltBrush.AndyB
             Vector3 rAttachPoint_GS = InputManager.Brush.Geometry.ToolAttachPoint.position;
             TrTransform rAttachPoint_CS = App.Scene.ActiveCanvas.AsCanvas[InputManager.Brush.Geometry.ToolAttachPoint];
 
-            // Keep the tool angle correct
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
+            
+            bool angleSnapping = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
             
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -96,6 +99,8 @@ namespace TiltBrush.AndyB
 
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                 var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
+                rotation_GS = angleSnapping ? QuantizeAngle(rotation_GS) : rotation_GS;
+                
                 Matrix4x4 transform_GS = Matrix4x4.TRS(
                     m_FirstPositionClicked_GS,
                     rotation_GS,
@@ -115,6 +120,7 @@ namespace TiltBrush.AndyB
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     var scale_CS = drawnVector_CS.magnitude;
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                    rotation_CS = angleSnapping ? QuantizeAngle(rotation_CS) : rotation_CS;
                     var poly = uiPoly._conwayPoly;
 
                     var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
@@ -208,6 +214,18 @@ namespace TiltBrush.AndyB
                 // SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
                 // SketchSurfacePanel.m_Instance.EnableSpecificTool(ToolType.PolyhydraTool);
             }
+        }
+        private Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            float snap = 45;
+            float round(float val)
+            {
+                return (Mathf.Round(val / snap)) * snap;
+            }
+            
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
