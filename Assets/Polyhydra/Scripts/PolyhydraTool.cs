@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Conway;
+using TMPro;
 using UnityEngine;
 using Random = System.Random;
 
@@ -10,8 +11,7 @@ namespace TiltBrush.AndyB
 {
     public class PolyhydraTool : BaseTool
     {
-        
-        
+
         //the parent of all of our tool's visual indicator objects
         private GameObject m_toolDirectionIndicator;
 
@@ -30,12 +30,18 @@ namespace TiltBrush.AndyB
 
         private Mesh previewMesh;
         private Material previewMaterial;
+        
+        
+        private float[] angleSnaps;
+        private int currentSnap;
+        private float angleSnappingAngle;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
         {
             base.Init();
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
+            angleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
         }
 
         //What to do when the tool is enabled or disabled
@@ -78,8 +84,15 @@ namespace TiltBrush.AndyB
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
-            
-            bool angleSnapping = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
+
+            if (InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Undo))
+            {
+                currentSnap++;
+                currentSnap %= angleSnaps.Length;
+                angleSnappingAngle = angleSnaps[currentSnap];
+                GetComponentInChildren<TextMeshPro>().text = angleSnappingAngle.ToString();
+            }
+            bool angleSnap = !(currentSnap == 0);
             
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -104,12 +117,13 @@ namespace TiltBrush.AndyB
                 
                 // Snapping needs compensating for the different rotation between global space and canvas space
                 var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
-                Debug.Log($"offset: {CS_GS_offset}");
-                rotation_GS = angleSnapping ? QuantizeAngle(rotation_GS, CS_GS_offset) : rotation_GS;
+                rotation_CS *= Quaternion.Euler(-CS_GS_offset);
+                rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
+                rotation_CS *= Quaternion.Euler(CS_GS_offset);
                 
                 Matrix4x4 transform_GS = Matrix4x4.TRS(
                     m_FirstPositionClicked_GS,
-                    rotation_GS,
+                    rotation_CS,
                     Vector3.one * drawnVector_GS.magnitude
                 );
                 Graphics.DrawMesh(previewMesh, transform_GS, previewMaterial, 0);
@@ -127,12 +141,7 @@ namespace TiltBrush.AndyB
                     var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                     var scale_CS = drawnVector_CS.magnitude;
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
-                    
-                    // Snapping needs compensating for the different rotation between global space and canvas space
-                    var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
-                    Debug.Log($"offset: {CS_GS_offset}");
-                    rotation_CS = angleSnapping ? QuantizeAngle(rotation_CS, CS_GS_offset) : rotation_CS;
+                    rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
                     
                     var poly = uiPoly._conwayPoly;
 
@@ -228,14 +237,13 @@ namespace TiltBrush.AndyB
                 // SketchSurfacePanel.m_Instance.EnableSpecificTool(ToolType.PolyhydraTool);
             }
         }
-        private Quaternion QuantizeAngle(Quaternion rotation, Vector3 offset)
+        private Quaternion QuantizeAngle(Quaternion rotation)
         {
-            float snap = 45;
-            float round(float val) {return Mathf.Round(val / snap) * snap;}
+            float round(float val) {return Mathf.Round(val / angleSnappingAngle) * angleSnappingAngle;}
             
             Vector3 euler = rotation.eulerAngles;
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler - offset);
+            return Quaternion.Euler(euler);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
