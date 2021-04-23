@@ -157,7 +157,12 @@ public class VrUiPoly : MonoBehaviour
 
     public Color GetFaceColor(int faceIndex)
     {
-        return colors.Evaluate((float)faceIndex / _conwayPoly.Faces.Count);
+        return PolyMeshBuilder.CalcFaceColor(
+            _conwayPoly,
+            previewColors,
+            PreviewColorMethod,
+            faceIndex
+        );
     }
 
     public void MakePolyhedron()

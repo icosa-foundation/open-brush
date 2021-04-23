@@ -173,7 +173,7 @@ namespace TiltBrush.AndyB
                                     m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
                                     m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
                                     m_Pressure = pressure,
-                                    m_TimestampMs = time++
+                                    m_TimestampMs = time+=10
                                 });
                             }
 
