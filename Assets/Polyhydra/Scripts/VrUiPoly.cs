@@ -38,7 +38,7 @@ public class VrUiPoly : MonoBehaviour
     {
         Init();
     }
-    
+
     void Init()
     {
         meshFilter = gameObject.GetComponent<MeshFilter>();
