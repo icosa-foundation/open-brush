@@ -37,6 +37,8 @@ namespace TiltBrush
         public PolyhydraSlider SliderP;
         public PolyhydraSlider SliderQ;
 
+        private MeshFilter meshFilter;
+
 
         override public void InitPanel()
         {
@@ -85,29 +87,22 @@ namespace TiltBrush
                 : PolyHydraEnums.ColorMethods.ByRole;
             PolyhydraModel.MakePolyhedron();
 
-            // I know the following is bad but I haven't decided the right way to do this yet
-            // so I want to avoid adding the wrong abstraction.
-            // Clunky and explicit is better than obscure and implicit.
-
-            var symWidget = SketchControlsScript.m_Instance.GetComponentInChildren<SymmetryWidget>();
-            if (symWidget != null)
+            Mesh polyMesh;
+            if (meshFilter == null)
             {
-
-                Mesh polyMesh;
-                var meshFilter = symWidget.m_SymmetryGuidePoly.GetComponent<MeshFilter>();
-
-                if (Application.isPlaying)
-                {
-                    polyMesh = PolyhydraModel.GetComponent<MeshFilter>().mesh;
-                    meshFilter.mesh = polyMesh;
-                }
-                else
-                {
-                    polyMesh = PolyhydraModel.GetComponent<MeshFilter>().sharedMesh;
-                    meshFilter.sharedMesh = polyMesh;
-                }
-                PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.CurrentSymmetryMode);
+                meshFilter = PolyhydraModel.GetComponent<MeshFilter>();
             }
+            if (Application.isPlaying)
+            {
+                polyMesh = PolyhydraModel.GetComponent<MeshFilter>().mesh;
+                meshFilter.mesh = polyMesh;
+            }
+            else
+            {
+                polyMesh = PolyhydraModel.GetComponent<MeshFilter>().sharedMesh;
+                meshFilter.sharedMesh = polyMesh;
+            }
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.CurrentSymmetryMode);
         }
 
         void Update()

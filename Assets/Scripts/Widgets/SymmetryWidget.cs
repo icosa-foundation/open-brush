@@ -36,7 +36,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_HintText;
         [SerializeField] private GrabWidgetHome m_Home;
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-        [SerializeField] public MeshRenderer m_SymmetryGuidePoly;
+        private MeshRenderer m_SymmetryGuidePoly;
 #endif
 
         public enum BeamDirection
@@ -103,10 +103,19 @@ namespace TiltBrush
             m_Home.SetFixedPosition(App.Scene.AsScene[transform].translation);
 
             m_CustomShowHide = true;
+
         }
 
         public void SetMode(PointerManager.SymmetryMode rMode)
         {
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            if (m_SymmetryGuidePoly == null)
+            {
+                m_SymmetryGuidePoly = FindObjectOfType<VrUiPoly>().GetComponent<MeshRenderer>();
+            }
+#endif
+            
             switch (rMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
