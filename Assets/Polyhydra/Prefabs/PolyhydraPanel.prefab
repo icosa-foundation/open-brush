@@ -2548,6 +2548,11 @@ PrefabInstance:
       propertyPath: PreviewColorMethod
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8240667959069599073, guid: 4c2638b770f13374f82fe34db29dc2bf,
+        type: 3}
+      propertyPath: SymmetryWidgetMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: d8c8bb0576ffd75428fca1625a6cc9e3, type: 2}
     - target: {fileID: 8240667959069599074, guid: 4c2638b770f13374f82fe34db29dc2bf,
         type: 3}
       propertyPath: m_RootOrder

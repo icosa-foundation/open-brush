@@ -36,7 +36,9 @@ namespace TiltBrush
         [SerializeField] private GameObject m_HintText;
         [SerializeField] private GrabWidgetHome m_Home;
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-        private MeshRenderer m_SymmetryGuidePoly;
+        private MeshRenderer m_SymmetryGuideMeshRenderer;
+        private MeshFilter m_SymmetryGuideMeshFilter;
+        private VrUiPoly vrUiPoly;
 #endif
 
         public enum BeamDirection
@@ -85,6 +87,12 @@ namespace TiltBrush
         {
             base.Awake();
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            m_SymmetryGuideMeshFilter = gameObject.AddComponent<MeshFilter>();
+            m_SymmetryGuideMeshRenderer = gameObject.AddComponent<MeshRenderer>();
+            m_SymmetryGuideMeshRenderer.enabled = false;
+#endif
+
             m_AngVelDampThreshold = 600f;
 
             //initialize beams
@@ -110,19 +118,12 @@ namespace TiltBrush
         {
 
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (m_SymmetryGuidePoly == null)
-            {
-                m_SymmetryGuidePoly = FindObjectOfType<VrUiPoly>().GetComponent<MeshRenderer>();
-            }
+            m_SymmetryGuideMeshRenderer.enabled = false;
 #endif
-            
             switch (rMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
                     m_LeftRightMesh.enabled = false;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    m_SymmetryGuidePoly.enabled = false;
-#endif
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
@@ -131,9 +132,6 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.FourAroundY:
                     m_LeftRightMesh.enabled = true;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    m_SymmetryGuidePoly.enabled = false;
-#endif
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&
@@ -142,10 +140,14 @@ namespace TiltBrush
                     break;
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    if (vrUiPoly == null)
+                    {
+                        vrUiPoly = FindObjectOfType<VrUiPoly>();
+                    }
                     m_LeftRightMesh.enabled = false;
-                    m_SymmetryGuidePoly.enabled = true;
-                    var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
-                    m_SymmetryGuidePoly.GetComponent<MeshFilter>().mesh = vrPoly.GetComponent<MeshFilter>().mesh;
+                    m_SymmetryGuideMeshRenderer.enabled = true;
+                    m_SymmetryGuideMeshFilter.mesh = vrUiPoly.GetComponent<MeshFilter>().mesh;
+                    m_SymmetryGuideMeshRenderer.material = vrUiPoly.SymmetryWidgetMaterial;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&

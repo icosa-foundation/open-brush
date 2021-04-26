@@ -29,6 +29,8 @@ public class VrUiPoly : MonoBehaviour
     private Color[] previewColors;
     public PolyHydraEnums.ColorMethods PreviewColorMethod;
 
+    public Material SymmetryWidgetMaterial;
+
     public bool vertexGizmos;
     public bool faceGizmos;
     public bool edgeGizmos;
@@ -173,6 +175,7 @@ public class VrUiPoly : MonoBehaviour
                 var wythoff = new WythoffPoly(UniformPolyType, PrismP, PrismQ);
                 wythoff.BuildFaces();
                 _conwayPoly = new ConwayPoly(wythoff);
+                _conwayPoly = _conwayPoly.SitLevel();
                 break;
             case PolyHydraEnums.ShapeTypes.Johnson:
                 _conwayPoly = JohnsonPoly.Build(JohnsonPolyType, PrismP);
