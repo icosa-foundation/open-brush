@@ -16,7 +16,6 @@ public class PolyhydraBrushHelper : MonoBehaviour
 
     [NonSerialized] public ConwayPoly poly;
 
-
     public Color GetFaceColor(int faceIndex)
     {
         return colors.Evaluate((float)faceIndex / (poly.Faces.Count - 1));
