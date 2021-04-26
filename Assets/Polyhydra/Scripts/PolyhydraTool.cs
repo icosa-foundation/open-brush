@@ -22,7 +22,7 @@ namespace TiltBrush.AndyB
         private Transform m_BrushController;
         
         // Set true when the tool is activated so we can detect when it's released
-        private bool m_ClickedLastUpdate = false;
+        private bool m_WasClicked = false;
         
         // The position of the pointed when m_ClickedLastUpdate was set to true;
         private TrTransform m_FirstPositionClicked_CS;
@@ -96,6 +96,7 @@ namespace TiltBrush.AndyB
             
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
+                m_WasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
                 VrUiPoly uiPoly = FindObjectOfType<VrUiPoly>();
                 if (uiPoly == null) return;
@@ -107,9 +108,6 @@ namespace TiltBrush.AndyB
             
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                
-                m_ClickedLastUpdate = true;
- 
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                 var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
@@ -131,9 +129,9 @@ namespace TiltBrush.AndyB
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                if (m_ClickedLastUpdate)
+                if (m_WasClicked)
                 {
-                    m_ClickedLastUpdate = false;
+                    m_WasClicked = false;
                     VrUiPoly uiPoly = FindObjectOfType<VrUiPoly>();
                     if (uiPoly == null) return;
 
