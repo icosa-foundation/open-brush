@@ -6,7 +6,6 @@ using UnityEngine;
 public class PolyhydraBrushHelper : MonoBehaviour
 {
 
-
     [Space]
     public bool Canonicalize;
     public Vector3 Position = Vector3.zero;
