@@ -7,8 +7,11 @@ namespace TiltBrush
 {
     public abstract class PolyhydraPopUpWindowBase : PopUpWindow
     {
+        public int ButtonsPerPage = 16;
+        
         [SerializeField] protected float m_ColorTransitionDuration;
         [SerializeField] protected GameObject ButtonPrefab;
+        [NonSerialized] public int FirstButtonIndex = 0;
 
         protected float m_ColorTransitionValue;
         protected Material m_ColorBackground;
@@ -93,7 +96,7 @@ namespace TiltBrush
                 rButton.transform.localScale = Vector3.one * .3f;
 
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
-                rButtonRenderer.material.mainTexture = GetButtonIcon(buttonIndex);
+                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonIndex);
 
                 PolyhydraThingButton rButtonScript = rButton.GetComponent<PolyhydraThingButton>();
                 rButtonScript.ButtonIndex = buttonIndex;
@@ -104,9 +107,9 @@ namespace TiltBrush
             }
         }
 
-        internal Texture2D GetButtonIcon(int buttonIndex)
+        protected Texture2D GetButtonTexture(int buttonIndex)
         {
-            return Resources.Load<Texture2D>(GetButtonTexturePath(buttonIndex));
+            return Resources.Load<Texture2D>(GetButtonTexturePath(buttonIndex + FirstButtonIndex));
         }
 
         protected abstract string GetButtonTexturePath(int i);
@@ -136,10 +139,6 @@ namespace TiltBrush
             HandleButtonPress(ButtonIndex);
             ParentPanel.RebuildPoly();
         }
-
-        protected Texture2D GetButtonTexture(int buttonIndex)
-        {
-            return Resources.Load<Texture2D>(GetButtonTexturePath(buttonIndex));
-        }
+        
     }
 }

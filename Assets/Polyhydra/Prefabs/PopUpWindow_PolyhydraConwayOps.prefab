@@ -415,6 +415,7 @@ MonoBehaviour:
   m_OrderedPageButtons: []
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
+  ButtonsPerPage: 16
   m_ColorTransitionDuration: 0
   ButtonPrefab: {fileID: 7630606763700834929, guid: 56c1524891cb7c44fb711233648ba9ff,
     type: 3}

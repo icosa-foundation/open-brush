@@ -25,8 +25,6 @@ namespace TiltBrush
     {
 
         [NonSerialized] protected int OpStackIndex = 0;
-        [NonSerialized] public int ButtonsPerPage = 16;
-        [NonSerialized] public int FirstButtonIndex = 0;
 
 
         protected override string[] GetButtonList()
@@ -59,8 +57,8 @@ namespace TiltBrush
 
             ops[OpStackIndex] = op;
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
-            ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(absoluteButtonIndex));
-
+            ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(relativeButtonIndex));
+            ParentPanel.ButtonsConwayOps[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);
             if (opConfig.usesAmount)
             {
                 ParentPanel.SlidersConwayOps[OpStackIndex * 2].gameObject.SetActive(true);
