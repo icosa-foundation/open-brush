@@ -4,6 +4,7 @@ using System.Linq;
 using Conway;
 using Johnson;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Wythoff;
 
 
@@ -22,7 +23,9 @@ public class VrUiPoly : MonoBehaviour
     public int PrismQ;
 
     public Gradient colors;
-
+    public float ColorRange;
+    public float ColorOffset;
+    
     public ConwayPoly _conwayPoly;
     public bool Rescale;
     private MeshFilter meshFilter;
@@ -44,8 +47,7 @@ public class VrUiPoly : MonoBehaviour
     void Init()
     {
         meshFilter = gameObject.GetComponent<MeshFilter>();
-        int maxColors = 6; // TODO what should this really be?
-        previewColors = Enumerable.Range(0, maxColors).Select(x => colors.Evaluate((float)x / maxColors)).ToArray();
+        previewColors = Enumerable.Range(0,8).Select(x => colors.Evaluate(((x / 8f) * ColorRange + ColorOffset) % 1)).ToArray();
         MakePolyhedron();
     }
 
