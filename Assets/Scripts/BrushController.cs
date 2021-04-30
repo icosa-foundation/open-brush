@@ -49,9 +49,15 @@ namespace TiltBrush
             }
             m_ActiveBrush = brush;
 
+            bool enableDefaultTool = 
+                SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RepaintTool &&
+                SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RebrushTool;
+            
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            enableDefaultTool = enableDefaultTool && SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.PolyhydraTool;
+#endif
             // Reset our tool when the user picks a new brush unless it is repainting.
-            if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RepaintTool &&
-                SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RebrushTool)
+            if (enableDefaultTool)
             {
                 SketchSurfacePanel.m_Instance.EnableDefaultTool();
             }

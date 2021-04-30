@@ -149,6 +149,7 @@ namespace TiltBrush.AndyB
                     float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
 
                     var strokes = new List<Stroke>();
+                    var group = App.GroupManager.NewUnusedGroup();
 
                     foreach (var (face, faceIndex) in poly.Faces.WithIndex())
                     {
@@ -171,7 +172,7 @@ namespace TiltBrush.AndyB
                                     m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
                                     m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
                                     m_Pressure = pressure,
-                                    m_TimestampMs = time+=10
+                                    m_TimestampMs = time
                                 });
                             }
 
@@ -190,49 +191,15 @@ namespace TiltBrush.AndyB
                             m_ControlPoints = controlPoints.ToArray(),
                         };
                         stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                        stroke.Uncreate();
+                        stroke.Group = group;
                         stroke.Recreate(null, App.Scene.ActiveCanvas);
-
-                        SketchMemoryScript.m_Instance.MemorizeBatchedBrushStroke(
-                            stroke.m_BatchSubset,
-                            stroke.m_Color,
-                            stroke.m_BrushGuid,
-                            stroke.m_BrushSize,
-                            stroke.m_BrushScale,
-                            stroke.m_ControlPoints.ToList(),
-                            stroke.m_Flags,
-                            WidgetManager.m_Instance.ActiveStencil,
-                            lineLength,
-                            123
+                        stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                        SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                            new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123)
                         );
-
-                        strokes.Add(stroke);
                     }
                 }
-
-                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                //     new SelectCommand(
-                //         strokes,
-                //         new List<GrabWidget>(),
-                //         SelectionManager.m_Instance.SelectionTransform,
-                //         deselect: false,
-                //         initial: false
-                //     )
-                // );
-                //
-                // // SelectionManager.m_Instance.SelectStrokes(strokes);
-                //
-                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                //     new GroupStrokesAndWidgetsCommand(
-                //         strokes, 
-                //         new List<GrabWidget>(),
-                //         null
-                //     )
-                // );
-                //
-                // AudioManager.m_Instance.PlayGroupedSound(InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
-                // SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
-                // SketchSurfacePanel.m_Instance.EnableSpecificTool(ToolType.PolyhydraTool);
             }
         }
         private Quaternion QuantizeAngle(Quaternion rotation)
