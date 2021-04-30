@@ -193,7 +193,7 @@ namespace TiltBrush.AndyB
                         stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                         stroke.Group = group;
                         stroke.Recreate(null, App.Scene.ActiveCanvas);
-                        stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                        if (faceIndex!=0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                         SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                         SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                             new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123)
