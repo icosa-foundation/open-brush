@@ -26,7 +26,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8240667959069599078}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.000099122524, y: -0.00008535385, z: -0.00007581711}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -40,7 +40,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8240667959069599078}
-  m_Mesh: {fileID: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &8240667959069599072
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -48,7 +48,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8240667959069599078}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -133,11 +133,19 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   Rescale: 1
   PreviewColorMethod: 1
+  SymmetryWidgetMaterial: {fileID: 2100000, guid: d8c8bb0576ffd75428fca1625a6cc9e3,
+    type: 2}
   vertexGizmos: 0
   faceGizmos: 0
   edgeGizmos: 0
   faceCenterGizmos: 0
   ConwayOperators:
+  - opType: 0
+    faceSelections: 0
+    randomize: 0
+    amount: 0
+    amount2: 0
+    disabled: 0
   - opType: 0
     faceSelections: 0
     randomize: 0

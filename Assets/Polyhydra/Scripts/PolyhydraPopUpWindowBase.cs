@@ -36,6 +36,8 @@ namespace TiltBrush
             }
         }
 
+        private List<GameObject> _buttons;
+
         protected override void UpdateOpening()
         {
             if (m_ColorBackground && m_TransitionValue == 0)
@@ -61,13 +63,19 @@ namespace TiltBrush
             m_ColorBackground = m_Background.GetComponent<MeshRenderer>().material;
             base.Init(rParent, sText);
             ParentPanel = FindObjectOfType<PolyhydraPanel>();
+            _buttons = new List<GameObject>();
             CreateButtons();
         }
 
         protected abstract string[] GetButtonList();
 
-        private void CreateButtons()
+        protected void CreateButtons()
         {
+            foreach (var btn in _buttons)
+            {
+                Destroy(btn);  
+            }
+            _buttons = new List<GameObject>();
             string[] buttonLabels = GetButtonList();
             int columns = 4;
             for (int buttonIndex = 0; buttonIndex < buttonLabels.Length; buttonIndex++)
@@ -92,6 +100,7 @@ namespace TiltBrush
                 rButtonScript.parentPopup = this;
                 rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
                 rButtonScript.RegisterComponent();
+                _buttons.Add(rButton);
             }
         }
 

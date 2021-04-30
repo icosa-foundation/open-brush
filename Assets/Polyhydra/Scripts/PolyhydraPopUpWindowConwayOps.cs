@@ -15,6 +15,7 @@
 using System;
 using System.Linq;
 using Conway;
+using UnityEngine;
 
 
 namespace TiltBrush
@@ -23,12 +24,20 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowConwayOps : PolyhydraPopUpWindowBase
     {
 
-        [NonSerialized] protected int OpIndex = 0;
+        [NonSerialized] protected int OpStackIndex = 0;
+        [NonSerialized] public int ButtonsPerPage = 16;
+        [NonSerialized] public int FirstButtonIndex = 0;
 
 
         protected override string[] GetButtonList()
         {
-            return Enum.GetNames(typeof(Ops)).Take(24).ToArray();
+            return Enum.GetNames(typeof(Ops)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
+        }
+
+        public override void SetPopupCommandParameters(int commandParam, int commandParam2)
+        {
+            base.SetPopupCommandParameters(commandParam, commandParam2);
+            OpStackIndex = commandParam;
         }
 
         protected override string GetButtonTexturePath(int i)
@@ -36,50 +45,62 @@ namespace TiltBrush
             return $"IconButtons/{(Ops)i}";
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(int relativeButtonIndex)
         {
+            int absoluteButtonIndex = relativeButtonIndex + FirstButtonIndex;
             var ops = ParentPanel.PolyhydraModel.ConwayOperators;
-            PolyHydraEnums.OpConfig opConfig = PolyHydraEnums.OpConfigs[(Ops)buttonIndex];
-            while (ops.Count < OpIndex)
-            {
-                ops.Add(new VrUiPoly.ConwayOperator());
-            }
+            
+            PolyHydraEnums.OpConfig opConfig = PolyHydraEnums.OpConfigs[(Ops)absoluteButtonIndex];
 
-            var op = ops[OpIndex];
-            op.opType = (Ops)buttonIndex;
+            var op = ops[OpStackIndex];
+            op.opType = (Ops)absoluteButtonIndex;
             op.amount = opConfig.amountDefault;
             op.amount2 = opConfig.amount2Default;
 
-            ops[OpIndex] = op;
+            ops[OpStackIndex] = op;
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
-            ParentPanel.ButtonsConwayOps[OpIndex].SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(absoluteButtonIndex));
 
             if (opConfig.usesAmount)
             {
-                ParentPanel.SlidersConwayOps[OpIndex * 2].gameObject.SetActive(true);
-                ParentPanel.SlidersConwayOps[OpIndex * 2].Min = opConfig.amountSafeMin;
-                ParentPanel.SlidersConwayOps[OpIndex * 2].Max = opConfig.amountSafeMax;
-                ParentPanel.SlidersConwayOps[OpIndex * 2].UpdateValueAbsolute(opConfig.amountDefault);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2].gameObject.SetActive(true);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2].Min = opConfig.amountSafeMin;
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2].Max = opConfig.amountSafeMax;
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2].UpdateValueAbsolute(opConfig.amountDefault);
             }
             else
             {
-                ParentPanel.SlidersConwayOps[OpIndex * 2].gameObject.SetActive(false);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2].gameObject.SetActive(false);
             }
 
             if (opConfig.usesAmount2)
             {
-                ParentPanel.SlidersConwayOps[OpIndex * 2 + 1].gameObject.SetActive(true);
-                ParentPanel.SlidersConwayOps[OpIndex * 2 + 1].Min = opConfig.amount2SafeMin;
-                ParentPanel.SlidersConwayOps[OpIndex * 2 + 1].Max = opConfig.amount2SafeMax;
-                ParentPanel.SlidersConwayOps[OpIndex * 2 + 1].UpdateValueAbsolute(opConfig.amount2Default);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2 + 1].gameObject.SetActive(true);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2 + 1].Min = opConfig.amount2SafeMin;
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2 + 1].Max = opConfig.amount2SafeMax;
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2 + 1].UpdateValueAbsolute(opConfig.amount2Default);
             }
             else
             {
-                ParentPanel.SlidersConwayOps[OpIndex * 2 + 1].gameObject.SetActive(false);
+                ParentPanel.SlidersConwayOps[OpStackIndex * 2 + 1].gameObject.SetActive(false);
             }
         }
 
-
+        public void NextPage()
+        {
+            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(Ops)).Length)
+            {
+                FirstButtonIndex += ButtonsPerPage;
+                CreateButtons();
+                
+            }
+        }
+        public void PrevPage()
+        {
+            FirstButtonIndex -= ButtonsPerPage;
+            FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
+            CreateButtons();
+        }
 
     }
 } // namespace TiltBrush

@@ -62,10 +62,10 @@ namespace TiltBrush
 
         public void HandleOpAmountSlider(Vector3 value)
         {
-            int opIndex = (int)value.x;
+            int opStackIndex = (int)value.x;
             int paramIndex = (int)value.y;
             float amount = value.z;
-            var op = PolyhydraModel.ConwayOperators[opIndex];
+            var op = PolyhydraModel.ConwayOperators[opStackIndex];
             switch (paramIndex)
             {
                 case 0:
@@ -75,7 +75,7 @@ namespace TiltBrush
                     op.amount2 = amount;
                     break;
             }
-            PolyhydraModel.ConwayOperators[opIndex] = op;
+            PolyhydraModel.ConwayOperators[opStackIndex] = op;
             RebuildPoly();
         }
 
