@@ -35,7 +35,7 @@ namespace TiltBrush
             m_lastPosition = m_stroke.m_ControlPoints[0].m_Pos;
 
             var desc = BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid);
-            m_playBackAtStrokeGranularity = (m_parent.QuickLoad || (desc?.m_PlayBackAtStrokeGranularity ?? true));
+            m_playBackAtStrokeGranularity = (m_parent.QuickLoad || desc.m_PlayBackAtStrokeGranularity);
         }
 
         protected override bool IsControlPointReady(PointerManager.ControlPoint controlPoint)

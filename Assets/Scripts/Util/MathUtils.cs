@@ -979,20 +979,19 @@ namespace TiltBrush
             // The fractional portion will be used for a lerp.
             double oldFromNew = (samples.Length - 1) / ((double)newSamples - 1);
 
-            for (int idxNew = 0; idxNew < newSamples; ++idxNew)
+            // The very last sample will try to do a Lerp(oldSamples[count-1], oldSamples[count], 0)
+            // which reads off the end of the array (but throws away the value in the lerp).
+            // Hack around it by treating that last sample specially.
+            for (int idxNew = 0; idxNew < newSamples - 1; ++idxNew)
             {
-                double idxOldf = oldFromNew * idxNew; // In general, this will be between two samples
+                double idxOldf = oldFromNew * idxNew;   // In general, this will be between two samples
                 double idxOldFloor = Math.Floor(idxOldf);
                 int idxOld = (int)idxOldFloor;
-                // We run off the end of the array in a couple cases:
-                // - the last sample, which tries to Lerp(oldSamples[count-1], oldSamples[count], 0)
-                // - samples.Length == 1
-                // In both cases, t==0 so it doesn't matter what index we use, so this clamp is fine
-                int idxOldPlus = Mathf.Min(idxOld + 1, (int)samples.Length - 1);
                 double t = idxOldf - idxOldFloor;
-                yield return Mathf.LerpUnclamped(samples[idxOld], samples[idxOldPlus], (float)t);
+                yield return Mathf.LerpUnclamped(samples[idxOld], samples[idxOld + 1], (float)t);
             }
+            yield return samples[samples.Length - 1];
         }
 
-    } // MathUtils
-}     // TiltBrush
+    }  // MathUtils
+}  // TiltBrush
