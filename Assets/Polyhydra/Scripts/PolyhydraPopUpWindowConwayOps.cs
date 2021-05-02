@@ -26,7 +26,6 @@ namespace TiltBrush
 
         [NonSerialized] protected int OpStackIndex = 0;
 
-
         protected override string[] GetButtonList()
         {
             return Enum.GetNames(typeof(Ops)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
