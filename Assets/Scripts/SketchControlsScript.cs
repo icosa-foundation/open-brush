@@ -149,6 +149,7 @@ namespace TiltBrush
             PolyhydraJohnsonTypesPopup,
             PolyhydraOtherTypesPopup,
             PolyhydraConwayOpTypesPopup,
+            PolyhydraConwayOpFaceSelPopup
 #endif
         }
 

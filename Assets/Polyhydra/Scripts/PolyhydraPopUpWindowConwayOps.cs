@@ -59,6 +59,16 @@ namespace TiltBrush
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
             ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(relativeButtonIndex));
             ParentPanel.ButtonsConwayOps[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);
+            
+            if (opConfig.usesFaces)
+            {
+                ParentPanel.ButtonsFaceSel[OpStackIndex].gameObject.SetActive(true);
+            }
+            else
+            {
+                ParentPanel.ButtonsFaceSel[OpStackIndex].gameObject.SetActive(false);
+            }
+            
             if (opConfig.usesAmount)
             {
                 ParentPanel.SlidersConwayOps[OpStackIndex * 2].gameObject.SetActive(true);

@@ -39,7 +39,7 @@ namespace TiltBrush
             }
         }
 
-        private List<GameObject> _buttons;
+        protected List<GameObject> _buttons;
 
         protected override void UpdateOpening()
         {
@@ -72,7 +72,7 @@ namespace TiltBrush
 
         protected abstract string[] GetButtonList();
 
-        protected void CreateButtons()
+        protected virtual void CreateButtons()
         {
             foreach (var btn in _buttons)
             {

@@ -32,6 +32,7 @@ namespace TiltBrush
         public PolyhydraOptionButton ButtonOtherPolyType;
         public PolyhydraOptionButton ButtonGridShape;
         public PolyhydraOptionButton[] ButtonsConwayOps;
+        public PolyhydraOptionButton[] ButtonsFaceSel;
         public PolyhydraSlider[] SlidersConwayOps;
 
         public PolyhydraSlider SliderP;
