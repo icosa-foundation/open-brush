@@ -607,11 +607,6 @@ namespace TiltBrush
             {
                 HttpServer.AddHttpHandler("/load", HttpLoadSketchCallback);
             }
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            foreach (var urlPath in GetApiUrlPaths()) {
-                HttpServer.AddHttpHandler(urlPath, ApiCommandCallback);
-            }
-#endif
             m_AutosaveRestoreFileExists = File.Exists(AutosaveRestoreFilePath());
 
             m_GoogleUserSettings = new GoogleUserSettings(m_GoogleIdentity);
@@ -1178,9 +1173,6 @@ namespace TiltBrush
                     // This should happen after SMS.ContinueDrawingFromMemory, so we're not loading and
                     // continuing in one frame.
                     HandleExternalTiltOpenRequest();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    HandleApiCommand();
-#endif
                     break;
                 case AppState.Reset:
                     SketchControlsScript.m_Instance.UpdateControls();
