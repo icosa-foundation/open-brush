@@ -37,8 +37,8 @@ jobs:
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       changelog: ${{ steps.changelog.outputs.changelog }}
-      btbgithub: ${{ steps.github.outputs.btbgithub }}
       basename: ${{ steps.github.outputs.basename }}
+      description: ${{ steps.github.outputs.description}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -81,18 +81,31 @@ jobs:
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
           echo "::set-output name=changelog::$CHANGELOG"
-      - name: Set github suffix if relevant
+      - name: Set custom app name and package name, if relevant
         id: github
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          if [ "$PRERELEASE" == "true" ]
+          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
+          # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
+          if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=btbgithub::-btb-github"
-            echo "::set-output name=basename::OpenBrush-github"
-          else
-            echo "::set-output name=btbgithub::"
             echo "::set-output name=basename::OpenBrush"
+            echo "::set-output name=description::"
+          else
+            if [[ ${{ github.ref }} == refs/pull/* ]]
+            then
+              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+            elif [[ ${{ github.ref }} == refs/heads/* ]]
+            then
+              DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
+            else
+              DESCRIPTION="Unknown"
+            fi
+            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[#_-]//g')
+            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
           fi
   build:
     name: ${{ matrix.name }}
@@ -242,7 +255,7 @@ jobs:
         env:
           BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=com.Icosa.$(echo $BASENAME | sed -e 's/-//g').apk" >> $GITHUB_ENV
+          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
@@ -293,7 +306,7 @@ jobs:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.btbgithub }} ${{ env.stamp }} ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
@@ -400,9 +413,9 @@ jobs:
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_$VERSION/OpenBrush-github
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush-github
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
