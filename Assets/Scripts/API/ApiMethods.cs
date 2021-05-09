@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    
     // ReSharper disable once UnusedType.Global
     public static class ApiMethods
     {
