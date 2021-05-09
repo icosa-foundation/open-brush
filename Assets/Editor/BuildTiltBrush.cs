@@ -47,7 +47,7 @@ static class BuildTiltBrush
         public string Location;
         public string Stamp;
         public BuildOptions UnityOptions;
-        public bool Github;
+        public string Description;
     }
 
     [Serializable()]
@@ -304,7 +304,7 @@ static class BuildTiltBrush
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development)
                 : BuildOptions.None,
-            Github = false,
+            Description = "(unity editor)",
         };
     }
 
@@ -742,9 +742,9 @@ static class BuildTiltBrush
                 {
                     tiltOptions.Experimental = true;
                 }
-                else if (args[i] == "-btb-github")
+                else if (args[i] == "-btb-description")
                 {
-                    tiltOptions.Github = true;
+                    tiltOptions.Description = args[++i];
                 }
                 else if (args[i] == "-btb-il2cpp")
                 {
@@ -937,7 +937,7 @@ static class BuildTiltBrush
         private string m_name;
         private string m_company;
         private bool m_isAndroid;
-        public TempSetAppNames(bool isAndroid, bool isGithub)
+        public TempSetAppNames(bool isAndroid, string Description)
         {
             m_isAndroid = isAndroid;
             m_identifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
@@ -945,10 +945,10 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = App.kGuiBuildAndroidApplicationIdentifier;
-            if (isGithub)
+            if (!String.IsNullOrEmpty(Description))
             {
-                new_name += " (Github)";
-                new_identifier += "-github";
+                new_name += " (" + Description + ")";
+                new_identifier += Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
             if (m_isAndroid)
             {
@@ -1242,7 +1242,7 @@ static class BuildTiltBrush
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
-        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Github))
+        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
         using (var unused7 = new RestoreVrSdks())
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
