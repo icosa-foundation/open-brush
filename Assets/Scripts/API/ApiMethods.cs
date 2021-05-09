@@ -13,8 +13,7 @@ namespace TiltBrush
 
         private static void ChangeBrushBearing(float angle, Vector3 axis)
         {
-            Quaternion bearingOffset = Quaternion.AngleAxis(angle, axis);
-            Quaternion newBearing = bearingOffset * ApiManager.Instance.BrushBearing;
+            Vector3 newBearing = Quaternion.AngleAxis(angle, axis) * ApiManager.Instance.BrushBearing;
             ApiManager.Instance.BrushBearing = newBearing;
         }
         private static void ChangeCameraBearing(float angle, Vector3 axis)
@@ -147,6 +146,8 @@ namespace TiltBrush
             ChangeCameraBearing(angle, Vector3.left);
         }
 
+        // TODO doesn't actually make any difference at the moment
+        // As we don't store orientation - only bearing.
         [ApiEndpoint("camera.roll")]
         [ApiEndpoint("camera.turn.z")]
         public static void Roll(float angle)
@@ -179,7 +180,7 @@ namespace TiltBrush
         public static void BrushMove(float distance)
         {
             var currentPosition = ApiManager.Instance.BrushPosition;
-            var directionVector = ApiManager.Instance.BrushBearing * Vector3.up;
+            var directionVector = ApiManager.Instance.BrushBearing;
             var newPosition = currentPosition + (directionVector * distance);
             ApiManager.Instance.BrushPosition = newPosition;
         }
@@ -187,7 +188,7 @@ namespace TiltBrush
         [ApiEndpoint("brush.draw")]
         public static void BrushDraw(float distance)
         {
-            var directionVector = ApiManager.Instance.BrushBearing * Vector3.up;
+            var directionVector = ApiManager.Instance.BrushBearing;
             var end = directionVector * distance;
             var path = new List<List<Vector3>>
             {
@@ -223,8 +224,7 @@ namespace TiltBrush
         [ApiEndpoint("brush.lookat")]
         public static void BrushLookAt(Vector3 direction)
         {
-            Quaternion newBearing = Quaternion.LookRotation(direction, Vector3.up);
-            ApiManager.Instance.BrushBearing = newBearing;
+            ApiManager.Instance.BrushBearing = direction.normalized;
         }
     }
 }

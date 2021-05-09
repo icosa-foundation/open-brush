@@ -18,7 +18,7 @@ public class ApiManager : MonoBehaviour
     private Dictionary<string, ApiEndpoint> endpoints;
 
     [NonSerialized] public Vector3 BrushPosition;
-    [NonSerialized] public Quaternion BrushBearing = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+    [NonSerialized] public Vector3 BrushBearing = Vector3.forward;
 
     public static ApiManager Instance
     {
