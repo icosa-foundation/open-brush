@@ -56,9 +56,15 @@ namespace TiltBrush
                             // Abort, even though it has already disposed the context.
                             break;
                         }
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                        bool allowExternalApiCalls = true;
+#else
+                        bool allowExternalApiCalls = false;
+#endif                        
                         try
                         {
-                            if (!ctx.Request.IsLocal)
+                            if (!ctx.Request.IsLocal || allowExternalApiCalls)
                             {
                                 // Return 403: Forbidden if the originator was non-local.
                                 ctx.Response.StatusCode = (int)HttpStatusCode.Forbidden;
