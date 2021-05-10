@@ -1498,6 +1498,11 @@ static class BuildTiltBrush
                         {
                             FileUtil.DeleteFileOrDirectory(openvrDll);
                         }
+                        string openvrDll64 = Path.Combine(Path.Combine(Path.Combine(dataDir, "Plugins"), "x86_64"), "openvr_api.dll");
+                        if (File.Exists(openvrDll64))
+                        {
+                            FileUtil.DeleteFileOrDirectory(openvrDll64);
+                        }
                     }
 
                     // b/120917711
