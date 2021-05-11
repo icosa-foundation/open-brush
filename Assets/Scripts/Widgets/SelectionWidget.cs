@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TiltBrush
 {
@@ -116,6 +117,37 @@ namespace TiltBrush
         override public float GetSignedWidgetSize()
         {
             return transform.localScale.Max();
+        }
+        
+        private Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SelectionManager.m_Instance.m_snappingAngle;
+            float round(float val) {return Mathf.Round(val / snapAngle) * snapAngle;}
+            
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+        
+        protected override bool AllowSnapping()
+        {
+            return true;
+        }
+
+        protected override TrTransform GetSnappedTransform(TrTransform xf_GS)
+        {
+
+            TrTransform outXf_GS = xf_GS;
+
+            outXf_GS.rotation = App.Scene.Pose.rotation * QuantizeAngle(xf_GS.rotation);
+
+            Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+            Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+            Vector3 grabToCenter = xf_GS.translation - grabSpot;
+            outXf_GS.translation = grabSpot + qDelta * grabToCenter;
+
+            return outXf_GS;
+            
         }
 
         override protected void SetWidgetSizeInternal(float fSize)

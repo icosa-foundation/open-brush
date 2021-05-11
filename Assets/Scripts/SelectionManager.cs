@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -66,6 +67,10 @@ namespace TiltBrush
         private bool m_IsAnimatingTossFromGrabbingGroup;
         private bool m_IsGrabbingGroup;
         private BaseTool.ToolType m_ToolTypeBeforeGrabbingGroup;
+        
+        [NonSerialized] public float m_snappingAngle = 45;  // TODO access control
+        private float[] angleSnaps;
+        private int currentSnap;
 
         // As opposed to 'add to selection'.  When this is true, strokes picked up
         // by the selection tool will be removed from selected strokes.  When false, they'll be added
@@ -379,6 +384,7 @@ namespace TiltBrush
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
+            angleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -927,6 +933,16 @@ namespace TiltBrush
             }
 
             return totalBounds_CS;
+        }
+        
+        public void IncrementSnappingAngle()
+        {
+            currentSnap++;
+            currentSnap %= angleSnaps.Length;
+            m_snappingAngle = angleSnaps[currentSnap];
+            // TODO
+            // GetComponentInChildren<TextMeshPro>().text = m_snappingAngle.ToString();
+
         }
     }
 
