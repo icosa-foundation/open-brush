@@ -122,13 +122,6 @@ namespace TiltBrush
                 }
                 else
                 {
-                    if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
-                    {
-                        // TODO UI
-                        Debug.Log($"{SelectionManager.m_Instance.m_snappingAngle}");
-                        SelectionManager.m_Instance.IncrementSnappingAngle();
-                        Debug.Log($"{SelectionManager.m_Instance.m_snappingAngle}");
-                    }
                     // Toggle selection/deselection if we have a selection, or if we're currently on deselect.
                     bool bShouldRemoveFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
                     if (SelectionManager.m_Instance.HasSelection || bShouldRemoveFromSelection)

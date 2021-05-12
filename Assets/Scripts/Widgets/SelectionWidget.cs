@@ -14,7 +14,6 @@
 
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace TiltBrush
 {
@@ -121,7 +120,7 @@ namespace TiltBrush
         
         private Quaternion QuantizeAngle(Quaternion rotation)
         {
-            var snapAngle = SelectionManager.m_Instance.m_snappingAngle;
+            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
             float round(float val) {return Mathf.Round(val / snapAngle) * snapAngle;}
             
             Vector3 euler = rotation.eulerAngles;
@@ -131,7 +130,7 @@ namespace TiltBrush
         
         protected override bool AllowSnapping()
         {
-            return true;
+            return SelectionManager.m_Instance.CurrentSnapIndex != 0;
         }
 
         protected override TrTransform GetSnappedTransform(TrTransform xf_GS)

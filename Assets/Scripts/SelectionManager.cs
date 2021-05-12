@@ -68,9 +68,9 @@ namespace TiltBrush
         private bool m_IsGrabbingGroup;
         private BaseTool.ToolType m_ToolTypeBeforeGrabbingGroup;
         
-        [NonSerialized] public float m_snappingAngle = 45;  // TODO access control
-        private float[] angleSnaps;
-        private int currentSnap;
+        private float m_snappingAngle;
+        private float[] m_AngleSnaps;
+        private int m_CurrentSnapIndex;
 
         // As opposed to 'add to selection'.  When this is true, strokes picked up
         // by the selection tool will be removed from selected strokes.  When false, they'll be added
@@ -261,6 +261,8 @@ namespace TiltBrush
         }
 
         public bool IsAnimatingTossFromGrabbingGroup => m_IsAnimatingTossFromGrabbingGroup;
+        public int CurrentSnapIndex => m_CurrentSnapIndex;
+        public float SnappingAngle => m_snappingAngle;
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
@@ -384,7 +386,7 @@ namespace TiltBrush
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
-            angleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
+            m_AngleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -937,12 +939,13 @@ namespace TiltBrush
         
         public void IncrementSnappingAngle()
         {
-            currentSnap++;
-            currentSnap %= angleSnaps.Length;
-            m_snappingAngle = angleSnaps[currentSnap];
-            // TODO
-            // GetComponentInChildren<TextMeshPro>().text = m_snappingAngle.ToString();
-
+            m_CurrentSnapIndex = CurrentSnapIndex + 1;
+            m_CurrentSnapIndex = CurrentSnapIndex % m_AngleSnaps.Length;
+            SetSnappingAngle(CurrentSnapIndex);
+        }
+        public void SetSnappingAngle(int snapIndex)
+        {
+            m_snappingAngle = m_AngleSnaps[snapIndex];
         }
     }
 

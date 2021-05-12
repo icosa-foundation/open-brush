@@ -35,8 +35,8 @@ namespace TiltBrush
         [SerializeField] private SketchControlsScript.GlobalCommands m_Command;
         [SerializeField] protected Option[] m_Options;
 
-        private int m_CurrentOptionIdx;
-        private GameObject m_OptionContainer;
+        protected int m_CurrentOptionIdx;
+        protected GameObject m_OptionContainer;
         private GameObject[] m_Sides;
         private Renderer[] m_SideRenderers;
         private Color? m_MaterialTint;
@@ -45,7 +45,7 @@ namespace TiltBrush
         private float m_TargetRotation;  // Degrees
         private bool m_IsRotating;
 
-        private int NumOptions
+        protected int NumOptions
         {
             get
             {
@@ -62,7 +62,7 @@ namespace TiltBrush
         }
 
         // Degrees between each option icon.
-        private float OptionAngleDeltaDegrees
+        protected virtual float OptionAngleDeltaDegrees
         {
             get
             {

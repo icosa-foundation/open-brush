@@ -140,6 +140,7 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            ChangeSnapAngle = 8000
         }
 
         public enum ControlsType
