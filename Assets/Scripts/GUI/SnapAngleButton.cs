@@ -7,7 +7,7 @@
         {
             get
             {
-                return 60; // Looks weird if the angle is too shallow
+                return 60; // Looks weird if the angle is too shallow so fake it
             }
         }
         
