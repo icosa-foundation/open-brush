@@ -61,10 +61,10 @@ namespace TiltBrush
                         bool allowExternalApiCalls = true;
 #else
                         bool allowExternalApiCalls = false;
-#endif                        
+#endif
                         try
                         {
-                            if (!ctx.Request.IsLocal || allowExternalApiCalls)
+                            if (!ctx.Request.IsLocal && !allowExternalApiCalls)
                             {
                                 // Return 403: Forbidden if the originator was non-local.
                                 ctx.Response.StatusCode = (int)HttpStatusCode.Forbidden;

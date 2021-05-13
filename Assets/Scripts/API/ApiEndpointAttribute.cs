@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -31,32 +32,47 @@ public class ApiEndpoint : Attribute
     {
         var parameters = new object[parameterInfo.Length];
         
-        // TODO multiple parameters.
-        // Do we need them?
-        // for (var i = 0; i < parameterInfo.Length; i++)
-        // {
-            int i = 0;
+        string[] tokens = commandValue.Split(',');
+        int tokenIndex = 0;
+        for (var i = 0; i < parameterInfo.Length; i++)
+        {
             ParameterInfo paramType = parameterInfo[i];
-            object paramValue;
+            object paramValue = null;
             if (paramType.ParameterType == typeof(string))
             {
-                paramValue = commandValue;
+                if (parameterInfo.Length == 1 && i == 0)
+                {
+                    // Special case methods with one string param
+                    // This allows string params to include commas if they are the only parameter
+                    paramValue = commandValue;
+                }
+                else
+                {
+                    paramValue = tokens[tokenIndex++];
+                }
             }
             else if (paramType.ParameterType == typeof(float))
             {
-                paramValue = float.Parse(commandValue);
+                paramValue = float.Parse(tokens[tokenIndex++]);
+            }
+            else if (paramType.ParameterType == typeof(int))
+            {
+                paramValue = int.Parse(tokens[tokenIndex++]);
             }
             else if (paramType.ParameterType == typeof(Vector3))
             {
-                string[] temp = commandValue.Split(',');
-                paramValue = new Vector3(float.Parse(temp[0]), float.Parse(temp[1]), float.Parse(temp[2])); 
+                paramValue = new Vector3(
+                    float.Parse(tokens[tokenIndex++]),
+                    float.Parse(tokens[tokenIndex++]),
+                    float.Parse(tokens[tokenIndex++])
+                );
             }
             else
             {
-                paramValue = TypeDescriptor.GetConverter(paramType).ConvertFromString(commandValue);
+                paramValue = TypeDescriptor.GetConverter(paramType).ConvertFromString(tokens[tokenIndex++]);
             }
             parameters[i] = paramValue;
-        // }
+        }
         return parameters;
     }
 }

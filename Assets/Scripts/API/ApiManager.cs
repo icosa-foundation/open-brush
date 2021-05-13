@@ -63,6 +63,7 @@ public class ApiManager : MonoBehaviour
                             Debug.LogWarning($"No instance found for ApiEndpoint on: {type}");
                         }
                     }
+                    
                     if (valid)
                     {
                         apiEndpoint.type = type;
@@ -81,6 +82,7 @@ public class ApiManager : MonoBehaviour
     }
     public bool InvokeEndpoint(KeyValuePair<string, string> command)
     {
+        Debug.Log($"Invoking: {command}");
         if (endpoints.ContainsKey(command.Key))
         {
             var endpoint = endpoints[command.Key];
@@ -99,12 +101,20 @@ public class ApiManager : MonoBehaviour
     {
 
         KeyValuePair<string, string> command;
+        Debug.Log($"Received {request.Url.Query}");
 
         // Handle GET
         foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
         {
-            var kv = pair.Split(new[]{'='}, 2);
-            command = new KeyValuePair<string, string>(kv[0], kv[1]);
+            string[] kv = pair.Split(new[]{'='}, 2);
+            if (kv.Length == 1)
+            {
+                command = new KeyValuePair<string, string>(kv[0], "");
+            }
+            else
+            {
+                command = new KeyValuePair<string, string>(kv[0], kv[1]);
+            }
             m_RequestedCommandQueue.Enqueue(command);
         }
         
@@ -123,6 +133,7 @@ public class ApiManager : MonoBehaviour
                         var kv = pair.Split(new[]{'='}, 2);
                         command = new KeyValuePair<string, string>(kv[0], kv[1]);
                         m_RequestedCommandQueue.Enqueue(command);
+                        Debug.Log($"Queued {command}");
                     }
                 }
             }
@@ -137,10 +148,12 @@ public class ApiManager : MonoBehaviour
         try
         {
             command = (KeyValuePair<string, string>)m_RequestedCommandQueue.Dequeue();
+            Debug.Log($"Dequeued {command}");
         }
         catch (InvalidOperationException)
         {
             return false;
+            Debug.Log($"Dequeue failed");
         }
 
         return Instance.InvokeEndpoint(command);
