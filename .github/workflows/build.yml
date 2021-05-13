@@ -6,17 +6,17 @@ on:  # yamllint disable-line rule:truthy
   pull_request: {}
   push:
     branches:
-      - "*"
+      - "**"
     tags:
       - "v*"
 
 env:
-  UNITY_VERSION: "2019.4.24f1"
+  UNITY_VERSION: "2019.4.25f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
   # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-04-10T11:43:41\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.24f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>GYC1YpQHTB2q5CllgJhlpihJuAk=</DigestValue></Reference></SignedInfo><SignatureValue>WE8iCxEU2CEWYaVo4EiFJzCmftuq994dQk7wPenZcQ0VZhJ7eXYLkxbJSXGCPbYv+Bphz0T0mhEy\nq2fV05Yfp1xiKryawbiA7kk7wIY6qTo35Oex+jEg5DX1V2Rf3uUeXfareHagnHTt43+slTCN1gNd\nbPHZhHetWWYBECMCkt95ISJg8R2eIxT2MeeHoey2Xr4+Y0MEJE57cmj2hYcd1rg5S6sbnovBlav4\nS5GdvS8ZufejTvuYrvhLMA+BBnJ2g1elqMaYJZu5nV1J2cTI/Xaipvp265CM5lykzRVrQAHxz5zt\n9M6hFRxnhRGamyTPOtxcCwG9Cl4xYKS1TyhEww==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
+  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
 
 jobs:
   configuration:
@@ -37,8 +37,8 @@ jobs:
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       changelog: ${{ steps.changelog.outputs.changelog }}
-      btbgithub: ${{ steps.github.outputs.btbgithub }}
       basename: ${{ steps.github.outputs.basename }}
+      description: ${{ steps.github.outputs.description}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "::set-output name=prerelease::false"
           else
-            echo "Prerelease version $MAJOR_MINOR.PATCH_VERSION $STAMP"
+            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
             echo "::set-output name=prerelease::true"
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
@@ -67,30 +67,45 @@ jobs:
           echo "::set-output name=stamp::$STAMP"
       - name: Calculate Changelog
         id: changelog
+        env:
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          if [ $(git describe --tags --abbrev=0) == $(git describe --tags) ]
+          if [ "$PRERELEASE" == "true" ]
           then
             PREV=$(git describe --tags --abbrev=0 HEAD^)
           else
-            PREV=$(git describe --tags --abbrev=0)
+            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
           CHANGELOG=$(git log --pretty=oneline $PREV..HEAD)
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
           echo "::set-output name=changelog::$CHANGELOG"
-      - name: Set github suffix if relevant
+      - name: Set custom app name and package name, if relevant
         id: github
+        env:
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
-          if [ $PATCH_VERSION == $MAJOR_MINOR ]
+          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
+          # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
+          if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=btbgithub::"
             echo "::set-output name=basename::OpenBrush"
+            echo "::set-output name=description::"
           else
-            echo "::set-output name=btbgithub::-btb-github"
-            echo "::set-output name=basename::OpenBrush-github"
+            if [[ ${{ github.ref }} == refs/pull/* ]]
+            then
+              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+            elif [[ ${{ github.ref }} == refs/heads/* ]]
+            then
+              DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
+            else
+              DESCRIPTION="Unknown"
+            fi
+            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[#_-]//g')
+            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
           fi
   build:
     name: ${{ matrix.name }}
@@ -104,14 +119,21 @@ jobs:
           - name: Windows SteamVR
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
+          - name: Windows Rift
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
           - name: Windows SteamVR Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Windows Monoscopic
+          - name: Windows Rift Experimental
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
+            extraoptions: -btb-experimental
+          - name: Windows Monoscopic Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: Monoscopic
-            extraoptions:
+            extraoptions: -btb-experimental
           - name: Linux SteamVR
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
@@ -119,13 +141,14 @@ jobs:
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Linux Monoscopic
+          - name: Linux Monoscopic Experimental
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
-            extraoptions:
-          - name: OSX Monoscopic
+            extraoptions: -btb-experimental
+          - name: OSX Monoscopic Experimental
             targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
             vrsdk: Monoscopic
+            extraoptions: -btb-experimental
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
@@ -145,9 +168,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 23.1
+          # version 27.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=3884880558189851 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=4231499270194643 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -232,7 +255,7 @@ jobs:
         env:
           BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=com.Icosa.$(echo $BASENAME | sed -e 's/-//g').apk" >> $GITHUB_ENV
+          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
@@ -283,7 +306,7 @@ jobs:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.btbgithub }} ${{ env.stamp }} ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
@@ -336,6 +359,18 @@ jobs:
           name: Windows SteamVR Experimental
           path: build_windows_steamvr_experimental
 
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+
+      - name: Download Build Artifacts (Windows Rift Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift Experimental
+          path: build_windows_rift_experimental
+
       - name: Download Build Artifacts (Linux SteamVR)
         uses: actions/download-artifact@v2
         with:
@@ -369,17 +404,23 @@ jobs:
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
           mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
           mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_$VERSION/OpenBrush-github
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush-github
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
+          rm -rf OpenBrush_Rift_$VERSION
+          rm -rf OpenBrush_Rift_Experimental_$VERSION
           rm -rf OpenBrush_Linux_$VERSION
           rm -rf OpenBrush_Linux_Experimental_$VERSION
       - name: Publish
