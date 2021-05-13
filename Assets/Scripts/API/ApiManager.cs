@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using TiltBrush;
 using UnityEngine;
 
@@ -82,7 +83,6 @@ public class ApiManager : MonoBehaviour
     }
     public bool InvokeEndpoint(KeyValuePair<string, string> command)
     {
-        Debug.Log($"Invoking: {command}");
         if (endpoints.ContainsKey(command.Key))
         {
             var endpoint = endpoints[command.Key];
@@ -97,11 +97,42 @@ public class ApiManager : MonoBehaviour
         return false;
     }
 
+    [ContextMenu("List Api Commands")]
+    string ListApiCommands()
+    {
+        var builder = new StringBuilder();
+        if (!Application.isPlaying)
+        {
+            Debug.LogError("Please run in play mode");
+            return "";
+        }
+        else
+        {
+            foreach (var endpoint in endpoints.Keys)
+            {
+                var paramInfoText = new List<string>();
+                foreach (var param in endpoints[endpoint].parameterInfo)
+                {
+                    string typeName = param.ParameterType.Name
+                        .Replace("Single", "float")
+                        .Replace("Int32", "int")
+                        .Replace("String", "string");
+                    paramInfoText.Add($"{typeName} {param.Name}");
+                }
+                var paramInfo = String.Join(", ", paramInfoText);
+                paramInfo = (paramInfo == "") ? "" : $": {paramInfo}";  // No colon if no params
+                builder.AppendLine($"{endpoint}{paramInfo}");
+            }
+            var output = builder.ToString(); 
+            Debug.Log(output);
+            return output;
+        }
+    }
+
     string ApiCommandCallback(HttpListenerRequest request)
     {
 
         KeyValuePair<string, string> command;
-        Debug.Log($"Received {request.Url.Query}");
 
         // Handle GET
         foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
@@ -133,7 +164,6 @@ public class ApiManager : MonoBehaviour
                         var kv = pair.Split(new[]{'='}, 2);
                         command = new KeyValuePair<string, string>(kv[0], kv[1]);
                         m_RequestedCommandQueue.Enqueue(command);
-                        Debug.Log($"Queued {command}");
                     }
                 }
             }
@@ -148,12 +178,10 @@ public class ApiManager : MonoBehaviour
         try
         {
             command = (KeyValuePair<string, string>)m_RequestedCommandQueue.Dequeue();
-            Debug.Log($"Dequeued {command}");
         }
         catch (InvalidOperationException)
         {
             return false;
-            Debug.Log($"Dequeue failed");
         }
 
         return Instance.InvokeEndpoint(command);

@@ -53,38 +53,38 @@ namespace TiltBrush
         }
         
         [ApiEndpoint("load.user")]
-        public static void LoadUser(int iParam1)
+        public static void LoadUser(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, 0);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
         }
         
         [ApiEndpoint("load.curated")]
-        public static void LoadCurated(int iParam1)
+        public static void LoadCurated(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, 1);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 1);
         }
         
         [ApiEndpoint("load.liked")]
-        public static void LoadLiked(int iParam1)
+        public static void LoadLiked(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, 2);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 2);
         }
         
         [ApiEndpoint("load.liked")]
-        public static void LoadDrive(int iParam1)
+        public static void LoadDrive(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, 3);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 3);
         }
         
         [ApiEndpoint("load.named")]
-        public static void LoadNamedFile(string sParam)
+        public static void LoadNamedFile(string pathName)
         {
             var rEnum = SketchControlsScript.GlobalCommands.LoadNamedFile;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1, sParam);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1, pathName);
         }
         
         [ApiEndpoint("new")]
@@ -198,11 +198,11 @@ namespace TiltBrush
         // }
         
         [ApiEndpoint("sketch.openfolder")]
-        public static void ShowSketchFolder(int iParam1)
+        public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
             // TODO 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, 0);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
         }
         
         // TODO Why no "enabled" counterpart?
@@ -229,10 +229,10 @@ namespace TiltBrush
         
         // Does this even work?
         [ApiEndpoint("straightedge.shape")]
-        public static void StraightEdgeShape(int iParam1)
+        public static void StraightEdgeShape(bool enable)
         {
             var rEnum = SketchControlsScript.GlobalCommands.StraightEdgeShape;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, enable?1:0);
         }
         
         // TODO Dangerous!
@@ -401,70 +401,70 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
         
-        [ApiEndpoint("load.confirm.complex.high")]
-        public static void LoadConfirmComplexHigh(int iParam1, int iParam2)
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmComplexHigh;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
-        }
+        // [ApiEndpoint("load.confirm.complex.high")]
+        // public static void LoadConfirmComplexHigh(int iParam1, int iParam2)
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmComplexHigh;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
+        // }
         
-        [ApiEndpoint("load.confirm.complex")]
-        public static void LoadConfirmComplex(int iParam1, int iParam2)
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmComplex;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
-        }
+        // [ApiEndpoint("load.confirm.complex")]
+        // public static void LoadConfirmComplex(int iParam1, int iParam2)
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmComplex;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
+        // }
         
-        [ApiEndpoint("load.confirm.unsaved")]
-        public static void LoadConfirmUnsaved(int iParam1, int iParam2)
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmUnsaved;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
-        }
+        // [ApiEndpoint("load.confirm.unsaved")]
+        // public static void LoadConfirmUnsaved(int iParam1, int iParam2)
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.LoadConfirmUnsaved;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
+        // }
         
-        [ApiEndpoint("load.wait.on.download")]
-        public static void LoadWaitOnDownload(int iParam1, int iParam2)
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.LoadWaitOnDownload;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
-        }
+        // [ApiEndpoint("load.wait.on.download")]
+        // public static void LoadWaitOnDownload(int iParam1, int iParam2)
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.LoadWaitOnDownload;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1, iParam2);
+        // }
         
-        [ApiEndpoint("show.quest.side.loading")]
-        public static void ShowQuestSideLoading()
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.ShowQuestSideLoading;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        }
+        // [ApiEndpoint("show.quest.side.loading")]
+        // public static void ShowQuestSideLoading()
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.ShowQuestSideLoading;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        // }
         
-        [ApiEndpoint("unload.reference.image.catalog")]
-        public static void UnloadReferenceImageCatalog()
-        {
-            var rEnum = SketchControlsScript.GlobalCommands.UnloadReferenceImageCatalog;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        }
+        // [ApiEndpoint("unload.reference.image.catalog")]
+        // public static void UnloadReferenceImageCatalog()
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.UnloadReferenceImageCatalog;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        // }
         
-        [ApiEndpoint("toggle.camera.path.visuals")]
+        [ApiEndpoint("camerapath.togglevisuals")]
         public static void ToggleCameraPathVisuals()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ToggleCameraPathVisuals;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
         
-        [ApiEndpoint("toggle.camera.path.preview")]
+        [ApiEndpoint("camerapath.togglepreview")]
         public static void ToggleCameraPathPreview()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ToggleCameraPathPreview;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
         
-        [ApiEndpoint("delete.camera.path")]
+        [ApiEndpoint("camerapath.delete")]
         public static void DeleteCameraPath()
         {
             var rEnum = SketchControlsScript.GlobalCommands.DeleteCameraPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
         
-        [ApiEndpoint("record.camera.path")]
+        [ApiEndpoint("camerapath.record")]
         public static void RecordCameraPath()
         {
             var rEnum = SketchControlsScript.GlobalCommands.RecordCameraPath;
