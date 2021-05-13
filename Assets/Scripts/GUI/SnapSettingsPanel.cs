@@ -17,8 +17,6 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    
-    
 
     public class SnapSettingsPanel : BasePanel
     {
