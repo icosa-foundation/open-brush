@@ -32,12 +32,14 @@ public class ApiEndpoint : Attribute
     {
         var parameters = new object[parameterInfo.Length];
         
-        string[] tokens = commandValue.Split(',');
+        string[] tokens = commandValue.Split(',').Select(x=>x.Trim()).ToArray();
+        
         int tokenIndex = 0;
         for (var i = 0; i < parameterInfo.Length; i++)
         {
             ParameterInfo paramType = parameterInfo[i];
-            object paramValue = null;
+            object paramValue;
+            
             if (paramType.ParameterType == typeof(string))
             {
                 if (parameterInfo.Length == 1 && i == 0)

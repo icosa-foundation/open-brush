@@ -9,10 +9,12 @@ using System.Reflection;
 using System.Text;
 using TiltBrush;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class ApiManager : MonoBehaviour
 {
     private const string ROOT_API_PATH = "/api/v1";
+    private const string SCRIPTS_PATH = "/scripts";
     
     private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
     private static ApiManager m_Instance;
@@ -20,6 +22,7 @@ public class ApiManager : MonoBehaviour
 
     [NonSerialized] public Vector3 BrushPosition;
     [NonSerialized] public Vector3 BrushBearing = Vector3.forward;
+    private Dictionary<string, string> m_Scripts;
 
     public static ApiManager Instance
     {
@@ -29,9 +32,32 @@ public class ApiManager : MonoBehaviour
     void Awake()
     {
         m_Instance = this;
-        Populate();
+        PopulateApi();
+        PopulateScripts();
     }
-    private void Populate()
+
+    private void PopulateScripts()
+    {
+        m_Scripts = new Dictionary<string, string>();
+        var scriptsDir = Path.Combine(App.UserPath(), "Scripts");
+        if (Directory.Exists(scriptsDir))
+        {
+            var info = new DirectoryInfo(scriptsDir);
+            FileInfo[] fileInfo = info.GetFiles();
+            foreach (FileInfo file in fileInfo)
+            {
+                if (file.Extension==".html" || file.Extension==".htm")
+                {
+                    var f = file.OpenText();
+                    var filename = file.Name;
+                    m_Scripts[filename] = f.ReadToEnd();
+                    App.HttpServer.AddHttpHandler($"{SCRIPTS_PATH}/{filename}", ScriptsCallback);
+                }
+            }
+        }
+    }
+    
+    private void PopulateApi()
     {
         endpoints = new Dictionary<string, ApiEndpoint>();
         var types = AppDomain.CurrentDomain.GetAssemblies()
@@ -81,6 +107,7 @@ public class ApiManager : MonoBehaviour
         }
         App.HttpServer.AddHttpHandler(ROOT_API_PATH, ApiCommandCallback);
     }
+    
     public bool InvokeEndpoint(KeyValuePair<string, string> command)
     {
         if (endpoints.ContainsKey(command.Key))
@@ -124,9 +151,13 @@ public class ApiManager : MonoBehaviour
                 builder.AppendLine($"{endpoint}{paramInfo}");
             }
             var output = builder.ToString(); 
-            Debug.Log(output);
             return output;
         }
+    }
+
+    private string ScriptsCallback(HttpListenerRequest request)
+    {
+        return m_Scripts[request.Url.Segments.Last()];
     }
 
     string ApiCommandCallback(HttpListenerRequest request)
@@ -138,15 +169,15 @@ public class ApiManager : MonoBehaviour
         foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
         {
             string[] kv = pair.Split(new[]{'='}, 2);
-            if (kv.Length == 1)
+            if (kv.Length == 1 && kv[0]!="")
             {
-                command = new KeyValuePair<string, string>(kv[0], "");
+                m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], ""));
             }
-            else
+            else if (kv.Length == 2)
             {
-                command = new KeyValuePair<string, string>(kv[0], kv[1]);
+                m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], UnityWebRequest.UnEscapeURL(kv[1])));
+                Debug.Log($"{kv[1]} > {UnityWebRequest.UnEscapeURL(kv[1])}");
             }
-            m_RequestedCommandQueue.Enqueue(command);
         }
         
         // Handle POST
@@ -158,7 +189,7 @@ public class ApiManager : MonoBehaviour
                 using (var reader = new StreamReader(body, request.ContentEncoding))
                 {
                     var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                    var pairs = formdata.Split('&');
+                    var pairs = formdata.Replace("+", " ").Split('&');
                     foreach (var pair in pairs)
                     {
                         var kv = pair.Split(new[]{'='}, 2);

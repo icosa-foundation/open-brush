@@ -45,11 +45,11 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("draw.svg")]
-        public static void SvgPath(string pathString)
+        public static void SvgPath(string svgPathString)
         {
             var origin = ApiManager.Instance.BrushPosition;
             SVGData svgData = new SVGData();
-            svgData.Path(pathString);
+            svgData.Path(svgPathString);
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
             DrawStrokes.PathsToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
