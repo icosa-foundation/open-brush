@@ -1218,6 +1218,7 @@ static class BuildTiltBrush
         string stamp = tiltOptions.Stamp;
         SdkMode vrSdk = tiltOptions.VrSdk;
         BuildOptions options = tiltOptions.UnityOptions;
+        // Add your new scenes in this List for your app for Oculus Quest 
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
         Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
             target, vrSdk, tiltOptions.Experimental, tiltOptions.AutoProfile,
