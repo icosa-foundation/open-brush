@@ -70,8 +70,15 @@ namespace TiltBrush
 
             if (brushDescriptor == null)
             {
-                brushId = brushId.ToLower();
-                brushDescriptor = BrushCatalog.m_Instance.AllBrushes.First(x => x.name.ToLower() == brushId);
+                brushId = brushId.ToLower().Trim().Replace(" ", "");
+                try
+                {
+                    brushDescriptor = BrushCatalog.m_Instance.AllBrushes.First(x => x.name.ToLower() == brushId);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Debug.LogError($"No brush found called: {brushId}");
+                }
             }
             
             if (brushDescriptor != null)

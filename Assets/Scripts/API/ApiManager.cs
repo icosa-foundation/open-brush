@@ -171,7 +171,6 @@ public class ApiManager : MonoBehaviour
             {
                 builder.AppendLine($"{k}{commands[k]}");
             }
-            Debug.Log(builder);
         }
     }
     
@@ -217,7 +216,6 @@ public class ApiManager : MonoBehaviour
             else if (kv.Length == 2)
             {
                 m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], UnityWebRequest.UnEscapeURL(kv[1])));
-                Debug.Log($"{kv[1]} > {UnityWebRequest.UnEscapeURL(kv[1])}");
             }
         }
         

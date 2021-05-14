@@ -13,6 +13,7 @@ namespace TiltBrush
                 var path = new List<Vector3>();
                 foreach (List<float> position in positionList)
                 {
+                    if (position.Count < 3) {position.Add(0);}
                     path.Add(new Vector3(position[0], position[1], position[2]));
                 }
                 paths.Add(path);

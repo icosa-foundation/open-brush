@@ -62,6 +62,11 @@ namespace TiltBrush
 #else
                         bool allowExternalApiCalls = false;
 #endif
+                        // CORS headers
+                        // TODO Tie this in with the option to accept non-localhost requests
+                        ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                        ctx.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
+
                         try
                         {
                             if (!ctx.Request.IsLocal && !allowExternalApiCalls)
