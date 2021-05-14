@@ -32,8 +32,41 @@ public class ApiManager : MonoBehaviour
     void Awake()
     {
         m_Instance = this;
+        App.HttpServer.AddHttpHandler($"/help", InfoCallback);
+        App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
         PopulateApi();
         PopulateScripts();
+    }
+
+    private string InfoCallback(HttpListenerRequest request)
+    {
+        string html;
+        switch (request.Url.Segments.Last())
+        {
+            case "commands":
+                var builder = new StringBuilder("<html><head></head><body>");
+                builder.AppendLine("<h3>Open Brush API Commands</h3>");
+                builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
+                builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
+                builder.AppendLine("<p>Separate multiple commands with &</p>");
+                builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
+                builder.AppendLine("<dl>");
+                var commands = ListApiCommands();
+                foreach (var k in commands.Keys)
+                {
+                    builder.AppendLine($"<dt>{k}</dt><dd>{commands[k]}</dd>");
+                }
+                builder.AppendLine("</dl></body></html>");
+                html = builder.ToString();
+                break;
+            case "help":
+            default:
+                html = @"<h3>Open Brush API Help</h3>
+<p>Try <a href='/help/commands'>/help/commands</a></p>
+";
+                break;
+        }
+        return html;
     }
 
     private void PopulateScripts()
@@ -123,36 +156,44 @@ public class ApiManager : MonoBehaviour
         }
         return false;
     }
-
-    [ContextMenu("List Api Commands")]
-    string ListApiCommands()
+    [ContextMenu("Log Api Commands")]
+    public void LogCommandsList()
     {
-        var builder = new StringBuilder();
         if (!Application.isPlaying)
         {
             Debug.LogError("Please run in play mode");
-            return "";
         }
         else
         {
-            foreach (var endpoint in endpoints.Keys)
+            var builder = new StringBuilder();
+            var commands = ListApiCommands();
+            foreach (var k in commands.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                var paramInfo = String.Join(", ", paramInfoText);
-                paramInfo = (paramInfo == "") ? "" : $": {paramInfo}";  // No colon if no params
-                builder.AppendLine($"{endpoint}{paramInfo}");
+                builder.AppendLine($"{k}{commands[k]}");
             }
-            var output = builder.ToString(); 
-            return output;
+            Debug.Log(builder);
         }
+    }
+    
+    Dictionary<string, string> ListApiCommands()
+    {
+        var commands = new Dictionary<string, string>();
+        foreach (var endpoint in endpoints.Keys)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            var paramInfo = String.Join(", ", paramInfoText);
+            paramInfo = (paramInfo == "") ? "" : $": {paramInfo}";  // No colon if no params
+            commands[endpoint] = paramInfo;
+        }
+        return commands;
     }
 
     private string ScriptsCallback(HttpListenerRequest request)
