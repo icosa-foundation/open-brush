@@ -34,6 +34,21 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(jsonData, origin);
         }
 
+        [ApiEndpoint("showfolder.exports")]
+        public static void OpenExportFolder()
+        {
+            // Launch external window and tell the user we did so
+            // TODO This call is windows only
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush,
+                    "Folder opened on desktop", fPopScalar: 0.5f
+                );
+                System.Diagnostics.Process.Start("explorer.exe", "/select," + App.UserExportPath());
+            }
+        }
+
         [ApiEndpoint("draw.text")]
         public static void Text(string text)
         {
@@ -54,7 +69,7 @@ namespace TiltBrush
             svgPolyline.Fill(svgData);
             DrawStrokes.PathsToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
-        
+
         [ApiEndpoint("brush.type")]
         public static void Brush(string brushId)
         {
@@ -80,7 +95,7 @@ namespace TiltBrush
                     Debug.LogError($"No brush found called: {brushId}");
                 }
             }
-            
+
             if (brushDescriptor != null)
             {
                 PointerManager.m_Instance.SetBrushForAllPointers(brushDescriptor);
@@ -96,7 +111,12 @@ namespace TiltBrush
         {
             float h, s, v;
             Color.RGBToHSV(App.BrushColor.CurrentColor, out h, out s, out v);
-            App.BrushColor.CurrentColor = Color.HSVToRGB(h + hsv.x, s + hsv.y, v + hsv.z);
+            App.BrushColor.CurrentColor = Color.HSVToRGB(
+                (h + hsv.x) % 1f,
+                (s + hsv.y) % 1f,
+                (v + hsv.z) % 1f
+            );
+            Debug.Log($"{(h + hsv.x) % 1f},{(s + hsv.y) % 1f},{(v + hsv.z) % 1f}={App.BrushColor.CurrentColor}");
         }
         
         [ApiEndpoint("brush.color")]

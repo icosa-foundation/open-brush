@@ -4,27 +4,35 @@ namespace TiltBrush
 {
     public static class GlobalCommandsApi
     {
-        [ApiEndpoint("save")]
-        public static void Save(int saveIndex)
+        // // Dangerous
+        // [ApiEndpoint("save.slot")]
+        // public static void Save(int slot)
+        // {
+        //     var rEnum = SketchControlsScript.GlobalCommands.Save;
+        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot);
+        // }
+        
+        [ApiEndpoint("save.overwrite")]
+        public static void SaveOverwrite()
         {
             var rEnum = SketchControlsScript.GlobalCommands.Save;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, saveIndex);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1);
         }
         
-        [ApiEndpoint("save.new")]
-        public static void SaveNew(bool generateBoundingBoxSaveIcon)
+        [ApiEndpoint("save")]
+        public static void SaveNew()
         {
             var rEnum = SketchControlsScript.GlobalCommands.SaveNew;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, generateBoundingBoxSaveIcon?1:-1);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
         // TODO 
-        // [ApiEndpoint("upload")]
-        // public static void SaveAndUpload()
-        // {
-        //     var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
-        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        // }
+        [ApiEndpoint("upload")]
+        public static void SaveAndUpload()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
         
         [ApiEndpoint("export.all")]
         public static void ExportAll()
@@ -197,7 +205,7 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
         
-        [ApiEndpoint("sketch.openfolder")]
+        [ApiEndpoint("showfolder.sketch")]
         public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;

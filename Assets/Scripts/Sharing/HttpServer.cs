@@ -161,5 +161,10 @@ namespace TiltBrush
         {
             m_HttpRequestHandlers.Remove(path);
         }
+
+        public bool HttpHandlerExists(string path)
+        {
+            return m_HttpRequestHandlers.ContainsKey(path);
+        }
     }
 } // namespace TiltBrush

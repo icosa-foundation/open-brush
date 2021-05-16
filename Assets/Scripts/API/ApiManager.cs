@@ -1,21 +1,25 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using Newtonsoft.Json;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
 
+
 public class ApiManager : MonoBehaviour
 {
-    private const string ROOT_API_PATH = "/api/v1";
-    private const string SCRIPTS_PATH = "/scripts";
+    private const string ROOT_API_URL = "/api/v1";
+    private const string BASE_SCRIPTS_URL = "/scripts";
+    private const string BASE_EXAMPLE_SCRIPTS_URL = "/examples";
     
+    private FileWatcher m_FileWatcher;
+    private string m_UserScriptsPath;
     private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
     private static ApiManager m_Instance;
     private Dictionary<string, ApiEndpoint> endpoints;
@@ -32,64 +36,129 @@ public class ApiManager : MonoBehaviour
     void Awake()
     {
         m_Instance = this;
+        m_UserScriptsPath = Path.Combine(App.UserPath(), "Scripts");
         App.HttpServer.AddHttpHandler($"/help", InfoCallback);
         App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
+        App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
         PopulateApi();
-        PopulateScripts();
+        m_Scripts = new Dictionary<string, string>();
+        PopulateExampleScripts();
+        PopulateUserScripts();
+        if (Directory.Exists(m_UserScriptsPath))
+        {
+            m_FileWatcher = new FileWatcher(m_UserScriptsPath, "*.html");
+            m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
+            m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
+            // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
+            m_FileWatcher.EnableRaisingEvents = true;
+        }
+    }
+    private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
+    {
+        var fileinfo = new FileInfo(e.FullPath);
+        RegisterUserScript(fileinfo);
     }
 
     private string InfoCallback(HttpListenerRequest request)
     {
         string html;
+        StringBuilder builder;
         switch (request.Url.Segments.Last())
         {
             case "commands":
-                var builder = new StringBuilder("<html><head></head><body>");
-                builder.AppendLine("<h3>Open Brush API Commands</h3>");
-                builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
-                builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
-                builder.AppendLine("<p>Separate multiple commands with &</p>");
-                builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
-                builder.AppendLine("<dl>");
                 var commands = ListApiCommands();
-                foreach (var k in commands.Keys)
+                if (request.Url.Query.Contains("raw"))
                 {
-                    builder.AppendLine($"<dt>{k}</dt><dd>{commands[k]}</dd>");
+                    html = String.Join("\n", commands.Keys);
                 }
-                builder.AppendLine("</dl></body></html>");
-                html = builder.ToString();
+                else
+                {
+                    builder = new StringBuilder("<html><head></head><body>");
+                    builder.AppendLine("<h3>Open Brush API Commands</h3>");
+                    builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
+                    builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
+                    builder.AppendLine("<p>Separate multiple commands with &</p>");
+                    builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
+                    builder.AppendLine("<dl>");
+                    foreach (var k in commands.Keys)
+                    {
+                        builder.AppendLine($"<dt>{k}</dt><dd>{commands[k]}</dd>");
+                    }
+                    builder.AppendLine("</dl></body></html>");
+                    html = builder.ToString();
+                }
+                break;
+            case "brushes":
+                var brushes = BrushCatalog.m_Instance.AllBrushes.Where(x=>x.m_Description!="");
+                if (request.Url.Query.Contains("raw"))
+                {
+                    html = String.Join("\n", brushes.Select(x=>x.m_Description));
+                }
+                else
+                {
+                    builder = new StringBuilder("<html><head></head><body>");
+                    builder.AppendLine("<h3>Open Brush Brushes</h3>");
+                    builder.AppendLine("<ul>");
+                    foreach (var b in brushes)
+                    {
+                        builder.AppendLine($"<li>{b.m_Description}</li>");
+                    }
+                    builder.AppendLine("</ul></body></html>");
+                    html = builder.ToString();
+                }
                 break;
             case "help":
             default:
                 html = @"<h3>Open Brush API Help</h3>
-<p>Try <a href='/help/commands'>/help/commands</a></p>
+<ul>
+<li><a href='/help/commands'>/help/commands</a></li>
+<li><a href='/help/brushes'>/help/brushes</a></li>
+</ul>
 ";
                 break;
         }
         return html;
     }
 
-    private void PopulateScripts()
+    private void PopulateExampleScripts()
     {
-        m_Scripts = new Dictionary<string, string>();
-        var scriptsDir = Path.Combine(App.UserPath(), "Scripts");
-        if (Directory.Exists(scriptsDir))
+        var exampleScripts = Resources.LoadAll("ScriptExamples", typeof(TextAsset));
+        foreach (TextAsset htmlFile in exampleScripts)
         {
-            var info = new DirectoryInfo(scriptsDir);
-            FileInfo[] fileInfo = info.GetFiles();
-            foreach (FileInfo file in fileInfo)
-            {
-                if (file.Extension==".html" || file.Extension==".htm")
-                {
-                    var f = file.OpenText();
-                    var filename = file.Name;
-                    m_Scripts[filename] = f.ReadToEnd();
-                    App.HttpServer.AddHttpHandler($"{SCRIPTS_PATH}/{filename}", ScriptsCallback);
-                }
-            }
+            string filename = $"{BASE_EXAMPLE_SCRIPTS_URL}/{htmlFile.name}.html";
+            m_Scripts[filename] = htmlFile.ToString();
+            App.HttpServer.AddHttpHandler(filename, ScriptsCallback);
         }
     }
     
+    private void PopulateUserScripts()
+    {
+        if (Directory.Exists(m_UserScriptsPath))
+        {
+            var dirInfo = new DirectoryInfo(m_UserScriptsPath);
+            FileInfo[] AllFileInfo = dirInfo.GetFiles();
+            foreach (FileInfo fileinfo in AllFileInfo)
+            {
+                RegisterUserScript(fileinfo);
+            }
+        }
+    }
+    private void RegisterUserScript(FileInfo file)
+    {
+        if (file.Extension==".html" || file.Extension==".htm")
+        {
+            var f = file.OpenText();
+            string filename = $"{BASE_SCRIPTS_URL}/{file.Name}";
+            m_Scripts[filename] = f.ReadToEnd();
+            f.Close();
+            if (!App.HttpServer.HttpHandlerExists(filename))
+            {
+                App.HttpServer.AddHttpHandler(filename, ScriptsCallback);
+            }
+        }
+    }
+
     private void PopulateApi()
     {
         endpoints = new Dictionary<string, ApiEndpoint>();
@@ -138,7 +207,7 @@ public class ApiManager : MonoBehaviour
                 }
             }
         }
-        App.HttpServer.AddHttpHandler(ROOT_API_PATH, ApiCommandCallback);
+        App.HttpServer.AddHttpHandler(ROOT_API_URL, ApiCommandCallback);
     }
     
     public bool InvokeEndpoint(KeyValuePair<string, string> command)
@@ -197,7 +266,11 @@ public class ApiManager : MonoBehaviour
 
     private string ScriptsCallback(HttpListenerRequest request)
     {
-        return m_Scripts[request.Url.Segments.Last()];
+        var html = m_Scripts[request.RawUrl];
+        string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.m_Description != "").Select(x => x.m_Description).ToArray();
+        string brushesJson = JsonConvert.SerializeObject(brushNameList);
+        html = html.Replace("{{brushesJson}}", brushesJson);
+        return html;
     }
 
     string ApiCommandCallback(HttpListenerRequest request)
