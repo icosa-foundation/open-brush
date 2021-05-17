@@ -90,10 +90,10 @@ public class ApiManager : MonoBehaviour
                 }
                 break;
             case "brushes":
-                var brushes = BrushCatalog.m_Instance.AllBrushes.Where(x=>x.m_Description!="");
+                var brushes = BrushCatalog.m_Instance.AllBrushes.Where(x=>x.DurableName!="");
                 if (request.Url.Query.Contains("raw"))
                 {
-                    html = String.Join("\n", brushes.Select(x=>x.m_Description));
+                    html = String.Join("\n", brushes.Select(x=>x.DurableName));
                 }
                 else
                 {
@@ -102,7 +102,7 @@ public class ApiManager : MonoBehaviour
                     builder.AppendLine("<ul>");
                     foreach (var b in brushes)
                     {
-                        builder.AppendLine($"<li>{b.m_Description}</li>");
+                        builder.AppendLine($"<li>{b.DurableName}</li>");
                     }
                     builder.AppendLine("</ul></body></html>");
                     html = builder.ToString();
@@ -267,7 +267,7 @@ public class ApiManager : MonoBehaviour
     private string ScriptsCallback(HttpListenerRequest request)
     {
         var html = m_Scripts[request.RawUrl];
-        string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.m_Description != "").Select(x => x.m_Description).ToArray();
+        string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "").Select(x => x.DurableName).ToArray();
         string brushesJson = JsonConvert.SerializeObject(brushNameList);
         html = html.Replace("{{brushesJson}}", brushesJson);
         return html;

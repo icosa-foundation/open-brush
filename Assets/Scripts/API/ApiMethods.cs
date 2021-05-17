@@ -106,8 +106,8 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("brush.color.shift")]
-        public static void ShiftColor(Vector3 hsv)
+        [ApiEndpoint("brush.addhsv")]
+        public static void AddColorHSV(Vector3 hsv)
         {
             float h, s, v;
             Color.RGBToHSV(App.BrushColor.CurrentColor, out h, out s, out v);
@@ -116,11 +116,28 @@ namespace TiltBrush
                 (s + hsv.y) % 1f,
                 (v + hsv.z) % 1f
             );
-            Debug.Log($"{(h + hsv.x) % 1f},{(s + hsv.y) % 1f},{(v + hsv.z) % 1f}={App.BrushColor.CurrentColor}");
         }
         
-        [ApiEndpoint("brush.color")]
-        public static void SetColor(string colorString)
+        [ApiEndpoint("brush.addrgb")]
+        public static void AddColorRGB(Vector3 rgb)
+        {
+            App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
+        }
+        
+        [ApiEndpoint("brush.rgb")]
+        public static void SetColorRGB(Vector3 rgb)
+        {
+            App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
+        }
+        
+        [ApiEndpoint("brush.hsv")]
+        public static void SetColorHSV(Vector3 hsv)
+        {
+            App.BrushColor.CurrentColor = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
+        }
+        
+        [ApiEndpoint("brush.htmlcolor")]
+        public static void SetColorHTML(string colorString)
         {
             Color color;
             if (ColorUtility.TryParseHtmlString(colorString, out color) ||
@@ -131,27 +148,20 @@ namespace TiltBrush
         }
         
         [ApiEndpoint("brush.size")]
-        public static void BrushSize(float size)
+        public static void BrushSizeSet(float size)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 = size;
         }
 
-        [ApiEndpoint("brush.enlarge")]
-        public static void BrushEnlarge(float size)
+        [ApiEndpoint("brush.addsize")]
+        public static void BrushSizeAdd(float size)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 += size;
         }
-        
-        [ApiEndpoint("brush.reduce")]
-        public static void BrushReduce(float size)
-        {
-            PointerManager.m_Instance.MainPointer.BrushSize01 -= size;
-        }
-        
+
         [ApiEndpoint("camera.teleport")]
         public static void TeleportCamera(Vector3 translation)
         {
-
             TrTransform pose = App.Scene.Pose;
             pose.translation -= translation;
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
