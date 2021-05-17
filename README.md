@@ -255,7 +255,7 @@ Follow these steps to build your app for Oculus Quest:
     `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
-**Note:** Add your new scene files' names in List '`scene`' on 1221st line in `../Assets/Editor/BuildTiltBrush.cs` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
+**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
 
 ### Publishing to Oculus stores
 
