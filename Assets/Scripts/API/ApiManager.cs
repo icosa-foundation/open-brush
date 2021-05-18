@@ -15,8 +15,12 @@ using UnityEngine.Networking;
 public class ApiManager : MonoBehaviour
 {
     private const string ROOT_API_URL = "/api/v1";
-    private const string BASE_SCRIPTS_URL = "/scripts";
-    private const string BASE_EXAMPLE_SCRIPTS_URL = "/examples";
+    private const string BASE_USER_SCRIPTS_URL = "/scripts";
+    private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
+    private const string BASE_HTML = @"<!doctype html><html lang='en'>
+<head><meta charset='UTF-8'></head>
+<body>{0}</body></html>";
+    
     
     private FileWatcher m_FileWatcher;
     private string m_UserScriptsPath;
@@ -26,12 +30,14 @@ public class ApiManager : MonoBehaviour
 
     [NonSerialized] public Vector3 BrushPosition;
     [NonSerialized] public Vector3 BrushBearing = Vector3.forward;
-    private Dictionary<string, string> m_Scripts;
+    private Dictionary<string, string> m_UserScripts;
+    private Dictionary<string, string> m_ExampleScripts;
 
     public static ApiManager Instance
     {
         get { return m_Instance; }
     }
+    public string UserScriptsPath() { return m_UserScriptsPath; }
 
     void Awake()
     {
@@ -41,7 +47,8 @@ public class ApiManager : MonoBehaviour
         App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
         App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
         PopulateApi();
-        m_Scripts = new Dictionary<string, string>();
+        m_UserScripts = new Dictionary<string, string>();
+        m_ExampleScripts = new Dictionary<string, string>();
         PopulateExampleScripts();
         PopulateUserScripts();
         if (Directory.Exists(m_UserScriptsPath))
@@ -74,8 +81,7 @@ public class ApiManager : MonoBehaviour
                 }
                 else
                 {
-                    builder = new StringBuilder("<html><head></head><body>");
-                    builder.AppendLine("<h3>Open Brush API Commands</h3>");
+                    builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
                     builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
                     builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
                     builder.AppendLine("<p>Separate multiple commands with &</p>");
@@ -85,8 +91,8 @@ public class ApiManager : MonoBehaviour
                     {
                         builder.AppendLine($"<dt>{k}</dt><dd>{commands[k]}</dd>");
                     }
-                    builder.AppendLine("</dl></body></html>");
-                    html = builder.ToString();
+                    builder.AppendLine("</dl>");
+                    html = String.Format(BASE_HTML, builder);
                 }
                 break;
             case "brushes":
@@ -97,25 +103,25 @@ public class ApiManager : MonoBehaviour
                 }
                 else
                 {
-                    builder = new StringBuilder("<html><head></head><body>");
-                    builder.AppendLine("<h3>Open Brush Brushes</h3>");
+                    builder = new StringBuilder("<h3>Open Brush Brushes</h3>");
                     builder.AppendLine("<ul>");
                     foreach (var b in brushes)
                     {
                         builder.AppendLine($"<li>{b.DurableName}</li>");
                     }
-                    builder.AppendLine("</ul></body></html>");
-                    html = builder.ToString();
+                    builder.AppendLine("</ul>");
+                    html = String.Format(BASE_HTML, builder);
                 }
                 break;
             case "help":
             default:
-                html = @"<h3>Open Brush API Help</h3>
+                html = $@"<h3>Open Brush API Help</h3>
 <ul>
-<li><a href='/help/commands'>/help/commands</a></li>
-<li><a href='/help/brushes'>/help/brushes</a></li>
-</ul>
-";
+<li>List of API commands: <a href='/help/commands'>/help/commands</a></li>
+<li>List of brushes: <a href='/help/brushes'>/help/brushes</a></li>
+<li>User Scripts: <a href='{BASE_USER_SCRIPTS_URL}'>{BASE_USER_SCRIPTS_URL}</a></li>
+<li>Example Scripts: <a href='{BASE_EXAMPLE_SCRIPTS_URL}'>{BASE_EXAMPLE_SCRIPTS_URL}</a></li>
+</ul>";
                 break;
         }
         return html;
@@ -123,17 +129,19 @@ public class ApiManager : MonoBehaviour
 
     private void PopulateExampleScripts()
     {
+        App.HttpServer.AddHttpHandler(BASE_EXAMPLE_SCRIPTS_URL, ExampleScriptsCallback);
         var exampleScripts = Resources.LoadAll("ScriptExamples", typeof(TextAsset));
         foreach (TextAsset htmlFile in exampleScripts)
         {
             string filename = $"{BASE_EXAMPLE_SCRIPTS_URL}/{htmlFile.name}.html";
-            m_Scripts[filename] = htmlFile.ToString();
-            App.HttpServer.AddHttpHandler(filename, ScriptsCallback);
+            m_ExampleScripts[filename] = htmlFile.ToString();
+            App.HttpServer.AddHttpHandler(filename, ExampleScriptsCallback);
         }
     }
     
     private void PopulateUserScripts()
     {
+        App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
         if (Directory.Exists(m_UserScriptsPath))
         {
             var dirInfo = new DirectoryInfo(m_UserScriptsPath);
@@ -149,12 +157,12 @@ public class ApiManager : MonoBehaviour
         if (file.Extension==".html" || file.Extension==".htm")
         {
             var f = file.OpenText();
-            string filename = $"{BASE_SCRIPTS_URL}/{file.Name}";
-            m_Scripts[filename] = f.ReadToEnd();
+            string filename = $"{BASE_USER_SCRIPTS_URL}/{file.Name}";
+            m_UserScripts[filename] = f.ReadToEnd();
             f.Close();
             if (!App.HttpServer.HttpHandlerExists(filename))
             {
-                App.HttpServer.AddHttpHandler(filename, ScriptsCallback);
+                App.HttpServer.AddHttpHandler(filename, UserScriptsCallback);
             }
         }
     }
@@ -264,9 +272,58 @@ public class ApiManager : MonoBehaviour
         return commands;
     }
 
-    private string ScriptsCallback(HttpListenerRequest request)
+    private string UserScriptsCallback(HttpListenerRequest request)
     {
-        var html = m_Scripts[request.RawUrl];
+        string html;
+        if (request.Url.Segments.Length == 2)
+        {
+            var builder = new StringBuilder("<h3>Open Brush User Scripts</h3>");
+            builder.AppendLine("<ul>");
+            foreach (var e in m_UserScripts)
+            {
+                builder.AppendLine($"<li><a href='{e.Key}'>{e.Key}</a></li>");
+            }
+                            
+            // Only show this button on Windows
+            // TODO Update this is ApiMethods.OpenUserFolder is ever cross platform
+            // (Also see similar global commands that will need updating)
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                builder.AppendLine($"<button onclick=\"fetch('{ROOT_API_URL}?showfolder.scripts');\">Open Scripts Folder</button>");
+            }
+            builder.AppendLine("</ul>");
+            html = String.Format(BASE_HTML, builder);
+        }
+        else
+        {
+            html = m_UserScripts[request.RawUrl];
+        }
+        return ScriptTemplateSubstitution(html);
+    }
+
+    private string ExampleScriptsCallback(HttpListenerRequest request)
+    {
+        string html;
+        if (request.Url.Segments.Length == 2)
+        {
+            var builder = new StringBuilder("<h3>Open Brush Example Scripts</h3>");
+            builder.AppendLine("<ul>");
+            foreach (var e in m_ExampleScripts)
+            {
+                builder.AppendLine($"<li><a href='{e.Key}'>{e.Key}</a></li>");
+            }
+            builder.AppendLine("</ul>");
+            html = String.Format(BASE_HTML, builder);
+        }
+        else
+        {
+            html = m_ExampleScripts[request.RawUrl];
+        }
+        return ScriptTemplateSubstitution(html);
+    }
+    
+    private string ScriptTemplateSubstitution(string html)
+    {
         string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "").Select(x => x.DurableName).ToArray();
         string brushesJson = JsonConvert.SerializeObject(brushNameList);
         html = html.Replace("{{brushesJson}}", brushesJson);

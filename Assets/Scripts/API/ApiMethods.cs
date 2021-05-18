@@ -34,8 +34,19 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(jsonData, origin);
         }
 
+        [ApiEndpoint("showfolder.scripts")]
+        public static void OpenUserScriptsFolder()
+        {
+            OpenUserFolder(ApiManager.Instance.UserScriptsPath());
+        }
+        
         [ApiEndpoint("showfolder.exports")]
         public static void OpenExportFolder()
+        {
+            OpenUserFolder(App.UserExportPath());
+        }
+
+        private static void OpenUserFolder(string path)
         {
             // Launch external window and tell the user we did so
             // TODO This call is windows only
@@ -45,7 +56,7 @@ namespace TiltBrush
                     InputManager.ControllerName.Brush,
                     "Folder opened on desktop", fPopScalar: 0.5f
                 );
-                System.Diagnostics.Process.Start("explorer.exe", "/select," + App.UserExportPath());
+                System.Diagnostics.Process.Start("explorer.exe", "/select," + path);
             }
         }
 
