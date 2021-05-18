@@ -36,7 +36,6 @@ namespace TiltBrush
         }
         public static void PathsToStrokes(List<List<Vector3>> paths, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
-            Vector3 pos = origin;
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
             float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
@@ -51,7 +50,7 @@ namespace TiltBrush
                 for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
                 {
                     var coordList0 = path[vertexIndex];
-                    var vert = new Vector3(coordList0[0], coordList0[1], coordList0[2]) * scale;
+                    var vert = new Vector3(coordList0[0], coordList0[1], coordList0[2]);
                     var coordList1 = path[(vertexIndex + 1) % path.Count];
                     // Fix for trailing zeros from SVG.
                     // TODO Find out why and fix it properly
@@ -59,13 +58,13 @@ namespace TiltBrush
                     {
                         break;
                     }
-                    var nextVert = new Vector3(coordList1[0], coordList1[1], coordList1[2]) * scale;
+                    var nextVert = new Vector3(coordList1[0], coordList1[1], coordList1[2]);
 
                     for (float step = 0; step <= 1f; step += .25f)
                     {
                         controlPoints.Add(new PointerManager.ControlPoint
                         {
-                            m_Pos = pos + vert + ((nextVert - vert) * step),
+                            m_Pos = (vert + (nextVert - vert) * step) * scale + origin,
                             m_Orient = Quaternion.identity, //.LookRotation(face.Normal, Vector3.up),
                             m_Pressure = pressure,
                             m_TimestampMs = time++
