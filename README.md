@@ -147,7 +147,7 @@ open-source licensing issues. These are:
 *   **Tilt Shift**. The official Tilt Brush app uses modified versions of the
     Tilt Shift effect that came with the standard assets in earlier versions of
     Unity. These have been replaced with a modified version of
-    [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
+    [Tilt shift by ruby0x1](https://gist.github.com/ruby0x1/10324388).
 
 ## Generating Secrets file
 Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
