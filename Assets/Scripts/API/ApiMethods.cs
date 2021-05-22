@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    
     // ReSharper disable once UnusedType.Global
     public static class ApiMethods
     {
@@ -26,7 +25,7 @@ namespace TiltBrush
             App.Scene.Pose = lookPose;
         }
 
-        [ApiEndpoint("draw.path")]
+        [ApiEndpoint("draw.path", "Draws a series of lines at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
         public static void Draw(string jsonString)
         {
             var origin = ApiManager.Instance.BrushPosition;
@@ -34,13 +33,13 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(jsonData, origin);
         }
 
-        [ApiEndpoint("showfolder.scripts")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
         public static void OpenUserScriptsFolder()
         {
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
         }
         
-        [ApiEndpoint("showfolder.exports")]
+        [ApiEndpoint("showfolder.exports", "Opens the user's Exports folder on the desktop")]
         public static void OpenExportFolder()
         {
             OpenUserFolder(App.UserExportPath());
@@ -60,7 +59,7 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("draw.text")]
+        [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
         public static void Text(string text)
         {
             var origin = ApiManager.Instance.BrushPosition;
@@ -70,7 +69,7 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(polyline2d, origin);
         }
 
-        [ApiEndpoint("draw.svg")]
+        [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
         public static void SvgPath(string svgPathString)
         {
             var origin = ApiManager.Instance.BrushPosition;
@@ -81,13 +80,13 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
 
-        [ApiEndpoint("brush.type")]
-        public static void Brush(string brushId)
+        [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the localhost:40074/help screen")]
+        public static void Brush(string brushType)
         {
             BrushDescriptor brushDescriptor = null;
             try
             {
-                var guid = new Guid(brushId);
+                var guid = new Guid(brushType);
                 brushDescriptor = BrushCatalog.m_Instance.GetBrush(guid);
             }
             catch (FormatException e)
@@ -96,14 +95,14 @@ namespace TiltBrush
 
             if (brushDescriptor == null)
             {
-                brushId = brushId.ToLower().Trim().Replace(" ", "");
+                brushType = brushType.ToLower().Trim().Replace(" ", "");
                 try
                 {
-                    brushDescriptor = BrushCatalog.m_Instance.AllBrushes.First(x => x.name.ToLower() == brushId);
+                    brushDescriptor = BrushCatalog.m_Instance.AllBrushes.First(x => x.name.ToLower() == brushType);
                 }
                 catch (InvalidOperationException e)
                 {
-                    Debug.LogError($"No brush found called: {brushId}");
+                    Debug.LogError($"No brush found called: {brushType}");
                 }
             }
 
@@ -113,11 +112,11 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogError($"No brush found with the name or guid: {brushId}");
+                Debug.LogError($"No brush found with the name or guid: {brushType}");
             }
         }
 
-        [ApiEndpoint("brush.addhsv")]
+        [ApiEndpoint("color.add.hsv", "Adds the supplied values to the current color. Values are hue, saturation and value")]
         public static void AddColorHSV(Vector3 hsv)
         {
             float h, s, v;
@@ -129,67 +128,100 @@ namespace TiltBrush
             );
         }
         
-        [ApiEndpoint("brush.addrgb")]
+        [ApiEndpoint("color.add.rgb", "Adds the supplied values to the current color. Values are red green and blue")]
         public static void AddColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
         }
         
-        [ApiEndpoint("brush.rgb")]
+        [ApiEndpoint("color.set.rgb", "Sets the current color. Values are hue, saturation and value")]
         public static void SetColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
         }
         
-        [ApiEndpoint("brush.hsv")]
+        [ApiEndpoint("color.set.hsv", "Sets the current color. Values are red, green and blue")]
         public static void SetColorHSV(Vector3 hsv)
         {
             App.BrushColor.CurrentColor = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
         }
-        
-        [ApiEndpoint("brush.htmlcolor")]
-        public static void SetColorHTML(string colorString)
+
+        [ApiEndpoint("color.set.html", "Sets the current color. colorString can either be a hex value or a css color name.")]
+        public static void SetColorHTML(string color)
         {
-            Color color;
-            if (ColorUtility.TryParseHtmlString(colorString, out color) ||
-                ColorUtility.TryParseHtmlString($"#{colorString}", out color))
+            
+            Color currentColor;
+            string colorString;
+
+            colorString = color;
+            if (CssColors.NamesToHex.ContainsKey(color)) colorString = CssColors.NamesToHex[color];
+            if (!color.StartsWith("#")) colorString = $"#{color}";
+            
+            if (ColorUtility.TryParseHtmlString($"#{color}", out currentColor))
             {
-                App.BrushColor.CurrentColor = color;
+                App.BrushColor.CurrentColor = currentColor;
+            }
+            else
+            {
+                Debug.LogError("Invalid color: {color}");
             }
         }
         
-        [ApiEndpoint("brush.size")]
+        [ApiEndpoint("brush.size.set", "Sets the current brush size")]
         public static void BrushSizeSet(float size)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 = size;
         }
 
-        [ApiEndpoint("brush.addsize")]
-        public static void BrushSizeAdd(float size)
+        [ApiEndpoint("brush.size.add", "Changes the current brush size by 'amount'")]
+        public static void BrushSizeAdd(float amount)
         {
-            PointerManager.m_Instance.MainPointer.BrushSize01 += size;
+            PointerManager.m_Instance.MainPointer.BrushSize01 += amount;
         }
 
-        [ApiEndpoint("camera.teleport")]
-        public static void TeleportCamera(Vector3 translation)
+        [ApiEndpoint("camera.move.to", "Moves the spectator or non-VR camera to the given position")]
+        public static void MoveCameraTo(Vector3 position)
         {
-            TrTransform pose = App.Scene.Pose;
-            pose.translation -= translation;
-            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
-            App.Scene.Pose = pose;
+            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                TrTransform pose = App.Scene.Pose;
+                pose.translation = position;
+                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+                App.Scene.Pose = pose;
+            }
+            else
+            {
+                var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                cam.transform.position = position;
+            }
+        }
+        
+        [ApiEndpoint("camera.move.by", "Moves the spectator or non-VR camera by the given amount")]
+        public static void MoveCameraBy(Vector3 amount)
+        {
+            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                TrTransform pose = App.Scene.Pose;
+                pose.translation -= amount;
+                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+                App.Scene.Pose = pose;
+            }
+            else
+            {
+                var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                cam.transform.position += amount;
+            }
         }
 
-        [ApiEndpoint("camera.turn")]
-        [ApiEndpoint("camera.turn.y")]
-        [ApiEndpoint("camera.yaw")]
+        [ApiEndpoint("camera.turn.y", "Turns the spectator or non-VR camera left or right.")]
         public static void Yaw(float angle)
         {
             ChangeCameraBearing(angle, Vector3.up);
         }
 
-        [ApiEndpoint("camera.pitch")]
-        [ApiEndpoint("camera.turn.x")]
+        [ApiEndpoint("camera.turn.x", "Changes the angle of the spectator or non-VR camera up or down.")]
         public static void Pitch(float angle)
         {
             ChangeCameraBearing(angle, Vector3.left);
@@ -197,14 +229,14 @@ namespace TiltBrush
 
         // TODO doesn't actually make any difference at the moment
         // As we don't store orientation - only bearing.
-        [ApiEndpoint("camera.roll")]
-        [ApiEndpoint("camera.turn.z")]
-        public static void Roll(float angle)
-        {
-            ChangeCameraBearing(angle, Vector3.forward);
-        }
+        // [ApiEndpoint("camera.turn.z", "")]
+        // public static void Roll(float angle)
+        // {
+        //     ChangeCameraBearing(angle, Vector3.forward);
+        // }
 
-        [ApiEndpoint("camera.lookat")]
+        // TODO This should be lookat "position"
+        [ApiEndpoint("camera.lookat", "Points the spectator or non-VR camera to look in the specified direction. Angles are given in x,y,z degrees")]
         public static void CameraDirection(Vector3 direction)
         {
             TrTransform lookPose = App.Scene.Pose;
@@ -213,19 +245,19 @@ namespace TiltBrush
             App.Scene.Pose = lookPose;
         }
         
-        [ApiEndpoint("brush.moveto")]
+        [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
         public static void BrushMoveTo(Vector3 position)
         {
             ApiManager.Instance.BrushPosition = position;
         }
         
-        [ApiEndpoint("brush.moveby")]
+        [ApiEndpoint("brush.move.by", "Moves the brush by the given amount")]
         public static void BrushMoveBy(Vector3 offset)
         {
             ApiManager.Instance.BrushPosition += offset;
         }
         
-        [ApiEndpoint("brush.move")]
+        [ApiEndpoint("brush.move", "Moves the brush forward by 'distance' without drawing a line")]
         public static void BrushMove(float distance)
         {
             var currentPosition = ApiManager.Instance.BrushPosition;
@@ -234,7 +266,7 @@ namespace TiltBrush
             ApiManager.Instance.BrushPosition = newPosition;
         }
 
-        [ApiEndpoint("brush.draw")]
+        [ApiEndpoint("brush.draw", "Moves the brush forward by 'distance' and draws a line")]
         public static void BrushDraw(float distance)
         {
             var directionVector = ApiManager.Instance.BrushBearing;
@@ -248,29 +280,25 @@ namespace TiltBrush
             ApiManager.Instance.BrushPosition += end;
         }
         
-        [ApiEndpoint("brush.turn")]
-        [ApiEndpoint("brush.turn.y")]
-        [ApiEndpoint("brush.yaw")]
+        [ApiEndpoint("brush.turn.y", "Changes the brush direction to the left or right. Angle is measured in degrees")]
         public static void BrushYaw(float angle)
         {
             ChangeBrushBearing(angle, Vector3.up);
         }
         
-        [ApiEndpoint("brush.pitch")]
-        [ApiEndpoint("brush.turn.x")]
+        [ApiEndpoint("brush.turn.x", "Changes the brush direction up or down. Angle is measured in degrees")]
         public static void BrushPitch(float angle)
         {
             ChangeBrushBearing(angle, Vector3.left);
         }
         
-        [ApiEndpoint("brush.roll")]
-        [ApiEndpoint("brush.turn.z")]
+        [ApiEndpoint("brush.turn.z", "Rotates the brush clockwise or anticlockwise. Angle is measured in degrees")]
         public static void BrushRoll(float angle)
         {
             ChangeBrushBearing(angle, Vector3.forward);
         }
 
-        [ApiEndpoint("brush.lookat")]
+        [ApiEndpoint("brush.lookat", "Changes the brush direction to look at the specified point")]
         public static void BrushLookAt(Vector3 direction)
         {
             ApiManager.Instance.BrushBearing = direction.normalized;

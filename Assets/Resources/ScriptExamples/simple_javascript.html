@@ -23,10 +23,10 @@
             
             for (var i=0; i<repeats; i++) {
                 sendCommands([
-                    `brush.turn=${turn}`,
+                    `brush.turn.y=${turn}`,
                     `brush.draw=${length}`,
                     `brush.move=-${length}`,
-					'brush.color.shift=0.015, 0, 0'
+					'color.add.hsv=0.015, 0, 0'
                 ]);
             }
         }

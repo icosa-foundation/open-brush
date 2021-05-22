@@ -74,10 +74,10 @@ public class ApiManager : MonoBehaviour
         switch (request.Url.Segments.Last())
         {
             case "commands":
-                var commands = ListApiCommands();
+                var commandList = ListApiCommands();
                 if (request.Url.Query.Contains("raw"))
                 {
-                    html = String.Join("\n", commands.Keys);
+                    html = String.Join("\n", commandList.Keys);
                 }
                 else
                 {
@@ -87,9 +87,14 @@ public class ApiManager : MonoBehaviour
                     builder.AppendLine("<p>Separate multiple commands with &</p>");
                     builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
                     builder.AppendLine("<dl>");
-                    foreach (var k in commands.Keys)
+                    foreach (var key in commandList.Keys)
                     {
-                        builder.AppendLine($"<dt>{k}</dt><dd>{commands[k]}</dd>");
+                        string paramList = commandList[key].Item1;
+                        if (paramList != "")
+                        {
+                            paramList = $"({paramList})";
+                        }
+                        builder.AppendLine($"<dt>{key} {paramList}</dt><dd>{commandList[key].Item2}</dd>");
                     }
                     builder.AppendLine("</dl>");
                     html = String.Format(BASE_HTML, builder);
@@ -246,14 +251,14 @@ public class ApiManager : MonoBehaviour
             var commands = ListApiCommands();
             foreach (var k in commands.Keys)
             {
-                builder.AppendLine($"{k}{commands[k]}");
+                builder.AppendLine($"{k} ({commands[k].Item2}): {commands[k].Item2}");
             }
         }
     }
     
-    Dictionary<string, string> ListApiCommands()
+    Dictionary<string, (string, string)> ListApiCommands()
     {
-        var commands = new Dictionary<string, string>();
+        var commandList = new Dictionary<string, (string, string)>();
         foreach (var endpoint in endpoints.Keys)
         {
             var paramInfoText = new List<string>();
@@ -265,11 +270,10 @@ public class ApiManager : MonoBehaviour
                     .Replace("String", "string");
                 paramInfoText.Add($"{typeName} {param.Name}");
             }
-            var paramInfo = String.Join(", ", paramInfoText);
-            paramInfo = (paramInfo == "") ? "" : $": {paramInfo}";  // No colon if no params
-            commands[endpoint] = paramInfo;
+            string paramInfo = String.Join(", ", paramInfoText);
+            commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
         }
-        return commands;
+        return commandList;
     }
 
     private string UserScriptsCallback(HttpListenerRequest request)

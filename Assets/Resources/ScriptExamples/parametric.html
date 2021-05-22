@@ -76,9 +76,9 @@
         var color = eval(document.getElementById('colorformula').value);
         var colorParam = `${color[0]},${color[1]},${color[2]}`;
         if (document.getElementById('rgb').checked==true) {
-            sendCommands([`brush.rgb=${colorParam}`]);
+            sendCommands([`color.set.rgb=${colorParam}`]);
         } else {
-            sendCommands([`brush.hsv=${colorParam}`]);
+            sendCommands([`color.set.hsv=${colorParam}`]);
         }
     }
 

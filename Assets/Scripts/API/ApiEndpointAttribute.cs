@@ -7,20 +7,27 @@ using UnityEngine;
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public class ApiEndpoint : Attribute  
 {
-    private string endpoint;
     public Type type;
     public MethodInfo methodInfo;
     public object instance;
     public ParameterInfo[] parameterInfo;
 
-    public ApiEndpoint(string endpoint)
+    private string m_Endpoint;
+    private string m_Description;
+
+    public ApiEndpoint(string endpoint, string description)
     {
-        this.endpoint = endpoint;
+        this.m_Endpoint = endpoint;
+        this.m_Description = description;
     }
 
     public virtual string Endpoint
     {
-        get {return endpoint;}
+        get {return m_Endpoint;}
+    }
+    public string Description
+    {
+        get {return m_Description;}
     }
 
     public void Invoke(System.Object[] parameters)
