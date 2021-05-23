@@ -91,7 +91,7 @@ namespace TiltBrush
 
         // Oculus Overlay
 #if OCULUS_SUPPORTED
-  private OVROverlay m_OVROverlay;
+        private OVROverlay m_OVROverlay;
 #endif // OCULUS_SUPPORTED
 
         // Mobile Overlay
@@ -167,36 +167,37 @@ namespace TiltBrush
                 m_OverlayMode = OverlayMode.Steam;
             }
 #if OCULUS_SUPPORTED
-    else if (App.Config.m_SdkMode == SdkMode.Oculus) {
-      m_OverlayMode = OverlayMode.OVR;
-      var gobj = new GameObject("Oculus Overlay");
-      gobj.transform.SetParent(m_VrSystem.transform, worldPositionStays: false);
-      m_OVROverlay = gobj.AddComponent<OVROverlay>();
-      m_OVROverlay.isDynamic = true;
-      m_OVROverlay.compositionDepth = 0;
-      m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
-      m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
-      m_OVROverlay.noDepthBufferTesting = true;
-      m_OVROverlay.enabled = false;
-    }
+            else if (App.Config.m_SdkMode == SdkMode.Oculus)
+            {
+                m_OverlayMode = OverlayMode.OVR;
+                var gobj = new GameObject("Oculus Overlay");
+                gobj.transform.SetParent(m_VrSystem.transform, worldPositionStays: false);
+                m_OVROverlay = gobj.AddComponent<OVROverlay>();
+                m_OVROverlay.isDynamic = true;
+                m_OVROverlay.compositionDepth = 0;
+                m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
+                m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
+                m_OVROverlay.noDepthBufferTesting = true;
+                m_OVROverlay.enabled = false;
+            }
 #endif // OCULUS_SUPPORTED
 
             if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
 #if OCULUS_SUPPORTED
-      // ---------------------------------------------------------------------------------------- //
-      // OculusVR
-      // ---------------------------------------------------------------------------------------- //
-      OVRManager manager = gameObject.AddComponent<OVRManager>();
-      manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
-      manager.useRecommendedMSAALevel = false;
+                // ---------------------------------------------------------------------------------------- //
+                // OculusVR
+                // ---------------------------------------------------------------------------------------- //
+                OVRManager manager = gameObject.AddComponent<OVRManager>();
+                manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+                manager.useRecommendedMSAALevel = false;
 
-      SetControllerStyle(TiltBrush.ControllerStyle.OculusTouch);
-      // adding components to the VR Camera needed for fading view and getting controller poses.
-      m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
-      m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
+                SetControllerStyle(TiltBrush.ControllerStyle.OculusTouch);
+                // adding components to the VR Camera needed for fading view and getting controller poses.
+                m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
+                m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
 
-      gameObject.AddComponent<OculusMRCCameraUpdate>();
+                gameObject.AddComponent<OculusMRCCameraUpdate>();
 #endif // OCULUS_SUPPORTED
             }
             else if (App.Config.m_SdkMode == SdkMode.SteamVR)
@@ -296,10 +297,10 @@ namespace TiltBrush
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
 #if OCULUS_SUPPORTED
-      OculusHandTrackingManager.NewPosesApplied += OnNewPoses;
-      // We shouldn't call this frequently, hence the local cache and callbacks.
-      OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
-      OVRManager.VrFocusLost += () => { OnInputFocus(false); };
+                OculusHandTrackingManager.NewPosesApplied += OnNewPoses;
+                // We shouldn't call this frequently, hence the local cache and callbacks.
+                OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
+                OVRManager.VrFocusLost += () => { OnInputFocus(false); };
 #endif // OCULUS_SUPPORTED
             }
             else if (App.Config.m_SdkMode == SdkMode.Gvr)
@@ -413,11 +414,12 @@ namespace TiltBrush
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
 #if OCULUS_SUPPORTED
-      OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
-      if (perfStats.FrameStatsCount > 0) {
-        return perfStats.FrameStats[0].AppDroppedFrameCount;
-      }
-      return 0;
+                OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
+                if (perfStats.FrameStatsCount > 0)
+                {
+                    return perfStats.FrameStats[0].AppDroppedFrameCount;
+                }
+                return 0;
 #endif // OCULUS_SUPPORTED
             }
 
@@ -429,7 +431,7 @@ namespace TiltBrush
             if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
 #if OCULUS_SUPPORTED
-      OVRPlugin.ResetAppPerfStats();
+                OVRPlugin.ResetAppPerfStats();
 #endif // OCULUS_SUPPORTED
             }
         }
@@ -470,10 +472,10 @@ namespace TiltBrush
             if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
 #if OCULUS_SUPPORTED
-      // N points, clockwise winding (but axis is undocumented), undocumented convexity
-      // In practice, it's clockwise looking along Y-
-      points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-          .Select(v => UnityFromOculus(v)).ToArray();
+                // N points, clockwise winding (but axis is undocumented), undocumented convexity
+                // In practice, it's clockwise looking along Y-
+                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
+                    .Select(v => UnityFromOculus(v)).ToArray();
 #endif // OCULUS_SUPPORTED
             }
             else if (App.Config.m_SdkMode == SdkMode.SteamVR)
@@ -870,7 +872,7 @@ namespace TiltBrush
                         return m_SteamVROverlay.gameObject.activeSelf;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
-        return m_OVROverlay.enabled;
+                        return m_OVROverlay.enabled;
 #else
                         return false;
 #endif // OCULUS_SUPPORTED
@@ -889,7 +891,7 @@ namespace TiltBrush
                         break;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
-        m_OVROverlay.enabled = value;
+                        m_OVROverlay.enabled = value;
 #endif // OCULUS_SUPPORTED
                         break;
                     case OverlayMode.Mobile:
@@ -909,7 +911,7 @@ namespace TiltBrush
                     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
-      m_OVROverlay.textures = new[] { tex };
+                    m_OVROverlay.textures = new[] { tex };
 #endif // OCULUS_SUPPORTED
                     break;
             }
@@ -933,9 +935,9 @@ namespace TiltBrush
                     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
-      vOverlayPosition += (vOverlayDirection * distance / 10);
-      m_OVROverlay.transform.position = vOverlayPosition;
-      m_OVROverlay.transform.forward = vOverlayDirection;
+                    vOverlayPosition += (vOverlayDirection * distance / 10);
+                    m_OVROverlay.transform.position = vOverlayPosition;
+                    m_OVROverlay.transform.forward = vOverlayDirection;
 #endif // OCULUS_SUPPORTED
                     break;
             }
@@ -1040,9 +1042,10 @@ namespace TiltBrush
                 return true;
             }
 #if OCULUS_SUPPORTED
-    else if (App.Config.m_SdkMode == SdkMode.Oculus && !OVRManager.isHmdPresent) {
-      return false;
-    }
+            else if (App.Config.m_SdkMode == SdkMode.Oculus && !OVRManager.isHmdPresent)
+            {
+                return false;
+            }
 #endif // OCULUS_SUPPORTED
             /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
               return false;
@@ -1156,27 +1159,33 @@ namespace TiltBrush
         // Performance Methods
         // -------------------------------------------------------------------------------------------- //
 #if OCULUS_SUPPORTED
-  public void SetFixedFoveation(int level) {
-    Debug.Assert(level >= 0 && level <= 3);
-    if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware
-                                    && App.Config.m_SdkMode == SdkMode.Oculus) {
-      OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel) level;
-    }
-  }
+        public void SetFixedFoveation(int level)
+        {
+            Debug.Assert(level >= 0 && level <= 3);
+            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware
+                && App.Config.m_SdkMode == SdkMode.Oculus)
+            {
+                OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
+            }
+        }
 
-  /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
-  public float GetGpuUtilization() {
-    if (App.Config.m_SdkMode == SdkMode.Oculus && OVRManager.gpuUtilSupported) {
-      return OVRManager.gpuUtilLevel;
-    }
-    return 0;
-  }
+        /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
+        public float GetGpuUtilization()
+        {
+            if (App.Config.m_SdkMode == SdkMode.Oculus && OVRManager.gpuUtilSupported)
+            {
+                return OVRManager.gpuUtilLevel;
+            }
+            return 0;
+        }
 
-  public void SetGpuClockLevel(int level) {
-    if (App.Config.m_SdkMode == SdkMode.Oculus && App.Config.IsMobileHardware) {
-      OVRManager.gpuLevel = level;
-    }
-  }
+        public void SetGpuClockLevel(int level)
+        {
+            if (App.Config.m_SdkMode == SdkMode.Oculus && App.Config.IsMobileHardware)
+            {
+                OVRManager.gpuLevel = level;
+            }
+        }
 #else // OCULUS_SUPPORTED
         public void SetFixedFoveation(int level)
         {

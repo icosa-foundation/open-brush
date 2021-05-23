@@ -141,7 +141,7 @@ namespace TiltBrush
         // is being used (Oculus VR, Steam's Open VR, Monoscopic, etc.).
         public VrHardware VrHardware
         {
-            // This is set lazily the first time VrHardware is accesssed.
+            // This is set lazily the first time VrHardware is accessed.
             get
             {
                 if (m_VrHardware == TiltBrush.VrHardware.Unset)
@@ -224,8 +224,11 @@ namespace TiltBrush
             // Only sadness will ensue if the user tries to set Override.MobileHardware=true
             // but their editor platform is still set to Windows.
 #if UNITY_EDITOR && UNITY_ANDROID
-    get { return Application.platform == RuntimePlatform.Android
-              || SpoofMobileHardware.MobileHardware; }
+            get
+            {
+                return Application.platform == RuntimePlatform.Android
+                    || SpoofMobileHardware.MobileHardware;
+            }
 #else
             get { return Application.platform == RuntimePlatform.Android; }
 #endif
