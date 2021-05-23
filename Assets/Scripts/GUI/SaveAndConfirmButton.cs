@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class SaveAndConfirmButton : ConfirmationButton {
-  override protected void OnButtonPressed() {
-    // SaveOverwriteOrNewIfNotAllowed will do the right thing with regards to save/save new,
-    // but in the event there's nothing to save, we don't want to bother.
-    bool shouldSave = SketchControlsScript.m_Instance.IsCommandAvailable(
-        SketchControlsScript.GlobalCommands.SaveOnLocalChanges);
-    if (shouldSave) {
-      SaveLoadScript.m_Instance.SuppressSaveNotifcation = true;
-      SaveLoadScript.m_Instance.SaveOverwriteOrNewIfNotAllowed();
+    public class SaveAndConfirmButton : ConfirmationButton
+    {
+        override protected void OnButtonPressed()
+        {
+            // SaveOverwriteOrNewIfNotAllowed will do the right thing with regards to save/save new,
+            // but in the event there's nothing to save, we don't want to bother.
+            bool shouldSave = SketchControlsScript.m_Instance.IsCommandAvailable(
+                SketchControlsScript.GlobalCommands.SaveOnLocalChanges);
+            if (shouldSave)
+            {
+                SaveLoadScript.m_Instance.SuppressSaveNotifcation = true;
+                SaveLoadScript.m_Instance.SaveOverwriteOrNewIfNotAllowed();
+            }
+            base.OnButtonPressed();
+        }
     }
-    base.OnButtonPressed();
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -18,21 +18,27 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-namespace TiltBrush {
-public class SwitchAppName : MonoBehaviour {
-  private void Awake() {
-    var tm = GetComponent<TextMesh>();
-    if (tm != null) {
-      tm.text = Switch(tm.text);
-    }
-    var tmp = GetComponent<TextMeshPro>();
-    if (tmp != null) {
-      tmp.text = Switch(tmp.text);
-    }
-  }
+namespace TiltBrush
+{
+    public class SwitchAppName : MonoBehaviour
+    {
+        private void Awake()
+        {
+            var tm = GetComponent<TextMesh>();
+            if (tm != null)
+            {
+                tm.text = Switch(tm.text);
+            }
+            var tmp = GetComponent<TextMeshPro>();
+            if (tmp != null)
+            {
+                tmp.text = Switch(tmp.text);
+            }
+        }
 
-  private string Switch(string target) {
-    return target.Replace("Tilt Brush", App.kAppDisplayName);
-  }
-}
+        private string Switch(string target)
+        {
+            return target.Replace("Tilt Brush", App.kAppDisplayName);
+        }
+    }
 }

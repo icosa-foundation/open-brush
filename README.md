@@ -1,11 +1,11 @@
 # Open Brush - A Tilt Brush fork
 
-![GitHub all releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)
+[![All GitHub releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-gallery/open-brush/releases/latest)
 [![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
 [![Open Collective backers and sponsors](https://img.shields.io/opencollective/all/icosa?logo=open-collective)](https://opencollective.com/icosa)
 
-## Current Version: `0.2.0`
+## Current Version: `0.3.0`
 
 We hope to help maintain Tilt Brush.  
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
@@ -25,16 +25,24 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 ### Currently we are:
 * Getting Open Brush to work with the Poly replacement, [Icosa](https://github.com/icosa-gallery).
 * Looking at modding support (custom brushes!)
-* Re-enabling the additional features.
 
 See our [Trello](https://trello.com/b/jItetqYe/open-brush) board for more information.
-
-
 
 ## Acknowledgements
 * Thank you to the Tilt Brush developers for your amazing work! 
 * [SiMonk0](http://www.furjandesign.com/) for the great new logo!
 * The [SideQuest](https://sidequestvr.com/) team for your support.
+
+## Bleeding Edge Releases
+
+Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-gallery/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
+
+These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
+
+Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
+
+In addition, there are also versions created for Linux (SteamVR and Monoscopic), OS X (Monoscopic only), and Windows Monoscopic that are listed as "Artifacts" of the Github Actions, however, these are intended only for developers, and should not be used by general users. You can find them by browsing to the [commit list](https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts (6)** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop SteamVR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. Note that if you download a Mac OS X build, you'll need to run `xattr -d com.apple.quarantine /path/to/OpenBrush-github.app` prior to be able to launch the app, as it is not signed with Apple developer keys.
+---
 
 # Tilt Brush README
 
@@ -113,10 +121,7 @@ quickly. The following features will take a little more time.
 *   [Enabling native Oculus support](#enabling-native-oculus-support)
 *   [Sketchfab support](#sketchfab-support)
 *   [\*.fbx file support](#fbx-file-support)
-*   [Camera path support](#camera-path-support)
-*   [Video recording for the camera](#video-support)
 *   [Offline rendering support](#offline-rendering-support)
-*   [GIF support for the camera](#gif-support)
 
 **Note:** Uploading to Poly has been removed completely and cannot be added back
 in, because it uses an internal Google API. Download from Poly can still be
@@ -142,7 +147,7 @@ open-source licensing issues. These are:
 *   **Tilt Shift**. The official Tilt Brush app uses modified versions of the
     Tilt Shift effect that came with the standard assets in earlier versions of
     Unity. These have been replaced with a modified version of
-    [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
+    [Tilt shift by ruby0x1](https://gist.github.com/ruby0x1/10324388).
 
 ## Generating Secrets file
 Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
@@ -224,9 +229,9 @@ enable native Oculus support:
 
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/23.1/).
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/27.0/).
 
-**Note:** The above link goes to version 23.1 which is the current latest version. Tilt Brush was formerly built with 1.41, but appears to function well with 23.1. You only need to include the `Platform` and `VR` subdirectories when you import.
+**Note:** The above link goes to version 27.0 which is the current latest version. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.
@@ -249,6 +254,8 @@ Follow these steps to build your app for Oculus Quest:
 1.  Find the generated executable. It will most likely be somewhere under
     `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
+
+**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
 
 ### Publishing to Oculus stores
 
@@ -323,20 +330,6 @@ You will need to build C# wrappers for the Autodesk FBX (the Autodesk filebox
 format) SDK in order to import or export FBX and OBJ files in the app. See
 [Support/fbx/README.md](Support/fbx/README.md) for details.
 
-## Video support
-
-To get video support you will need to put an ffmpeg.exe binary in to 
-`/Support/ThirdParty/ffmpeg/bin`. We have created a script to build one for
-you - it temporarily requires around 2GB of space to build but will clear up
-after itself.
-
-Follow these steps to get video support:
-
-1. Find '/Support/ThirdParty/ffmpeg/BuildFfmpeg.ps1', right-click on it in explorer and select
-   'Run with Powershell'. It will take some time to build.
-2. In Unity, modify `/Assets/PlatformConfigPC` and add 'Video' to 'Enabled Multicam Styles'.
-   'Snapshot' should always be enabled.
-
 ### Video support bug fix
 
 If you add video support, you may encounter a bug where the "Looking for audio"
@@ -372,28 +365,6 @@ Follow these steps to restore the path:
 1.  In the function, find the comments on how to modify the string to point to
     the executable path.
 1.  Update the string to point to the correct path.
-
-## GIF support
-
-GIF support was removed for licensing reasons. To get GIF support, integrate
-your own system by following these steps:
-
-1.  Add the encoding code in around lines 129 - 148 of `Assets/Scripts/Gif
-    Creation/GifEncodeTask.cs`.
-1.  Modify `Assets/PlatformConfigPC` and `Assets/PlatformConfigMobile`. Add
-    **Auto GIF** and/or **Time GIF** to **Enabled Multicam Styles**.
-
-The released PC build had the following settings:
-
-*   Snapshot
-*   Auto GIF
-*   Time GIF
-*   Video
-
-The released Quest build had the following settings:
-
-*   Snapshot
-*   Time GIF
 
 ## Experimental mode
 
@@ -440,13 +411,3 @@ executable.
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
 folder. They are not included in non-experimental builds.
-
-## Bleeding Edge Releases
-
-Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-gallery/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
-
-These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
-
-Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
-
-In addition, there are also versions created for Linux (SteamVR and Monoscopic), OS X (Monoscopic only), and Windows Monoscopic that are listed as "Artifacts" of the Github Actions, however, these are intended only for developers, and should not be used by general users. You can find them by browsing to the [commit list]((https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts (6)** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop SteamVR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. Note that if you download a Mac OS X build, you'll need to run `xattr -d com.apple.quarantine /path/to/OpenBrush-github.app` prior to be able to launch the app, as it is not signed with Apple developer keys.

@@ -14,71 +14,83 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class DeleteStrokeCommand : BaseCommand {
-  private Stroke m_TargetStroke;
-  private bool m_SilenceFirstAudio;
+namespace TiltBrush
+{
+    public class DeleteStrokeCommand : BaseCommand
+    {
+        private Stroke m_TargetStroke;
+        private bool m_SilenceFirstAudio;
 
-  private Vector3 CommandAudioPosition {
-    get { return GetPositionForCommand(m_TargetStroke); }
-  }
+        private Vector3 CommandAudioPosition
+        {
+            get { return GetPositionForCommand(m_TargetStroke); }
+        }
 
-  public DeleteStrokeCommand(Stroke stroke, BaseCommand parent = null)
-      : base(parent) {
-    m_TargetStroke = stroke;
-    m_SilenceFirstAudio = true;
-  }
+        public DeleteStrokeCommand(Stroke stroke, BaseCommand parent = null)
+            : base(parent)
+        {
+            m_TargetStroke = stroke;
+            m_SilenceFirstAudio = true;
+        }
 
-  public override bool NeedsSave { get { return true; } }
+        public override bool NeedsSave { get { return true; } }
 
-  protected override void OnRedo() {
-    if (!m_SilenceFirstAudio) {
-      AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
+        protected override void OnRedo()
+        {
+            if (!m_SilenceFirstAudio)
+            {
+                AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
+            }
+            m_SilenceFirstAudio = false;
+
+            switch (m_TargetStroke.m_Type)
+            {
+                case Stroke.Type.BrushStroke:
+                    BaseBrushScript rBrushScript =
+                        m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
+                    if (rBrushScript)
+                    {
+                        rBrushScript.HideBrush(true);
+                    }
+                    break;
+                case Stroke.Type.BatchedBrushStroke:
+                    var batch = m_TargetStroke.m_BatchSubset.m_ParentBatch;
+                    batch.DisableSubset(m_TargetStroke.m_BatchSubset);
+                    break;
+                case Stroke.Type.NotCreated:
+                    Debug.LogError("Unexpected: redo delete NotCreated stroke");
+                    break;
+            }
+
+            TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: false);
+        }
+
+        protected override void OnUndo()
+        {
+            if (!m_SilenceFirstAudio)
+            {
+                AudioManager.m_Instance.PlayRedoSound(CommandAudioPosition);
+            }
+            m_SilenceFirstAudio = false;
+
+            switch (m_TargetStroke.m_Type)
+            {
+                case Stroke.Type.BrushStroke:
+                    BaseBrushScript rBrushScript = m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
+                    if (rBrushScript)
+                    {
+                        rBrushScript.HideBrush(false);
+                    }
+                    break;
+                case Stroke.Type.BatchedBrushStroke:
+                    m_TargetStroke.m_BatchSubset.m_ParentBatch.EnableSubset(m_TargetStroke.m_BatchSubset);
+                    break;
+                case Stroke.Type.NotCreated:
+                    Debug.LogError("Unexpected: undo delete NotCreated stroke");
+                    break;
+            }
+
+            TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: true);
+        }
     }
-    m_SilenceFirstAudio = false;
-
-    switch (m_TargetStroke.m_Type) {
-    case Stroke.Type.BrushStroke:
-      BaseBrushScript rBrushScript =
-          m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
-      if (rBrushScript) {
-        rBrushScript.HideBrush(true);
-      }
-      break;
-    case Stroke.Type.BatchedBrushStroke:
-      var batch = m_TargetStroke.m_BatchSubset.m_ParentBatch;
-      batch.DisableSubset(m_TargetStroke.m_BatchSubset);
-      break;
-    case Stroke.Type.NotCreated:
-      Debug.LogError("Unexpected: redo delete NotCreated stroke");
-      break;
-    }
-
-    TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: false);
-  }
-
-  protected override void OnUndo() {
-    if (!m_SilenceFirstAudio) {
-      AudioManager.m_Instance.PlayRedoSound(CommandAudioPosition);
-    }
-    m_SilenceFirstAudio = false;
-
-    switch (m_TargetStroke.m_Type) {
-    case Stroke.Type.BrushStroke:
-      BaseBrushScript rBrushScript = m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
-      if (rBrushScript) {
-        rBrushScript.HideBrush(false);
-      }
-      break;
-    case Stroke.Type.BatchedBrushStroke:
-      m_TargetStroke.m_BatchSubset.m_ParentBatch.EnableSubset(m_TargetStroke.m_BatchSubset);
-      break;
-    case Stroke.Type.NotCreated:
-      Debug.LogError("Unexpected: undo delete NotCreated stroke");
-      break;
-    }
-
-    TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: true);
-  }
-}
 } // namespace TiltBrush

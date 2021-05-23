@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class PolySetButton : ModeButton {
-  public PolySetType m_ButtonType;
+    public class PolySetButton : ModeButton
+    {
+        public PolySetType m_ButtonType;
 
-  override protected void OnButtonPressed() {
-    PolyPanel polyp = m_Manager.GetComponent<PolyPanel>();
-    if (polyp) {
-      polyp.ButtonPressed(m_ButtonType);
+        override protected void OnButtonPressed()
+        {
+            PolyPanel polyp = m_Manager.GetComponent<PolyPanel>();
+            if (polyp)
+            {
+                polyp.ButtonPressed(m_ButtonType);
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

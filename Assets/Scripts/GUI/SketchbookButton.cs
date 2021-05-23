@@ -14,20 +14,24 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class SketchbookButton : OptionButton {
-  [SerializeField] private float m_AdjustDistanceAmount;
-  [SerializeField] private Renderer m_IconRenderer;
+namespace TiltBrush
+{
+    public class SketchbookButton : OptionButton
+    {
+        [SerializeField] private float m_AdjustDistanceAmount;
+        [SerializeField] private Renderer m_IconRenderer;
 
-  protected override void AdjustButtonPositionAndScale(
-      float posAmount, float scaleAmount, float boxColliderGrowAmount) {
-    SetMaterialFloat("_Distance", posAmount != 0 ? m_AdjustDistanceAmount : 0.0f);
-    SetMaterialFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
-    base.AdjustButtonPositionAndScale(posAmount, scaleAmount, boxColliderGrowAmount);
-  }
+        protected override void AdjustButtonPositionAndScale(
+            float posAmount, float scaleAmount, float boxColliderGrowAmount)
+        {
+            SetMaterialFloat("_Distance", posAmount != 0 ? m_AdjustDistanceAmount : 0.0f);
+            SetMaterialFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
+            base.AdjustButtonPositionAndScale(posAmount, scaleAmount, boxColliderGrowAmount);
+        }
 
-  protected override void SetMaterialFloat(string name, float value) {
-    m_IconRenderer.material.SetFloat(name, value);
-  }
-}
+        protected override void SetMaterialFloat(string name, float value)
+        {
+            m_IconRenderer.material.SetFloat(name, value);
+        }
+    }
 } // namespace TiltBrush

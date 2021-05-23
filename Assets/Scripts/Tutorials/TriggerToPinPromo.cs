@@ -12,41 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// Promo: Show the user how to pin a widget.
-/// Completion: User pins a widget.
-/// Conditions: User is grabbing a pinnable widget.
-public class TriggerToPinPromo : BasePromo {
-  private InputManager.ControllerName m_Controller;
+    /// Promo: Show the user how to pin a widget.
+    /// Completion: User pins a widget.
+    /// Conditions: User is grabbing a pinnable widget.
+    public class TriggerToPinPromo : BasePromo
+    {
+        private InputManager.ControllerName m_Controller;
 
-  public override string PrefsKey { get { return PromoManager.kPromoPrefix + "TriggerToPin"; } }
+        public override string PrefsKey { get { return PromoManager.kPromoPrefix + "TriggerToPin"; } }
 
-  public TriggerToPinPromo() : base(PromoType.TriggerToPin) { }
+        public TriggerToPinPromo() : base(PromoType.TriggerToPin) { }
 
-  public override void OnActive() {
-    if (!SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() ||
-        SketchControlsScript.m_Instance.OneHandGrabController != m_Controller ||
-        SketchControlsScript.m_Instance.IsCurrentGrabWidgetPinned()) {
-      m_Request = RequestingState.ToHide;
+        public override void OnActive()
+        {
+            if (!SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() ||
+                SketchControlsScript.m_Instance.OneHandGrabController != m_Controller ||
+                SketchControlsScript.m_Instance.IsCurrentGrabWidgetPinned())
+            {
+                m_Request = RequestingState.ToHide;
+            }
+        }
+
+        protected override void OnDisplay()
+        {
+            m_Controller = SketchControlsScript.m_Instance.OneHandGrabController;
+            m_HintObject = InputManager.GetControllerGeometry(m_Controller).PinHint;
+            m_HintObject.Activate(true);
+        }
+
+        protected override void OnHide()
+        {
+            m_HintObject = null;
+        }
+
+        public override void OnIdle()
+        {
+            if (SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
+                SketchControlsScript.m_Instance.CanCurrentGrabWidgetBePinned())
+            {
+                m_Request = RequestingState.ToDisplay;
+            }
+        }
     }
-  }
-
-  protected override void OnDisplay() {
-    m_Controller = SketchControlsScript.m_Instance.OneHandGrabController;
-    m_HintObject = InputManager.GetControllerGeometry(m_Controller).PinHint;
-    m_HintObject.Activate(true);
-  }
-
-  protected override void OnHide() {
-    m_HintObject = null;
-  }
-
-  public override void OnIdle() {
-    if (SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
-        SketchControlsScript.m_Instance.CanCurrentGrabWidgetBePinned()) {
-      m_Request = RequestingState.ToDisplay;
-    }
-  }
-}
 } // namespace TiltBrush

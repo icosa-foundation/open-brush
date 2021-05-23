@@ -16,51 +16,66 @@ using System;
 using System.Reflection;
 using UnityEngine;
 
-namespace TiltBrush {
-// SerializedPropertyReference<T> allows you to serialize a reference to a property on a component
-// on a gameobject. However, because you can't have a PropertyDrawer for a generic type we have
-// to derive from SerializedPropertyReference<T> to make a class that can have a propertydrawer
-// attached.
+namespace TiltBrush
+{
+    // SerializedPropertyReference<T> allows you to serialize a reference to a property on a component
+    // on a gameobject. However, because you can't have a PropertyDrawer for a generic type we have
+    // to derive from SerializedPropertyReference<T> to make a class that can have a propertydrawer
+    // attached.
 
-[Serializable]
-public class SerializedPropertyReferenceBool : SerializedPropertyReference<bool> { }
-
-[Serializable]
-public class SerializedPropertyReferenceInt : SerializedPropertyReference<int> { }
-
-[Serializable]
-public class SerializedPropertyReferenceFloat : SerializedPropertyReference<float> { }
-
-[Serializable]
-public class SerializedPropertyReferenceString : SerializedPropertyReference<string> { }
-
-[Serializable]
-public class SerializedPropertyReference<T> : ISerializationCallbackReceiver {
-  [SerializeField] private UnityEngine.Object m_Target;
-  [SerializeField] private string m_PropertyName;
-
-  private PropertyInfo m_Property;
-
-  public bool HasValue {
-    get { return m_Target != null && m_Property != null; }
-  }
-
-  public T Value {
-    get { return (T) m_Property.GetValue(m_Target); }
-    set { m_Property.SetValue(m_Target, value); }
-  }
-
-  private void Resolve() {
-    if (m_Target != null && !string.IsNullOrEmpty(m_PropertyName)) {
-        m_Property = m_Target.GetType().GetProperty(m_PropertyName);
+    [Serializable]
+    public class SerializedPropertyReferenceBool : SerializedPropertyReference<bool>
+    {
     }
-  }
 
-  public void OnAfterDeserialize() {
-    Resolve();
-  }
+    [Serializable]
+    public class SerializedPropertyReferenceInt : SerializedPropertyReference<int>
+    {
+    }
 
-  public void OnBeforeSerialize() { }
-}
+    [Serializable]
+    public class SerializedPropertyReferenceFloat : SerializedPropertyReference<float>
+    {
+    }
+
+    [Serializable]
+    public class SerializedPropertyReferenceString : SerializedPropertyReference<string>
+    {
+    }
+
+    [Serializable]
+    public class SerializedPropertyReference<T> : ISerializationCallbackReceiver
+    {
+        [SerializeField] private UnityEngine.Object m_Target;
+        [SerializeField] private string m_PropertyName;
+
+        private PropertyInfo m_Property;
+
+        public bool HasValue
+        {
+            get { return m_Target != null && m_Property != null; }
+        }
+
+        public T Value
+        {
+            get { return (T)m_Property.GetValue(m_Target); }
+            set { m_Property.SetValue(m_Target, value); }
+        }
+
+        private void Resolve()
+        {
+            if (m_Target != null && !string.IsNullOrEmpty(m_PropertyName))
+            {
+                m_Property = m_Target.GetType().GetProperty(m_PropertyName);
+            }
+        }
+
+        public void OnAfterDeserialize()
+        {
+            Resolve();
+        }
+
+        public void OnBeforeSerialize() { }
+    }
 
 } // namespace TiltBrush

@@ -1,20 +1,22 @@
+# yamllint disable rule:line-length
 ---
 name: Builds
 
-on:
+on:  # yamllint disable-line rule:truthy
   pull_request: {}
   push:
     branches:
-      - "*"
+      - "**"
     tags:
       - "v*"
 
 env:
+  UNITY_VERSION: "2019.4.25f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
   # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"b24e2ad2b9d60ad5aace4fde9911fc1c1f659e36\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFQ1ktRDhXTS01OTRHLUU5UlctQ0FYOA==\"/>\n        <SerialMasked Value=\"F4-DECY-D8WM-594G-E9RW-XXXX\"/>\n        <StartDate Value=\"2021-02-07T00:00:00\"/>\n        <UpdateDate Value=\"2021-03-10T23:13:19\"/>\n        <InitialActivationDate Value=\"2021-02-07T12:51:19\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.18f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>EQ57QnLpZQy5Ft2KgPCV+PcFuPg=</DigestValue></Reference></SignedInfo><SignatureValue>z+iLsAtgjx6jf0J41On79ErzFJdljmwNPvvBUEMpsdzf4E6GjFZIzpUfn1BA5livZmnmWTI3eF1V\nJ+0aIjkVfAIo0M8yhKcM1vj4+mUMhO7xZh3ipDtlnakdATvWrOBBFWLQO4rYADdkfvmIG1uLaadq\nGiTsxaXA/Vap2ffI+ECeUqtBdIwHLON4vEL6p1VKyUfbtAoafxnr9d1+kQaH0TAe60/J1Z8D6kmP\n5M/iCoWQaFq+Zo+0ACiXQikPt17lIhlwX0be+FuSa0WOwOBSnJyuzy+cpsd4ZQi724rQKbNtOx7M\nxq+FlamO+TPP26L6zIes+zfHCa/WD1+d9r1kuQ==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
+  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
 
 jobs:
   configuration:
@@ -35,7 +37,8 @@ jobs:
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       changelog: ${{ steps.changelog.outputs.changelog }}
-      btbgithub: ${{ steps.btbgithub.outputs.btbgithub }}
+      basename: ${{ steps.github.outputs.basename }}
+      description: ${{ steps.github.outputs.description}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -56,7 +59,7 @@ jobs:
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "::set-output name=prerelease::false"
           else
-            echo "Prerelease version $MAJOR_MINOR.PATCH_VERSION $STAMP"
+            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
             echo "::set-output name=prerelease::true"
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
@@ -64,28 +67,45 @@ jobs:
           echo "::set-output name=stamp::$STAMP"
       - name: Calculate Changelog
         id: changelog
+        env:
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          if [ $(git describe --tags --abbrev=0) == $(git describe --tags) ]
+          if [ "$PRERELEASE" == "true" ]
           then
             PREV=$(git describe --tags --abbrev=0 HEAD^)
           else
-            PREV=$(git describe --tags --abbrev=0)
+            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
           CHANGELOG=$(git log --pretty=oneline $PREV..HEAD)
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
           echo "::set-output name=changelog::$CHANGELOG"
-      - name: Set -btb-github if relevant
-        id: btbgithub
+      - name: Set custom app name and package name, if relevant
+        id: github
+        env:
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
-          if [ $PATCH_VERSION == $MAJOR_MINOR ]
+          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
+          # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
+          if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=btbgithub::"
+            echo "::set-output name=basename::OpenBrush"
+            echo "::set-output name=description::"
           else
-            echo "::set-output name=btbgithub::-btb-github"
+            if [[ ${{ github.ref }} == refs/pull/* ]]
+            then
+              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+            elif [[ ${{ github.ref }} == refs/heads/* ]]
+            then
+              DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
+            else
+              DESCRIPTION="Unknown"
+            fi
+            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[#_-]//g')
+            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
           fi
   build:
     name: ${{ matrix.name }}
@@ -99,14 +119,21 @@ jobs:
           - name: Windows SteamVR
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
+          - name: Windows Rift
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
           - name: Windows SteamVR Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Windows Monoscopic
+          - name: Windows Rift Experimental
+            targetPlatform: StandaloneWindows64
+            vrsdk: Oculus
+            extraoptions: -btb-experimental
+          - name: Windows Monoscopic Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: Monoscopic
-            extraoptions:
+            extraoptions: -btb-experimental
           - name: Linux SteamVR
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
@@ -114,13 +141,14 @@ jobs:
             targetPlatform: StandaloneLinux64
             vrsdk: SteamVR
             extraoptions: -btb-experimental
-          - name: Linux Monoscopic
+          - name: Linux Monoscopic Experimental
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic
-            extraoptions:
-          - name: OSX Monoscopic
+            extraoptions: -btb-experimental
+          - name: OSX Monoscopic Experimental
             targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
             vrsdk: Monoscopic
+            extraoptions: -btb-experimental
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
@@ -132,6 +160,27 @@ jobs:
 
 
     steps:
+      - name: Free extra space
+        # This takes several minutes, so we only do it where required
+        if: matrix.targetPlatform == 'Android'
+        run: |
+          echo "Initial free space"
+          df -h
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          docker rmi $(docker image ls -aq)
+          #echo "Listing 100 largest packages"
+          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "Removing remaining large directories"
+          rm -rf /usr/share/dotnet/
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup"
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
@@ -140,9 +189,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 23.1
+          # version 27.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=3884880558189851 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=4231499270194643 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -163,10 +212,10 @@ jobs:
 
       - name: Install TextMesh Pro package
         run: |
-          # version 2.0.1; must be updated if the version changes
+          # version 2.1.4; must be updated if the version changes
           # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
           mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.0.1.tgz -O tmp.plugin/plugin.tgz
+          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.1.4.tgz -O tmp.plugin/plugin.tgz
           tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
           mkdir tmp.package
           tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
@@ -186,18 +235,16 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: Library
-          # Adding the sha ensures that we always save it (by default cache hits are not saved, even if it's just a base and it's updated, which is not what we want)
-          key: Library-${{ matrix.targetPlatform }}-${{ github.sha }}
-          # When we load, take the 'latest' one that matches. Worst case, it's slightly out of date. Still better than nothing.
+          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
+          key: Library-${{ matrix.targetPlatform }}-${{ env.UNITY_VERSION }}
           restore-keys: |
             Library-${{ matrix.targetPlatform }}-
-            Library-
 
       - name: Update Oculus OVR Plugin
         uses: game-ci/unity-builder@v2.0-alpha-6
         if: matrix.vrsdk == 'Oculus'
         with:
-          unityVersion: 2019.4.18f1
+          unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
@@ -205,23 +252,31 @@ jobs:
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github.exe" >> $GITHUB_ENV
+          echo "filename=$BASENAME.exe" >> $GITHUB_ENV
 
       - name: Set filename (for Linux)
         if: matrix.targetPlatform == 'StandaloneLinux64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github" >> $GITHUB_ENV
+          echo "filename=$BASENAME" >> $GITHUB_ENV
 
       - name: Set filename (for OSX)
         if: matrix.targetPlatform == 'StandaloneOSX'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=OpenBrush-github.app" >> $GITHUB_ENV
+          echo "filename=$BASENAME.app" >> $GITHUB_ENV
 
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
-          echo "filename=com.Icosa.OpenBrushgithub.apk" >> $GITHUB_ENV
+          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
@@ -270,9 +325,9 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
           allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
-          unityVersion: 2019.4.18f1
+          unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.btbgithub }} ${{ env.stamp }} ${{ matrix.extraoptions }}
+          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
@@ -282,13 +337,17 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
-      - name: Set executable permissions (for OSX)
+      - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
           # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
           docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
           chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
@@ -320,6 +379,18 @@ jobs:
         with:
           name: Windows SteamVR Experimental
           path: build_windows_steamvr_experimental
+
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+
+      - name: Download Build Artifacts (Windows Rift Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift Experimental
+          path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Linux SteamVR)
         uses: actions/download-artifact@v2
@@ -354,17 +425,23 @@ jobs:
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
           mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
           mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_$VERSION/OpenBrush-github
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush || chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush-github
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
           tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
+          rm -rf OpenBrush_Rift_$VERSION
+          rm -rf OpenBrush_Rift_Experimental_$VERSION
           rm -rf OpenBrush_Linux_$VERSION
           rm -rf OpenBrush_Linux_Experimental_$VERSION
       - name: Publish
@@ -376,3 +453,50 @@ jobs:
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+  publish_oculus:
+    name: Publish Oculus Release
+    needs: [configuration, build]
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
+          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          cd releases
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+          else
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+          fi

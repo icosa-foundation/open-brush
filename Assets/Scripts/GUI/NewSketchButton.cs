@@ -14,40 +14,49 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class NewSketchButton : OptionButton {
-  [SerializeField] private float m_AdjustDistanceAmount;
-  [SerializeField] private Renderer m_NewSketchButtonBG;
+namespace TiltBrush
+{
+    public class NewSketchButton : OptionButton
+    {
+        [SerializeField] private float m_AdjustDistanceAmount;
+        [SerializeField] private Renderer m_NewSketchButtonBG;
 
-  protected override void AdjustButtonPositionAndScale(
-      float posAmount, float scaleAmount, float boxColliderGrowAmount) {
-    SetMaterialFloat("_Distance", posAmount != 0 ? m_AdjustDistanceAmount : 0.0f);
-    SetMaterialFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
-    m_NewSketchButtonBG.material.SetFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
-    base.AdjustButtonPositionAndScale(posAmount, scaleAmount, boxColliderGrowAmount);
-  }
+        protected override void AdjustButtonPositionAndScale(
+            float posAmount, float scaleAmount, float boxColliderGrowAmount)
+        {
+            SetMaterialFloat("_Distance", posAmount != 0 ? m_AdjustDistanceAmount : 0.0f);
+            SetMaterialFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
+            m_NewSketchButtonBG.material.SetFloat("_Grayscale", posAmount != 0 ? 0.0f : 1.0f);
+            base.AdjustButtonPositionAndScale(posAmount, scaleAmount, boxColliderGrowAmount);
+        }
 
-  protected override void OnButtonPressed() {
-    if (!SketchControlsScript.m_Instance.SketchHasChanges()) {
-      Vector3 vPos = PointerManager.m_Instance.MainPointer.transform.position;
-      if (App.VrSdk.GetControllerDof() == VrSdk.DoF.Six) {
-        vPos = InputManager.m_Instance.GetControllerPosition(
-            InputManager.ControllerName.Wand);
-      }
-      AudioManager.m_Instance.PlayIntroTransitionSound(vPos);
+        protected override void OnButtonPressed()
+        {
+            if (!SketchControlsScript.m_Instance.SketchHasChanges())
+            {
+                Vector3 vPos = PointerManager.m_Instance.MainPointer.transform.position;
+                if (App.VrSdk.GetControllerDof() == VrSdk.DoF.Six)
+                {
+                    vPos = InputManager.m_Instance.GetControllerPosition(
+                        InputManager.ControllerName.Wand);
+                }
+                AudioManager.m_Instance.PlayIntroTransitionSound(vPos);
+            }
+
+            PanelManager.m_Instance.ToggleSketchbookPanels();
+            App.Instance.ExitIntroSketch();
+            PromoManager.m_Instance.RequestAdvancedPanelsPromo();
+
+            // Change the shown sketchset by simulating a press on the corresponding gallery button.
+            SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
+            if (SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches == 0)
+            {
+                panel.ButtonPressed(GalleryButton.Type.Showcase);
+            }
+            else
+            {
+                panel.ButtonPressed(GalleryButton.Type.Local);
+            }
+        }
     }
-
-    PanelManager.m_Instance.ToggleSketchbookPanels();
-    App.Instance.ExitIntroSketch();
-    PromoManager.m_Instance.RequestAdvancedPanelsPromo();
-
-    // Change the shown sketchset by simulating a press on the corresponding gallery button.
-    SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
-    if (SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches == 0) {
-      panel.ButtonPressed(GalleryButton.Type.Showcase);
-    } else {
-      panel.ButtonPressed(GalleryButton.Type.Local);
-    }
-  }
-}
 } // namespace TiltBrush

@@ -15,41 +15,46 @@
 using System;
 using UnityEngine;
 
-namespace TiltBrush {
-public class RepaintStrokeCommand : BaseCommand {
-  private Stroke m_TargetStroke;
-  private Color m_StartColor;
-  private Guid m_StartGuid;
-  private Color m_EndColor;
-  private Guid m_EndGuid;
+namespace TiltBrush
+{
+    public class RepaintStrokeCommand : BaseCommand
+    {
+        private Stroke m_TargetStroke;
+        private Color m_StartColor;
+        private Guid m_StartGuid;
+        private Color m_EndColor;
+        private Guid m_EndGuid;
 
-  public RepaintStrokeCommand(
-      Stroke stroke, Color newcolor, Guid newGuid, BaseCommand parent = null) : base(parent) {
-    m_TargetStroke = stroke;
-    m_StartColor = stroke.m_Color;
-    m_StartGuid = stroke.m_BrushGuid;
-    m_EndColor = newcolor;
-    m_EndGuid = newGuid;
-  }
+        public RepaintStrokeCommand(
+            Stroke stroke, Color newcolor, Guid newGuid, BaseCommand parent = null) : base(parent)
+        {
+            m_TargetStroke = stroke;
+            m_StartColor = stroke.m_Color;
+            m_StartGuid = stroke.m_BrushGuid;
+            m_EndColor = newcolor;
+            m_EndGuid = newGuid;
+        }
 
-  public override bool NeedsSave { get { return true; } }
+        public override bool NeedsSave { get { return true; } }
 
-  private void ApplyColorAndBrushToObject(Color color, Guid brushGuid) {
-    m_TargetStroke.m_Color = ColorPickerUtils.ClampLuminance(
-        color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
-    m_TargetStroke.m_BrushGuid = brushGuid;
-    m_TargetStroke.InvalidateCopy();
-    m_TargetStroke.Uncreate();
-    m_TargetStroke.Recreate();
-  }
+        private void ApplyColorAndBrushToObject(Color color, Guid brushGuid)
+        {
+            m_TargetStroke.m_Color = ColorPickerUtils.ClampLuminance(
+                color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
+            m_TargetStroke.m_BrushGuid = brushGuid;
+            m_TargetStroke.InvalidateCopy();
+            m_TargetStroke.Uncreate();
+            m_TargetStroke.Recreate();
+        }
 
-  protected override void OnRedo() {
-    ApplyColorAndBrushToObject(m_EndColor, m_EndGuid);
-  }
+        protected override void OnRedo()
+        {
+            ApplyColorAndBrushToObject(m_EndColor, m_EndGuid);
+        }
 
-  protected override void OnUndo() {
-    ApplyColorAndBrushToObject(m_StartColor, m_StartGuid);
-  }
-}
+        protected override void OnUndo()
+        {
+            ApplyColorAndBrushToObject(m_StartColor, m_StartGuid);
+        }
+    }
 } // namespace TiltBrush
-

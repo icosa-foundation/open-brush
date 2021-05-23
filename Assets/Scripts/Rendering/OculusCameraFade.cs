@@ -15,67 +15,79 @@
 using UnityEngine;
 using System.Collections;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// Controls Fading in and out the view on Oculus VR
-public class OculusCameraFade : MonoBehaviour {
-  public static OculusCameraFade m_Instance;
+    /// Controls Fading in and out the view on Oculus VR
+    public class OculusCameraFade : MonoBehaviour
+    {
+        public static OculusCameraFade m_Instance;
 
-  [SerializeField] private Material m_FadeMaterial;
-  private bool m_IsFading = false;
+        [SerializeField] private Material m_FadeMaterial;
+        private bool m_IsFading = false;
 
-  // Use this for initialization
-  void Awake() {
-    m_Instance = this;
+        // Use this for initialization
+        void Awake()
+        {
+            m_Instance = this;
 
-    m_FadeMaterial = new Material(Shader.Find("Oculus/Unlit Transparent Color"));
-  }
+            m_FadeMaterial = new Material(Shader.Find("Oculus/Unlit Transparent Color"));
+        }
 
-  public void Fade(bool fadeIn, float fadeTime) {
-    if (!m_IsFading) {
-      StartCoroutine(FadeColor(fadeIn, fadeTime));
+        public void Fade(bool fadeIn, float fadeTime)
+        {
+            if (!m_IsFading)
+            {
+                StartCoroutine(FadeColor(fadeIn, fadeTime));
+            }
+        }
+
+        private IEnumerator FadeColor(bool fadeIn, float fadeTime)
+        {
+            m_IsFading = true;
+
+            Color finalFadeColor;
+            Color initialFadeColor;
+            if (fadeIn)
+            {
+                finalFadeColor = new Color(0f, 0f, 0f, 0f);
+            }
+            else
+            {
+                finalFadeColor = Color.black;
+            }
+
+            float timer = 0f;
+
+            initialFadeColor = m_FadeMaterial.color;
+
+            while (timer < fadeTime)
+            {
+                m_FadeMaterial.color = Color.Lerp(initialFadeColor, finalFadeColor, timer / fadeTime);
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            m_FadeMaterial.color = finalFadeColor;
+
+            m_IsFading = false;
+        }
+
+        void OnPostRender()
+        {
+            if (m_IsFading)
+            {
+                m_FadeMaterial.SetPass(0);
+                GL.PushMatrix();
+                GL.LoadOrtho();
+                GL.Color(m_FadeMaterial.color);
+                GL.Begin(GL.QUADS);
+                GL.Vertex3(0f, 0f, -12f);
+                GL.Vertex3(0f, 1f, -12f);
+                GL.Vertex3(1f, 1f, -12f);
+                GL.Vertex3(1f, 0f, -12f);
+                GL.End();
+                GL.PopMatrix();
+            }
+        }
     }
-  }
-
-  private IEnumerator FadeColor(bool fadeIn, float fadeTime) {
-    m_IsFading = true;
-
-    Color finalFadeColor;
-    Color initialFadeColor;
-    if (fadeIn)  {
-      finalFadeColor = new Color(0f, 0f, 0f, 0f);
-    } else {
-      finalFadeColor = Color.black;
-    }
-
-    float timer = 0f;
-
-    initialFadeColor = m_FadeMaterial.color;
-
-    while (timer < fadeTime) {
-      m_FadeMaterial.color = Color.Lerp(initialFadeColor, finalFadeColor, timer / fadeTime);
-      timer += Time.deltaTime;
-      yield return null;
-    }
-    m_FadeMaterial.color = finalFadeColor;
-
-    m_IsFading = false;
-  }
-
-  void OnPostRender() {
-    if (m_IsFading) {
-      m_FadeMaterial.SetPass(0);
-      GL.PushMatrix();
-      GL.LoadOrtho();
-      GL.Color(m_FadeMaterial.color);
-      GL.Begin(GL.QUADS);
-      GL.Vertex3(0f, 0f, -12f);
-      GL.Vertex3(0f, 1f, -12f);
-      GL.Vertex3(1f, 1f, -12f);
-      GL.Vertex3(1f, 0f, -12f);
-      GL.End();
-      GL.PopMatrix();
-    }
-  }
-}
 } // namespace TiltBrush

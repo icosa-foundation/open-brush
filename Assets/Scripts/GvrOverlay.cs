@@ -15,50 +15,59 @@
 using TMPro;
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class GvrOverlay : MonoBehaviour {
-    [SerializeField] MeshRenderer m_ProgressIndicator;
-    [SerializeField] TextMeshPro m_Message;
-    // Optional parameter for specifying which camera will have the culling
-    // mask modified.  If null, we get the camera from the VrSdk.
-    [SerializeField] Camera m_VrCamera;
+    public class GvrOverlay : MonoBehaviour
+    {
+        [SerializeField] MeshRenderer m_ProgressIndicator;
+        [SerializeField] TextMeshPro m_Message;
+        // Optional parameter for specifying which camera will have the culling
+        // mask modified.  If null, we get the camera from the VrSdk.
+        [SerializeField] Camera m_VrCamera;
 
-    // We store the camera with which we've modified the culling mask because
-    // on startup, m_VrCamera can be destroyed before we've reset the culling
-    // mask on it.  Note that in this scenario, it doesn't matter that it
-    // wasn't restored because it's gone.
-    private Camera m_ModifiedCamera;
+        // We store the camera with which we've modified the culling mask because
+        // on startup, m_VrCamera can be destroyed before we've reset the culling
+        // mask on it.  Note that in this scenario, it doesn't matter that it
+        // wasn't restored because it's gone.
+        private Camera m_ModifiedCamera;
 
-    public MeshRenderer ProgressIndicator {
-      get { return m_ProgressIndicator; }
+        public MeshRenderer ProgressIndicator
+        {
+            get { return m_ProgressIndicator; }
+        }
+
+        public TextMeshPro Status
+        {
+            get { return m_Message; }
+        }
+
+        public float Progress
+        {
+            set { m_ProgressIndicator.material.SetFloat("_Progress", value); }
+        }
+
+        private const int kOverlayMask = 1 << 24;
+
+        private int m_OriginalCameraCullingMask;
+
+        public void OnEnable()
+        {
+            m_ModifiedCamera = (m_VrCamera != null) ? m_VrCamera : App.VrSdk.GetVrCamera();
+            if (m_OriginalCameraCullingMask != kOverlayMask)
+            {
+                m_OriginalCameraCullingMask = m_ModifiedCamera.cullingMask;
+            }
+            m_ModifiedCamera.cullingMask = kOverlayMask;
+        }
+
+        public void OnDisable()
+        {
+            if (m_ModifiedCamera != null)
+            {
+                m_ModifiedCamera.cullingMask = m_OriginalCameraCullingMask;
+            }
+        }
     }
 
-    public TextMeshPro Status {
-      get { return m_Message; }
-    }
-
-    public float Progress {
-      set { m_ProgressIndicator.material.SetFloat("_Progress", value); }
-    }
-
-    private const int kOverlayMask = 1 << 24;
-
-    private int m_OriginalCameraCullingMask;
-
-    public void OnEnable() {
-      m_ModifiedCamera = (m_VrCamera != null) ? m_VrCamera : App.VrSdk.GetVrCamera();  
-      if (m_OriginalCameraCullingMask != kOverlayMask) {
-        m_OriginalCameraCullingMask = m_ModifiedCamera.cullingMask;
-      }
-      m_ModifiedCamera.cullingMask = kOverlayMask;
-    }
-
-    public void OnDisable() {
-      if (m_ModifiedCamera != null) {
-        m_ModifiedCamera.cullingMask = m_OriginalCameraCullingMask;
-      }
-    }
-  }
-
-}  // namespace TiltBrush
+} // namespace TiltBrush

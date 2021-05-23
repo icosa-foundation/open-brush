@@ -14,17 +14,21 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class BillboardPanel : MonoBehaviour {
-  private Transform m_BillboardTransform;
+namespace TiltBrush
+{
+    public class BillboardPanel : MonoBehaviour
+    {
+        private Transform m_BillboardTransform;
 
-  private void Awake() {
-    m_BillboardTransform = GameObject.Find("LightsPanel(Clone)").transform;
-  }
+        private void Awake()
+        {
+            m_BillboardTransform = GameObject.Find("LightsPanel(Clone)").transform;
+        }
 
-  void Update() {
-    transform.LookAt(transform.position + m_BillboardTransform.transform.rotation * Vector3.forward,
-        m_BillboardTransform.transform.rotation * Vector3.up);
-  }
-}
+        void Update()
+        {
+            transform.LookAt(transform.position + m_BillboardTransform.transform.rotation * Vector3.forward,
+                m_BillboardTransform.transform.rotation * Vector3.up);
+        }
+    }
 }

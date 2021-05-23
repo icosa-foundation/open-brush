@@ -15,16 +15,16 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// Unity has an irritating habit of turning on Gpu Emulation automatically when you're developing
-/// for Android, and it breaks some things in Tilt Brush. This class uses [InitializeOnLoad]
-/// and a static class constructor to monitor whether Gpu Emulation has been turned on and
-/// turns it off again when it finds it so.
-/// This behaviour can be toggled using Tilt -> Keep GPU Emulation Turned Off.
-/// Unity 2019 doesn't have gpu emulation in the same place, so all this does is spew errors all the time.
+    /// Unity has an irritating habit of turning on Gpu Emulation automatically when you're developing
+    /// for Android, and it breaks some things in Tilt Brush. This class uses [InitializeOnLoad]
+    /// and a static class constructor to monitor whether Gpu Emulation has been turned on and
+    /// turns it off again when it finds it so.
+    /// This behaviour can be toggled using Tilt -> Keep GPU Emulation Turned Off.
+    /// Unity 2019 doesn't have gpu emulation in the same place, so all this does is spew errors all the time.
 #if UNITY_2018
-
 [InitializeOnLoad]
 public static class TurnOffGpuEmulation {
 

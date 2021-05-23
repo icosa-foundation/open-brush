@@ -14,28 +14,34 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class ControllerActivationEffectScript : MonoBehaviour {
-  private float m_Time;
-  public float m_Duration;
-  private Renderer m_Renderer;
+    public class ControllerActivationEffectScript : MonoBehaviour
+    {
+        private float m_Time;
+        public float m_Duration;
+        private Renderer m_Renderer;
 
-  // Use this for initialization
-  void Start() {
-    m_Renderer = GetComponentInChildren<Renderer>();
-  }
+        // Use this for initialization
+        void Start()
+        {
+            m_Renderer = GetComponentInChildren<Renderer>();
+        }
 
-  // Update is called once per frame
-  void Update() {
-    m_Time += Time.deltaTime;
-    float intensity = Mathf.Sin((m_Time / m_Duration) * Mathf.PI);
-    if (m_Renderer != null) {
-      m_Renderer.material.SetFloat("_Intensity", intensity);
+        // Update is called once per frame
+        void Update()
+        {
+            m_Time += Time.deltaTime;
+            float intensity = Mathf.Sin((m_Time / m_Duration) * Mathf.PI);
+            if (m_Renderer != null)
+            {
+                m_Renderer.material.SetFloat("_Intensity", intensity);
+            }
+            if (m_Time > m_Duration)
+            {
+                Destroy(gameObject);
+            }
+        }
     }
-    if (m_Time > m_Duration) {
-      Destroy(gameObject);
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -14,22 +14,29 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class RotationIconScript : MonoBehaviour {
-  public Texture m_Standard;
-  public Texture m_AngleLocked;
+    public class RotationIconScript : MonoBehaviour
+    {
+        public Texture m_Standard;
+        public Texture m_AngleLocked;
 
-  void Start() {
-    GetComponent<Renderer>().material.mainTexture = m_Standard;
-  }
+        void Start()
+        {
+            GetComponent<Renderer>().material.mainTexture = m_Standard;
+        }
 
-  public void SetLocked(bool bLocked) {
-    if (bLocked) {
-      GetComponent<Renderer>().material.mainTexture = m_AngleLocked;
-    } else {
-      GetComponent<Renderer>().material.mainTexture = m_Standard;
+        public void SetLocked(bool bLocked)
+        {
+            if (bLocked)
+            {
+                GetComponent<Renderer>().material.mainTexture = m_AngleLocked;
+            }
+            else
+            {
+                GetComponent<Renderer>().material.mainTexture = m_Standard;
+            }
+        }
     }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

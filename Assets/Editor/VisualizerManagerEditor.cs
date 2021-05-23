@@ -16,37 +16,43 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 
-namespace TiltBrush {
-[CustomEditor(typeof(VisualizerManager))]
-public class VisualizerManagerEditor : Editor {
-  public override void OnInspectorGUI() {
-    base.OnInspectorGUI();
-    var t = target as VisualizerManager;
-    if (Application.isPlaying && t.gameObject.activeSelf) {
-      EditorGUILayout.Space();
-      InspectorUtils.LayoutCustomLabel("Visualization Data", 12, FontStyle.Bold, TextAnchor.MiddleCenter);
-      EditorGUILayout.Space();
+namespace TiltBrush
+{
+    [CustomEditor(typeof(VisualizerManager))]
+    public class VisualizerManagerEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+            var t = target as VisualizerManager;
+            if (Application.isPlaying && t.gameObject.activeSelf)
+            {
+                EditorGUILayout.Space();
+                InspectorUtils.LayoutCustomLabel("Visualization Data", 12, FontStyle.Bold, TextAnchor.MiddleCenter);
+                EditorGUILayout.Space();
 
-      AudioCaptureManager a = AudioCaptureManager.m_Instance;
-      InspectorUtils.LayoutCustomLabel(string.Format("Status: <color={0}>{1}</color>",
-        (a != null && a.CaptureRequested ? (a.IsCapturingAudio ? "green" : "orange") : "brown"),
-        (a != null && a.CaptureRequested ? (a.IsCapturingAudio ? "Capturing" : "Waiting for Audio") : "Inactive")),
-        11, FontStyle.Bold, TextAnchor.MiddleLeft
-      );
+                AudioCaptureManager a = AudioCaptureManager.m_Instance;
+                InspectorUtils.LayoutCustomLabel(string.Format("Status: <color={0}>{1}</color>",
+                        (a != null && a.CaptureRequested ? (a.IsCapturingAudio ? "green" : "orange") : "brown"),
+                        (a != null && a.CaptureRequested ? (a.IsCapturingAudio ? "Capturing" : "Waiting for Audio") : "Inactive")),
+                    11, FontStyle.Bold, TextAnchor.MiddleLeft
+                );
 
-      EditorGUILayout.Space();
-      InspectorUtils.LayoutTexture("Waveform texture:", t.WaveformTexture);
-      InspectorUtils.LayoutTexture("FFT texture:", t.FFTTexture);
+                EditorGUILayout.Space();
+                InspectorUtils.LayoutTexture("Waveform texture:", t.WaveformTexture);
+                InspectorUtils.LayoutTexture("FFT texture:", t.FFTTexture);
 
-      InspectorUtils.LayoutBarVec4("BandPeakLevelsOutput", t.BandPeakLevelsOutput, Color.blue);
-      InspectorUtils.LayoutBarVec4("BeatOutput", t.BeatOutput, Color.blue);
-      InspectorUtils.LayoutBarVec4("BeatOutputAccum", t.BeatOutputAccum, Color.blue, false);
-      InspectorUtils.LayoutBarVec4("AudioVolume", t.AudioVolume, Color.blue);
+                InspectorUtils.LayoutBarVec4("BandPeakLevelsOutput", t.BandPeakLevelsOutput, Color.blue);
+                InspectorUtils.LayoutBarVec4("BeatOutput", t.BeatOutput, Color.blue);
+                InspectorUtils.LayoutBarVec4("BeatOutputAccum", t.BeatOutputAccum, Color.blue, false);
+                InspectorUtils.LayoutBarVec4("AudioVolume", t.AudioVolume, Color.blue);
 
-      Repaint();
-    } else {
-      EditorGUILayout.HelpBox("Hit Play to visualize the output data here", MessageType.Info);
+                Repaint();
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Hit Play to visualize the output data here", MessageType.Info);
+            }
+        }
     }
-  }
-}
 }

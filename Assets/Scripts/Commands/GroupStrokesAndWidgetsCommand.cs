@@ -15,57 +15,67 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// A command to group or ungroup a set of strokes.
-public class GroupStrokesAndWidgetsCommand : BaseCommand {
-  private Stroke[] m_Strokes;
-  private GrabWidget[] m_Widgets;
-  private SketchGroupTag[] m_InitialStrokesGroups;
-  private SketchGroupTag[] m_InitialWidgetsGroups;
-  private SketchGroupTag m_TargetGroup;
+    /// A command to group or ungroup a set of strokes.
+    public class GroupStrokesAndWidgetsCommand : BaseCommand
+    {
+        private Stroke[] m_Strokes;
+        private GrabWidget[] m_Widgets;
+        private SketchGroupTag[] m_InitialStrokesGroups;
+        private SketchGroupTag[] m_InitialWidgetsGroups;
+        private SketchGroupTag m_TargetGroup;
 
-  override public bool NeedsSave {
-    // We save groups.
-    get => true;
-  }
+        override public bool NeedsSave
+        {
+            // We save groups.
+            get => true;
+        }
 
-  /// <summary>
-  /// Move strokes and widgets other things to a group.
-  /// </summary>
-  /// <param name="strokes">Strokes to group</param>
-  /// <param name="widgets">Widgets to group</param>
-  /// <param name="targetGroup">Group to move to, or null to move to a newly-created group</param>
-  /// <param name="parent">parent command</param>
-  public GroupStrokesAndWidgetsCommand(
-      ICollection<Stroke> strokes,
-      ICollection<GrabWidget> widgets,
-      SketchGroupTag? targetGroup,
-      BaseCommand parent = null)
-      : base(parent) {
-    m_Strokes = strokes.ToArray();
-    m_Widgets = widgets.ToArray();
-    m_InitialStrokesGroups = m_Strokes.Select(s => s.Group).ToArray();
-    m_InitialWidgetsGroups = m_Widgets.Select(s => s.Group).ToArray();
-    m_TargetGroup = targetGroup ?? App.GroupManager.NewUnusedGroup();
-  }
+        /// <summary>
+        /// Move strokes and widgets other things to a group.
+        /// </summary>
+        /// <param name="strokes">Strokes to group</param>
+        /// <param name="widgets">Widgets to group</param>
+        /// <param name="targetGroup">Group to move to, or null to move to a newly-created group</param>
+        /// <param name="parent">parent command</param>
+        public GroupStrokesAndWidgetsCommand(
+            ICollection<Stroke> strokes,
+            ICollection<GrabWidget> widgets,
+            SketchGroupTag? targetGroup,
+            BaseCommand parent = null)
+            : base(parent)
+        {
+            m_Strokes = strokes.ToArray();
+            m_Widgets = widgets.ToArray();
+            m_InitialStrokesGroups = m_Strokes.Select(s => s.Group).ToArray();
+            m_InitialWidgetsGroups = m_Widgets.Select(s => s.Group).ToArray();
+            m_TargetGroup = targetGroup ?? App.GroupManager.NewUnusedGroup();
+        }
 
-  protected override void OnRedo() {
-    for (int i = 0; i < m_Strokes.Length; i++) {
-      m_Strokes[i].Group = m_TargetGroup;
+        protected override void OnRedo()
+        {
+            for (int i = 0; i < m_Strokes.Length; i++)
+            {
+                m_Strokes[i].Group = m_TargetGroup;
+            }
+            for (int i = 0; i < m_Widgets.Length; i++)
+            {
+                m_Widgets[i].Group = m_TargetGroup;
+            }
+        }
+
+        protected override void OnUndo()
+        {
+            for (int i = 0; i < m_Strokes.Length; i++)
+            {
+                m_Strokes[i].Group = m_InitialStrokesGroups[i];
+            }
+            for (int i = 0; i < m_Widgets.Length; i++)
+            {
+                m_Widgets[i].Group = m_InitialWidgetsGroups[i];
+            }
+        }
     }
-    for (int i = 0; i < m_Widgets.Length; i++) {
-      m_Widgets[i].Group = m_TargetGroup;
-    }
-  }
-
-  protected override void OnUndo() {
-    for (int i = 0; i < m_Strokes.Length; i++) {
-      m_Strokes[i].Group = m_InitialStrokesGroups[i];
-    }
-    for (int i = 0; i < m_Widgets.Length; i++) {
-      m_Widgets[i].Group = m_InitialWidgetsGroups[i];
-    }
-  }
-}
 } // namespace TiltBrush

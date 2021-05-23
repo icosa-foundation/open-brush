@@ -16,12 +16,15 @@ using UnityEditor;
 using UnityEngine;
 using System.Collections;
 
-namespace TiltBrush {
-public class ResetFirstPlay : MonoBehaviour {
+namespace TiltBrush
+{
+    public class ResetFirstPlay : MonoBehaviour
+    {
 
-  [MenuItem("Tilt/Reset First Play")]
-  static public void Execute() {
-    PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
-  }
-}
+        [MenuItem("Tilt/Reset First Play")]
+        static public void Execute()
+        {
+            PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
+        }
+    }
 }

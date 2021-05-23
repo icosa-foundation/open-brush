@@ -14,18 +14,22 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-/// This component exists only to be attached to the camera so that
-/// OculusHandTrackerManager.OnPreCull() is called at the appropriate time
-/// to update the controller poses.
-public class OculusPreCullHook : MonoBehaviour {
+    /// This component exists only to be attached to the camera so that
+    /// OculusHandTrackerManager.OnPreCull() is called at the appropriate time
+    /// to update the controller poses.
+    public class OculusPreCullHook : MonoBehaviour
+    {
 
-  private void OnPreCull() {
-    if (OculusHandTrackingManager.m_Instance) {
-      OculusHandTrackingManager.m_Instance.OnPreCull();
+        private void OnPreCull()
+        {
+            if (OculusHandTrackingManager.m_Instance)
+            {
+                OculusHandTrackingManager.m_Instance.OnPreCull();
+            }
+        }
     }
-  }
-}
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class StencilsVisibleCommand : BaseCommand {
-  bool m_StencilsStartDisabled;
+namespace TiltBrush
+{
+    public class StencilsVisibleCommand : BaseCommand
+    {
+        bool m_StencilsStartDisabled;
 
-  public StencilsVisibleCommand(BaseCommand parent = null) : base(parent) {
-    m_StencilsStartDisabled = WidgetManager.m_Instance.StencilsDisabled;
-  }
+        public StencilsVisibleCommand(BaseCommand parent = null) : base(parent)
+        {
+            m_StencilsStartDisabled = WidgetManager.m_Instance.StencilsDisabled;
+        }
 
-  protected override void OnRedo() {
-    WidgetManager.m_Instance.StencilsDisabled = !m_StencilsStartDisabled;
-  }
+        protected override void OnRedo()
+        {
+            WidgetManager.m_Instance.StencilsDisabled = !m_StencilsStartDisabled;
+        }
 
-  protected override void OnUndo() {
-    WidgetManager.m_Instance.StencilsDisabled = m_StencilsStartDisabled;
-  }
-}
+        protected override void OnUndo()
+        {
+            WidgetManager.m_Instance.StencilsDisabled = m_StencilsStartDisabled;
+        }
+    }
 } // namespace TiltBrush
