@@ -149,21 +149,16 @@ namespace TiltBrush
         [ApiEndpoint("color.set.html", "Sets the current color. colorString can either be a hex value or a css color name.")]
         public static void SetColorHTML(string color)
         {
-            
-            Color currentColor;
-            string colorString;
-
-            colorString = color;
-            if (CssColors.NamesToHex.ContainsKey(color)) colorString = CssColors.NamesToHex[color];
-            if (!color.StartsWith("#")) colorString = $"#{color}";
-            
-            if (ColorUtility.TryParseHtmlString($"#{color}", out currentColor))
+            Color c;
+            if (CssColors.NamesToHex.ContainsKey(color)) color = CssColors.NamesToHex[color];
+            if (!color.StartsWith("#")) color = $"#{color}";
+            if (ColorUtility.TryParseHtmlString(color, out c))
             {
-                App.BrushColor.CurrentColor = currentColor;
+                App.BrushColor.CurrentColor = c;
             }
             else
             {
-                Debug.LogError("Invalid color: {color}");
+                Debug.LogError($"Invalid color: {color}");
             }
         }
         
