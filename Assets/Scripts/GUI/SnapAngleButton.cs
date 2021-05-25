@@ -1,4 +1,5 @@
-﻿namespace TiltBrush
+﻿using UnityEngine;
+namespace TiltBrush
 {
     class SnapAngleButton : MultistateButton
     {
@@ -7,20 +8,20 @@
         {
             get
             {
-                return 60; // Looks weird if the angle is too shallow so fake it
+                return 120; // Button looks weird if the angle is too shallow so fake it
             }
         }
-        
-        protected virtual void OnStart()
+
+        protected override void OnStart()
         {
             CreateOptionSides();
             ForceSelectedOption(SelectionManager.m_Instance.CurrentSnapIndex);
         }
         
-        override protected void OnButtonPressed()
+        protected override void OnButtonPressed()
         {
             SetSelectedOption((m_CurrentOptionIdx + 1) % NumOptions);
-            SelectionManager.m_Instance.IncrementSnappingAngle();
+            SelectionManager.m_Instance.SetSnappingAngle(m_CurrentOptionIdx);
         }
         
     }

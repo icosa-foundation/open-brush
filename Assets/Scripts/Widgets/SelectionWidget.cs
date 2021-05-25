@@ -25,6 +25,7 @@ namespace TiltBrush
         [SerializeField] private CanvasScript m_SelectionCanvas;
 
         private TrTransform m_xfOriginal_SS = TrTransform.identity;
+        private Quaternion m_PrevSnapRotation;
         private Bounds? m_SelectionBounds_CS;
 
         private InputManager.ControllerName? m_CurrentIntersectionController;
@@ -133,12 +134,31 @@ namespace TiltBrush
             return SelectionManager.m_Instance.CurrentSnapIndex != 0;
         }
 
+        protected override void InitiateSnapping()
+        {
+            base.InitiateSnapping();
+            m_PrevSnapRotation = Quaternion.identity;
+        }
+
         protected override TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
-
             TrTransform outXf_GS = xf_GS;
+            Quaternion nearestSnapRotation = QuantizeAngle(xf_GS.rotation);
 
-            outXf_GS.rotation = App.Scene.Pose.rotation * QuantizeAngle(xf_GS.rotation);
+            float snapAngle = SelectionManager.m_Instance.SnappingAngle;
+            float stickiness = m_ValidSnapRotationStickyAngle / 90f;
+            float stickyAngle = snapAngle * stickiness;
+
+            if (nearestSnapRotation != m_PrevSnapRotation)
+            {
+                float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
+                if (a > stickyAngle)
+                {
+                    m_PrevSnapRotation = nearestSnapRotation;
+                }
+            }
+            
+            outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
 
             Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
             Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);

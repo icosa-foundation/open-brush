@@ -215,7 +215,7 @@ namespace TiltBrush
             m_SnapEnabledTimeStamp = 0.0f;
         }
 
-        protected bool SnapEnabled
+        protected virtual bool SnapEnabled
         {
             get
             {

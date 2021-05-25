@@ -939,12 +939,13 @@ namespace TiltBrush
         
         public void IncrementSnappingAngle()
         {
-            m_CurrentSnapIndex = CurrentSnapIndex + 1;
-            m_CurrentSnapIndex = CurrentSnapIndex % m_AngleSnaps.Length;
-            SetSnappingAngle(CurrentSnapIndex);
+            m_CurrentSnapIndex++;
+            m_CurrentSnapIndex = m_CurrentSnapIndex % m_AngleSnaps.Length;
+            SetSnappingAngle(m_CurrentSnapIndex);
         }
         public void SetSnappingAngle(int snapIndex)
         {
+            m_CurrentSnapIndex = snapIndex;
             m_snappingAngle = m_AngleSnaps[snapIndex];
         }
     }
