@@ -128,10 +128,20 @@ namespace TiltBrush
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
             return Quaternion.Euler(euler);
         }
+
+        private Vector3 QuantizePosition(Vector3 pos)
+        {
+            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+            float round(float val) {return Mathf.Round(val / gridSize) * gridSize;}
+            return new Vector3(round(pos.x), round(pos.y), round(pos.z));
+        }
         
         protected override bool AllowSnapping()
         {
-            return SelectionManager.m_Instance.CurrentSnapIndex != 0;
+            return (
+                SelectionManager.m_Instance.CurrentSnapAngleIndex != 0 ||
+                SelectionManager.m_Instance.CurrentSnapGridIndex != 0
+            );
         }
 
         protected override void InitiateSnapping()
@@ -143,30 +153,40 @@ namespace TiltBrush
         protected override TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
             TrTransform outXf_GS = xf_GS;
-            Quaternion nearestSnapRotation = QuantizeAngle(xf_GS.rotation);
 
-            float snapAngle = SelectionManager.m_Instance.SnappingAngle;
-            float stickiness = m_ValidSnapRotationStickyAngle / 90f;
-            float stickyAngle = snapAngle * stickiness;
-
-            if (nearestSnapRotation != m_PrevSnapRotation)
+            if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
-                float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
-                if (a > stickyAngle)
+                Quaternion nearestSnapRotation = QuantizeAngle(xf_GS.rotation);
+
+                float snapAngle = SelectionManager.m_Instance.SnappingAngle;
+                float stickiness = m_ValidSnapRotationStickyAngle / 90f;
+                float stickyAngle = snapAngle * stickiness;
+
+                if (nearestSnapRotation != m_PrevSnapRotation)
                 {
-                    m_PrevSnapRotation = nearestSnapRotation;
+                    float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
+                    if (a > stickyAngle)
+                    {
+                        m_PrevSnapRotation = nearestSnapRotation;
+                    }
                 }
+            
+                outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
+
+                Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+                Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+                Vector3 grabToCenter = xf_GS.translation - grabSpot;
+                outXf_GS.translation = grabSpot + qDelta * grabToCenter;
             }
             
-            outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
-
-            Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
-            Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
-            Vector3 grabToCenter = xf_GS.translation - grabSpot;
-            outXf_GS.translation = grabSpot + qDelta * grabToCenter;
-
-            return outXf_GS;
+            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                var outXf_CS = outXf_GS.TransformBy(App.Scene.Pose.inverse);
+                outXf_CS.translation = QuantizePosition(outXf_CS.translation);
+                outXf_GS = outXf_CS.TransformBy(App.Scene.Pose);
+            }
             
+            return outXf_GS;
         }
 
         override protected void SetWidgetSizeInternal(float fSize)

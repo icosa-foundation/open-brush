@@ -69,8 +69,11 @@ namespace TiltBrush
         private BaseTool.ToolType m_ToolTypeBeforeGrabbingGroup;
         
         private float m_snappingAngle;
+        private float m_snappingGridSize;
         private float[] m_AngleSnaps;
-        private int m_CurrentSnapIndex;
+        private float[] m_GridSnaps;
+        private int m_CurrentSnapAngleIndex;
+        private int m_CurrentSnapGridIndex;
 
         // As opposed to 'add to selection'.  When this is true, strokes picked up
         // by the selection tool will be removed from selected strokes.  When false, they'll be added
@@ -261,8 +264,10 @@ namespace TiltBrush
         }
 
         public bool IsAnimatingTossFromGrabbingGroup => m_IsAnimatingTossFromGrabbingGroup;
-        public int CurrentSnapIndex => m_CurrentSnapIndex;
+        public int CurrentSnapAngleIndex => m_CurrentSnapAngleIndex;
+        public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
+        public float SnappingGridSize => m_snappingGridSize;
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
@@ -387,6 +392,7 @@ namespace TiltBrush
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
             m_AngleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
+            m_GridSnaps = new[] {0f, 1f, 5f, 10f, 25f, 50f};
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -937,17 +943,19 @@ namespace TiltBrush
             return totalBounds_CS;
         }
         
-        public void IncrementSnappingAngle()
-        {
-            m_CurrentSnapIndex++;
-            m_CurrentSnapIndex = m_CurrentSnapIndex % m_AngleSnaps.Length;
-            SetSnappingAngle(m_CurrentSnapIndex);
-        }
         public void SetSnappingAngle(int snapIndex)
         {
-            m_CurrentSnapIndex = snapIndex;
+            m_CurrentSnapAngleIndex = snapIndex;
             m_snappingAngle = m_AngleSnaps[snapIndex];
         }
+        
+        public void SetSnappingGridSize(int snapIndex)
+        {
+            m_CurrentSnapGridIndex = snapIndex;
+            m_snappingGridSize = m_GridSnaps[snapIndex];
+        }
+        
+        
     }
 
 } // namespace TiltBrush
