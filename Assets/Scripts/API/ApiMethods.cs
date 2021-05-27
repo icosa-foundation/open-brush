@@ -13,9 +13,9 @@ namespace TiltBrush
 
         private static void ChangeBrushBearing(float angle, Vector3 axis)
         {
-            Vector3 newBearing = Quaternion.AngleAxis(angle, axis) * ApiManager.Instance.BrushBearing;
-            ApiManager.Instance.BrushBearing = newBearing;
+            ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
         }
+        
         private static void ChangeCameraBearing(float angle, Vector3 axis)
         {
             TrTransform lookPose = App.Scene.Pose;
@@ -150,6 +150,7 @@ namespace TiltBrush
         public static void SetColorHTML(string color)
         {
             Color c;
+            color = color.ToLower();
             if (CssColors.NamesToHex.ContainsKey(color)) color = CssColors.NamesToHex[color];
             if (!color.StartsWith("#")) color = $"#{color}";
             if (ColorUtility.TryParseHtmlString(color, out c))
@@ -256,7 +257,7 @@ namespace TiltBrush
         public static void BrushMove(float distance)
         {
             var currentPosition = ApiManager.Instance.BrushPosition;
-            var directionVector = ApiManager.Instance.BrushBearing;
+            Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var newPosition = currentPosition + (directionVector * distance);
             ApiManager.Instance.BrushPosition = newPosition;
         }
@@ -264,7 +265,7 @@ namespace TiltBrush
         [ApiEndpoint("brush.draw", "Moves the brush forward by 'distance' and draws a line")]
         public static void BrushDraw(float distance)
         {
-            var directionVector = ApiManager.Instance.BrushBearing;
+            Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var end = directionVector * distance;
             var path = new List<List<Vector3>>
             {
@@ -296,7 +297,57 @@ namespace TiltBrush
         [ApiEndpoint("brush.lookat", "Changes the brush direction to look at the specified point")]
         public static void BrushLookAt(Vector3 direction)
         {
-            ApiManager.Instance.BrushBearing = direction.normalized;
+            ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.forwards", "Changes the brush direction to look forwards")]
+        public static void BrushLookForwards()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.forward, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
+        public static void BrushLookUp()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
+        public static void BrushLookDown()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]
+        public static void BrushLookLeft()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.left, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.right", "Changes the brush direction to look to the right")]
+        public static void BrushLookRight()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.right, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.look.backwards", "Changes the brush direction to look backwards")]
+        public static void BrushLookBackwards()
+        {
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.back, Vector3.up);
+        }
+        
+        [ApiEndpoint("brush.home", "Resets the brush position and direction")]
+        public static void BrushHome()
+        {
+            BrushMoveTo(ApiManager.Instance.BrushOrigin);
+            BrushLookForwards();
+        }
+        
+        [ApiEndpoint("debug.brush", "Logs some info about the brush")]
+        public static void DebugBrush()
+        {
+            Debug.Log($"Brush position: {ApiManager.Instance.BrushPosition}");
+            Debug.Log($"Brush rotation: {ApiManager.Instance.BrushRotation.eulerAngles}");
         }
     }
 }

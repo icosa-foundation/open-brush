@@ -56,7 +56,6 @@
         xmlHttp.send(null);
     }
 
-    // noqa
     var brushes = {{brushesJson}};
     var menu = document.getElementById("brush.type");
     for (var brush of brushes) {
@@ -107,7 +106,7 @@
         var vinc = (vmax - vmin) / vsteps;
 
         sendCommands([
-            'brush.size=' + document.getElementById('brush.size').value,
+            'brush.size.set=' + document.getElementById('brush.size').value,
             'brush.type=' + document.getElementById('brush.type').value,
         ]);
 

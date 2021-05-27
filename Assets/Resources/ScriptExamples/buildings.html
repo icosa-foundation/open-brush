@@ -120,7 +120,7 @@
         var floorHeight = parseFloat(document.getElementById('floorHeight').value);
 
         sendCommands([
-            'brush.size=' + document.getElementById('brush.size').value,
+            'brush.size.set=' + document.getElementById('brush.size').value,
             'brush.type=' + document.getElementById('brush.type').value,
             'color.set.html=' + document.getElementById('brush.color').value,
         ]);

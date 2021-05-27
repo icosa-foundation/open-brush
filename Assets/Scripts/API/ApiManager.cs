@@ -28,8 +28,9 @@ public class ApiManager : MonoBehaviour
     private static ApiManager m_Instance;
     private Dictionary<string, ApiEndpoint> endpoints;
 
-    [NonSerialized] public Vector3 BrushPosition;
-    [NonSerialized] public Vector3 BrushBearing = Vector3.forward;
+    [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
+    [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3);  // Good origin for monoscopic
+    [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
     private Dictionary<string, string> m_UserScripts;
     private Dictionary<string, string> m_ExampleScripts;
 
@@ -300,7 +301,7 @@ public class ApiManager : MonoBehaviour
         }
         else
         {
-            html = m_UserScripts[request.RawUrl];
+            html = m_UserScripts[Uri.UnescapeDataString(request.Url.AbsolutePath)];
         }
         return ScriptTemplateSubstitution(html);
     }
@@ -321,7 +322,7 @@ public class ApiManager : MonoBehaviour
         }
         else
         {
-            html = m_ExampleScripts[request.RawUrl];
+            html = m_ExampleScripts[Uri.UnescapeDataString(request.Url.AbsolutePath)];
         }
         return ScriptTemplateSubstitution(html);
     }
