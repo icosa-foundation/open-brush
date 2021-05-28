@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using SVGMeshUnity;
+using UnityEditor;
 using UnityEngine;
 
 namespace TiltBrush
@@ -392,12 +393,37 @@ namespace TiltBrush
             return node.Value;
         }
 
-        [ApiEndpoint("stroke.delete", "If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
+        [ApiEndpoint("stroke.delete", "Delete strokes by their index. If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
         public static void DeleteStroke(int index)
         {
             var stroke = GetStrokeAtIndex(index);
             SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
             stroke.Uncreate();
+        }
+        
+        [ApiEndpoint("stroke.select", "Select strokes by their index. If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
+        public static void SelectStroke(int index)
+        {
+            var stroke = GetStrokeAtIndex(index);
+            SelectionManager.m_Instance.SelectStrokes(new List<Stroke>{stroke});
+        }
+        
+        [ApiEndpoint("selection.recolor", "Recolors the currently selected stroke")]
+        public static void RecolorSelection()
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false);
+            }
+        }
+        
+        [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected stroke")]
+        public static void RebrushSelection()
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true);
+            }
         }
     }
 }
