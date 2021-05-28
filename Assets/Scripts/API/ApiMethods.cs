@@ -349,5 +349,55 @@ namespace TiltBrush
             Debug.Log($"Brush position: {ApiManager.Instance.BrushPosition}");
             Debug.Log($"Brush rotation: {ApiManager.Instance.BrushRotation.eulerAngles}");
         }
+
+        private static Stroke GetStrokeAtIndex(int index)
+        {
+            
+            // Default to the most recent stroke for index=0
+            LinkedListNode<Stroke> node = SketchMemoryScript.m_Instance.CurrentNodeByTime;
+            
+            if (index<0)
+            {
+                // Count backwards for negative indices
+                for (int i = 0; i > index; i--)
+                {
+                    if (node.Previous != null)
+                    {
+                        node = node.Previous;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                
+            }
+            else if (index > 0)
+            {
+                // Count forwards from the first stroke. (Strokes are therefore 1-indexed
+                node = SketchMemoryScript.m_Instance.FirstNodeByTime;
+                for (int i = 0; i < index - 1; i++)
+                {
+                    if (node.Next != null)
+                    {
+                        node = node.Next;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                
+            }
+            return node.Value;
+        }
+
+        [ApiEndpoint("stroke.delete", "If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
+        public static void DeleteStroke(int index)
+        {
+            var stroke = GetStrokeAtIndex(index);
+            SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+            stroke.Uncreate();
+        }
     }
 }

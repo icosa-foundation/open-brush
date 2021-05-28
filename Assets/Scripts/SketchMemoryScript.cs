@@ -177,6 +177,29 @@ namespace TiltBrush
         {
             get { return (float)m_LastCheckedVertCount / (float)m_MemoryWarningVertCount; }
         }
+        public Stroke MostRecentStroke
+        {
+            get
+            {
+                return m_CurrentNodeByTime.Value;
+            }
+        }
+        public LinkedListNode<Stroke> FirstNodeByTime
+        {
+            get
+            {
+                return m_MemoryList.First;
+
+            }
+        }
+
+        public LinkedListNode<Stroke> CurrentNodeByTime
+        {
+            get
+            {
+                return m_CurrentNodeByTime;
+            }
+        }
 
         public void SetLastOperationStackCount()
         {
