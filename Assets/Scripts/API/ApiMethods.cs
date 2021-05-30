@@ -350,53 +350,11 @@ namespace TiltBrush
             Debug.Log($"Brush position: {ApiManager.Instance.BrushPosition}");
             Debug.Log($"Brush rotation: {ApiManager.Instance.BrushRotation.eulerAngles}");
         }
-
-        private static Stroke GetStrokeAtIndex(int index)
-        {
-            
-            // Default to the most recent stroke for index=0
-            LinkedListNode<Stroke> node = SketchMemoryScript.m_Instance.CurrentNodeByTime;
-            
-            if (index<0)
-            {
-                // Count backwards for negative indices
-                for (int i = 0; i > index; i--)
-                {
-                    if (node.Previous != null)
-                    {
-                        node = node.Previous;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                
-            }
-            else if (index > 0)
-            {
-                // Count forwards from the first stroke. (Strokes are therefore 1-indexed
-                node = SketchMemoryScript.m_Instance.FirstNodeByTime;
-                for (int i = 0; i < index - 1; i++)
-                {
-                    if (node.Next != null)
-                    {
-                        node = node.Next;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                
-            }
-            return node.Value;
-        }
-
+        
         [ApiEndpoint("stroke.delete", "Delete strokes by their index. If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
         public static void DeleteStroke(int index)
         {
-            var stroke = GetStrokeAtIndex(index);
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
             SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
             stroke.Uncreate();
         }
@@ -404,7 +362,7 @@ namespace TiltBrush
         [ApiEndpoint("stroke.select", "Select strokes by their index. If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
         public static void SelectStroke(int index)
         {
-            var stroke = GetStrokeAtIndex(index);
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke>{stroke});
         }
         
@@ -413,7 +371,7 @@ namespace TiltBrush
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false);
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false, false);
             }
         }
         
@@ -422,8 +380,116 @@ namespace TiltBrush
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true);
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true, false);
             }
         }
+        
+        [ApiEndpoint("selection.resize", "Changes the brush size the currently selected stroke")]
+        public static void ResizeSelection()
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, false, true);
+            }
+        }
+        
+        [ApiEndpoint("selection.trim", "Removes points from the current selection")]
+        public static void TrimSelection(int count)
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                int newCount = Mathf.Max(0, stroke.m_ControlPoints.Length - count);
+                if (newCount > 0)
+                {
+                    Array.Resize(ref stroke.m_ControlPoints, newCount);
+                    stroke.Recreate(null, stroke.Canvas);
+                    SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, false, true);
+                }
+                else
+                {
+                    SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                    stroke.Uncreate();
+                }
+            }
+        }
+        
+        private static Vector3 QuantizePosition(Vector3 pos, Vector3 grid)
+        {
+            float round(float val, float res) {return Mathf.Round(val / res) * res;}
+            return new Vector3(round(pos.x, grid.x), round(pos.y, grid.y), round(pos.z, grid.z));
+        }
+
+        [ApiEndpoint("selection.quantize", "Snaps all the points in selected strokes to a grid (buggy)")]
+        public static void QuantizeSelection(Vector3 grid)
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                var newCPs = new List<PointerManager.ControlPoint>();
+                for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                {
+                    var cp = stroke.m_ControlPoints[i];
+                    cp.m_Pos = QuantizePosition(cp.m_Pos, grid);
+                    // Only add a control point if it's pos is different to it's predecessor
+                    if (i == 0 || (i > 0 && cp.m_Pos != stroke.m_ControlPoints[i - 1].m_Pos))
+                    {
+                        newCPs.Add(cp);
+                    }
+                }
+                stroke.m_ControlPoints = newCPs.ToArray();
+                stroke.Uncreate();
+                stroke.Recreate(null, stroke.Canvas);
+            }
+        }
+
+        [ApiEndpoint("stroke.join", "Joins a stroke with the previous one")]
+        public static void JoinStroke()
+        {
+            var stroke1 = SketchMemoryScript.m_Instance.GetStrokeAtIndex(0);
+            var stroke2 = SketchMemoryScript.m_Instance.GetStrokeAtIndex(-1);
+            stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
+            stroke2.Uncreate();
+            stroke2.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke2.m_ControlPoints.Length).ToArray();
+            stroke2.Recreate(null, stroke2.Canvas);
+            DeleteStroke(0);
+        }
+        
+        [ApiEndpoint("strokes.join", "Joins all strokes between the two indices (inclusive)")]
+        public static void JoinStrokes(int start, int end)
+        {
+            var strokesToJoin = SketchMemoryScript.GetStrokesBetween(start, end);
+            var firstStroke = strokesToJoin[0];
+            firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
+            for (int i=1; i<strokesToJoin.Count(); i++)
+            {
+                var stroke = strokesToJoin[i];
+                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                stroke.DestroyStroke();
+            }
+            firstStroke.Uncreate();
+            firstStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, firstStroke.m_ControlPoints.Length).ToArray();
+            firstStroke.Recreate(null, firstStroke.Canvas);
+        }
+
+        [ApiEndpoint("stroke.add", "Adds a point at the current brush position to the specified stroke")]
+        public static void AddPointToStroke(int index)
+        {
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
+            var prevCP = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1];
+            Array.Resize(ref stroke.m_ControlPoints, stroke.m_ControlPoints.Length + 1);
+
+            PointerManager.ControlPoint cp = new PointerManager.ControlPoint
+            {
+                m_Pos = ApiManager.Instance.BrushPosition,
+                m_Orient = ApiManager.Instance.BrushRotation,
+                m_Pressure = prevCP.m_Pressure,
+                m_TimestampMs = prevCP.m_TimestampMs
+            };
+
+            stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1] = cp;
+            stroke.Uncreate();
+            stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
+            stroke.Recreate(null, stroke.Canvas);
+        }
+        
     }
 }

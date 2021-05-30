@@ -131,7 +131,7 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGroup.m_Stroke, m_Recolor, m_Rebrush);
+                rGroup.m_Stroke, m_Recolor, m_Rebrush, false);
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
         }
@@ -139,7 +139,7 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject)
         {
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGameObject, m_Recolor, m_Rebrush);
+                rGameObject, m_Recolor, m_Rebrush, false);
             PlayModifyStrokeSound();
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
