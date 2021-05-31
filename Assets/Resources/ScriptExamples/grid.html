@@ -11,9 +11,9 @@
 
 <label>Steps: <input id="steps" value="10"></label>
 <label>Scale: <input id="scale" value="1"></label><br>
-<label>Noise X: <input id="noisex" value="3"></label>
-<label>Noise Y: <input id="noisey" value="1.5"></label>
-<label>Noise Z: <input id="noisez" value="3"></label>
+<label>Noise X: <input id="noisex" value="4"></label>
+<label>Noise Y: <input id="noisey" value="2.5"></label>
+<label>Noise Z: <input id="noisez" value="4"></label>
 <button id="runButton">Run</button>
 <br><br>
 <button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
@@ -60,7 +60,8 @@
         {
         sendCommands([
             "select.all",
-            `selection.points.addnoise=y,${noisex},${noisey},${noisez}`
+            `selection.points.addnoise=y,${noisex},${noisey},${noisez}`,
+            'selection.points.quantize=.001,1.2,.001'  // Battlezone...
         ]);
         }
     }
