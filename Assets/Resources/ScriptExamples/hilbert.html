@@ -55,7 +55,7 @@
         var newCommands = [];
         for (var commandsCounter = 0; commandsCounter < commands.length; commandsCounter ++) {
             var command = commands[commandsCounter];
-            if (command.command == 'X') {
+            if (command.command==='X') {
                 // Replace
                 var tempCommands = generateTransformationCommands();
                 for (var tempCommandsCounter = 0; tempCommandsCounter < tempCommands.length; tempCommandsCounter ++) {
@@ -117,8 +117,10 @@
     var generateStringCommands = function(commands, theta, length) {
 
         var commandStrings = [];
-
+		var strokeCount = 0;
+		
         for (var i = 0; i < commands.length; i++) {
+		    if (commands[i].command==="brush.draw") {strokeCount++}
             var param = commands[i].parameter;
             if (param==='length') {
                 param = length;
@@ -130,9 +132,10 @@
                 param = -theta;
             }
 
-            if (commands[i].command=="X") continue;
+            if (commands[i].command==="X") continue;
             commandStrings.push([commands[i].command, param].join('='));
         }
+        commandStrings.push(`strokes.join=0,-${strokeCount+1}`);
         return commandStrings;
     }
 
