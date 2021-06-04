@@ -1239,12 +1239,16 @@ namespace TiltBrush
             int lastStrokeIndex = SketchMemoryScript.m_Instance.StrokeCount - 1;
             if (start < 1)
             {
-                start = start + lastStrokeIndex;
+                // Counting backwards so subtract from last index
+                start += lastStrokeIndex;
             }
             if (end < 1)
             {
-                end = end + lastStrokeIndex;
+                // Counting backwards so subtract from last index
+                end += lastStrokeIndex;
             }
+            
+            
             if (start <= end)
             {
                 index0 = start;
@@ -1255,14 +1259,25 @@ namespace TiltBrush
                 index0 = end;
                 index1 = start;
             }
-            var node = GetNodeAtIndex(index0);
+
+            // Clamp
+            index0 = Mathf.Min(index0, lastStrokeIndex);
+            index1 = Mathf.Min(index1, lastStrokeIndex);
+            index0 = Mathf.Max(index0, 0);
+            index1 = Mathf.Max(index1, 0);
+            
             var result = new List<Stroke>();
             int i = index0;
-            while (i <= index1)
+            var node = GetNodeAtIndex(index0 + 1); // 1 Indexed
+            while (i < index1)
             {
                 result.Add(node.Value);
                 node = node.Next;
-                if (node == null) break;
+                if (node == null)
+                {
+                    Debug.LogError($"Aborting early due to no next stroke in linked list");
+                    break;
+                }
                 i++;
             }
             return result;

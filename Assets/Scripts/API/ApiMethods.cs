@@ -340,7 +340,28 @@ namespace TiltBrush
         public static void BrushHome()
         {
             BrushMoveTo(ApiManager.Instance.BrushOrigin);
-            BrushLookForwards();
+            ApiManager.Instance.BrushRotation = ApiManager.Instance.BrushInitialRotation;
+        }
+        
+        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home")]
+        public static void BrushSetHome()
+        {
+            ApiManager.Instance.BrushOrigin = ApiManager.Instance.BrushPosition;
+            ApiManager.Instance.BrushInitialRotation = ApiManager.Instance.BrushRotation;
+        }
+        
+        [ApiEndpoint("brush.transform.push", "Stores the current brush position and direction on to a stack")]
+        public static void BrushTransformPush()
+        {
+            ApiManager.Instance.BrushTransformStack.Push((ApiManager.Instance.BrushPosition, ApiManager.Instance.BrushRotation));
+        }
+        
+        [ApiEndpoint("brush.transform.pop", "Pops the most recent current brush position and direction from the stack")]
+        public static void BrushTransformPop()
+        {
+            var (pos, rot) = ApiManager.Instance.BrushTransformStack.Pop();
+            BrushMoveTo(pos);
+            ApiManager.Instance.BrushRotation = rot;
         }
         
         [ApiEndpoint("debug.brush", "Logs some info about the brush")]
@@ -499,7 +520,7 @@ namespace TiltBrush
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(start, end);
             var firstStroke = strokesToJoin[0];
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
-            for (int i=1; i<strokesToJoin.Count(); i++)
+            for (int i=1; i<strokesToJoin.Count; i++)
             {
                 var stroke = strokesToJoin[i];
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);

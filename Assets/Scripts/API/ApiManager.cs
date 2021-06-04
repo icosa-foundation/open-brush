@@ -29,6 +29,7 @@ public class ApiManager : MonoBehaviour
     private Dictionary<string, ApiEndpoint> endpoints;
 
     [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
+    [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
     [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3);  // Good origin for monoscopic
     [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
     private Dictionary<string, string> m_UserScripts;
@@ -38,6 +39,7 @@ public class ApiManager : MonoBehaviour
     {
         get { return m_Instance; }
     }
+    [NonSerialized]public Stack<(Vector3, Quaternion)> BrushTransformStack;
     public string UserScriptsPath() { return m_UserScriptsPath; }
 
     void Awake()
@@ -52,6 +54,7 @@ public class ApiManager : MonoBehaviour
         m_ExampleScripts = new Dictionary<string, string>();
         PopulateExampleScripts();
         PopulateUserScripts();
+        BrushTransformStack = new Stack<(Vector3, Quaternion)>();
         if (Directory.Exists(m_UserScriptsPath))
         {
             m_FileWatcher = new FileWatcher(m_UserScriptsPath, "*.html");

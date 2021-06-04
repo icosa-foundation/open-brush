@@ -6,11 +6,11 @@
 <body>
 
 <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
-<label>Brush size: <input id="brush.size" value=".025"></label><br>
+<label>Brush size: <input id="brush.size" value=".5"></label><br>
 <label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
 
 <label>Angle: <input id="angle" value="20"></label>
-<label>Steps: <input id="steps" value="144"></label>
+<label>Steps: <input id="steps" value="50"></label>
 <label>Scale: <input id="scale" value=".01"></label>
 <button id="runButton">Run</button>
 <br><br>
@@ -27,7 +27,7 @@
         var option = document.createElement("option");
         option.text = brush;
         option.name = brush;
-        if (brush==='Light') option.selected=true;
+        if (brush==='SoftHighlighter') option.selected=true;
         menu.add(option);
     }
 
@@ -55,9 +55,14 @@
         for (var i=0; i<steps; i++) {
             sendCommands([
                 'brush.draw=' + (steps - i) * scale,
-                'brush.turn.x=' + angle
+                'brush.turn.x=' + angle,
+                'brush.turn.z=1',
+                'color.add.hsv=0.05,0,0'
             ]);
         }
+        sendCommands([
+            `strokes.join=0,-${steps}`
+        ]);
 
     }
 
