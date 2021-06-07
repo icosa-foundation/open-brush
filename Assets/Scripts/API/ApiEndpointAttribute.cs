@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using UnityEngine;
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
@@ -28,6 +30,17 @@ public class ApiEndpoint : Attribute
     public string Description
     {
         get {return m_Description;}
+    }
+
+    public Dictionary<string, string> ParamsAsDict()
+    {
+        var paramInfo = new Dictionary<string, string>();
+        foreach (var param in parameterInfo)
+        {
+            string typeName = param.ParameterType.Name;
+            paramInfo[param.Name] = typeName;
+        }
+        return paramInfo;
     }
 
     public void Invoke(System.Object[] parameters)

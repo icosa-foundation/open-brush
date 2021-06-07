@@ -3,10 +3,14 @@
 <body>
 
 <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
-<label>Brush size: <input id="brush.size" value=".025"></label><br>
+<label>Brush size: <input id="brush.size" value=".035"></label><br>
 <label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
 
-<label>Iterations: <input id="iterations" value="0"></label>
+<label>Iterations: <select id="iterations">
+    <option>0</option>
+    <option selected>1</option>
+    <option>2</option>
+</select></label><br>
 <label>Scale: <input id="scale" value="1"></label>
 <button id = "runButton">Run</button>
 <br><br>
@@ -22,6 +26,7 @@
         var option = document.createElement("option");
         option.text = brush;
         option.name = brush;
+        if (brush==='LightWire') option.selected=true;
         menu.add(option);
     }
 

@@ -158,6 +158,11 @@
                 '|': () => sendCommand('brush.turn.y=180'),
                 '#': () => sendCommand('brush.size.add', brushSize/10),
                 '!': () => sendCommand('brush.size.add', -(brushSize/10)),
+                'T': () => sendCommand('draw.polygon', `${3},${scale / (tree.iterations + 1)},0`),
+                'S': () => sendCommand('draw.polygon', `${4},${scale / (tree.iterations + 1)},0`),
+                'P': () => sendCommand('draw.polygon', `${5},${scale / (tree.iterations + 1)},0`),
+                'H': () => sendCommand('draw.polygon', `${6},${scale / (tree.iterations + 1)},0`),
+                '.': () => angle=-angle,
                 //'>': () => scale *= branchScale,
                 //'<': () => scale /= branchScale,
 

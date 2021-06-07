@@ -7,9 +7,11 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
+using SimpleJSON;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
+using Object = System.Object;
 
 
 public class ApiManager : MonoBehaviour
@@ -78,13 +80,27 @@ public class ApiManager : MonoBehaviour
         switch (request.Url.Segments.Last())
         {
             case "commands":
-                var commandList = ListApiCommands();
+                
                 if (request.Url.Query.Contains("raw"))
                 {
-                    html = String.Join("\n", commandList.Keys);
+                    html = String.Join("\n", endpoints.Keys);
+                }
+                else if (request.Url.Query.Contains("json"))
+                {
+                    var commandList = new Dictionary<string, object>();
+                    foreach (var endpoint in endpoints.Keys)
+                    {
+                        commandList[endpoint] = new
+                        {
+                            parameters = endpoints[endpoint].ParamsAsDict(),
+                            description = endpoints[endpoint].Description
+                        };
+                    }
+                    html = JsonConvert.SerializeObject(commandList, Formatting.Indented);
                 }
                 else
                 {
+                    var commandList = ListApiCommands();
                     builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
                     builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
                     builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
@@ -391,7 +407,6 @@ public class ApiManager : MonoBehaviour
         {
             return false;
         }
-
         return Instance.InvokeEndpoint(command);
     }
 

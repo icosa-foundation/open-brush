@@ -6,14 +6,14 @@
 <body>
 
 <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
-<label>Brush size: <input id="brush.size" value=".25"></label><br>
-<label>Brush color: <input id="brush.color" value="Green"></label><br>
+<label>Brush size: <input id="brush.size" value=".05"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
 
-<label>Steps: <input id="steps" value="10"></label>
+<label>Sides: <input id="sides" value="5"></label><br>
+<label>Steps: <input id="steps" value="30"></label><br>
 <label>Scale: <input id="scale" value="1"></label><br>
-<label>Noise X: <input id="noisex" value="4"></label>
-<label>Noise Y: <input id="noisey" value="2.5"></label>
-<label>Noise Z: <input id="noisez" value="4"></label>
+<label>Angle: <input id="angle" value="5"></label><br>
+<label>Distance: <input id="distance" value=".025"></label><br>
 <button id="runButton">Run</button>
 <br><br>
 <button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
@@ -29,7 +29,7 @@
         var option = document.createElement("option");
         option.text = brush;
         option.name = brush;
-        if (brush==='FacetedTube') option.selected=true;
+        if (brush==='ShinyHull') option.selected=true;
         menu.add(option);
     }
 
@@ -42,52 +42,31 @@
 
     function run() {
 
+
         sendCommands([
+            'brush.home',
+            'brush.turn.y=90',
             'color.set.html=' + document.getElementById("brush.color").value,
             'brush.size.set=' + document.getElementById("brush.size").value,
             'brush.type=' + document.getElementById("brush.type").value,
-            'brush.turn.y=90'
         ]);
 
-        drawLines(false);
-        drawLines(true);
-
-        var noisex = parseFloat(document.getElementById('noisex').value);
-        var noisey = parseFloat(document.getElementById('noisey').value);
-        var noisez = parseFloat(document.getElementById('noisez').value);
-
-        if (noisex>0 && noisey>0 && noisez>0)
-        {
-        sendCommands([
-            "select.all",
-            `selection.points.addnoise=y,${noisex},${noisey},${noisez}`,
-            // 'selection.points.quantize=.001,1.2,.001'  // Battlezone...
-        ]);
-        }
-    }
-
-    function drawLines(flip)
-    {
+        var sides = parseFloat(document.getElementById('sides').value);
         var steps = parseInt(document.getElementById('steps').value);
         var scale = parseFloat(document.getElementById('scale').value);
+        var angle = parseFloat(document.getElementById('angle').value);
+        var distance = parseFloat(document.getElementById('distance').value);
 
+        var rot = 0;
         for (var i=0; i<steps; i++) {
-            var line = [];
-            for (var j=0; j<steps; j++) {
-                if (flip) {
-                    var x = i;
-                    var y = j;
-                } else {
-                    var x = j;
-                    var y = i;
-                }
-                line.push(`[${x*scale}, 0, ${y*scale}]`);
-            }
+            rot += angle;
+            var radius = ((steps-i)/steps) * scale;
             sendCommands([
-                `draw.path=[${line.join(",")}]`
+                `brush.move=${distance}`,
+                `draw.polygon=${sides},${radius}, ${rot}`,
+                'color.add.hsv=0.05,0,0'
             ]);
         }
-
     }
 
      function sendCommand(command) {

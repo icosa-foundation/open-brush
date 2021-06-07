@@ -5,6 +5,25 @@ namespace TiltBrush
 {
     public static class DrawStrokes
     {
+
+        public static void PathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f)
+        {
+            var floatPaths = new List<List<List<float>>>{floatPath};
+            PathsToStrokes(floatPaths, origin, scale);
+        }
+        
+        public static void PathToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
+        {
+            var polylines2d = new List<List<Vector2>>{polyline2d};
+            PathsToStrokes(polylines2d, origin, scale);
+        }
+        
+        public static void PathToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
+        {
+            var paths = new List<List<Vector3>>{path};
+            PathsToStrokes(paths, origin, scale);
+        }
+        
         public static void PathsToStrokes(List<List<List<float>>> floatPaths, Vector3 origin, float scale = 1f)
         {
             var paths = new List<List<Vector3>>();
@@ -20,10 +39,11 @@ namespace TiltBrush
             }
             PathsToStrokes(paths, origin, scale);
         }
-        public static void PathsToStrokes(List<List<Vector2>> polyline2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
+        
+        public static void PathsToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
             var paths = new List<List<Vector3>>();
-            foreach (List<Vector2> positionList in polyline2d)
+            foreach (List<Vector2> positionList in polylines2d)
             {
                 var path = new List<Vector3>();
                 foreach (Vector2 position in positionList)
@@ -34,6 +54,7 @@ namespace TiltBrush
             }
             PathsToStrokes(paths, origin, scale, breakOnOrigin);
         }
+        
         public static void PathsToStrokes(List<List<Vector3>> paths, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;

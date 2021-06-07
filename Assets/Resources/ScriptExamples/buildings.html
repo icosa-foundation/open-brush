@@ -138,7 +138,6 @@
                 path.push('[');
                 for (var h=0; h<feature.properties.height; h+=floorHeight)
                 {
-                    path.push('[');
                     for (var coord of coords) {
                         path.push('[');
                         path.push((coord[0] - lat) * scale + xorigin);
@@ -148,7 +147,6 @@
                         path.push((coord[1] - lng) * scale + zorigin);
                         path.push('],');
                     }
-                    path.push('],');
                     c2++;
                     if (c2>100) break;  // Failsafe
                 }

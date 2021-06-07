@@ -25,12 +25,47 @@ namespace TiltBrush
             App.Scene.Pose = lookPose;
         }
 
-        [ApiEndpoint("draw.path", "Draws a series of lines at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
-        public static void Draw(string jsonString)
+        [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
+        public static void DrawPaths(string jsonString)
         {
             var origin = ApiManager.Instance.BrushPosition;
-            var jsonData = JsonConvert.DeserializeObject<List<List<List<float>>>>(jsonString);
-            DrawStrokes.PathsToStrokes(jsonData, origin);
+            var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>(jsonString);
+            DrawStrokes.PathsToStrokes(paths, origin);
+        }
+        
+        [ApiEndpoint("draw.path", "Draws a path at the current brush position [[x1,y1,z1],[x2,y2,z2], etc...]. Does not move the brush position")]
+        public static void DrawPath(string jsonString)
+        {
+            var origin = ApiManager.Instance.BrushPosition;
+            var path = JsonConvert.DeserializeObject<List<List<float>>>(jsonString);
+            DrawStrokes.PathToStroke(path, origin);
+        }
+        
+        private static Vector3 rotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
+        {
+            Vector3 dir = point - pivot; 
+            dir = rot * dir;
+            point = dir + pivot;
+            return point;
+        }
+
+        [ApiEndpoint("draw.polygon", "Draws a polygon at the current brush position. Does not move the brush position")]
+        public static void DrawPolygon(int sides, float radius, float angle)
+        {
+            var path = new List<Vector3>();
+            for (float i = 0; i <= sides; i++)
+            {
+                var theta = Mathf.PI * (i / sides) * 2f;
+                theta += angle * Mathf.Deg2Rad;
+                var point = new Vector3(
+                    Mathf.Cos(theta),
+                    Mathf.Sin(theta),
+                    0
+                ) * radius;
+                point = ApiManager.Instance.BrushRotation * point;
+                path.Add(point);
+            }
+            DrawStrokes.PathToStroke(path, ApiManager.Instance.BrushPosition);
         }
 
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
