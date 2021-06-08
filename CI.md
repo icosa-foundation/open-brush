@@ -17,3 +17,7 @@ The CI build will automatically enable the use of this file instead of the defau
 ## Signed Android Builds
 
 When building Oculus Android builds, you can use your own keystore instead of the default "Debug" signing keys. This will allow you to upgrade your application, instead of needing to uninstall and reinstall it each time to avoid Signature Mismatch errors. To do this, create a keystore, and a key, and define the following secrets: `ANDROID_KEYSTORE_PASS`, `ANDROID_KEYALIAS_NAME`, and `ANDROID_KEYALIAS_PASS`. The keystore itself should be converted to base64 and stored in a secret named `ANDROID_KEYSTORE_BASE64`; you can get the value to store in the secret by using `base64 -i YOUR_KEYSTORE_NAME.keystore`.
+
+## Oculus Publish
+
+Pre-release builds and release builds will automatically be uploaded to Oculus for both Rift and Quest. This requires the following values to be defined (you can get the values from the Admin page in Oculus profile, or from the command line provided in the "Upload a build" button on a release channel. `OCULUS_QUEST_APP_ID`, `OCULUS_QUEST_APP_SECRET`, `OCULUS_RIFT_APP_ID`, `OCULUS_RIFT_APP_SECRET`
