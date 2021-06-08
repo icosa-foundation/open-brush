@@ -11,12 +11,12 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2019.4.24f1"
+  UNITY_VERSION: "2019.4.25f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
   # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-04-10T11:43:41\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.24f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>GYC1YpQHTB2q5CllgJhlpihJuAk=</DigestValue></Reference></SignedInfo><SignatureValue>WE8iCxEU2CEWYaVo4EiFJzCmftuq994dQk7wPenZcQ0VZhJ7eXYLkxbJSXGCPbYv+Bphz0T0mhEy\nq2fV05Yfp1xiKryawbiA7kk7wIY6qTo35Oex+jEg5DX1V2Rf3uUeXfareHagnHTt43+slTCN1gNd\nbPHZhHetWWYBECMCkt95ISJg8R2eIxT2MeeHoey2Xr4+Y0MEJE57cmj2hYcd1rg5S6sbnovBlav4\nS5GdvS8ZufejTvuYrvhLMA+BBnJ2g1elqMaYJZu5nV1J2cTI/Xaipvp265CM5lykzRVrQAHxz5zt\n9M6hFRxnhRGamyTPOtxcCwG9Cl4xYKS1TyhEww==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
+  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
 
 jobs:
   configuration:
@@ -160,6 +160,27 @@ jobs:
 
 
     steps:
+      - name: Free extra space
+        # This takes several minutes, so we only do it where required
+        if: matrix.targetPlatform == 'Android'
+        run: |
+          echo "Initial free space"
+          df -h
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          docker rmi $(docker image ls -aq)
+          #echo "Listing 100 largest packages"
+          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "Removing remaining large directories"
+          rm -rf /usr/share/dotnet/
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup"
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
@@ -432,3 +453,50 @@ jobs:
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+  publish_oculus:
+    name: Publish Oculus Release
+    needs: [configuration, build]
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
+          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          cd releases
+          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+          else
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+          fi
