@@ -47,15 +47,15 @@ public class PanelLister : MonoBehaviour
             popupList.AppendLine($"{pp.name}\t");
             PopupMapKey[] m_PanelPopUpMap;
             FieldInfo privateField2 = pp.GetType().GetField("m_PanelPopUpMap", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (privateField2==null) continue;
+            if (privateField2 == null) continue;
             m_PanelPopUpMap = (PopupMapKey[])privateField2.GetValue(pp);
             foreach (var popup in m_PanelPopUpMap)
             {
                 popupList.AppendLine($"\t{popup.m_Command}\t{popup.m_PopUpPrefab.name}");
             }
         }
-        
+
         Debug.Log($"{popupList}");
     }
-    
+
 }

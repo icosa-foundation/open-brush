@@ -20,34 +20,34 @@ public class BrushLister : MonoBehaviour
     static void ListBrushes()
     {
         brushList = new StringBuilder();
-        
+
         Object[] defaultBrushes = Resources.LoadAll("Brushes", typeof(BrushDescriptor)).ToArray();
         var experimentalBrushes = Resources.LoadAll("X/Brushes", typeof(BrushDescriptor)).ToArray();
-        
+
         brushManifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest.asset");
         brushManifestX = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>("Assets/Manifest_Experimental.asset");
 
         deprecated = new List<Guid>();
-        
-        foreach (BrushDescriptor b in defaultBrushes) { if (b.m_Supersedes!=null) deprecated.Add(b.m_Supersedes.m_Guid);}
-        foreach (BrushDescriptor b in experimentalBrushes) { if (b.m_Supersedes!=null) deprecated.Add(b.m_Supersedes.m_Guid);}
-        
-        foreach (BrushDescriptor brush in defaultBrushes) {AppendValidBrushString(brush, false);}
+
+        foreach (BrushDescriptor b in defaultBrushes) { if (b.m_Supersedes != null) deprecated.Add(b.m_Supersedes.m_Guid); }
+        foreach (BrushDescriptor b in experimentalBrushes) { if (b.m_Supersedes != null) deprecated.Add(b.m_Supersedes.m_Guid); }
+
+        foreach (BrushDescriptor brush in defaultBrushes) { AppendValidBrushString(brush, false); }
         foreach (BrushDescriptor brush in experimentalBrushes)
         {
-            try {AppendValidBrushString(brush, true);}
-            catch (Exception UnassignedReferenceException) {}
+            try { AppendValidBrushString(brush, true); }
+            catch (Exception UnassignedReferenceException) { }
         }
 
         Debug.Log($"{brushList}");
     }
-    
+
     public static string getBrushRowString(BrushDescriptor brush, bool experimental)
     {
         // Exclude legacy brushes
         if (brush.m_SupersededBy != null) return "";
         var brushScripts = sniffBrushScript(brush);
-        string prefabName = brush.m_BrushPrefab!= null ? brush.m_BrushPrefab.name : "";
+        string prefabName = brush.m_BrushPrefab != null ? brush.m_BrushPrefab.name : "";
         string materialName = brush.Material != null ? brush.Material.name : "";
         string shaderName = brush.Material != null ? brush.Material.shader.name : "";
         string manifest = "";
