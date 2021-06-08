@@ -20,6 +20,6 @@ namespace TiltBrush
 
     public class SnapSettingsPanel : BasePanel
     {
-        
+
     }
 } // namespace TiltBrush

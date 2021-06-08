@@ -1353,7 +1353,7 @@ namespace TiltBrush
             }
             return outXf_GS;
         }
-        
+
         protected virtual bool AllowSnapping()
         {
             return m_AllowSnapping && SnapEnabled;

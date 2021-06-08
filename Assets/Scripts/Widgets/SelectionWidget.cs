@@ -118,12 +118,12 @@ namespace TiltBrush
         {
             return transform.localScale.Max();
         }
-        
+
         private Quaternion QuantizeAngle(Quaternion rotation)
         {
             var snapAngle = SelectionManager.m_Instance.SnappingAngle;
-            float round(float val) {return Mathf.Round(val / snapAngle) * snapAngle;}
-            
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
             Vector3 euler = rotation.eulerAngles;
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
             return Quaternion.Euler(euler);
@@ -132,10 +132,10 @@ namespace TiltBrush
         private Vector3 QuantizePosition(Vector3 pos)
         {
             float gridSize = SelectionManager.m_Instance.SnappingGridSize;
-            float round(float val) {return Mathf.Round(val / gridSize) * gridSize;}
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             return new Vector3(round(pos.x), round(pos.y), round(pos.z));
         }
-        
+
         protected override bool AllowSnapping()
         {
             return (
@@ -170,7 +170,7 @@ namespace TiltBrush
                         m_PrevSnapRotation = nearestSnapRotation;
                     }
                 }
-            
+
                 outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
@@ -178,14 +178,14 @@ namespace TiltBrush
                 Vector3 grabToCenter = xf_GS.translation - grabSpot;
                 outXf_GS.translation = grabSpot + qDelta * grabToCenter;
             }
-            
+
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
                 var outXf_CS = outXf_GS.TransformBy(App.Scene.Pose.inverse);
                 outXf_CS.translation = QuantizePosition(outXf_CS.translation);
                 outXf_GS = outXf_CS.TransformBy(App.Scene.Pose);
             }
-            
+
             return outXf_GS;
         }
 

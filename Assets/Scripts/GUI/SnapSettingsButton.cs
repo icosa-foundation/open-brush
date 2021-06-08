@@ -13,7 +13,7 @@ namespace TiltBrush
         }
 
         public SettingTypes SettingType;
-        
+
         protected override float OptionAngleDeltaDegrees
         {
             get
@@ -37,7 +37,7 @@ namespace TiltBrush
             }
             ForceSelectedOption(optionIndex);
         }
-        
+
         protected override void OnButtonPressed()
         {
             SetSelectedOption((m_CurrentOptionIdx + 1) % NumOptions);
@@ -51,6 +51,6 @@ namespace TiltBrush
                     break;
             }
         }
-        
+
     }
 }

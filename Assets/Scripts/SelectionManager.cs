@@ -67,7 +67,7 @@ namespace TiltBrush
         private bool m_IsAnimatingTossFromGrabbingGroup;
         private bool m_IsGrabbingGroup;
         private BaseTool.ToolType m_ToolTypeBeforeGrabbingGroup;
-        
+
         private float m_snappingAngle;
         private float m_snappingGridSize;
         private float[] m_AngleSnaps;
@@ -391,8 +391,8 @@ namespace TiltBrush
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
-            m_AngleSnaps = new[] {0f, 15f, 30f, 45f, 60f, 75f, 90f};
-            m_GridSnaps = new[] {0f, 1f, 5f, 10f, 25f, 50f};
+            m_AngleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
+            m_GridSnaps = new[] { 0f, 1f, 5f, 10f, 25f, 50f };
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -942,20 +942,20 @@ namespace TiltBrush
 
             return totalBounds_CS;
         }
-        
+
         public void SetSnappingAngle(int snapIndex)
         {
             m_CurrentSnapAngleIndex = snapIndex;
             m_snappingAngle = m_AngleSnaps[snapIndex];
         }
-        
+
         public void SetSnappingGridSize(int snapIndex)
         {
             m_CurrentSnapGridIndex = snapIndex;
             m_snappingGridSize = m_GridSnaps[snapIndex];
         }
-        
-        
+
+
     }
 
 } // namespace TiltBrush
