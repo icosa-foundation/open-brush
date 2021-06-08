@@ -30,11 +30,11 @@ namespace TiltBrush
             Value
         }
         public JitterProperties JitterProperty;
-        
+
         protected override void Awake()
         {
 
-            float adjust(float val) {return Mathf.Pow(val * 2f, 1f/pow);}
+            float adjust(float val) { return Mathf.Pow(val * 2f, 1f / pow); }
             base.Awake();
             var jitter = PointerManager.m_Instance.colorJitter;
             switch (JitterProperty)

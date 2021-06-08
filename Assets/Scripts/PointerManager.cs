@@ -153,7 +153,7 @@ namespace TiltBrush
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
         private Color m_lastChosenColor { get; set; }
-        public Vector3 colorJitter  { get; set; }
+        public Vector3 colorJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -1014,15 +1014,15 @@ namespace TiltBrush
             {
                 m_lastChosenColor = PointerColor;
             }
-            
+
             float h, s, v;
             Color.RGBToHSV(m_lastChosenColor, out h, out s, out v);
-            
+
             // Bypass the code in the PointerColor setter
             ChangeAllPointerColorsDirectly(Random.ColorHSV(
-                h-colorJitter.x, h+colorJitter.x,
-                s-colorJitter.y, h+colorJitter.y,
-                v-colorJitter.z, h+colorJitter.z
+                h - colorJitter.x, h + colorJitter.x,
+                s - colorJitter.y, h + colorJitter.y,
+                v - colorJitter.z, h + colorJitter.z
             ));
 
             if (m_StraightEdgeEnabled)

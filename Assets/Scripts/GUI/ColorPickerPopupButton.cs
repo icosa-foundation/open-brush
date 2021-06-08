@@ -18,6 +18,6 @@ namespace TiltBrush
 {
     public class ColorPickerPopupButton : OptionButton
     {
-      
+
     }
 } // namespace TiltBrush
