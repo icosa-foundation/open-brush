@@ -5,45 +5,46 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-  public class TextToStrokes
-  {
-    private CHRFont _font;
-
-    public TextToStrokes(CHRFont font)
+    public class TextToStrokes
     {
-      _font = font;
-    }
+        private CHRFont _font;
 
-    public List<List<Vector3>> Build(string text)
-    {
-      var shape = new List<List<Vector3>>();
-      Vector2 offset = Vector2.zero;
-      foreach (var character in text)
-      {
-        if (character == '\n') {
-          offset.y -= (_font.Height * 1.1f);
-          offset.x = 0;
-          continue;
+        public TextToStrokes(CHRFont font)
+        {
+            _font = font;
         }
-        // try
-        // {
-            List<List<Vector2>> letter = _font.Outlines[character];
-            // Offset letter outline by the current total offset
-            shape.AddRange(
-                letter.Select(
-                    path => path.Select(
-                        point => new Vector3(point.x + offset.x, point.y + offset.y, 0)
+
+        public List<List<Vector3>> Build(string text)
+        {
+            var shape = new List<List<Vector3>>();
+            Vector2 offset = Vector2.zero;
+            foreach (var character in text)
+            {
+                if (character == '\n')
+                {
+                    offset.y -= (_font.Height * 1.1f);
+                    offset.x = 0;
+                    continue;
+                }
+                // try
+                // {
+                List<List<Vector2>> letter = _font.Outlines[character];
+                // Offset letter outline by the current total offset
+                shape.AddRange(
+                    letter.Select(
+                        path => path.Select(
+                            point => new Vector3(point.x + offset.x, point.y + offset.y, 0)
+                        ).ToList()
                     ).ToList()
-                ).ToList()
-            );
-            offset.x += _font.Widths[character];
-        // }
-        // catch (Ex e)
-        // {
-        //     
-        // }
-      }
-      return shape;
+                );
+                offset.x += _font.Widths[character];
+                // }
+                // catch (Ex e)
+                // {
+                //     
+                // }
+            }
+            return shape;
+        }
     }
-  }
 }

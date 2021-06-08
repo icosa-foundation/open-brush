@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class ApiEndpoint : Attribute  
+public class ApiEndpoint : Attribute
 {
     public Type type;
     public MethodInfo methodInfo;
@@ -25,11 +25,11 @@ public class ApiEndpoint : Attribute
 
     public virtual string Endpoint
     {
-        get {return m_Endpoint;}
+        get { return m_Endpoint; }
     }
     public string Description
     {
-        get {return m_Description;}
+        get { return m_Description; }
     }
 
     public Dictionary<string, string> ParamsAsDict()
@@ -51,15 +51,15 @@ public class ApiEndpoint : Attribute
     public object[] DecodeParams(string commandValue)
     {
         var parameters = new object[parameterInfo.Length];
-        
-        string[] tokens = commandValue.Split(',').Select(x=>x.Trim()).ToArray();
-        
+
+        string[] tokens = commandValue.Split(',').Select(x => x.Trim()).ToArray();
+
         int tokenIndex = 0;
         for (var i = 0; i < parameterInfo.Length; i++)
         {
             ParameterInfo paramType = parameterInfo[i];
             object paramValue;
-            
+
             if (paramType.ParameterType == typeof(string))
             {
                 if (parameterInfo.Length == 1 && i == 0)

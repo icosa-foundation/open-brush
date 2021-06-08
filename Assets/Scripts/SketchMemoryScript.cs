@@ -583,7 +583,7 @@ namespace TiltBrush
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
             float brushSize = PointerManager.m_Instance.MainPointer.BrushSize01;
             if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
-                (rebrush && stroke.m_BrushGuid != brushGuid) || 
+                (rebrush && stroke.m_BrushGuid != brushGuid) ||
                 (resize && stroke.m_BrushSize != brushSize))
             {
                 if (m_RepaintStrokeParent == null)
@@ -1181,15 +1181,15 @@ namespace TiltBrush
                 stroke.m_ControlPoints[iCp].m_TimestampMs = nowMs + offsetMs++;
             }
         }
-        
+
         // Strokes are 1-indexed so that 0 can conveniently point to the most recent stroke
         // Negative numbers count backwards from here.
         public static LinkedListNode<Stroke> GetNodeAtIndex(int index)
         {
             // Default to the most recent stroke for index=0
             LinkedListNode<Stroke> node = m_Instance.CurrentNodeByTime;
-            
-            if (index<0)
+
+            if (index < 0)
             {
                 // Count backwards for negative indices
                 for (int i = 0; i > index; i--)
@@ -1204,7 +1204,7 @@ namespace TiltBrush
                         break;
                     }
                 }
-                
+
             }
             else if (index > 0)
             {
@@ -1222,9 +1222,9 @@ namespace TiltBrush
                         break;
                     }
                 }
-                
+
             }
-            
+
             return node;
         }
 
@@ -1247,8 +1247,8 @@ namespace TiltBrush
                 // Counting backwards so subtract from last index
                 end += lastStrokeIndex;
             }
-            
-            
+
+
             if (start <= end)
             {
                 index0 = start;
@@ -1265,7 +1265,7 @@ namespace TiltBrush
             index1 = Mathf.Min(index1, lastStrokeIndex);
             index0 = Mathf.Max(index0, 0);
             index1 = Mathf.Max(index1, 0);
-            
+
             var result = new List<Stroke>();
             int i = index0;
             var node = GetNodeAtIndex(index0 + 1); // 1 Indexed
