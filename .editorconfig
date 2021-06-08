@@ -3,14 +3,12 @@
 
 root = true
 
-[*.{cs,py,json,cfg}]
+[*.{json,cfg}]
 indent_style = space
 indent_size = 2
 
-[*.py]
-indent_size = 4
-
-[*.cs]
+[*.{cs,py}]
+indent_style = space
 indent_size = 4
 
 # Microsoft .NET properties

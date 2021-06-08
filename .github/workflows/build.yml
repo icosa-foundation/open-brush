@@ -160,6 +160,27 @@ jobs:
 
 
     steps:
+      - name: Free extra space
+        # This takes several minutes, so we only do it where required
+        if: matrix.targetPlatform == 'Android'
+        run: |
+          echo "Initial free space"
+          df -h
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          docker rmi $(docker image ls -aq)
+          #echo "Listing 100 largest packages"
+          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "Removing remaining large directories"
+          rm -rf /usr/share/dotnet/
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup"
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
