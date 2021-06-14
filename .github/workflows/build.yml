@@ -104,7 +104,7 @@ jobs:
               DESCRIPTION="Unknown"
             fi
             echo "::set-output name=description::-btb-description ${DESCRIPTION}"
-            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[#_-]//g')
+            IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
             echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
           fi
   build:
