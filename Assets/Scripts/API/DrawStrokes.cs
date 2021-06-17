@@ -8,22 +8,22 @@ namespace TiltBrush
 
         public static void PathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f)
         {
-            var floatPaths = new List<List<List<float>>>{floatPath};
+            var floatPaths = new List<List<List<float>>> { floatPath };
             PathsToStrokes(floatPaths, origin, scale);
         }
-        
+
         public static void PathToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
         {
-            var polylines2d = new List<List<Vector2>>{polyline2d};
+            var polylines2d = new List<List<Vector2>> { polyline2d };
             PathsToStrokes(polylines2d, origin, scale);
         }
-        
+
         public static void PathToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
         {
-            var paths = new List<List<Vector3>>{path};
+            var paths = new List<List<Vector3>> { path };
             PathsToStrokes(paths, origin, scale);
         }
-        
+
         public static void PathsToStrokes(List<List<List<float>>> floatPaths, Vector3 origin, float scale = 1f)
         {
             var paths = new List<List<Vector3>>();
@@ -32,14 +32,14 @@ namespace TiltBrush
                 var path = new List<Vector3>();
                 foreach (List<float> position in positionList)
                 {
-                    if (position.Count < 3) {position.Add(0);}
+                    if (position.Count < 3) { position.Add(0); }
                     path.Add(new Vector3(position[0], position[1], position[2]));
                 }
                 paths.Add(path);
             }
             PathsToStrokes(paths, origin, scale);
         }
-        
+
         public static void PathsToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
             var paths = new List<List<Vector3>>();
@@ -54,7 +54,7 @@ namespace TiltBrush
             }
             PathsToStrokes(paths, origin, scale, breakOnOrigin);
         }
-        
+
         public static void PathsToStrokes(List<List<Vector3>> paths, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;

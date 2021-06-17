@@ -15,7 +15,7 @@ namespace TiltBrush
         {
             ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
         }
-        
+
         private static void ChangeCameraBearing(float angle, Vector3 axis)
         {
             TrTransform lookPose = App.Scene.Pose;
@@ -32,7 +32,7 @@ namespace TiltBrush
             var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>(jsonString);
             DrawStrokes.PathsToStrokes(paths, origin);
         }
-        
+
         [ApiEndpoint("draw.path", "Draws a path at the current brush position [[x1,y1,z1],[x2,y2,z2], etc...]. Does not move the brush position")]
         public static void DrawPath(string jsonString)
         {
@@ -40,10 +40,10 @@ namespace TiltBrush
             var path = JsonConvert.DeserializeObject<List<List<float>>>(jsonString);
             DrawStrokes.PathToStroke(path, origin);
         }
-        
+
         private static Vector3 rotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
         {
-            Vector3 dir = point - pivot; 
+            Vector3 dir = point - pivot;
             dir = rot * dir;
             point = dir + pivot;
             return point;
@@ -73,7 +73,7 @@ namespace TiltBrush
         {
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
         }
-        
+
         [ApiEndpoint("showfolder.exports", "Opens the user's Exports folder on the desktop")]
         public static void OpenExportFolder()
         {
@@ -162,19 +162,19 @@ namespace TiltBrush
                 (v + hsv.z) % 1f
             );
         }
-        
+
         [ApiEndpoint("color.add.rgb", "Adds the supplied values to the current color. Values are red green and blue")]
         public static void AddColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
         }
-        
+
         [ApiEndpoint("color.set.rgb", "Sets the current color. Values are hue, saturation and value")]
         public static void SetColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
         }
-        
+
         [ApiEndpoint("color.set.hsv", "Sets the current color. Values are red, green and blue")]
         public static void SetColorHSV(Vector3 hsv)
         {
@@ -197,7 +197,7 @@ namespace TiltBrush
                 Debug.LogError($"Invalid color: {color}");
             }
         }
-        
+
         [ApiEndpoint("brush.size.set", "Sets the current brush size")]
         public static void BrushSizeSet(float size)
         {
@@ -227,7 +227,7 @@ namespace TiltBrush
                 cam.transform.position = position;
             }
         }
-        
+
         [ApiEndpoint("camera.move.by", "Moves the spectator or non-VR camera by the given amount")]
         public static void MoveCameraBy(Vector3 amount)
         {
@@ -275,19 +275,19 @@ namespace TiltBrush
             lookPose.rotation = qNewRotation;
             App.Scene.Pose = lookPose;
         }
-        
+
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
         public static void BrushMoveTo(Vector3 position)
         {
             ApiManager.Instance.BrushPosition = position;
         }
-        
+
         [ApiEndpoint("brush.move.by", "Moves the brush by the given amount")]
         public static void BrushMoveBy(Vector3 offset)
         {
             ApiManager.Instance.BrushPosition += offset;
         }
-        
+
         [ApiEndpoint("brush.move", "Moves the brush forward by 'distance' without drawing a line")]
         public static void BrushMove(float distance)
         {
@@ -310,19 +310,19 @@ namespace TiltBrush
             DrawStrokes.PathsToStrokes(path, origin);
             ApiManager.Instance.BrushPosition += end;
         }
-        
+
         [ApiEndpoint("brush.turn.y", "Changes the brush direction to the left or right. Angle is measured in degrees")]
         public static void BrushYaw(float angle)
         {
             ChangeBrushBearing(angle, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.turn.x", "Changes the brush direction up or down. Angle is measured in degrees")]
         public static void BrushPitch(float angle)
         {
             ChangeBrushBearing(angle, Vector3.left);
         }
-        
+
         [ApiEndpoint("brush.turn.z", "Rotates the brush clockwise or anticlockwise. Angle is measured in degrees")]
         public static void BrushRoll(float angle)
         {
@@ -334,63 +334,63 @@ namespace TiltBrush
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.forwards", "Changes the brush direction to look forwards")]
         public static void BrushLookForwards()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.forward, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
         public static void BrushLookUp()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
         public static void BrushLookDown()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]
         public static void BrushLookLeft()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.left, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.right", "Changes the brush direction to look to the right")]
         public static void BrushLookRight()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.right, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.look.backwards", "Changes the brush direction to look backwards")]
         public static void BrushLookBackwards()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.back, Vector3.up);
         }
-        
+
         [ApiEndpoint("brush.home", "Resets the brush position and direction")]
         public static void BrushHome()
         {
             BrushMoveTo(ApiManager.Instance.BrushOrigin);
             ApiManager.Instance.BrushRotation = ApiManager.Instance.BrushInitialRotation;
         }
-        
+
         [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home")]
         public static void BrushSetHome()
         {
             ApiManager.Instance.BrushOrigin = ApiManager.Instance.BrushPosition;
             ApiManager.Instance.BrushInitialRotation = ApiManager.Instance.BrushRotation;
         }
-        
+
         [ApiEndpoint("brush.transform.push", "Stores the current brush position and direction on to a stack")]
         public static void BrushTransformPush()
         {
             ApiManager.Instance.BrushTransformStack.Push((ApiManager.Instance.BrushPosition, ApiManager.Instance.BrushRotation));
         }
-        
+
         [ApiEndpoint("brush.transform.pop", "Pops the most recent current brush position and direction from the stack")]
         public static void BrushTransformPop()
         {
@@ -398,14 +398,14 @@ namespace TiltBrush
             BrushMoveTo(pos);
             ApiManager.Instance.BrushRotation = rot;
         }
-        
+
         [ApiEndpoint("debug.brush", "Logs some info about the brush")]
         public static void DebugBrush()
         {
             Debug.Log($"Brush position: {ApiManager.Instance.BrushPosition}");
             Debug.Log($"Brush rotation: {ApiManager.Instance.BrushRotation.eulerAngles}");
         }
-        
+
         [ApiEndpoint("stroke.delete", "Delete strokes by their index. If index is 0 the most recent stroke is deleted. -1 etc steps back in time")]
         public static void DeleteStroke(int index)
         {
@@ -413,21 +413,21 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
             stroke.Uncreate();
         }
-        
+
         [ApiEndpoint("stroke.select", "Selects a stroke by it's index. 0 is the most recent stroke, -1 is second to last, 1 is the first.")]
         public static void SelectStroke(int index)
         {
             var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
-            SelectionManager.m_Instance.SelectStrokes(new List<Stroke>{stroke});
+            SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
-        
+
         [ApiEndpoint("strokes.select", "Select multiple strokes by their index. 0 is the most recent stroke, -1 is second to last, 1 is the first.")]
         public static void SelectStrokes(int start, int end)
         {
             var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
-                
+
         [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
         public static void RecolorSelection()
         {
@@ -436,7 +436,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false, false);
             }
         }
-        
+
         [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
         public static void RebrushSelection()
         {
@@ -445,7 +445,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true, false);
             }
         }
-        
+
         [ApiEndpoint("selection.resize", "Changes the brush size the currently selected strokes")]
         public static void ResizeSelection()
         {
@@ -454,7 +454,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, false, true);
             }
         }
-        
+
         [ApiEndpoint("selection.trim", "Removes a number of points from the currently selected strokes")]
         public static void TrimSelection(int count)
         {
@@ -474,10 +474,10 @@ namespace TiltBrush
                 }
             }
         }
-        
+
         private static Vector3 QuantizePosition(Vector3 pos, Vector3 grid)
         {
-            float round(float val, float res) {return Mathf.Round(val / res) * res;}
+            float round(float val, float res) { return Mathf.Round(val / res) * res; }
             return new Vector3(round(pos.x, grid.x), round(pos.y, grid.y), round(pos.z, grid.z));
         }
 
@@ -510,11 +510,11 @@ namespace TiltBrush
             ModifyControlPoints(quantize);
         }
 
-        private enum Axis {X, Y, Z}
-        
+        private enum Axis { X, Y, Z }
+
         private static Vector3 PerlinNoisePosition(Vector3 pos, Vector3 scale, Axis axis)
         {
-            pos = new Vector3(pos.x/scale.x, pos.y/scale.y, pos.z/scale.z);
+            pos = new Vector3(pos.x / scale.x, pos.y / scale.y, pos.z / scale.z);
             switch (axis)
             {
                 case Axis.X:
@@ -527,7 +527,7 @@ namespace TiltBrush
                     pos.z += Mathf.PerlinNoise(pos.x, pos.y) * scale.z;
                     break;
             }
-            return  new Vector3(pos.x*scale.x, pos.y*scale.y, pos.z*scale.z);
+            return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
         [ApiEndpoint("selection.points.quantize", "Snaps all the points in selected strokes to a grid (buggy)")]
@@ -548,14 +548,14 @@ namespace TiltBrush
             stroke2.Recreate(null, stroke2.Canvas);
             DeleteStroke(0);
         }
-        
+
         [ApiEndpoint("strokes.join", "Joins all strokes between the two indices (inclusive)")]
         public static void JoinStrokes(int start, int end)
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(start, end);
             var firstStroke = strokesToJoin[0];
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
-            for (int i=1; i<strokesToJoin.Count; i++)
+            for (int i = 1; i < strokesToJoin.Count; i++)
             {
                 var stroke = strokesToJoin[i];
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
@@ -586,6 +586,6 @@ namespace TiltBrush
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
         }
-        
+
     }
 }

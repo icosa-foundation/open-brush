@@ -147,7 +147,7 @@ open-source licensing issues. These are:
 *   **Tilt Shift**. The official Tilt Brush app uses modified versions of the
     Tilt Shift effect that came with the standard assets in earlier versions of
     Unity. These have been replaced with a modified version of
-    [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
+    [Tilt shift by ruby0x1](https://gist.github.com/ruby0x1/10324388).
 
 ## Generating Secrets file
 Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
@@ -254,6 +254,8 @@ Follow these steps to build your app for Oculus Quest:
 1.  Find the generated executable. It will most likely be somewhere under
     `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
+
+**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
 
 ### Publishing to Oculus stores
 

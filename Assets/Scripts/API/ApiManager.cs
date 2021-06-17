@@ -22,8 +22,8 @@ public class ApiManager : MonoBehaviour
     private const string BASE_HTML = @"<!doctype html><html lang='en'>
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
-    
-    
+
+
     private FileWatcher m_FileWatcher;
     private string m_UserScriptsPath;
     private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
@@ -41,7 +41,7 @@ public class ApiManager : MonoBehaviour
     {
         get { return m_Instance; }
     }
-    [NonSerialized]public Stack<(Vector3, Quaternion)> BrushTransformStack;
+    [NonSerialized] public Stack<(Vector3, Quaternion)> BrushTransformStack;
     public string UserScriptsPath() { return m_UserScriptsPath; }
 
     void Awake()
@@ -84,7 +84,7 @@ public class ApiManager : MonoBehaviour
         switch (request.Url.Segments.Last())
         {
             case "commands":
-                
+
                 if (request.Url.Query.Contains("raw"))
                 {
                     html = String.Join("\n", endpoints.Keys);
@@ -116,10 +116,10 @@ public class ApiManager : MonoBehaviour
                 }
                 break;
             case "brushes":
-                var brushes = BrushCatalog.m_Instance.AllBrushes.Where(x=>x.DurableName!="");
+                var brushes = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "");
                 if (request.Url.Query.Contains("raw"))
                 {
-                    html = String.Join("\n", brushes.Select(x=>x.DurableName));
+                    html = String.Join("\n", brushes.Select(x => x.DurableName));
                 }
                 else
                 {
@@ -158,7 +158,7 @@ public class ApiManager : MonoBehaviour
             App.HttpServer.AddHttpHandler(filename, ExampleScriptsCallback);
         }
     }
-    
+
     private void PopulateUserScripts()
     {
         App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
@@ -178,7 +178,7 @@ public class ApiManager : MonoBehaviour
     }
     private void RegisterUserScript(FileInfo file)
     {
-        if (file.Extension==".html" || file.Extension==".htm")
+        if (file.Extension == ".html" || file.Extension == ".htm")
         {
             var f = file.OpenText();
             string filename = $"{BASE_USER_SCRIPTS_URL}/{file.Name}";
@@ -224,7 +224,7 @@ public class ApiManager : MonoBehaviour
                             Debug.LogWarning($"No instance found for ApiEndpoint on: {type}");
                         }
                     }
-                    
+
                     if (valid)
                     {
                         apiEndpoint.type = type;
@@ -241,7 +241,7 @@ public class ApiManager : MonoBehaviour
         }
         App.HttpServer.AddHttpHandler(ROOT_API_URL, ApiCommandCallback);
     }
-    
+
     public bool InvokeEndpoint(KeyValuePair<string, string> command)
     {
         if (endpoints.ContainsKey(command.Key))
@@ -320,7 +320,7 @@ public class ApiManager : MonoBehaviour
             {
                 builder.AppendLine($"<li><a href='{e.Key}'>{e.Key}</a></li>");
             }
-                            
+
             // Only show this button on Windows
             // TODO Update this is ApiMethods.OpenUserFolder is ever cross platform
             // (Also see similar global commands that will need updating)
@@ -358,7 +358,7 @@ public class ApiManager : MonoBehaviour
         }
         return ScriptTemplateSubstitution(html);
     }
-    
+
     private string ScriptTemplateSubstitution(string html)
     {
         string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "").Select(x => x.DurableName).ToArray();
@@ -377,8 +377,8 @@ public class ApiManager : MonoBehaviour
         // Handle GET
         foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
         {
-            string[] kv = pair.Split(new[]{'='}, 2);
-            if (kv.Length == 1 && kv[0]!="")
+            string[] kv = pair.Split(new[] { '=' }, 2);
+            if (kv.Length == 1 && kv[0] != "")
             {
                 m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], ""));
             }
@@ -387,7 +387,7 @@ public class ApiManager : MonoBehaviour
                 m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], UnityWebRequest.UnEscapeURL(kv[1])));
             }
         }
-        
+
         // Handle POST
         // TODO also accept JSON
         if (request.HasEntityBody)
@@ -400,14 +400,14 @@ public class ApiManager : MonoBehaviour
                     var pairs = formdata.Replace("+", " ").Split('&');
                     foreach (var pair in pairs)
                     {
-                        var kv = pair.Split(new[]{'='}, 2);
+                        var kv = pair.Split(new[] { '=' }, 2);
                         command = new KeyValuePair<string, string>(kv[0], kv[1]);
                         m_RequestedCommandQueue.Enqueue(command);
                     }
                 }
             }
         }
-        
+
         return "OK";
     }
 
