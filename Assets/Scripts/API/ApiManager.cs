@@ -57,6 +57,10 @@ public class ApiManager : MonoBehaviour
         PopulateExampleScripts();
         PopulateUserScripts();
         BrushTransformStack = new Stack<(Vector3, Quaternion)>();
+        if (!Directory.Exists(m_UserScriptsPath))
+        {
+            Directory.CreateDirectory(m_UserScriptsPath);
+        }
         if (Directory.Exists(m_UserScriptsPath))
         {
             m_FileWatcher = new FileWatcher(m_UserScriptsPath, "*.html");
@@ -87,20 +91,11 @@ public class ApiManager : MonoBehaviour
                 }
                 else if (request.Url.Query.Contains("json"))
                 {
-                    var commandList = new Dictionary<string, object>();
-                    foreach (var endpoint in endpoints.Keys)
-                    {
-                        commandList[endpoint] = new
-                        {
-                            parameters = endpoints[endpoint].ParamsAsDict(),
-                            description = endpoints[endpoint].Description
-                        };
-                    }
-                    html = JsonConvert.SerializeObject(commandList, Formatting.Indented);
+                    html = JsonConvert.SerializeObject(ListApiCommands(), Formatting.Indented);
                 }
                 else
                 {
-                    var commandList = ListApiCommands();
+                    var commandList = ListApiCommandsAsStrings();
                     builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
                     builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
                     builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
@@ -167,6 +162,10 @@ public class ApiManager : MonoBehaviour
     private void PopulateUserScripts()
     {
         App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
+        if (!Directory.Exists(m_UserScriptsPath))
+        {
+            Directory.CreateDirectory(m_UserScriptsPath);
+        }
         if (Directory.Exists(m_UserScriptsPath))
         {
             var dirInfo = new DirectoryInfo(m_UserScriptsPath);
@@ -268,7 +267,7 @@ public class ApiManager : MonoBehaviour
         else
         {
             var builder = new StringBuilder();
-            var commands = ListApiCommands();
+            var commands = ListApiCommandsAsStrings();
             foreach (var k in commands.Keys)
             {
                 builder.AppendLine($"{k} ({commands[k].Item2}): {commands[k].Item2}");
@@ -276,7 +275,7 @@ public class ApiManager : MonoBehaviour
         }
     }
     
-    Dictionary<string, (string, string)> ListApiCommands()
+    Dictionary<string, (string, string)> ListApiCommandsAsStrings()
     {
         var commandList = new Dictionary<string, (string, string)>();
         foreach (var endpoint in endpoints.Keys)
@@ -292,6 +291,20 @@ public class ApiManager : MonoBehaviour
             }
             string paramInfo = String.Join(", ", paramInfoText);
             commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+        }
+        return commandList;
+    }
+    
+    Dictionary<string, object> ListApiCommands()
+    {
+        var commandList = new Dictionary<string, object>();
+        foreach (var endpoint in endpoints.Keys)
+        {
+            commandList[endpoint] = new
+            {
+                parameters = endpoints[endpoint].ParamsAsDict(),
+                description = endpoints[endpoint].Description
+            };
         }
         return commandList;
     }
@@ -350,7 +363,9 @@ public class ApiManager : MonoBehaviour
     {
         string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "").Select(x => x.DurableName).ToArray();
         string brushesJson = JsonConvert.SerializeObject(brushNameList);
+        string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
         html = html.Replace("{{brushesJson}}", brushesJson);
+        html = html.Replace("{{commandsJson}}", commandsJson);
         return html;
     }
 
