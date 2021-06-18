@@ -4853,7 +4853,7 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/examples");
+                    OpenUrl("http://localhost:40074/examplescripts");
                     break;
                 case GlobalCommands.Null: break; // Intentionally blank.
                 default:
