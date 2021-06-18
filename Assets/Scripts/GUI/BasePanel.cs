@@ -103,7 +103,8 @@ namespace TiltBrush
             LabsMobile,
             ReferenceMobile,
             CameraPath,
-            BrushLab
+            BrushLab,
+            Scripts = 6000,
         }
 
         private enum FixedTransitionState
