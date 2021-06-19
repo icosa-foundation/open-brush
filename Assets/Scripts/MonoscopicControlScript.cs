@@ -42,6 +42,14 @@ namespace TiltBrush
         private bool isMoving;
         private bool isDrawMode = false;
 
+        void Start() {
+            if (!App.Instance.IsMonoscopicMode()) {
+                return;
+            } 
+
+            Screen.SetResolution(1920, 1080, false);
+        }
+
         void FixedUpdate()
         {
             if (!App.Instance.IsMonoscopicMode()) {
@@ -164,9 +172,6 @@ namespace TiltBrush
         private string log;
         private const int MAXCHARS = 10000;
         private Queue myLogQueue = new Queue();
-        void Start() {
-            Debug.Log("Screen logger started");
-        }
 
         void OnEnable() {
             Application.logMessageReceived += HandleLog;

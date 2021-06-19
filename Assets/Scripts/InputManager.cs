@@ -212,8 +212,8 @@ namespace TiltBrush
             { (int)KeyboardShortcut.MonoCameraBackward, new[] { KeyCode.S } },
             { (int)KeyboardShortcut.MonoCameraLeft, new[] { KeyCode.A } },
             { (int)KeyboardShortcut.MonoCameraRight, new[] { KeyCode.D } },
-            { (int)KeyboardShortcut.MonoCameraUp, new[] { KeyCode.E } },
-            { (int)KeyboardShortcut.MonoCameraDown, new[] { KeyCode.Q } },
+            { (int)KeyboardShortcut.MonoCameraUp, new[] { KeyCode.Space } },
+            { (int)KeyboardShortcut.MonoCameraDown, new[] { KeyCode.LeftControl } },
             { (int)KeyboardShortcut.MonoCameraIncreaseCursorDistance, new[] { KeyCode.R } },
             { (int)KeyboardShortcut.MonoCameraDecreaseCursorDistance, new[] { KeyCode.F } },
 
