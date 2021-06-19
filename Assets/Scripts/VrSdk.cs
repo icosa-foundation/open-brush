@@ -261,7 +261,7 @@ namespace TiltBrush
                 // ---------------------------------------------------------------------------------------- //
                 // Monoscopic
                 // ---------------------------------------------------------------------------------------- //
-                m_VrCamera.gameObject.AddComponent<MonoCameraControlScript>();
+                m_VrCamera.gameObject.AddComponent<MonoscopicControlScript>();
                 SetControllerStyle(TiltBrush.ControllerStyle.None);
                 // Offset for head position, since camera height is set by the VR system.
                 m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);

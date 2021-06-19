@@ -750,6 +750,12 @@ namespace TiltBrush
             }
         }
 
+        public void UpdateReticlePosition(Vector3 newPosition, Vector3 newRotation)
+        {
+            transform.position = newPosition;
+            transform.localEulerAngles = newRotation;
+        }
+
         //  Given a position that has been proven to be a hit point on the panel's collider and the cast
         //  direction that resulted in that point, determine where the reticle should be located.
         //  Used by wand panel method of interacting with panels.

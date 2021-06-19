@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -135,10 +135,16 @@ namespace TiltBrush
             Save,
             Load,
 
-            Forward,
-            Backward,
+            MonoCameraForward,
+            MonoCameraBackward,
+            MonoCameraLeft,
+            MonoCameraRight,
+            MonoCameraUp,
+            MonoCameraDown,
+            MonoCameraIncreaseCursorDistance,
+            MonoCameraDecreaseCursorDistance,
 
-            PositionMonoCamera,
+            ToggleMonoCameraDrawMode,
 
             ToggleHeadStationaryOrWobble,
             ToggleHeadStationaryOrFollow,
@@ -202,10 +208,16 @@ namespace TiltBrush
             { (int)KeyboardShortcut.Save, new[] { KeyCode.S } },
             { (int)KeyboardShortcut.Load, new[] { KeyCode.L } },
 
-            { (int)KeyboardShortcut.Forward, new[] { KeyCode.N } },
-            { (int)KeyboardShortcut.Backward, new[] { KeyCode.M } },
+            { (int)KeyboardShortcut.MonoCameraForward, new[] { KeyCode.W } },
+            { (int)KeyboardShortcut.MonoCameraBackward, new[] { KeyCode.S } },
+            { (int)KeyboardShortcut.MonoCameraLeft, new[] { KeyCode.A } },
+            { (int)KeyboardShortcut.MonoCameraRight, new[] { KeyCode.D } },
+            { (int)KeyboardShortcut.MonoCameraUp, new[] { KeyCode.E } },
+            { (int)KeyboardShortcut.MonoCameraDown, new[] { KeyCode.Q } },
+            { (int)KeyboardShortcut.MonoCameraIncreaseCursorDistance, new[] { KeyCode.R } },
+            { (int)KeyboardShortcut.MonoCameraDecreaseCursorDistance, new[] { KeyCode.F } },
 
-            { (int)KeyboardShortcut.PositionMonoCamera, new[] { KeyCode.LeftAlt, KeyCode.RightAlt } },
+            { (int)KeyboardShortcut.ToggleMonoCameraDrawMode, new[] { KeyCode.LeftShift, KeyCode.RightShift } },
 
             { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
             { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },
@@ -680,7 +692,7 @@ namespace TiltBrush
                 case SketchCommands.Activate:
                     return Brush.GetCommand(rCommand) || (!isDemoMode && GetMouseButton(0));
                 case SketchCommands.AltActivate:
-                    return GetMouseButton(1) || Wand.GetCommand(rCommand);
+                    return Wand.GetCommand(rCommand);
                 case SketchCommands.LockToHead:
                     return GetKeyboardShortcut(shortcut.Value);
                 case SketchCommands.PivotRotation:
@@ -842,11 +854,6 @@ namespace TiltBrush
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
         }
 
-        public float GetMouseWheel()
-        {
-            return Input.GetAxis("Mouse ScrollWheel");
-        }
-
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
         /// presses when you fiddle with the joystick.
         public bool GetMouseButton(int button)
@@ -910,13 +917,17 @@ namespace TiltBrush
 
         public float GetToolSelection()
         {
-            float fScrollWheel = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(fScrollWheel) > m_InputThreshold)
-            {
-                return fScrollWheel;
-            }
+            if (App.Instance.IsMonoscopicMode()) {
+                return 0;
+            } else {
+                float fScrollWheel = Input.GetAxis("Mouse ScrollWheel");
+                if (Mathf.Abs(fScrollWheel) > m_InputThreshold)
+                {
+                    return fScrollWheel;
+                }
 
-            return Wand.GetScrollYDelta();
+                return Wand.GetScrollYDelta();
+            }
         }
 
         public bool GetTouchPosition(out Vector2 touchPos)
