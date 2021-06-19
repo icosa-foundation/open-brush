@@ -168,29 +168,29 @@ namespace TiltBrush
             Debug.Log("Screen logger started");
         }
 
-    void OnEnable() {
-        Application.logMessageReceived += HandleLog;
-    }
+        void OnEnable() {
+            Application.logMessageReceived += HandleLog;
+        }
 
-    void OnDisable() {
-        Application.logMessageReceived -= HandleLog;
-    }
+        void OnDisable() {
+            Application.logMessageReceived -= HandleLog;
+        }
 
-    void HandleLog(string logString, string stackTrace, LogType type) {
-        myLogQueue.Enqueue("\n [" + type + "] : " + logString);
-        if (type == LogType.Exception)
-        myLogQueue.Enqueue("\n" + stackTrace);
-    }
+        void HandleLog(string logString, string stackTrace, LogType type) {
+            myLogQueue.Enqueue("\n [" + type + "] : " + logString);
+            if (type == LogType.Exception)
+            myLogQueue.Enqueue("\n" + stackTrace);
+        }
 
-    void Update() {
-        while (myLogQueue.Count > 0)
-        log = myLogQueue.Dequeue() + log;
-        if (log.Length > MAXCHARS)
-        log = log.Substring(0, MAXCHARS);
-    }
+        void Update() {
+            while (myLogQueue.Count > 0)
+            log = myLogQueue.Dequeue() + log;
+            if (log.Length > MAXCHARS)
+            log = log.Substring(0, MAXCHARS);
+        }
 
-    void OnGUI() {
-        GUILayout.Label(log);
-    }
+        void OnGUI() {
+            // GUILayout.Label(log);
+        }
     }
 } // namespace TiltBrush
