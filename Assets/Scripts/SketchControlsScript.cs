@@ -1031,7 +1031,7 @@ namespace TiltBrush
                     else
                     {
                         //standard input, no gaze object
-                        if (m_InputStateConfigs[(int)m_CurrentInputState].m_AllowMovement)
+                        if (m_InputStateConfigs[(int)m_CurrentInputState].m_AllowMovement && !App.Instance.IsMonoscopicMode())
                         {
                             m_SketchSurfacePanel.UpdateReticleOffset(m_MouseDeltaX, m_MouseDeltaY);
                         }
@@ -1496,7 +1496,7 @@ namespace TiltBrush
             }
 #endif
 
-            bool hasController = m_ControlsType == ControlsType.SixDofControllers;
+            bool hasController = m_ControlsType != ControlsType.ViewingOnly;
 
             // Toggle default tool.
             if (!m_PanelManager.AdvancedModeActive() &&
@@ -3277,8 +3277,23 @@ namespace TiltBrush
             m_CurrentGazeObject = -1;
         }
 
+        public void SyncMonoPosition(Vector3 newPosition, Vector3 newRotation)
+        {
+          m_SketchSurface.transform.position = newPosition;
+          m_SketchSurface.transform.localEulerAngles = newRotation;
+          m_SketchSurfacePanel.UpdateReticlePosition(newPosition, newRotation);
+        }
+
+        public Vector3 getSketchSurfacePos() {
+            return m_SketchSurface.transform.position;
+        }
+
         void UpdatePanInput()
         {
+            if (App.Instance.IsMonoscopicMode()) { 
+                return; 
+            }
+
             if (Input.GetMouseButton(2))
             {
                 Vector3 vPanDiff = Vector3.zero;
@@ -3305,6 +3320,10 @@ namespace TiltBrush
 
         void UpdateRotationInput()
         {
+            if (App.Instance.IsMonoscopicMode()) { 
+                return; 
+            }
+
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.PivotRotation))
             {
                 bool bAltInputActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.AltActivate);
@@ -3413,6 +3432,10 @@ namespace TiltBrush
 
         void UpdateHeadLockInput()
         {
+            if (App.Instance.IsMonoscopicMode()) { 
+                return; 
+            }
+
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToHead))
             {
                 //compute new position/orientation of sketch surface
@@ -3458,6 +3481,10 @@ namespace TiltBrush
 
         void UpdatePushPullInput()
         {
+            if (App.Instance.IsMonoscopicMode()) { 
+                return; 
+            }
+
             bool bRotationActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.PivotRotation);
             bool bInputActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             bool bAltInputActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.AltActivate);
