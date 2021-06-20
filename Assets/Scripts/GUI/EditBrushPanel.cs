@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -54,13 +55,21 @@ namespace TiltBrush
 
         public void SaveEditedBrush()
         {
-            // TODO
+            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+            // TODO - this probably doesn't work
+            var fileName = Path.Combine(brush.UserVariantBrush.Location, brush.name);
+            UserVariantBrush.ExportDescriptor(brush, fileName);
+            UpdateSceneMaterials();
         }
 
 
         public void SliderChanged(string name, float value)
         {
+            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             PreviewMaterial.SetFloat(name, value);
+            // TODO - do we set this here or on save?
+            // How are we handling unsaved changes?
+            brush.Material.SetFloat(name, value);
         }
 
         private void OnMainPointerBrushChange(BrushDescriptor brush)
@@ -121,6 +130,7 @@ namespace TiltBrush
             var slider = sliderTr.GetComponent<EditBrushSlider>();
             sliderTr.parent = gameObject.transform;
             slider.SetDescriptionText(name);
+            slider.ShaderPropertyName = name;
             slider.UpdateValue(value);
             Debug.Log($"float param: {name} = {value}");
         }
@@ -131,6 +141,7 @@ namespace TiltBrush
             // var vectorInput = vectorInputTr.GetComponent<>();
             // vectorInputTr.parent = gameObject.transform;
             // vectorInput.SetDescriptionText(name);
+            // vectorInput.ShaderPropertyName = name;
             // vectorInput.UpdateValue(value);
             Debug.Log($"Vector param: {name} = {value}");            
         }
@@ -141,6 +152,7 @@ namespace TiltBrush
             // var picker = colorPickerTr.GetComponent<>();
             // colorPickerTr.parent = gameObject.transform;
             // picker.SetDescriptionText(name);
+            // picker.ShaderPropertyName = name;
             // picker.UpdateValue(value);
             Debug.Log($"Color param: {name} = {value}");
         }
@@ -151,6 +163,7 @@ namespace TiltBrush
             // var picker = texturePickerTr.GetComponent<>();
             // texturePickerTr.parent = gameObject.transform;
             // picker.SetDescriptionText(name);
+            // picker.ShaderPropertyName = name;
             // picker.UpdateValue(value);
             Debug.Log($"Texture param: {name} = {value}");
         }

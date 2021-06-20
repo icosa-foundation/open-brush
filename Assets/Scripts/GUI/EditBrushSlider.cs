@@ -21,17 +21,18 @@ namespace TiltBrush
     {
 
         private EditBrushPanel ParentPanel;
-        private string shaderProperty;
+        public string ShaderPropertyName;
 
         override protected void Awake()
         {
-            ParentPanel = GetComponentInParent<EditBrushPanel>();
             base.Awake();
+            ParentPanel = GetComponentInParent<EditBrushPanel>();
+            Debug.Log($"ParentPanel: {ParentPanel.gameObject.name}");
         }
 
         override public void UpdateValue(float fValue)
         {
-            ParentPanel.SliderChanged(Description, fValue);
+            ParentPanel.SliderChanged(ShaderPropertyName, fValue);
         }
     }
 } // namespace TiltBrush
