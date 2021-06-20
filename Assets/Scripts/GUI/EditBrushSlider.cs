@@ -27,39 +27,6 @@ namespace TiltBrush
         {
             ParentPanel = GetComponentInParent<EditBrushPanel>();
             base.Awake();
-            InitSliders();
-            PointerManager.m_Instance.OnMainPointerBrushChange += OnMainPointerBrushChange;
-        }
-        
-        private void OnDestroy()
-        {
-            PointerManager.m_Instance.OnMainPointerBrushChange -= OnMainPointerBrushChange;
-        }
-
-        private void OnMainPointerBrushChange(BrushDescriptor obj)
-        {
-            Debug.Log($"OnMainPointerBrushChange");
-            InitSliders();
-        }
-
-        private void InitSliders()
-        {
-            InitMaterial();
-            SetSliderPositionToReflectValue();
-        }
-        
-        private void InitMaterial()
-        {
-            var currentBrush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-            if (currentBrush != null)
-            {
-                ParentPanel.PreviewMaterial = currentBrush.Material;
-            }
-            else
-            {
-                ParentPanel.PreviewMaterial = null;
-            }
-            
         }
 
         override public void UpdateValue(float fValue)
