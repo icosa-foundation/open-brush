@@ -4,13 +4,14 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Valve.Newtonsoft.Json.Utilities;
 namespace TiltBrush
 {
-    class EditBrushPanel : BasePanel
+    public class EditBrushPanel : BasePanel
     {
 
         public GameObject StrokePreview;
-        private GameObject[] MaterialUiWidgets; 
+        private List<GameObject> ParameterWidgets; 
         public GameObject CloneMaterialButton;
         public GameObject SaveButton;
         
@@ -23,11 +24,11 @@ namespace TiltBrush
         {
             get
             {
-                return PreviewMaterial;
+                return StrokePreview.GetComponent<MeshRenderer>().material;
             }
             set
             {
-                PreviewMaterial = value;
+                StrokePreview.GetComponent<MeshRenderer>().material = value;
             }
         }
         void Awake()
@@ -74,15 +75,16 @@ namespace TiltBrush
 
         private void OnMainPointerBrushChange(BrushDescriptor brush)
         {
-            GeneratePreviewMesh();
-            if (MaterialUiWidgets != null)
+            if (brush == null) return;
+            GeneratePreviewMesh(brush);
+            if (ParameterWidgets != null)
             {
-                foreach (var widget in MaterialUiWidgets)
+                foreach (var widget in ParameterWidgets)
                 {
                     Destroy(widget);
                 }
             }
-            MaterialUiWidgets = new GameObject[0];
+            ParameterWidgets = new List<GameObject>();
             if (brush.UserVariantBrush == null)
             {
                 // A built in brush
@@ -96,7 +98,7 @@ namespace TiltBrush
                 CloneMaterialButton.SetActive(false);
                 
                 var shader = brush.Material.shader;
-                
+                int index = 0;
                 for (int i = 0; i < shader.GetPropertyCount(); ++i)
                 {
                     string name = shader.GetPropertyName(i);
@@ -104,16 +106,20 @@ namespace TiltBrush
                     {
                         case ShaderPropertyType.Float:
                         case ShaderPropertyType.Range:
-                            AddSlider(name, brush.Material.GetFloat(name));
+                            AddSlider(name, brush.Material.GetFloat(name), index);
+                            index++;
                             break;
                         case ShaderPropertyType.Color:
-                            AddColorPicker(name, brush.Material.GetColor(name));
+                            AddColorPicker(name, brush.Material.GetColor(name), index);
+                            // index++;
                             break;
                         case ShaderPropertyType.Vector:
-                            AddVectorInput(name, brush.Material.GetVector(name));
+                            AddVectorInput(name, brush.Material.GetVector(name), index);
+                            // index++;
                             break;
                         case ShaderPropertyType.Texture:
-                            AddTexturePicker(name, brush.Material.GetTexture(name));
+                            AddTexturePicker(name, brush.Material.GetTexture(name), index);
+                            // index++;
                             break;
                         default:
                             Debug.LogWarning($"Brush {brush.DurableName} has property {name} of unsupported type {shader.GetPropertyType(i)}.");
@@ -124,18 +130,34 @@ namespace TiltBrush
             }
         }
 
-        private void AddSlider(string name, float value)
+        private void PositionWidgetByIndex(Transform tr, int index)
+        {
+            tr.localRotation = Quaternion.identity;
+            
+            float initialY = .25f;
+            var pos = tr.localPosition;
+            pos.x = 0;
+            pos.z = -0.075f;
+            pos.y = initialY - (index * 0.25f);
+            tr.localPosition = pos;
+        }
+
+        private void AddSlider(string name, float value, int index)
         {
             var sliderTr = Instantiate(SliderPrefab);
             var slider = sliderTr.GetComponent<EditBrushSlider>();
             sliderTr.parent = gameObject.transform;
+            slider.ParentPanel = this;
             slider.SetDescriptionText(name);
             slider.ShaderPropertyName = name;
             slider.UpdateValue(value);
+            PositionWidgetByIndex(slider.transform, index);
+            ParameterWidgets.Add(slider.gameObject);
+            slider.RegisterComponent();
             Debug.Log($"float param: {name} = {value}");
         }
 
-        private void AddVectorInput(string name, Vector4 value)
+        private void AddVectorInput(string name, Vector4 value, int index)
         {
             // var vectorInputTr = Instantiate(VectorInputPrefab);
             // var vectorInput = vectorInputTr.GetComponent<>();
@@ -143,10 +165,12 @@ namespace TiltBrush
             // vectorInput.SetDescriptionText(name);
             // vectorInput.ShaderPropertyName = name;
             // vectorInput.UpdateValue(value);
+            // PositionWidgetByIndex(slider.transform, index);
+            // ParameterWidgets.Add(vectorInput.gameObject);
             Debug.Log($"Vector param: {name} = {value}");            
         }
 
-        private void AddColorPicker(string name, Color value)
+        private void AddColorPicker(string name, Color value, int index)
         {
             // var colorPickerTr = Instantiate(ColorPickerPrefab);
             // var picker = colorPickerTr.GetComponent<>();
@@ -154,10 +178,12 @@ namespace TiltBrush
             // picker.SetDescriptionText(name);
             // picker.ShaderPropertyName = name;
             // picker.UpdateValue(value);
+            // PositionWidgetByIndex(picker.transform, index);
+            // ParameterWidgets.Add(picker.gameObject);
             Debug.Log($"Color param: {name} = {value}");
         }
 
-        private void AddTexturePicker(string name, Texture value)
+        private void AddTexturePicker(string name, Texture value, int index)
         {
             // var texturePickerTr = Instantiate(ColorPickerPrefab);
             // var picker = texturePickerTr.GetComponent<>();
@@ -165,6 +191,8 @@ namespace TiltBrush
             // picker.SetDescriptionText(name);
             // picker.ShaderPropertyName = name;
             // picker.UpdateValue(value);
+            // PositionWidgetByIndex(picker.transform, index);
+            // ParameterWidgets.Add(picker.gameObject);
             Debug.Log($"Texture param: {name} = {value}");
         }
         
@@ -177,23 +205,23 @@ namespace TiltBrush
 
         }
         
-        public void GeneratePreviewMesh()
+        public void GeneratePreviewMesh(BrushDescriptor brush)
         {
             var origin = Vector3.zero;
-            var scale = 1f;
-            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+            var scale = 2f;
             uint time = 0;
             if (brush == null) return;
-            float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
+            float minPressure = brush.PressureSizeMin(false);
             float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
             var group = App.GroupManager.NewUnusedGroup();
             var path = new List<Vector3>
             {
-                new Vector3(-1f, -1f, 0),
-                new Vector3(-.5f, 1f, 0),
+                new Vector3(-1f, -.2f, 0),
+                new Vector3(-.75f, -.1f, 0),
+                new Vector3(-.5f, .2f, 0),
                 Vector3.zero,
-                new Vector3(.5f, -1f, 0),
-                new Vector3(1f, 1f, 0),
+                new Vector3(.5f, -.2f, 0),
+                new Vector3(1f, .2f, 0),
             };
             float lineLength = 0;
             var controlPoints = new List<PointerManager.ControlPoint>();
@@ -223,17 +251,19 @@ namespace TiltBrush
                 m_IntendedCanvas = App.Scene.ActiveCanvas,
                 m_BrushGuid = brush.m_Guid,
                 m_BrushScale = 1f,
-                m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
+                m_BrushSize = .5f,
                 m_Color = App.BrushColor.CurrentColor,
                 m_Seed = 0,
                 m_ControlPoints = controlPoints.ToArray(),
             };
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-            stroke.Group = @group;
+            stroke.Group = group;
             stroke.Recreate(null, App.Scene.ActiveCanvas);
-            var mesh = stroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().mesh;
+            var mesh = stroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().sharedMesh;
             StrokePreview.GetComponent<MeshFilter>().mesh = mesh;
-            stroke.DestroyStroke();
+            StrokePreview.GetComponent<MeshRenderer>().material = brush.Material;
+            Debug.Log($"Preview mesh: {mesh.vertices.Length} verts");
+            //stroke.DestroyStroke();
         }
     }
 }

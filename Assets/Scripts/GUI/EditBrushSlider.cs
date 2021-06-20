@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -20,15 +21,8 @@ namespace TiltBrush
     public class EditBrushSlider : BaseSlider
     {
 
-        private EditBrushPanel ParentPanel;
+        [NonSerialized] public EditBrushPanel ParentPanel;
         public string ShaderPropertyName;
-
-        override protected void Awake()
-        {
-            base.Awake();
-            ParentPanel = GetComponentInParent<EditBrushPanel>();
-            Debug.Log($"ParentPanel: {ParentPanel.gameObject.name}");
-        }
 
         override public void UpdateValue(float fValue)
         {
