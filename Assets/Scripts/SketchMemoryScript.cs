@@ -686,7 +686,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        public IEnumerator<float> RepaintCoroutine()
+        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint=null)
         {
             int numStrokes = m_MemoryList.Count;
             int strokesRepainted = 0;
@@ -700,7 +700,8 @@ namespace TiltBrush
             for (var node = m_MemoryList.First; node != null; node = node.Next)
             {
                 // TODO: Should we skip this stroke if it's particles?
-                var stroke = node.Value;
+                Stroke stroke = node.Value;
+                if (brushesToRepaint != null && brushesToRepaint.Contains(stroke.m_BrushGuid.ToString())) continue;
                 if (stroke.m_Type == Stroke.Type.BatchedBrushStroke)
                 {
                     totalPrevVerts += stroke.m_BatchSubset.m_VertLength;

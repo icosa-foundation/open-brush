@@ -555,6 +555,24 @@ public class UserVariantBrush
     /// Static function to export all the standard Brush Descriptors to
     /// Support/Brush/ExportedProperties.
     /// </summary>
+
+    [MenuItem("Tilt/Brushes/Duplicate Existing Brush")]
+    public static void DoExportDuplicateDescriptor()
+    {
+        var absolutePath = EditorUtility.OpenFilePanel(
+            "Choose a brush asset",
+            Path.Combine(Application.dataPath, "Resources/Brushes"),
+            "asset"
+        );
+        if (absolutePath.StartsWith(Application.dataPath))
+        {
+            var relativePath = absolutePath.Replace(Application.dataPath, "");
+            relativePath = Path.Combine("Assets/", relativePath.Remove(0,1));
+            var brush = AssetDatabase.LoadAssetAtPath<BrushDescriptor>(relativePath);
+            ExportDuplicateDescriptor(brush, $"{brush.DurableName}Copy");
+        }
+    }
+
     [MenuItem("Tilt/Brushes/Export Standard Brush Properties")]
     public static void ExportDescriptorDetails()
     {
@@ -612,6 +630,54 @@ public class UserVariantBrush
         }
     }
 
+    public static void ExportDuplicateDescriptor(BrushDescriptor brush, string newname)
+    {
+#if UNITY_EDITOR
+        // TODO Refactor so we can reuse the logic in App.InitUserPath
+        var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+        var brushesPath = Path.Combine(userPath, "Open Brush", "Brushes");
+#else
+        var brushesPath = App.UserBrushesPath();
+#endif
+        
+        BrushProperties properties = new BrushProperties();
+        CopyDescriptorToProperties(brush, properties);
+        CopyMaterialToProperties(brush, properties);
+        
+        string oldGuid = brush.m_Guid.ToString();
+        string newGuid = Guid.NewGuid().ToString();
+        
+        string newBrushPath = Path.Combine(brushesPath, $"{newname}_{newGuid}");
+        if (!Directory.Exists(newBrushPath)) Directory.CreateDirectory(newBrushPath);
+        string filename = Path.Combine(newBrushPath, "brush.cfg");
+
+        properties.VariantOf = oldGuid;
+        properties.GUID = newGuid;
+        properties.Description = $"Based on {properties.Name}";
+        properties.Name = newname;
+        properties.ButtonIcon = "";
+        properties.Author = "";
+        properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
+
+        try
+        {
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            });
+            serializer.ContractResolver = new CustomJsonContractResolver();
+            using (var writer = new CustomJsonWriter(new StreamWriter(filename)))
+            {
+                writer.Formatting = Formatting.Indented;
+                serializer.Serialize(writer, properties);
+            }
+        }
+        catch (JsonException e)
+        {
+            Debug.LogWarning(e.Message);
+        }
+    }
+    
     /// <summary>
     /// Converts a Vector2 or Color struct to an array of floats.
     /// If the object is not a Vector2 or Color, it will return itself.

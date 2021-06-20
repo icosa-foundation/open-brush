@@ -227,11 +227,11 @@ namespace TiltBrush
         {
             if (m_ChangedBrushes.Count > 0)
             {
-                foreach (var path in m_ChangedBrushes)
+                for (var i = 0; i < m_ChangedBrushes.Count; i++)
                 {
+                    var path = m_ChangedBrushes[i];
                     LoadUserLibraryBrush(path);
                 }
-                m_ChangedBrushes.Clear();
                 m_CatalogChanged = true;
             }
             if (m_CatalogChanged)
@@ -243,7 +243,14 @@ namespace TiltBrush
                 {
                     BrushCatalogChanged();
                 }
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositorWithProgress(
+                        OverlayType.LoadGeneric,
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes),
+                        0.25f)
+                );
             }
+            m_ChangedBrushes.Clear();
         }
 
         // Returns brushes in both sections of the manifest (compat and non-compat)
