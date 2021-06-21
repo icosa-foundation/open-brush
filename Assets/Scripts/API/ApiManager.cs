@@ -6,12 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
-using SimpleJSON;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
-using Object = System.Object;
 
 
 public class ApiManager : MonoBehaviour
@@ -29,6 +28,10 @@ public class ApiManager : MonoBehaviour
     private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
     private static ApiManager m_Instance;
     private Dictionary<string, ApiEndpoint> endpoints;
+    private byte[] CameraViewPng;
+    
+    private bool cameraViewRequested;
+    private bool cameraViewGenerated;
 
     [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
     [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
@@ -51,6 +54,7 @@ public class ApiManager : MonoBehaviour
         App.HttpServer.AddHttpHandler($"/help", InfoCallback);
         App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
         App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+        App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
         PopulateApi();
         m_UserScripts = new Dictionary<string, string>();
         m_ExampleScripts = new Dictionary<string, string>();
@@ -428,6 +432,73 @@ public class ApiManager : MonoBehaviour
     private void Update()
     {
         HandleApiCommand();
+        UpdateCameraView();
     }
+    
+
+    IEnumerator ScreenCap()
+    {
+        yield return new WaitForEndOfFrame();
+        var rt = new RenderTexture(Screen.width, Screen.height, 0);
+        ScreenCapture.CaptureScreenshotIntoRenderTexture(rt);
+        var oldTex = RenderTexture.active;
+        var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+        RenderTexture.active = rt;
+        tex.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
+        FlipTextureVertically(tex);
+        tex.Apply();
+        RenderTexture.active = oldTex;
+        CameraViewPng = tex.EncodeToPNG();
+
+        cameraViewRequested = false;
+        cameraViewGenerated = true;
+    }
+    
+    public static void FlipTextureVertically(Texture2D original)
+    {
+        // ScreenCap is upside down so flip it
+        // Orientation might be platform specific so we might need some logic around this
+        
+        var originalPixels = original.GetPixels();
+
+        Color[] newPixels = new Color[originalPixels.Length];
+
+        int width = original.width;
+        int rows = original.height;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
+            }
+        }
+
+        original.SetPixels(newPixels);
+        original.Apply();
+    }
+
+    private void UpdateCameraView()
+    {
+        if (cameraViewRequested) StartCoroutine(ScreenCap());
+    }
+
+    private HttpListenerContext CameraViewCallback(HttpListenerContext ctx) {
+        
+        cameraViewRequested = true;
+        while (cameraViewGenerated==false)
+        {
+            Thread.Sleep(5);
+        }
+        cameraViewGenerated = false;
+        
+        ctx.Response.AddHeader("Content-Type", "image/png");
+        ctx.Response.ContentLength64 = CameraViewPng.Length;
+        ctx.Response.OutputStream.Write(CameraViewPng, 0, CameraViewPng.Length);
+        ctx.Response.Close();
+        ctx = null;
+        return ctx;
+    }
+
 
 }

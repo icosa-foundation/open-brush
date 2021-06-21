@@ -156,6 +156,17 @@ namespace TiltBrush
             m_HttpRequestHandlers.Add(path, wrapper);
         }
 
+        // Same as above but expects the response to be manually constructed by the handler
+        public void AddRawHttpHandler(string path, Func<HttpListenerContext, HttpListenerContext> handler)
+        {
+            var wrapper = new Action<HttpListenerContext>(context =>
+            {
+                handler(context);
+            });
+            m_HttpRequestHandlers.Add(path, wrapper);
+        }
+
+        
         // Removes a path from the Http server.
         public void RemoveHttpHandler(string path)
         {
