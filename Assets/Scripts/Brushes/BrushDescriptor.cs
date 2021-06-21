@@ -215,7 +215,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
             return GetExportTextureFilenameEditor();
 #else
-    return GetExportTextureFilenameStandalone();
+            return GetExportTextureFilenameStandalone();
 #endif
         }
 

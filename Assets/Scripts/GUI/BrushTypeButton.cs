@@ -86,7 +86,7 @@ namespace TiltBrush
             }
             else
 #endif
-    if (BrushCatalog.m_Instance.IsBrushInLibrary(rBrush))
+            if (BrushCatalog.m_Instance.IsBrushInLibrary(rBrush))
             {
                 SetDescriptionText(rBrush.m_Description, $"By {rBrush.UserVariantBrush.Author} (In Library)");
             }

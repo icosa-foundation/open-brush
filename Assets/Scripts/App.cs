@@ -529,7 +529,7 @@ namespace TiltBrush
             // in an additive scene.
             // Don't do this in the editor, because it mutates the asset on disk!
 #if !UNITY_EDITOR
-    PlatformConfig.IntroSketchPrefab = null;
+            PlatformConfig.IntroSketchPrefab = null;
 #endif
             Resources.UnloadUnusedAssets();
         }

@@ -11,15 +11,15 @@ namespace TiltBrush
     {
 
         public GameObject StrokePreview;
-        private List<GameObject> ParameterWidgets; 
+        private List<GameObject> ParameterWidgets;
         public GameObject CloneMaterialButton;
         public GameObject SaveButton;
-        
+
         public Transform SliderPrefab;
         public Transform VectorInputPrefab;
         public Transform ColorPickerPrefab;
         public Transform TexturePickerPrefab;
-        
+
         public Material PreviewMaterial
         {
             get
@@ -96,7 +96,7 @@ namespace TiltBrush
             {
                 // An editable brush
                 CloneMaterialButton.SetActive(false);
-                
+
                 var shader = brush.Material.shader;
                 int index = 0;
                 for (int i = 0; i < shader.GetPropertyCount(); ++i)
@@ -133,7 +133,7 @@ namespace TiltBrush
         private void PositionWidgetByIndex(Transform tr, int index)
         {
             tr.localRotation = Quaternion.identity;
-            
+
             float initialY = .25f;
             var pos = tr.localPosition;
             pos.x = 0;
@@ -167,7 +167,7 @@ namespace TiltBrush
             // vectorInput.UpdateValue(value);
             // PositionWidgetByIndex(slider.transform, index);
             // ParameterWidgets.Add(vectorInput.gameObject);
-            Debug.Log($"Vector param: {name} = {value}");            
+            Debug.Log($"Vector param: {name} = {value}");
         }
 
         private void AddColorPicker(string name, Color value, int index)
@@ -195,7 +195,7 @@ namespace TiltBrush
             // ParameterWidgets.Add(picker.gameObject);
             Debug.Log($"Texture param: {name} = {value}");
         }
-        
+
         private void UpdateSceneMaterials()
         {
             // TODO
@@ -204,7 +204,7 @@ namespace TiltBrush
             }
 
         }
-        
+
         public void GeneratePreviewMesh(BrushDescriptor brush)
         {
             var origin = Vector3.zero;

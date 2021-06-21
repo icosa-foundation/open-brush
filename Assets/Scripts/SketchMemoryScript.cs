@@ -686,7 +686,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint=null)
+        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null)
         {
             int numStrokes = m_MemoryList.Count;
             int strokesRepainted = 0;

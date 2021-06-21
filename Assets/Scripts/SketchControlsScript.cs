@@ -3792,8 +3792,8 @@ namespace TiltBrush
             }
             ssMgr.SetScreenshotResolution(App.UserConfig.Video.Resolution);
 #else
-    Debug.LogError("Render path requires USD support");
-    yield return null;
+            Debug.LogError("Render path requires USD support");
+            yield return null;
 #endif
             QuitApp();
         }
@@ -3831,7 +3831,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-    Application.Quit();
+            Application.Quit();
 #endif
         }
 
@@ -3925,8 +3925,8 @@ namespace TiltBrush
             return OverlayManager.m_Instance.RunInCompositor(
                 OverlayType.Export, () =>
                 {
-            // Sort of a kludge: put stuff back into the main canvas
-            SelectionManager.m_Instance.ClearActiveSelection();
+                    // Sort of a kludge: put stuff back into the main canvas
+                    SelectionManager.m_Instance.ClearActiveSelection();
                     Export.ExportScene();
                 }, 0.25f, false, true);
         }
