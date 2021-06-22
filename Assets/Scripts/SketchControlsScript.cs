@@ -3279,19 +3279,21 @@ namespace TiltBrush
 
         public void SyncMonoPosition(Vector3 newPosition, Vector3 newRotation)
         {
-          m_SketchSurface.transform.position = newPosition;
-          m_SketchSurface.transform.localEulerAngles = newRotation;
-          m_SketchSurfacePanel.UpdateReticlePosition(newPosition, newRotation);
+            m_SketchSurface.transform.position = newPosition;
+            m_SketchSurface.transform.localEulerAngles = newRotation;
+            m_SketchSurfacePanel.UpdateReticlePosition(newPosition, newRotation);
         }
 
-        public Vector3 getSketchSurfacePos() {
+        public Vector3 getSketchSurfacePos()
+        {
             return m_SketchSurface.transform.position;
         }
 
         void UpdatePanInput()
         {
-            if (App.Instance.IsMonoscopicMode()) { 
-                return; 
+            if (App.Instance.IsMonoscopicMode())
+            {
+                return;
             }
 
             if (Input.GetMouseButton(2))
@@ -3320,8 +3322,9 @@ namespace TiltBrush
 
         void UpdateRotationInput()
         {
-            if (App.Instance.IsMonoscopicMode()) { 
-                return; 
+            if (App.Instance.IsMonoscopicMode())
+            {
+                return;
             }
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.PivotRotation))
@@ -3432,8 +3435,9 @@ namespace TiltBrush
 
         void UpdateHeadLockInput()
         {
-            if (App.Instance.IsMonoscopicMode()) { 
-                return; 
+            if (App.Instance.IsMonoscopicMode())
+            {
+                return;
             }
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToHead))
@@ -3481,8 +3485,9 @@ namespace TiltBrush
 
         void UpdatePushPullInput()
         {
-            if (App.Instance.IsMonoscopicMode()) { 
-                return; 
+            if (App.Instance.IsMonoscopicMode())
+            {
+                return;
             }
 
             bool bRotationActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.PivotRotation);

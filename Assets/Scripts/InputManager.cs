@@ -917,9 +917,12 @@ namespace TiltBrush
 
         public float GetToolSelection()
         {
-            if (App.Instance.IsMonoscopicMode()) {
+            if (App.Instance.IsMonoscopicMode())
+            {
                 return 0;
-            } else {
+            }
+            else
+            {
                 float fScrollWheel = Input.GetAxis("Mouse ScrollWheel");
                 if (Mathf.Abs(fScrollWheel) > m_InputThreshold)
                 {

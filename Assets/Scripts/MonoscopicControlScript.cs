@@ -34,7 +34,7 @@ namespace TiltBrush
         private float m_maxMovementSpeed = 1.0f;
         private float m_minMovementSpeed = 0.02f;
         private float m_scrollSpeed = .01f;
-        
+
         private Vector3 m_syncedTransform;
         private Vector3 m_cameraRotation;
         private Vector3 m_cameraPosition;
@@ -42,17 +42,20 @@ namespace TiltBrush
         private bool isMoving;
         private bool isDrawMode = false;
 
-        void Start() {
-            if (!App.Instance.IsMonoscopicMode()) {
+        void Start()
+        {
+            if (!App.Instance.IsMonoscopicMode())
+            {
                 return;
-            } 
+            }
 
             Screen.SetResolution(1920, 1080, false);
         }
 
         void FixedUpdate()
         {
-            if (!App.Instance.IsMonoscopicMode()) {
+            if (!App.Instance.IsMonoscopicMode())
+            {
                 return;
             }
 
@@ -71,19 +74,21 @@ namespace TiltBrush
                 InputManager.KeyboardShortcut.MonoCameraIncreaseCursorDistance))
             {
                 m_zCameraOffset = Mathf.Min(m_zCameraOffset + m_zOffsetInterval, m_maxZCameraOffset);
-            } else if (!isMoving && InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.MonoCameraDecreaseCursorDistance))
+            }
+            else if (!isMoving && InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.MonoCameraDecreaseCursorDistance))
             {
                 m_zCameraOffset = Mathf.Max(m_zCameraOffset - m_zOffsetInterval, m_minZCameraOffset);
             }
 
             // Adjust movement speed from scroll wheel
-            if (Input.GetAxis("Mouse ScrollWheel") > 0f )
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f)
             {
-               m_translateSpeed = Mathf.Min(m_translateSpeed + m_scrollSpeed, m_maxMovementSpeed);
-            } else if (Input.GetAxis("Mouse ScrollWheel") < 0f )
+                m_translateSpeed = Mathf.Min(m_translateSpeed + m_scrollSpeed, m_maxMovementSpeed);
+            }
+            else if (Input.GetAxis("Mouse ScrollWheel") < 0f)
             {
-               m_translateSpeed = Mathf.Max(m_translateSpeed - m_scrollSpeed, m_minMovementSpeed);
+                m_translateSpeed = Mathf.Max(m_translateSpeed - m_scrollSpeed, m_minMovementSpeed);
             }
 
             Debug.Log(m_translateSpeed);
@@ -92,7 +97,8 @@ namespace TiltBrush
             isMoving = false;
 
             // Movement inputs
-            if (!isDrawMode) {
+            if (!isDrawMode)
+            {
                 if (InputManager.m_Instance.GetKeyboardShortcut(
                     InputManager.KeyboardShortcut.MonoCameraForward))
                 {
@@ -138,7 +144,7 @@ namespace TiltBrush
 
             m_cameraPosition += movementOffset;
 
-            transform.localPosition = m_cameraPosition;            
+            transform.localPosition = m_cameraPosition;
             transform.localEulerAngles = m_cameraRotation;
 
             // Use mouse position to control camera rotation.
@@ -160,41 +166,48 @@ namespace TiltBrush
                 m_cameraRotation.x -= Input.GetAxis("Mouse Y") * m_yScale;
                 m_cameraRotation.x = Mathf.Clamp(m_cameraRotation.x, -m_yClamp, m_yClamp);
 
-            } else {
+            }
+            else
+            {
                 m_syncedTransform = SketchControlsScript.m_Instance.getSketchSurfacePos() + movementOffset;
                 m_syncedTransform += (Input.GetAxis("Mouse Y") * m_drawSensitivity * transform.up);
                 m_syncedTransform += (Input.GetAxis("Mouse X") * m_drawSensitivity * transform.right);
             }
-                
-            SketchControlsScript.m_Instance.SyncMonoPosition(m_syncedTransform, m_cameraRotation);    
+
+            SketchControlsScript.m_Instance.SyncMonoPosition(m_syncedTransform, m_cameraRotation);
         }
 
         private string log;
         private const int MAXCHARS = 10000;
         private Queue myLogQueue = new Queue();
 
-        void OnEnable() {
+        void OnEnable()
+        {
             Application.logMessageReceived += HandleLog;
         }
 
-        void OnDisable() {
+        void OnDisable()
+        {
             Application.logMessageReceived -= HandleLog;
         }
 
-        void HandleLog(string logString, string stackTrace, LogType type) {
+        void HandleLog(string logString, string stackTrace, LogType type)
+        {
             myLogQueue.Enqueue("\n [" + type + "] : " + logString);
             if (type == LogType.Exception)
-            myLogQueue.Enqueue("\n" + stackTrace);
+                myLogQueue.Enqueue("\n" + stackTrace);
         }
 
-        void Update() {
+        void Update()
+        {
             while (myLogQueue.Count > 0)
-            log = myLogQueue.Dequeue() + log;
+                log = myLogQueue.Dequeue() + log;
             if (log.Length > MAXCHARS)
-            log = log.Substring(0, MAXCHARS);
+                log = log.Substring(0, MAXCHARS);
         }
 
-        void OnGUI() {
+        void OnGUI()
+        {
             // GUILayout.Label(log);
         }
     }
