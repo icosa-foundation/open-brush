@@ -66,20 +66,11 @@ Get the Tilt Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea) (Unity 2019.4.18f1 for this fork)
+*   [Unity 2019.4.25f1](unityhub://2019.4.25f1/01a0494af254)
 *   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
 *   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
     Tested with Python 3.8.
-
-### Changing the application name
-
-_Tilt Brush_ is a Google trademark. If you intend to publish a cloned version of
-the application, you are required to choose a different name to distinguish it
-from the official version. Before building the application, go into `App.cs` and
-the Player settings to change the company and application names to your own.
-
-Please see the [Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md) for more details.
 
 ### Running the application in the Unity editor
 
