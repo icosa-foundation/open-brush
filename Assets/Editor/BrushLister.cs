@@ -36,7 +36,8 @@ public class BrushLister : MonoBehaviour
         foreach (BrushDescriptor brush in experimentalBrushes)
         {
             try { AppendValidBrushString(brush, true); }
-            catch (Exception UnassignedReferenceException) { 
+            catch (Exception UnassignedReferenceException)
+            {
                 Debug.Log($"Experimental brush loading error: {UnassignedReferenceException}");
             }
         }
