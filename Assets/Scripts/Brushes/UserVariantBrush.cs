@@ -23,7 +23,7 @@ using Newtonsoft.Json.Converters;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
+#if UNITY_EDITORX
 using UnityEditor;
 
 #endif
@@ -550,7 +550,7 @@ public class UserVariantBrush
         }
     }
 
-#if UNITY_EDITOR
+#if UNITY_EDITORX
     /// <summary>
     /// Static function to export all the standard Brush Descriptors to
     /// Support/Brush/ExportedProperties.
@@ -573,6 +573,7 @@ public class UserVariantBrush
         }
     }
 
+    
     [MenuItem("Tilt/Brushes/Export Standard Brush Properties")]
     public static void ExportDescriptorDetails()
     {
@@ -593,6 +594,8 @@ public class UserVariantBrush
 
         Debug.Log($"Exported {manifest.Brushes.Length} brushes.");
     }
+    
+#endif
 
     /// <summary>
     /// Exports a single descriptor to a file.
@@ -629,10 +632,10 @@ public class UserVariantBrush
             Debug.LogWarning(e.Message);
         }
     }
-
+    
     public static void ExportDuplicateDescriptor(BrushDescriptor brush, string newname)
     {
-#if UNITY_EDITOR
+#if UNITY_EDITORX
         // TODO Refactor so we can reuse the logic in App.InitUserPath
         var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
         var brushesPath = Path.Combine(userPath, "Open Brush", "Brushes");
@@ -699,7 +702,8 @@ public class UserVariantBrush
 
         return obj;
     }
-
+    
+    
     /// <summary>
     /// Copies the details of a BrushDescriptor to an object.
     /// </summary>
@@ -795,5 +799,4 @@ public class UserVariantBrush
             }
         }
     }
-#endif
 }
