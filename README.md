@@ -66,20 +66,11 @@ Get the Tilt Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea) (Unity 2019.4.18f1 for this fork)
+*   [Unity 2019.4.25f1](unityhub://2019.4.25f1/01a0494af254)
 *   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
 *   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
     Tested with Python 3.8.
-
-### Changing the application name
-
-_Tilt Brush_ is a Google trademark. If you intend to publish a cloned version of
-the application, you are required to choose a different name to distinguish it
-from the official version. Before building the application, go into `App.cs` and
-the Player settings to change the company and application names to your own.
-
-Please see the [Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md) for more details.
 
 ### Running the application in the Unity editor
 
@@ -147,7 +138,7 @@ open-source licensing issues. These are:
 *   **Tilt Shift**. The official Tilt Brush app uses modified versions of the
     Tilt Shift effect that came with the standard assets in earlier versions of
     Unity. These have been replaced with a modified version of
-    [Tilt shift by underscorediscovery](https://gist.github.com/underscorediscovery/10324388).
+    [Tilt shift by ruby0x1](https://gist.github.com/ruby0x1/10324388).
 
 ## Generating Secrets file
 Credentials for services such as Google and Sketchfab are stored in a `SecretsConfig` scriptable object. This has been ignored in the git config for safety. To add it back:
@@ -254,6 +245,8 @@ Follow these steps to build your app for Oculus Quest:
 1.  Find the generated executable. It will most likely be somewhere under
     `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
+
+**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
 
 ### Publishing to Oculus stores
 

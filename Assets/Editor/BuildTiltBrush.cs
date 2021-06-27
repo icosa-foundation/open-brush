@@ -47,7 +47,7 @@ static class BuildTiltBrush
         public string Location;
         public string Stamp;
         public BuildOptions UnityOptions;
-        public bool Github;
+        public string Description;
     }
 
     [Serializable()]
@@ -90,8 +90,8 @@ static class BuildTiltBrush
             new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneLinux64),
             new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneOSX),
 #if OCULUS_SUPPORTED
-    new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
-    new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.Android),
+            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.Android),
 #endif // OCULUS_SUPPORTED
             new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Gvr, BuildTarget.Android),
         };
@@ -156,7 +156,7 @@ static class BuildTiltBrush
             EditorPrefs.SetString(kMenuSdkPref, value.ToString());
             Menu.SetChecked(kMenuSdkMonoscopic, false);
 #if OCULUS_SUPPORTED
-      Menu.SetChecked(kMenuSdkOculus, false);
+            Menu.SetChecked(kMenuSdkOculus, false);
 #endif // OCULUS_SUPPORTED
             Menu.SetChecked(kMenuSdkSteamVr, false);
             Menu.SetChecked(kMenuSdkGoogleVr, false);
@@ -168,7 +168,7 @@ static class BuildTiltBrush
                     break;
                 case SdkMode.Oculus:
 #if OCULUS_SUPPORTED
-        Menu.SetChecked(kMenuSdkOculus, true);
+                    Menu.SetChecked(kMenuSdkOculus, true);
 #endif // OCULUS_SUPPORTED
                     break;
                 case SdkMode.SteamVR:
@@ -304,12 +304,12 @@ static class BuildTiltBrush
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development)
                 : BuildOptions.None,
-            Github = false,
+            Description = "(unity editor)",
         };
     }
 
     // Menu items
-    [MenuItem("Tilt/Build/Do Build...", false, 2)]
+    [MenuItem("Tilt/Build/Do Build... #&b", false, 2)]
     public static void MenuItem_Build()
     {
         TiltBuildOptions tiltOptions = GetGuiOptions();
@@ -415,8 +415,8 @@ static class BuildTiltBrush
     static bool MenuItem_Sdk_Oculus_Validate()
     {
 #if OCULUS_SUPPORTED
-    Menu.SetChecked(kMenuSdkOculus, GuiSelectedSdk == SdkMode.Oculus);
-    return true;
+        Menu.SetChecked(kMenuSdkOculus, GuiSelectedSdk == SdkMode.Oculus);
+        return true;
 #else
         return false;
 #endif
@@ -707,11 +707,11 @@ static class BuildTiltBrush
 
 
 #if OCULUS_SUPPORTED
-    // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
-    // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
-    // there!
-    OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
-    string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
+        // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
+        // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
+        // there!
+        OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
+        string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
 #endif
 
         {
@@ -742,9 +742,9 @@ static class BuildTiltBrush
                 {
                     tiltOptions.Experimental = true;
                 }
-                else if (args[i] == "-btb-github")
+                else if (args[i] == "-btb-description")
                 {
-                    tiltOptions.Github = true;
+                    tiltOptions.Description = args[++i];
                 }
                 else if (args[i] == "-btb-il2cpp")
                 {
@@ -937,7 +937,7 @@ static class BuildTiltBrush
         private string m_name;
         private string m_company;
         private bool m_isAndroid;
-        public TempSetAppNames(bool isAndroid, bool isGithub)
+        public TempSetAppNames(bool isAndroid, string Description)
         {
             m_isAndroid = isAndroid;
             m_identifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
@@ -945,10 +945,10 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = App.kGuiBuildAndroidApplicationIdentifier;
-            if (isGithub)
+            if (!String.IsNullOrEmpty(Description))
             {
-                new_name += " (Github)";
-                new_identifier += "-github";
+                new_name += " (" + Description + ")";
+                new_identifier += Description.Replace("_", "").Replace("#", "").Replace("-", "");
             }
             if (m_isAndroid)
             {
@@ -1218,6 +1218,9 @@ static class BuildTiltBrush
         string stamp = tiltOptions.Stamp;
         SdkMode vrSdk = tiltOptions.VrSdk;
         BuildOptions options = tiltOptions.UnityOptions;
+        // Add your new scenes in this List for your app.
+        // During the build process the Scene List in the Build Settings is ignored.
+        // Only the following scenes are included in the build.
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
         Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
             target, vrSdk, tiltOptions.Experimental, tiltOptions.AutoProfile,
@@ -1242,7 +1245,7 @@ static class BuildTiltBrush
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
-        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Github))
+        using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
         using (var unused7 = new RestoreVrSdks())
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
@@ -1498,6 +1501,11 @@ static class BuildTiltBrush
                         {
                             FileUtil.DeleteFileOrDirectory(openvrDll);
                         }
+                        string openvrDll64 = Path.Combine(Path.Combine(Path.Combine(dataDir, "Plugins"), "x86_64"), "openvr_api.dll");
+                        if (File.Exists(openvrDll64))
+                        {
+                            FileUtil.DeleteFileOrDirectory(openvrDll64);
+                        }
                     }
 
                     // b/120917711
@@ -1519,19 +1527,19 @@ static class BuildTiltBrush
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
 #if UNITY_EDITOR_OSX && UNITY_IPHONE
-      string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
+                    string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
-      PBXProject project = new PBXProject();
-      project.ReadFromString(File.ReadAllText(pbxPath));
-      string pbxTarget = project.TargetGuidByName("Unity-iPhone");
+                    PBXProject project = new PBXProject();
+                    project.ReadFromString(File.ReadAllText(pbxPath));
+                    string pbxTarget = project.TargetGuidByName("Unity-iPhone");
 
-      // additional framework libs
-      project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
-      project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
-      // disable bitcode due to issue with Cardboard plugin (b/27129333)
-      project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
+                    // additional framework libs
+                    project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
+                    project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
+                    // disable bitcode due to issue with Cardboard plugin (b/27129333)
+                    project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
-      File.WriteAllText(pbxPath, project.WriteToString());
+                    File.WriteAllText(pbxPath, project.WriteToString());
 #else
                     Die(5, "OS X required for building iOS target.");
 #endif
@@ -1748,7 +1756,7 @@ static class BuildTiltBrush
         string logFile = Path.Combine(rootCopyDir.FullName, "BackgroundBuild.log");
         FileUtil.DeleteFileOrDirectory(logFile);
 #if UNITY_EDITOR_OSX
-    args.AppendFormat("--args ");
+        args.AppendFormat("--args ");
 #endif
         args.AppendFormat("-logFile {0} ", logFile);
         if (!interactive) { args.Append("-batchmode "); }
@@ -1774,8 +1782,8 @@ static class BuildTiltBrush
         StringBuilder unityPath = new StringBuilder();
         unityPath.AppendFormat(EditorApplication.applicationPath);
 #if UNITY_EDITOR_OSX
-    // We want to run the inner Unity executable, not the GUI wrapper
-    unityPath.AppendFormat("/Contents/MacOS/Unity");
+        // We want to run the inner Unity executable, not the GUI wrapper
+        unityPath.AppendFormat("/Contents/MacOS/Unity");
 #endif
         process.StartInfo = new System.Diagnostics.ProcessStartInfo(unityPath.ToString(), args.ToString());
         DetectBackgroundProcessExit(process);
