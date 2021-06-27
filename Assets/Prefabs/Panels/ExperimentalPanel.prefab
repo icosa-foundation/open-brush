@@ -341,7 +341,7 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 5.39, y: 12, z: 3.81}
+  m_InitialSpawnPos: {x: 5.39, y: 12, z: 3}
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
   m_WandAttachYOffset: 2.5
@@ -368,7 +368,7 @@ MonoBehaviour:
   m_CollisionRadius: 1.2
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
-  m_AllowHideWithToss: 0
+  m_AllowHideWithToss: 1
   m_DisableDrift: 0
   m_RecordMovements: 0
   m_AllowSnapping: 0
@@ -1109,7 +1109,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
+  m_DescriptionText: Edit Brush
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1123,7 +1123,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 34
+  m_Type: 9000
   m_AlwaysSpawn: 0
 --- !u!1 &5591636336640369085
 GameObject:

@@ -3193,7 +3193,7 @@ MonoBehaviour:
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
   m_IsExperimental: 1
-  m_SdkMode: 1
+  m_SdkMode: 3
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: 2f5f8e93c6bc7be49a5023148b50e7a0, type: 2}
@@ -27354,9 +27354,9 @@ MonoBehaviour:
     m_Basic: 1
     m_Advanced: 0
   - m_PanelPrefab: {fileID: 176644, guid: 82e9561ccc4f9d646b8d328e8a736c62, type: 3}
-    m_ModeVr: 0
+    m_ModeVr: 1
     m_ModeVrExperimental: 1
-    m_ModeMono: 0
+    m_ModeMono: 1
     m_ModeQuest: 0
     m_ModeGvr: 0
     m_Basic: 0
@@ -27573,14 +27573,14 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 199434, guid: ec8bfc3daf3140a40b74246785710580, type: 3}
-    m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeMono: 1
+  - m_PanelPrefab: {fileID: 0}
+    m_ModeVr: 0
+    m_ModeVrExperimental: 0
+    m_ModeMono: 0
     m_ModeQuest: 0
     m_ModeGvr: 0
     m_Basic: 0
-    m_Advanced: 1
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 199434, guid: c745e82c911f0df4d8abea9c33e3ae6f, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1

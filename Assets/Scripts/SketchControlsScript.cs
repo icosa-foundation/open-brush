@@ -141,6 +141,8 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            EditBrushOpenColorPicker = 9000,
+            EditBrushOpenTexturePicker = 9001,
         }
 
         public enum ControlsType
