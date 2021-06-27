@@ -251,7 +251,6 @@ namespace TiltBrush
             PositionWidgetByIndex(slider.transform, index);
             ParameterWidgets.Add(slider.gameObject);
             slider.RegisterComponent();
-            Debug.Log($"float param: {name} = {value}");
         }
 
         private void AddVectorInput(string name, Vector4 value, int index)
@@ -280,7 +279,6 @@ namespace TiltBrush
             PositionWidgetByIndex(pickerButton.transform, index);
             ParameterWidgets.Add(pickerButton.gameObject);
             pickerButton.RegisterComponent();
-            Debug.Log($"Color param: {name} = {color}");
         }
 
         private void AddTexturePicker(string name, Texture tex, int index, string textureName)
@@ -297,7 +295,6 @@ namespace TiltBrush
             PositionWidgetByIndex(pickerButton.transform, index);
             ParameterWidgets.Add(pickerButton.gameObject);
             pickerButton.RegisterComponent();
-            Debug.Log($"Texture param: {name} = {tex}");
         }
 
         private void UpdateSceneMaterials()
