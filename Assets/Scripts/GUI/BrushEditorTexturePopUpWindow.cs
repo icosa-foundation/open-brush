@@ -71,9 +71,9 @@ namespace TiltBrush
 
             base.Init(rParent, sText);
         }
-        public void SetActiveButtonSelected(int index)
+        public void SetActiveTextureButtonSelected(int buttonIndex)
         {
-            var iconButton = m_Icons[index].m_IconScript;
+            var iconButton = m_Icons[buttonIndex].m_IconScript;
             iconButton.SetButtonSelected(true);
         }
     }

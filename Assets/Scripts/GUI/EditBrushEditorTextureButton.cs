@@ -30,7 +30,6 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            Debug.Log($"OnButtonPressed");
             var parentPanel = gameObject.GetComponentInParent<EditBrushPanel>();
             var popup = (BrushEditorTexturePopUpWindow)parentPanel.PanelPopUp;
             var texturePropertyName = popup.OpenerButton.TexturePropertyName;

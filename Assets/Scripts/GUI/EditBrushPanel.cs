@@ -91,7 +91,6 @@ namespace TiltBrush
                 m_TextureNameLookup[tex.imageContentsHash] = fileinfo[i].Name;
                 tex.LoadImage(bytes);
                 AvailableTextures.Add(tex);
-                Debug.Log("name  " + name);
             }
         }
         
@@ -138,15 +137,17 @@ namespace TiltBrush
             brush.Material.SetFloat(propertyName, value);
         }
         
-        public void TextureChanged(string propertyName, int index)
+        public void TextureChanged(string propertyName, int textureIndex)
         {
-            Debug.Log($"TextureChanged {propertyName} {index}");
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-            var tex = m_AvailableTextures[index];
-            PreviewMaterial.SetTexture(propertyName, tex);
-            // TODO - do we set this here or on save?
-            // How are we handling unsaved changes?
-            brush.Material.SetTexture(propertyName, tex);
+            if (textureIndex >= 0)
+            {
+                var tex = m_AvailableTextures[textureIndex];
+                PreviewMaterial.SetTexture(propertyName, tex);
+                // TODO - do we set this here or on save?
+                // How are we handling unsaved changes?
+                brush.Material.SetTexture(propertyName, tex);
+            }
         }
 
         public void ColorChanged(string propertyName, Color color)
@@ -162,7 +163,7 @@ namespace TiltBrush
         {
             if (brush == null) return;
             GeneratePreviewMesh(brush);
-            RegenerateTextureLists();
+            if (m_AvailableTextures == null) RegenerateTextureLists();
             
             if (ParameterWidgets != null)
             {
@@ -290,8 +291,17 @@ namespace TiltBrush
             pickerButton.SetDescriptionText(name);
             pickerButton.TexturePropertyName = name;
             pickerButton.SetPreset(tex, textureName);
-            int textureIndex = m_AvailableTextures.IndexOf(x => x.imageContentsHash == tex.imageContentsHash);
-            pickerButton.TextureIndex = textureIndex;
+            // textureIndex will become invalid if we refresh the texture list
+            // The panel should be refreshes whenever we do this
+            if (tex != null)
+            {
+                int textureIndex = m_AvailableTextures.IndexOf(x => x.imageContentsHash == tex.imageContentsHash);
+                pickerButton.TextureIndex = textureIndex;
+            }
+            else
+            {
+                pickerButton.TextureIndex = -1;
+            }
             PositionWidgetByIndex(pickerButton.transform, index);
             ParameterWidgets.Add(pickerButton.gameObject);
             pickerButton.RegisterComponent();
@@ -363,7 +373,6 @@ namespace TiltBrush
             var mesh = stroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().sharedMesh;
             StrokePreview.GetComponent<MeshFilter>().mesh = mesh;
             StrokePreview.GetComponent<MeshRenderer>().material = brush.Material;
-            Debug.Log($"Preview mesh: {mesh.vertices.Length} verts");
             // TODO - how do we clean up as this breaks the preview mesh
             //stroke.DestroyStroke();
         }
