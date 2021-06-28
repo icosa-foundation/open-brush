@@ -23,7 +23,7 @@ using Newtonsoft.Json.Converters;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITORX
+#if UNITY_EDITOR
 using UnityEditor;
 
 #endif
@@ -550,7 +550,7 @@ public class UserVariantBrush
         }
     }
 
-#if UNITY_EDITORX
+#if UNITY_EDITOR
     /// <summary>
     /// Static function to export all the standard Brush Descriptors to
     /// Support/Brush/ExportedProperties.
@@ -635,7 +635,7 @@ public class UserVariantBrush
     
     public static void ExportDuplicateDescriptor(BrushDescriptor brush, string newname)
     {
-#if UNITY_EDITORX
+#if UNITY_EDITOR
         // TODO Refactor so we can reuse the logic in App.InitUserPath
         var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
         var brushesPath = Path.Combine(userPath, "Open Brush", "Brushes");
