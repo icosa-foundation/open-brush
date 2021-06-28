@@ -205,7 +205,7 @@ namespace TiltBrush
                             // index++;
                             break;
                         case ShaderPropertyType.Texture:
-                            Texture tex = brush.Material.GetTexture(propertyName);
+                            var tex = (Texture2D)brush.Material.GetTexture(propertyName);
                             string textureName;
                             if (tex != null)
                             {
@@ -281,7 +281,7 @@ namespace TiltBrush
             pickerButton.RegisterComponent();
         }
 
-        private void AddTexturePicker(string name, Texture tex, int index, string textureName)
+        private void AddTexturePicker(string name, Texture2D tex, int index, string textureName)
         {
             var texturePickerButtonTr = Instantiate(TexturePickerPrefab);
             var pickerButton = texturePickerButtonTr.GetComponent<BrushEditorTexturePickerButton>();
@@ -290,7 +290,7 @@ namespace TiltBrush
             pickerButton.SetDescriptionText(name);
             pickerButton.TexturePropertyName = name;
             pickerButton.SetPreset(tex, textureName);
-            var textureIndex = m_AvailableTextures.IndexOf(x => x.imageContentsHash == tex.imageContentsHash);
+            int textureIndex = m_AvailableTextures.IndexOf(x => x.imageContentsHash == tex.imageContentsHash);
             pickerButton.TextureIndex = textureIndex;
             PositionWidgetByIndex(pickerButton.transform, index);
             ParameterWidgets.Add(pickerButton.gameObject);
