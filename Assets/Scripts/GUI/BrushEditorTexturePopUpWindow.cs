@@ -45,32 +45,37 @@ namespace TiltBrush
         {
             icon.m_Valid = true;
         }
+        
+        
+        
 
-        protected override void RefreshIcon(ImageIcon icon, int index)
+        protected override void RefreshIcon(ImageIcon icon, int iconIndex)
         {
             EditBrushEditorTextureButton iconButton = icon.m_IconScript as EditBrushEditorTextureButton;
-            Texture2D thisTexture = ParentPanel.AvailableTextures[index];
-            iconButton.SetPreset(thisTexture, ParentPanel.TextureNames[index], index);
-            // TODO this doesn't work because OpenerButton isn't set until after Init has created all the buttons
-            if (OpenerButton != null)
-            {
-                Texture2D currentTexture = (Texture2D)ParentPanel.PreviewMaterial.GetTexture(OpenerButton.TexturePropertyName);
-                iconButton.SetButtonSelected(thisTexture.imageContentsHash==currentTexture.imageContentsHash);
-            }
+            Texture2D thisTexture = ParentPanel.AvailableTextures[iconIndex];
+            iconButton.SetPreset(thisTexture, ParentPanel.TextureNames[iconIndex], iconIndex);
+            iconButton.SetButtonSelected(false);
         }
 
         public override void Init(GameObject rParent, string sText)
         {
             // Set this early so that Init can access parent to get m_DataCount
             m_ParentPanel = rParent.GetComponent<BasePanel>();
-            
+
             if (ActiveTextureIndex >= 0)
             {
                 m_RequestedPageIndex = ActiveTextureIndex / m_IconCountNavPage;
             }
 
             base.Init(rParent, sText);
+            
+            // Set active icon
+            int activeIconIndex = ActiveTextureIndex % m_IconCountNavPage;
+            var iconButton = m_Icons[activeIconIndex].m_IconScript;
+            iconButton.SetButtonSelected(true);
+            
         }
+        
         public void SetActiveTextureButtonSelected(int buttonIndex)
         {
             var iconButton = m_Icons[buttonIndex].m_IconScript;
