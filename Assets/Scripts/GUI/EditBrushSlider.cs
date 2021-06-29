@@ -22,11 +22,11 @@ namespace TiltBrush
     {
 
         [NonSerialized] public EditBrushPanel ParentPanel;
-        public string ShaderPropertyName;
+        public string FloatPropertyName;
 
         override public void UpdateValue(float fValue)
         {
-            ParentPanel.SliderChanged(ShaderPropertyName, fValue);
+            ParentPanel.SliderChanged(FloatPropertyName, fValue);
         }
     }
 } // namespace TiltBrush

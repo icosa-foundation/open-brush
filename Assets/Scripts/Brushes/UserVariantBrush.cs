@@ -206,6 +206,12 @@ public class UserVariantBrush
     private string m_Location;
     private bool m_ShowInGUI;
     private bool m_EmbedInSketch;
+    
+    public string GetFilenameForTextureProperty(string propertyName)
+    {
+        return m_BrushProperties.Material.TextureProperties[propertyName];
+    }
+
 
     private UserVariantBrush() { }
 
@@ -604,6 +610,12 @@ public class UserVariantBrush
     /// <param name="filename">Destination file path.</param>
     public static void ExportDescriptor(BrushDescriptor brush, string filename)
     {
+        var textureRefs = new Dictionary<string, string>();
+        ExportDescriptor(brush, filename, textureRefs);
+    }
+    
+    public static void ExportDescriptor(BrushDescriptor brush, string filename, [CanBeNull] Dictionary<string, string> textureRefs)
+    {
         BrushProperties properties = new BrushProperties();
         properties.VariantOf = "";
         properties.GUID = brush.m_Guid.ToString();
@@ -613,6 +625,9 @@ public class UserVariantBrush
 
         CopyDescriptorToProperties(brush, properties);
         CopyMaterialToProperties(brush, properties);
+        
+        // If we have paths for textures then apply them to the Material
+        brush.UserVariantBrush.UpdatePropertyTexturePaths(brush.Material.shader, textureRefs);
 
         try
         {
@@ -773,30 +788,85 @@ public class UserVariantBrush
 
         for (int i = 0; i < shader.GetPropertyCount(); ++i)
         {
-            string name = shader.GetPropertyName(i);
+            string propertyName = shader.GetPropertyName(i);
             switch (shader.GetPropertyType(i))
             {
                 case ShaderPropertyType.Float:
                 case ShaderPropertyType.Range:
-                    properties.Material.FloatProperties.Add(name, material.GetFloat(name));
+                    properties.Material.FloatProperties.Add(propertyName, material.GetFloat(propertyName));
                     break;
                 case ShaderPropertyType.Color:
-                    Color color = material.GetColor(name);
+                    Color color = material.GetColor(propertyName);
                     float[] colorArray = { color.r, color.g, color.b, color.a };
-                    properties.Material.ColorProperties.Add(name, colorArray);
+                    properties.Material.ColorProperties.Add(propertyName, colorArray);
                     break;
                 case ShaderPropertyType.Vector:
-                    Vector4 vector = material.GetVector(name);
+                    Vector4 vector = material.GetVector(propertyName);
                     float[] floatArray = { vector.x, vector.y, vector.z, vector.w };
-                    properties.Material.VectorProperties.Add(name, floatArray);
+                    properties.Material.VectorProperties.Add(propertyName, floatArray);
                     break;
                 case ShaderPropertyType.Texture:
-                    properties.Material.TextureProperties.Add(name, "");
+                    properties.Material.TextureProperties.Add(propertyName, "");
                     break;
                 default:
-                    Debug.LogWarning($"Shader {shader.name} from material {material.name} has property {name} of unsupported type {shader.GetPropertyType(i)}.");
+                    Debug.LogWarning($"Shader {shader.name} from material {material.name} has property {propertyName} of unsupported type {shader.GetPropertyType(i)}.");
                     break;
             }
         }
     }
+    
+    /// <summary>
+    /// Fills in values for m_BrushProperties.Material.TextureProperties
+    /// Also - if the texture is internal (i.e. in Resources) it saves it to the brush directory
+    /// If the texture is external but from a different brush then it creates a copy in the brush directory
+    /// Used when saving a user brush created at runtime 
+    /// </summary>
+    /// <param name="material">The BrushDescriptor.</param>
+    /// <param name="textureRefs">A dictionary mapping texture property names to texture paths.</param>
+    private void UpdatePropertyTexturePaths(Shader shader, Dictionary<string, string> textureRefs)
+    {
+        
+        for (int i = 0; i < shader.GetPropertyCount(); ++i)
+        {
+            var propertyType = shader.GetPropertyType(i);
+            string propertyName = shader.GetPropertyName(i);
+            
+            if (propertyType==ShaderPropertyType.Texture && textureRefs.ContainsKey(propertyName))
+            {
+                string userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                string texturePath = textureRefs[propertyName];
+                string userBrushPath = Location;
+                string textureName;
+                string resourcePath = "Resources/";
+                
+                Debug.Log($"Saving texture {texturePath}");
+                
+                if (texturePath.StartsWith(userBrushPath))
+                {
+                    // A texture that is already saved
+                    textureName = texturePath.Substring(userBrushPath.Length);
+                }
+                else if (texturePath.StartsWith(resourcePath))
+                {
+                    // A built in texture. Save it to the user brush folder
+                    textureName = texturePath.Substring(resourcePath.Length);
+                    Texture tex = Descriptor.Material.GetTexture(propertyName);
+                    
+                } else if (texturePath.StartsWith(userPath))
+                {
+                    // A texture from a different user brush. Copy it.
+                    textureName = texturePath.Substring(userPath.Length);
+                    string newTexturePath = Path.Combine(userBrushPath, textureName);
+                    File.Copy(texturePath, newTexturePath);
+                }
+                else
+                {
+                    Debug.LogError("User brush textures must be inside brush folder or brush resources folder");
+                    return;
+                }
+                m_BrushProperties.Material.TextureProperties[propertyName] = textureName;
+            }
+        }
+    }
+    
 }

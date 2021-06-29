@@ -20,7 +20,7 @@ namespace TiltBrush
     public class BrushEditorColorPickerButton : OptionButton
     {
         [NonSerialized] public EditBrushPanel ParentPanel;
-        public string ShaderPropertyName;
+        public string ColorPropertyName;
         [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
         
         override protected void OnButtonPressed()
@@ -75,7 +75,7 @@ namespace TiltBrush
         
         void OnColorPicked(Color color)
         {
-            ParentPanel.ColorChanged(ShaderPropertyName, color);
+            ParentPanel.ColorChanged(ColorPropertyName, color);
             SetColor(color);
         }
 
