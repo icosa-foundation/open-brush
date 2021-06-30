@@ -185,7 +185,7 @@ namespace TiltBrush
             { (int)KeyboardShortcut.Abort, new[] { KeyCode.Escape } },
 
             { (int)KeyboardShortcut.SaveNew, new[] { KeyCode.S } },
-            { (int)KeyboardShortcut.ExportAll, new[] { KeyCode.A } },
+            { (int)KeyboardShortcut.ExportAll, new[] { KeyCode.I } },
             { (int)KeyboardShortcut.ToggleProfile, new[] { KeyCode.K } },
             // Context-dependent
             { (int)KeyboardShortcut.SwitchCamera, new[] { KeyCode.C } },
@@ -195,7 +195,7 @@ namespace TiltBrush
             { (int)KeyboardShortcut.PreviousTool, new[] { KeyCode.LeftArrow } },
             { (int)KeyboardShortcut.NextTool, new[] { KeyCode.RightArrow } },
             { (int)KeyboardShortcut.CycleSymmetryMode, new[] { KeyCode.F2 } },
-            { (int)KeyboardShortcut.Export, new[] { KeyCode.E } },
+            { (int)KeyboardShortcut.Export, new[] { KeyCode.U } },
             { (int)KeyboardShortcut.StoreHeadTransform, new[] { KeyCode.O } }, // Also checks for shift
             { (int)KeyboardShortcut.RecallHeadTransform, new[] { KeyCode.O } },
             { (int)KeyboardShortcut.ToggleLightType, new[] { KeyCode.P } },
