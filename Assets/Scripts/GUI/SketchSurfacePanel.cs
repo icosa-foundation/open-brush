@@ -343,6 +343,14 @@ namespace TiltBrush
             }
         }
 
+        public void EnableAllTools(bool status)
+        {
+            for (int i = 0; i < m_Tools.Length; ++i)
+            {
+               m_Tools[i].EnableTool(status);
+            }
+        }
+
         public void NextTool()
         {
             int iPrevIndex = m_ActiveToolIndex;

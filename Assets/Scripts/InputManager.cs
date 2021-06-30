@@ -146,6 +146,8 @@ namespace TiltBrush
 
             ToggleMonoCameraDrawMode,
 
+            ToggleMonoUi,
+
             ToggleHeadStationaryOrWobble,
             ToggleHeadStationaryOrFollow,
 
@@ -171,7 +173,7 @@ namespace TiltBrush
         private static readonly KeyMap m_KeyMap = new KeyMap
         {
             { (int)KeyboardShortcut.PivotRotation, new[] { KeyCode.LeftControl } },
-            { (int)KeyboardShortcut.Scale, new[] { KeyCode.Tab } },
+            // { (int)KeyboardShortcut.Scale, new[] { KeyCode.Tab } },
 
             { (int)KeyboardShortcut.RewindTimeline, new[] { KeyCode.Minus } },
             { (int)KeyboardShortcut.AdvanceTimeline, new[] { KeyCode.Plus } },
@@ -217,6 +219,7 @@ namespace TiltBrush
             { (int)KeyboardShortcut.MonoCameraDecreaseCursorDistance, new[] { KeyCode.F } },
 
             { (int)KeyboardShortcut.ToggleMonoCameraDrawMode, new[] { KeyCode.LeftShift, KeyCode.RightShift } },
+            { (int)KeyboardShortcut.ToggleMonoUi, new[] { KeyCode.Tab } },
 
             { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
             { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },
