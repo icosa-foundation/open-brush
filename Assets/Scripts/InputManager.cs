@@ -170,7 +170,6 @@ namespace TiltBrush
         // active.
         private static readonly KeyMap m_KeyMap = new KeyMap
         {
-            { (int)KeyboardShortcut.LockToHead, new[] { KeyCode.LeftShift } },
             { (int)KeyboardShortcut.PivotRotation, new[] { KeyCode.LeftControl } },
             { (int)KeyboardShortcut.Scale, new[] { KeyCode.Tab } },
 

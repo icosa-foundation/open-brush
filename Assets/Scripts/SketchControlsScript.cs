@@ -161,7 +161,6 @@ namespace TiltBrush
             Standard,
             Pan,
             Rotation,
-            HeadLock,
             ControllerLock,
             PushPull,
             BrushSize,
@@ -822,7 +821,6 @@ namespace TiltBrush
 
             m_InputStateConfigs[(int)InputState.Standard].m_AllowDrawing = true;
             m_InputStateConfigs[(int)InputState.Pan].m_AllowDrawing = true;
-            m_InputStateConfigs[(int)InputState.HeadLock].m_AllowDrawing = true;
             m_InputStateConfigs[(int)InputState.ControllerLock].m_AllowDrawing = true;
             m_InputStateConfigs[(int)InputState.PushPull].m_AllowDrawing = true;
 
@@ -834,7 +832,6 @@ namespace TiltBrush
 
             m_InputStateConfigs[(int)InputState.Pan].m_ShowGizmo = true;
             m_InputStateConfigs[(int)InputState.Rotation].m_ShowGizmo = true;
-            m_InputStateConfigs[(int)InputState.HeadLock].m_ShowGizmo = true;
             m_InputStateConfigs[(int)InputState.PushPull].m_ShowGizmo = true;
 
             m_CurrentGazeRay = new Ray(Vector3.zero, Vector3.forward);
@@ -1046,9 +1043,6 @@ namespace TiltBrush
                                 break;
                             case InputState.Rotation:
                                 UpdateRotationInput();
-                                break;
-                            case InputState.HeadLock:
-                                UpdateHeadLockInput();
                                 break;
                             case InputState.ControllerLock:
                                 UpdateControllerLock();
@@ -1525,12 +1519,6 @@ namespace TiltBrush
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.PivotRotation))
             {
                 SwitchState(InputState.Rotation);
-            }
-            // Head lock.
-            else if (!hasController &&
-                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToHead))
-            {
-                SwitchState(InputState.HeadLock);
             }
             // Push pull.
             else if (!hasController &&
@@ -3433,35 +3421,6 @@ namespace TiltBrush
             }
         }
 
-        void UpdateHeadLockInput()
-        {
-            if (App.Instance.IsMonoscopicMode())
-            {
-                return;
-            }
-
-            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToHead))
-            {
-                //compute new position/orientation of sketch surface
-                Vector3 vTransformedOffset = m_CurrentHeadOrientation * m_SurfaceLockOffset;
-                Vector3 vSurfacePos = m_CurrentGazeRay.origin + vTransformedOffset;
-
-                Quaternion qDiff = m_CurrentHeadOrientation * Quaternion.Inverse(m_SurfaceLockBaseHeadRotation);
-                Quaternion qNewSurfaceRot = qDiff * m_SurfaceLockBaseSurfaceRotation;
-
-                m_SketchSurface.transform.position = vSurfacePos;
-                m_SketchSurface.transform.rotation = qNewSurfaceRot;
-            }
-            else
-            {
-                m_SurfaceForward = m_SketchSurface.transform.forward;
-                m_SurfaceRight = m_SketchSurface.transform.right;
-                m_SurfaceUp = m_SketchSurface.transform.up;
-
-                SwitchState(InputState.Standard);
-            }
-        }
-
         void UpdateControllerLock()
         {
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToController))
@@ -3676,12 +3635,6 @@ namespace TiltBrush
                     m_RotationCursor.transform.rotation = m_SketchSurface.transform.rotation;
                     m_RotationCursor.ClearCursorLines(m_SketchSurface.transform.position);
                     m_RotationCursor.gameObject.SetActive(bSketchSurfaceToolActive);
-                    break;
-                case InputState.HeadLock:
-                    m_SurfaceLockBaseHeadRotation = m_CurrentHeadOrientation;
-                    m_SurfaceLockBaseSurfaceRotation = m_SketchSurface.transform.rotation;
-                    m_SurfaceLockOffset = m_SketchSurface.transform.position - m_CurrentGazeRay.origin;
-                    m_SurfaceLockOffset = Quaternion.Inverse(m_SurfaceLockBaseHeadRotation) * m_SurfaceLockOffset;
                     break;
                 case InputState.ControllerLock:
                     if (bSketchSurfaceToolActive)
