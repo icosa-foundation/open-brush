@@ -42,6 +42,8 @@ namespace TiltBrush
         private bool isMoving;
         private bool isDrawMode = false;
 
+        public bool isUiVisible = false;
+
         void Start()
         {
             if (!App.Instance.IsMonoscopicMode())
@@ -64,6 +66,13 @@ namespace TiltBrush
                 InputManager.KeyboardShortcut.ToggleMonoCameraDrawMode))
             {
                 isDrawMode = !isDrawMode;
+            }
+            
+            if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoUi))
+            {
+                isUiVisible = !isUiVisible;
+                SketchControlsScript.m_SketchSurfacePanel.EnableAllTools(isUiVisible);
             }
 
             m_cameraPosition = transform.localPosition;
