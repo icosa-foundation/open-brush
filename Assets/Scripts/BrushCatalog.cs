@@ -225,6 +225,11 @@ namespace TiltBrush
 
         void Update()
         {
+            HandleChangedBrushes();
+        }
+        
+        public void HandleChangedBrushes()
+        {
             if (m_ChangedBrushes.Count > 0)
             {
                 for (var i = 0; i < m_ChangedBrushes.Count; i++)
@@ -251,7 +256,10 @@ namespace TiltBrush
                 );
             }
             m_ChangedBrushes.Clear();
+
         }
+
+
 
         // Returns brushes in both sections of the manifest (compat and non-compat)
         // Brushes that are found only in the compat section will have m_HiddenInGui = true
@@ -359,18 +367,24 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
-            if (e.FullPath.StartsWith(App.UserBrushesPath()))
+            string path = e.FullPath;
+            if (path.StartsWith(App.UserBrushesPath()))
             {
-                int brushPathLength = App.UserBrushesPath().Length + 1;
-                var end = e.FullPath.Substring(brushPathLength, e.FullPath.Length - brushPathLength);
-                var parts = end.Split(Path.DirectorySeparatorChar);
-                string brush = parts.FirstOrDefault();
-                if (brush == null)
-                {
-                    return;
-                }
-                m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
+                UpdateCatalog(path);
             }
+        }
+        
+        public void UpdateCatalog(string brushPath)
+        {
+            int brushPathLength = App.UserBrushesPath().Length + 1;
+            var end = brushPath.Substring(brushPathLength, brushPath.Length - brushPathLength);
+            var parts = end.Split(Path.DirectorySeparatorChar);
+            string brush = parts.FirstOrDefault();
+            if (brush == null)
+            {
+                return;
+            }
+            m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
         }
 
     }

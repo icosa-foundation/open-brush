@@ -75,7 +75,7 @@ namespace TiltBrush
         
         void OnColorPicked(Color color)
         {
-            ParentPanel.ColorChanged(ColorPropertyName, color);
+            ParentPanel.ColorChanged(ColorPropertyName, color, this);
             SetColor(color);
         }
 

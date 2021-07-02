@@ -46,9 +46,6 @@ namespace TiltBrush
             icon.m_Valid = true;
         }
         
-        
-        
-
         protected override void RefreshIcon(ImageIcon icon, int iconIndex)
         {
             EditBrushEditorTextureButton iconButton = icon.m_IconScript as EditBrushEditorTextureButton;

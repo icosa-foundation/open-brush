@@ -25,7 +25,12 @@ namespace TiltBrush
         private string m_TexturePath;
         [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
         [NonSerialized] public BrushEditorTexturePopUpWindow popup;
-        
+        public string TexturePath
+        {
+            get => m_TexturePath;
+            set => m_TexturePath = value;
+        }
+
         protected override void OnButtonPressed()
         {
             for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
@@ -48,7 +53,7 @@ namespace TiltBrush
         {
             SetButtonTexture((Texture2D)tex);
             SetDescriptionText(texName ?? "None");
-            m_TexturePath = texPath;
+            TexturePath = texPath;
         }
         
         void OnTextureChanged()
@@ -65,25 +70,9 @@ namespace TiltBrush
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
         }
 
-        // void OnPopUpClose()
-        // {
-        //     Debug.Log($"OnPopUpClose");
-        //     for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
-        //     {
-        //         m_ObjectsToHideBehindPopups[i].SetActive(true);
-        //     }
-        //     popup = null;
-        // }
-        //
-        // void OnTexturePickedAsFinal(Texture2D tex)
-        // {
-        //     Debug.Log($"OnTexturePickedAsFinal");
-        //     //ParentPanel.TextureChanged(ShaderPropertyName, tex);
-        // }
-        //
-        // public void UpdateValue(Texture2D tex)
-        // {
-        //     m_ButtonTexture = tex;
-        // }
+        public void UpdateValue(Texture2D tex)
+        {
+            m_ButtonTexture = tex;
+        }
     }
 } // namespace TiltBrush

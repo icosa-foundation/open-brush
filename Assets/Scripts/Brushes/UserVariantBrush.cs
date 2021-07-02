@@ -206,12 +206,6 @@ public class UserVariantBrush
     private string m_Location;
     private bool m_ShowInGUI;
     private bool m_EmbedInSketch;
-    
-    public string GetFilenameForTextureProperty(string propertyName)
-    {
-        return m_BrushProperties.Material.TextureProperties[propertyName];
-    }
-
 
     private UserVariantBrush() { }
 
@@ -527,6 +521,7 @@ public class UserVariantBrush
             m_FileData[filename] = data;
             if (ImageConversion.LoadImage(texture, data, true))
             {
+                texture.name = Path.GetFileNameWithoutExtension(filename);
                 return texture;
             }
         }
@@ -603,31 +598,16 @@ public class UserVariantBrush
     
 #endif
 
-    /// <summary>
-    /// Exports a single descriptor to a file.
-    /// </summary>
-    /// <param name="brush">The BrushDescriptor.</param>
-    /// <param name="filename">Destination file path.</param>
-    public static void ExportDescriptor(BrushDescriptor brush, string filename)
+    public static void SaveDescriptor(BrushDescriptor brush, string filename, Dictionary<string, string> textureRefs)
     {
-        var textureRefs = new Dictionary<string, string>();
-        ExportDescriptor(brush, filename, textureRefs);
-    }
-    
-    public static void ExportDescriptor(BrushDescriptor brush, string filename, [CanBeNull] Dictionary<string, string> textureRefs)
-    {
-        BrushProperties properties = new BrushProperties();
-        properties.VariantOf = "";
-        properties.GUID = brush.m_Guid.ToString();
-        properties.ButtonIcon = "blank.png";
-        properties.Author = "Open Brush";
-        properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
-
+        
+        BrushProperties properties = brush.UserVariantBrush.m_BrushProperties;
+        
         CopyDescriptorToProperties(brush, properties);
         CopyMaterialToProperties(brush, properties);
         
-        // If we have paths for textures then apply them to the Material
-        brush.UserVariantBrush.UpdatePropertyTexturePaths(brush.Material.shader, textureRefs);
+        // Copy textures and update texture paths
+        brush.UserVariantBrush.SaveorCopyTextures(brush.Material.shader, textureRefs);
 
         try
         {
@@ -648,15 +628,45 @@ public class UserVariantBrush
         }
     }
     
-    public static void ExportDuplicateDescriptor(BrushDescriptor brush, string newname)
+    /// <summary>
+    /// Exports a single descriptor to a file.
+    /// </summary>
+    /// <param name="brush">The BrushDescriptor.</param>
+    /// <param name="filename">Destination file path.</param>
+    public static void ExportDescriptor(BrushDescriptor brush, string filename)
     {
-#if UNITY_EDITOR
-        // TODO Refactor so we can reuse the logic in App.InitUserPath
-        var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-        var brushesPath = Path.Combine(userPath, "Open Brush", "Brushes");
-#else
-        var brushesPath = App.UserBrushesPath();
-#endif
+        BrushProperties properties = new BrushProperties();
+        properties.VariantOf = "";
+        properties.GUID = brush.m_Guid.ToString();
+        properties.ButtonIcon = "blank.png";
+        properties.Author = "Open Brush";
+        properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
+
+        CopyDescriptorToProperties(brush, properties);
+        CopyMaterialToProperties(brush, properties);
+
+        try
+        {
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            });
+            serializer.ContractResolver = new CustomJsonContractResolver();
+            using (var writer = new CustomJsonWriter(new StreamWriter(filename)))
+            {
+                writer.Formatting = Formatting.Indented;
+                serializer.Serialize(writer, properties);
+            }
+        }
+        catch (JsonException e)
+        {
+            Debug.LogWarning(e.Message);
+        }
+    }
+    
+    public static string ExportDuplicateDescriptor(BrushDescriptor brush, string newBrushName)
+    {
+        var brushesPath = GetBrushesPath();
         
         BrushProperties properties = new BrushProperties();
         CopyDescriptorToProperties(brush, properties);
@@ -665,14 +675,14 @@ public class UserVariantBrush
         string oldGuid = brush.m_Guid.ToString();
         string newGuid = Guid.NewGuid().ToString();
         
-        string newBrushPath = Path.Combine(brushesPath, $"{newname}_{newGuid}");
+        string newBrushPath = Path.Combine(brushesPath, $"{newBrushName}_{newGuid}");
         if (!Directory.Exists(newBrushPath)) Directory.CreateDirectory(newBrushPath);
         string filename = Path.Combine(newBrushPath, "brush.cfg");
 
         properties.VariantOf = oldGuid;
         properties.GUID = newGuid;
         properties.Description = $"Based on {properties.Name}";
-        properties.Name = newname;
+        properties.Name = newBrushName;
         properties.ButtonIcon = "";
         properties.Author = "";
         properties.CopyRestrictions = CopyRestrictions.EmbedAndShare;
@@ -694,8 +704,21 @@ public class UserVariantBrush
         {
             Debug.LogWarning(e.Message);
         }
+
+        return newBrushPath;
     }
-    
+    public static string GetBrushesPath()
+    {
+#if UNITY_EDITOR
+        // TODO Refactor so we can reuse the logic in App.InitUserPath
+        var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+        var brushesPath = Path.Combine(userPath, "Open Brush", "Brushes");
+#else
+        var brushesPath = App.UserBrushesPath();
+#endif
+        return brushesPath;
+    }
+
     /// <summary>
     /// Converts a Vector2 or Color struct to an array of floats.
     /// If the object is not a Vector2 or Color, it will return itself.
@@ -823,48 +846,67 @@ public class UserVariantBrush
     /// </summary>
     /// <param name="material">The BrushDescriptor.</param>
     /// <param name="textureRefs">A dictionary mapping texture property names to texture paths.</param>
-    private void UpdatePropertyTexturePaths(Shader shader, Dictionary<string, string> textureRefs)
+    public void SaveorCopyTextures(Shader shader, Dictionary<string, string> textureRefs)
     {
+        
+        Debug.Log($"SaveorCopyTextures for {shader.name}");
         
         for (int i = 0; i < shader.GetPropertyCount(); ++i)
         {
+            
             var propertyType = shader.GetPropertyType(i);
             string propertyName = shader.GetPropertyName(i);
             
-            if (propertyType==ShaderPropertyType.Texture && textureRefs.ContainsKey(propertyName))
+            if (propertyType==ShaderPropertyType.Texture)
             {
-                string userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-                string texturePath = textureRefs[propertyName];
-                string userBrushPath = Location;
-                string textureName;
-                string resourcePath = "Resources/";
-                
-                Debug.Log($"Saving texture {texturePath}");
-                
-                if (texturePath.StartsWith(userBrushPath))
+                if (textureRefs.ContainsKey(propertyName))
                 {
-                    // A texture that is already saved
-                    textureName = texturePath.Substring(userBrushPath.Length);
-                }
-                else if (texturePath.StartsWith(resourcePath))
-                {
-                    // A built in texture. Save it to the user brush folder
-                    textureName = texturePath.Substring(resourcePath.Length);
-                    Texture tex = Descriptor.Material.GetTexture(propertyName);
                     
-                } else if (texturePath.StartsWith(userPath))
-                {
-                    // A texture from a different user brush. Copy it.
-                    textureName = texturePath.Substring(userPath.Length);
-                    string newTexturePath = Path.Combine(userBrushPath, textureName);
-                    File.Copy(texturePath, newTexturePath);
+                    string textureFullPath = textureRefs[propertyName];
+                    var userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    
+                    string thisUserBrushDir = Path.Combine(GetBrushesPath(), Location);
+                    string textureName;
+                    string newTextureFullPath;
+
+                    if (textureFullPath.StartsWith(thisUserBrushDir))
+                    {
+                        // A texture that is already saved
+                        newTextureFullPath = textureFullPath;
+                    }
+                    else if (textureFullPath.StartsWith(userPath))
+                    {
+                        // A texture from somewhere else in the Open Brush user folder. Copy it.
+                        textureName = Path.GetFileName(textureFullPath + ".png");
+                        newTextureFullPath = Path.Combine(thisUserBrushDir, textureName + ".png");
+                        File.Copy(textureFullPath, newTextureFullPath);
+                    }
+                    else if (textureFullPath.StartsWith("__Resources__"))
+                    {
+                        // A built in texture. Save it to the user brush folder
+                        Texture2D tex = (Texture2D)Descriptor.Material.GetTexture(propertyName);
+                        // Can't EncodeToPNG for compressed textures
+                        // TODO switch to GetPixelData/SetPixelData when we update Unity
+                        var validTex = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, true);
+                        validTex.SetPixels32(tex.GetPixels32());
+                        validTex.Apply();
+                        var bytes = ImageConversion.EncodeToPNG(validTex);
+                        newTextureFullPath = Path.Combine(thisUserBrushDir, tex.name + ".png");
+                        File.WriteAllBytes(newTextureFullPath, bytes);
+
+                    }
+                    else
+                    {
+                        Debug.LogError("User brush textures must be inside brush folder or brush resources folder");
+                        return;
+                    }
+                    var textureRelativePath = newTextureFullPath.Substring(thisUserBrushDir.Length + 1);
+                    m_BrushProperties.Material.TextureProperties[propertyName] = textureRelativePath;
                 }
                 else
                 {
-                    Debug.LogError("User brush textures must be inside brush folder or brush resources folder");
-                    return;
+                    Debug.LogWarning($"No textureRef found for {propertyName}");
                 }
-                m_BrushProperties.Material.TextureProperties[propertyName] = textureName;
             }
         }
     }

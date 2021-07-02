@@ -33,7 +33,7 @@ namespace TiltBrush
             var parentPanel = gameObject.GetComponentInParent<EditBrushPanel>();
             var popup = (BrushEditorTexturePopUpWindow)parentPanel.PanelPopUp;
             var texturePropertyName = popup.OpenerButton.TexturePropertyName;
-            parentPanel.TextureChanged(texturePropertyName, m_TextureIndex);
+            parentPanel.TextureChanged(texturePropertyName, m_TextureIndex, popup.OpenerButton);
         }
     }
 } // namespace TiltBrush
