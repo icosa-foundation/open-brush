@@ -28,7 +28,7 @@ namespace TiltBrush
         public string TexturePath
         {
             get => m_TexturePath;
-            set => m_TexturePath = value;
+            private set => m_TexturePath = value;
         }
 
         protected override void OnButtonPressed()
@@ -49,30 +49,22 @@ namespace TiltBrush
 
         }
         
-        public void SetPreset(Texture tex, string texName, string texPath)
-        {
-            SetButtonTexture((Texture2D)tex);
-            SetDescriptionText(texName ?? "None");
-            TexturePath = texPath;
-        }
-        
-        void OnTextureChanged()
-        {
-            BasePanel panel = m_Manager.GetPanelForPopUps();
-            if (panel != null)
-            {
-                SetColor(panel.GetGazeColorFromActiveGazePercent());
-            }
-        }
-        
         override public void GazeRatioChanged(float gazeRatio)
         {
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
         }
 
-        public void UpdateValue(Texture2D tex)
+        public void UpdateValue(Texture2D tex, string propertyName, string texPath)
         {
-            m_ButtonTexture = tex;
+            if (tex != null)
+            {
+                SetButtonTexture((Texture2D)tex);
+                m_ButtonTexture = tex;
+                GetComponent<MeshRenderer>().material.mainTexture = tex;
+            }
+            TexturePropertyName = propertyName;
+            SetDescriptionText(propertyName);
+            TexturePath = texPath;
         }
     }
 } // namespace TiltBrush

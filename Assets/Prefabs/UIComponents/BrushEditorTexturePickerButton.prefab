@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57fdfefba9df460c83d26abb1d1491ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DescriptionType: -1
+  m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Open Texture Picker
   m_DescriptionTextExtra: 

@@ -22,7 +22,20 @@ namespace TiltBrush
         [NonSerialized] public EditBrushPanel ParentPanel;
         public string ColorPropertyName;
         [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
-        
+        private Color m_chosenColor;
+        public Color ChosenColor
+        {
+            get
+            {
+                return m_chosenColor;
+            }
+            set
+            {
+                GetComponent<Renderer>().material.color = value;
+                m_chosenColor = value;
+            }
+        }
+
         override protected void OnButtonPressed()
         {
             for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
@@ -37,6 +50,7 @@ namespace TiltBrush
             var popup = (panel.PanelPopUp as ColorPickerPopUpWindow);
             if (popup != null)
             {
+                popup.ColorPicker.Controller.CurrentColor = ChosenColor;
                 // Init must be called after all popup.ColorPicked actions have been assigned.
                 popup.ColorPicker.ColorPicked += OnColorPicked;
                 popup.ColorPicker.Controller.CurrentColor = SceneSettings.m_Instance.SkyColorA;
@@ -45,21 +59,12 @@ namespace TiltBrush
             }
         }
         
-        void OnColorChanged()
-        {
-            BasePanel panel = m_Manager.GetPanelForPopUps();
-            if (panel != null)
-            {
-                SetColor(panel.GetGazeColorFromActiveGazePercent());
-            }
-        }
-        
         public override void SetColor(Color color)
         {
-            // Don't use this for setting brush colors. It's UI related
-            base.SetColor(color);
+            // Override this and ignore the color changes from the UI system
+            base.SetColor(ChosenColor);
         }
-        
+
         public override void GazeRatioChanged(float gazeRatio)
         {
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
@@ -76,7 +81,7 @@ namespace TiltBrush
         void OnColorPicked(Color color)
         {
             ParentPanel.ColorChanged(ColorPropertyName, color, this);
-            SetColor(color);
+            ChosenColor = color;
         }
 
         void ColorFinalized()
@@ -88,11 +93,6 @@ namespace TiltBrush
         {
             // Not used?
             Debug.Log($"OnColorPickedAsFinal");
-        }
-        
-        public void UpdateValue(Color color)
-        {
-            Debug.Log($"UpdateValue");
         }
     }
 } // namespace TiltBrush

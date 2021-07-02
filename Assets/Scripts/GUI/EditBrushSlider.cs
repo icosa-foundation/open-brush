@@ -27,6 +27,7 @@ namespace TiltBrush
         override public void UpdateValue(float fValue)
         {
             ParentPanel.SliderChanged(FloatPropertyName, fValue);
+            base.UpdateValue(fValue);
         }
     }
 } // namespace TiltBrush
