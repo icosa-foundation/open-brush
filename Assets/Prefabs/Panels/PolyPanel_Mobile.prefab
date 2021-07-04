@@ -639,9 +639,15 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1059040247519986}
-  m_Text: 'Reference README.md
+  m_Text: 'Poly was shut down
 
-    to see Poly content'
+    on 2021/06/30
+
+
+    Icosa Gallery support
+
+    coming
+    soon!'
   m_OffsetZ: 0
   m_CharacterSize: 0.04
   m_LineSpacing: 0.72
