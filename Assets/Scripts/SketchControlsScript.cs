@@ -1563,10 +1563,8 @@ namespace TiltBrush
                     InputManager.m_Instance.GetKeyboardShortcutDown(
                         InputManager.KeyboardShortcut.ResetScene))
                 {
-                    // TODO: Should thsi go away? Seems like the "sweetspot" may no longer be used.
                     if (App.VrSdk.GetControllerDof() == VrSdk.DoF.Two)
                     {
-                        m_PanelManager.SetSweetSpotPosition(m_CurrentGazeRay.origin);
                         ResetGrabbedPose();
                     }
                 }
@@ -3215,28 +3213,8 @@ namespace TiltBrush
                     }
                 }
 
-                if (!hasController)
-                {
-                    //lock to head if we're holding a lock button..
-                    bool bLockToHead = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToHead) ||
-                        InputManager.m_Instance.GetCommand(InputManager.SketchCommands.LockToController);
-
-                    if (bLockToHead)
-                    {
-                        m_PositioningPanelWithHead = true;
-                        m_PositioningPanelBaseHeadRotation = m_CurrentHeadOrientation;
-                        m_PositioningPanelOffset = currentPanel.transform.position -
-                            m_PanelManager.m_SweetSpot.transform.position;
-
-                        currentPanel.ResetPanelFlair();
-
-                        //prime all other panels for movement
-                        m_PanelManager.PrimeCollisionSimForKeyboardMouse();
-                    }
-                }
-
-                PointerManager.m_Instance.RequestPointerRendering(false);
-                currentPanel.UpdateReticleOffset(m_MouseDeltaX, m_MouseDeltaY);
+                // PointerManager.m_Instance.RequestPointerRendering(false);
+                // currentPanel.UpdateReticleOffset(m_MouseDeltaX, m_MouseDeltaY);
             }
 
             // Keep reticle locked in the right spot.
@@ -3265,11 +3243,22 @@ namespace TiltBrush
             m_CurrentGazeObject = -1;
         }
 
-        public void SyncMonoPosition(Vector3 newPosition, Vector3 newRotation)
+        public void SetAllPanelsStatus(bool status)
         {
-            m_SketchSurface.transform.position = newPosition;
+            PointerManager.m_Instance.RequestPointerRendering(true);
+        }
+
+
+        public void SyncMonoCursor(Vector3 newCursorPosition, Vector3 newRotation)
+        {
+            m_SketchSurface.transform.position = newCursorPosition;
             m_SketchSurface.transform.localEulerAngles = newRotation;
-            m_SketchSurfacePanel.UpdateReticlePosition(newPosition, newRotation);
+            m_SketchSurfacePanel.UpdateReticlePosition(newCursorPosition, newRotation);
+        }
+
+        public void SyncMonoPanels( Transform cameraTransform, Vector3 newRotation, bool isUiVisible)
+        {
+            m_PanelManager.SetSweetSpotPosition(cameraTransform, newRotation, isUiVisible);
         }
 
         public Vector3 getSketchSurfacePos()

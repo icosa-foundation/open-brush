@@ -703,7 +703,7 @@ namespace TiltBrush
                 }
             }
 
-            SetSweetSpotPosition(m_SweetSpot.transform.position);
+            // SetSweetSpotPosition(m_SweetSpot.transform.position);
             RefreshConfiguredFlag();
         }
 
@@ -857,29 +857,40 @@ namespace TiltBrush
             return m_AllPanels.Where(p => p.m_Panel.m_Fixed);
         }
 
-        public void SetSweetSpotPosition(Vector3 vSweetSpot)
+        public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, bool isUiVisible)
         {
             // Run through each fixed panel and set their new position.
-            Vector3 vPreviousSweetSpot = m_SweetSpot.transform.position;
+            // Vector3 vPreviousSweetSpot = m_SweetSpot.transform.position;
             foreach (PanelData p in GetFixedPanels())
             {
-                // Get previous offset vector.
-                Vector3 vPreviousOffset = p.m_Panel.transform.position - vPreviousSweetSpot;
-                vPreviousOffset.Normalize();
-
-                // Set as normal.
-                p.m_Panel.transform.forward = vPreviousOffset;
-
                 // Extend to radius of sweet spot and set new position.
-                vPreviousOffset *= p.m_Panel.m_SweetSpotDistance;
-                p.m_Panel.transform.position = vSweetSpot + vPreviousOffset;
+                p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward;
+                p.m_Panel.transform.localEulerAngles = newRotation;
+
+                if (p.m_Panel.ToString().IndexOf("AdvancedToolsPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * 1.0f;
+                } else if (p.m_Panel.ToString().IndexOf("ColorPickerPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * -1.0f;
+                } else if (p.m_Panel.ToString().IndexOf("ToolsPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * 1.5f;
+                } else if (p.m_Panel.ToString().IndexOf("BrushesPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * -1.5f;
+                } else if (p.m_Panel.ToString().IndexOf("ExtraPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * -2.0f;
+                } else if (p.m_Panel.ToString().IndexOf("AdminPanel") > -1) {
+                    p.m_Panel.transform.position += cameraTransform.right * 2.0f;
+                } else {
+                    Debug.Log(p.m_Panel);
+                }
+
+                if (!isUiVisible) {
+                    p.m_Panel.transform.position += cameraTransform.up * -3.0f;
+                } else {
+                    p.m_Panel.gameObject.SetActive(true);
+                }
             }
-
-            // Set sweet spot to new position.
-            m_SweetSpot.transform.position = vSweetSpot;
-            OutputWindowScript.m_Instance.UpdateBasePositionHeight(vSweetSpot.y);
         }
-
+        
         public Vector3 GetSketchSurfaceResetPos()
         {
             return m_SweetSpot.transform.position + (Vector3.forward * m_SweetSpot.m_PanelAttachRadius) +

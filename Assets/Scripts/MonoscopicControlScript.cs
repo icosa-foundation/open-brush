@@ -62,7 +62,7 @@ namespace TiltBrush
             }
 
             // Toggle draw mode
-            if (!isMoving && InputManager.m_Instance.GetKeyboardShortcutDown(
+            if (!isMoving && !isUiVisible && InputManager.m_Instance.GetKeyboardShortcutDown(
                 InputManager.KeyboardShortcut.ToggleMonoCameraDrawMode))
             {
                 isDrawMode = !isDrawMode;
@@ -72,7 +72,8 @@ namespace TiltBrush
                 InputManager.KeyboardShortcut.ToggleMonoUi))
             {
                 isUiVisible = !isUiVisible;
-                SketchControlsScript.m_SketchSurfacePanel.EnableAllTools(isUiVisible);
+                isDrawMode = isUiVisible;
+                SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
             }
 
             m_cameraPosition = transform.localPosition;
@@ -99,8 +100,6 @@ namespace TiltBrush
             {
                 m_translateSpeed = Mathf.Max(m_translateSpeed - m_scrollSpeed, m_minMovementSpeed);
             }
-
-            Debug.Log(m_translateSpeed);
 
             transform.localEulerAngles = m_cameraRotation;
             isMoving = false;
@@ -183,7 +182,8 @@ namespace TiltBrush
                 m_syncedTransform += (Input.GetAxis("Mouse X") * m_drawSensitivity * transform.right);
             }
 
-            SketchControlsScript.m_Instance.SyncMonoPosition(m_syncedTransform, m_cameraRotation);
+            SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, isUiVisible);
+            SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
         }
 
         private string log;
@@ -217,7 +217,7 @@ namespace TiltBrush
 
         void OnGUI()
         {
-            // GUILayout.Label(log);
+            GUILayout.Label(log);
         }
     }
 } // namespace TiltBrush
