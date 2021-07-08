@@ -32,6 +32,8 @@ public class OculusMRCCameraUpdate : MonoBehaviour {
       OVRPlugin.CameraIntrinsics cameraIntrinsics;
       OVRPlugin.CameraExtrinsics cameraExtrinsics;
 
+      OVRPlugin.OverrideExternalCameraStaticPose(0, false, OVRPose.identity); // or OVRPlugin.ResetDefaultExternalCamera();
+      
       if (OVRPlugin.GetMixedRealityCameraInfo(0, out cameraExtrinsics, out cameraIntrinsics)) {
         calibratedCameraPose = cameraExtrinsics.RelativePose.ToOVRPose();
       } else {
