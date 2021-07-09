@@ -24,21 +24,19 @@ public class OculusMRCCameraUpdate : MonoBehaviour {
   private OVRPose? calibratedCameraPose = null;
 
   void Update() {
-    if (!calibratedCameraPose.HasValue) {
-      if (!OVRPlugin.Media.GetInitialized()) {
-        return;
-      }
+    if (!OVRPlugin.Media.GetInitialized()) {
+      return;
+    }
 
-      OVRPlugin.CameraIntrinsics cameraIntrinsics;
-      OVRPlugin.CameraExtrinsics cameraExtrinsics;
+    OVRPlugin.CameraIntrinsics cameraIntrinsics;
+    OVRPlugin.CameraExtrinsics cameraExtrinsics;
 
-      OVRPlugin.OverrideExternalCameraStaticPose(0, false, OVRPose.identity.ToPosef()); // or OVRPlugin.ResetDefaultExternalCamera();
+    // OVRPlugin.OverrideExternalCameraStaticPose(0, false, OVRPose.identity.ToPosef()); // or OVRPlugin.ResetDefaultExternalCamera();
       
-      if (OVRPlugin.GetMixedRealityCameraInfo(0, out cameraExtrinsics, out cameraIntrinsics)) {
-        calibratedCameraPose = cameraExtrinsics.RelativePose.ToOVRPose();
-      } else {
-        return;
-      }
+    if (OVRPlugin.GetMixedRealityCameraInfo(0, out cameraExtrinsics, out cameraIntrinsics)) {
+      calibratedCameraPose = cameraExtrinsics.RelativePose.ToOVRPose();
+    } else {
+      return;
     }
 
     OVRPose cameraStagePoseInUnits = calibratedCameraPose.Value;
