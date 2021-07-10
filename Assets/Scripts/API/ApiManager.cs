@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -45,6 +46,7 @@ public class ApiManager : MonoBehaviour
         get { return m_Instance; }
     }
     [NonSerialized] public Stack<(Vector3, Quaternion)> BrushTransformStack;
+    [NonSerialized] public Dictionary<string, string> CommandExamples;
     public string UserScriptsPath() { return m_UserScriptsPath; }
 
     void Awake()
@@ -74,6 +76,51 @@ public class ApiManager : MonoBehaviour
             // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
             m_FileWatcher.EnableRaisingEvents = true;
         }
+
+        CommandExamples = new Dictionary<string, string>
+        {
+            {"draw.paths (string jsonString)", "[[0,0,0], [1,0,0], [1,1,0]],[[0,0,-1], [-1,0,-1], [-1,1,-1]]"}, 
+            {"draw.path (string jsonString)", "[0,0,0], [1,0,0], [1,1,0], [0,1,0]"}, 
+            {"draw.polygon", "5,1,0"}, 
+            {"draw.text", "hello"}, 
+            {"draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88"}, 
+            {"brush.type", "ink"}, 
+            {"color.add.hsv", "0.1,0.2,0.3"}, 
+            {"color.add.rgb", "0.1,0.2,0.3"}, 
+            {"color.set.rgb", "0.1,0.2,0.3"}, 
+            {"color.set.hsv", "0.1,0.2,0.3"}, 
+            {"color.set.html", "darkblue"}, 
+            {"brush.size.set", ".5"}, 
+            {"brush.size.add", ".1"}, 
+            {"camera.move.to", "1,1,1"}, 
+            {"camera.move.by", "1,1,1"}, 
+            {"camera.turn.y", "45"}, 
+            {"camera.turn.x", "45"}, 
+            {"camera.turn.z", "45"}, 
+            {"camera.lookat", "1,2,3"}, 
+            {"brush.move.to", "1,1,1"}, 
+            {"brush.move.by", "1,1,1"}, 
+            {"brush.move", "1"}, 
+            {"brush.draw", "1"}, 
+            {"brush.turn.y", "45"}, 
+            {"brush.turn.x", "45"}, 
+            {"brush.turn.z", "45"}, 
+            {"brush.lookat", "1,1,1"}, 
+            {"stroke.delete", "0"}, 
+            {"stroke.select", "0"}, 
+            {"strokes.select", "0,3"}, 
+            {"selection.trim", "2"}, 
+            {"selection.points.addnoise", "x,0.5"},
+            {"selection.points.quantize", "0.1"},
+            {"strokes.join", "0,2"},
+            {"stroke.add", "0"},
+            {"load.user", "0"}, 
+            {"load.curated", "0"}, 
+            {"load.liked", "0"}, 
+            {"load.drive", "0"}, 
+            {"load.named", "mysketch.sketch"},
+            {"showfolder.sketch", "0"},
+        };
     }
     private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
     {
@@ -113,7 +160,9 @@ public class ApiManager : MonoBehaviour
                         {
                             paramList = $"({paramList})";
                         }
-                        builder.AppendLine($"<dt>{key} {paramList}</dt><dd>{commandList[key].Item2}</dd>");
+                        builder.AppendLine($@"<dt>{key} {paramList}
+ <a href=""http://localhost:40074/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
+<dd>{commandList[key].Item2}<br><br></dd>");
                     }
                     builder.AppendLine("</dl>");
                     html = String.Format(BASE_HTML, builder);
@@ -149,6 +198,18 @@ public class ApiManager : MonoBehaviour
                 break;
         }
         return html;
+    }
+    
+    private string getCommandExample(string key)
+    {
+        if (CommandExamples.ContainsKey(key))
+        {
+            return $"{key}={CommandExamples[key]}";
+        }
+        else
+        {
+            return key;
+        }
     }
 
     private void PopulateExampleScripts()
@@ -494,8 +555,21 @@ public class ApiManager : MonoBehaviour
         
         ctx.Response.AddHeader("Content-Type", "image/png");
         ctx.Response.ContentLength64 = CameraViewPng.Length;
-        ctx.Response.OutputStream.Write(CameraViewPng, 0, CameraViewPng.Length);
-        ctx.Response.Close();
+        try
+        {
+            if (ctx.Response.OutputStream.CanWrite)
+            {
+                ctx.Response.OutputStream.Write(CameraViewPng, 0, CameraViewPng.Length);
+            }
+        }
+        catch (SocketException e)
+        {
+            Debug.LogWarning(e.Message);
+        }
+        finally
+        {
+            ctx.Response.Close();
+        }
         ctx = null;
         return ctx;
     }
