@@ -39,7 +39,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_NoLikesMessage;
         [SerializeField] private GameObject m_NotLoggedInMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
-        [SerializeField] private GameObject m_NotSupportedMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
 
         private PolySetType m_CurrentSet;
@@ -70,8 +69,6 @@ namespace TiltBrush
             m_NoLikesMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_OutOfDateMessage.SetActive(false);
-            if (m_NotSupportedMessage)
-                m_NotSupportedMessage.SetActive(false);
             m_NoPolyConnectionMessage.SetActive(false);
         }
 
@@ -134,15 +131,6 @@ namespace TiltBrush
                 base.RefreshPage();
                 return;
             }
-
-#if UNITY_ANDROID && OCULUS_SUPPORTED
-    if (OVRPlugin.GetSystemHeadsetType() == OVRPlugin.SystemHeadset.Oculus_Quest) {
-      m_NotSupportedMessage.SetActive(true);
-      RefreshPanelText();
-      base.RefreshPage();
-      return;
-    }
-#endif
 
             m_NumPages = ((App.PolyAssetCatalog.NumCloudModels(m_CurrentSet) - 1) / Icons.Count) + 1;
             int numCloudModels = App.PolyAssetCatalog.NumCloudModels(m_CurrentSet);
