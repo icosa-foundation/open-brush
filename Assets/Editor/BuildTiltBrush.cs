@@ -309,7 +309,7 @@ static class BuildTiltBrush
     }
 
     // Menu items
-    [MenuItem("Tilt/Build/Do Build...", false, 2)]
+    [MenuItem("Tilt/Build/Do Build... #&b", false, 2)]
     public static void MenuItem_Build()
     {
         TiltBuildOptions tiltOptions = GetGuiOptions();

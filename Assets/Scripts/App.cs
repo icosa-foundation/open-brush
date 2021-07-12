@@ -45,11 +45,6 @@ namespace TiltBrush
         public const float METERS_TO_UNITS = 10f;
         public const float UNITS_TO_METERS = .1f;
 
-        // These control the naming of various things related to the app. If you distribute your own
-        // build, you need to call is something other that 'Tilt Brush', as that if a Google trademark -
-        // see the BRANDING file for details.
-        // As a minimum, you should change kAppDisplayName.
-
         // This is the name of the app, as displayed to the users running it.
         public const string kAppDisplayName = "Open Brush";
         // The vendor name - used for naming android builds - shouldn't have spaces.
