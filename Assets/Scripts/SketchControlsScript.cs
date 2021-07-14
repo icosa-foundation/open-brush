@@ -4317,7 +4317,10 @@ namespace TiltBrush
                     m_ViewOnly = !m_ViewOnly;
                     RequestPanelsVisibility(!m_ViewOnly);
                     PointerManager.m_Instance.RequestPointerRendering(!m_ViewOnly);
-                    m_SketchSurface.SetActive(!m_ViewOnly);
+                    // TODO - decide if this is a permanent change
+                    // With this line, you can't set a tool such as fly or teleport
+                    // and switch to View Only mode as the mode change disables all tools
+                    //m_SketchSurface.SetActive(!m_ViewOnly);
                     m_Decor.SetActive(!m_ViewOnly);
                     break;
                 case GlobalCommands.SaveGallery:

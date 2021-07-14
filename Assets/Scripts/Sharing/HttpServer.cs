@@ -14,8 +14,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -50,8 +52,14 @@ namespace TiltBrush
                         {
                             ctx = m_HttpListener.GetContext();
                         }
-                        catch (HttpListenerException)
+                        catch (Exception ex)
                         {
+                            
+                            if (!(ex is HttpListenerException) && !(ex is SocketException))
+                            {
+                                throw;
+                            }
+                        
                             // Irritatingly HttpListener will try to complete contexts when you call Close or
                             // Abort, even though it has already disposed the context.
                             break;

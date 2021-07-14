@@ -121,6 +121,44 @@ public class ApiManager : MonoBehaviour
             {"load.named", "mysketch.sketch"},
             {"showfolder.sketch", "0"},
         };
+
+        var startupScriptPath = Path.Combine(m_UserScriptsPath, "startup.sketchscript");
+        
+        if (File.Exists(startupScriptPath))
+        {
+            var lines = File.ReadAllLines(startupScriptPath);
+            Debug.Log($"Found startup script with {lines.Length} lines");
+            foreach (string pair in lines)
+            {
+                EnqueueCommandString(pair);
+            }
+        }
+        else
+        {
+            Debug.Log($"No startup script");
+        }
+    }
+    private void EnqueueCommandString(string commandString)
+    {
+        string[] commandPair = commandString.Split(new[] {'='}, 2);
+        if (commandPair.Length == 1 && commandPair[0] != "")
+        {
+            Debug.Log($"Queuing {commandPair[0]}");
+            m_RequestedCommandQueue.Enqueue(
+                new KeyValuePair<string, string>(commandPair[0], "")
+            );
+        }
+        else if (commandPair.Length == 2)
+        {
+            Debug.Log($"Queuing {commandPair[0]}={commandPair[1]}");
+            m_RequestedCommandQueue.Enqueue(
+                new KeyValuePair<string, string>(
+                        commandPair[0],
+                        UnityWebRequest.UnEscapeURL(commandPair[1]
+                    )
+                )
+            );
+        }
     }
     private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
     {
@@ -241,6 +279,7 @@ public class ApiManager : MonoBehaviour
             }
         }
     }
+    
     private void RegisterUserScript(FileInfo file)
     {
         if (file.Extension == ".html" || file.Extension == ".htm")
@@ -442,15 +481,7 @@ public class ApiManager : MonoBehaviour
         // Handle GET
         foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
         {
-            string[] kv = pair.Split(new[] { '=' }, 2);
-            if (kv.Length == 1 && kv[0] != "")
-            {
-                m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], ""));
-            }
-            else if (kv.Length == 2)
-            {
-                m_RequestedCommandQueue.Enqueue(new KeyValuePair<string, string>(kv[0], UnityWebRequest.UnEscapeURL(kv[1])));
-            }
+            EnqueueCommandString(pair);
         }
 
         // Handle POST
@@ -465,9 +496,7 @@ public class ApiManager : MonoBehaviour
                     var pairs = formdata.Replace("+", " ").Split('&');
                     foreach (var pair in pairs)
                     {
-                        var kv = pair.Split(new[] { '=' }, 2);
-                        command = new KeyValuePair<string, string>(kv[0], kv[1]);
-                        m_RequestedCommandQueue.Enqueue(command);
+                        EnqueueCommandString(pair);
                     }
                 }
             }
@@ -487,6 +516,7 @@ public class ApiManager : MonoBehaviour
         {
             return false;
         }
+        Debug.Log($"Invoking {command.Key}={command.Value}");
         return Instance.InvokeEndpoint(command);
     }
 

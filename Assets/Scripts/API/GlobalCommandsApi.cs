@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -88,9 +89,12 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 3);
         }
 
-        [ApiEndpoint("load.named", "Loads the sketch from the given directory")]
-        public static void LoadNamedFile(string directory)
+        [ApiEndpoint("load.named", "Loads the sketch with the given name from the user's sketch folder")]
+        public static void LoadNamedFile(string filename)
         {
+            // TODO do we want to allow arbitrary directories?
+            // Does this even check for directory traversal?
+            var directory = Path.Combine(App.UserSketchPath(), filename);
             var rEnum = SketchControlsScript.GlobalCommands.LoadNamedFile;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1, directory);
         }
