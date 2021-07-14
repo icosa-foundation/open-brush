@@ -94,9 +94,16 @@ namespace TiltBrush
         {
             // TODO do we want to allow arbitrary directories?
             // Does this even check for directory traversal?
-            var directory = Path.Combine(App.UserSketchPath(), filename);
+            var sketchFullPath = Path.Combine(App.UserSketchPath(), filename);
             var rEnum = SketchControlsScript.GlobalCommands.LoadNamedFile;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1, directory);
+            SketchControlsScript.m_Instance.IssueGlobalCommand(
+                rEnum,
+                (int)SketchControlsScript.LoadSpeed.Quick,
+                -1,
+                sketchFullPath
+            );
+            SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.Sketchbook);
+
         }
 
         [ApiEndpoint("new", "Clears the current sketch")]

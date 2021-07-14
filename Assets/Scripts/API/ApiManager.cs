@@ -122,6 +122,15 @@ public class ApiManager : MonoBehaviour
             {"showfolder.sketch", "0"},
         };
 
+        App.Instance.StateChanged += RunStartupScript;
+
+    }
+    
+    public void RunStartupScript(App.AppState oldState, App.AppState newState)
+    {
+        
+        if (!(oldState==App.AppState.LoadingBrushesAndLighting && newState==App.AppState.Standard)) return;
+        
         var startupScriptPath = Path.Combine(m_UserScriptsPath, "startup.sketchscript");
         
         if (File.Exists(startupScriptPath))
@@ -137,7 +146,9 @@ public class ApiManager : MonoBehaviour
         {
             Debug.Log($"No startup script");
         }
+
     }
+    
     private void EnqueueCommandString(string commandString)
     {
         string[] commandPair = commandString.Split(new[] {'='}, 2);
