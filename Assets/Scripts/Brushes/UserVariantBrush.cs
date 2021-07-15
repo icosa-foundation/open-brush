@@ -272,6 +272,7 @@ public class UserVariantBrush
     private bool Initialize(FolderOrZipReader brushFile, bool forceInGui = false)
     {
         m_FileData = new Dictionary<string, byte[]>();
+		
         if (!brushFile.Exists(kConfigFile))
         {
             return false;
