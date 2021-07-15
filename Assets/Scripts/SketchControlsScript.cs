@@ -3680,6 +3680,8 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
+            // Always false in viewonly mode
+            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
