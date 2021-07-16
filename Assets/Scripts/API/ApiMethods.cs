@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using SVGMeshUnity;
@@ -592,6 +594,32 @@ namespace TiltBrush
             stroke.Uncreate();
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
+        }
+        
+
+        
+        [ApiEndpoint("import.model", "Imports a model from your media libraries Models folder")]
+        public static void ImportModel(string path)
+        {
+            path = Path.Combine(App.MediaLibraryPath(), "Models", path);
+            var model = new Model(Model.Location.File(path));
+            model.LoadModel();
+
+            var tr = new TrTransform();
+            tr.translation = ApiManager.Instance.BrushPosition;
+            tr.rotation = ApiManager.Instance.BrushRotation;
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.ModelWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+            modelWidget.Model = model;
+            modelWidget.Show(true);
+            createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+            
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+
         }
         
         // Tools.
