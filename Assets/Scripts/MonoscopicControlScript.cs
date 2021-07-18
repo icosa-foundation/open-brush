@@ -100,11 +100,6 @@ namespace TiltBrush
                 activePanel = activePanel == 6 ? 0 : 6;      
             }
 
-            // Hide pointer when panels are visible
-            if (activePanel > 0) {
-
-            }
-
             // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
 
             m_cameraPosition = transform.localPosition;
@@ -209,7 +204,7 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
             }
             // panels off, draw mode on
-            else if (isDrawMode)
+            else if (isDrawMode && activePanel == 0)
             {
                 m_syncedTransform = SketchControlsScript.m_Instance.getSketchSurfacePos() + movementOffset;
                 m_syncedTransform += (Input.GetAxis("Mouse Y") * m_drawSensitivity * transform.up);
@@ -220,9 +215,7 @@ namespace TiltBrush
             } else { // panels on
                 SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
                 SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform + transform.up * -10.0f, transform.localEulerAngles);
-            }
-
-            Debug.Log(activePanel);
+            }            
         }
 
         private string log;

@@ -860,13 +860,11 @@ namespace TiltBrush
         public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, int activePanel)
         {
             // Run through each fixed panel and set their new position.
-            // Vector3 vPreviousSweetSpot = m_SweetSpot.transform.position;
-            foreach (PanelData p in GetFixedPanels())
+            foreach (PanelData p in m_AllPanels)
             {
                 // Extend to radius of sweet spot and set new position.
                 p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward + cameraTransform.up * -5.0f;
                 p.m_Panel.transform.localEulerAngles = newRotation;
-
                 if (
                     p.m_Panel.ToString().IndexOf("ColorPickerPanel(Clone)_Basic") > -1 && activePanel == 1 ||
                     p.m_Panel.ToString().IndexOf("BrushesPanel(Clone)_Basic") > -1 && activePanel == 2 ||
@@ -875,6 +873,7 @@ namespace TiltBrush
                     p.m_Panel.ToString().IndexOf("ExtraPanel") > -1 && activePanel == 5 ||
                     p.m_Panel.ToString().IndexOf("AdminPanel") > -1 && activePanel == 6
                 ) {
+                    p.m_Panel.gameObject.SetActive(true);
                     p.m_Panel.transform.position += cameraTransform.up * 5.0f;
                     p.m_Panel.UpdateReticleOffset(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
                 }
