@@ -857,36 +857,26 @@ namespace TiltBrush
             return m_AllPanels.Where(p => p.m_Panel.m_Fixed);
         }
 
-        public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, bool isUiVisible)
+        public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, int activePanel)
         {
             // Run through each fixed panel and set their new position.
             // Vector3 vPreviousSweetSpot = m_SweetSpot.transform.position;
             foreach (PanelData p in GetFixedPanels())
             {
                 // Extend to radius of sweet spot and set new position.
-                p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward;
+                p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward + cameraTransform.up * -5.0f;
                 p.m_Panel.transform.localEulerAngles = newRotation;
 
-                if (p.m_Panel.ToString().IndexOf("AdvancedToolsPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * 1.0f;
-                } else if (p.m_Panel.ToString().IndexOf("ColorPickerPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * -1.0f;
-                } else if (p.m_Panel.ToString().IndexOf("ToolsPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * 1.5f;
-                } else if (p.m_Panel.ToString().IndexOf("BrushesPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * -1.5f;
-                } else if (p.m_Panel.ToString().IndexOf("ExtraPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * -2.0f;
-                } else if (p.m_Panel.ToString().IndexOf("AdminPanel") > -1) {
-                    p.m_Panel.transform.position += cameraTransform.right * 2.0f;
-                } else {
-                    Debug.Log(p.m_Panel);
-                }
-
-                if (!isUiVisible) {
-                    p.m_Panel.transform.position += cameraTransform.up * -3.0f;
-                } else {
-                    p.m_Panel.gameObject.SetActive(true);
+                if (
+                    p.m_Panel.ToString().IndexOf("ColorPickerPanel(Clone)_Basic") > -1 && activePanel == 1 ||
+                    p.m_Panel.ToString().IndexOf("BrushesPanel(Clone)_Basic") > -1 && activePanel == 2 ||
+                    p.m_Panel.ToString().IndexOf("ToolsPanel(Clone)_Basic") > -1 && activePanel == 3 ||
+                    p.m_Panel.ToString().IndexOf("AdvancedToolsPanel(Clone)_Advanced") > -1 && activePanel == 4 ||
+                    p.m_Panel.ToString().IndexOf("ExtraPanel") > -1 && activePanel == 5 ||
+                    p.m_Panel.ToString().IndexOf("AdminPanel") > -1 && activePanel == 6
+                ) {
+                    p.m_Panel.transform.position += cameraTransform.up * 5.0f;
+                    p.m_Panel.UpdateReticleOffset(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
                 }
             }
         }

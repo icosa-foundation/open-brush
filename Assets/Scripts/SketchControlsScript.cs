@@ -3251,14 +3251,16 @@ namespace TiltBrush
 
         public void SyncMonoCursor(Vector3 newCursorPosition, Vector3 newRotation)
         {
-            m_SketchSurface.transform.position = newCursorPosition;
-            m_SketchSurface.transform.localEulerAngles = newRotation;
+            // m_SketchSurfacePanel.transform.position = newCursorPosition;
+            // m_SketchSurfacePanel.transform.localEulerAngles = newRotation;
+            PointerManager.m_Instance.transform.position = newCursorPosition;
+            PointerManager.m_Instance.transform.localEulerAngles = newRotation;
             m_SketchSurfacePanel.UpdateReticlePosition(newCursorPosition, newRotation);
         }
 
-        public void SyncMonoPanels( Transform cameraTransform, Vector3 newRotation, bool isUiVisible)
+        public void SyncMonoPanels( Transform cameraTransform, Vector3 newRotation, int activePanel)
         {
-            m_PanelManager.SetSweetSpotPosition(cameraTransform, newRotation, isUiVisible);
+            m_PanelManager.SetSweetSpotPosition(cameraTransform, newRotation, activePanel);
         }
 
         public Vector3 getSketchSurfacePos()

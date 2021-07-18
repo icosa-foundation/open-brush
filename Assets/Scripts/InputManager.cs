@@ -147,6 +147,12 @@ namespace TiltBrush
             ToggleMonoCameraDrawMode,
 
             ToggleMonoUi,
+            ToggleMonoPanel1,
+            ToggleMonoPanel2,
+            ToggleMonoPanel3,
+            ToggleMonoPanel4,
+            ToggleMonoPanel5,
+            ToggleMonoPanel6,
 
             ToggleHeadStationaryOrWobble,
             ToggleHeadStationaryOrFollow,
@@ -220,6 +226,12 @@ namespace TiltBrush
 
             { (int)KeyboardShortcut.ToggleMonoCameraDrawMode, new[] { KeyCode.LeftShift, KeyCode.RightShift } },
             { (int)KeyboardShortcut.ToggleMonoUi, new[] { KeyCode.Tab } },
+            { (int)KeyboardShortcut.ToggleMonoPanel1, new[] { KeyCode.Alpha1 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel2, new[] { KeyCode.Alpha2 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel3, new[] { KeyCode.Alpha3 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel4, new[] { KeyCode.Alpha4 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel5, new[] { KeyCode.Alpha5 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel6, new[] { KeyCode.Alpha6 } },
 
             { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
             { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },

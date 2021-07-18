@@ -42,7 +42,7 @@ namespace TiltBrush
         private bool isMoving;
         private bool isDrawMode = false;
 
-        public bool isUiVisible = false;
+        public int activePanel = 0;
 
         void Start()
         {
@@ -54,7 +54,7 @@ namespace TiltBrush
             Screen.SetResolution(1920, 1080, false);
         }
 
-        void FixedUpdate()
+        void Update()
         {
             if (!App.Instance.IsMonoscopicMode())
             {
@@ -62,19 +62,50 @@ namespace TiltBrush
             }
 
             // Toggle draw mode
-            if (!isMoving && !isUiVisible && InputManager.m_Instance.GetKeyboardShortcutDown(
+            if (!isMoving && activePanel == 0 && InputManager.m_Instance.GetKeyboardShortcutDown(
                 InputManager.KeyboardShortcut.ToggleMonoCameraDrawMode))
             {
                 isDrawMode = !isDrawMode;
             }
-            
+
             if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoUi))
+                InputManager.KeyboardShortcut.ToggleMonoPanel1))
             {
-                isUiVisible = !isUiVisible;
-                isDrawMode = isUiVisible;
-                SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 1 ? 0 : 1;        
+            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel2))
+            {
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 2 ? 0 : 2;      
+            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel3))
+            {
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 3 ? 0 : 3;      
+            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel4))
+            {
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 4 ? 0 : 4;      
+            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel5))
+            {
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 5 ? 0 : 5;      
+            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel5))
+            {
+                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+                activePanel = activePanel == 6 ? 0 : 6;      
             }
+
+            // Hide pointer when panels are visible
+            if (activePanel > 0) {
+
+            }
+
+            // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
 
             m_cameraPosition = transform.localPosition;
             movementOffset = new Vector3(0.0f, 0.0f, 0.0f);
@@ -105,7 +136,7 @@ namespace TiltBrush
             isMoving = false;
 
             // Movement inputs
-            if (!isDrawMode)
+            if (!isDrawMode && activePanel == 0)
             {
                 if (InputManager.m_Instance.GetKeyboardShortcut(
                     InputManager.KeyboardShortcut.MonoCameraForward))
@@ -155,8 +186,8 @@ namespace TiltBrush
             transform.localPosition = m_cameraPosition;
             transform.localEulerAngles = m_cameraRotation;
 
-            // Use mouse position to control camera rotation.
-            if (!isDrawMode)
+            // Use mouse movement to control camera rotation when no panels are visible
+            if (!isDrawMode && activePanel == 0)
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
                 // Mouse's x coordinate corresponds to camera's rotation around y axis.
@@ -174,50 +205,30 @@ namespace TiltBrush
                 m_cameraRotation.x -= Input.GetAxis("Mouse Y") * m_yScale;
                 m_cameraRotation.x = Mathf.Clamp(m_cameraRotation.x, -m_yClamp, m_yClamp);
 
+                SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
+                SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
             }
-            else
+            // panels off, draw mode on
+            else if (isDrawMode)
             {
                 m_syncedTransform = SketchControlsScript.m_Instance.getSketchSurfacePos() + movementOffset;
                 m_syncedTransform += (Input.GetAxis("Mouse Y") * m_drawSensitivity * transform.up);
                 m_syncedTransform += (Input.GetAxis("Mouse X") * m_drawSensitivity * transform.right);
+
+                SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
+                SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
+            } else { // panels on
+                SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
+                SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform + transform.up * -10.0f, transform.localEulerAngles);
             }
 
-            SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, isUiVisible);
-            SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
+            Debug.Log(activePanel);
         }
 
         private string log;
         private const int MAXCHARS = 10000;
         private Queue myLogQueue = new Queue();
 
-        void OnEnable()
-        {
-            Application.logMessageReceived += HandleLog;
-        }
-
-        void OnDisable()
-        {
-            Application.logMessageReceived -= HandleLog;
-        }
-
-        void HandleLog(string logString, string stackTrace, LogType type)
-        {
-            myLogQueue.Enqueue("\n [" + type + "] : " + logString);
-            if (type == LogType.Exception)
-                myLogQueue.Enqueue("\n" + stackTrace);
-        }
-
-        void Update()
-        {
-            while (myLogQueue.Count > 0)
-                log = myLogQueue.Dequeue() + log;
-            if (log.Length > MAXCHARS)
-                log = log.Substring(0, MAXCHARS);
-        }
-
-        void OnGUI()
-        {
-            GUILayout.Label(log);
-        }
+       
     }
 } // namespace TiltBrush
