@@ -1,0 +1,16 @@
+{
+    "name": "FbxLinuxTest",
+    "references": [
+        "Autodesk.Fbx"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_EDITOR_LINUX"
+    ],
+    "allowUnsafeCode": false
+}
