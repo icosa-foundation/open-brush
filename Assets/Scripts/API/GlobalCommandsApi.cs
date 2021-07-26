@@ -201,7 +201,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("export", "Exports the current sketch to the user's Exports folder")]
+        [ApiEndpoint("export.current", "Exports the current sketch to the user's Exports folder")]
         public static void ExportRaw()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ExportRaw;
