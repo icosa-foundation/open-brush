@@ -121,6 +121,9 @@ URL=" + kExportDocumentationUrl;
 #if USD_SUPPORTED
             if (App.PlatformConfig.EnableExportUsd) { progress.SetWork("usd"); }
 #endif
+#if LATK_SUPPORTED
+            if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
+#endif
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
@@ -165,6 +168,16 @@ URL=" + kExportDocumentationUrl;
                     ExportUsd.ExportPayload(filename);
                 }
             progress.CompleteWork("usd");
+#endif
+
+#if LATK_SUPPORTED
+            if (App.PlatformConfig.EnableExportLatk &&
+                (filename = MakeExportPath(parent, basename, "latk")) != null)
+                using (var unused = new AutoTimer("latk export"))
+                {
+                    ExportLatk.Export(filename);
+                }
+            progress.CompleteWork("latk");
 #endif
 
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
