@@ -25,7 +25,7 @@ http://fox-gieg.com
 # limitations under the License.
 */
 
-//#if LATK_SUPPORTED
+#if LATK_SUPPORTED
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -42,7 +42,7 @@ namespace TiltBrush
     public class ExportLatk
     {
 
-        private string writeFileName = "test.zip";
+        private string writeFileName = "output.latk";
         private bool writePressure = true;
         private bool useTimestamp = true;
         private Vector2 brushSizeRange = new Vector2(0f, 1f);
@@ -335,4 +335,4 @@ namespace TiltBrush
     }
 
 }
-//#endif
+#endif
