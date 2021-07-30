@@ -47,6 +47,8 @@ namespace TiltBrush
         private bool useTimestamp = true;
         private Vector2 brushSizeRange = new Vector2(0f, 1f);
         private float consoleUpdateInterval = 0f;
+        private int layerNum = 1;
+        private int frameNum = 1;
 
         private void getBrushSizeRange()
         {
@@ -84,47 +86,48 @@ namespace TiltBrush
 
             if (writePressure) getBrushSizeRange();
 
-            for (int hh = 0; hh < layerList.Count; hh++)
+            for (int hh = 0; hh < layerNum; hh++)
             {
-                currentLayer = hh;
+                int currentLayer = hh;
 
                 List<string> sb = new List<string>();
                 List<string> sbHeader = new List<string>();
                 sbHeader.Add("\t\t\t\t\t\"frames\":[");
                 sb.Add(string.Join("\n", sbHeader.ToArray()));
 
-                for (int h = 0; h < layerList[currentLayer].frameList.Count; h++)
+                for (int h = 0; h < frameNum; h++)
                 {
-                    Debug.Log("Starting frame " + (layerList[currentLayer].currentFrame + 1) + ".");
-                    layerList[currentLayer].currentFrame = h;
+                    int currentFrame = h;
 
                     List<string> sbbHeader = new List<string>();
                     sbbHeader.Add("\t\t\t\t\t\t{");
                     sbbHeader.Add("\t\t\t\t\t\t\t\"strokes\":[");
                     sb.Add(string.Join("\n", sbbHeader.ToArray()));
-                    for (int i = 0; i < layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList.Count; i++)
+                    for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
                     {
+                        Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
+
                         List<string> sbb = new List<string>();
                         sbb.Add("\t\t\t\t\t\t\t\t{");
-                        float r = layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].brushColor.r;
-                        float g = layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].brushColor.g;
-                        float b = layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].brushColor.b;
+                        float r = stroke.m_Color.r;
+                        float g = stroke.m_Color.g;
+                        float b = stroke.m_Color.b;
                         sbb.Add("\t\t\t\t\t\t\t\t\t\"color\":[" + r + ", " + g + ", " + b + "],");
 
-                        if (layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].points.Count > 0)
+                        if (stroke.m_ControlPoints.Length > 0)
                         {
                             sbb.Add("\t\t\t\t\t\t\t\t\t\"points\":[");
-                            for (int j = 0; j < layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].points.Count; j++)
+                            for (int j = 0; j < stroke.m_ControlPoints.Length; j++)
                             {
-                                Vector3 pt = layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].transform.TransformPoint(layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].points[j]);
-                                float x = pt.x;
-                                float y = pt.y;
-                                float z = pt.z;
+                                PointerManager.ControlPoint point = stroke.m_ControlPoints[j];
+                                float x = point.m_Pos.x;
+                                float y = point.m_Pos.y;
+                                float z = point.m_Pos.z;
 
-                                string pressureVal = "1";
-                                if (writePressure) pressureVal = "" + getNormalizedBrushSize(layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].brushSize);
+                                float pressureVal = 1f;
+                                if (writePressure) pressureVal = point.m_Pressure * getNormalizedBrushSize(stroke.m_BrushSize);
 
-                                if (j == layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList[i].points.Count - 1)
+                                if (j == stroke.m_ControlPoints.Length - 1)
                                 {
                                     sbb.Add("\t\t\t\t\t\t\t\t\t\t{\"co\":[" + x + ", " + y + ", " + z + "], \"pressure\":" + pressureVal + ", \"strength\":1}");
                                     sbb.Add("\t\t\t\t\t\t\t\t\t]");
@@ -140,7 +143,7 @@ namespace TiltBrush
                             sbb.Add("\t\t\t\t\t\t\t\t\t\"points\":[]");
                         }
 
-                        if (i == layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList.Count - 1)
+                        if (i == SketchMemoryScript.m_Instance.StrokeCount - 1)
                         {
                             sbb.Add("\t\t\t\t\t\t\t\t}");
                         }
@@ -149,16 +152,13 @@ namespace TiltBrush
                             sbb.Add("\t\t\t\t\t\t\t\t},");
                         }
 
-                        Debug.Log("Adding frame " + (layerList[currentLayer].currentFrame + 1) + ": stroke " + (i + 1) + " of " + layerList[currentLayer].frameList[layerList[currentLayer].currentFrame].brushStrokeList.Count + ".");
-
                         sb.Add(string.Join("\n", sbb.ToArray()));
                     }
 
-                    Debug.Log("Ending frame " + (layerList[currentLayer].currentFrame + 1) + ".");
                     yield return new WaitForSeconds(consoleUpdateInterval);
 
                     List<string> sbFooter = new List<string>();
-                    if (h == layerList[currentLayer].frameList.Count - 1)
+                    if (h == frameNum - 1)
                     {
                         sbFooter.Add("\t\t\t\t\t\t\t]");
                         sbFooter.Add("\t\t\t\t\t\t}");
@@ -185,24 +185,19 @@ namespace TiltBrush
             s.Add("\t\t{");
             s.Add("\t\t\t\"layers\":[");
 
-            for (int i = 0; i < layerList.Count; i++)
+            for (int i = 0; i < layerNum; i++)
             {
-                currentLayer = i;
+                int currentLayer = i;
 
                 s.Add("\t\t\t\t{");
-                if (layerList[currentLayer].name != null && layerList[currentLayer].name != "")
                 {
-                    s.Add("\t\t\t\t\t\"name\": \"" + layerList[currentLayer].name + "\",");
-                }
-                else
-                {
-                    s.Add("\t\t\t\t\t\"name\": \"UnityLayer " + (currentLayer + 1) + "\",");
+                    s.Add("\t\t\t\t\t\"name\": \"OpenBrushLayer " + (currentLayer + 1) + "\",");
                 }
 
                 s.Add(FINAL_LAYER_LIST[currentLayer]);
 
                 s.Add("\t\t\t\t\t]");
-                if (currentLayer < layerList.Count - 1)
+                if (currentLayer < layerNum - 1)
                 {
                     s.Add("\t\t\t\t},");
                 }

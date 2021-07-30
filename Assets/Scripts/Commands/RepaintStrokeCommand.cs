@@ -26,7 +26,7 @@ namespace TiltBrush
         private Guid m_EndGuid;
 
         public RepaintStrokeCommand(
-            Stroke stroke, Color newcolor, Guid newGuid, BaseCommand parent = null) : base(parent)
+            Stroke stroke, Color newcolor, Guid newGuid, float newSize, BaseCommand parent = null) : base(parent)
         {
             m_TargetStroke = stroke;
             m_StartColor = stroke.m_Color;
