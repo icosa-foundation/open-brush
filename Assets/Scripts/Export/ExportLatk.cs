@@ -43,7 +43,7 @@ namespace TiltBrush
     {
 
         private string writeFileName = "test.zip";
-        private bool writePressure = false;
+        private bool writePressure = true;
         private bool useTimestamp = true;
         private Vector2 brushSizeRange = new Vector2(0f, 1f);
         private float consoleUpdateInterval = 0f;
@@ -52,15 +52,10 @@ namespace TiltBrush
         {
             List<float> allBrushSizes = new List<float>();
 
-            for (int i = 0; i < layerList.Count; i++)
+            for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
             {
-                for (int j = 0; j < layerList[i].frameList.Count; j++)
-                {
-                    for (int k = 0; k < layerList[i].frameList[j].brushStrokeList.Count; k++)
-                    {
-                        allBrushSizes.Add(layerList[i].frameList[j].brushStrokeList[k].brushSize);
-                    }
-                }
+                Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
+                allBrushSizes.Add(stroke.m_BrushSize);
             }
 
             allBrushSizes.Sort();
@@ -75,12 +70,6 @@ namespace TiltBrush
         private float map(float s, float a1, float a2, float b1, float b2)
         {
             return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
-        }
-
-        private Vector3 tween3D(Vector3 v1, Vector3 v2, float e)
-        {
-            v1 += (v2 - v1) / e;
-            return v1;
         }
 
         public IEnumerator writeLatkStrokes()
@@ -165,7 +154,6 @@ namespace TiltBrush
                         sb.Add(string.Join("\n", sbb.ToArray()));
                     }
 
-                    statusText = "WRITING " + (layerList[currentLayer].currentFrame + 1) + " / " + layerList[currentLayer].frameList.Count;
                     Debug.Log("Ending frame " + (layerList[currentLayer].currentFrame + 1) + ".");
                     yield return new WaitForSeconds(consoleUpdateInterval);
 
@@ -228,7 +216,7 @@ namespace TiltBrush
             s.Add("    ]");
             s.Add("}");
 
-            url = "";
+            string url = "";
             string tempName = "";
             if (useTimestamp)
             {
@@ -267,7 +255,6 @@ namespace TiltBrush
             }
 
             Debug.Log("*** Wrote " + url);
-            isWritingFile = false;
 
             yield return null;
         }
