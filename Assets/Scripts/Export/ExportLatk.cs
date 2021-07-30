@@ -42,34 +42,8 @@ namespace TiltBrush
     public static class ExportLatk
     {
 
-        private static bool writePressure = true;
-        private static Vector2 brushSizeRange;
         private static int layerNum = 1;
         private static int frameNum = 1;
-
-        private static void getBrushSizeRange()
-        {
-            List<float> allBrushSizes = new List<float>();
-
-            for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
-            {
-                Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
-                allBrushSizes.Add(stroke.m_BrushSize);
-            }
-
-            allBrushSizes.Sort();
-            brushSizeRange = new Vector2(allBrushSizes[0], allBrushSizes[allBrushSizes.Count - 1]);
-        }
-
-        private static float getNormalizedBrushSize(float s)
-        {
-            return map(s, brushSizeRange.x, brushSizeRange.y, 0.1f, 1f);
-        }
-
-        private static float map(float s, float a1, float a2, float b1, float b2)
-        {
-            return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
-        }
 
         public static void Export(string writeFileName)
         {
@@ -78,8 +52,6 @@ namespace TiltBrush
             bool useZip = (ext == ".latk" || ext == ".zip");
 
             List<string> FINAL_LAYER_LIST = new List<string>();
-
-            if (writePressure) getBrushSizeRange();
 
             for (int hh = 0; hh < layerNum; hh++)
             {
@@ -119,8 +91,7 @@ namespace TiltBrush
                                 float y = point.m_Pos.y;
                                 float z = point.m_Pos.z;
 
-                                float pressureVal = 1f;
-                                if (writePressure) pressureVal = point.m_Pressure * getNormalizedBrushSize(stroke.m_BrushSize);
+                                float pressureVal = point.m_Pressure;
 
                                 if (j == stroke.m_ControlPoints.Length - 1)
                                 {
