@@ -189,70 +189,7 @@ namespace TiltBrush
 
         public Stroke GetStrokeAtIndex(int index)
         {
-            return GetNodeAtIndex(index).Value;
-        }
-
-        // Strokes are 1-indexed so that 0 can conveniently point to the most recent stroke
-        // Negative numbers count backwards from here.
-        public static LinkedListNode<Stroke> GetNodeAtIndex(int index)
-        {
-            // Default to the most recent stroke for index=0
-            LinkedListNode<Stroke> node = m_Instance.CurrentNodeByTime;
-
-            if (index < 0)
-            {
-                // Count backwards for negative indices
-                for (int i = 0; i > index; i--)
-                {
-                    if (node.Previous != null)
-                    {
-                        node = node.Previous;
-                    }
-                    else
-                    {
-                        node = null;
-                        break;
-                    }
-                }
-
-            }
-            else if (index > 0)
-            {
-                // Count forwards from the first stroke. (Strokes are therefore 1-indexed
-                node = m_Instance.FirstNodeByTime;
-                for (int i = 0; i < index - 1; i++)
-                {
-                    if (node.Next != null)
-                    {
-                        node = node.Next;
-                    }
-                    else
-                    {
-                        node = null;
-                        break;
-                    }
-                }
-
-            }
-
-            return node;
-        }
-
-        public LinkedListNode<Stroke> FirstNodeByTime
-        {
-            get
-            {
-                return m_MemoryList.First;
-
-            }
-        }
-
-        public LinkedListNode<Stroke> CurrentNodeByTime
-        {
-            get
-            {
-                return m_CurrentNodeByTime;
-            }
+            return m_Instance.m_MemoryList.ElementAt(index);
         }
 
         // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
