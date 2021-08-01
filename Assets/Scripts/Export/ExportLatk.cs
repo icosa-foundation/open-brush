@@ -42,6 +42,7 @@ namespace TiltBrush
     public static class ExportLatk
     {
 
+        // Latk has the ability to store multiple layers and frames, but we're not using that here
         private static int layerNum = 1;
         private static int frameNum = 1;
 
@@ -70,9 +71,20 @@ namespace TiltBrush
                     sbbHeader.Add("\t\t\t\t\t\t{");
                     sbbHeader.Add("\t\t\t\t\t\t\t\"strokes\":[");
                     sb.Add(string.Join("\n", sbbHeader.ToArray()));
+
+                    LinkedListNode<Stroke> node = SketchMemoryScript.m_Instance.GetMemoryList.First;
+                    Stroke stroke = node.Value;
+
                     for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
                     {
-                        Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
+                        // Simpler way to access strokes in the linked list by index, but more expensive
+                        //Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
+
+                        if (i > 0)
+                        {
+                            node = node.Next;
+                            stroke = node.Value;
+                        }
 
                         List<string> sbb = new List<string>();
                         sbb.Add("\t\t\t\t\t\t\t\t{");

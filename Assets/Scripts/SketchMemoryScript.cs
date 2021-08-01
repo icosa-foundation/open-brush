@@ -178,13 +178,16 @@ namespace TiltBrush
             get { return (float)m_LastCheckedVertCount / (float)m_MemoryWarningVertCount; }
         }
 
-        // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
-        // + + + +   Methods by @IxxyXR to access strokes from outside   + + + +
-        // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+        // + + + +   New stroke access methods   + + + +
 
         public int StrokeCount
         {
             get { return m_MemoryList.Count; }
+        }
+
+        public LinkedList<Stroke> GetMemoryList
+        {
+            get { return m_MemoryList; }
         }
 
         public Stroke GetStrokeAtIndex(int index)
@@ -192,7 +195,7 @@ namespace TiltBrush
             return m_Instance.m_MemoryList.ElementAt(index);
         }
 
-        // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+        // + + + + + + + + + + + + + + + + + + + + + + +
 
         public void SetLastOperationStackCount()
         {
