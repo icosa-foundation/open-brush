@@ -144,7 +144,13 @@ namespace TiltBrush
                 brushType = brushType.ToLower().Trim().Replace(" ", "");
                 try
                 {
-                    brushDescriptor = BrushCatalog.m_Instance.AllBrushes.First(x => x.name.ToLower() == brushType);
+                    brushDescriptor = BrushCatalog.m_Instance.AllBrushes
+                        .First(x => x.m_Description
+                            .Replace(" ", "")
+                            .Replace(".", "")
+                            .Replace("(", "")
+                            .Replace(")", "")
+                            .ToLower() == brushType);
                 }
                 catch (InvalidOperationException e)
                 {
