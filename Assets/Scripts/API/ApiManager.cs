@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 
 public class ApiManager : MonoBehaviour
@@ -180,6 +181,7 @@ public class ApiManager : MonoBehaviour
 
     private string InfoCallback(HttpListenerRequest request)
     {
+        gameObject.GetComponent<Text>().text = "some text";
         string html;
         StringBuilder builder;
         switch (request.Url.Segments.Last())
@@ -477,7 +479,11 @@ public class ApiManager : MonoBehaviour
 
     private string ScriptTemplateSubstitution(string html)
     {
-        string[] brushNameList = BrushCatalog.m_Instance.AllBrushes.Where(x => x.DurableName != "").Select(x => x.DurableName).ToArray();
+        string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
+            .Where(x => x.m_Description != "")
+            .Where(x => x.m_SupersededBy == null)
+            .Select(x => x.m_Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
+            .ToArray();
         string brushesJson = JsonConvert.SerializeObject(brushNameList);
         string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
         html = html.Replace("{{brushesJson}}", brushesJson);
