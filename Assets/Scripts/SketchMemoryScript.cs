@@ -178,8 +178,6 @@ namespace TiltBrush
             get { return (float)m_LastCheckedVertCount / (float)m_MemoryWarningVertCount; }
         }
 
-        // + + + +   New stroke access methods   + + + +
-
         public int StrokeCount
         {
             get { return m_MemoryList.Count; }
@@ -194,8 +192,6 @@ namespace TiltBrush
         {
             return m_Instance.m_MemoryList.ElementAt(index);
         }
-
-        // + + + + + + + + + + + + + + + + + + + + + + +
 
         public void SetLastOperationStackCount()
         {

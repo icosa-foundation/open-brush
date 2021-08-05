@@ -1,29 +1,16 @@
-﻿/*
-LIGHTNING ARTIST TOOLKIT v1.1.0
-
-The Lightning Artist Toolkit was developed with support from:
-   Canada Council on the Arts
-   Eyebeam Art + Technology Center
-   Ontario Arts Council
-   Toronto Arts Council
-   
-Copyright (c) 2021 Nick Fox-Gieg
-http://fox-gieg.com
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-*/
+﻿// Copyright 2021 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #if LATK_SUPPORTED
 using UnityEngine;
@@ -77,7 +64,7 @@ namespace TiltBrush
 
                     for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
                     {
-                        // Simpler way to access strokes in the linked list by index, but more expensive
+                        // Simpler way to access strokes in the linked list by index, but possibly more expensive
                         //Stroke stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(i);
 
                         if (i > 0)
@@ -199,8 +186,6 @@ namespace TiltBrush
 
         private static JSONNode getJsonFromZip(byte[] bytes)
         {
-            // https://gist.github.com/r2d2rigo/2bd3a1cafcee8995374f
-
             MemoryStream fileStream = new MemoryStream(bytes, 0, bytes.Length);
             ZipFile zipFile = new ZipFile(fileStream);
 
@@ -221,10 +206,6 @@ namespace TiltBrush
 
         private static void saveJsonAsZip(string fileName, string s)
         {
-            // https://stackoverflow.com/questions/1879395/how-do-i-generate-a-stream-from-a-string
-            // https://github.com/icsharpcode/SharpZipLib/wiki/Zip-Samples
-            // https://stackoverflow.com/questions/8624071/save-and-load-memorystream-to-from-a-file
-
             MemoryStream memStreamIn = new MemoryStream();
             StreamWriter writer = new StreamWriter(memStreamIn);
             writer.Write(s);
@@ -234,7 +215,7 @@ namespace TiltBrush
             MemoryStream outputMemStream = new MemoryStream();
             ZipOutputStream zipStream = new ZipOutputStream(outputMemStream);
 
-            zipStream.SetLevel(3); //0-9, 9 being the highest level of compression
+            zipStream.SetLevel(4); // 0-9, 9 being the highest level of compression
 
             string fileNameBase = Path.GetFileNameWithoutExtension(fileName);
 
@@ -258,16 +239,6 @@ namespace TiltBrush
                 file.Write(bytes, 0, bytes.Length);
                 outputMemStream.Close();
             }
-
-            /*
-            // Alternative outputs:
-            // ToArray is the cleaner and easiest to use correctly with the penalty of duplicating allocated memory.
-            byte[] byteArrayOut = outputMemStream.ToArray();
-
-            // GetBuffer returns a raw buffer raw and so you need to account for the true length yourself.
-            byte[] byteArrayOut = outputMemStream.GetBuffer();
-            long len = outputMemStream.Length;
-            */
         }
 
     }
