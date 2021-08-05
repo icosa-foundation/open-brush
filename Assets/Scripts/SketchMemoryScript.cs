@@ -177,6 +177,22 @@ namespace TiltBrush
         {
             get { return (float)m_LastCheckedVertCount / (float)m_MemoryWarningVertCount; }
         }
+
+		public int StrokeCount
+        {
+            get { return m_MemoryList.Count; }
+        }
+
+        public LinkedList<Stroke> GetMemoryList
+        {
+            get { return m_MemoryList; }
+        }
+
+        public Stroke GetStrokeAtIndex(int index)
+        {
+            return m_Instance.m_MemoryList.ElementAt(index);
+        }
+
         public Stroke MostRecentStroke
         {
             get
@@ -200,8 +216,7 @@ namespace TiltBrush
                 return m_CurrentNodeByTime;
             }
         }
-        public int StrokeCount { get { return m_MemoryList.Count; } }
-
+        
         public void SetLastOperationStackCount()
         {
             m_LastOperationStackCount = m_OperationStack.Count;
@@ -1182,72 +1197,37 @@ namespace TiltBrush
             }
         }
 
-        // Strokes are 1-indexed so that 0 can conveniently point to the most recent stroke
-        // Negative numbers count backwards from here.
+        // Negative numbers count backwards from most recent stroke.
+        // -1 is most recent, -2 is next etc
         public static LinkedListNode<Stroke> GetNodeAtIndex(int index)
         {
-            // Default to the most recent stroke for index=0
-            LinkedListNode<Stroke> node = m_Instance.CurrentNodeByTime;
-
+            LinkedListNode<Stroke> node;
             if (index < 0)
             {
-                // Count backwards for negative indices
-                for (int i = 0; i > index; i--)
-                {
-                    if (node.Previous != null)
-                    {
-                        node = node.Previous;
-                    }
-                    else
-                    {
-                        node = null;
-                        break;
-                    }
-                }
-
+                index = m_Instance.StrokeCount - index;
+                node = m_Instance.m_MemoryList.ElementAt(index).m_NodeByTime;
             }
-            else if (index > 0)
+            else
             {
-                // Count forwards from the first stroke. (Strokes are therefore 1-indexed
-                node = m_Instance.FirstNodeByTime;
-                for (int i = 0; i < index - 1; i++)
-                {
-                    if (node.Next != null)
-                    {
-                        node = node.Next;
-                    }
-                    else
-                    {
-                        node = null;
-                        break;
-                    }
-                }
-
+                node = m_Instance.m_MemoryList.ElementAt(index).m_NodeByTime;
             }
-
             return node;
-        }
-
-        public Stroke GetStrokeAtIndex(int index)
-        {
-            return GetNodeAtIndex(index).Value;
         }
 
         public static List<Stroke> GetStrokesBetween(int start, int end)
         {
             int index0, index1;
-            int lastStrokeIndex = SketchMemoryScript.m_Instance.StrokeCount - 1;
-            if (start < 1)
+            int lastStrokeIndex = m_Instance.StrokeCount - 1;
+            if (start < 0)
             {
                 // Counting backwards so subtract from last index
                 start += lastStrokeIndex;
             }
-            if (end < 1)
+            if (end < 0)
             {
                 // Counting backwards so subtract from last index
                 end += lastStrokeIndex;
             }
-
 
             if (start <= end)
             {
@@ -1268,7 +1248,7 @@ namespace TiltBrush
 
             var result = new List<Stroke>();
             int i = index0;
-            var node = GetNodeAtIndex(index0 + 1); // 1 Indexed
+            var node = GetNodeAtIndex(index0);
             while (i < index1)
             {
                 result.Add(node.Value);
