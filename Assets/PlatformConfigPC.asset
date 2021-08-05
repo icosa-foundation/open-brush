@@ -28,7 +28,7 @@ MonoBehaviour:
   EnableExportFbx: 1
   EnableExportGlb: 1
   EnableExportJson: 1
-  EnableExportUsd: 1
+  EnableExportUsd: 0
   EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
