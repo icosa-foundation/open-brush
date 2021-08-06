@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.autodesk.fbx": {
+      "version": "file:com.autodesk.fbx",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
