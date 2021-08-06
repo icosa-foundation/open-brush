@@ -181,7 +181,6 @@ public class ApiManager : MonoBehaviour
 
     private string InfoCallback(HttpListenerRequest request)
     {
-        gameObject.GetComponent<Text>().text = "some text";
         string html;
         StringBuilder builder;
         switch (request.Url.Segments.Last())
