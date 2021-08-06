@@ -42,6 +42,9 @@ namespace TiltBrush
             public bool HighResolutionSnapshots; // Deprecated
             public bool ShowDroppedFrames;
 
+            public bool EnableApiRemoteCalls;
+            public bool EnableApiCorsHeaders;
+
             bool? m_ShowDangerousBrushes;
             public bool ShowDangerousBrushes
             {

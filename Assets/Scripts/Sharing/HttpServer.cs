@@ -64,25 +64,18 @@ namespace TiltBrush
                             // Abort, even though it has already disposed the context.
                             break;
                         }
-
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                        bool allowExternalApiCalls = true;
-#else
-                        bool allowExternalApiCalls = false;
-#endif
-                        // CORS headers
-                        // TODO Tie this in with the option to accept non-localhost requests
-                        ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-                        ctx.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
+                        if (App.UserConfig.Flags.EnableApiCorsHeaders)
+                        {
+                            // CORS headers to allow external Api Calls
+                            // Calls can still be made without this but not via javascript in a browser
+                            // Use alongside EnableApiRemoteCalls
+                            ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                            ctx.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
+                        }
 
                         try
                         {
-                            if (!ctx.Request.IsLocal && !allowExternalApiCalls)
-                            {
-                                // Return 403: Forbidden if the originator was non-local.
-                                ctx.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                            }
-                            else
+                            if (ctx.Request.IsLocal || App.UserConfig.Flags.EnableApiRemoteCalls)
                             {
                                 var handlerKey = m_HttpRequestHandlers.Keys.FirstOrDefault(
                                     x => ctx.Request.Url.LocalPath.StartsWith(x));
@@ -105,6 +98,12 @@ namespace TiltBrush
                                         ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
                                     }
                                 }
+                            }
+                            else
+                            {
+                                // Return 403: Forbidden if the originator was non-local
+                                // and EnableApiRemoteCalls hasn't been set to true
+                                ctx.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                             }
                         }
                         finally
