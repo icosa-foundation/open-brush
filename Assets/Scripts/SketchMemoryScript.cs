@@ -686,7 +686,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
-        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null)
+        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null, bool silent=false)
         {
             int numStrokes = m_MemoryList.Count;
             int strokesRepainted = 0;
@@ -745,36 +745,41 @@ namespace TiltBrush
                 ++batchEnabledIndex;
             }
 
-            // Report change to user.
-            if (totalPrevVerts < totalVerts)
+            if (!silent)
             {
-                float vertChange = (float)totalVerts / (float)totalPrevVerts;
-                float increasePercent = (vertChange - 1.0f) * 100.0f;
-                int increaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(increasePercent));
-                string report = "Sketch is " + increaseReadable.ToString() + "% larger.";
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    report);
-            }
-            else if (totalPrevVerts > totalVerts)
-            {
-                float vertChange = (float)totalVerts / (float)totalPrevVerts;
-                float decreasePercent = 100.0f - (vertChange * 100.0f);
-                int decreaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(decreasePercent));
-                string report = "Sketch is " + decreaseReadable.ToString() + "% smaller.";
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    report);
-            }
-            else
-            {
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    "No change in sketch size.");
-            }
-            ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
-                totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
 
+                // Report change to user.
+                if (totalPrevVerts < totalVerts)
+                {
+                    float vertChange = (float)totalVerts / (float)totalPrevVerts;
+                    float increasePercent = (vertChange - 1.0f) * 100.0f;
+                    int increaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(increasePercent));
+                    string report = "Sketch is " + increaseReadable.ToString() + "% larger.";
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        report);
+                }
+                else if (totalPrevVerts > totalVerts)
+                {
+                    float vertChange = (float)totalVerts / (float)totalPrevVerts;
+                    float decreasePercent = 100.0f - (vertChange * 100.0f);
+                    int decreaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(decreasePercent));
+                    string report = "Sketch is " + decreaseReadable.ToString() + "% smaller.";
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        report);
+                }
+                else
+                {
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        "No change in sketch size.");
+                }
+
+                ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
+                    totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
+            }
+            
             m_RepaintCoroutine = null;
         }
 

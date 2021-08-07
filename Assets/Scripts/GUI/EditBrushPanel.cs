@@ -29,8 +29,8 @@ namespace TiltBrush
         
         public Material PreviewMaterial
         {
-            get => StrokePreview.GetComponent<MeshRenderer>().material;
-            set => StrokePreview.GetComponent<MeshRenderer>().material = value;
+            get => StrokePreview.GetComponent<MeshRenderer>().sharedMaterial;
+            set => StrokePreview.GetComponent<MeshRenderer>().sharedMaterial = value;
         }
         
         public List<Texture2D> AvailableTextures
@@ -56,9 +56,10 @@ namespace TiltBrush
         void Awake()
         {
             PointerManager.m_Instance.OnMainPointerBrushChange += OnMainPointerBrushChange;
-            PreviewMaterial = StrokePreview.GetComponent<MeshRenderer>().material;
+            PreviewMaterial = StrokePreview.GetComponent<MeshRenderer>().sharedMaterial;
             OnMainPointerBrushChange(PointerManager.m_Instance.MainPointer.CurrentBrush);
             RegenerateTextureLists();
+            base.Awake();
         }
 
         private void OnDestroy()
@@ -203,6 +204,7 @@ namespace TiltBrush
 
         public void SliderChanged(string propertyName, float value)
         {
+            // Value has already been scaled from 0..1 back to the full range
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             PreviewMaterial.SetFloat(propertyName, value);
             brush.Material.SetFloat(propertyName, value);
@@ -231,11 +233,9 @@ namespace TiltBrush
 
         private void OnMainPointerBrushChange(BrushDescriptor brush)
         {
-            Debug.Log($"starting OnMainPointerBrushChange");
             if (brush == null) return;
             // if (m_needsSaving) return;
             
-            Debug.Log($"OnMainPointerBrushChange");
             GeneratePreviewMesh(brush);
             if (AvailableTextures == null) RegenerateTextureLists();
             
@@ -267,8 +267,14 @@ namespace TiltBrush
                     switch (shader.GetPropertyType(i))
                     {
                         case ShaderPropertyType.Float:
+                            float value = brush.Material.GetFloat(propertyName);
+                            // Invent a plausible range for float values
+                            Vector2 range = new Vector2(value / 10f, value * 10);
+                            AddSlider(propertyName, value, widgetIndex, range);
+                            widgetIndex++;
+                            break;
                         case ShaderPropertyType.Range:
-                            AddSlider(propertyName, brush.Material.GetFloat(propertyName), widgetIndex);
+                            AddSlider(propertyName, brush.Material.GetFloat(propertyName), widgetIndex, shader.GetPropertyRangeLimits(i));
                             widgetIndex++;
                             break;
                         case ShaderPropertyType.Color:
@@ -308,7 +314,7 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
-            var previewMesh = StrokePreview.GetComponent<MeshFilter>().sharedMesh;
+            var previewMesh = StrokePreview.GetComponent<MeshFilter>().mesh;
             if (currentStroke!= null && (previewMesh == null || previewMesh.vertexCount < 3))
             {
                 try
@@ -334,14 +340,15 @@ namespace TiltBrush
             tr.localPosition = pos;
         }
 
-        private void AddSlider(string propertyName, float value, int widgetIndex)
+        private void AddSlider(string propertyName, float unscaledValue, int widgetIndex, Vector2 range)
         {
             var sliderTr = Instantiate(SliderPrefab, gameObject.transform, true);
             var slider = sliderTr.GetComponent<EditBrushSlider>();
             slider.ParentPanel = this;
             slider.SetDescriptionText(propertyName);
             slider.FloatPropertyName = propertyName;
-            slider.UpdateValue(value);
+            slider.Range = range;
+            slider.UpdateValueFromUnscaled(unscaledValue);
             slider.SetSliderPositionToReflectValue();
             PositionWidgetByIndex(slider.transform, widgetIndex);
             ParameterWidgets.Add(slider.gameObject);
@@ -410,7 +417,6 @@ namespace TiltBrush
 
         public void GeneratePreviewMesh(BrushDescriptor brush)
         {
-            Debug.Log($"GeneratePreviewMesh");
             var origin = Vector3.zero;
             var scale = 2f;
             uint time = 0;
@@ -421,10 +427,12 @@ namespace TiltBrush
             var path = new List<Vector3>
             {
                 new Vector3(-1f, -.2f, 0),
-                new Vector3(-.75f, -.1f, 0),
+                new Vector3(-.7f, -.1f, 0),
+                new Vector3(-.6f, -.1f, 0),
                 new Vector3(-.5f, .2f, 0),
                 Vector3.zero,
                 new Vector3(.5f, -.2f, 0),
+                new Vector3(.6f, -.2f, 0),
                 new Vector3(1f, .2f, 0),
             };
             var controlPoints = new List<PointerManager.ControlPoint>();
@@ -468,8 +476,8 @@ namespace TiltBrush
             // if (previousStroke != null) previousStroke.DestroyStroke();
             
             previousStroke = currentStroke;
-            StrokePreview.GetComponent<MeshRenderer>().material = brush.Material;
-            StrokePreview.GetComponent<MeshFilter>().sharedMesh = null; // And set it on Update
+            StrokePreview.GetComponent<MeshRenderer>().sharedMaterial = brush.Material;
+            StrokePreview.GetComponent<MeshFilter>().mesh = null; // And set it on Update
 
         }
     }

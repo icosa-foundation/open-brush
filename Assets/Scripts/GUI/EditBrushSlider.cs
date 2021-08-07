@@ -22,12 +22,31 @@ namespace TiltBrush
     {
 
         [NonSerialized] public EditBrushPanel ParentPanel;
+        public Vector2 Range = Vector2.up; // 0 to 1
         public string FloatPropertyName;
 
-        override public void UpdateValue(float fValue)
+        public void UpdateValueFromUnscaled(float unscaledValue)
         {
-            ParentPanel.SliderChanged(FloatPropertyName, fValue);
-            base.UpdateValue(fValue);
+            UpdateValue(UnscaledValueToUnitValue(unscaledValue));
         }
+        
+        public override void UpdateValue(float unitValue)
+        {
+            float unscaledValue = UnitValueToUnscaledValue(unitValue);
+            ParentPanel.SliderChanged(FloatPropertyName, unscaledValue);
+            SetDescriptionText($"{FloatPropertyName.Substring(1)}={unscaledValue:0.##}");
+            base.UpdateValue(unitValue);
+        }
+        
+        public float UnscaledValueToUnitValue(float unscaledValue)
+        {
+            return Mathf.InverseLerp(Range.x, Range.y, unscaledValue);
+        }
+        
+        public float UnitValueToUnscaledValue(float unitValue)
+        {
+            return Mathf.Lerp(Range.x, Range.y, unitValue);
+        }        
+
     }
 } // namespace TiltBrush

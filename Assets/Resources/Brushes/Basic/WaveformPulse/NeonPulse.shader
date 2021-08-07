@@ -16,6 +16,11 @@ Shader "Brush/Visualizer/WaveformPulse" {
 
 Properties {
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+  _Speed ("Speed", Range(0, 40)) = 15
+  _Spacing ("Spacing", Range(0, 5)) = 1
+  _Length ("Length", Range(0, 1)) = 0.2
+  _Fade1 ("Fade1", Range(0, 20)) = 10
+  _Fade2 ("Fade2", Range(0, 10)) = 5
 }
 
 SubShader {
@@ -56,6 +61,11 @@ SubShader {
   };
 
   float _EmissionGain;
+  float _Speed;
+  float _Fade1;
+  float _Spacing;
+  float _Length;
+  float _Fade2;
 
   void vert (inout appdata i, out Input o) {
     PrepForOds(i.vertex);
@@ -74,10 +84,10 @@ SubShader {
     IN.tex.x -= _BeatOutputAccum.z;
     IN.color += IN.color * _BeatOutput.w * .25;
 #else
-    IN.tex.x -= _Time.x*15;
+    IN.tex.x -= _Time.x*_Speed;
 #endif
-    IN.tex.x = fmod( abs(IN.tex.x),1);
-    float neon = saturate(pow( 10 * saturate(.2 - IN.tex.x),5) * audioMultiplier);
+    IN.tex.x = fmod( abs(IN.tex.x),_Spacing);
+    float neon = saturate(pow( _Fade1 * saturate(_Length - IN.tex.x),_Fade2) * audioMultiplier);
     float4 bloom = bloomColor(IN.color, _EmissionGain);
     float3 n = WorldNormalVector (IN, o.Normal);
     half rim = 1.0 - saturate(dot (normalize(IN.viewDir), n));

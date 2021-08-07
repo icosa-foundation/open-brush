@@ -850,8 +850,6 @@ public class UserVariantBrush
     public void SaveorCopyTextures(Shader shader, Dictionary<string, string> textureRefs)
     {
         
-        Debug.Log($"SaveorCopyTextures for {shader.name}");
-        
         for (int i = 0; i < shader.GetPropertyCount(); ++i)
         {
             

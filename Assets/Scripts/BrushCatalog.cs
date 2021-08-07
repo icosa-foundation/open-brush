@@ -251,7 +251,7 @@ namespace TiltBrush
                 StartCoroutine(
                     OverlayManager.m_Instance.RunInCompositorWithProgress(
                         OverlayType.LoadGeneric,
-                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes),
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes, true),
                         0.25f)
                 );
             }
