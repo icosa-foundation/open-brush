@@ -122,7 +122,7 @@ namespace TiltBrush.LachlanSleight
                     position = m_BrushController.position;
                     vMovement = m_BrushController.forward;
                 }
-                
+
                 m_Velocity = Vector3.Lerp(m_Velocity, vMovement * m_MaxSpeed, Time.deltaTime * m_DampingUp);
 
                 AudioManager.m_Instance.WorldGrabLoop(true);

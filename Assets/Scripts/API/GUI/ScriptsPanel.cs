@@ -16,6 +16,6 @@ namespace TiltBrush
 {
     public class ScriptsPanel : BasePanel
     {
-        
+
     }
 }

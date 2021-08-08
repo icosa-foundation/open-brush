@@ -29,11 +29,11 @@ namespace TiltBrush
             {
                 camTr = SketchControlsScript.m_Instance.GetDropCampWidget().transform;
             }
-            
+
             var rot = camTr.rotation;
             rot *= Quaternion.AngleAxis(angle, axis);
             camTr.rotation = rot;
-            
+
         }
 
         [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
@@ -601,9 +601,9 @@ namespace TiltBrush
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
         }
-        
 
-        
+
+
         [ApiEndpoint("import.model", "Imports a model from your media libraries Models folder")]
         public static void ImportModel(string path)
         {
@@ -621,13 +621,13 @@ namespace TiltBrush
             modelWidget.Model = model;
             modelWidget.Show(true);
             createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
-            
+
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
 
         }
-        
+
         // Tools.
 
         [ApiEndpoint("tool.sketchsurface", "Activates the SketchSurface")]

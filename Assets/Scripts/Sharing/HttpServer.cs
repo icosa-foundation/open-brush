@@ -54,12 +54,12 @@ namespace TiltBrush
                         }
                         catch (Exception ex)
                         {
-                            
+
                             if (!(ex is HttpListenerException) && !(ex is SocketException))
                             {
                                 throw;
                             }
-                        
+
                             // Irritatingly HttpListener will try to complete contexts when you call Close or
                             // Abort, even though it has already disposed the context.
                             break;
@@ -173,7 +173,7 @@ namespace TiltBrush
             m_HttpRequestHandlers.Add(path, wrapper);
         }
 
-        
+
         // Removes a path from the Http server.
         public void RemoveHttpHandler(string path)
         {

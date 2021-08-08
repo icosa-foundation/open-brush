@@ -31,7 +31,7 @@ public class ApiManager : MonoBehaviour
     private static ApiManager m_Instance;
     private Dictionary<string, ApiEndpoint> endpoints;
     private byte[] CameraViewPng;
-    
+
     private bool cameraViewRequested;
     private bool cameraViewGenerated;
 
@@ -80,45 +80,45 @@ public class ApiManager : MonoBehaviour
 
         CommandExamples = new Dictionary<string, string>
         {
-            {"draw.paths (string jsonString)", "[[0,0,0], [1,0,0], [1,1,0]],[[0,0,-1], [-1,0,-1], [-1,1,-1]]"}, 
-            {"draw.path (string jsonString)", "[0,0,0], [1,0,0], [1,1,0], [0,1,0]"}, 
-            {"draw.polygon", "5,1,0"}, 
-            {"draw.text", "hello"}, 
-            {"draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88"}, 
-            {"brush.type", "ink"}, 
-            {"color.add.hsv", "0.1,0.2,0.3"}, 
-            {"color.add.rgb", "0.1,0.2,0.3"}, 
-            {"color.set.rgb", "0.1,0.2,0.3"}, 
-            {"color.set.hsv", "0.1,0.2,0.3"}, 
-            {"color.set.html", "darkblue"}, 
-            {"brush.size.set", ".5"}, 
-            {"brush.size.add", ".1"}, 
-            {"camera.move.to", "1,1,1"}, 
-            {"camera.move.by", "1,1,1"}, 
-            {"camera.turn.y", "45"}, 
-            {"camera.turn.x", "45"}, 
-            {"camera.turn.z", "45"}, 
-            {"camera.lookat", "1,2,3"}, 
-            {"brush.move.to", "1,1,1"}, 
-            {"brush.move.by", "1,1,1"}, 
-            {"brush.move", "1"}, 
-            {"brush.draw", "1"}, 
-            {"brush.turn.y", "45"}, 
-            {"brush.turn.x", "45"}, 
-            {"brush.turn.z", "45"}, 
-            {"brush.lookat", "1,1,1"}, 
-            {"stroke.delete", "0"}, 
-            {"stroke.select", "0"}, 
-            {"strokes.select", "0,3"}, 
-            {"selection.trim", "2"}, 
+            {"draw.paths (string jsonString)", "[[0,0,0], [1,0,0], [1,1,0]],[[0,0,-1], [-1,0,-1], [-1,1,-1]]"},
+            {"draw.path (string jsonString)", "[0,0,0], [1,0,0], [1,1,0], [0,1,0]"},
+            {"draw.polygon", "5,1,0"},
+            {"draw.text", "hello"},
+            {"draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88"},
+            {"brush.type", "ink"},
+            {"color.add.hsv", "0.1,0.2,0.3"},
+            {"color.add.rgb", "0.1,0.2,0.3"},
+            {"color.set.rgb", "0.1,0.2,0.3"},
+            {"color.set.hsv", "0.1,0.2,0.3"},
+            {"color.set.html", "darkblue"},
+            {"brush.size.set", ".5"},
+            {"brush.size.add", ".1"},
+            {"camera.move.to", "1,1,1"},
+            {"camera.move.by", "1,1,1"},
+            {"camera.turn.y", "45"},
+            {"camera.turn.x", "45"},
+            {"camera.turn.z", "45"},
+            {"camera.lookat", "1,2,3"},
+            {"brush.move.to", "1,1,1"},
+            {"brush.move.by", "1,1,1"},
+            {"brush.move", "1"},
+            {"brush.draw", "1"},
+            {"brush.turn.y", "45"},
+            {"brush.turn.x", "45"},
+            {"brush.turn.z", "45"},
+            {"brush.lookat", "1,1,1"},
+            {"stroke.delete", "0"},
+            {"stroke.select", "0"},
+            {"strokes.select", "0,3"},
+            {"selection.trim", "2"},
             {"selection.points.addnoise", "x,0.5"},
             {"selection.points.quantize", "0.1"},
             {"strokes.join", "0,2"},
             {"stroke.add", "0"},
-            {"load.user", "0"}, 
-            {"load.curated", "0"}, 
-            {"load.liked", "0"}, 
-            {"load.drive", "0"}, 
+            {"load.user", "0"},
+            {"load.curated", "0"},
+            {"load.liked", "0"},
+            {"load.drive", "0"},
             {"load.named", "mysketch.sketch"},
             {"showfolder.sketch", "0"},
             {"import.model", "example.glb"}
@@ -127,14 +127,14 @@ public class ApiManager : MonoBehaviour
         App.Instance.StateChanged += RunStartupScript;
 
     }
-    
+
     public void RunStartupScript(App.AppState oldState, App.AppState newState)
     {
-        
-        if (!(oldState==App.AppState.LoadingBrushesAndLighting && newState==App.AppState.Standard)) return;
-        
+
+        if (!(oldState == App.AppState.LoadingBrushesAndLighting && newState == App.AppState.Standard)) return;
+
         var startupScriptPath = Path.Combine(m_UserScriptsPath, "startup.sketchscript");
-        
+
         if (File.Exists(startupScriptPath))
         {
             var lines = File.ReadAllLines(startupScriptPath);
@@ -150,10 +150,10 @@ public class ApiManager : MonoBehaviour
         }
 
     }
-    
+
     private void EnqueueCommandString(string commandString)
     {
-        string[] commandPair = commandString.Split(new[] {'='}, 2);
+        string[] commandPair = commandString.Split(new[] { '=' }, 2);
         if (commandPair.Length == 1 && commandPair[0] != "")
         {
             Debug.Log($"Queuing {commandPair[0]}");
@@ -250,7 +250,7 @@ public class ApiManager : MonoBehaviour
         }
         return html;
     }
-    
+
     private string getCommandExample(string key)
     {
         if (CommandExamples.ContainsKey(key))
@@ -292,7 +292,7 @@ public class ApiManager : MonoBehaviour
             }
         }
     }
-    
+
     private void RegisterUserScript(FileInfo file)
     {
         if (file.Extension == ".html" || file.Extension == ".htm")
@@ -391,7 +391,7 @@ public class ApiManager : MonoBehaviour
             }
         }
     }
-    
+
     Dictionary<string, (string, string)> ListApiCommandsAsStrings()
     {
         var commandList = new Dictionary<string, (string, string)>();
@@ -411,7 +411,7 @@ public class ApiManager : MonoBehaviour
         }
         return commandList;
     }
-    
+
     Dictionary<string, object> ListApiCommands()
     {
         var commandList = new Dictionary<string, object>();
@@ -542,7 +542,7 @@ public class ApiManager : MonoBehaviour
         HandleApiCommand();
         UpdateCameraView();
     }
-    
+
 
     IEnumerator ScreenCap()
     {
@@ -561,12 +561,12 @@ public class ApiManager : MonoBehaviour
         cameraViewRequested = false;
         cameraViewGenerated = true;
     }
-    
+
     public static void FlipTextureVertically(Texture2D original)
     {
         // ScreenCap is upside down so flip it
         // Orientation might be platform specific so we might need some logic around this
-        
+
         var originalPixels = original.GetPixels();
 
         Color[] newPixels = new Color[originalPixels.Length];
@@ -578,7 +578,7 @@ public class ApiManager : MonoBehaviour
         {
             for (int y = 0; y < rows; y++)
             {
-                newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
+                newPixels[x + y * width] = originalPixels[x + (rows - y - 1) * width];
             }
         }
 
@@ -591,15 +591,16 @@ public class ApiManager : MonoBehaviour
         if (cameraViewRequested) StartCoroutine(ScreenCap());
     }
 
-    private HttpListenerContext CameraViewCallback(HttpListenerContext ctx) {
-        
+    private HttpListenerContext CameraViewCallback(HttpListenerContext ctx)
+    {
+
         cameraViewRequested = true;
-        while (cameraViewGenerated==false)
+        while (cameraViewGenerated == false)
         {
             Thread.Sleep(5);
         }
         cameraViewGenerated = false;
-        
+
         ctx.Response.AddHeader("Content-Type", "image/png");
         ctx.Response.ContentLength64 = CameraViewPng.Length;
         try
