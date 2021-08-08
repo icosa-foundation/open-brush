@@ -309,6 +309,10 @@ Follow these steps to enable Sketchfab support:
 
 1.  [Contact Sketchfab](https://sketchfab.com/developers/oauth) for a client ID
     and secret before you can upload to their service.
+    
+    -  The **Application Name** will probably need to be changed
+    -  The **Grant Type** should be **Authorization Code** 
+    -  The **URI** should be **http://localhost:40074/sketchfab**
 1.  Follow the steps to [create your secrets file](#-Generating-Secrets-file).
     Add a new item to the **Secrets** field.
 1.  Add the client ID and secret to the field.
