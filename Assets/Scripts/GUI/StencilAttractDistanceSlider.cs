@@ -25,6 +25,7 @@ namespace TiltBrush
         void OnEnable()
         {
             App.Switchboard.StencilAttractDistChanged += OnStencilAttractDistChanged;
+            OnStencilAttractDistChanged();
         }
 
         protected override void OnDestroy()
@@ -45,10 +46,13 @@ namespace TiltBrush
         // will be notified here so that we can update the slider visuals
         private void OnStencilAttractDistChanged()
         {
-            float value = WidgetManager.m_Instance.StencilAttractDist;
-            float range = m_MaxAttractDistance - m_MinAttractDistance;
-            float newSliderValue = (value - m_MinAttractDistance) / range;
-            UpdateValue(newSliderValue);
+            if (WidgetManager.m_Instance != null)
+            {
+                float value = WidgetManager.m_Instance.StencilAttractDist;
+                float range = m_MaxAttractDistance - m_MinAttractDistance;
+                float newSliderValue = (value - m_MinAttractDistance) / range;
+                UpdateValue(newSliderValue);
+            }
         }
 
         public override void ButtonReleased()
