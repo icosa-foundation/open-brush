@@ -20,7 +20,7 @@ using System.Linq;
 using UnityEngine;
 
 using Autodesk.Fbx;
-
+using TiltBrushToolkit;
 using static TiltBrush.ExportUtils;
 
 namespace TiltBrush {
@@ -194,7 +194,7 @@ public static class ExportFbx {
       try {
         WriteObjectsAndConnections2(G);
         G.m_exporter.Export(G.m_scene);
-      } catch (InvalidOperationException e) {
+      } catch (GlbError e) {
         OutputWindowScript.Error("FBX export failed", e.Message);
         return false;
       } catch (IOException e) {
