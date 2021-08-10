@@ -19,12 +19,14 @@ namespace TiltBrush
 {
     /*
      * Implements a basic plane guide (known as a stencil in code).  This provides a cleaner way
-     * for mimicking a whiteboard for usages simply beyond painting on a flat surface.
+     * for mimicking a whiteboard for usages beyond painting on a flat surface.
      */
 
     public class PlaneStencil : StencilWidget
     {
         private Vector3 m_AspectRatio;
+        private float m_LayeringOffset = 0.1f;
+
         public override Vector3 Extents
         {
             get
@@ -54,6 +56,11 @@ namespace TiltBrush
             base.Awake();
             m_Type = StencilType.Plane;
             m_AspectRatio = Vector3.one;
+
+            // The mesh's z coordinate cannot be at 0 or layering will not work in FindClosestPoint
+            Vector3 meshPosition = m_Mesh.transform.localPosition;
+            meshPosition.z = m_LayeringOffset;
+            m_Mesh.transform.localPosition = meshPosition;
         }
 
         // Determine where the pointer will be snapped or "magnetized" to on the surface
@@ -64,8 +71,7 @@ namespace TiltBrush
             Vector3 halfDimensions = ((BoxCollider)m_Collider).size * 0.5f;
             surfacePos.x = Mathf.Clamp(localPos.x, -halfDimensions.x, halfDimensions.x);
             surfacePos.y = Mathf.Clamp(localPos.y, -halfDimensions.y, halfDimensions.y);
-            surfacePos.z = Mathf.Clamp(localPos.z, -halfDimensions.z, halfDimensions.z);
-            surfacePos.z = 0f; // ignore box for depth
+            surfacePos.z = m_LayeringOffset; // this must not be too close to 0 or layering will not work
             surfaceNorm = -Vector3.forward;
 
             surfaceNorm = transform.TransformDirection(surfaceNorm);
