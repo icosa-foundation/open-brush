@@ -69,7 +69,7 @@ MonoBehaviour:
   m_ButtonWidth: 0.6
   m_BaseButtonOffset: {x: 0, y: 0, z: 0}
   m_ReticleBounds: {x: 1.65, y: 2, z: -0.35}
-  m_PopUpForwardOffset: -0.25
+  m_PopUpForwardOffset: -0.5
   m_AutoPlaceButtons: []
   m_TransitionDuration: 0.1
   m_OpenDelay: 0
