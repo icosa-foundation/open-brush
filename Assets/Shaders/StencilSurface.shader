@@ -124,7 +124,7 @@ CGINCLUDE
 #endif
 
     // This was previously calculated using the code below.  The fmodBias is problematic when it
-    // comes to dynamically adjusting the grid size (it jumpts around dramatically) and it doesn't
+    // comes to dynamically adjusting the grid size (it jumps around dramatically) and it doesn't
     // seem necessary if you just take the absolute value instead (as seen in the code above).
     //float fmodBias = 10000; //keep fmod from wrapping into negative values
     // interiorGrid += fmod( (localPos.y + fmodBias + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingY : 0;
@@ -225,7 +225,7 @@ Pass {
       #elif HIGHLIGHT_ON
          return float4( _BrushColor.rgb, c.r) * 0.65;
       #endif
-      
+
       c.a = c.r * .65;
       c.rgb += float3(.2,.2,.2);
       c.a = _WidgetsDormant ? max (.5, c.a) : c.a;
