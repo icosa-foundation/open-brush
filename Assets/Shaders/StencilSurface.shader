@@ -70,7 +70,7 @@ CGINCLUDE
 
     o.normal = v.normal;
     o.texcoord = v.texcoord;
-      o.screenPos = ComputeScreenPos(o.vertex);
+    o.screenPos = ComputeScreenPos(o.vertex);
     return o;
   }
 
@@ -115,12 +115,12 @@ CGINCLUDE
     // mod(abs(myValue) + offset half of a line width to center on a line, distance to next line)
     // https://graphtoy.com/?f1(x,t)=0.04&v1=false&f2(x,t)=0.23&v2=true&f3(x,t)=mod(x%20+%20f1(x,t)/2,%20f2(x,t))%20%3E%20f1(x,t)&v3=true&f4(x,t)=abs(sin(t)%20*%200.5)&v4=false&f5(x,t)=(t+floor(x-t))/2-5&v5=false&f6(x,t)=sin(f5(x,t))-5&v6=false&grid=true&coords=-0.1521486828664754,0.5308298491119252,1.4741516828840726
 #if _SHAPE_PLANE
-    interiorGrid += fmod( (abs(localPos.y) + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 : 0;
-    interiorGrid = max(fmod( (abs(localPos.x) + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 : 0, interiorGrid);
 #else
-    interiorGrid += fmod( (abs(localPos.y) + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingY : 0;
-    interiorGrid = max(fmod( (abs(localPos.x) + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingX : 0, interiorGrid);
-    interiorGrid = max(fmod( (abs(localPos.z) + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingZ : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingY : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingX : 0, interiorGrid);
+    interiorGrid = max(fmod((abs(localPos.z) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingZ : 0, interiorGrid);
 #endif
 
     // This was previously calculated using the code below.  The fmodBias is problematic when it
@@ -145,28 +145,28 @@ CGINCLUDE
 #if _SHAPE_PLANE
     float gridWidthX = _FrameWidth / _LocalScale.x;
     float gridWidthY = _FrameWidth / _LocalScale.y;
-    outerEdges += (abs(.5 - i.texcoord.x) >  (.5 - gridWidthX)) ;
-    outerEdges += (abs(.5 - i.texcoord.y) >  (.5 - gridWidthY)) ;
+    outerEdges += (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #elif _SHAPE_CUBE
     float gridWidthX = _FrameWidth / _LocalScale.x;
     float gridWidthY = _FrameWidth / _LocalScale.y;
     float gridWidthZ = _FrameWidth / _LocalScale.z;
 
     // top / bottom
-    outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) >  (.5 - gridWidthX)) ;
-    outerEdges += facings.facingY * (abs(.5 - i.texcoord.y) >  (.5 - gridWidthZ)) ;
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.y) > (.5 - gridWidthZ));
 
     // left / right
-    outerEdges += facings.facingX * (abs(.5 - i.texcoord.x) >  (.5 - gridWidthZ)) ;
-    outerEdges += facings.facingX * (abs(.5 - i.texcoord.y) >  (.5 - gridWidthY)) ;
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.x) > (.5 - gridWidthZ));
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 
     // front / back
-    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.x) >  (.5 - gridWidthX)) ;
-    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.y) >  (.5 - gridWidthY)) ;
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #elif _SHAPE_CAPSULE
     int numLines = 4;
     float gridWidthX = .5 * _FrameWidth / _LocalScale.x;
-    outerEdges += fmod(( (i.texcoord.x - (gridWidthX / 2.0f) / (numLines)) * numLines + 1000), 1) >  (1-gridWidthX) ;
+    outerEdges += fmod(((i.texcoord.x - (gridWidthX / 2.0f) / (numLines)) * numLines + 1000), 1) > (1-gridWidthX);
 
     float gridWidthY =  .25 * _FrameWidth / (_LocalScale.y);
     outerEdges += abs(.5 - i.texcoord.y) >  (.5 - gridWidthY);
@@ -187,14 +187,14 @@ CGINCLUDE
     // Get NDC (0 to 1) depth value
     // Unity uses a reverse z-buffer: 1 -> near plane, 0 -> far plane
     float depthFactor = i.screenPos.z / i.screenPos.w;
-    depthFactor = 1 - smoothstep( fStartFade, fEndFade, depthFactor);
+    depthFactor = 1 - smoothstep(fStartFade, fEndFade, depthFactor);
 
     // Get a [0, 1] value based on an S curve to depthFactor easing in at fStartFade and out fEndFade
     interiorGrid = depthFactor * saturate(interiorGrid);
 
     // Add in the outer frame (A.K.A edges) and combine it with the interior edges
     c.rgb += saturate(outerEdges);
-    c.rgb += saturate(interiorGrid) * ( 1 - saturate(outerEdges));
+    c.rgb += saturate(interiorGrid) * (1 - saturate(outerEdges));
 
     return c;
   }
@@ -221,9 +221,9 @@ Pass {
       float4 c = createStencilGrid(i,2,.5,.25);
 
       #if SELECTION_ON
-         return float4( GetSelectionColor().rgb, c.r ) * 0.65;
+         return float4(GetSelectionColor().rgb, c.r) * 0.65;
       #elif HIGHLIGHT_ON
-         return float4( _BrushColor.rgb, c.r) * 0.65;
+         return float4(_BrushColor.rgb, c.r) * 0.65;
       #endif
 
       c.a = c.r * .65;
@@ -247,9 +247,9 @@ Pass {
       float4 c = createStencilGrid(i,1,1,.5);
 
       #if SELECTION_ON
-         return float4( GetSelectionColor().rgb, c.r );
+         return float4(GetSelectionColor().rgb, c.r);
       #elif HIGHLIGHT_ON
-         return float4( _BrushColor.rgb, c.r);
+         return float4(_BrushColor.rgb, c.r);
       #endif
 
       c.a = c.r * .65;
