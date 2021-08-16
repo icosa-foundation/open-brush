@@ -33,6 +33,7 @@ Material:
         m_Offset: {x: 0, y: 1}
     m_Floats:
     - _Cutoff: 0.5
+    - _FrameWidth: 0.1
     - _GridSize: 0.2
     - _GridWidth: 0.01
     - _InvFade: 1
