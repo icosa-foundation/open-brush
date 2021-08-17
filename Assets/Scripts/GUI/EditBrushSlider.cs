@@ -24,17 +24,33 @@ namespace TiltBrush
         [NonSerialized] public EditBrushPanel ParentPanel;
         public Vector2 Range = Vector2.up; // 0 to 1
         public string FloatPropertyName;
+        public int? VectorComponent;
 
-        public void UpdateValueFromUnscaled(float unscaledValue)
+        public string GenerateDescription(float unscaledValue)
         {
-            UpdateValue(UnscaledValueToUnitValue(unscaledValue));
+            // Strip the leading underscore
+            string description = FloatPropertyName.Substring(1);
+            // For vector parameters we want to append xyzw
+            description = VectorComponent.HasValue ?
+                $"{description}{"XYZW".ToCharArray()[VectorComponent.Value]}" :
+                description;
+            // Append the current value
+            description = $"{description}={unscaledValue:0.##}";
+            return description;
+        }
+        
+        public void UpdateValueIgnoreParent(float unscaledValue)
+        {
+            float unitValue = UnscaledValueToUnitValue(unscaledValue);
+            SetDescriptionText(GenerateDescription(unscaledValue));
+            base.UpdateValue(unitValue);
         }
         
         public override void UpdateValue(float unitValue)
         {
             float unscaledValue = UnitValueToUnscaledValue(unitValue);
-            ParentPanel.SliderChanged(FloatPropertyName, unscaledValue);
-            SetDescriptionText($"{FloatPropertyName.Substring(1)}={unscaledValue:0.##}");
+            ParentPanel.SliderChanged(FloatPropertyName, unscaledValue, VectorComponent);
+            SetDescriptionText(GenerateDescription(unscaledValue));
             base.UpdateValue(unitValue);
         }
         

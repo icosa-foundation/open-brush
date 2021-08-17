@@ -202,12 +202,22 @@ namespace TiltBrush
             SaveButton.GetComponent<ActionButton>().SetButtonAvailable(false);
         }
 
-        public void SliderChanged(string propertyName, float value)
+        public void SliderChanged(string propertyName, float value, int? vectorComponent)
         {
             // Value has already been scaled from 0..1 back to the full range
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-            PreviewMaterial.SetFloat(propertyName, value);
-            brush.Material.SetFloat(propertyName, value);
+            if (vectorComponent.HasValue)
+            {
+                var vecVal = PreviewMaterial.GetVector(propertyName);
+                vecVal[vectorComponent.Value] = value;
+                PreviewMaterial.SetVector(propertyName, vecVal);
+                brush.Material.SetVector(propertyName, vecVal);
+            }
+            else
+            {
+                PreviewMaterial.SetFloat(propertyName, value);
+                brush.Material.SetFloat(propertyName, value);
+            }
         }
         
         public void TextureChanged(string propertyName, int textureIndex, BrushEditorTexturePickerButton btn)
@@ -229,6 +239,17 @@ namespace TiltBrush
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             PreviewMaterial.SetColor(propertyName, color);
             brush.Material.SetColor(propertyName, color);
+        }
+
+        private Vector2 GuessRange(float val)
+        {
+            // We need slider ranges even for float params
+            // Make a rough guess at a plausible range based on the current value
+            // TODO Find a VR friendly UI widget that doesn't need ranges
+            return val == 0 ?
+                new Vector2(0, 1) : // We can't guess a range for 0 so use 0..1
+                new Vector2(val / 10f, val * 10);
+            
         }
 
         private void OnMainPointerBrushChange(BrushDescriptor brush)
@@ -269,7 +290,7 @@ namespace TiltBrush
                         case ShaderPropertyType.Float:
                             float value = brush.Material.GetFloat(propertyName);
                             // Invent a plausible range for float values
-                            Vector2 range = new Vector2(value / 10f, value * 10);
+                            Vector2 range = GuessRange(value);
                             AddSlider(propertyName, value, widgetIndex, range);
                             widgetIndex++;
                             break;
@@ -282,8 +303,16 @@ namespace TiltBrush
                             widgetIndex++;
                             break;
                         case ShaderPropertyType.Vector:
-                            AddVectorInput(propertyName, brush.Material.GetVector(propertyName), widgetIndex);
-                            // index++;
+                            var v = brush.Material.GetVector(propertyName);
+                            AddSlider($"{propertyName}", v.x, widgetIndex, GuessRange(v.x), 0);
+                            widgetIndex++;
+                            AddSlider($"{propertyName}", v.y, widgetIndex, GuessRange(v.y), 1);
+                            widgetIndex++;
+                            AddSlider($"{propertyName}", v.z, widgetIndex, GuessRange(v.z), 2);
+                            widgetIndex++;
+                            // No current shader uses the 4th component 
+                            // AddSlider($"{propertyName}", v.w, widgetIndex, GuessRange(v.w), 3);
+                            // widgetIndex++;
                             break;
                         case ShaderPropertyType.Texture:
                             var tex = (Texture2D)brush.Material.GetTexture(propertyName);
@@ -336,38 +365,24 @@ namespace TiltBrush
             var pos = tr.localPosition;
             pos.x = 0;
             pos.z = -0.075f;
-            pos.y = initialY - (index * 0.27f);
+            pos.y = initialY - (index * 0.22f);
             tr.localPosition = pos;
         }
 
-        private void AddSlider(string propertyName, float unscaledValue, int widgetIndex, Vector2 range)
+        private void AddSlider(string propertyName, float unscaledValue, int widgetIndex, Vector2 range, int? vectorComponent=null)
         {
             var sliderTr = Instantiate(SliderPrefab, gameObject.transform, true);
             var slider = sliderTr.GetComponent<EditBrushSlider>();
             slider.ParentPanel = this;
-            slider.SetDescriptionText(propertyName);
             slider.FloatPropertyName = propertyName;
             slider.Range = range;
-            slider.UpdateValueFromUnscaled(unscaledValue);
+            slider.UpdateValueIgnoreParent(unscaledValue);
             slider.SetSliderPositionToReflectValue();
+            slider.VectorComponent = vectorComponent;
+            slider.SetDescriptionText(slider.GenerateDescription(unscaledValue));
             PositionWidgetByIndex(slider.transform, widgetIndex);
             ParameterWidgets.Add(slider.gameObject);
             slider.RegisterComponent();
-        }
-
-        private void AddVectorInput(string propertyName, Vector4 value, int widgetIndex)
-        {
-            // TODO
-            // var vectorInputTr = Instantiate(VectorInputPrefab);
-            // var vectorInput = vectorInputTr.GetComponent<>();
-            // vectorInputTr.parent = gameObject.transform;
-            // vectorInput.ParentPanel = this;
-            // vectorInput.SetDescriptionText(name);
-            // vectorInput.ShaderPropertyName = name;
-            // vectorInput.UpdateValue(value);
-            // PositionWidgetByIndex(slider.transform, index);
-            // ParameterWidgets.Add(vectorInput.gameObject);
-            Debug.Log($"Vector param: {propertyName} = {value}");
         }
 
         private void AddColorPickerButton(string propertyName, Color color, int widgetIndex)
