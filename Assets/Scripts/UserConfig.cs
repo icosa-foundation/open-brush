@@ -185,6 +185,26 @@ namespace TiltBrush
         public DemoConfig Demo;
 
         [Serializable]
+        public struct BrushConfig
+        {
+            private string[] m_IncludeTags;
+            private string[] m_ExcludeTags;
+
+            public string[] IncludeTags
+            {
+                get => m_IncludeTags ?? (m_IncludeTags = new string[] { "default" });
+                set => m_IncludeTags = value;
+            }
+
+            public string[] ExcludeTags
+            {
+                get => m_ExcludeTags ?? (ExcludeTags = Array.Empty<string>());
+                set => m_ExcludeTags = value;
+            }
+        }
+        public BrushConfig Brushes;
+
+        [Serializable]
         public struct ExportConfig
         {
             bool? m_ExportBinaryFbx;

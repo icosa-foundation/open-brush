@@ -181,6 +181,34 @@ namespace TiltBrush
             }
         }
 
+
+        public Brush[] GetTagFilteredBrushList()
+        {
+            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
+            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+
+            if (includeTags == null)
+            {
+                Debug.LogError("There will be no brushes because there are no 'include' tags.");
+            }
+
+            // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
+            Brush[] filteredList = m_GuiBrushList.Where((brush) =>
+            {
+                // Is this brush excluded?
+                bool? excluded = excludeTags?.Intersect(brush.m_Tags).Any();
+                if (excluded == true || includeTags == null)
+                {
+                    return false;
+                }
+
+                // Is this brush included?
+                return includeTags.Intersect(brush.m_Tags).Any();
+            }).ToArray();
+
+            return filteredList;
+        }
+
         void Update()
         {
             if (m_IsLoading)
