@@ -1391,7 +1391,7 @@ static class BuildTiltBrush
                 };
 
                 // The return value changed between 2017 and 2018
-                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
+                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options & BuildOptions.Development);
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))
                 {
