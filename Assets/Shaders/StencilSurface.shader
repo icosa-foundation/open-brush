@@ -19,7 +19,7 @@ Properties {
   _BackColor ("Backside Color", Color) = (1,1,1,1)
   _LocalScale ("Local Scale", Vector) = (1,1,1)
   _GridSize ("Grid Size", Float) = 1
-  _GridWidth ("Grid Width", Float) = .05
+  _GridLineWidth ("Grid Line Width", Float) = .01
   _FrameWidth ("Frame Width", Float) = .1
   [KeywordEnum(Plane, Cube, Sphere, Capsule)] _Shape ("Shape Type", Float) = 0
 }
@@ -29,14 +29,17 @@ CGINCLUDE
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
-  #pragma multi_compile _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
+  #pragma multi_compile _SHAPE_PLANE _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
   #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 
   uniform float4 _Color;
   uniform float4 _BackColor;
   uniform float3 _LocalScale;
   uniform float _GridSize;
-  uniform float _GridWidth;
+  uniform float _GlobalGridSizeMultiplier;
+  uniform float _GlobalGridLineWidthMultiplier;
+  uniform float _GlobalFrameWidthMultiplier;
+  uniform float _GridLineWidth;
   uniform float _FrameWidth;
   uniform float _ModeSwitch;
   uniform int _UserIsInteractingWithStencilWidget;
@@ -96,17 +99,15 @@ CGINCLUDE
     else gridMultiplier = 16;
 #endif
 
-    _GridSize *= gridMultiplier * gridSizeMultiplier;
-    _GridWidth *= gridMultiplier * gridWidthMultiplier;
-    _FrameWidth *= gridMultiplier * UVGridWidthMultiplier;
+    _GridSize *= gridMultiplier * gridSizeMultiplier * _GlobalGridSizeMultiplier;
+    _GridLineWidth *= gridMultiplier * gridWidthMultiplier * _GlobalGridLineWidthMultiplier;
+    _FrameWidth *= gridMultiplier * UVGridWidthMultiplier * _GlobalFrameWidthMultiplier;
 
 #ifndef _SHAPE_PLANE
     facings.facingY = pow(dot(i.normal, float3(0,1,0)),4);
     facings.facingX = pow(dot(i.normal, float3(1,0,0)),4);
     facings.facingZ = pow(dot(i.normal, float3(0,0,1)),4);
 #endif
-
-    float fmodBias = 10000;
 
     // Edges along the interior of the cube
     float interiorGrid = 0;
@@ -115,21 +116,21 @@ CGINCLUDE
     // mod(abs(myValue) + offset half of a line width to center on a line, distance to next line)
     // https://graphtoy.com/?f1(x,t)=0.04&v1=false&f2(x,t)=0.23&v2=true&f3(x,t)=mod(x%20+%20f1(x,t)/2,%20f2(x,t))%20%3E%20f1(x,t)&v3=true&f4(x,t)=abs(sin(t)%20*%200.5)&v4=false&f5(x,t)=(t+floor(x-t))/2-5&v5=false&f6(x,t)=sin(f5(x,t))-5&v6=false&grid=true&coords=-0.1521486828664754,0.5308298491119252,1.4741516828840726
 #if _SHAPE_PLANE
-    interiorGrid += fmod((abs(localPos.y) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 : 0;
-    interiorGrid = max(fmod((abs(localPos.x) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 : 0, interiorGrid);
 #else
-    interiorGrid += fmod((abs(localPos.y) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingY : 0;
-    interiorGrid = max(fmod((abs(localPos.x) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingX : 0, interiorGrid);
-    interiorGrid = max(fmod((abs(localPos.z) + (_GridWidth / 2.0f)), _GridSize) < _GridWidth ? 1 - facings.facingZ : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingY : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
+    interiorGrid = max(fmod((abs(localPos.z) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
 #endif
 
     // This was previously calculated using the code below.  The fmodBias is problematic when it
     // comes to dynamically adjusting the grid size (it jumps around dramatically) and it doesn't
     // seem necessary if you just take the absolute value instead (as seen in the code above).
     //float fmodBias = 10000; //keep fmod from wrapping into negative values
-    // interiorGrid += fmod( (localPos.y + fmodBias + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingY : 0;
-    // interiorGrid = max(fmod( (localPos.x + fmodBias + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingX : 0, interiorGrid);
-    // interiorGrid = max(fmod( (localPos.z + fmodBias + (_GridWidth / 2.0f) ), _GridSize) < _GridWidth ? 1 - facings.facingZ : 0, interiorGrid);
+    // interiorGrid += fmod( (localPos.y + fmodBias + (_GridLineWidth / 2.0f) ), _GridSize) < _GridLineWidth ? 1 - facings.facingY : 0;
+    // interiorGrid = max(fmod( (localPos.x + fmodBias + (_GridLineWidth / 2.0f) ), _GridSize) < _GridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
+    // interiorGrid = max(fmod( (localPos.z + fmodBias + (_GridLineWidth / 2.0f) ), _GridSize) < _GridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
 
     return interiorGrid;
   }
