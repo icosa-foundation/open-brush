@@ -17,7 +17,7 @@ using System;
 
 namespace TiltBrush
 {
-    public class StencilGridSizeSlider: BaseSlider
+    public class StencilGridSizeSlider : BaseSlider
     {
         [SerializeField] private float m_MinGridSize = 0.25f;
         [SerializeField] private float m_MaxGridSize = 3f;
@@ -25,14 +25,7 @@ namespace TiltBrush
         void OnEnable()
         {
             Shader.SetGlobalFloat(ModifyStencilGridSizeCommand.GlobalGridSizeMultiplierHash, 1f);
-            // App.Switchboard.StencilAttractDistChanged += OnStencilAttractDistChanged;
             OnStencilGridSizeChanged();
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            // App.Switchboard.StencilAttractDistChanged -= OnStencilAttractDistChanged;
         }
 
         public override void UpdateValue(float value)
@@ -77,8 +70,7 @@ namespace TiltBrush
         void EndModifyCommand()
         {
             float percent = GetCurrentValue();
-            float displacement = m_MaxGridSize - m_MinGridSize;
-            float newGridSize = m_MinGridSize + percent * displacement;
+            float newGridSize = Mathf.Lerp(m_MinGridSize, m_MaxGridSize, percent);
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new ModifyStencilGridSizeCommand(newGridSize, true));

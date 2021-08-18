@@ -18,7 +18,7 @@ using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
-    public class StencilGridWidthSlider: BaseSlider
+    public class StencilGridLineWidthSlider : BaseSlider
     {
         [SerializeField] private float m_MinGridWidth = 0.25f;
         [SerializeField] private float m_MaxGridWidth = 3f;
@@ -71,8 +71,7 @@ namespace TiltBrush
         void EndModifyCommand()
         {
             float percent = GetCurrentValue();
-            float displacement = m_MaxGridWidth - m_MinGridWidth;
-            float newGridWidth = m_MinGridWidth + percent * displacement;
+            float newGridWidth = Mathf.Lerp(m_MinGridWidth, m_MaxGridWidth, percent);
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new ModifyStencilGridLineWidthCommand(newGridWidth, true));
