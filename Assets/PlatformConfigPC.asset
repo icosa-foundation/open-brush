@@ -29,6 +29,7 @@ MonoBehaviour:
   EnableExportGlb: 1
   EnableExportJson: 1
   EnableExportUsd: 1
+  EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
   EnabledMulticamStyles: 00000000010000000200000003000000
