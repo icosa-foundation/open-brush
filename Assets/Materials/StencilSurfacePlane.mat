@@ -35,7 +35,7 @@ Material:
     - _Cutoff: 0.5
     - _FrameWidth: 0.05
     - _GridSize: 0.2
-    - _GridWidth: 0.01
+    - _GridLineWidth: 0.01
     - _InvFade: 1
     - _ModeSwitch: 0
     - _Outline: 0.007
