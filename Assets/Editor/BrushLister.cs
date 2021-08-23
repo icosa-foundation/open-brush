@@ -16,6 +16,41 @@ public class BrushLister : MonoBehaviour
     private static TiltBrushManifest brushManifest;
     private static TiltBrushManifest brushManifestX;
 
+    
+    [MenuItem("Tilt/Info/Check Brush Textures")]
+    static void CheckBrushTextures()
+    {
+        Object[] defaultBrushes = Resources.LoadAll("Brushes", typeof(BrushDescriptor)).ToArray();
+        var experimentalBrushes = Resources.LoadAll("X/Brushes", typeof(BrushDescriptor)).ToArray();
+        var allBrushes = defaultBrushes.Concat(experimentalBrushes);
+
+        var checkedMaterials = new HashSet<Material>();
+        
+        foreach (BrushDescriptor brush in allBrushes)
+        {
+            if (brush.Material == null) continue;
+            Debug.Log($"Checking {brush.Material.name}");
+            if (!checkedMaterials.Contains(brush.Material))
+            {
+                var textureProps = brush.Material.GetTexturePropertyNames();
+                foreach (var textureProp in textureProps)
+                {
+                    var texture = brush.Material.GetTexture(textureProp);
+                    if (texture!=null && !texture.isReadable)
+                    {
+                        Debug.LogWarning($"{brush.Material.name} {textureProp} needs read/write enabled");
+                    }
+                    else
+                    {
+                        Debug.Log($"{textureProp} checked");
+                    }
+                }
+                checkedMaterials.Add(brush.Material);
+            }
+        }
+    }
+
+    
     [MenuItem("Tilt/Info/Brush Lister")]
     static void ListBrushes()
     {
