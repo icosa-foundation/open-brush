@@ -114,14 +114,16 @@ CGINCLUDE
 
     // Grid line creation follows a formula that goes something like this:
     // mod(abs(myValue) + offset half of a line width to center on a line, distance to next line)
-    // https://graphtoy.com/?f1(x,t)=0.04&v1=false&f2(x,t)=0.23&v2=true&f3(x,t)=mod(x%20+%20f1(x,t)/2,%20f2(x,t))%20%3E%20f1(x,t)&v3=true&f4(x,t)=abs(sin(t)%20*%200.5)&v4=false&f5(x,t)=(t+floor(x-t))/2-5&v5=false&f6(x,t)=sin(f5(x,t))-5&v6=false&grid=true&coords=-0.1521486828664754,0.5308298491119252,1.4741516828840726
+    //https://graphtoy.com/?f1(x,t)=0.05&v1=false&f2(x,t)=0.5&v2=true&f3(x,t)=mod(abs(x)+f1(x,t)/2,f2(x,t))%3Cf1(x,t)&v3=true&f4(x,t)=mod(abs(x)%20+%20f2(x,t)/2%20+%20f1(x,t)/2,f2(x,t))%3Cf1(x,t)&v4=false&f5(x,t)=(t+floor(x-t))/2-5&v5=false&f6(x,t)=sin(f5(x,t))-5&v6=false&grid=true&coords=-0.1521486828664754,0.5308298491119252,1.2183071759372512
+
+    const float halfLineWidth = _GridLineWidth / 2.0;
 #if _SHAPE_PLANE
-    interiorGrid += fmod((abs(localPos.y) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 : 0;
-    interiorGrid = max(fmod((abs(localPos.x) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 : 0, interiorGrid);
 #else
-    interiorGrid += fmod((abs(localPos.y) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingY : 0;
-    interiorGrid = max(fmod((abs(localPos.x) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
-    interiorGrid = max(fmod((abs(localPos.z) + (_GridLineWidth / 2.0f)), _GridSize) < _GridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
+    interiorGrid += fmod((abs(localPos.y) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingY : 0;
+    interiorGrid = max(fmod((abs(localPos.x) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
+    interiorGrid = max(fmod((abs(localPos.z) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
 #endif
 
     // This was previously calculated using the code below.  The fmodBias is problematic when it
@@ -144,14 +146,14 @@ CGINCLUDE
     float outerEdges = 0;
 
 #if _SHAPE_PLANE
-    float gridWidthX = _FrameWidth / _LocalScale.x;
-    float gridWidthY = _FrameWidth / _LocalScale.y;
+    const float gridWidthX = _FrameWidth / _LocalScale.x;
+    const float gridWidthY = _FrameWidth / _LocalScale.y;
     outerEdges += (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
     outerEdges += (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #elif _SHAPE_CUBE
-    float gridWidthX = _FrameWidth / _LocalScale.x;
-    float gridWidthY = _FrameWidth / _LocalScale.y;
-    float gridWidthZ = _FrameWidth / _LocalScale.z;
+    const float gridWidthX = _FrameWidth / _LocalScale.x;
+    const float gridWidthY = _FrameWidth / _LocalScale.y;
+    const float gridWidthZ = _FrameWidth / _LocalScale.z;
 
     // top / bottom
     outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
@@ -165,14 +167,14 @@ CGINCLUDE
     outerEdges += facings.facingZ * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
     outerEdges += facings.facingZ * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #elif _SHAPE_CAPSULE
-    int numLines = 4;
-    float gridWidthX = .5 * _FrameWidth / _LocalScale.x;
+    const int numLines = 4;
+    const float gridWidthX = .5 * _FrameWidth / _LocalScale.x;
     outerEdges += fmod(((i.texcoord.x - (gridWidthX / 2.0f) / (numLines)) * numLines + 1000), 1) > (1-gridWidthX);
 
-    float gridWidthY =  .25 * _FrameWidth / (_LocalScale.y);
+    const float gridWidthY =  .25 * _FrameWidth / (_LocalScale.y);
     outerEdges += abs(.5 - i.texcoord.y) >  (.5 - gridWidthY);
 #elif _SHAPE_SPHERE
-    float gridWidthX = _FrameWidth / _LocalScale.x;
+    const float gridWidthX = _FrameWidth / _LocalScale.x;
     outerEdges += abs(fmod(i.pos.x * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.y * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.z * 2 + 0 , 1)) < gridWidthX * 2;
@@ -182,8 +184,8 @@ CGINCLUDE
 
     // Compute a float that fades out when the camera gets too close
     // Magic numbers tuned to taste here.
-    float fStartFade = .95;
-    float fEndFade = .985;
+    const float fStartFade = .95;
+    const float fEndFade = .985;
 
     // Get NDC (0 to 1) depth value
     // Unity uses a reverse z-buffer: 1 -> near plane, 0 -> far plane
