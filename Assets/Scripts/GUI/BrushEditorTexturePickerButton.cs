@@ -21,16 +21,16 @@ namespace TiltBrush
     {
         [NonSerialized] public EditBrushPanel ParentPanel;
         [NonSerialized] public string TexturePropertyName;
-        public int TextureIndex;
-        private string m_TexturePath;
         [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
         [NonSerialized] public BrushEditorTexturePopUpWindow popup;
-        public string TexturePath
+        private int _textureIndex;
+        public int TextureIndex
         {
-            get => m_TexturePath;
-            private set => m_TexturePath = value;
+            get { return _textureIndex; }
+            set
+            { _textureIndex = value; }
         }
-
+        
         protected override void OnButtonPressed()
         {
             for (int i = 0; i < m_ObjectsToHideBehindPopups.Length; ++i)
@@ -40,7 +40,7 @@ namespace TiltBrush
             base.OnButtonPressed();
             
             popup = (BrushEditorTexturePopUpWindow) ParentPanel.PanelPopUp;
-            popup.ActiveTextureIndex = TextureIndex;
+            popup.ActiveTextureIndex = _textureIndex;
             popup.OpenerButton = this;
             // TODO - match buttons to textures so we can make the right one active
             // Otherwise we need to fix the underlying problem where the popup can't access ParentPanel during Init
@@ -54,17 +54,17 @@ namespace TiltBrush
             GetComponent<Renderer>().material.SetFloat("_Distance", gazeRatio);
         }
 
-        public void UpdateValue(Texture2D tex, string propertyName, string texPath)
+        public void UpdateValue(Texture2D tex, string propertyName, int textureIndex)
         {
             if (tex != null)
             {
-                SetButtonTexture((Texture2D)tex);
+                SetButtonTexture(tex);
                 m_ButtonTexture = tex;
                 GetComponent<MeshRenderer>().material.mainTexture = tex;
             }
             TexturePropertyName = propertyName;
+            _textureIndex = textureIndex;
             SetDescriptionText(propertyName);
-            TexturePath = texPath;
         }
     }
 } // namespace TiltBrush
