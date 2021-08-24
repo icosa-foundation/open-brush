@@ -142,7 +142,8 @@ namespace TiltBrush
             ReadOnlyNotice,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
-            OpenExampleScriptsList = 6002
+            OpenExampleScriptsList = 6002,
+            OpenColorOptionsPopup = 7000
         }
 
         public enum ControlsType

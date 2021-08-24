@@ -200,12 +200,12 @@ namespace TiltBrush
                 return m_CurrentNodeByTime.Value;
             }
         }
+
         public LinkedListNode<Stroke> FirstNodeByTime
         {
             get
             {
                 return m_MemoryList.First;
-
             }
         }
 
