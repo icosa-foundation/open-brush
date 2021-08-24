@@ -27157,7 +27157,7 @@ MonoBehaviour:
     type: 3}
   m_RotationIconPrefab: {fileID: 100000, guid: 72830b8e348ad7649886747f9c168ebc, type: 3}
   m_GazeMaxAngleFromFacing: 40
-  m_GazeMaxDistance: 10
+  m_GazeMaxDistance: 15
   m_GazeControllerPointingDistance: 4
   m_GazePanelDectivationDelay: 0.25
   m_UIReticle: {fileID: 269484831}
