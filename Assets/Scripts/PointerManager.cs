@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ControllerName = TiltBrush.InputManager.ControllerName;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -151,6 +152,8 @@ namespace TiltBrush
         private SymmetryMode m_CurrentSymmetryMode;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
+        private Color m_lastChosenColor { get; set; }
+        public Vector3 colorJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -177,15 +180,23 @@ namespace TiltBrush
             get { return m_MainPointerData.m_Script; }
         }
 
+        /// Only call this if you don't want to update m_lastChosenColor
+        /// Used by color jitter on new stroke
+        private void ChangeAllPointerColorsDirectly(Color value)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.SetColor(value);
+            }
+        }
+
         public Color PointerColor
         {
             get { return m_MainPointerData.m_Script.GetCurrentColor(); }
             set
             {
-                for (int i = 0; i < m_NumActivePointers; ++i)
-                {
-                    m_Pointers[i].m_Script.SetColor(value);
-                }
+                ChangeAllPointerColorsDirectly(value);
+                m_lastChosenColor = value;
                 OnPointerColorChange();
             }
         }
@@ -997,6 +1008,27 @@ namespace TiltBrush
 
         private void Transition_WaitingForInput_RecordingInput()
         {
+            // Can't check for null as Color is a struct
+            // But it's harmless to call this if the color really has been set to black
+            if (m_lastChosenColor == Color.black)
+            {
+                m_lastChosenColor = PointerColor;
+            }
+
+            if (colorJitter.sqrMagnitude > 0)  // Is Jitter enabled?
+            {
+                float h, s, v;
+                Color.RGBToHSV(m_lastChosenColor, out h, out s, out v);
+
+                // Bypass the code in the PointerColor setter
+                ChangeAllPointerColorsDirectly(Random.ColorHSV(
+                    h - colorJitter.x, h + colorJitter.x,
+                    s - colorJitter.y, h + colorJitter.y,
+                    v - colorJitter.z, h + colorJitter.z
+                ));
+            }
+
+
             if (m_StraightEdgeEnabled)
             {
                 StraightEdgeGuide.SetTempShape(StraightEdgeGuideScript.Shape.Line);
