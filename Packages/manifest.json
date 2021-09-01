@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.atteneder.gltfast": "4.2.1",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "0.0.2-preview.1",
@@ -47,5 +48,14 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.atteneder"
+      ]
+    }
+  ]
 }
