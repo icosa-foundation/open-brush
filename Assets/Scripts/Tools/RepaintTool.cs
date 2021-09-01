@@ -105,6 +105,9 @@ namespace TiltBrush
                 float speedDelta = m_SpinSpeedDecay * Time.deltaTime;
                 m_SpinSpeed = Mathf.Sign(m_SpinSpeed) * Mathf.Max(Mathf.Abs(m_SpinSpeed) - speedDelta, 0.0f);
                 m_SpinSpeedVel = 0.0f;
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                m_BatchFilter = null;
+#endif
             }
             m_SpinAmount += m_SpinSpeed * Time.deltaTime;
         }
@@ -130,6 +133,18 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            if (altSelect && Config.IsExperimental)
+            {
+                if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
+                    m_BatchFilter = rGroup.m_ParentBatch;
+
+                if (!ReferenceEquals(m_BatchFilter, rGroup.m_ParentBatch))
+                    return true;
+            }
+            else
+                m_BatchFilter = null;
+#endif
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
                 rGroup.m_Stroke, m_Recolor, m_Rebrush);
             if (didRepaint) { PlayModifyStrokeSound(); }

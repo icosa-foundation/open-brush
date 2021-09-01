@@ -90,6 +90,19 @@ namespace TiltBrush
             ClearGpuFutureLists();
         }
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        public virtual bool altSelect
+        {
+            get
+            {
+                return InputManager.m_Instance.GetCommand(InputManager.SketchCommands.AltActivate);
+            }
+        }
+
+        [System.NonSerialized]
+        protected Batch m_BatchFilter;
+#endif
+        
         virtual protected void SnapIntersectionObjectToController() { }
 
         /// Easier interface than overriding HandleIntersectionWith*

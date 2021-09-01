@@ -324,6 +324,18 @@ namespace TiltBrush
             return m_CurrentLineCreationState == LineCreationState.ProcessingStraightEdge;
         }
 
+        public static bool MainPointerIsPainting()
+        {
+            if (
+                m_Instance.IsMainPointerProcessingLine()
+                || m_Instance.IsMainPointerCreatingStroke()
+                || m_Instance.IsLineEnabled()
+            )
+                return true;
+
+            return false;
+        }
+
         public void SetInPlaybackMode(bool bInPlaybackMode)
         {
             m_InPlaybackMode = bInPlaybackMode;

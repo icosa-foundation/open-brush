@@ -374,6 +374,22 @@ namespace TiltBrush
             return (!last && current);
         }
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        /// Returns true if the specified input has just been deactivated (falling-edge trigger).
+        public override bool GetVrInputUp(VrInput input)
+        {
+            if (Config.IsExperimental)
+            {
+                if (!IndexIsValid()) { return false; }
+                bool last = GetVrInputForFrame(input, currentFrame: false);
+                bool current = GetVrInputForFrame(input, currentFrame: true);
+                return (last && !current);
+            }
+            else
+                return false;
+        }
+#endif
+
         public override void TriggerControllerHaptics(float seconds)
         {
             if (!IndexIsValid()) { return; }

@@ -970,6 +970,19 @@ namespace TiltBrush
             VideoRecorderUtils.SerializerNewUsdFrame();
         }
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        public bool IsFreepaintToolReady()
+        {
+            return
+                !m_PinCushion.IsShowing() &&
+                !PointerManager.m_Instance.IsStraightEdgeProxyActive() &&
+                !InputManager.m_Instance.ControllersAreSwapping() &&
+                (m_SketchSurfacePanel.IsSketchSurfaceToolActive() ||
+                (m_SketchSurfacePanel.GetCurrentToolType() == BaseTool.ToolType.FreePaintTool))
+                ;
+        }
+#endif
+
         public void UpdateControls()
         {
             UnityEngine.Profiling.Profiler.BeginSample("SketchControlsScript.UpdateControls");
@@ -1079,13 +1092,16 @@ namespace TiltBrush
                         m_SketchSurfacePanel.AllowDrawing(m_InputStateConfigs[(int)m_CurrentInputState].m_AllowDrawing);
                         m_SketchSurfacePanel.UpdateCurrentTool();
 
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                        PointerManager.m_Instance.AllowPointerPreviewLine(IsFreepaintToolReady());
+#else
                         PointerManager.m_Instance.AllowPointerPreviewLine(
                             !m_PinCushion.IsShowing() &&
                             !PointerManager.m_Instance.IsStraightEdgeProxyActive() &&
                             !InputManager.m_Instance.ControllersAreSwapping() &&
                             (m_SketchSurfacePanel.IsSketchSurfaceToolActive() ||
                             (m_SketchSurfacePanel.GetCurrentToolType() == BaseTool.ToolType.FreePaintTool)));
-
+#endif
                         //keep transform gizmo at sketch surface pos
                         m_TransformGizmo.transform.position = m_SketchSurface.transform.position;
                         bool bGizmoActive = m_InputStateConfigs[(int)m_CurrentInputState].m_ShowGizmo && m_SketchSurfacePanel.ShouldShowTransformGizmo();
@@ -1166,30 +1182,29 @@ namespace TiltBrush
         void UpdatePinCushionVisibility()
         {
             // If the pin cushion is showing and the user cancels, eat the input.
-            if (m_PinCushion.IsShowing())
-            {
-                if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) ||
-                    InputManager.Brush.GetControllerGrip() ||
-                    InputManager.Wand.GetControllerGrip() ||
-                    IsUserInteractingWithAnyWidget() ||
-                    IsUserInteractingWithUI())
-                {
-                    m_EatPinCushionInput = true;
-                }
-            }
+            // if (m_PinCushion.IsShowing())
+            // {
+            //     if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) ||
+            //         InputManager.Brush.GetControllerGrip() ||
+            //         InputManager.Wand.GetControllerGrip() ||
+            //         IsUserInteractingWithAnyWidget() ||
+            //         IsUserInteractingWithUI())
+            //     {
+            //         m_EatPinCushionInput = true;
+            //     }
+            // }
 
             // If our tool wants the input blocked, maintain the input eat state until
             // after the user has let off input.
-            if (m_SketchSurfacePanel.ActiveTool.BlockPinCushion())
+            if (m_SketchSurfacePanel.ActiveTool.BlockPinCushion() || !CanUsePinCushion())
             {
                 m_EatPinCushionInput = true;
             }
 
-            bool inputValid =
+            bool show =
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.ShowPinCushion);
-            bool show = inputValid && CanUsePinCushion();
             m_PinCushion.ShowPinCushion(show && !m_EatPinCushionInput);
-            m_EatPinCushionInput = m_EatPinCushionInput && inputValid;
+            m_EatPinCushionInput = m_EatPinCushionInput && show;
         }
 
         bool CanUsePinCushion()
@@ -1480,6 +1495,10 @@ namespace TiltBrush
                         InputManager.KeyboardShortcut.ToggleProfile)))
                 {
                     IssueGlobalCommand(GlobalCommands.ToggleProfiling);
+                }
+                else if (VisorWidget.m_Instance)
+                {
+                    VisorWidget.m_Instance.UpdateInput();
                 }
             }
 #endif
@@ -2400,6 +2419,11 @@ namespace TiltBrush
             m_WorldTransformResetXf =
                 toSavedXf ? SketchMemoryScript.m_Instance.InitialSketchTransform : TrTransform.identity;
             m_WorldTransformResetState = WorldTransformResetState.Requested;
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            if (Config.IsExperimental)
+                App.Scene.disableTiltProtection = false;
+#endif
         }
 
         void UpdateWorldTransformReset()
@@ -2436,6 +2460,27 @@ namespace TiltBrush
                     break;
             }
         }
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        bool CheckToggleTiltProtection()
+        {
+            if (
+                !InGrabCanvasMode &&
+                (
+                InputManager.Wand.GetCommandDown(InputManager.SketchCommands.Redo) ||
+                InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Redo)
+                )
+            )
+            {
+                App.Scene.disableTiltProtection = !App.Scene.disableTiltProtection;
+
+                return !App.Scene.disableTiltProtection;
+            }
+
+            return false;
+
+        }
+#endif
 
         void UpdateGrab_World()
         {
@@ -2529,11 +2574,22 @@ namespace TiltBrush
                         }
                         else
                         {
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                            bool fixOffset = false;
+
+                            if (Config.IsExperimental) {
+                                fixOffset = CheckToggleTiltProtection();
+                            }
+#endif
                             xfNew = MathUtils.TwoPointObjectTransformation(
                                 m_GrabBrush.grabTransform, m_GrabWand.grabTransform,
                                 grabXfBrush, grabXfWand,
                                 xfOld,
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                                rotationAxisConstraint: (Config.IsExperimental && App.Scene.disableTiltProtection ? default(Vector3) : Vector3.up),
+#else
                                 rotationAxisConstraint: Vector3.up,
+#endif
                                 deltaScaleMin: deltaScaleMin, deltaScaleMax: deltaScaleMax);
                             float fCurrentWorldTransformSpeed =
                                 Mathf.Abs((xfNew.scale - xfOld.scale) / Time.deltaTime);
@@ -2544,6 +2600,27 @@ namespace TiltBrush
                                 Mathf.Clamp(m_WorldTransformSpeedSmoothed /
                                     AudioManager.m_Instance.m_WorldGrabLoopAttenuation, 0f,
                                     AudioManager.m_Instance.m_WorldGrabLoopMaxVolume));
+
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                            if (Config.IsExperimental)
+                            {
+                                if (fixOffset)
+                                {
+                                    Vector3 midPoint = Vector3.Lerp(grabXfBrush.translation, grabXfWand.translation, 0.5f);
+
+                                    Vector3 localMidPointOldXF = xfOld.inverse * midPoint;
+
+                                    // assign this to force the axial protection
+                                    GrabbedPose = xfNew;
+                                    xfNew = GrabbedPose;
+
+                                    Vector3 midPointXFNew = xfNew * localMidPointOldXF;
+
+                                    TrTransform xfDelta1 = TrTransform.T(midPoint - midPointXFNew);
+                                    xfNew = xfDelta1 * xfNew;
+                                }
+                            }
+#endif
                         }
                         GrabbedPose = xfNew;
                     }
@@ -2895,7 +2972,9 @@ namespace TiltBrush
                 && !m_SketchSurfacePanel.ActiveTool.InputBlocked()
                 && (m_GrabWidgetState == GrabWidgetState.None)
                 && !m_GrabBrush.grabbingWorld
-                && !m_PinCushion.IsShowing();
+                && !m_PinCushion.IsShowing()
+                && !PointerManager.MainPointerIsPainting()
+                ;
 
             bool bGazeDeactivationOverrideWithInput = false;
             List<PanelManager.PanelData> aAllPanels = m_PanelManager.GetAllPanels();

@@ -47,6 +47,9 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            DraftingTool = 30000,
+#endif
         }
         public ToolType m_Type;
 
