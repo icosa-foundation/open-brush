@@ -9750,10 +9750,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Standard: {fileID: 2100000, guid: 71181c4f4e8422341a2e8f4a2e4519c8, type: 2}
   m_Blank: {fileID: 2100000, guid: 9207b485a72789a44b3bce9e43ca1f8b, type: 2}
-  m_LazyInputOn: {fileID: 0}
-  m_LazyInputAltOn: {fileID: 0}
-  m_LazyInputOff: {fileID: 0}
-  m_RevolverRadius: {fileID: 0}
+  m_LazyInputOn: {fileID: 2100000, guid: f4d3091097d738f44baa30c2d7cf56e5, type: 2}
+  m_LazyInputAltOn: {fileID: 2100000, guid: 531896ce58d50314b8b7dfaf0f347e16, type: 2}
+  m_LazyInputOff: {fileID: 2100000, guid: 13b32f7c759931545ae3014c849fa437, type: 2}
+  m_RevolverRadius: {fileID: 2100000, guid: 041d0377c82867c478b48f6a66fa4af8, type: 2}
   m_SnapOn: {fileID: 2100000, guid: c1cf869575c9e824c8b385b75cc086f5, type: 2}
   m_SnapOff: {fileID: 2100000, guid: 603d1437b0b279144b9a122d1334bb6f, type: 2}
   m_PanelsRotate: {fileID: 2100000, guid: fcf0a08462436274da0c139a1eb522d5, type: 2}
