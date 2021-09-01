@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TiltBrush {
-  public class DepthGuide : MonoBehaviour {
+namespace TiltBrush
+{
+    public class DepthGuide : MonoBehaviour
+    {
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
 
     [SerializeField]
@@ -80,6 +82,6 @@ namespace TiltBrush {
       FollowBrushController();
     }
 #endif
-  }
+    }
 
 }

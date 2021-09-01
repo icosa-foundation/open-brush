@@ -1,9 +1,11 @@
 ﻿using System;
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public class MarkerPoint : GrabWidget {
+    public class MarkerPoint : GrabWidget
+    {
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
 
     protected override void Awake() {
@@ -11,6 +13,6 @@ namespace TiltBrush {
       base.Awake();
     }
 #endif
-  }
+    }
 
 }

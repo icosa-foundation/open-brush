@@ -102,7 +102,7 @@ namespace TiltBrush
         [System.NonSerialized]
         protected Batch m_BatchFilter;
 #endif
-        
+
         virtual protected void SnapIntersectionObjectToController() { }
 
         /// Easier interface than overriding HandleIntersectionWith*

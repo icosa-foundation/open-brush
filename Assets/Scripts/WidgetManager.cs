@@ -1014,7 +1014,7 @@ namespace TiltBrush
                     .Where(w => w != null);
             }
         }
-        
+
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public IEnumerable<MarkerPoint> MarkerPoints {
             get {

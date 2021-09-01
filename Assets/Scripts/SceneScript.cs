@@ -59,7 +59,7 @@ namespace TiltBrush
         [System.NonSerialized]
         public bool disableTiltProtection;
 #endif
-        
+
         /// The global pose of this scene. All scene modifications must go through this.
         /// On assignment, range of local scale is limited (log10) to +/-4.
         /// Emits SceneScript.PoseChanged, CanvasScript.PoseChanged.

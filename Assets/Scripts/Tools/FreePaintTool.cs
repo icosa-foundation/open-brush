@@ -96,14 +96,14 @@ namespace TiltBrush
         {
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
             // for FreePaintTool.
-            m_wandTriggerRatio    = InputManager.Wand.GetTriggerRatio();
-            m_wandTrigger         = InputManager.Wand.GetCommand(InputManager.SketchCommands.Activate);
-            m_wandTriggerDown     = InputManager.Wand.GetCommandDown(InputManager.SketchCommands.Activate);
+            m_wandTriggerRatio = InputManager.Wand.GetTriggerRatio();
+            m_wandTrigger = InputManager.Wand.GetCommand(InputManager.SketchCommands.Activate);
+            m_wandTriggerDown = InputManager.Wand.GetCommandDown(InputManager.SketchCommands.Activate);
             m_brushTriggerRatio = InputManager.Brush.GetTriggerRatio();
-            m_brushTrigger        = InputManager.Brush.GetCommand(InputManager.SketchCommands.Activate);
-            m_brushTriggerDown    = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Activate);
+            m_brushTrigger = InputManager.Brush.GetCommand(InputManager.SketchCommands.Activate);
+            m_brushTriggerDown = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Activate);
 
-            m_brushUndoButton     = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
+            m_brushUndoButton = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
             m_brushUndoButtonDown = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Undo);
 
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
@@ -188,7 +188,7 @@ namespace TiltBrush
             else
                 m_PaintingActive = !m_EatInput && !m_ToolHidden && m_brushTrigger;
 #else
-        m_PaintingActive = !m_EatInput && !m_ToolHidden && m_brushTrigger;
+            m_PaintingActive = !m_EatInput && !m_ToolHidden && m_brushTrigger;
 #endif
 
             PointerManager.m_Instance.EnableLine(m_PaintingActive);
@@ -263,7 +263,7 @@ namespace TiltBrush
                 }
             }
 #endif
-            
+
             PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos, rot);
         }
 

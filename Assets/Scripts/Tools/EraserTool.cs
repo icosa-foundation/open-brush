@@ -114,7 +114,7 @@ namespace TiltBrush
             else
                 m_BatchFilter = null;
 #endif
-            
+
             SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGroup.m_Stroke);
             PlayModifyStrokeSound();
             return true;

@@ -277,7 +277,7 @@ namespace TiltBrush
             return false;
         }
 #endif
-        
+
         public override bool GetVrInputTouch(VrInput input)
         {
             return false;

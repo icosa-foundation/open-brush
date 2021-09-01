@@ -179,7 +179,7 @@ namespace TiltBrush
                 return false;
         }
 #endif
-        
+
         public override bool GetVrInputDown(VrInput input)
         {
             switch (input)

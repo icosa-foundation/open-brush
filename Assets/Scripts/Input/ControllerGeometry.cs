@@ -705,7 +705,7 @@ namespace TiltBrush
                     break;
             }
         }
-        
+
 #endif
 
         public void ShowBrushSizer()

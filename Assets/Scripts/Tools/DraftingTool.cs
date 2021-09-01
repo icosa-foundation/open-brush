@@ -1,8 +1,10 @@
 ﻿using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-  public partial class DraftingTool : BaseTool {
+    public partial class DraftingTool : BaseTool
+    {
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
 
     public static DraftingTool m_Instance { get; private set; }
@@ -101,6 +103,6 @@ namespace TiltBrush {
     }
 
 #endif // (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-  }
+    }
 
 }

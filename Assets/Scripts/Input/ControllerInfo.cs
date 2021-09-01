@@ -278,7 +278,7 @@ namespace TiltBrush
             return false;
         }
 #endif
-        
+
         // -------------------------------------------------------------------------------------------- //
         // Command/Input Held support
         // -------------------------------------------------------------------------------------------- //
@@ -389,7 +389,7 @@ namespace TiltBrush
                 return false;
         }
 #endif
-        
+
         /// Returns the same value as GetVrInputTouch(VrControllerInput.Touchpad)
         public bool GetPadTouch()
         {
@@ -454,7 +454,7 @@ namespace TiltBrush
         /// Returns true if the specified input has just been deactivated (falling-edge trigger).
         public abstract bool GetVrInputUp(VrInput input);
 #endif
-        
+
         /// Returns true if the specified input is currently being touched, and if the controller
         /// supports it (currently: Oculus Touch, Knuckles).
         ///
