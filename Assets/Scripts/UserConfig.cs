@@ -190,6 +190,9 @@ namespace TiltBrush
             private string[] m_IncludeTags;
             private string[] m_ExcludeTags;
 
+            public Dictionary<string, string[]> AddTagsToBrushes { get; set; }
+            public Dictionary<string, string[]> RemoveTagsFromBrushes { get; set; }
+
             public string[] IncludeTags
             {
                 get => m_IncludeTags ?? (m_IncludeTags = new string[] { "default" });
