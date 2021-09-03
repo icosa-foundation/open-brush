@@ -40,16 +40,29 @@ namespace TiltBrush
         public static void DrawPaths(string jsonString)
         {
             var origin = ApiManager.Instance.BrushPosition;
-            var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>(jsonString);
-            DrawStrokes.PathsToStrokes(paths, origin);
+            var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
+            DrawStrokes.MultiPathsToStrokes(paths, origin);
         }
 
-        [ApiEndpoint("draw.path", "Draws a path at the current brush position [[x1,y1,z1],[x2,y2,z2], etc...]. Does not move the brush position")]
+        [ApiEndpoint("draw.path", "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position")]
         public static void DrawPath(string jsonString)
         {
             var origin = ApiManager.Instance.BrushPosition;
-            var path = JsonConvert.DeserializeObject<List<List<float>>>(jsonString);
-            DrawStrokes.PathToStroke(path, origin);
+            var path = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
+            DrawStrokes.SinglePathToStroke(path, origin);
+        }
+
+        [ApiEndpoint("draw.stroke", "Draws an exact brush stroke as recorded in another app")]
+        public static void DrawStroke(string jsonString)
+        {
+            var strokeData = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
+            DrawStrokes.SinglePathToStroke(strokeData, Vector3.zero, rawStroke: true);
+        }
+
+        [ApiEndpoint("listenfor.strokes", "Adds the url of an app that wants to receive the data for a stroke as each one is finished")]
+        public static void AddListener(string url)
+        {
+            ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
         private static Vector3 rotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
@@ -76,7 +89,7 @@ namespace TiltBrush
                 point = ApiManager.Instance.BrushRotation * point;
                 path.Add(point);
             }
-            DrawStrokes.PathToStroke(path, ApiManager.Instance.BrushPosition);
+            DrawStrokes.PositionPathsToStroke(path, ApiManager.Instance.BrushPosition);
         }
 
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
@@ -112,7 +125,7 @@ namespace TiltBrush
             var font = Resources.Load<CHRFont>("arcade");
             var textToStroke = new TextToStrokes(font);
             var polyline2d = textToStroke.Build(text);
-            DrawStrokes.PathsToStrokes(polyline2d, origin);
+            DrawStrokes.MultiPositionPathsToStrokes(polyline2d, null, null, origin);
         }
 
         [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
@@ -123,7 +136,7 @@ namespace TiltBrush
             svgData.Path(svgPathString);
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
-            DrawStrokes.PathsToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
+            DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
 
         [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the localhost:40074/help screen")]
@@ -322,7 +335,7 @@ namespace TiltBrush
                 new List<Vector3>{Vector3.zero, end}
             };
             var origin = ApiManager.Instance.BrushPosition;
-            DrawStrokes.PathsToStrokes(path, origin);
+            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, origin);
             ApiManager.Instance.BrushPosition += end;
         }
 

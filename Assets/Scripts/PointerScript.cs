@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -903,6 +904,26 @@ namespace TiltBrush
             Stroke rMemoryObjectForPlayback,
             SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None)
         {
+            if (ApiManager.Instance.HasOutgoingListeners)
+            {
+                var color = App.BrushColor.CurrentColor;
+                var pointsAsStrings = new List<string>();
+                foreach (var cp in m_ControlPoints)
+                {
+                    var pos = cp.m_Pos;
+                    var rot = cp.m_Orient.eulerAngles;
+                    pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+                }
+                ApiManager.Instance.EnqueueOutgoingCommands(
+                    new List<KeyValuePair<string, string>>
+                    {
+                        new KeyValuePair<string, string>("brush.type", CurrentBrush.m_Guid.ToString()),
+                        new KeyValuePair<string, string>("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                        new KeyValuePair<string, string>("draw.stroke", string.Join(",", pointsAsStrings))
+                    }
+                );
+            }
+
             if (rMemoryObjectForPlayback != null)
             {
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);

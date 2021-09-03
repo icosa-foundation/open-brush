@@ -81,10 +81,10 @@
                     var x = j;
                     var y = i;
                 }
-                line.push(`[${x*scale}, 0, ${y*scale}]`);
+                line.push(`[${x*scale},0,${y*scale}]`);
             }
             sendCommands([
-                `draw.path=[${line.join(",")}]`
+                `draw.path=${line.join(",")}`
             ]);
         }
 

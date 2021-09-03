@@ -135,7 +135,6 @@
                 if (coords.length < 3) continue;
                 var c2 = 0;
                 var path = [];
-                path.push('[');
                 for (var h=0; h<feature.properties.height; h+=floorHeight)
                 {
                     for (var coord of coords) {
@@ -150,7 +149,6 @@
                     c2++;
                     if (c2>100) break;  // Failsafe
                 }
-                path.push(']');
                 var pathString = path.join('');
                 sendCommands([`draw.path=${pathString}`]);
                 count++;

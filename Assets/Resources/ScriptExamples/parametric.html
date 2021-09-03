@@ -115,7 +115,6 @@
             for (var v = vmin; v <= vmax; v += vinc) {
                 setBrushColor(umin, v, umin, umax, vmin, vmax, xformula, yformula, zformula);
                 var path = [];
-                path.push('[');
                 for (var u = umin; u <= umax; u += uinc) {
                     path.push('[');
                     path.push(`${eval(xformula) * scale + xorigin},`);
@@ -123,7 +122,6 @@
                     path.push(`${eval(zformula) * scale + zorigin}`);
                     path.push('],');
                 }
-                path.push(']');
 
                 sendCommands([`draw.path=${path.join('')}`]);
             }
@@ -133,7 +131,6 @@
             for (var u = umin; u <= umax; u += uinc) {
                 setBrushColor(u, vmin, umin, umax, vmin, vmax, xformula, yformula, zformula);
                 var path = [];
-                path.push('[');
                 for (var v = vmin; v <= vmax; v += vinc) {
                     path.push('[');
                     path.push(`${eval(xformula) * scale + xorigin},`);
@@ -141,7 +138,6 @@
                     path.push(`${eval(zformula) * scale + zorigin}`);
                     path.push('],');
                 }
-                path.push(']');
                 sendCommands([`draw.path=${path.join('')}`]);
             }
         }

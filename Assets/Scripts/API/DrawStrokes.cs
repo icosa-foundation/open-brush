@@ -6,43 +6,65 @@ namespace TiltBrush
     public static class DrawStrokes
     {
 
-        public static void PathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f)
+        public static void SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, bool rawStroke = false)
         {
             var floatPaths = new List<List<List<float>>> { floatPath };
-            PathsToStrokes(floatPaths, origin, scale);
+            MultiPathsToStrokes(floatPaths, origin, scale, rawStroke);
         }
 
-        public static void PathToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
+        public static void SinglePath2dToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
         {
             var polylines2d = new List<List<Vector2>> { polyline2d };
-            PathsToStrokes(polylines2d, origin, scale);
+            MultiPath2dToStrokes(polylines2d, origin, scale);
         }
 
-        public static void PathToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
+        public static void PositionPathsToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
         {
-            var paths = new List<List<Vector3>> { path };
-            PathsToStrokes(paths, origin, scale);
+            var positions = new List<List<Vector3>> { path };
+            MultiPositionPathsToStrokes(positions, null, null, origin, scale);
         }
 
-        public static void PathsToStrokes(List<List<List<float>>> floatPaths, Vector3 origin, float scale = 1f)
+        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, bool rawStroke = false)
         {
-            var paths = new List<List<Vector3>>();
-            foreach (List<List<float>> positionList in floatPaths)
+            var positions = new List<List<Vector3>>();
+            var orientations = new List<List<Vector3>>();
+            var pressures = new List<List<float>>();
+
+            // This assumes that the stroke data is consistent.
+            // If we have orientation or pressure for the first point, we have it for all
+            bool orientationsExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
+            bool pressuresExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
+
+            foreach (List<List<float>> positionList in strokeData)
             {
-                var path = new List<Vector3>();
-                foreach (List<float> position in positionList)
+                var positionsPath = new List<Vector3>();
+                var orientationsPath = new List<Vector3>();
+                var pressuresPath = new List<float>();
+
+                foreach (List<float> controlPoint in positionList)
                 {
-                    if (position.Count < 3) { position.Add(0); }
-                    path.Add(new Vector3(position[0], position[1], position[2]));
+                    if (controlPoint.Count < 3) { controlPoint.Add(0); }  // Handle 2D paths
+
+                    positionsPath.Add(new Vector3(controlPoint[0], controlPoint[1], controlPoint[2]));
+                    if (orientationsExist)
+                    {
+                        orientationsPath.Add(new Vector3(controlPoint[3], controlPoint[4], controlPoint[5]));
+                    }
+                    if (pressuresExist)
+                    {
+                        pressuresPath.Add(controlPoint.Last());
+                    }
                 }
-                paths.Add(path);
+                positions.Add(positionsPath);
+                if (orientationsExist) orientations.Add(orientationsPath);
+                if (pressuresExist) pressures.Add(pressuresPath);
             }
-            PathsToStrokes(paths, origin, scale);
+            MultiPositionPathsToStrokes(positions, orientations, pressures, origin, scale, rawStroke);
         }
 
-        public static void PathsToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
+        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
         {
-            var paths = new List<List<Vector3>>();
+            var positions = new List<List<Vector3>>();
             foreach (List<Vector2> positionList in polylines2d)
             {
                 var path = new List<Vector3>();
@@ -50,49 +72,69 @@ namespace TiltBrush
                 {
                     path.Add(new Vector3(position.x, position.y, 0));
                 }
-                paths.Add(path);
+                positions.Add(path);
             }
-            PathsToStrokes(paths, origin, scale, breakOnOrigin);
+            MultiPositionPathsToStrokes(positions, null, null, origin, scale, breakOnOrigin);
         }
 
-        public static void PathsToStrokes(List<List<Vector3>> paths, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
+        public static void MultiPositionPathsToStrokes(List<List<Vector3>> positions, List<List<Vector3>> orientations, List<List<float>> pressures, Vector3 origin, float scale = 1f, bool breakOnOrigin = false, bool rawStrokes = false)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
             float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
-            float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
+            float defaultPressure = Mathf.Lerp(minPressure, 1f, 0.5f);
             var group = App.GroupManager.NewUnusedGroup();
-            for (var pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+            for (var pathIndex = 0; pathIndex < positions.Count; pathIndex++)
             {
-                var path = paths[pathIndex];
-                if (path.Count < 2) continue;
+                // Single joined paths
+                var positionList = positions[pathIndex];
+                if (positionList.Count < 2) continue;
                 float lineLength = 0;
                 var controlPoints = new List<PointerManager.ControlPoint>();
-                for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
+                for (var vertexIndex = 0; vertexIndex < positionList.Count - 1; vertexIndex++)
                 {
-                    var coordList0 = path[vertexIndex];
-                    var vert = new Vector3(coordList0[0], coordList0[1], coordList0[2]);
-                    var coordList1 = path[(vertexIndex + 1) % path.Count];
+                    var position = positionList[vertexIndex];
+                    Quaternion orientation = orientations?.Any() == true ?
+                        Quaternion.Euler(orientations[pathIndex][vertexIndex]) :
+                        Quaternion.identity;
+                    float pressure = pressures?.Any() == true ?
+                        pressures[pathIndex][vertexIndex] :
+                        defaultPressure;
+                    var nextPosition = positionList[(vertexIndex + 1) % positionList.Count];
                     // Fix for trailing zeros from SVG.
                     // TODO Find out why and fix it properly
-                    if (breakOnOrigin && coordList1 == Vector3.zero)
+                    if (breakOnOrigin && nextPosition == Vector3.zero)
                     {
                         break;
                     }
-                    var nextVert = new Vector3(coordList1[0], coordList1[1], coordList1[2]);
 
-                    for (float step = 0; step <= 1f; step += .25f)
+                    if (rawStrokes)
                     {
-                        controlPoints.Add(new PointerManager.ControlPoint
+                        controlPoints.Add(new PointerManager.ControlPoint()
                         {
-                            m_Pos = (vert + (nextVert - vert) * step) * scale + origin,
-                            m_Orient = Quaternion.identity, //.LookRotation(face.Normal, Vector3.up),
+                            m_Pos = position,
+                            m_Orient = orientation,
                             m_Pressure = pressure,
                             m_TimestampMs = time++
                         });
                     }
+                    else
+                    {
+                        // Create extra control points if needed
+                        // Procedural strokes need to have extra control points added to avoid being smoothed out.
+                        for (float step = 0; step <= 1f; step += 0.25f)
+                        {
+                            controlPoints.Add(new PointerManager.ControlPoint
+                            {
+                                m_Pos = (position + (nextPosition - position) * step) * scale + origin,
+                                m_Orient = orientation,
+                                m_Pressure = pressure,
+                                m_TimestampMs = time++
+                            });
+                        }
+                    }
 
-                    lineLength += (nextVert - vert).magnitude; // TODO Does this need scaling? Should be in Canvas space
+                    lineLength += (nextPosition - position).magnitude; // TODO Does this need scaling? Should be in Canvas space
                 }
                 var stroke = new Stroke
                 {

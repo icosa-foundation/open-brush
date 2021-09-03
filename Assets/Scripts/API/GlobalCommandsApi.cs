@@ -93,17 +93,26 @@ namespace TiltBrush
         public static void LoadNamedFile(string filename)
         {
             // TODO do we want to allow arbitrary directories?
-            // Does this even check for directory traversal?
-            var sketchFullPath = Path.Combine(App.UserSketchPath(), filename);
-            var rEnum = SketchControlsScript.GlobalCommands.LoadNamedFile;
+            // Does this even check for directory traversal?;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                rEnum,
+                SketchControlsScript.GlobalCommands.LoadNamedFile,
                 (int)SketchControlsScript.LoadSpeed.Quick,
                 -1,
-                sketchFullPath
+                Path.Combine(App.UserSketchPath(), filename)
             );
-            SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.Sketchbook);
+        }
 
+        [ApiEndpoint("merge.named", "Loads the sketch with the given name from the user's sketch folder")]
+        public static void MergeNamedFile(string filename)
+        {
+            // TODO do we want to allow arbitrary directories?
+            // Does this even check for directory traversal?;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(
+                SketchControlsScript.GlobalCommands.LoadNamedFile,
+                (int)SketchControlsScript.LoadSpeed.Quick,
+                1,
+                Path.Combine(App.UserSketchPath(), filename)
+            );
         }
 
         [ApiEndpoint("new", "Clears the current sketch")]
