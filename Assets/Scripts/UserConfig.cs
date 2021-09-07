@@ -187,11 +187,22 @@ namespace TiltBrush
         [Serializable]
         public struct BrushConfig
         {
+            private Dictionary<string, string[]> m_AddTagsToBrushes;
+            private Dictionary<string, string[]> m_RemoveTagsFromBrushes;
             private string[] m_IncludeTags;
             private string[] m_ExcludeTags;
 
-            public Dictionary<string, string[]> AddTagsToBrushes { get; set; }
-            public Dictionary<string, string[]> RemoveTagsFromBrushes { get; set; }
+            public Dictionary<string, string[]> AddTagsToBrushes
+            {
+                get => m_AddTagsToBrushes ?? (m_AddTagsToBrushes = new Dictionary<string, string[]>());
+                set => m_AddTagsToBrushes = value;
+            }
+
+            public Dictionary<string, string[]> RemoveTagsFromBrushes
+            {
+                get => m_RemoveTagsFromBrushes ?? (m_RemoveTagsFromBrushes = new Dictionary<string, string[]>());
+                set => m_RemoveTagsFromBrushes = value;
+            }
 
             public string[] IncludeTags
             {
