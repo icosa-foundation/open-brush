@@ -178,6 +178,21 @@ namespace TiltBrush
             get { return (float)m_LastCheckedVertCount / (float)m_MemoryWarningVertCount; }
         }
 
+        public int StrokeCount
+        {
+            get { return m_MemoryList.Count; }
+        }
+
+        public LinkedList<Stroke> GetMemoryList
+        {
+            get { return m_MemoryList; }
+        }
+
+        public Stroke GetStrokeAtIndex(int index)
+        {
+            return m_Instance.m_MemoryList.ElementAt(index);
+        }
+
         public void SetLastOperationStackCount()
         {
             m_LastOperationStackCount = m_OperationStack.Count;
