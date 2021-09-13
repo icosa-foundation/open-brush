@@ -875,7 +875,9 @@ namespace TiltBrush
             {
                 SetInFreePaintMode(true);
                 SetInitialTool(BaseTool.ToolType.FreePaintTool);
-            } else if (App.Instance.IsMonoscopicMode()) {
+            }
+            else if (App.Instance.IsMonoscopicMode())
+            {
                 SetInFreePaintMode(true);
                 SetInitialTool(BaseTool.ToolType.FreePaintTool);
             }
@@ -3261,7 +3263,7 @@ namespace TiltBrush
             PointerManager.m_Instance.MainPointer.transform.localEulerAngles = newRotation;
         }
 
-        public void SyncMonoPanels( Transform cameraTransform, Vector3 newRotation, int activePanel)
+        public void SyncMonoPanels(Transform cameraTransform, Vector3 newRotation, int activePanel)
         {
             m_PanelManager.SetSweetSpotPosition(cameraTransform, newRotation, activePanel);
         }

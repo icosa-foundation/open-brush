@@ -872,14 +872,15 @@ namespace TiltBrush
                     p.m_Panel.ToString().IndexOf("AdvancedToolsPanel(Clone)_Advanced") > -1 && activePanel == 4 ||
                     p.m_Panel.ToString().IndexOf("ExtraPanel") > -1 && activePanel == 5 ||
                     p.m_Panel.ToString().IndexOf("AdminPanel") > -1 && activePanel == 6
-                ) {
+                )
+                {
                     p.m_Panel.gameObject.SetActive(true);
                     p.m_Panel.transform.position += cameraTransform.up * 5.0f;
                     p.m_Panel.UpdateReticleOffset(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
                 }
             }
         }
-        
+
         public Vector3 GetSketchSurfaceResetPos()
         {
             return m_SweetSpot.transform.position + (Vector3.forward * m_SweetSpot.m_PanelAttachRadius) +

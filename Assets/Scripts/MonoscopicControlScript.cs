@@ -72,32 +72,37 @@ namespace TiltBrush
                 InputManager.KeyboardShortcut.ToggleMonoPanel1))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 1 ? 0 : 1;        
-            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoPanel2))
+                activePanel = activePanel == 1 ? 0 : 1;
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoPanel2))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 2 ? 0 : 2;      
-            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoPanel3))
+                activePanel = activePanel == 2 ? 0 : 2;
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoPanel3))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 3 ? 0 : 3;      
-            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoPanel4))
+                activePanel = activePanel == 3 ? 0 : 3;
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoPanel4))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 4 ? 0 : 4;      
-            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoPanel5))
+                activePanel = activePanel == 4 ? 0 : 4;
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoPanel5))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 5 ? 0 : 5;      
-            } else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                InputManager.KeyboardShortcut.ToggleMonoPanel5))
+                activePanel = activePanel == 5 ? 0 : 5;
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoPanel5))
             {
                 m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 6 ? 0 : 6;      
+                activePanel = activePanel == 6 ? 0 : 6;
             }
 
             // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
@@ -212,16 +217,18 @@ namespace TiltBrush
 
                 SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
                 SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform, transform.localEulerAngles);
-            } else { // panels on
+            }
+            else
+            { // panels on
                 SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
                 SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform + transform.up * -10.0f, transform.localEulerAngles);
-            }            
+            }
         }
 
         private string log;
         private const int MAXCHARS = 10000;
         private Queue myLogQueue = new Queue();
 
-       
+
     }
 } // namespace TiltBrush

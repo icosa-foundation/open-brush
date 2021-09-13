@@ -61,7 +61,8 @@ namespace TiltBrush
             // for FreePaintTool.
             float brushTriggerRatio = InputManager.Brush.GetTriggerRatio();
 
-            if (App.Instance.IsMonoscopicMode() && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)) {
+            if (App.Instance.IsMonoscopicMode() && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
                 brushTriggerRatio = 1.0f;
             }
 
@@ -121,7 +122,8 @@ namespace TiltBrush
 
         void PositionPointer()
         {
-            if (App.Instance.IsMonoscopicMode()) {
+            if (App.Instance.IsMonoscopicMode())
+            {
                 return;
             }
             // Angle the pointer according to the user-defined pointer angle.
