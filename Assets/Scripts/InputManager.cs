@@ -153,6 +153,9 @@ namespace TiltBrush
             ToggleMonoPanel4,
             ToggleMonoPanel5,
             ToggleMonoPanel6,
+            ToggleMonoPanel7,
+            ToggleMonoPanel8,
+            ToggleMonoPanel9,
 
             ToggleHeadStationaryOrWobble,
             ToggleHeadStationaryOrFollow,
@@ -232,6 +235,9 @@ namespace TiltBrush
             { (int)KeyboardShortcut.ToggleMonoPanel4, new[] { KeyCode.Alpha4 } },
             { (int)KeyboardShortcut.ToggleMonoPanel5, new[] { KeyCode.Alpha5 } },
             { (int)KeyboardShortcut.ToggleMonoPanel6, new[] { KeyCode.Alpha6 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel7, new[] { KeyCode.Alpha7 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel8, new[] { KeyCode.Alpha8 } },
+            { (int)KeyboardShortcut.ToggleMonoPanel9, new[] { KeyCode.Alpha9 } },
 
             { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
             { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },

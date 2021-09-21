@@ -857,22 +857,16 @@ namespace TiltBrush
             return m_AllPanels.Where(p => p.m_Panel.m_Fixed);
         }
 
-        public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, int activePanel)
+        public void SetSweetSpotPosition(Transform cameraTransform, Vector3 newRotation, BasePanel.PanelType activePanel)
         {
             // Run through each fixed panel and set their new position.
-            foreach (PanelData p in m_AllPanels)
+            for (var i = 0; i < m_AllPanels.Count; i++)
             {
+                PanelData p = m_AllPanels[i];
                 // Extend to radius of sweet spot and set new position.
                 p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward + cameraTransform.up * -5.0f;
                 p.m_Panel.transform.localEulerAngles = newRotation;
-                if (
-                    p.m_Panel.ToString().IndexOf("ColorPickerPanel(Clone)_Basic") > -1 && activePanel == 1 ||
-                    p.m_Panel.ToString().IndexOf("BrushesPanel(Clone)_Basic") > -1 && activePanel == 2 ||
-                    p.m_Panel.ToString().IndexOf("ToolsPanel(Clone)_Basic") > -1 && activePanel == 3 ||
-                    p.m_Panel.ToString().IndexOf("AdvancedToolsPanel(Clone)_Advanced") > -1 && activePanel == 4 ||
-                    p.m_Panel.ToString().IndexOf("ExtraPanel") > -1 && activePanel == 5 ||
-                    p.m_Panel.ToString().IndexOf("AdminPanel") > -1 && activePanel == 6
-                )
+                if (p.m_Panel.Type==activePanel && p.AvailableInCurrentMode)
                 {
                     p.m_Panel.gameObject.SetActive(true);
                     p.m_Panel.transform.position += cameraTransform.up * 5.0f;

@@ -249,12 +249,20 @@ namespace TiltBrush
 
         override protected void SnapIntersectionObjectToController()
         {
-            Vector3 vPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
-                InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
-            m_DropperTransform.position = vPos;
-            m_DropperTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation;
+            if (!App.Instance.IsMonoscopicMode())
+            {
+                Vector3 vPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
+                    InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;
+                m_DropperTransform.position = vPos;
+                m_DropperTransform.rotation = InputManager.Brush.Geometry.ToolAttachPoint.rotation;
+            }
+            else
+            {
+                transform.position = SketchSurfacePanel.m_Instance.transform.position;
+                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+            }
         }
-
+        
         override protected void HandleIntersection(Stroke stroke)
         {
             var desc = BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid);

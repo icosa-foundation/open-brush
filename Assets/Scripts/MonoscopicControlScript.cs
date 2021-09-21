@@ -42,7 +42,7 @@ namespace TiltBrush
         private bool isMoving;
         private bool isDrawMode = false;
 
-        public int activePanel = 0;
+        public BasePanel.PanelType activePanel;
 
         void Start()
         {
@@ -61,6 +61,8 @@ namespace TiltBrush
                 return;
             }
 
+            bool advancedMode = PanelManager.m_Instance.AdvancedModeActive();
+
             // Toggle draw mode
             if (!isMoving && activePanel == 0 && InputManager.m_Instance.GetKeyboardShortcutDown(
                 InputManager.KeyboardShortcut.ToggleMonoCameraDrawMode))
@@ -71,38 +73,54 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetKeyboardShortcutDown(
                 InputManager.KeyboardShortcut.ToggleMonoPanel1))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 1 ? 0 : 1;
+                TogglePanel(BasePanel.PanelType.Color);
             }
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
               InputManager.KeyboardShortcut.ToggleMonoPanel2))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 2 ? 0 : 2;
+                if (advancedMode)
+                {
+                    TogglePanel(BasePanel.PanelType.ToolsAdvanced);
+                }
+                else
+                {
+                    TogglePanel(BasePanel.PanelType.ToolsBasic);
+                }
             }
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
               InputManager.KeyboardShortcut.ToggleMonoPanel3))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 3 ? 0 : 3;
+                TogglePanel(BasePanel.PanelType.ExtraPanel);
             }
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
               InputManager.KeyboardShortcut.ToggleMonoPanel4))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 4 ? 0 : 4;
+                TogglePanel(BasePanel.PanelType.Brush);
             }
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
               InputManager.KeyboardShortcut.ToggleMonoPanel5))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 5 ? 0 : 5;
+                TogglePanel(BasePanel.PanelType.Labs);
             }
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-              InputManager.KeyboardShortcut.ToggleMonoPanel5))
+              InputManager.KeyboardShortcut.ToggleMonoPanel6))
             {
-                m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-                activePanel = activePanel == 6 ? 0 : 6;
+                TogglePanel(BasePanel.PanelType.AdminPanel);
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel7))
+            {
+                TogglePanel(BasePanel.PanelType.Experimental);
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel8))
+            {
+                TogglePanel(BasePanel.PanelType.Environment);
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                InputManager.KeyboardShortcut.ToggleMonoPanel9))
+            {
+                TogglePanel(BasePanel.PanelType.Reference);
             }
 
             // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
@@ -110,7 +128,7 @@ namespace TiltBrush
             m_cameraPosition = transform.localPosition;
             movementOffset = new Vector3(0.0f, 0.0f, 0.0f);
 
-            // Adjust distance betwen cursor and camera
+            // Adjust distance between cursor and camera
             if (InputManager.m_Instance.GetKeyboardShortcutDown(
                 InputManager.KeyboardShortcut.MonoCameraIncreaseCursorDistance))
             {
@@ -222,6 +240,18 @@ namespace TiltBrush
             { // panels on
                 SketchControlsScript.m_Instance.SyncMonoPanels(transform, transform.localEulerAngles, activePanel);
                 SketchControlsScript.m_Instance.SyncMonoCursor(m_syncedTransform + transform.up * -10.0f, transform.localEulerAngles);
+            }
+        }
+        private void TogglePanel(BasePanel.PanelType requestedPanel)
+        {
+            m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
+            if (activePanel == requestedPanel)
+            {
+                activePanel = BasePanel.PanelType.SketchSurface;
+            }
+            else
+            {
+                activePanel = requestedPanel;
             }
         }
 

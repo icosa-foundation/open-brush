@@ -239,7 +239,7 @@ namespace TiltBrush
 
         override protected void SnapIntersectionObjectToController()
         {
-            if (m_LockToController)
+            if (m_LockToController && !App.Instance.IsMonoscopicMode())
             {
                 Vector3 toolPos = InputManager.Brush.Geometry.ToolAttachPoint.position +
                     InputManager.Brush.Geometry.ToolAttachPoint.forward * m_PointerForwardOffset;

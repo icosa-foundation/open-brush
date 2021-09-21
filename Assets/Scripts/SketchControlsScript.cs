@@ -3263,7 +3263,7 @@ namespace TiltBrush
             PointerManager.m_Instance.MainPointer.transform.localEulerAngles = newRotation;
         }
 
-        public void SyncMonoPanels(Transform cameraTransform, Vector3 newRotation, int activePanel)
+        public void SyncMonoPanels(Transform cameraTransform, Vector3 newRotation, BasePanel.PanelType activePanel)
         {
             m_PanelManager.SetSweetSpotPosition(cameraTransform, newRotation, activePanel);
         }
