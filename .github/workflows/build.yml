@@ -172,7 +172,7 @@ jobs:
           #echo "Listing 100 largest packages"
           #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing large packages"
-          sudo apt-get remove -y '^ghc-8.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
           sudo apt-get autoremove -y
           sudo apt-get clean
           echo "Removing remaining large directories"
