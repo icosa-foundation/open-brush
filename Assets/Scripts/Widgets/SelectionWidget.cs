@@ -129,13 +129,6 @@ namespace TiltBrush
             return Quaternion.Euler(euler);
         }
 
-        private Vector3 QuantizePosition(Vector3 pos)
-        {
-            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
-            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
-            return new Vector3(round(pos.x), round(pos.y), round(pos.z));
-        }
-
         protected override bool AllowSnapping()
         {
             return (
@@ -181,12 +174,23 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                var outXf_CS = outXf_GS.TransformBy(App.Scene.Pose.inverse);
-                outXf_CS.translation = QuantizePosition(outXf_CS.translation);
-                outXf_GS = outXf_CS.TransformBy(App.Scene.Pose);
+                outXf_GS.translation = SnapToGrid(outXf_GS.translation);
             }
 
             return outXf_GS;
+        }
+
+        public static Vector3 SnapToGrid(Vector3 position)
+        {
+            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
 
         override protected void SetWidgetSizeInternal(float fSize)
