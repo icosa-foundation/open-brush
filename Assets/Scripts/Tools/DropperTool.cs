@@ -262,7 +262,7 @@ namespace TiltBrush
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
             }
         }
-        
+
         override protected void HandleIntersection(Stroke stroke)
         {
             var desc = BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid);

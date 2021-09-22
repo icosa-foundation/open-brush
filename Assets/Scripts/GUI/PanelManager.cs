@@ -866,7 +866,7 @@ namespace TiltBrush
                 // Extend to radius of sweet spot and set new position.
                 p.m_Panel.transform.position = cameraTransform.position + 4.0f * cameraTransform.forward + cameraTransform.up * -5.0f;
                 p.m_Panel.transform.localEulerAngles = newRotation;
-                if (p.m_Panel.Type==activePanel && p.AvailableInCurrentMode)
+                if (p.m_Panel.Type == activePanel && p.AvailableInCurrentMode)
                 {
                     p.m_Panel.gameObject.SetActive(true);
                     p.m_Panel.transform.position += cameraTransform.up * 5.0f;
