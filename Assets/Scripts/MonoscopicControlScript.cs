@@ -43,6 +43,8 @@ namespace TiltBrush
         private bool isDrawMode = false;
 
         public BasePanel.PanelType activePanel;
+        public BasePanel.PanelType lastActivePanel;
+        
 
         void Start()
         {
@@ -121,6 +123,18 @@ namespace TiltBrush
                 InputManager.KeyboardShortcut.ToggleMonoPanel9))
             {
                 TogglePanel(BasePanel.PanelType.Reference);
+            }
+            else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+              InputManager.KeyboardShortcut.ToggleMonoUi))
+            {
+                if (activePanel == 0) 
+                {
+                    TogglePanel(lastActivePanel);
+                }
+                else {
+                    activePanel = 0;
+                }
+                
             }
 
             // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
@@ -245,13 +259,10 @@ namespace TiltBrush
         private void TogglePanel(BasePanel.PanelType requestedPanel)
         {
             m_syncedTransform = transform.position + (transform.forward * m_zCameraOffset);
-            if (activePanel == requestedPanel)
-            {
-                activePanel = BasePanel.PanelType.SketchSurface;
-            }
-            else
+            if (activePanel != requestedPanel)
             {
                 activePanel = requestedPanel;
+                lastActivePanel = requestedPanel;
             }
         }
 
