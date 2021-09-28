@@ -49,20 +49,28 @@ public class SnapGrid3D : MonoBehaviour
     public float lineLength = 0.3f;
     public float lineWidth = 0.01f;
 
-    private Transform pointer;
-    private Transform canvas;
-    private bool initialized;
-    private void Start()
-    {
-        if (PointerManager.m_Instance == null) return;
-        pointer = PointerManager.m_Instance.MainPointer.transform;
-        canvas = App.Scene.ActiveCanvas.transform;
-        initialized = true;
-    }
+    private Transform toolTransform;
+    private Transform canvasTransform;
 
     private void OnRenderObject()
     {
-        if (!initialized) return;
+        var currentTool = SketchSurfacePanel.m_Instance.ActiveTool;
+        if (currentTool is StrokeModificationTool)
+        {
+            toolTransform = (currentTool as StrokeModificationTool).m_ToolTransform;
+        }
+        else if (currentTool is FreePaintTool)
+        {
+            toolTransform = PointerManager.m_Instance.MainPointer.transform;
+        }
+        else
+        {
+            // Not sure what to fall back to for general cases.
+            toolTransform = currentTool.transform;
+        }
+        
+        canvasTransform = App.Scene.ActiveCanvas.transform;
+
         if ((Camera.current.cullingMask & (1 << gameObject.layer)) != 0)
         {
             var lineVertexCount = 6 * 2;
@@ -70,16 +78,16 @@ public class SnapGrid3D : MonoBehaviour
 
             var vertexCount = gridCount.x * gridCount.y * gridCount.z * starVertexCount;
 
-            material.SetMatrix(ShaderParam.CanvasToWorldMatrix, canvas.localToWorldMatrix);
-            material.SetMatrix(ShaderParam.WorldToCanvasMatrix, canvas.worldToLocalMatrix);
-            material.SetVector(ShaderParam.Pointer, pointer.position);
-            material.SetVector(ShaderParam.CanvasOrigin, canvas.position);
+            material.SetMatrix(ShaderParam.CanvasToWorldMatrix, canvasTransform.localToWorldMatrix);
+            material.SetMatrix(ShaderParam.WorldToCanvasMatrix, canvasTransform.worldToLocalMatrix);
+            material.SetVector(ShaderParam.Pointer, toolTransform.position);
+            material.SetVector(ShaderParam.CanvasOrigin, canvasTransform.position);
             material.SetColor(ShaderParam.Color, color);
             material.SetVector(ShaderParam.GridCount, (Vector3)gridCount);
             material.SetFloat(ShaderParam.GridInterval, gridInterval);
             material.SetFloat(ShaderParam.LineWidth, lineWidth);
             material.SetFloat(ShaderParam.LineLength, lineLength);
-            material.SetFloat(ShaderParam.CanvasScale, canvas.lossyScale.x); // Presumed always uniform
+            material.SetFloat(ShaderParam.CanvasScale, canvasTransform.lossyScale.x); // Presumed always uniform
             material.SetPass(0);
             Graphics.DrawProceduralNow(MeshTopology.Triangles, vertexCount);
         }

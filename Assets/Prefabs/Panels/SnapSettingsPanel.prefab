@@ -743,14 +743,18 @@ MonoBehaviour:
   m_Options:
   - m_Description: Off
     m_Texture: {fileID: 2800000, guid: bcd7d8c1894256240ab73a089d217cb2, type: 3}
+  - m_Description: 0.1
+    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
+  - m_Description: 0.25
+    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
+  - m_Description: 0.5
+    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
   - m_Description: 1
     m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
+  - m_Description: 2
+    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
+  - m_Description: 3
+    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
   - m_Description: 5
-    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
-  - m_Description: 10
-    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
-  - m_Description: 25
-    m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
-  - m_Description: 50
     m_Texture: {fileID: 2800000, guid: c0d6e5dae8ebd284399fe8a50337bbc4, type: 3}
   SettingType: 1

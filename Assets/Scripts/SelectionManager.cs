@@ -27,6 +27,7 @@ namespace TiltBrush
     public class SelectionManager : MonoBehaviour
     {
         public static SelectionManager m_Instance;
+        private SnapGrid3D m_SnapGridVisualization;
 
         [SerializeField] private SelectionWidget m_SelectionWidget;
 
@@ -392,7 +393,7 @@ namespace TiltBrush
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
             m_AngleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
-            m_GridSnaps = new[] { 0f, 1f, 5f, 10f, 25f, 50f };
+            m_GridSnaps = new[] { 0f, .1f, .25f, .5f, 1f, 2f, 3f, 5f };
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -953,6 +954,19 @@ namespace TiltBrush
         {
             m_CurrentSnapGridIndex = snapIndex;
             m_snappingGridSize = m_GridSnaps[snapIndex];
+            if (m_SnapGridVisualization==null)
+            {
+                m_SnapGridVisualization = App.Scene.MainCanvas.GetComponentInChildren<SnapGrid3D>();
+            }
+            if (m_snappingGridSize > 0)
+            {
+                m_SnapGridVisualization.enabled = true;
+                m_SnapGridVisualization.gridInterval = m_snappingGridSize;
+            }
+            else
+            {
+                m_SnapGridVisualization.enabled = false;
+            }
         }
 
 

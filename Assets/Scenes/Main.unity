@@ -28775,10 +28775,20 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1151265645430167894, guid: 7c4b8fb0825ff204aae3d64acd012276,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1151265645430167895, guid: 7c4b8fb0825ff204aae3d64acd012276,
         type: 3}
       propertyPath: m_Name
       value: SnapGrid3D
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151265645430167895, guid: 7c4b8fb0825ff204aae3d64acd012276,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7c4b8fb0825ff204aae3d64acd012276, type: 3}
