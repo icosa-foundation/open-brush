@@ -1,5 +1,4 @@
 ﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
 // MIT License
 //
 // Copyright (c) 2020 fuqunaga
@@ -22,7 +21,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
 Shader "Custom/Grid3D"
 {
     Properties
@@ -32,7 +30,7 @@ Shader "Custom/Grid3D"
         _OutMin("OutMin", Float) = 0
         _OutMax("OutMax", Float) = 1
         _Color("Color", color) = (1,1,1,1)
-        _Origin("Origin", Vector) = (100,100,100,0)
+        _PointerOrigin("PointerOrigin", Vector) = (100,100,100,0)
         _GridCount("GridCount", Vector) = (100,100,100,0)
         _GridInterval("GridInterval", Float) = 10
         _LineWidth("LineWidth", Float) = 0.01
@@ -63,12 +61,15 @@ Shader "Custom/Grid3D"
             float _InMax;
             float _OutMin;
             float _OutMax;
-            float3 _Origin;
+            float3 _Pointer_GS;
+            float3 _CanvasOrigin_GS;
             float4 _GridCount;
             float _GridInterval;
             float _LineWidth;
             float _LineLength;
-            float4x4 _CanvasMatrix;
+            float _CanvasScale; 
+            float4x4 _CanvasToWorldMatrix;
+            float4x4 _WorldToCanvasMatrix;
 
             struct appdata
             {
@@ -119,50 +120,61 @@ Shader "Custom/Grid3D"
             v2f vert (appdata v)
             {
                 v2f o;
-                
                 uint vtx_per_quad = 6;
                 uint vtx_per_line = vtx_per_quad * 2;
                 uint vtx_per_star = vtx_per_line * 3;
-
                 uint quad_vtx_idx = v.id % vtx_per_quad;
                 float3 quad = calcQuadVertex(quad_vtx_idx);
-
                 uint line_vtx_idx = v.id % vtx_per_line;
                 bool rot90 = line_vtx_idx >= vtx_per_quad;
-
                 quad.xyz = rot90 ? quad.zyx : quad.xyz;
-
                 uint line_idx_per_star = (v.id % vtx_per_star) / vtx_per_line;
                 switch(line_idx_per_star)
                 {
                     case 0: quad.xyz = quad.yxz; break;
                     case 2: quad.xyz = quad.xzy; break;
                 }
-
-                uint star_idx = v.id / vtx_per_star;
+                uint starIndex = v.id / vtx_per_star;
                 int3 gridCount = _GridCount;
-
-                float3 xyz_idx = float3(
-                    (star_idx / gridCount.z) % gridCount.x + 0.5,
-                    star_idx / (gridCount.x * gridCount.z) + 0.5,
-                    star_idx % gridCount.z + 0.5
+                float3 xyzIndex = float3(
+                    starIndex / gridCount.z % gridCount.x + 0.5,
+                    starIndex / (gridCount.x * gridCount.z) + 0.5,
+                    starIndex % gridCount.z + 0.5
                 );
 
-                float3 origin = _GridCount * -0.5;
-                float3 pos = (xyz_idx + origin) * _GridInterval + quad;
-                float3 g = 1.0/_GridInterval;
-                float3 quantizedOrigin = float3(
-                    round(_Origin.x * g.x) / g.x,
-                    round(_Origin.y * g.y) / g.y,
-                    round(_Origin.z * g.z) / g.z
+                float3 gridOrigin_CS = _GridCount * -0.5;
+                float3 vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
+                
+                float3 _Pointer_CS = mul(_WorldToCanvasMatrix, _Pointer_GS);
+                
+                float3 quantizedPointer_CS = float3(
+                    round(_Pointer_CS.x / _GridInterval) * _GridInterval,
+                    round(_Pointer_CS.y / _GridInterval) * _GridInterval,
+                    round(_Pointer_CS.z / _GridInterval) * _GridInterval
                 );
-                float3 remainder = (quantizedOrigin - _Origin) / 2.0;
-                float3 worldPos = mul(_CanvasMatrix, pos);
-                o.vertex = mul(UNITY_MATRIX_VP, float4(worldPos + quantizedOrigin, 1));
+
+                float3 _CanvasOrigin_CS = mul(_WorldToCanvasMatrix, _CanvasOrigin_GS);
+                float3 quantizedCanvasOrigin_CS = float3(
+                    round(_CanvasOrigin_CS.x / _GridInterval) * _GridInterval,
+                    round(_CanvasOrigin_CS.y / _GridInterval) * _GridInterval,
+                    round(_CanvasOrigin_CS.z / _GridInterval) * _GridInterval
+                );
+                float3 canvasOffsetFix_CS = quantizedCanvasOrigin_CS - _CanvasOrigin_CS;
+                float3 canvasOffsetFix_GS = mul(_CanvasToWorldMatrix, canvasOffsetFix_CS);
+
+                vertexPos_CS += quantizedPointer_CS;
+                float3 vertexPos_GS = mul(_CanvasToWorldMatrix, vertexPos_CS);
+                vertexPos_GS -= canvasOffsetFix_GS;
+                o.vertex = mul(UNITY_MATRIX_VP, float4(vertexPos_GS, 1));
+
+                
+                // TODO - the brightness of each grid point should be based on the non-quantized pointer position.
+                //float3 remainder = (quantizedPointerOffset_CS - _PointerOffset_CS) * _GridInterval;
+                float3 remainder = float3(0, 0, 0);
                 float d = (
-                    quickdist(xyz_idx.x + remainder.x) +
-                    quickdist(xyz_idx.y + remainder.y) +
-                    quickdist(xyz_idx.z + remainder.z)
+                    quickdist(xyzIndex.x + remainder.x) +
+                    quickdist(xyzIndex.y + remainder.y) +
+                    quickdist(xyzIndex.z + remainder.z)
                 ) / 3;
                 o.pos = half4(d, d, d, 1);
                 return o;

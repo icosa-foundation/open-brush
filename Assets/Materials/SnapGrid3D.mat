@@ -85,4 +85,5 @@ Material:
     - _Color: {r: 0.49056602, g: 0.8503767, b: 1, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _GridCount: {r: 5, g: 5, b: 5, a: 0}
-    - _Origin: {r: 5.212654, g: 4.794293, b: 5.2342963, a: 0}
+    - _Origin: {r: 1.3514966, g: 0.7674245, b: 0.49591112, a: 0}
+    - _PointerOrigin: {r: -0.99, g: 0.7674245, b: -0.21, a: 0}

@@ -31,12 +31,15 @@ public class SnapGrid3D : MonoBehaviour
     public static class ShaderParam
     {
         public static readonly int Color = Shader.PropertyToID("_Color");
-        public static readonly int Origin = Shader.PropertyToID("_Origin");
+        public static readonly int Pointer = Shader.PropertyToID("_Pointer_GS");
+        public static readonly int CanvasOrigin = Shader.PropertyToID("_CanvasOrigin_GS");
         public static readonly int GridCount = Shader.PropertyToID("_GridCount");
         public static readonly int GridInterval = Shader.PropertyToID("_GridInterval");
         public static readonly int LineWidth = Shader.PropertyToID("_LineWidth");
         public static readonly int LineLength = Shader.PropertyToID("_LineLength");
-        public static readonly int CanvasMatrix = Shader.PropertyToID("_CanvasMatrix");
+        public static readonly int CanvasToWorldMatrix = Shader.PropertyToID("_CanvasToWorldMatrix");
+        public static readonly int WorldToCanvasMatrix = Shader.PropertyToID("_WorldToCanvasMatrix");
+        public static readonly int CanvasScale = Shader.PropertyToID("_CanvasScale");
     }
     
     public Material material;
@@ -46,12 +49,14 @@ public class SnapGrid3D : MonoBehaviour
     public float lineLength = 0.3f;
     public float lineWidth = 0.01f;
 
-    private Transform target;
+    private Transform pointer;
+    private Transform canvas;
     private bool initialized;
     private void Start()
     {
         if (PointerManager.m_Instance == null) return;
-        target = PointerManager.m_Instance.MainPointer.transform;
+        pointer = PointerManager.m_Instance.MainPointer.transform;
+        canvas = App.Scene.ActiveCanvas.transform;
         initialized = true;
     }
 
@@ -65,14 +70,16 @@ public class SnapGrid3D : MonoBehaviour
 
             var vertexCount = gridCount.x * gridCount.y * gridCount.z * starVertexCount;
 
-            material.SetMatrix(ShaderParam.CanvasMatrix, transform.localToWorldMatrix);
-            material.SetVector(ShaderParam.Origin, target.position);
+            material.SetMatrix(ShaderParam.CanvasToWorldMatrix, canvas.localToWorldMatrix);
+            material.SetMatrix(ShaderParam.WorldToCanvasMatrix, canvas.worldToLocalMatrix);
+            material.SetVector(ShaderParam.Pointer, pointer.position);
+            material.SetVector(ShaderParam.CanvasOrigin, canvas.position);
             material.SetColor(ShaderParam.Color, color);
             material.SetVector(ShaderParam.GridCount, (Vector3)gridCount);
             material.SetFloat(ShaderParam.GridInterval, gridInterval);
             material.SetFloat(ShaderParam.LineWidth, lineWidth);
             material.SetFloat(ShaderParam.LineLength, lineLength);
-            
+            material.SetFloat(ShaderParam.CanvasScale, canvas.lossyScale.x); // Presumed always uniform
             material.SetPass(0);
             Graphics.DrawProceduralNow(MeshTopology.Triangles, vertexCount);
         }
