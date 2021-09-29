@@ -64,7 +64,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _GridCount: 5
-    - _GridInterval: 1
+    - _GridInterval: 5
     - _InMax: 1
     - _InMin: 0.21
     - _LineLength: 0.3
