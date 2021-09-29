@@ -27670,6 +27670,9 @@ MonoBehaviour:
   - m_Type: 8
     m_StencilPrefab: {fileID: 114000010304738242, guid: 00dc61f9b313bf3489063b76b1bc9a58,
       type: 3}
+  - m_Type: 0
+    m_StencilPrefab: {fileID: 7435273578356639229, guid: 5f54d1338beef174ea5bd7dbe2262304,
+      type: 3}
   m_StencilAttractDist: 0.5
   m_StencilAttachHysteresis: 0.1
   m_StencilLayerName: StencilObject

@@ -140,6 +140,7 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000
         }
 
