@@ -149,18 +149,19 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
-                Quaternion nearestSnapRotation = QuantizeAngle(xf_GS.rotation);
+                var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
+                Quaternion nearestSnapRotation_CS = QuantizeAngle(rot_CS);
 
                 float snapAngle = SelectionManager.m_Instance.SnappingAngle;
                 float stickiness = m_ValidSnapRotationStickyAngle / 90f;
                 float stickyAngle = snapAngle * stickiness;
 
-                if (nearestSnapRotation != m_PrevSnapRotation)
+                if (nearestSnapRotation_CS != m_PrevSnapRotation)
                 {
                     float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
                     if (a > stickyAngle)
                     {
-                        m_PrevSnapRotation = nearestSnapRotation;
+                        m_PrevSnapRotation = nearestSnapRotation_CS;
                     }
                 }
 
