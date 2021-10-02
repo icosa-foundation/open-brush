@@ -13,28 +13,55 @@ namespace TiltBrush
     public static class ApiMethods
     {
 
+        public static Quaternion LookAt(Vector3 sourcePoint, Vector3 destPoint)
+        {
+            Vector3 forwardVector = Vector3.Normalize(destPoint - sourcePoint);
+            float dot = Vector3.Dot(Vector3.forward, forwardVector);
+            if (Math.Abs(dot - (-1.0f)) < 0.000001f)
+            {
+                return new Quaternion(Vector3.up.x, Vector3.up.y, Vector3.up.z, 3.1415926535897932f);
+            }
+            if (Math.Abs(dot - (1.0f)) < 0.000001f)
+            {
+                return Quaternion.identity;
+            }
+
+            float rotAngle = (float)Math.Acos(dot);
+            Vector3 rotAxis = Vector3.Cross(Vector3.forward, forwardVector);
+            rotAxis = Vector3.Normalize(rotAxis);
+            return CreateFromAxisAngle(rotAxis, rotAngle);
+        }
+
+        public static Quaternion CreateFromAxisAngle(Vector3 axis, float angle)
+        {
+            float halfAngle = angle * .5f;
+            float s = (float)System.Math.Sin(halfAngle);
+            Quaternion q;
+            q.x = axis.x * s;
+            q.y = axis.y * s;
+            q.z = axis.z * s;
+            q.w = (float)System.Math.Cos(halfAngle);
+            return q;
+        }
+
         private static void ChangeBrushBearing(float angle, Vector3 axis)
         {
             ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
         }
 
-        private static void ChangeCameraBearing(float angle, Vector3 axis)
+        private static void ChangeSpectatorBearing(float angle, Vector3 axis)
         {
-            Transform camTr;
-            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
-            {
-                camTr = Camera.main.transform;  // TODO yeah yeah
-            }
-            else
-            {
-                camTr = SketchControlsScript.m_Instance.GetDropCampWidget().transform;
-            }
-
-            var rot = camTr.rotation;
-            rot *= Quaternion.AngleAxis(angle, axis);
-            camTr.rotation = rot;
-
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.rotation *= Quaternion.AngleAxis(angle, axis);
         }
+
+        // private static void ChangeUserBearing(float angle, Vector3 axis)
+        // {
+        //     Transform camTr = Camera.main.transform;
+        //     var rot = camTr.rotation;
+        //     rot *= Quaternion.AngleAxis(angle, axis);
+        //     camTr.rotation = rot;
+        // }
 
         [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
         public static void DrawPaths(string jsonString)
@@ -240,69 +267,110 @@ namespace TiltBrush
             PointerManager.m_Instance.MainPointer.BrushSize01 += amount;
         }
 
-        [ApiEndpoint("camera.move.to", "Moves the spectator or non-VR camera to the given position")]
-        public static void MoveCameraTo(Vector3 position)
+        [ApiEndpoint("spectator.move.to", "Moves the spectator camera to the given position")]
+        public static void MoveSpectatorTo(Vector3 position)
         {
-            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
-            {
-                TrTransform pose = App.Scene.Pose;
-                pose.translation = position;
-                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
-                App.Scene.Pose = pose;
-            }
-            else
-            {
-                var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-                cam.transform.position = position;
-            }
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.position = position;
         }
 
-        [ApiEndpoint("camera.move.by", "Moves the spectator or non-VR camera by the given amount")]
-        public static void MoveCameraBy(Vector3 amount)
+        [ApiEndpoint("user.move.to", "Moves the user to the given position")]
+        public static void MoveUserTo(Vector3 position)
         {
-            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
-            {
-                TrTransform pose = App.Scene.Pose;
-                pose.translation -= amount;
-                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
-                App.Scene.Pose = pose;
-            }
-            else
-            {
-                var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-                cam.transform.position += amount;
-            }
+            TrTransform pose = App.Scene.Pose;
+            pose.translation = position;
+            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+            App.Scene.Pose = pose;
         }
 
-        [ApiEndpoint("camera.turn.y", "Turns the spectator or non-VR camera left or right.")]
-        public static void CameraYaw(float angle)
+        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
+        public static void MoveSpectatorBy(Vector3 amount)
         {
-            ChangeCameraBearing(angle, Vector3.up);
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.position += amount;
         }
 
-        [ApiEndpoint("camera.turn.x", "Changes the angle of the spectator or non-VR camera up or down.")]
-        public static void CameraPitch(float angle)
+        [ApiEndpoint("user.move.by", "Moves the user by the given amount")]
+        public static void MoveUserBy(Vector3 amount)
         {
-            ChangeCameraBearing(angle, Vector3.left);
+            TrTransform pose = App.Scene.Pose;
+            pose.translation -= amount;
+            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+            App.Scene.Pose = pose;
         }
 
-        [ApiEndpoint("camera.turn.z", "Tilts the angle of the spectator or non-VR camera clockwise or anticlockwise.")]
-        public static void CameraRoll(float angle)
+        [ApiEndpoint("spectator.turn.y", "Rotates the spectator camera left or right.")]
+        public static void SpectatorYaw(float angle)
         {
-            ChangeCameraBearing(angle, Vector3.forward);
+            ChangeSpectatorBearing(angle, Vector3.up);
         }
 
-        // TODO This should be lookat "position"
-        [ApiEndpoint("camera.lookat", "Points the spectator or non-VR camera to look in the specified direction. Angles are given in x,y,z degrees")]
-        public static void CameraDirection(Vector3 direction)
+        [ApiEndpoint("spectator.turn.x", "Rotates the spectator camera up or down.")]
+        public static void SpectatorPitch(float angle)
+        {
+            ChangeSpectatorBearing(angle, Vector3.left);
+        }
+
+        [ApiEndpoint("spectator.turn.z", "Tilts the angle of the spectator camera clockwise or anticlockwise.")]
+        public static void SpectatorRoll(float angle)
+        {
+            ChangeSpectatorBearing(angle, Vector3.forward);
+        }
+
+        // [ApiEndpoint("user.turn.y", "Rotates the user camera left or right.")]
+        // public static void UserYaw(float angle)
+        // {
+        //     ChangeUserBearing(angle, Vector3.up);
+        // }
+        //
+        // [ApiEndpoint("user.turn.x", "Rotates the user camera up or down. (monoscopic mode only)")]
+        // public static void UserPitch(float angle)
+        // {
+        //     ChangeUserBearing(angle, Vector3.left);
+        // }
+        //
+        // [ApiEndpoint("user.turn.z", "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)")]
+        // public static void UserRoll(float angle)
+        // {
+        //     ChangeUserBearing(angle, Vector3.forward);
+        // }
+
+        [ApiEndpoint("spectator.direction", "Points the spectator camera to look in the specified direction. Angles are given in x,y,z degrees")]
+        public static void SpectatorDirection(Vector3 direction)
         {
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = qNewRotation;
             App.Scene.Pose = lookPose;
         }
+
+        // [ApiEndpoint("user.direction", "Points the user camera to look in the specified direction. Angles are given in x,y,z degrees. (Monoscopic mode only)")]
+        // public static void UserDirection(Vector3 direction)
+        // {
+        //     TrTransform lookPose = App.Scene.Pose;
+        //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
+        //     lookPose.rotation = qNewRotation;
+        //     App.Scene.Pose = lookPose;
+        // }
+
+        [ApiEndpoint("spectator.lookat", "Points the spectator camera towards a specific point")]
+        public static void SpectatorLookat(Vector3 position)
+        {
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            Quaternion qNewRotation = LookAt(cam.transform.position, position);
+            cam.transform.rotation = qNewRotation;
+        }
+
+        // [ApiEndpoint("user.lookat", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]
+        // public static void UserLookat(Vector3 position)
+        // {
+        //     TrTransform lookPose = App.Scene.Pose;
+        //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
+        //     lookPose.rotation = qNewRotation;
+        //     App.Scene.Pose = lookPose;
+        // }
 
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
         public static void BrushMoveTo(Vector3 position)
@@ -797,6 +865,13 @@ namespace TiltBrush
         public static void ActivateFlyTool()
         {
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+        }
+
+        [ApiEndpoint("environment.set", "Sets the current environment")]
+        public static void SetEnvironment(string name)
+        {
+            Environment env = EnvironmentCatalog.m_Instance.AllEnvironments.First(x => x.name == name);
+            SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
 
     }

@@ -98,12 +98,15 @@ public class ApiManager : MonoBehaviour
             {"color.set.html", "darkblue"},
             {"brush.size.set", ".5"},
             {"brush.size.add", ".1"},
-            {"camera.move.to", "1,1,1"},
-            {"camera.move.by", "1,1,1"},
-            {"camera.turn.y", "45"},
-            {"camera.turn.x", "45"},
-            {"camera.turn.z", "45"},
-            {"camera.lookat", "1,2,3"},
+            {"spectator.move.to", "1,1,1"},
+            {"spectator.move.by", "1,1,1"},
+            {"spectator.turn.y", "45"},
+            {"spectator.turn.x", "45"},
+            {"spectator.turn.z", "45"},
+            {"spectator.direction", "45,45,0"},
+            {"spectator.lookat", "1,2,3"},
+            {"user.move.to", "1,1,1"},
+            {"user.move.by", "1,1,1"},
             {"brush.move.to", "1,1,1"},
             {"brush.move.by", "1,1,1"},
             {"brush.move", "1"},
@@ -489,9 +492,17 @@ public class ApiManager : MonoBehaviour
             .Select(x => x.m_Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
             .ToArray();
         string brushesJson = JsonConvert.SerializeObject(brushNameList);
-        string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
         html = html.Replace("{{brushesJson}}", brushesJson);
+
+        string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
+            .Select(x => x.name)
+            .ToArray();
+        string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
+        html = html.Replace("{{environmentsJson}}", environmentsJson);
+
+        string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
         html = html.Replace("{{commandsJson}}", commandsJson);
+
         return html;
     }
 
