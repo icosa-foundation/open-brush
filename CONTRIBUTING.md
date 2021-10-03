@@ -1,5 +1,14 @@
 # Development / Contributing
 
+## Suggested areas to tackle
+
+The best place to look currently would be either:
+
+1. The [issues](https://github.com/icosa-gallery/open-brush/issues)
+2. The [Trello cards](https://trello.com/b/jItetqYe/open-brush)
+3. Take a look at some of the [experimental branches](https://icosa.gitbook.io/open-brush/alternate-and-experimental-builds) that might need assistance
+4. Join the Discord and look at the [feature requests](https://discord.gg/BXYUKzhS)
+
 ## Coding Style
 While the original Tilt Brush used a Google code style, Open Brush follows standard C# and Python conventions for formatting, indentation, etc. To reduce the work required by contributors, we use the [pre-commit](https://pre-commit.com) python package and git hook to automatically run some syntax checking and formatting prior to commits. Similarly, all Pull Requests use pre-commit to check that these rules are followed. To have your code automatically checked, please run the following (you will need python 3.5+ installed):
 ```bash
