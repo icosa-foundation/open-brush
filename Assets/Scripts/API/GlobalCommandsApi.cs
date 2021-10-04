@@ -196,11 +196,23 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
-        [ApiEndpoint("dropcam.toggle", "Toggles the Drop Cam widget on or off")]
-        public static void DropCam()
+        [ApiEndpoint("spectator.toggle", "Toggles the spectator camera")]
+        public static void ToggleSpectator()
         {
             var rEnum = SketchControlsScript.GlobalCommands.DropCam;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
+        [ApiEndpoint("spectator.on", "Turns the spectator camera on")]
+        public static void EnableSpectator()
+        {
+            SketchControlsScript.m_Instance.GetDropCampWidget().ShowInstantly(true);
+        }
+
+        [ApiEndpoint("spectator.off", "Turns the spectator camera off")]
+        public static void DisableSpectator()
+        {
+            SketchControlsScript.m_Instance.GetDropCampWidget().ShowInstantly(false);
         }
 
         [ApiEndpoint("autosimplify.toggle", "Toggles 'auto-simplify' mode on or off")]

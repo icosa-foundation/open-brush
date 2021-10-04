@@ -355,16 +355,16 @@ namespace TiltBrush
         //     App.Scene.Pose = lookPose;
         // }
 
-        [ApiEndpoint("spectator.lookat", "Points the spectator camera towards a specific point")]
-        public static void SpectatorLookat(Vector3 position)
+        [ApiEndpoint("spectator.look.at", "Points the spectator camera towards a specific point")]
+        public static void SpectatorLookAt(Vector3 position)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             Quaternion qNewRotation = LookAt(cam.transform.position, position);
             cam.transform.rotation = qNewRotation;
         }
 
-        // [ApiEndpoint("user.lookat", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]
-        // public static void UserLookat(Vector3 position)
+        // [ApiEndpoint("user.look.at", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]
+        // public static void UserLookAt(Vector3 position)
         // {
         //     TrTransform lookPose = App.Scene.Pose;
         //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
@@ -425,7 +425,7 @@ namespace TiltBrush
             ChangeBrushBearing(angle, Vector3.forward);
         }
 
-        [ApiEndpoint("brush.lookat", "Changes the brush direction to look at the specified point")]
+        [ApiEndpoint("brush.look.at", "Changes the brush direction to look at the specified point")]
         public static void BrushLookAt(Vector3 direction)
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
@@ -867,7 +867,7 @@ namespace TiltBrush
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
         }
 
-        [ApiEndpoint("environment.set", "Sets the current environment")]
+        [ApiEndpoint("environment.type", "Sets the current environment")]
         public static void SetEnvironment(string name)
         {
             Environment env = EnvironmentCatalog.m_Instance.AllEnvironments.First(x => x.name == name);
