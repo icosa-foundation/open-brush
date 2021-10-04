@@ -495,7 +495,7 @@ public class ApiManager : MonoBehaviour
         html = html.Replace("{{brushesJson}}", brushesJson);
 
         string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-            .Select(x => x.name)
+            .Select(x => x.m_Description.Replace(" ", ""))
             .ToArray();
         string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
         html = html.Replace("{{environmentsJson}}", environmentsJson);
@@ -619,6 +619,7 @@ public class ApiManager : MonoBehaviour
         tex.Apply();
         RenderTexture.active = oldTex;
         CameraViewPng = tex.EncodeToPNG();
+        Destroy(tex);
 
         cameraViewRequested = false;
         cameraViewGenerated = true;
