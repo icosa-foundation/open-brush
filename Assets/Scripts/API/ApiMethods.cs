@@ -372,6 +372,27 @@ namespace TiltBrush
         //     App.Scene.Pose = lookPose;
         // }
 
+        [ApiEndpoint("spectator.mode", "Sets the spectator camera mode to one of Stationary, SlowFollow, Wobble, Circular")]
+        public static void SpectatorMode(string mode)
+        {
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            switch (mode.ToLower())
+            {
+                case "stationary":
+                    cam.SetMode(DropCamWidget.Mode.Stationary);
+                    break;
+                case "slowfollow":
+                    cam.SetMode(DropCamWidget.Mode.SlowFollow);
+                    break;
+                case "wobble":
+                    cam.SetMode(DropCamWidget.Mode.Wobble);
+                    break;
+                case "circular":
+                    cam.SetMode(DropCamWidget.Mode.Circular);
+                    break;
+            }
+        }
+
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
         public static void BrushMoveTo(Vector3 position)
         {

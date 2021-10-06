@@ -105,6 +105,7 @@ public class ApiManager : MonoBehaviour
             {"spectator.turn.z", "45"},
             {"spectator.direction", "45,45,0"},
             {"spectator.look.at", "1,2,3"},
+            {"spectator.mode", "circular"},
             {"user.move.to", "1,1,1"},
             {"user.move.by", "1,1,1"},
             {"brush.move.to", "1,1,1"},
