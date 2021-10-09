@@ -943,6 +943,14 @@ namespace TiltBrush
 
             return totalBounds_CS;
         }
+        
+        public bool AngleOrPositionSnapEnabled()
+        {
+            return (
+                CurrentSnapAngleIndex != 0 ||
+                CurrentSnapGridIndex != 0
+            );
+        }
 
         public void SetSnappingAngle(int snapIndex)
         {
