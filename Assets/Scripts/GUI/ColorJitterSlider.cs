@@ -27,7 +27,8 @@ namespace TiltBrush
         {
             Hue,
             Saturation,
-            Value
+            Value,
+            Size
         }
         public JitterProperties JitterProperty;
 
@@ -36,17 +37,21 @@ namespace TiltBrush
 
             float adjust(float val) { return Mathf.Pow(val * 2f, 1f / pow); }
             base.Awake();
-            var jitter = PointerManager.m_Instance.colorJitter;
+            Vector3 colorJitter = PointerManager.m_Instance.colorJitter;
+            float sizeJitter = PointerManager.m_Instance.sizeJitter;
             switch (JitterProperty)
             {
                 case JitterProperties.Hue:
-                    m_CurrentValue = adjust(jitter.x);
+                    m_CurrentValue = adjust(colorJitter.x);
                     break;
                 case JitterProperties.Saturation:
-                    m_CurrentValue = adjust(jitter.y);
+                    m_CurrentValue = adjust(colorJitter.y);
                     break;
                 case JitterProperties.Value:
-                    m_CurrentValue = adjust(jitter.z);
+                    m_CurrentValue = adjust(colorJitter.z);
+                    break;
+                case JitterProperties.Size:
+                    m_CurrentValue = adjust(sizeJitter);
                     break;
             }
             SetSliderPositionToReflectValue();
@@ -54,23 +59,27 @@ namespace TiltBrush
 
         public override void UpdateValue(float fValue)
         {
-            var jitter = PointerManager.m_Instance.colorJitter;
             float val = Mathf.Pow(fValue, pow) / 2f;  // Lower values are more interesting so square it
+            Vector3 colorJitter = PointerManager.m_Instance.colorJitter;
             switch (JitterProperty)
             {
                 case JitterProperties.Hue:
-                    jitter.x = val;
+                    colorJitter.x = val;
+                    PointerManager.m_Instance.colorJitter = colorJitter;
                     break;
                 case JitterProperties.Saturation:
-                    jitter.y = val;
+                    colorJitter.y = val;
+                    PointerManager.m_Instance.colorJitter = colorJitter;
                     break;
                 case JitterProperties.Value:
-                    jitter.z = val;
+                    colorJitter.z = val;
+                    PointerManager.m_Instance.colorJitter = colorJitter;
+                    break;
+                case JitterProperties.Size:
+                    PointerManager.m_Instance.sizeJitter = val;
                     break;
             }
-            PointerManager.m_Instance.colorJitter = jitter;
             m_CurrentValue = fValue;
-            Debug.Log($"val {fValue}: {PointerManager.m_Instance.colorJitter} = {jitter}");
         }
 
         public override void ResetState()

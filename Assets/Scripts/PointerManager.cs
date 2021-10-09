@@ -154,6 +154,7 @@ namespace TiltBrush
         private bool m_UseSymmetryWidget = false;
         private Color m_lastChosenColor { get; set; }
         public Vector3 colorJitter { get; set; }
+        public float sizeJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -280,13 +281,7 @@ namespace TiltBrush
                 PlayerPrefs.SetFloat(PLAYER_PREFS_POINTER_ANGLE, m_FreePaintPointerAngle);
             }
         }
-        public bool JitterEnabled
-        {
-            get
-            {
-                return PointerManager.m_Instance.colorJitter.sqrMagnitude > 0;
-            }
-        }
+        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0;
 
         static public void ClearPlayerPrefs()
         {
@@ -1024,8 +1019,8 @@ namespace TiltBrush
 
             if (JitterEnabled)
             {
-
                 // Bypass the code in the PointerColor setter
+                // Size is jittered in PointerScript. Should we also do color there?
                 ChangeAllPointerColorsDirectly(GenerateJitteredColor());
             }
 
