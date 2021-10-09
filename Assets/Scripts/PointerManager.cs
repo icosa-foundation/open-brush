@@ -154,6 +154,7 @@ namespace TiltBrush
         private bool m_UseSymmetryWidget = false;
         private Color m_lastChosenColor { get; set; }
         public Vector3 colorJitter { get; set; }
+        public float sizeJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -280,6 +281,7 @@ namespace TiltBrush
                 PlayerPrefs.SetFloat(PLAYER_PREFS_POINTER_ANGLE, m_FreePaintPointerAngle);
             }
         }
+        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0;
 
         static public void ClearPlayerPrefs()
         {
@@ -1015,17 +1017,10 @@ namespace TiltBrush
                 m_lastChosenColor = PointerColor;
             }
 
-            if (colorJitter.sqrMagnitude > 0)  // Is Jitter enabled?
+            if (JitterEnabled)
             {
-                float h, s, v;
-                Color.RGBToHSV(m_lastChosenColor, out h, out s, out v);
-
                 // Bypass the code in the PointerColor setter
-                ChangeAllPointerColorsDirectly(Random.ColorHSV(
-                    h - colorJitter.x, h + colorJitter.x,
-                    s - colorJitter.y, h + colorJitter.y,
-                    v - colorJitter.z, h + colorJitter.z
-                ));
+                ChangeAllPointerColorsDirectly(GenerateJitteredColor());
             }
 
 
@@ -1041,6 +1036,15 @@ namespace TiltBrush
             InitiateLine();
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
+        }
+        public Color GenerateJitteredColor()
+        {
+            Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
+            return Random.ColorHSV(
+                h - colorJitter.x, h + colorJitter.x,
+                s - colorJitter.y, s + colorJitter.y,
+                v - colorJitter.z, v + colorJitter.z
+            );
         }
 
         private void Transition_RecordingInput_ProcessingStraightEdge(List<ControlPoint> cps)

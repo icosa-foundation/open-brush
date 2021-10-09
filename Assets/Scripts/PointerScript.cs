@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -837,9 +838,18 @@ namespace TiltBrush
             m_LastUsedBrushSize_CS = (1 / Coords.CanvasPose.scale) * BrushSizeAbsolute;
             m_LineLength_CS = 0.0f;
 
+            float jitteredBrushSize = m_CurrentBrushSize;
+            if (PointerManager.m_Instance.JitterEnabled)
+            {
+                float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
+                float sizeJitter = PointerManager.m_Instance.sizeJitter;
+                float jitterValue = Random.Range(-sizeJitter * range, sizeJitter * range) * 0.5f;
+                jitteredBrushSize = m_CurrentBrushSize + jitterValue;
+                jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
+            }
             m_CurrentLine = BaseBrushScript.Create(
                 canvas.transform, xf_CS,
-                desc, m_CurrentColor, m_CurrentBrushSize);
+                desc, m_CurrentColor, jitteredBrushSize);
         }
 
         /// Like BeginLineFromMemory + EndLineFromMemory
