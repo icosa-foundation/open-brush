@@ -591,15 +591,17 @@ namespace TiltBrush
                 if (PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
                 {
                     if (recolor) newColor = PointerManager.m_Instance.GenerateJitteredColor();
-                    BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
-                    if (resize) newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
+                    if (resize)
+                    {
+                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
+                        newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
+                    }
                 }
                 else
                 {
                     if (recolor) newColor = PointerManager.m_Instance.PointerColor;
                     if (resize) newSize = brushSize;
                 }
-
 
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
                 return true;

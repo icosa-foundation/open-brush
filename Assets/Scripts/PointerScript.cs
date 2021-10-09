@@ -840,7 +840,7 @@ namespace TiltBrush
             float jitteredBrushSize = m_CurrentBrushSize;
             if (PointerManager.m_Instance.JitterEnabled)
             {
-                PointerManager.m_Instance.GenerateJitteredSize(desc, m_CurrentBrushSize);
+                jitteredBrushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, m_CurrentBrushSize);
             }
 
             m_CurrentLine = BaseBrushScript.Create(
