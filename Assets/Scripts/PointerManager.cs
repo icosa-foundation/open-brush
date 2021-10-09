@@ -1048,6 +1048,17 @@ namespace TiltBrush
             );
         }
 
+        public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
+        {
+            float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
+            float sizeJitter = PointerManager.m_Instance.sizeJitter;
+            float jitterValue = Random.Range(-sizeJitter * range, sizeJitter * range) * 0.5f;
+            float jitteredBrushSize = currentSize + jitterValue;
+            jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
+            return jitteredBrushSize;
+
+        }
+
         private void Transition_RecordingInput_ProcessingStraightEdge(List<ControlPoint> cps)
         {
             Debug.Assert(m_StraightEdgeProxyActive);
