@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace TiltBrush
 {
-    public class SelectionTray : BaseTray
-    {
-        [SerializeField] private OptionButton m_GroupButton;
 
-        protected override void OnSelectionChanged()
+    // TODO Refactor ToggleButton and OptionButton so that ToggleButton
+    // carries less baggage that it doesn't need from OptionButton.
+    public class ToggleButton : OptionButton
+    {
+        public bool m_IsToggledOn;
+        public UnityEvent m_OnToggle;
+
+        protected override bool IsButtonActive()
         {
-            m_GroupButton.UpdateVisuals();
+            return m_IsToggledOn;
+        }
+
+        override protected void OnButtonPressed()
+        {
+            m_IsToggledOn = !m_IsToggledOn;
+            m_OnToggle.Invoke();
         }
     }
-
 } // namespace TiltBrush

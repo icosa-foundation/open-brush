@@ -568,15 +568,17 @@ namespace TiltBrush
             }
         }
 
-        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize)
+        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter)
         {
-            Guid brushGuid = PointerManager.m_Instance
+
+            Guid currentBrushGuid = PointerManager.m_Instance
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
-            float brushSize = PointerManager.m_Instance.MainPointer.BrushSize01;
+            float currentBrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+
             if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
-                (recolor && PointerManager.m_Instance.JitterEnabled) ||
-                (rebrush && stroke.m_BrushGuid != brushGuid) ||
-                (resize && stroke.m_BrushSize != brushSize))
+                (jitter && PointerManager.m_Instance.JitterEnabled) ||
+                (rebrush && stroke.m_BrushGuid != currentBrushGuid) ||
+                (resize && stroke.m_BrushSize != currentBrushSize))
             {
                 if (m_RepaintStrokeParent == null)
                 {
@@ -586,9 +588,9 @@ namespace TiltBrush
                 Color newColor = stroke.m_Color;
                 float newSize = stroke.m_BrushSize;
 
-                Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
+                Guid newGuid = rebrush ? currentBrushGuid : stroke.m_BrushGuid;
 
-                if (PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
+                if (jitter && PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
                 {
                     if (recolor) newColor = PointerManager.m_Instance.GenerateJitteredColor();
                     if (resize)
@@ -600,7 +602,7 @@ namespace TiltBrush
                 else
                 {
                     if (recolor) newColor = PointerManager.m_Instance.PointerColor;
-                    if (resize) newSize = brushSize;
+                    if (resize) newSize = currentBrushSize;
                 }
 
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
@@ -609,12 +611,12 @@ namespace TiltBrush
             return false;
         }
 
-        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush, bool resize)
+        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush, bool resize, bool jitter)
         {
             var brush = rObject.GetComponent<BaseBrushScript>();
             if (brush)
             {
-                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush, resize);
+                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush, resize, jitter);
                 return true;
             }
             return false;
