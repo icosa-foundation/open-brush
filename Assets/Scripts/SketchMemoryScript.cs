@@ -568,7 +568,7 @@ namespace TiltBrush
             }
         }
 
-        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter)
+        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false)
         {
 
             Guid currentBrushGuid = PointerManager.m_Instance
