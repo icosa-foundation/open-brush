@@ -573,7 +573,8 @@ namespace TiltBrush
 
             Guid currentBrushGuid = PointerManager.m_Instance
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
-            float currentBrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+
+            float currentBrushSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
 
             if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
                 (jitter && PointerManager.m_Instance.JitterEnabled) ||
