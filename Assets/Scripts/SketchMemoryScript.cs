@@ -606,6 +606,20 @@ namespace TiltBrush
                     if (resize) newSize = currentBrushSize;
                 }
 
+                var positionJitter = PointerManager.m_Instance.positionJitter;
+                if (positionJitter > 0)
+                {
+                    // Jitter positions
+                    var newControlPoints = new PointerManager.ControlPoint[stroke.m_ControlPoints.Length];
+                    for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                    {
+                        PointerManager.ControlPoint cp = stroke.m_ControlPoints[i];
+                        cp.m_Pos = PointerManager.m_Instance.GenerateJitteredPosition(cp.m_Pos, positionJitter);
+                        newControlPoints[i] = cp;
+                    }
+                    new ModifyStrokePointsCommand(stroke, newControlPoints, m_RepaintStrokeParent);
+                }
+
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
                 return true;
             }

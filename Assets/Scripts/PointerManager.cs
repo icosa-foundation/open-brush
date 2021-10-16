@@ -155,6 +155,7 @@ namespace TiltBrush
         private Color m_lastChosenColor { get; set; }
         public Vector3 colorJitter { get; set; }
         public float sizeJitter { get; set; }
+        public float positionJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -281,7 +282,7 @@ namespace TiltBrush
                 PlayerPrefs.SetFloat(PLAYER_PREFS_POINTER_ANGLE, m_FreePaintPointerAngle);
             }
         }
-        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0;
+        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
         static public void ClearPlayerPrefs()
         {
@@ -1056,7 +1057,11 @@ namespace TiltBrush
             float jitteredBrushSize = currentSize + jitterValue;
             jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
             return jitteredBrushSize;
+        }
 
+        public Vector3 GenerateJitteredPosition(Vector3 currentPos, float jitterAmount)
+        {
+            return currentPos + (Random.insideUnitSphere * jitterAmount);
         }
 
         private void Transition_RecordingInput_ProcessingStraightEdge(List<ControlPoint> cps)
