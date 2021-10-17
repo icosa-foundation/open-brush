@@ -27,7 +27,7 @@ namespace TiltBrush
         public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, bool rawStroke = false)
         {
             var positions = new List<List<Vector3>>();
-            var orientations = new List<List<Vector3>>();
+            var orientations = new List<List<Quaternion>>();
             var pressures = new List<List<float>>();
 
             // This assumes that the stroke data is consistent.
@@ -38,7 +38,7 @@ namespace TiltBrush
             foreach (List<List<float>> positionList in strokeData)
             {
                 var positionsPath = new List<Vector3>();
-                var orientationsPath = new List<Vector3>();
+                var orientationsPath = new List<Quaternion>();
                 var pressuresPath = new List<float>();
 
                 foreach (List<float> controlPoint in positionList)
@@ -48,7 +48,12 @@ namespace TiltBrush
                     positionsPath.Add(new Vector3(controlPoint[0], controlPoint[1], controlPoint[2]));
                     if (orientationsExist)
                     {
-                        orientationsPath.Add(new Vector3(controlPoint[3], controlPoint[4], controlPoint[5]));
+                        orientationsPath.Add(
+                            Quaternion.Euler(
+                                controlPoint[3],
+                                controlPoint[4],
+                                controlPoint[5]
+                            ));
                     }
                     if (pressuresExist)
                     {
@@ -77,7 +82,7 @@ namespace TiltBrush
             MultiPositionPathsToStrokes(positions, null, null, origin, scale, breakOnOrigin);
         }
 
-        public static void MultiPositionPathsToStrokes(List<List<Vector3>> positions, List<List<Vector3>> orientations, List<List<float>> pressures, Vector3 origin, float scale = 1f, bool breakOnOrigin = false, bool rawStrokes = false)
+        public static void MultiPositionPathsToStrokes(List<List<Vector3>> positions, List<List<Quaternion>> orientations, List<List<float>> pressures, Vector3 origin, float scale = 1f, bool breakOnOrigin = false, bool rawStrokes = false)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
@@ -95,7 +100,7 @@ namespace TiltBrush
                 {
                     var position = positionList[vertexIndex];
                     Quaternion orientation = orientations?.Any() == true ?
-                        Quaternion.Euler(orientations[pathIndex][vertexIndex]) :
+                        orientations[pathIndex][vertexIndex] :
                         Quaternion.identity;
                     float pressure = pressures?.Any() == true ?
                         pressures[pathIndex][vertexIndex] :

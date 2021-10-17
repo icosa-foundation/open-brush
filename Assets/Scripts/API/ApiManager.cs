@@ -90,6 +90,7 @@ public class ApiManager : MonoBehaviour
             {"draw.polygon", "5,1,0"},
             {"draw.text", "hello"},
             {"draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88"},
+            {"draw.camerapath", "0"},
             {"brush.type", "ink"},
             {"color.add.hsv", "0.1,0.2,0.3"},
             {"color.add.rgb", "0.1,0.2,0.3"},
@@ -128,7 +129,7 @@ public class ApiManager : MonoBehaviour
             {"load.curated", "0"},
             {"load.liked", "0"},
             {"load.drive", "0"},
-            {"load.named", "mysketch.sketch"},
+            {"load.named", "mysketch.tilt"},
             {"showfolder.sketch", "0"},
             {"import.model", "example.glb"}
         };

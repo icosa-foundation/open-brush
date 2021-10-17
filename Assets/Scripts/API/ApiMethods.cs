@@ -895,5 +895,33 @@ namespace TiltBrush
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
 
+        [ApiEndpoint("draw.camerapath", "Draws along a camera path with the current brush settings")]
+        public static void DrawCameraPath(int index)
+        {
+            CameraPathWidget widget = WidgetManager.m_Instance.CameraPathWidgets.ElementAt(index).WidgetScript;
+            CameraPath path = widget.Path;
+            var positions = new List<Vector3>();
+            var rotations = new List<Quaternion>();
+            for (float t = 0; t < path.Segments.Count; t += .1f)
+            {
+                positions.Add(path.GetPosition(new PathT(t)));
+                rotations.Add(path.GetRotation(new PathT(t)));
+            }
+            DrawStrokes.MultiPositionPathsToStrokes(
+                new List<List<Vector3>> { positions },
+                new List<List<Quaternion>> { rotations },
+                null,
+                Vector3.zero
+            );
+        }
+
+        // Example of calling a command and recording an undo step
+        // [ApiEndpoint("foo", "")]
+        // public static void FooCommand()
+        // {
+        //     FooCommand fooCommand = new FooCommand();
+        //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(fooCommand);
+        // }
+
     }
 }
