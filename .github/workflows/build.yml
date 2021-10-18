@@ -453,6 +453,76 @@ jobs:
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+
+  publish_steam:
+    name: Publish Steam Release
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+      - name: Setup steamcmd
+        uses: CyberAndrii/setup-steamcmd@v1.1.1
+      - name: Restore steam login config
+        run: |
+          mkdir -p /home/runner/Steam/config
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
+      - name: Download Build Artifacts (Windows SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR
+          path: build_windows_steamvr
+      - name: Download Build Artifacts (Windows SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR Experimental
+          path: build_windows_steamvr_experimental
+      - name: Upload Regular Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_steamvr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_steamvr/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          CHANNEL: prerelease
+      - name: Upload Experimental Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_steamvr_experimental/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr_experimental/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_steamvr_experimental/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr_experimental/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          CHANNEL: prerelease-experimental
+      - name: Save logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: steamcmd logs
+          path: build_output/
+
+
   publish_oculus:
     name: Publish Oculus Release
     needs: [configuration, build]
