@@ -44,7 +44,7 @@ namespace TiltBrush
 
         public BasePanel.PanelType activePanel;
         public BasePanel.PanelType lastActivePanel;
-        
+
 
         void Start()
         {
@@ -127,14 +127,15 @@ namespace TiltBrush
             else if (InputManager.m_Instance.GetKeyboardShortcutDown(
               InputManager.KeyboardShortcut.ToggleMonoUi))
             {
-                if (activePanel == 0) 
+                if (activePanel == 0)
                 {
                     TogglePanel(lastActivePanel);
                 }
-                else {
+                else
+                {
                     activePanel = 0;
                 }
-                
+
             }
 
             // SketchControlsScript.m_Instance.SetAllPanelsStatus(isUiVisible);
