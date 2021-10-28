@@ -37,7 +37,7 @@ namespace TiltBrush
         [SerializeField] protected Option[] m_Options;
         [SerializeField] protected bool DisplayTextLabel = false;
         [SerializeField] protected bool DisplayIcon = true;
-        
+
         protected int m_CurrentOptionIdx;
         protected GameObject m_OptionContainer;
         private GameObject[] m_Sides;
@@ -230,7 +230,7 @@ namespace TiltBrush
                     tmpText.fontSize = 4;
                     tmpText.alignment = TextAlignmentOptions.Center;
                 }
-                
+
                 side.transform.localRotation = Quaternion.Euler(0, OptionAngleDeltaDegrees * (i + 1), 0);
                 side.transform.localPosition = side.transform.localRotation * new Vector3(0, 0, -OptionSideDistance);
                 side.transform.localScale = Vector3.one;

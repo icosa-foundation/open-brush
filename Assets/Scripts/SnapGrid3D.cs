@@ -41,7 +41,7 @@ public class SnapGrid3D : MonoBehaviour
         public static readonly int WorldToCanvasMatrix = Shader.PropertyToID("_WorldToCanvasMatrix");
         public static readonly int CanvasScale = Shader.PropertyToID("_CanvasScale");
     }
-    
+
     public Material material;
     public Color color;
     public Vector3Int gridCount = Vector3Int.one * 5;
@@ -68,7 +68,7 @@ public class SnapGrid3D : MonoBehaviour
             // Not sure what to fall back to for general cases.
             toolTransform = currentTool.transform;
         }
-        
+
         canvasTransform = App.Scene.ActiveCanvas.transform;
 
         if ((Camera.current.cullingMask & (1 << gameObject.layer)) != 0)

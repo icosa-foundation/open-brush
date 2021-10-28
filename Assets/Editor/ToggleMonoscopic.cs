@@ -33,7 +33,7 @@ public class ToggleMonoscopic : MonoBehaviour
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
     }
-    
+
     private static SteamVR_Settings SteamVrSettings
     {
         get

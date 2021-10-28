@@ -1241,7 +1241,7 @@ namespace TiltBrush
 
             return outXf_GS;
         }
-        
+
         private Quaternion QuantizeAngle(Quaternion rotation)
         {
             var snapAngle = SelectionManager.m_Instance.SnappingAngle;
@@ -1251,7 +1251,7 @@ namespace TiltBrush
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
             return Quaternion.Euler(euler);
         }
-        
+
         public static Vector3 SnapToGrid(Vector3 position)
         {
             float gridSize = SelectionManager.m_Instance.SnappingGridSize;

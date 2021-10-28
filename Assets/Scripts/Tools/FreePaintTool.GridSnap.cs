@@ -31,13 +31,13 @@ namespace TiltBrush
                     Mathf.Round(localCanvasPos.y / gridSubdivision) * gridSubdivision,
                     Mathf.Round(localCanvasPos.z / gridSubdivision) * gridSubdivision
                 );
-            
+
             Vector3 offset = new Vector3(
                 Mathf.Abs(roundedCanvasPos.x - localCanvasPos.x),
                 Mathf.Abs(roundedCanvasPos.y - localCanvasPos.y),
                 Mathf.Abs(roundedCanvasPos.z - localCanvasPos.z)
             );
-            
+
             // If we're close to a grid point then always snap
             Vector3 snappedPos = roundedCanvasPos;
 

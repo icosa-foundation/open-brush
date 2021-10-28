@@ -943,7 +943,7 @@ namespace TiltBrush
 
             return totalBounds_CS;
         }
-        
+
         public bool AngleOrPositionSnapEnabled()
         {
             return (
@@ -962,7 +962,7 @@ namespace TiltBrush
         {
             m_CurrentSnapGridIndex = snapIndex;
             m_snappingGridSize = m_GridSnaps[snapIndex];
-            if (m_SnapGridVisualization==null)
+            if (m_SnapGridVisualization == null)
             {
                 m_SnapGridVisualization = App.Scene.MainCanvas.GetComponentInChildren<SnapGrid3D>();
             }
