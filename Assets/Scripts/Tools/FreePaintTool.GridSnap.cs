@@ -40,7 +40,7 @@ namespace TiltBrush
             
             // If we're close to a grid point then always snap
             Vector3 snappedPos = roundedCanvasPos;
-            
+
             // Otherwise allow a degree of freedom in the appropriate snap axis
             // (but only if we're not very close to a snap point)
             const float stickiness = 5f;
@@ -50,7 +50,8 @@ namespace TiltBrush
                 {
                     snappedPos = new Vector3(localCanvasPos.x, roundedCanvasPos.y, roundedCanvasPos.z);
                 }
-            } else if (offset.y > offset.x && offset.y > offset.z) // y is biggest
+            }
+            else if (offset.y > offset.x && offset.y > offset.z) // y is biggest
             {
                 if (offset.y > gridSubdivision / stickiness)
                 {
