@@ -757,7 +757,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLWasmStreaming: 0
   scriptingDefineSymbols:
-    1: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
+    1: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
     7: TILT_BRUSH;OCULUS_SUPPORTED
     14: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
   platformArchitecture:
@@ -773,6 +773,7 @@ PlayerSettings:
   managedStrippingLevel: {}
   incrementalIl2cppBuild:
     iPhone: 1
+  suppressCommonWarnings: 1
   allowUnsafeCode: 1
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1

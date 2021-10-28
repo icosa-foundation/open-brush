@@ -22,6 +22,7 @@ namespace TiltBrush
         public event Action MirrorVisibilityChanged;
         public event Action PanelDismissed;
         public event Action StencilModeChanged;
+        public event Action StencilAttractDistChanged;
         public event Action AudioReactiveStateChanged;
         public event Action MemoryExceededChanged;
         public event Action MemoryWarningAcceptedChanged;
@@ -62,6 +63,11 @@ namespace TiltBrush
         public void TriggerStencilModeChanged()
         {
             StencilModeChanged?.Invoke();
+        }
+
+        public void TriggerStencilAttractDistChanged()
+        {
+            StencilAttractDistChanged?.Invoke();
         }
 
         public void TriggerAudioReactiveStateChanged()
