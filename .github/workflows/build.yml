@@ -241,7 +241,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -249,6 +249,7 @@ jobs:
           versioning: Custom
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: OVRPluginUpdater.BatchmodePluginUpdate  # We created this symlink above
+          chownFilesTo: "1000:1000"
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
@@ -320,7 +321,7 @@ jobs:
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -336,13 +337,12 @@ jobs:
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          chownFilesTo: "1000:1000"
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
-          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
           # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
-          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
           chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
           # Compress, but skip the top directories
           tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
