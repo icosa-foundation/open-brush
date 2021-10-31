@@ -39,6 +39,7 @@ jobs:
       changelog: ${{ steps.changelog.outputs.changelog }}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
+      uidgid: ${{ steps.github.outputs.uidgid }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -65,6 +66,7 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "::set-output name=version::$VERSION"
           echo "::set-output name=stamp::$STAMP"
+          echo "::set-output name=uidgid::$(id -u).$(id -g)"
       - name: Calculate Changelog
         id: changelog
         env:
@@ -337,7 +339,7 @@ jobs:
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-          chownFilesTo: "1000:1000"
+          chownFilesTo: ${{ needs.configuration.outputs.uidgid }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
