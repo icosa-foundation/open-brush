@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import os, sys, platform
-print('hello world')
+# notes:
+# on ubuntu you need to install:
+# sudo apt-get install libgconf-2-4
 
 def count_lines( folder, info ):
 	for name in os.listdir(folder):
@@ -41,5 +43,5 @@ if '--build' in sys.argv or True:
 	import unitybuild
 	print(unitybuild)	
 	import unitybuild.main  # noqa: E402 pylint: disable=import-error,wrong-import-position
-	args = ["--experimental", "--vrsdk", "Monoscopic"]
+	args = ["--experimental", "--vrsdk", "Monoscopic", '--platform', 'Linux']
 	unitybuild.main.main(args)
