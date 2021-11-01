@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, platform
+import os, sys, platform, subprocess
 # notes:
 # on ubuntu you need to install:
 # sudo apt-get install libgconf-2-4
@@ -37,7 +37,9 @@ sys.path.append(
 	os.path.join(os.path.dirname(os.path.abspath(__file__)), "Support/Python")
 )
 
-if '--build' in sys.argv or True:
+exe = os.path.expanduser('~/Builds/Monoscopic_Release_OpenBrush_Experimental_FromCli/OpenBrush')
+
+if '--build' in sys.argv or not os.path.isfile(exe):
 	print(__file__)
 	print(sys.path)
 	import unitybuild
@@ -45,3 +47,5 @@ if '--build' in sys.argv or True:
 	import unitybuild.main  # noqa: E402 pylint: disable=import-error,wrong-import-position
 	args = ["--experimental", "--vrsdk", "Monoscopic", '--platform', 'Linux']
 	unitybuild.main.main(args)
+	
+subprocess.check_call( [exe] )
