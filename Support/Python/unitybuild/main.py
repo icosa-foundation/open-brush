@@ -897,11 +897,16 @@ def maybe_prompt_and_set_version_code(project_dir):
 
 def sanity_check_build(build_dir):
     # We've had issues with Unity dying(?) or exiting(?) before emitting an exe
-    exes = []
-    for pat in ("*.app", "*.exe", "*.apk"):
-        exes.extend(glob.glob(os.path.join(build_dir, pat)))
-    if len(exes) == 0:
-        raise BuildFailed("Cannot find any executables in %s" % build_dir)
+    if sys.platform.startswith('linux'):
+    	exe = os.path.join(build_dir, 'OpenBrush')
+    	if not os.path.isfile( exe ):
+            raise BuildFailed("Cannot find OpenBrush executable in %s" % build_dir)
+    else:
+        exes = []
+        for pat in ("*.app", "*.exe", "*.apk"):
+            exes.extend(glob.glob(os.path.join(build_dir, pat)))
+        if len(exes) == 0:
+            raise BuildFailed("Cannot find any executables in %s" % build_dir)
 
 
 def main(
