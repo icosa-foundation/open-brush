@@ -75,6 +75,7 @@ from unitybuild.vcs import create as vcs_create
 
 VENDOR_NAME = "Icosa"
 EXE_BASE_NAME = "OpenBrush"
+is_linux = sys.platform.startswith('linux')
 
 # ----------------------------------------------------------------------
 # Build logic
@@ -543,7 +544,7 @@ def build(
     exe_name = os.path.join(output_dir, get_exe_name(platform, exe_base_name))
     cmd_env = os.environ.copy()
     cmdline = [
-        get_unity_exe(get_project_unity_version(project_dir), lenient=True),
+        get_unity_exe(get_project_unity_version(project_dir), lenient=is_jenkins or is_linux),
         "-logFile",
         logfile,
         "-batchmode",
@@ -897,16 +898,11 @@ def maybe_prompt_and_set_version_code(project_dir):
 
 def sanity_check_build(build_dir):
     # We've had issues with Unity dying(?) or exiting(?) before emitting an exe
-    if sys.platform.startswith('linux'):
-    	exe = os.path.join(build_dir, 'OpenBrush')
-    	if not os.path.isfile( exe ):
-            raise BuildFailed("Cannot find OpenBrush executable in %s" % build_dir)
-    else:
-        exes = []
-        for pat in ("*.app", "*.exe", "*.apk"):
-            exes.extend(glob.glob(os.path.join(build_dir, pat)))
-        if len(exes) == 0:
-            raise BuildFailed("Cannot find any executables in %s" % build_dir)
+    exes = []
+    for pat in ("*.app", "*.exe", "*.apk", "OpenBrush"):
+        exes.extend(glob.glob(os.path.join(build_dir, pat)))
+    if len(exes) == 0:
+        raise BuildFailed("Cannot find any executables in %s" % build_dir)
 
 
 def main(
