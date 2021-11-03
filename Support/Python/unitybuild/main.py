@@ -254,13 +254,13 @@ def iter_editors_and_versions():  # pylint: disable=too-many-branches
             if os.path.exists(editor_dir):
                 yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
     elif sys.platform.startswith('linux'):
-        editor_dir = os.path.expanduser('~/Unity/Hub/Editor/2019.4.32f1')
-        if os.path.isdir(editor_dir):
-            print('found linux unity 2019')
+        app_list = [ os.path.expanduser('~/Unity/Hub/Editor/2019.*') ]
+        for editor_dir in app_list:
             exe = os.path.join(editor_dir, "Editor/Unity")
             editor_data_dir = os.path.join(editor_dir, "Editor")
             if os.path.exists(editor_dir):
                 yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
+
 
 
 def parse_version(txt):
