@@ -223,7 +223,9 @@ URL=" + kExportDocumentationUrl;
                         exporter.ExportBrushStrokes(
                             filename, AxisConvention.kGltf2, binary: true, doExtras: false,
                             includeLocalMediaContent: true,
-                            gltfVersion: gltfVersion);
+                            gltfVersion: gltfVersion,
+                            selfContained: true
+                        );
                         progress.CompleteWork("glb");
                     }
                 }
