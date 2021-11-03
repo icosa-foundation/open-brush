@@ -107,6 +107,8 @@ public class ApiManager : MonoBehaviour
             {"spectator.direction", "45,45,0"},
             {"spectator.look.at", "1,2,3"},
             {"spectator.mode", "circular"},
+            {"spectator.show", "panels"},
+            {"spectator.hide", "widgets"},
             {"user.move.to", "1,1,1"},
             {"user.move.by", "1,1,1"},
             {"brush.move.to", "1,1,1"},
@@ -129,9 +131,11 @@ public class ApiManager : MonoBehaviour
             {"load.curated", "0"},
             {"load.liked", "0"},
             {"load.drive", "0"},
-            {"load.named", "mysketch.tilt"},
+            {"load.named", "Untitled_0.tilt"},
             {"showfolder.sketch", "0"},
-            {"import.model", "example.glb"}
+            {"import.model", "Andy\\Andy.obj"},
+            {"import.image", "TiltBrushLogo.png"},
+            {"import.video", "animated-logo.mp4"}
         };
 
         App.Instance.StateChanged += RunStartupScript;
@@ -554,7 +558,9 @@ public class ApiManager : MonoBehaviour
     public void AddOutgoingCommandListener(Uri uri)
     {
         if (m_OutgoingApiListeners == null) m_OutgoingApiListeners = new List<Uri>();
+        if (m_OutgoingApiListeners.Contains(uri)) return;
         m_OutgoingApiListeners.Add(uri);
+
     }
 
     private void OutgoingApiCommand()
@@ -573,7 +579,8 @@ public class ApiManager : MonoBehaviour
 
         foreach (var listenerUrl in m_OutgoingApiListeners)
         {
-            StartCoroutine(GetRequest($"{listenerUrl}?{command.Key}={command.Value}"));
+            string uri = $"{listenerUrl}?{command.Key}={command.Value}";
+            StartCoroutine(GetRequest(uri));
         }
     }
 

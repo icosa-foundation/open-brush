@@ -393,6 +393,58 @@ namespace TiltBrush
             }
         }
 
+        public static void SpectatorShowHide(string thing, bool state)
+        {
+            // Friendly names to layer names
+            string layerName = null;
+            switch (thing.Trim().ToLower())
+            {
+                case "widgets":
+                    layerName = "GrabWidgets";
+                    break;
+                case "strokes":
+                    layerName = "MainCanvas";
+                    break;
+                case "selection":
+                    layerName = "SelectionCanvas";
+                    break;
+                case "headset":
+                    layerName = "HeadMesh";
+                    break;
+                case "panels":
+                    layerName = "Panels";
+                    break;
+                case "ui":
+                    layerName = "UI";
+                    break;
+            }
+
+            if (layerName == null) return;
+
+            int mask = 1 << LayerMask.NameToLayer(layerName);
+            Camera cam = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
+            if (state)
+            {
+                cam.cullingMask |= mask;
+            }
+            else
+            {
+                cam.cullingMask = ~(~cam.cullingMask | mask);
+            }
+        }
+
+        [ApiEndpoint("spectator.show", "Unhides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
+        public static void SpectatorShow(string thing)
+        {
+            SpectatorShowHide(thing, true);
+        }
+
+        [ApiEndpoint("spectator.show", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
+        public static void SpectatorHide(string thing)
+        {
+            SpectatorShowHide(thing, false);
+        }
+
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
         public static void BrushMoveTo(Vector3 position)
         {
@@ -706,7 +758,7 @@ namespace TiltBrush
 
 
 
-        [ApiEndpoint("import.model", "Imports a model from your media libraries Models folder")]
+        [ApiEndpoint("import.model", "Imports a model from your Open Brush\\Media Library\\Models folder")]
         public static void ImportModel(string path)
         {
             path = Path.Combine(App.MediaLibraryPath(), "Models", path);
@@ -729,6 +781,53 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
 
         }
+
+        [ApiEndpoint("import.image", "Imports an image  from your Open Brush\\Media Library\\Images folder")]
+        public static void ImportImage(string path)
+        {
+            path = Path.Combine(App.MediaLibraryPath(), "Images", path);
+            var image = new ReferenceImage(path);
+            image.RequestLoad(allowMainThread: true);
+            var tr = new TrTransform();
+            tr.translation = ApiManager.Instance.BrushPosition;
+            tr.rotation = ApiManager.Instance.BrushRotation;
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+            WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            ImageWidget imageWidget = createCommand.Widget as ImageWidget;
+            imageWidget.ReferenceImage = image;
+            imageWidget.Show(true);
+            createCommand.SetWidgetCost(imageWidget.GetTiltMeterCost());
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+
+        }
+
+        // WIP
+        // [ApiEndpoint("import.video", "Imports a video from your Open Brush\\Media Library\\Video folder")]
+        // public static void ImportVideo(string path)
+        // {
+        //     path = Path.Combine("Videos", path);
+        //     var video = new TiltVideo();
+        //     video.FilePath = path;
+        //     Debug.Log($"FilePath: {video.FilePath}");
+        //     VideoWidget.FromTiltVideo(video);
+        //     // var tr = new TrTransform();
+        //     // tr.translation = ApiManager.Instance.BrushPosition;
+        //     // tr.rotation = ApiManager.Instance.BrushRotation;
+        //     // CreateWidgetCommand createCommand = new CreateWidgetCommand(
+        //     //     WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+        //     // SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+        //     // videoWidget.Show(true);
+        //     // createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
+        //     //
+        //     // WidgetManager.m_Instance.WidgetsDormant = false;
+        //     // SketchControlsScript.m_Instance.EatGazeObjectInput();
+        //     // SelectionManager.m_Instance.RemoveFromSelection(false);
+        //
+        // }
 
         // Tools.
 
