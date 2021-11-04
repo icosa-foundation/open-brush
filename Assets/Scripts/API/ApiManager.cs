@@ -152,15 +152,10 @@ public class ApiManager : MonoBehaviour
         if (File.Exists(startupScriptPath))
         {
             var lines = File.ReadAllLines(startupScriptPath);
-            Debug.Log($"Found startup script with {lines.Length} lines");
             foreach (string pair in lines)
             {
                 EnqueueCommandString(pair);
             }
-        }
-        else
-        {
-            Debug.Log($"No startup script");
         }
 
     }
@@ -693,6 +688,63 @@ public class ApiManager : MonoBehaviour
         ctx = null;
         return ctx;
     }
+
+    public void LoadPolyModel(string assetId)
+    {
+        StartCoroutine(SpawnModelCoroutine(assetId, "API"));
+    }
+
+    public void LoadPolyModel(Uri uri)
+    {
+        string assetId = UnityWebRequest.EscapeURL(uri.ToString());
+        StartCoroutine(SpawnModelCoroutine(assetId, "API"));
+    }
+
+    private static IEnumerator SpawnModelCoroutine(string assetId, string reason)
+    {
+        // Same as calling Model.RequestModelPreload -> RequestModelLoadInternal, except
+        // this won't ignore the request if the load-into-memory previously failed.
+        App.PolyAssetCatalog.RequestModelLoad(assetId, reason);
+
+        // It is possible from this section forward that the user may have moved on to a different page
+        // on the Poly panel, which is why we use a local copy of 'model' rather than m_Model.
+        Model model;
+        // A model in the catalog will become non-null once the gltf has been downloaded or is in the
+        // cache.
+        while ((model = App.PolyAssetCatalog.GetModel(assetId)) == null)
+        {
+            yield return null;
+        }
+
+        // A model becomes valid once the gltf has been successfully read into a Unity mesh.
+        if (!model.m_Valid)
+        {
+            // The model might be in the "loaded with error" state, but it seems harmless to try again.
+            // If the user keeps clicking, we'll keep trying.
+            yield return model.LoadFullyCoroutine(reason);
+            Debug.Assert(model.m_Valid || model.Error != null);
+        }
+
+        if (!model.m_Valid)
+        {
+            OutputWindowScript.Error($"Couldn't load model: {model.Error?.message}", model.Error?.detail);
+        }
+        else
+        {
+            TrTransform xfSpawn = new TrTransform();
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+            modelWidget.Model = model;
+            modelWidget.Show(true);
+            createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
+    }
+
 
 
 }

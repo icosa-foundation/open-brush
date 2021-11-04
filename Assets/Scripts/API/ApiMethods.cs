@@ -782,6 +782,19 @@ namespace TiltBrush
 
         }
 
+        [ApiEndpoint("import.polymodel", "Imports a model from it's Google Poly ID")]
+        public static void ImportPolyModel(string assetId)
+        {
+            ApiManager.Instance.LoadPolyModel(assetId);
+        }
+
+        [ApiEndpoint("import.webmodel", "Imports a model from a public url")]
+        public static void ImportModelFromUrl(string url)
+        {
+            Uri uri = new Uri(url);
+            ApiManager.Instance.LoadPolyModel(uri);
+        }
+
         [ApiEndpoint("import.image", "Imports an image  from your Open Brush\\Media Library\\Images folder")]
         public static void ImportImage(string path)
         {
