@@ -75,7 +75,7 @@ from unitybuild.vcs import create as vcs_create
 
 VENDOR_NAME = "Icosa"
 EXE_BASE_NAME = "OpenBrush"
-is_linux = sys.platform.startswith('linux')
+is_linux = sys.platform.startswith("linux")
 
 # ----------------------------------------------------------------------
 # Build logic
@@ -253,14 +253,13 @@ def iter_editors_and_versions():  # pylint: disable=too-many-branches
             editor_data_dir = os.path.join(editor_dir, "Contents")
             if os.path.exists(editor_dir):
                 yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
-    elif sys.platform.startswith('linux'):
-        app_list = [ os.path.expanduser('~/Unity/Hub/Editor/2019.*') ]
+    elif sys.platform.startswith("linux"):
+        app_list = [os.path.expanduser("~/Unity/Hub/Editor/2019.*")]
         for editor_dir in app_list:
             exe = os.path.join(editor_dir, "Editor/Unity")
             editor_data_dir = os.path.join(editor_dir, "Editor")
             if os.path.exists(editor_dir):
                 yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
-
 
 
 def parse_version(txt):
@@ -544,7 +543,9 @@ def build(
     exe_name = os.path.join(output_dir, get_exe_name(platform, exe_base_name))
     cmd_env = os.environ.copy()
     cmdline = [
-        get_unity_exe(get_project_unity_version(project_dir), lenient=is_jenkins or is_linux),
+        get_unity_exe(
+            get_project_unity_version(project_dir), lenient=is_jenkins or is_linux
+        ),
         "-logFile",
         logfile,
         "-batchmode",
