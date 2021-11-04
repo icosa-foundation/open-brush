@@ -60,6 +60,7 @@ namespace TiltBrush
                     sb.Add(string.Join("\n", sbbHeader.ToArray()));
 
                     LinkedListNode<Stroke> node = SketchMemoryScript.m_Instance.GetMemoryList.First;
+                    if (node == null) continue;
                     Stroke stroke = node.Value;
 
                     for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
