@@ -80,7 +80,7 @@ namespace TiltBrush
                         float b = stroke.m_Color.b;
                         sbb.Add("\t\t\t\t\t\t\t\t\t\"color\":[" + r + ", " + g + ", " + b + "],");
 
-                        if (stroke.m_ControlPoints.Length > 0)
+                        if (stroke.IsGeometryEnabled && stroke.m_ControlPoints.Length > 0)
                         {
                             sbb.Add("\t\t\t\t\t\t\t\t\t\"points\":[");
                             for (int j = 0; j < stroke.m_ControlPoints.Length; j++)
