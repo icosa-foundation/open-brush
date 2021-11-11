@@ -439,7 +439,7 @@ namespace TiltBrush
             SpectatorShowHide(thing, true);
         }
 
-        [ApiEndpoint("spectator.show", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
+        [ApiEndpoint("spectator.hide", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
         public static void SpectatorHide(string thing)
         {
             SpectatorShowHide(thing, false);
