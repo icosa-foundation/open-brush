@@ -417,6 +417,9 @@ namespace TiltBrush
                 case "ui":
                     layerName = "UI";
                     break;
+                case "usertools":
+                    layerName = "UserTools";
+                    break;
             }
 
             if (layerName == null) return;
