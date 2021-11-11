@@ -3196,7 +3196,7 @@ MonoBehaviour:
   m_SdkMode: 1
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
-  Secrets: {fileID: 11400000, guid: 2f5f8e93c6bc7be49a5023148b50e7a0, type: 2}
+  Secrets: {fileID: 11400000, guid: 94ce910a09cb4944f9100b4be96da57f, type: 2}
   m_SketchFiles: []
   m_OdsNumFrames: 0
   m_OdsFps: 30
@@ -27063,7 +27063,7 @@ MonoBehaviour:
     type: 3}
   m_RotationIconPrefab: {fileID: 100000, guid: 72830b8e348ad7649886747f9c168ebc, type: 3}
   m_GazeMaxAngleFromFacing: 40
-  m_GazeMaxDistance: 10
+  m_GazeMaxDistance: 15
   m_GazeControllerPointingDistance: 4
   m_GazePanelDectivationDelay: 0.25
   m_UIReticle: {fileID: 269484831}
