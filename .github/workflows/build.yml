@@ -156,11 +156,11 @@ jobs:
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
           - name: Oculus Quest Experimental
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-experimental
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
 
 
     steps:
@@ -193,9 +193,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 27.0
+          # version 33.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=4231499270194643 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=4446561818719935 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -245,7 +245,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -324,7 +324,7 @@ jobs:
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
