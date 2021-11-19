@@ -143,7 +143,8 @@ namespace TiltBrush
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
-            OpenColorOptionsPopup = 7000
+            OpenColorOptionsPopup = 7000,
+            ChangeSnapAngle = 8000
         }
 
         public enum ControlsType

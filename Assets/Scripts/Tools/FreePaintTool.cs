@@ -17,7 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class FreePaintTool : BaseTool
+    public partial class FreePaintTool : BaseTool
     {
         [SerializeField] private float m_AdjustSizeScalar;
 
@@ -124,7 +124,12 @@ namespace TiltBrush
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
 
-            if (PointerManager.m_Instance.positionJitter > 0)
+            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                pos = SnapToGrid(pos);
+            }
+			
+			if (PointerManager.m_Instance.positionJitter > 0)
             {
                 pos = PointerManager.m_Instance.GenerateJitteredPosition(pos, PointerManager.m_Instance.positionJitter);
             }
