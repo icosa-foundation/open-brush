@@ -247,7 +247,7 @@ MonoBehaviour:
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
   m_WandAttachHalfHeight: 1
-  m_BeginFixed: 1
+  m_BeginFixed: 0
   m_CanBeFixedToWand: 1
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
