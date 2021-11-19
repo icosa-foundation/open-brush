@@ -592,46 +592,70 @@ namespace TiltBrush
             }
         }
 
-        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize)
+        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false)
         {
-            Guid brushGuid = PointerManager.m_Instance
+
+            Guid currentBrushGuid = PointerManager.m_Instance
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
-            float brushSize = PointerManager.m_Instance.MainPointer.BrushSize01;
+
+            float currentBrushSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+
             if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
-                (recolor && PointerManager.m_Instance.JitterEnabled) ||
-                (rebrush && stroke.m_BrushGuid != brushGuid) ||
-                (resize && stroke.m_BrushSize != brushSize))
+                (jitter && PointerManager.m_Instance.JitterEnabled) ||
+                (rebrush && stroke.m_BrushGuid != currentBrushGuid) ||
+                (resize && stroke.m_BrushSize != currentBrushSize))
             {
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
                 }
-                Color strokeColor = stroke.m_Color;
-                if (recolor)
+
+                Color newColor = stroke.m_Color;
+                float newSize = stroke.m_BrushSize;
+
+                Guid newGuid = rebrush ? currentBrushGuid : stroke.m_BrushGuid;
+
+                if (jitter && PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
                 {
-                    if (PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
+                    if (recolor) newColor = PointerManager.m_Instance.GenerateJitteredColor();
+                    if (resize)
                     {
-                        strokeColor = PointerManager.m_Instance.GenerateJitteredColor();
-                    }
-                    else
-                    {
-                        strokeColor = PointerManager.m_Instance.PointerColor;
+                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
+                        newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
                     }
                 }
-                Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
-                float newSize = resize ? brushSize : stroke.m_BrushSize;
-                new RepaintStrokeCommand(stroke, strokeColor, newGuid, newSize, m_RepaintStrokeParent);
+                else
+                {
+                    if (recolor) newColor = PointerManager.m_Instance.PointerColor;
+                    if (resize) newSize = currentBrushSize;
+                }
+
+                var positionJitter = PointerManager.m_Instance.positionJitter;
+                if (positionJitter > 0)
+                {
+                    // Jitter positions
+                    var newControlPoints = new PointerManager.ControlPoint[stroke.m_ControlPoints.Length];
+                    for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                    {
+                        PointerManager.ControlPoint cp = stroke.m_ControlPoints[i];
+                        cp.m_Pos = PointerManager.m_Instance.GenerateJitteredPosition(cp.m_Pos, positionJitter);
+                        newControlPoints[i] = cp;
+                    }
+                    new ModifyStrokePointsCommand(stroke, newControlPoints, m_RepaintStrokeParent);
+                }
+
+                new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
                 return true;
             }
             return false;
         }
 
-        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush, bool resize)
+        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush, bool resize, bool jitter = false)
         {
             var brush = rObject.GetComponent<BaseBrushScript>();
             if (brush)
             {
-                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush, resize);
+                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush, resize, jitter);
                 return true;
             }
             return false;

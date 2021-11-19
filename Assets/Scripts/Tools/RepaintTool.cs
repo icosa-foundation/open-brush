@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -19,14 +20,17 @@ namespace TiltBrush
 
     public class RepaintTool : StrokeModificationTool
     {
-        [SerializeField] private bool m_Recolor;
-        [SerializeField] private bool m_Rebrush;
         public float m_SpinSpeedAcceleration;
         public float m_MaxSpinSpeed;
         public float m_SpinSpeedDecay;
         private float m_SpinSpeedVel;
         private float m_SpinSpeed;
         private float m_SpinAmount;
+
+        [NonSerialized] public bool RecolorOn = true;
+        [NonSerialized] public bool RebrushOn = false;
+        [NonSerialized] public bool ResizeOn = false;
+        [NonSerialized] public bool JitterOn = false;
 
         override protected void Awake()
         {
@@ -131,7 +135,7 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGroup.m_Stroke, m_Recolor, m_Rebrush, false);
+                rGroup.m_Stroke, RecolorOn, RebrushOn, ResizeOn, JitterOn);
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
         }
@@ -139,7 +143,7 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject)
         {
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGameObject, m_Recolor, m_Rebrush, false);
+                rGameObject, RecolorOn, RebrushOn, ResizeOn, JitterOn);
             PlayModifyStrokeSound();
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
