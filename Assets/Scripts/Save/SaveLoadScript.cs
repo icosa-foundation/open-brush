@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -678,13 +679,15 @@ namespace TiltBrush
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
+                
+                var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch
                 using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -696,61 +699,74 @@ namespace TiltBrush
                     }
                 }
 
-                ModelCatalog.m_Instance.ClearMissingModels();
-                SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+                
+                // It's proving to be rather complex to merge widgets/models etc. 
+                // For now skip all that when loading additively with the if (!bAdditive) below
+                // This should cover the majority of use cases.
 
-                if (jsonData.ModelIndex != null)
-                {
-                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                }
+                // (For when we do support merging widgets:)
+                // It's much simpler to change the group ids in the JSON
+                // before we pass it to WidgetManager
+                //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
 
-                if (jsonData.GuideIndex != null)
+                if (!bAdditive)
                 {
-                    foreach (Guides guides in jsonData.GuideIndex)
+                    ModelCatalog.m_Instance.ClearMissingModels();
+                    SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+
+                    if (jsonData.ModelIndex != null)
                     {
-                        StencilWidget.FromGuideIndex(guides);
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                     }
-                }
-                if (jsonData.Lights != null)
-                {
-                    LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
-                }
-                // Pass even if null; null is treated as empty
-                CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
-                // Images are not stored on Poly either.
-                if (!(fileInfo is PolySceneFileInfo))
-                {
-                    if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+
+                    if (jsonData.GuideIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                        foreach (Guides guides in jsonData.GuideIndex)
+                        {
+                            StencilWidget.FromGuideIndex(guides);
+                        }
                     }
-                    if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                    if (jsonData.Lights != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                        LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
                     }
-                }
-                if (jsonData.Mirror != null)
-                {
-                    PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
-                }
-                if (jsonData.CameraPaths != null)
-                {
-                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
-                }
-                if (m_LastSceneFile is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
-                {
-                    gdInfo.SourceId = jsonData.SourceId;
-                }
-                if (WidgetManager.m_Instance.CreatingMediaWidgets)
-                {
-                    StartCoroutine(
-                        OverlayManager.m_Instance.RunInCompositor(
-                            OverlayType.LoadMedia,
-                            WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
-                            0.5f));
+                    // Pass even if null; null is treated as empty
+                    CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
+                    // Images are not stored on Poly either.
+                    if (!(fileInfo is PolySceneFileInfo))
+                    {
+                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                        }
+                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                        }
+                    }
+                    if (jsonData.Mirror != null)
+                    {
+                        PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
+                    }
+                    if (jsonData.CameraPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                    }
+                    if (m_LastSceneFile is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                    {
+                        gdInfo.SourceId = jsonData.SourceId;
+                    }
+                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
+                    {
+                        StartCoroutine(
+                            OverlayManager.m_Instance.RunInCompositor(
+                                OverlayType.LoadMedia,
+                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
+                                0.5f));
+                    }
                 }
             }
-
+            
             return true;
         }
 

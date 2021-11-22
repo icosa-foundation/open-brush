@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TiltBrush
 {
@@ -60,6 +61,114 @@ namespace TiltBrush
         {
             m_nextUnusedCookie = 1;
             m_idToGroup = new Dictionary<UInt32, SketchGroupTag>();
+        }
+        
+        public static void MoveStrokesToNewGroups(List<Stroke> strokes, Dictionary<int, int> oldGroupToNewGroup)
+        {
+            foreach (var stroke in strokes ?? new List<Stroke>())
+            {
+                if (stroke.Group != SketchGroupTag.None)
+                {
+                    if (!oldGroupToNewGroup.ContainsKey(stroke.Group.GetHashCode()))
+                    {
+                        var newGroup = App.GroupManager.NewUnusedGroup();
+                        oldGroupToNewGroup.Add(stroke.Group.GetHashCode(), newGroup.GetHashCode());
+                    }
+                    stroke.Group = new SketchGroupTag((uint)oldGroupToNewGroup[stroke.Group.GetHashCode()]);
+                }
+            }
+        }
+        
+        public static void MoveWidgetsToNewGroups(List<GrabWidget> widgets, Dictionary<int, int> oldGroupToNewGroup)
+        {
+            foreach (var widget in widgets ?? new List<GrabWidget>())
+            {
+                if (widget.Group != SketchGroupTag.None)
+                {
+                    if (!oldGroupToNewGroup.ContainsKey(widget.Group.GetHashCode()))
+                    {
+                        var newGroup = App.GroupManager.NewUnusedGroup();
+                        oldGroupToNewGroup.Add(widget.Group.GetHashCode(), newGroup.GetHashCode());
+                    }
+                    widget.Group = new SketchGroupTag((uint)oldGroupToNewGroup[widget.Group.GetHashCode()]);
+                }
+            }
+        }
+        
+        public static void UpdateWidgetJsonToNewGroups(SketchMetadata jsonData, Dictionary<int, int> oldGroupToNewGroup)
+        {
+            foreach (TiltVideo video in jsonData.Videos ?? Array.Empty<TiltVideo>())
+            {
+                if (video.GroupId != 0)
+                {
+                    int currentGroup = (int)video.GroupId;
+                    int newGroup = currentGroup;
+                    if (!oldGroupToNewGroup.ContainsKey(currentGroup))
+                    {
+                        newGroup = App.GroupManager.NewUnusedGroup().GetHashCode();
+                        oldGroupToNewGroup.Add(currentGroup, newGroup);
+                    }
+                    video.GroupId = (uint)newGroup.GetHashCode();
+                }
+            }
+            
+            foreach (TiltImages75 image in jsonData.ImageIndex ?? Array.Empty<TiltImages75>())
+            {
+                uint[] newGroupIds = (uint[]) image.GroupIds.Clone();
+                for (var i = 0; i < image.GroupIds.Length; i++)
+                {
+                    int currentGroupId = (int)image.GroupIds[i];
+                    if (!oldGroupToNewGroup.ContainsKey(currentGroupId))
+                    {
+                        var newGroup = App.GroupManager.NewUnusedGroup();
+                        oldGroupToNewGroup.Add(currentGroupId, newGroup.GetHashCode());
+                        newGroupIds[i] = (uint)newGroup.GetHashCode();
+                    }
+                }
+                image.GroupIds = newGroupIds;
+            }
+
+            foreach (Guides guide in jsonData.GuideIndex ?? Array.Empty<Guides>())
+            {
+                foreach (var state in guide.States)
+                {
+                    if (state.GroupId != 0)
+                    {
+                        int currentGroup = (int)state.GroupId;
+                        int newGroup = currentGroup;
+                        if (!oldGroupToNewGroup.ContainsKey(currentGroup))
+                        {
+                            newGroup = App.GroupManager.NewUnusedGroup().GetHashCode();
+                            oldGroupToNewGroup.Add(currentGroup, newGroup);
+                        }
+                        state.GroupId = (uint)newGroup.GetHashCode();
+                    }
+                }
+            }
+            
+            foreach (TiltModels75 model in jsonData.ModelIndex ?? Array.Empty<TiltModels75>())
+            {
+                uint[] newGroupIds = (uint[]) model.GroupIds.Clone();
+                for (var i = 0; i < model.GroupIds.Length; i++)
+                {
+                    int currentGroupId = (int)model.GroupIds[i];
+                    if (!oldGroupToNewGroup.ContainsKey(currentGroupId))
+                    {
+                        var newGroup = App.GroupManager.NewUnusedGroup();
+                        oldGroupToNewGroup.Add(currentGroupId, newGroup.GetHashCode());
+                        newGroupIds[i] = (uint)newGroup.GetHashCode();
+                    }
+                }
+                model.GroupIds = newGroupIds;
+            }
+            
+        }
+
+        public static void MoveToNewGroups(List<Stroke> strokes, List<GrabWidget> widgets)
+        {
+            var oldGroupToNewGroup = new Dictionary<int, int>();
+            MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+            MoveWidgetsToNewGroups(widgets, oldGroupToNewGroup);
         }
     }
 
@@ -141,5 +250,6 @@ namespace TiltBrush
             return id;
         }
     }
+    
 
 } // namespace TiltBrush

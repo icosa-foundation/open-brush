@@ -4085,7 +4085,7 @@ namespace TiltBrush
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
         }
 
-        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
+        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4094,7 +4094,7 @@ namespace TiltBrush
             m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -4206,13 +4206,16 @@ namespace TiltBrush
                     }
                 case GlobalCommands.Load:
                     {
+                        bool additive = false;
+                        SketchbookPanel sketchBook = (SketchbookPanel)m_PanelManager.GetSketchBookPanel();
+                        if (sketchBook != null) additive = sketchBook.MergeSceneIsChecked;
                         var index = iParam1;
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
-                            LoadSketch(rInfo);
+                            LoadSketch(rInfo, false, additive);
                             if (m_ControlsType != ControlsType.ViewingOnly)
                             {
                                 EatGazeObjectInput();
