@@ -51,7 +51,7 @@ namespace TiltBrush
                 m_DuplicatedWidgets.Add(duplicatedWidget);
             }
             
-            GroupManager.MoveToNewGroups(m_DuplicatedStrokes, m_DuplicatedWidgets);
+            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
             m_DuplicateTransform = xf;

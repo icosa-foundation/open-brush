@@ -74,6 +74,7 @@ namespace TiltBrush
         {
             return SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
         }
+		
         override public void UpdateVisuals()
         {
             base.UpdateVisuals();
