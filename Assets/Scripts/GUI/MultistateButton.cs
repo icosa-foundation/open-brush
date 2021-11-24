@@ -221,11 +221,9 @@ namespace TiltBrush
                     sideLabel.transform.parent = side.transform;
                     TextMeshPro tmpText = sideLabel.AddComponent<TextMeshPro>();
                     RectTransform rt = sideLabel.transform as RectTransform;
-                    // rt.rotation = Quaternion.Euler(0,-90, 0);
-                    // rt.pivot = Vector2.zero;
                     rt.sizeDelta = new Vector2(1, 1);
-                    // rt.pivot = Vector2.up;
                     rt.localPosition = new Vector3(0, 0, -0.01f);
+                    rt.localScale = Vector3.one;
                     tmpText.text = option.m_Description;
                     tmpText.fontSize = 4;
                     tmpText.alignment = TextAlignmentOptions.Center;
