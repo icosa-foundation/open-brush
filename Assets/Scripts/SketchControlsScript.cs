@@ -144,7 +144,8 @@ namespace TiltBrush
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
             OpenColorOptionsPopup = 7000,
-            ChangeSnapAngle = 8000
+            ChangeSnapAngle = 8000,
+            MergeBrushStrokes = 10000
         }
 
         public enum ControlsType
@@ -4207,6 +4208,23 @@ namespace TiltBrush
                         {
                             m_DraftingVisibility = option;
                             UpdateDraftingVisibility();
+                        }
+                        break;
+                    }
+                case GlobalCommands.MergeBrushStrokes:
+                    {
+                        // TODO Refactor with Load below
+                        var index = iParam1;
+                        var sketchSetType = (SketchSetType)iParam2;
+                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                        if (rInfo != null)
+                        {
+                            LoadSketch(rInfo, true, true);
+                            if (m_ControlsType != ControlsType.ViewingOnly)
+                            {
+                                EatGazeObjectInput();
+                            }
                         }
                         break;
                     }
