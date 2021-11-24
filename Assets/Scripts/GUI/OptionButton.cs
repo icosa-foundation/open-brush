@@ -70,7 +70,7 @@ namespace TiltBrush
             }
         }
 
-		
+
         override public void UpdateVisuals()
         {
             base.UpdateVisuals();

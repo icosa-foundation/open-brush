@@ -678,7 +678,7 @@ namespace TiltBrush
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
-                
+
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch
@@ -698,7 +698,7 @@ namespace TiltBrush
                     }
                 }
 
-                
+
                 // It's proving to be rather complex to merge widgets/models etc. 
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
@@ -765,7 +765,7 @@ namespace TiltBrush
                     }
                 }
             }
-            
+
             return true;
         }
 
