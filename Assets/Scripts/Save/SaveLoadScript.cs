@@ -639,42 +639,45 @@ namespace TiltBrush
                     }
                 }
 
-                var environment = EnvironmentCatalog.m_Instance
-                    .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
-                if (environment != null)
+                if (!bAdditive)
                 {
-                    SceneSettings.m_Instance.RecordSkyColorsForFading();
-                    if (jsonData.Environment != null)
+                    var environment = EnvironmentCatalog.m_Instance
+                        .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
+                    if (environment != null)
                     {
-                        SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
+                        SceneSettings.m_Instance.RecordSkyColorsForFading();
+                        if (jsonData.Environment != null)
+                        {
+                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
+                        }
+                        SceneSettings.m_Instance.SetDesiredPreset(
+                            environment, forceTransition: true,
+                            keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
+                        );
                     }
-                    SceneSettings.m_Instance.SetDesiredPreset(
-                        environment, forceTransition: true,
-                        keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                    );
-                }
-                else
-                {
-                    Debug.LogWarningFormat("Unknown environment preset {0}",
-                        jsonData.EnvironmentPreset);
-                }
-
-                App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
-                    jsonData.SceneTransformInRoomSpace);
-                App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
-                Coords.CanvasLocalPose = TrTransform.identity;
-                if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                {
-                    Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
+                    else
+                    {
+                        Debug.LogWarningFormat("Unknown environment preset {0}",
+                            jsonData.EnvironmentPreset);
+                    }
+                    App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
+                        jsonData.SceneTransformInRoomSpace);
+                    App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                    Coords.CanvasLocalPose = TrTransform.identity;
+                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
+                    {
+                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    if (Config.IsExperimental)
-                    {
-                        Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                    }
+                        if (Config.IsExperimental)
+                        {
+                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
+                        }
 #endif
+                    }
+                    LastThumbnail_SS = App.Scene.Pose.inverse *
+                        jsonData.ThumbnailCameraTransformInRoomSpace;
+
                 }
-                LastThumbnail_SS = App.Scene.Pose.inverse *
-                    jsonData.ThumbnailCameraTransformInRoomSpace;
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;

@@ -4086,6 +4086,24 @@ namespace TiltBrush
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
         }
 
+        private void MergeBrushStrokes(SceneFileInfo fileInfo)
+        {
+            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            {
+                SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
+                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
+                // the order of these two lines are important as ExitIntroSketch is setting the
+                // color of the pointer and we need the color to be set before we go to the Loading
+                // state. App script's ShouldTintControllers allow the controller to be tinted only
+                // when the app is in the standard mode. That was there to prevent the controller color
+                // from flickering while in the intro mode.
+                App.Instance.ExitIntroSketch();
+                App.Instance.SetDesiredState(App.AppState.QuickLoad);
+            }
+        }
+
         private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
@@ -4214,7 +4232,7 @@ namespace TiltBrush
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
-                            LoadSketch(rInfo, true, true);
+                            MergeBrushStrokes(rInfo);
                             if (m_ControlsType != ControlsType.ViewingOnly)
                             {
                                 EatGazeObjectInput();
