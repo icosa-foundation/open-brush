@@ -158,19 +158,9 @@ namespace TiltBrush
 
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
-            SketchbookPanel sketchBookPanel = (SketchbookPanel)PanelManager.m_Instance.GetSketchBookPanel();
-            if (sketchBookPanel.MergeSceneIsChecked)
-            {
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.LoadConfirmComplex,
-                    m_SketchIndex, (int)m_SketchSet.Type);
-            }
-            else
-            {
-                SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                 m_SketchIndex, (int)m_SketchSet.Type);
-            }
             ResetState();
         }
 

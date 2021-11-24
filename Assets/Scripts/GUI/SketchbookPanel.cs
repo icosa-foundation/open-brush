@@ -80,12 +80,6 @@ namespace TiltBrush
         private List<BaseButton> m_IconScriptsOnNormalPage;
         private bool m_DriveSetHasSketches;
         private bool m_ReadOnlyShown = false;
-        private bool m_MergeSceneIsChecked = false;
-        public bool MergeSceneIsChecked => m_MergeSceneIsChecked;
-        public void MergeSceneToggled(ToggleButton button)
-        {
-            m_MergeSceneIsChecked = button.m_IsToggledOn;
-        }
 
         public float ImageAspect { get { return m_ImageAspect; } }
 

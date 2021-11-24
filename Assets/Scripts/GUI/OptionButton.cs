@@ -70,10 +70,6 @@ namespace TiltBrush
             }
         }
 
-        protected virtual bool IsButtonActive()
-        {
-            return SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
-        }
 		
         override public void UpdateVisuals()
         {
@@ -86,7 +82,7 @@ namespace TiltBrush
             if (m_ToggleButton)
             {
                 bool bWasToggleActive = m_ToggleActive;
-                m_ToggleActive = IsButtonActive();
+                m_ToggleActive = SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
                 if (bWasToggleActive != m_ToggleActive)
                 {
                     if (m_ToggleActive)

@@ -140,7 +140,8 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
-            OpenColorOptionsPopup = 7000
+            OpenColorOptionsPopup = 7000,
+            MergeBrushStrokes = 10000
         }
 
         public enum ControlsType
@@ -4204,18 +4205,32 @@ namespace TiltBrush
                         }
                         break;
                     }
-                case GlobalCommands.Load:
+                case GlobalCommands.MergeBrushStrokes:
                     {
-                        bool additive = false;
-                        SketchbookPanel sketchBook = (SketchbookPanel)m_PanelManager.GetSketchBookPanel();
-                        if (sketchBook != null) additive = sketchBook.MergeSceneIsChecked;
+                        // TODO Refactor with Load below
                         var index = iParam1;
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
-                            LoadSketch(rInfo, false, additive);
+                            LoadSketch(rInfo, true, true);
+                            if (m_ControlsType != ControlsType.ViewingOnly)
+                            {
+                                EatGazeObjectInput();
+                            }
+                        }
+                        break;
+                    }
+                case GlobalCommands.Load:
+                    {
+                        var index = iParam1;
+                        var sketchSetType = (SketchSetType)iParam2;
+                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                        if (rInfo != null)
+                        {
+                            LoadSketch(rInfo);
                             if (m_ControlsType != ControlsType.ViewingOnly)
                             {
                                 EatGazeObjectInput();
