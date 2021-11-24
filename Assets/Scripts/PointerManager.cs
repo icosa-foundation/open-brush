@@ -1022,7 +1022,7 @@ namespace TiltBrush
             {
                 // Bypass the code in the PointerColor setter
                 // Size is jittered in PointerScript. Should we also do color there?
-                ChangeAllPointerColorsDirectly(GenerateJitteredColor());
+                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
 
 
@@ -1039,13 +1039,16 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
         }
-        public Color GenerateJitteredColor()
+        public Color GenerateJitteredColor(float colorLuminanceMin)
         {
             Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
-            return Random.ColorHSV(
-                h - colorJitter.x, h + colorJitter.x,
-                s - colorJitter.y, s + colorJitter.y,
-                v - colorJitter.z, v + colorJitter.z
+            return ColorPickerUtils.ClampLuminance(
+                Random.ColorHSV(
+                    h - colorJitter.x, h + colorJitter.x,
+                    s - colorJitter.y, s + colorJitter.y,
+                    v - colorJitter.z, v + colorJitter.z
+                ),
+                colorLuminanceMin
             );
         }
 
