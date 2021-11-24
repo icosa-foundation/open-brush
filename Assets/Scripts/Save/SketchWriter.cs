@@ -279,7 +279,7 @@ namespace TiltBrush
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             var strokes = GetStrokes(bufferedStream, brushList, allowFastPath);
-            if (strokes == null){return false;}
+            if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
             uint headMs = uint.MinValue;
@@ -294,7 +294,7 @@ namespace TiltBrush
                 }
                 headMs = stroke.HeadTimestampMs;
             }
-            
+
             QualityControls.m_Instance.AutoAdjustSimplifierLevel(strokes, brushList);
             foreach (var stroke in strokes)
             {

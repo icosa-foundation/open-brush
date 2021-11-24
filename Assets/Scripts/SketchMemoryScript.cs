@@ -624,7 +624,7 @@ namespace TiltBrush
                         BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
                         newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
                     }
-                    
+
                 }
                 else
                 {

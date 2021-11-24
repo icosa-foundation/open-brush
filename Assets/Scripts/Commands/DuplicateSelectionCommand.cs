@@ -50,7 +50,7 @@ namespace TiltBrush
                 var duplicatedWidget = widget.Clone();
                 m_DuplicatedWidgets.Add(duplicatedWidget);
             }
-            
+
             GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;

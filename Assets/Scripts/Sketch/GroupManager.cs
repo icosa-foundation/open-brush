@@ -67,7 +67,7 @@ namespace TiltBrush
         {
 
             if (oldGroupToNewGroup == null) oldGroupToNewGroup = new Dictionary<int, int>();
-            
+
             foreach (var stroke in strokes ?? new List<Stroke>())
             {
                 if (stroke.Group != SketchGroupTag.None)
@@ -161,6 +161,6 @@ namespace TiltBrush
             return id;
         }
     }
-    
+
 
 } // namespace TiltBrush
