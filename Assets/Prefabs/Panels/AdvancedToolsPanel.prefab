@@ -108,7 +108,7 @@ GameObject:
   - component: {fileID: 65156450117035654}
   - component: {fileID: 114236876208769008}
   m_Layer: 16
-  m_Name: Button_Recolor
+  m_Name: Button_Repaint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
