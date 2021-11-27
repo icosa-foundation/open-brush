@@ -1490,10 +1490,6 @@ namespace TiltBrush
                 {
                     IssueGlobalCommand(GlobalCommands.ToggleProfiling);
                 }
-                else if (VisorWidget.m_Instance)
-                {
-                    VisorWidget.m_Instance.UpdateInput();
-                }
             }
 #endif
 

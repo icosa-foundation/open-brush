@@ -46,8 +46,7 @@ namespace TiltBrush
             PinTool,
             EmptyTool,
             CameraPathTool,
-            FlyTool,
-            DraftingTool = 30000
+            FlyTool
         }
         public ToolType m_Type;
 

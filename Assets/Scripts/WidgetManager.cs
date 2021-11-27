@@ -145,7 +145,6 @@ namespace TiltBrush
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
         private List<TypedWidgetData<CameraPathWidget>> m_CameraPathWidgets;
-        private List<TypedWidgetData<MarkerPoint>> m_MarkerWidgets;
 
         // These lists are used by the PinTool.  They're kept in sync by the
         // widget manager, but the PinTool is responsible for their coherency.
@@ -298,7 +297,6 @@ namespace TiltBrush
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
-            m_MarkerWidgets = new List<TypedWidgetData<MarkerPoint>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
             m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
@@ -368,13 +366,6 @@ namespace TiltBrush
                 if (m_StencilWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_StencilWidgets[i];
-                }
-            }
-            for (int i = 0; i < m_MarkerWidgets.Count; ++i)
-            {
-                if (m_MarkerWidgets[i].m_WidgetObject.activeSelf)
-                {
-                    yield return m_MarkerWidgets[i];
                 }
             }
             for (int i = 0; i < m_ImageWidgets.Count; ++i)
@@ -606,7 +597,6 @@ namespace TiltBrush
         public bool HasSelectableWidgets()
         {
             return (m_ModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
-                m_MarkerWidgets.Count > 0 ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -1001,16 +991,6 @@ namespace TiltBrush
             }
         }
 
-        public IEnumerable<MarkerPoint> MarkerPoints
-        {
-            get
-            {
-                return m_MarkerWidgets
-                    .Select(d => d == null ? null : d.WidgetScript)
-                    .Where(w => w != null);
-            }
-        }
-
         public StencilWidget GetStencilPrefab(StencilType type)
         {
             for (int i = 0; i < m_StencilMap.Length; ++i)
@@ -1194,7 +1174,6 @@ namespace TiltBrush
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
-            if (RemoveFrom(m_MarkerWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
             if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
@@ -1344,7 +1323,6 @@ namespace TiltBrush
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_VideoWidgets);
             DestroyWidgetList(m_StencilWidgets);
-            DestroyWidgetList(m_MarkerWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
             SetCurrentCameraPath_Internal(null);
             App.Switchboard.TriggerAllWidgetsDestroyed();

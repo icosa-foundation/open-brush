@@ -121,20 +121,11 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
-            bool depthGuideVisible = DepthGuide.m_instance && DepthGuide.m_instance.isActiveAndEnabled;
-            if (!(m_BimanualTape && m_RevolverActive))
-            {
-                m_GridSnapActive = depthGuideVisible && m_brushUndoButtonHeld;
-            }
-            else if (m_GridSnapActive && !depthGuideVisible)
-                m_GridSnapActive = false;
-
             if (m_BimanualTape)
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ShowPinCushion))
                 {
                     EndBimanualTape();
-                    SketchSurfacePanel.m_Instance.EnableSpecificTool(ToolType.DraftingTool);
                 }
                 else if (!m_wandTrigger && !m_brushTrigger)
                     EndBimanualTape();
