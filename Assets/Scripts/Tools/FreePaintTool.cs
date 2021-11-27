@@ -17,11 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
     public partial class FreePaintTool : BaseTool
-#else
-    public class FreePaintTool : BaseTool
-#endif
     {
         [SerializeField] private float m_AdjustSizeScalar;
 
@@ -263,6 +259,15 @@ namespace TiltBrush
                 }
             }
 #endif
+            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                pos = SnapToGrid(pos);
+            }
+
+            if (PointerManager.m_Instance.positionJitter > 0)
+            {
+                pos = PointerManager.m_Instance.GenerateJitteredPosition(pos, PointerManager.m_Instance.positionJitter);
+            }
 
             PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos, rot);
         }

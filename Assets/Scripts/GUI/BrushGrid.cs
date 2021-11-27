@@ -32,6 +32,7 @@ namespace TiltBrush
 
         private UIComponentManager m_UIComponentManager;
         private BrushTypeButton[] m_BrushButtons;
+        private BrushDescriptor[] m_TagFilteredBrushes;
         private int m_BaseBrushIndex;
 
         private float m_PageIndex;
@@ -70,10 +71,6 @@ namespace TiltBrush
 
             // Cache brush buttons.
             m_BrushButtons = GetComponentsInChildren<BrushTypeButton>();
-
-            // Start the brushes on Page 2
-            m_PageIndex = 1;
-            m_BaseBrushIndex = (int)m_PageIndex * m_BrushButtons.Length;
         }
 
         override public void SetColor(Color color)
@@ -235,7 +232,8 @@ namespace TiltBrush
 
         void CountPages()
         {
-            m_NumPages = ((BrushCatalog.m_Instance.GuiBrushList.Count - 1) / m_BrushButtons.Length) + 1;
+            int numBrushes = m_TagFilteredBrushes.Length;
+            m_NumPages = ((numBrushes - 1) / m_BrushButtons.Length) + 1;
 
             float pages = (float)m_NumPages;
             ControllerMaterialCatalog.m_Instance.BrushPage.SetFloat("_UsedIconCount", pages);
@@ -246,7 +244,19 @@ namespace TiltBrush
             m_PadSwipePerPage = 1.0f / (float)m_NumPages;
         }
 
-        public void RefreshNavigationButtons()
+        void SetPageIndexToDefault()
+        {
+            int numBrushes = m_TagFilteredBrushes.Length;
+
+            // If we have more than 2 pages, set the 2nd page as the starting page
+            int pageStartIndex = (numBrushes > m_BrushButtons.Length * 2) ? 1 : 0;
+
+            m_PageIndex = pageStartIndex;
+            m_RequestedPageIndex = m_PageIndex;
+            m_BaseBrushIndex = (int)pageStartIndex * m_BrushButtons.Length;
+        }
+
+        void RefreshNavigationButtons()
         {
             // Refresh the navigation buttons.
             m_PrevButton.SetActive(m_PageIndex > 0 + m_BoundaryThreshold);
@@ -262,9 +272,9 @@ namespace TiltBrush
                 int iBrushIndex = m_BaseBrushIndex + i;
 
                 //show icon according to availability
-                if (iBrushIndex < BrushCatalog.m_Instance.GuiBrushList.Count)
+                if (iBrushIndex < m_TagFilteredBrushes.Length)
                 {
-                    BrushDescriptor rBrush = BrushCatalog.m_Instance.GuiBrushList[iBrushIndex];
+                    BrushDescriptor rBrush = m_TagFilteredBrushes[iBrushIndex];
                     m_BrushButtons[i].SetButtonSelected(rBrush == activeBrush);
                 }
             }
@@ -277,8 +287,7 @@ namespace TiltBrush
 
         void OnBrushSetToDefault()
         {
-            m_PageIndex = 1;
-            m_RequestedPageIndex = 1;
+            SetPageIndexToDefault();
 
             RefreshButtonSelection();
             RefreshButtonPositions();
@@ -298,8 +307,11 @@ namespace TiltBrush
         // Since we cache brush textures, we need to deal with them getting Destroy()ed etc.
         void OnBrushCatalogChanged()
         {
+            m_TagFilteredBrushes = BrushCatalog.m_Instance.GetTagFilteredBrushList();
+
             CountPages();
             RefreshButtonPositions();
+            SetPageIndexToDefault();
         }
 
         // TODO : See if we can make BrushGrid not use Update.
@@ -405,7 +417,7 @@ namespace TiltBrush
                 }
 
                 m_BaseBrushIndex = 0;
-                int numBrushesInBrushList = BrushCatalog.m_Instance.GuiBrushList.Count;
+                int numBrushesInBrushList = m_TagFilteredBrushes.Length;
                 int iNumBrushesPerPage = m_BrushButtons.Length;
                 int iPageWalk = 0;
                 int iBrushCountWalk = numBrushesInBrushList;
@@ -427,7 +439,7 @@ namespace TiltBrush
                 {
                     if (!m_BrushButtons[i].IsHover())
                     {
-                        BrushDescriptor rBrush = BrushCatalog.m_Instance.GuiBrushList[iBrushIndex];
+                        BrushDescriptor rBrush = m_TagFilteredBrushes[iBrushIndex];
                         m_BrushButtons[i].SetButtonProperties(rBrush);
                         m_BrushButtons[i].SetButtonSelected(rBrush == BrushController.m_Instance.ActiveBrush);
                         m_BrushButtons[i].gameObject.SetActive(true);

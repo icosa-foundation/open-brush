@@ -193,6 +193,30 @@ namespace TiltBrush
             return m_Instance.m_MemoryList.ElementAt(index);
         }
 
+        public Stroke MostRecentStroke
+        {
+            get
+            {
+                return m_CurrentNodeByTime.Value;
+            }
+        }
+
+        public LinkedListNode<Stroke> FirstNodeByTime
+        {
+            get
+            {
+                return m_MemoryList.First;
+            }
+        }
+
+        public LinkedListNode<Stroke> CurrentNodeByTime
+        {
+            get
+            {
+                return m_CurrentNodeByTime;
+            }
+        }
+
         public void SetLastOperationStackCount()
         {
             m_LastOperationStackCount = m_OperationStack.Count;
@@ -568,32 +592,72 @@ namespace TiltBrush
             }
         }
 
-        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush)
+        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false)
         {
-            Guid brushGuid = PointerManager.m_Instance
+
+            Guid currentBrushGuid = PointerManager.m_Instance
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
+
+            float currentBrushSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+
             if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
-                (rebrush && stroke.m_BrushGuid != brushGuid))
+                (jitter && PointerManager.m_Instance.JitterEnabled) ||
+                (rebrush && stroke.m_BrushGuid != currentBrushGuid) ||
+                (resize && stroke.m_BrushSize != currentBrushSize))
             {
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
                 }
 
-                Color newColor = recolor ? PointerManager.m_Instance.PointerColor : stroke.m_Color;
-                Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
-                new RepaintStrokeCommand(stroke, newColor, newGuid, m_RepaintStrokeParent);
+                Color newColor = stroke.m_Color;
+                float newSize = stroke.m_BrushSize;
+
+                Guid newGuid = rebrush ? currentBrushGuid : stroke.m_BrushGuid;
+
+                if (jitter && PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
+                {
+                    float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(newGuid).m_ColorLuminanceMin;
+                    if (recolor) newColor = PointerManager.m_Instance.GenerateJitteredColor(colorLuminanceMin);
+                    if (resize)
+                    {
+                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
+                        newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
+                    }
+
+                }
+                else
+                {
+                    if (recolor) newColor = PointerManager.m_Instance.PointerColor;
+                    if (resize) newSize = currentBrushSize;
+                }
+
+                var positionJitter = PointerManager.m_Instance.positionJitter;
+                if (positionJitter > 0)
+                {
+                    // Jitter positions
+                    var newControlPoints = new PointerManager.ControlPoint[stroke.m_ControlPoints.Length];
+                    for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                    {
+                        PointerManager.ControlPoint cp = stroke.m_ControlPoints[i];
+                        cp.m_Pos = PointerManager.m_Instance.GenerateJitteredPosition(cp.m_Pos, positionJitter);
+                        newControlPoints[i] = cp;
+                    }
+                    new ModifyStrokePointsCommand(stroke, newControlPoints, m_RepaintStrokeParent);
+                }
+
+                new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
                 return true;
             }
             return false;
         }
 
-        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush)
+        public bool MemorizeStrokeRepaint(GameObject rObject, bool recolor, bool rebrush, bool resize, bool jitter = false)
         {
             var brush = rObject.GetComponent<BaseBrushScript>();
             if (brush)
             {
-                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush);
+                MemorizeStrokeRepaint(brush.Stroke, recolor, rebrush, resize, jitter);
                 return true;
             }
             return false;
@@ -860,7 +924,7 @@ namespace TiltBrush
         }
 
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
-        public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false)
+        public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
             if (bDrawFromStart)
             {
@@ -869,7 +933,7 @@ namespace TiltBrush
                     case PlaybackMode.Distance:
                     default:
                         m_ScenePlayback = new ScenePlaybackByStrokeDistance(m_MemoryList);
-                        PointerManager.m_Instance.SetPointersAudioForPlayback();
+                        if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = GetEarliestTimestamp();
@@ -1168,6 +1232,72 @@ namespace TiltBrush
             {
                 stroke.m_ControlPoints[iCp].m_TimestampMs = nowMs + offsetMs++;
             }
+        }
+
+        // Negative numbers count backwards from most recent stroke.
+        // -1 is most recent, -2 is next etc
+        public static LinkedListNode<Stroke> GetNodeAtIndex(int index)
+        {
+            LinkedListNode<Stroke> node;
+            if (index < 0)
+            {
+                index = m_Instance.StrokeCount - index;
+                node = m_Instance.m_MemoryList.ElementAt(index).m_NodeByTime;
+            }
+            else
+            {
+                node = m_Instance.m_MemoryList.ElementAt(index).m_NodeByTime;
+            }
+            return node;
+        }
+
+        public static List<Stroke> GetStrokesBetween(int start, int end)
+        {
+            int index0, index1;
+            int lastStrokeIndex = m_Instance.StrokeCount - 1;
+            if (start < 0)
+            {
+                // Counting backwards so subtract from last index
+                start += lastStrokeIndex;
+            }
+            if (end < 0)
+            {
+                // Counting backwards so subtract from last index
+                end += lastStrokeIndex;
+            }
+
+            if (start <= end)
+            {
+                index0 = start;
+                index1 = end;
+            }
+            else
+            {
+                index0 = end;
+                index1 = start;
+            }
+
+            // Clamp
+            index0 = Mathf.Min(index0, lastStrokeIndex);
+            index1 = Mathf.Min(index1, lastStrokeIndex);
+            index0 = Mathf.Max(index0, 0);
+            index1 = Mathf.Max(index1, 0);
+
+            var result = new List<Stroke>();
+            int i = index0;
+            var node = GetNodeAtIndex(index0);
+            while (i < index1)
+            {
+                result.Add(node.Value);
+                node = node.Next;
+                if (node == null)
+                {
+                    Debug.LogError($"Aborting early due to no next stroke in linked list");
+                    break;
+                }
+                i++;
+            }
+            return result;
         }
     }
 } // namespace TiltBrush

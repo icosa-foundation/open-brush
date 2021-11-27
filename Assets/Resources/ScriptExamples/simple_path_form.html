@@ -1,0 +1,18 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<form method="POST" action="http://localhost:40074/api/v1">
+    <label>Brush type: <input name="brush.type" value="LightWire"></label><br>
+    <label>Brush color: <input name="color.set.html" value="lightblue"></label><br>
+    <label>Brush size: <input name="brush.size.set" value="1"></label><br>
+    <br>
+    <label>Stroke:<br>
+    <textarea name="draw.path" rows="14" cols="80">
+[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,0]
+</textarea></label>
+    <button type="submit">Go</button>
+</form>
+</body>
+</html>

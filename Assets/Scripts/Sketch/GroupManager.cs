@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TiltBrush
 {
@@ -60,6 +61,25 @@ namespace TiltBrush
         {
             m_nextUnusedCookie = 1;
             m_idToGroup = new Dictionary<UInt32, SketchGroupTag>();
+        }
+
+        public static void MoveStrokesToNewGroups(List<Stroke> strokes, Dictionary<int, int> oldGroupToNewGroup)
+        {
+
+            if (oldGroupToNewGroup == null) oldGroupToNewGroup = new Dictionary<int, int>();
+
+            foreach (var stroke in strokes ?? new List<Stroke>())
+            {
+                if (stroke.Group != SketchGroupTag.None)
+                {
+                    if (!oldGroupToNewGroup.ContainsKey(stroke.Group.GetHashCode()))
+                    {
+                        var newGroup = App.GroupManager.NewUnusedGroup();
+                        oldGroupToNewGroup.Add(stroke.Group.GetHashCode(), newGroup.GetHashCode());
+                    }
+                    stroke.Group = new SketchGroupTag((uint)oldGroupToNewGroup[stroke.Group.GetHashCode()]);
+                }
+            }
         }
     }
 
@@ -141,5 +161,6 @@ namespace TiltBrush
             return id;
         }
     }
+
 
 } // namespace TiltBrush

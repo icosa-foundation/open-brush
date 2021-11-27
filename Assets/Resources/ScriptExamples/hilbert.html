@@ -1,0 +1,160 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta charset="UTF-8"></head>
+<body>
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".035"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
+
+<label>Iterations: <select id="iterations">
+    <option>0</option>
+    <option selected>1</option>
+    <option>2</option>
+</select></label><br>
+<label>Scale: <input id="scale" value="1"></label>
+<button id = "runButton">Run</button>
+<br><br>
+<button onclick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<p><em>Thanks to <a href="https://twitter.com/Shoseki/">Shoseki</a> for the script</em></p>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        if (brush==='LightWire') option.selected=true;
+        menu.add(option);
+    }
+
+    var run = function() {
+
+        sendCommands([
+            'color.set.html=' + document.getElementById("brush.color").value,
+            'brush.size.set=' + document.getElementById("brush.size").value,
+            'brush.type=' + document.getElementById("brush.type").value
+        ]);
+
+        var iterations = parseInt(document.getElementById('iterations').value);
+        iterations = Math.min(iterations, 4);
+        var scale = parseFloat(document.getElementById('scale').value);
+
+        // Original
+        var commands = generateTransformationCommands();
+
+        for (var iterationCounter = 0; iterationCounter < iterations; iterationCounter ++) {
+            commands = applyTransformation(commands);
+        }
+
+        var theta = 90;
+        var length = (1/(iterations+1)) * scale;
+        var commandStrings = generateStringCommands(commands, theta, length);
+        sendCommands(commandStrings);
+    };
+
+    var applyTransformation = function(commands) {
+
+        var newCommands = [];
+        for (var commandsCounter = 0; commandsCounter < commands.length; commandsCounter ++) {
+            var command = commands[commandsCounter];
+            if (command.command==='X') {
+                // Replace
+                var tempCommands = generateTransformationCommands();
+                for (var tempCommandsCounter = 0; tempCommandsCounter < tempCommands.length; tempCommandsCounter ++) {
+                    newCommands.push(tempCommands[tempCommandsCounter]);    
+                }
+            }
+            else {
+                newCommands.push(command);
+            }
+        }
+
+        return newCommands;
+    };
+
+    var generateTransformationCommands = function() {
+
+        return [
+            generateCommand('brush.turn.x', 'theta'),
+            generateCommand('brush.turn.z', '-theta'),
+            generateCommand('X', ''),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('brush.turn.x', 'theta'),
+            generateCommand('brush.turn.z', '-theta'),
+            generateCommand('X', ''),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('X', ''),
+            generateCommand('brush.turn.y', '-theta'),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('brush.turn.x', 'theta'),
+            generateCommand('brush.turn.z', 'theta'),
+            generateCommand('brush.turn.z', 'theta'),
+            generateCommand('X', ''),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('X', ''),
+            generateCommand('brush.turn.x', '-theta'),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('brush.turn.y', 'theta'),
+            generateCommand('brush.turn.z', 'theta'),
+            generateCommand('brush.turn.z', 'theta'),
+            generateCommand('X', ''),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('X', ''),
+            generateCommand('brush.turn.y', '-theta'),
+            generateCommand('brush.draw', 'length'),
+            generateCommand('brush.turn.z', 'theta'),
+            generateCommand('X', ''),
+            generateCommand('brush.turn.y', '-theta'),
+            generateCommand('brush.turn.z', 'theta'),
+        ];
+    };
+
+    var generateCommand = function(commandString, parameter) {
+        return {
+          'command' : commandString,
+          'parameter' : parameter
+        };
+    };
+
+    var generateStringCommands = function(commands, theta, length) {
+
+        var commandStrings = [];
+		var strokeCount = 0;
+		
+        for (var i = 0; i < commands.length; i++) {
+		    if (commands[i].command==="brush.draw") {strokeCount++}
+            var param = commands[i].parameter;
+            if (param==='length') {
+                param = length;
+            } else if (param==='-length') {
+                param = -length;
+            } else if (param==='theta') {
+                param = theta;
+            } else if (param==='-theta') {
+                param = -theta;
+            }
+
+            if (commands[i].command==="X") continue;
+            commandStrings.push([commands[i].command, param].join('='));
+        }
+        commandStrings.push(`strokes.join=0,-${strokeCount+1}`);
+        return commandStrings;
+    }
+
+    var sendCommands = function(commandStrings) {
+        var xmlHttp = new XMLHttpRequest();
+
+        var url = '/api/v1?' + commandStrings.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    };
+
+    var button = document.getElementById('runButton');
+    button.onclick = run;
+</script>
+
+
+</body></html>
