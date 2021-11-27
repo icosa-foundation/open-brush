@@ -25,10 +25,11 @@ repos:
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
   - repo: https://github.com/dotnet/format
-    rev: "7e343070a0355c86f72bdee226b5e19ffcbac931"  # "v5.0.211103"
+    rev: "aec7996c51c76644de6014bbcce9264d402a8db0"
     hooks:
       - id: dotnet-format
         exclude: ^(Assets/ThirdParty)|(Packages/)
+        entry: dotnet-format whitespace
         args:
           - --folder
           - --include

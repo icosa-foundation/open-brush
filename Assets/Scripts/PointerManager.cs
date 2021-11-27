@@ -1035,8 +1035,8 @@ namespace TiltBrush
                 // Bypass the code in the PointerColor setter
                 ChangeAllPointerColorsDirectly(Random.ColorHSV(
                     h - colorJitter.x, h + colorJitter.x,
-                    s - colorJitter.y, h + colorJitter.y,
-                    v - colorJitter.z, h + colorJitter.z
+                    s - colorJitter.y, s + colorJitter.y,
+                    v - colorJitter.z, v + colorJitter.z
                 ));
             }
 
