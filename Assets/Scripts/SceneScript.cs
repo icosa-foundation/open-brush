@@ -55,10 +55,8 @@ namespace TiltBrush
         ///
         public TransformExtensions.RelativeAccessor AsScene;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         [System.NonSerialized]
         public bool disableTiltProtection;
-#endif
 
         /// The global pose of this scene. All scene modifications must go through this.
         /// On assignment, range of local scale is limited (log10) to +/-4.
@@ -81,10 +79,7 @@ namespace TiltBrush
                 {
                     value.scale = Mathf.Clamp(Mathf.Abs(value.scale), 1e-4f, 1e4f);
                     bool bRestoreUp = true;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    if (Config.IsExperimental)
-                        bRestoreUp = !disableTiltProtection;
-#endif
+                    bRestoreUp = !disableTiltProtection;
                     if (bRestoreUp)
                     {
                         var qRestoreUp = Quaternion.FromToRotation(

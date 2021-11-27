@@ -48,7 +48,6 @@ namespace TiltBrush
         [SerializeField] private Material m_Blank;
         [CatalogMaterial] public Material Blank { get; private set; }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         [SerializeField] private Material m_LazyInputOn;
         [CatalogMaterial] public Material LazyInputOn { get; private set; }
 
@@ -61,7 +60,6 @@ namespace TiltBrush
 
         [SerializeField] private Material m_RevolverRadius;
         [CatalogMaterial] public Material RevolverRadius { get; private set; }
-#endif
 
         [SerializeField] private Material m_SnapOn;
         [CatalogMaterial] public Material SnapOn { get; private set; }

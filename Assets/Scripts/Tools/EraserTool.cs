@@ -55,9 +55,7 @@ namespace TiltBrush
                 m_SpinSpeed = Mathf.Max(m_SpinSpeed - m_SpinSpeedDecay * Time.deltaTime, 0.0f);
                 m_SpinSpeedVel = 0.0f;
                 // TODO: Can we find a better place for this? Ah crap mom is gonna get mad dinner is getting cold!
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 m_BatchFilter = null;
-#endif
             }
             m_SpinAmount += m_SpinSpeed * Time.deltaTime;
         }
@@ -102,8 +100,7 @@ namespace TiltBrush
                 return false;
             }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (altSelect && Config.IsExperimental)
+            if (altSelect)
             {
                 if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
                     m_BatchFilter = rGroup.m_ParentBatch;
@@ -113,7 +110,6 @@ namespace TiltBrush
             }
             else
                 m_BatchFilter = null;
-#endif
 
             SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGroup.m_Stroke);
             PlayModifyStrokeSound();

@@ -198,14 +198,12 @@ namespace TiltBrush
             return OVRInput.GetDown(MapVrInput(input), m_ControllerType);
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         /// Returns true if the specified input has just been deactivated (falling-edge trigger).
         public override bool GetVrInputUp(VrInput input)
         {
             if (!m_IsValid) { return false; }
             return OVRInput.GetUp(MapVrInput(input), m_ControllerType);
         }
-#endif
 
         public override bool GetVrInputTouch(VrInput input)
         {
@@ -279,13 +277,11 @@ namespace TiltBrush
             return false;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         /// Returns true if the specified input has just been deactivated (falling-edge trigger).
         public override bool GetVrInputUp(VrInput input)
         {
             return false;
         }
-#endif
 
         public override bool GetVrInputTouch(VrInput input)
         {

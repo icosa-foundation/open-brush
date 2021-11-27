@@ -90,7 +90,6 @@ namespace TiltBrush
             ClearGpuFutureLists();
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public virtual bool altSelect
         {
             get
@@ -101,7 +100,6 @@ namespace TiltBrush
 
         [System.NonSerialized]
         protected Batch m_BatchFilter;
-#endif
 
         virtual protected void SnapIntersectionObjectToController() { }
 

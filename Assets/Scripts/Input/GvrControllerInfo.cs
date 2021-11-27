@@ -149,36 +149,29 @@ namespace TiltBrush
             return false;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public override bool GetVrInputUp(VrInput input)
         {
-            if (Config.IsExperimental)
+            switch (input)
             {
-                switch (input)
-                {
-                    case VrInput.Button03:
-                        return GetAppButtonUp();
-                    case VrInput.Button01: /*half_left*/
-                    case VrInput.Button02: /*half_right*/
-                    case VrInput.Button05: /*quad_up*/
-                    case VrInput.Button06: /*quad_down*/
-                        return GetClickButtonUp() && IsInPosition(GetTouchPos(), input);
+                case VrInput.Button03:
+                    return GetAppButtonUp();
+                case VrInput.Button01: /*half_left*/
+                case VrInput.Button02: /*half_right*/
+                case VrInput.Button05: /*quad_up*/
+                case VrInput.Button06: /*quad_down*/
+                    return GetClickButtonUp() && IsInPosition(GetTouchPos(), input);
 
-                    case VrInput.Button04: /*full-pad button*/
-                        return GetClickButtonUp();
+                case VrInput.Button04: /*full-pad button*/
+                    return GetClickButtonUp();
 
-                    case VrInput.Trigger:
-                        return GetTriggerButtonUp();
+                case VrInput.Trigger:
+                    return GetTriggerButtonUp();
 
-                    case VrInput.Any:
-                        return GetTriggerButtonUp() || GetAppButtonUp() || GetClickButtonUp();
-                }
-                return false;
+                case VrInput.Any:
+                    return GetTriggerButtonUp() || GetAppButtonUp() || GetClickButtonUp();
             }
-            else
-                return false;
+            return false;
         }
-#endif
 
         public override bool GetVrInputDown(VrInput input)
         {
@@ -249,19 +242,12 @@ namespace TiltBrush
                 : GvrControllerInput.TriggerButtonDownRight;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         private bool GetTriggerButtonUp()
         {
-            if (Config.IsExperimental)
-            {
-                if (GetControllerGrip()) { return false; }
-                return m_isLeftHand ? GvrControllerInput.TriggerButtonUpLeft
-                    : GvrControllerInput.TriggerButtonUpRight;
-            }
-            else
-                return false;
+            if (GetControllerGrip()) { return false; }
+            return m_isLeftHand ? GvrControllerInput.TriggerButtonUpLeft
+                : GvrControllerInput.TriggerButtonUpRight;
         }
-#endif
 
         private bool GetIsTouching()
         {
@@ -296,18 +282,12 @@ namespace TiltBrush
                 : GvrControllerInput.ClickButtonDownRight;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         private bool GetClickButtonUp()
         {
-            if (Config.IsExperimental)
-            {
-                if (GetControllerGrip()) { return false; }
-                return m_isLeftHand ? GvrControllerInput.ClickButtonUpLeft
-                    : GvrControllerInput.ClickButtonUpRight;
-            }
-            return false;
+            if (GetControllerGrip()) { return false; }
+            return m_isLeftHand ? GvrControllerInput.ClickButtonUpLeft
+                : GvrControllerInput.ClickButtonUpRight;
         }
-#endif
 
         private bool GetAppButton()
         {
@@ -321,18 +301,11 @@ namespace TiltBrush
                 : GvrControllerInput.AppButtonDownRight;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         private bool GetAppButtonUp()
         {
-            if (Config.IsExperimental)
-            {
-                return m_isLeftHand ? GvrControllerInput.AppButtonUpLeft
-                    : GvrControllerInput.AppButtonUpRight;
-            }
-            else
-                return false;
+            return m_isLeftHand ? GvrControllerInput.AppButtonUpLeft
+                : GvrControllerInput.AppButtonUpRight;
         }
-#endif
 
     }
 } // namespace TiltBrush

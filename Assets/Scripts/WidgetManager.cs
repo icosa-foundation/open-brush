@@ -298,14 +298,7 @@ namespace TiltBrush
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
-
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                m_MarkerWidgets = new List<TypedWidgetData<MarkerPoint>>();
-            }
-#endif
-
+            m_MarkerWidgets = new List<TypedWidgetData<MarkerPoint>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
             m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
@@ -377,18 +370,13 @@ namespace TiltBrush
                     yield return m_StencilWidgets[i];
                 }
             }
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
+            for (int i = 0; i < m_MarkerWidgets.Count; ++i)
             {
-                for (int i = 0; i < m_MarkerWidgets.Count; ++i)
+                if (m_MarkerWidgets[i].m_WidgetObject.activeSelf)
                 {
-                    if (m_MarkerWidgets[i].m_WidgetObject.activeSelf)
-                    {
-                        yield return m_MarkerWidgets[i];
-                    }
+                    yield return m_MarkerWidgets[i];
                 }
             }
-#endif
             for (int i = 0; i < m_ImageWidgets.Count; ++i)
             {
                 if (m_ImageWidgets[i].m_WidgetObject.activeSelf)
@@ -618,9 +606,7 @@ namespace TiltBrush
         public bool HasSelectableWidgets()
         {
             return (m_ModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 m_MarkerWidgets.Count > 0 ||
-#endif
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -1015,15 +1001,15 @@ namespace TiltBrush
             }
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-        public IEnumerable<MarkerPoint> MarkerPoints {
-            get {
+        public IEnumerable<MarkerPoint> MarkerPoints
+        {
+            get
+            {
                 return m_MarkerWidgets
                     .Select(d => d == null ? null : d.WidgetScript)
                     .Where(w => w != null);
             }
         }
-#endif
 
         public StencilWidget GetStencilPrefab(StencilType type)
         {
@@ -1208,12 +1194,7 @@ namespace TiltBrush
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                if (RemoveFrom(m_MarkerWidgets, rWidget)) { return; }
-            }
-#endif
+            if (RemoveFrom(m_MarkerWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
             if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
@@ -1363,12 +1344,7 @@ namespace TiltBrush
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_VideoWidgets);
             DestroyWidgetList(m_StencilWidgets);
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                DestroyWidgetList(m_MarkerWidgets);
-            }
-#endif
+            DestroyWidgetList(m_MarkerWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
             SetCurrentCameraPath_Internal(null);
             App.Switchboard.TriggerAllWidgetsDestroyed();

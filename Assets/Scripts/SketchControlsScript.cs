@@ -975,7 +975,6 @@ namespace TiltBrush
             VideoRecorderUtils.SerializerNewUsdFrame();
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public bool IsFreepaintToolReady()
         {
             return
@@ -986,7 +985,6 @@ namespace TiltBrush
                 (m_SketchSurfacePanel.GetCurrentToolType() == BaseTool.ToolType.FreePaintTool))
                 ;
         }
-#endif
 
         public void UpdateControls()
         {
@@ -1097,16 +1095,7 @@ namespace TiltBrush
                         m_SketchSurfacePanel.AllowDrawing(m_InputStateConfigs[(int)m_CurrentInputState].m_AllowDrawing);
                         m_SketchSurfacePanel.UpdateCurrentTool();
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                         PointerManager.m_Instance.AllowPointerPreviewLine(IsFreepaintToolReady());
-#else
-                        PointerManager.m_Instance.AllowPointerPreviewLine(
-                            !m_PinCushion.IsShowing() &&
-                            !PointerManager.m_Instance.IsStraightEdgeProxyActive() &&
-                            !InputManager.m_Instance.ControllersAreSwapping() &&
-                            (m_SketchSurfacePanel.IsSketchSurfaceToolActive() ||
-                            (m_SketchSurfacePanel.GetCurrentToolType() == BaseTool.ToolType.FreePaintTool)));
-#endif
                         //keep transform gizmo at sketch surface pos
                         m_TransformGizmo.transform.position = m_SketchSurface.transform.position;
                         bool bGizmoActive = m_InputStateConfigs[(int)m_CurrentInputState].m_ShowGizmo && m_SketchSurfacePanel.ShouldShowTransformGizmo();
@@ -2425,10 +2414,7 @@ namespace TiltBrush
                 toSavedXf ? SketchMemoryScript.m_Instance.InitialSketchTransform : TrTransform.identity;
             m_WorldTransformResetState = WorldTransformResetState.Requested;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-                App.Scene.disableTiltProtection = false;
-#endif
+            App.Scene.disableTiltProtection = false;
         }
 
         void UpdateWorldTransformReset()
@@ -2466,7 +2452,6 @@ namespace TiltBrush
             }
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         bool CheckToggleTiltProtection()
         {
             if (
@@ -2485,7 +2470,6 @@ namespace TiltBrush
             return false;
 
         }
-#endif
 
         void UpdateGrab_World()
         {
@@ -2579,22 +2563,13 @@ namespace TiltBrush
                         }
                         else
                         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                             bool fixOffset = false;
-
-                            if (Config.IsExperimental) {
-                                fixOffset = CheckToggleTiltProtection();
-                            }
-#endif
+                            fixOffset = CheckToggleTiltProtection();
                             xfNew = MathUtils.TwoPointObjectTransformation(
                                 m_GrabBrush.grabTransform, m_GrabWand.grabTransform,
                                 grabXfBrush, grabXfWand,
                                 xfOld,
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                                rotationAxisConstraint: (Config.IsExperimental && App.Scene.disableTiltProtection ? default(Vector3) : Vector3.up),
-#else
-                                rotationAxisConstraint: Vector3.up,
-#endif
+                                rotationAxisConstraint: (App.Scene.disableTiltProtection ? default(Vector3) : Vector3.up),
                                 deltaScaleMin: deltaScaleMin, deltaScaleMax: deltaScaleMax);
                             float fCurrentWorldTransformSpeed =
                                 Mathf.Abs((xfNew.scale - xfOld.scale) / Time.deltaTime);
@@ -2606,26 +2581,21 @@ namespace TiltBrush
                                     AudioManager.m_Instance.m_WorldGrabLoopAttenuation, 0f,
                                     AudioManager.m_Instance.m_WorldGrabLoopMaxVolume));
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                            if (Config.IsExperimental)
+                            if (fixOffset)
                             {
-                                if (fixOffset)
-                                {
-                                    Vector3 midPoint = Vector3.Lerp(grabXfBrush.translation, grabXfWand.translation, 0.5f);
+                                Vector3 midPoint = Vector3.Lerp(grabXfBrush.translation, grabXfWand.translation, 0.5f);
 
-                                    Vector3 localMidPointOldXF = xfOld.inverse * midPoint;
+                                Vector3 localMidPointOldXF = xfOld.inverse * midPoint;
 
-                                    // assign this to force the axial protection
-                                    GrabbedPose = xfNew;
-                                    xfNew = GrabbedPose;
+                                // assign this to force the axial protection
+                                GrabbedPose = xfNew;
+                                xfNew = GrabbedPose;
 
-                                    Vector3 midPointXFNew = xfNew * localMidPointOldXF;
+                                Vector3 midPointXFNew = xfNew * localMidPointOldXF;
 
-                                    TrTransform xfDelta1 = TrTransform.T(midPoint - midPointXFNew);
-                                    xfNew = xfDelta1 * xfNew;
-                                }
+                                TrTransform xfDelta1 = TrTransform.T(midPoint - midPointXFNew);
+                                xfNew = xfDelta1 * xfNew;
                             }
-#endif
                         }
                         GrabbedPose = xfNew;
                     }

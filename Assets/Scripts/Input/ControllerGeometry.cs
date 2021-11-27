@@ -614,8 +614,6 @@ namespace TiltBrush
             }
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-
         // Toggles the little auxillary "lock" icon for snapping.
         // Enabled indicates if the icon should be shown at all, where snappingOn indicates whether the
         // open lock or closed lock icon should be shown.
@@ -670,43 +668,16 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                 case ControllerStyle.LogitechPen:
                     bool undoHover = InputManager.Wand.GetPadValue().x < 0.0f;
-
-                    if (Config.IsExperimental || undoHover)
-                    {
-                        padMat = Materials.WorldTransformReset;
-                    }
-
+                    padMat = Materials.WorldTransformReset;
                     Materials.Assign(PadMesh, padMat);
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                    if (Config.IsExperimental)
-                        Materials.Assign(Button02Mesh, padMat);
-
+                    Materials.Assign(Button02Mesh, padMat);
                     Materials.Assign(Button01Mesh, Materials.WorldTransformReset);
                     break;
             }
         }
-
-#else
-
-        public void ShowWorldTransformReset()
-        {
-            switch (Style)
-            {
-                case ControllerStyle.Vive:
-                case ControllerStyle.Wmr:
-                case ControllerStyle.LogitechPen:
-                    Materials.Assign(PadMesh, Materials.WorldTransformReset);
-                    break;
-                case ControllerStyle.OculusTouch:
-                case ControllerStyle.Knuckles:
-                    Materials.Assign(Button01Mesh, Materials.WorldTransformReset);
-                    break;
-            }
-        }
-
-#endif
 
         public void ShowBrushSizer()
         {
