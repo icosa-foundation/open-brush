@@ -141,8 +141,16 @@ namespace TiltBrush
                         BeginRevolver();
                 }
             }
-            else
-                m_PaintingActive = !m_EatInput && !m_ToolHidden && m_brushTrigger;
+            else if (m_brushUndoButtonTapped)
+            {
+                if (m_brushTrigger)
+                {
+                    if (m_LazyInputActive)
+                        m_LazyInputTangentMode = !m_LazyInputTangentMode;
+                }
+                else
+                    m_LazyInputActive = !m_LazyInputActive;
+            }
 
             PointerManager.m_Instance.EnableLine(m_PaintingActive);
             PointerManager.m_Instance.PointerPressure = m_brushTriggerRatio;
