@@ -596,16 +596,23 @@ namespace TiltBrush
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
             Debug.LogFormat("Loading {0} {1}", fileInfo.HumanName, fileInfo.FullPath);
-            m_LastSceneFile = fileInfo;
-            m_LastThumbnailBytes = null;
-            if (!m_LastSceneFile.IsHeaderValid())
+            if (!bAdditive)
+            {
+                m_LastSceneFile = fileInfo;
+                m_LastThumbnailBytes = null;
+            }
+
+            if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load: {0}", fileInfo.HumanName);
                 return false;
             }
 
-            m_LastSceneIsLegacy = false;
+            if (!bAdditive)
+            {
+                m_LastSceneIsLegacy = false;
+            }
             Stream metadata = GetMetadataReadStream(m_LastSceneFile);
             if (metadata == null)
             {
@@ -690,13 +697,21 @@ namespace TiltBrush
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
                     bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
-                    m_LastSceneIsLegacy |= legacySketch;
+
+                    if (!bAdditive)
+                    {
+                        m_LastSceneIsLegacy |= legacySketch;
+                    }
+
                     if (!success)
                     {
                         OutputWindowScript.m_Instance.AddNewLine(
                             "Could not load: {0}", fileInfo.HumanName);
-                        // Prevent it from being overwritten
-                        m_LastSceneIsLegacy = false;
+                        if (!bAdditive)
+                        {
+                            // Prevent it from being overwritten
+                            m_LastSceneIsLegacy = false;
+                        }
                         return false;
                     }
                 }
