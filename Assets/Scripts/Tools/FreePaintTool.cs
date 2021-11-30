@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Linq;
+using MoonSharp.Interpreter;
 using UnityEngine;
 
 namespace TiltBrush
@@ -214,6 +217,28 @@ namespace TiltBrush
             {
                 ApplyLazyInput(ref pos, ref rot);
             }
+
+            // Script script = ApiManager.Instance.LuaScripts[0];
+            // DynValue result = script.Call(script.Globals["foo"], pos);
+            string scriptCode = @"
+                function foo(x, y, z)
+                    return x, y, z+math.sin(x*10)
+                end
+            ";
+            Script script = new Script();
+            script.DoString(scriptCode);
+            DynValue result = script.Call(script.Globals["foo"], pos.x, pos.y, pos.z);
+            var coords = result.Tuple;
+            pos = new Vector3(
+                (float)coords[0].Number,
+                (float)coords[1].Number,
+                (float)coords[2].Number
+            );
+
+            // foreach (var foo in script.Globals.Keys) Debug.Log(foo);
+            // Debug.Log("----");
+            // foreach (var foo in script.Registry.Keys) Debug.Log(foo);
+            // var result = script.Call(script.Globals["foo"], pos);
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
