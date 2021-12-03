@@ -596,9 +596,8 @@ namespace TiltBrush
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
             Debug.LogFormat("Loading {0} {1}", fileInfo.HumanName, fileInfo.FullPath);
-            m_LastSceneFile = fileInfo;
             m_LastThumbnailBytes = null;
-            if (!m_LastSceneFile.IsHeaderValid())
+            if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load: {0}", fileInfo.HumanName);
@@ -606,7 +605,7 @@ namespace TiltBrush
             }
 
             m_LastSceneIsLegacy = false;
-            Stream metadata = GetMetadataReadStream(m_LastSceneFile);
+            Stream metadata = GetMetadataReadStream(fileInfo);
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
@@ -685,7 +684,7 @@ namespace TiltBrush
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch
-                using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH))
+                using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
@@ -754,7 +753,7 @@ namespace TiltBrush
                     {
                         WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
                     }
-                    if (m_LastSceneFile is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                    if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
                         gdInfo.SourceId = jsonData.SourceId;
                     }
@@ -766,6 +765,7 @@ namespace TiltBrush
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
                     }
+                    m_LastSceneFile = fileInfo;
                 }
             }
 
