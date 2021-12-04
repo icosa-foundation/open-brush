@@ -19,6 +19,9 @@ MonoBehaviour:
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 1000012812167754, guid: 24aca64ac0ed6654f9ec99da6d0d5692,
     type: 3}
+  m_Tags:
+  - experimental
+  - particle
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
