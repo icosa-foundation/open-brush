@@ -21,6 +21,7 @@ MonoBehaviour:
     type: 3}
   m_Tags:
   - default
+  - particle
   m_Nondeterministic: 1
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
