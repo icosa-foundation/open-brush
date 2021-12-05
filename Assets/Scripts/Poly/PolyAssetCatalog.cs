@@ -35,7 +35,8 @@ namespace TiltBrush
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
-        static readonly Regex sm_AssetIdPattern = new Regex(@"^[a-zA-Z0-9-_]+$");
+        // Change - added . % ~ to allow urlencoded urls
+        static readonly Regex sm_AssetIdPattern = new Regex(@"^[a-zA-Z0-9-_%~\.]+$");
 
         public enum AssetLoadState
         {

@@ -231,7 +231,7 @@ namespace TiltBrush
         public static VrAssetService m_Instance;
 
         // Currently this always returns the standard API host when running unit tests
-        private static string ApiHost
+        public static string ApiHost
         {
             get
             {
@@ -527,8 +527,6 @@ namespace TiltBrush
 
         private static async Task<PolyStatus> GetPolyStatus()
         {
-            return PolyStatus.Disabled;
-
             // UserConfig override
             if (App.UserConfig.Flags.DisablePoly ||
                 string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
@@ -747,7 +745,15 @@ namespace TiltBrush
 
         public AssetGetter GetAsset(string assetId, VrAssetFormat type, string reason)
         {
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+            string uri;
+            if (assetId.ToLower().StartsWith("https%3a%2f%2f") || assetId.ToLower().StartsWith("http%3a%2f%2f"))
+            {
+                uri = UnityWebRequest.UnEscapeURL(assetId);
+            }
+            else
+            {
+                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+            }
             return new AssetGetter(uri, assetId, type, reason);
         }
 

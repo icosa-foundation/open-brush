@@ -1,0 +1,91 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charSet="UTF-8">
+</head>
+<body>
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".05"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
+
+<label>Sides: <input id="sides" value="5"></label><br>
+<label>Steps: <input id="steps" value="30"></label><br>
+<label>Scale: <input id="scale" value="1"></label><br>
+<label>Angle: <input id="angle" value="5"></label><br>
+<label>Distance: <input id="distance" value=".025"></label><br>
+<button id="runButton">Run</button>
+<br><br>
+<button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        if (brush==='ShinyHull') option.selected=true;
+        menu.add(option);
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+
+    function run() {
+
+
+        sendCommands([
+            'brush.home',
+            'brush.turn.y=90',
+            'color.set.html=' + document.getElementById("brush.color").value,
+            'brush.size.set=' + document.getElementById("brush.size").value,
+            'brush.type=' + document.getElementById("brush.type").value,
+        ]);
+
+        var sides = parseFloat(document.getElementById('sides').value);
+        var steps = parseInt(document.getElementById('steps').value);
+        var scale = parseFloat(document.getElementById('scale').value);
+        var angle = parseFloat(document.getElementById('angle').value);
+        var distance = parseFloat(document.getElementById('distance').value);
+
+        var rot = 0;
+        for (var i=0; i<steps; i++) {
+            rot += angle;
+            var radius = ((steps-i)/steps) * scale;
+            sendCommands([
+                `brush.move=${distance}`,
+                `draw.polygon=${sides},${radius}, ${rot}`,
+                'color.add.hsv=0.05,0,0'
+            ]);
+        }
+    }
+
+     function sendCommand(command) {
+         sendCommands([command]);
+     }
+
+    function sendCommands(commands) {
+        var xhr = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xhr.open('GET', url, true);
+        log(commands.join('\n'));
+        xhr.onload = () => log('<' + xhr.responseText + '>');
+        xhr.send(null);
+    }
+
+    var button = document.getElementById('runButton');
+    button.onclick = run;
+</script>
+
+
+</body>
+</html>

@@ -46,7 +46,7 @@ namespace TiltBrush
             PinTool,
             EmptyTool,
             CameraPathTool,
-            FlyTool,
+            FlyTool
         }
         public ToolType m_Type;
 

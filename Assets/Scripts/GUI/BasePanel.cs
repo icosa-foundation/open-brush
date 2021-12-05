@@ -104,6 +104,7 @@ namespace TiltBrush
             ReferenceMobile,
             CameraPath,
             BrushLab,
+            Scripts = 6000,
             StencilSettings = 20200
         }
 

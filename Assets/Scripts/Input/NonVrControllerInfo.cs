@@ -79,6 +79,12 @@ namespace TiltBrush
             return false;
         }
 
+        /// Returns true if the specified input has just been deactivated (falling-edge trigger).
+        public override bool GetVrInputUp(VrInput input)
+        {
+            return false;
+        }
+
         public override void TriggerControllerHaptics(float seconds) { }
     }
 

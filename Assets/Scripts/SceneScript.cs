@@ -55,6 +55,9 @@ namespace TiltBrush
         ///
         public TransformExtensions.RelativeAccessor AsScene;
 
+        [System.NonSerialized]
+        public bool disableTiltProtection;
+
         /// The global pose of this scene. All scene modifications must go through this.
         /// On assignment, range of local scale is limited (log10) to +/-4.
         /// Emits SceneScript.PoseChanged, CanvasScript.PoseChanged.
@@ -75,9 +78,14 @@ namespace TiltBrush
                 // and are not the proper way to impose UX constraints.
                 {
                     value.scale = Mathf.Clamp(Mathf.Abs(value.scale), 1e-4f, 1e4f);
-                    var qRestoreUp = Quaternion.FromToRotation(
-                        value.rotation * Vector3.up, Vector3.up);
-                    value = TrTransform.R(qRestoreUp) * value;
+                    bool bRestoreUp = true;
+                    bRestoreUp = !disableTiltProtection;
+                    if (bRestoreUp)
+                    {
+                        var qRestoreUp = Quaternion.FromToRotation(
+                            value.rotation * Vector3.up, Vector3.up);
+                        value = TrTransform.R(qRestoreUp) * value;
+                    }
                 }
 
                 Coords.AsGlobal[transform] = value;
