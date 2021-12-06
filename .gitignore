@@ -4,6 +4,8 @@
 /Build/
 /Library/
 /Logs/
+/[Uu]ser[Ss]ettings/
+
 
 # Automatically created by Support/ tools (builds, analyze_refgraph, etc)
 /Support/tmp_steam/
