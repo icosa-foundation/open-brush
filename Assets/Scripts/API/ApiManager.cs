@@ -44,7 +44,7 @@ namespace TiltBrush
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
         private static ApiManager m_Instance;
-        private Dictionary<string, ApiEndpoint> endpoints;
+        [NonSerialized] public Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
 
         private bool cameraViewRequested;
@@ -414,22 +414,28 @@ namespace TiltBrush
             }
         }
 
+        public (string paramInfo, string Description) GetCommandInfo(string endpoint)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+
+        }
+
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
         {
             var commandList = new Dictionary<string, (string, string)>();
             foreach (var endpoint in endpoints.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                string paramInfo = String.Join(", ", paramInfoText);
-                commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+                commandList[endpoint] = GetCommandInfo(endpoint);
             }
             return commandList;
         }

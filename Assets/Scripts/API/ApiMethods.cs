@@ -177,7 +177,7 @@ namespace TiltBrush
             svgData.Path(svgPathString);
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
-            DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
+            DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, 1f, true);
         }
 
         [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the localhost:40074/help screen")]

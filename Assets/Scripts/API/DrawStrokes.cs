@@ -20,10 +20,10 @@ namespace TiltBrush
     public static class DrawStrokes
     {
 
-        public static void SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, bool rawStroke = false)
+        public static void SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             var floatPaths = new List<List<List<float>>> { floatPath };
-            MultiPathsToStrokes(floatPaths, origin, scale, rawStroke);
+            MultiPathsToStrokes(floatPaths, origin, scale, brushScale, rawStroke);
         }
 
         public static void SinglePath2dToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
@@ -32,13 +32,13 @@ namespace TiltBrush
             MultiPath2dToStrokes(polylines2d, origin, scale);
         }
 
-        public static void PositionPathsToStroke(List<Vector3> path, Vector3 origin, float scale = 1f)
+        public static void PositionPathsToStroke(List<Vector3> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
         {
             var positions = new List<List<Vector3>> { path };
-            MultiPositionPathsToStrokes(positions, null, null, origin, scale);
+            MultiPositionPathsToStrokes(positions, null, null, origin, scale, brushScale);
         }
 
-        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, bool rawStroke = false)
+        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             var positions = new List<List<Vector3>>();
             var orientations = new List<List<Quaternion>>();
@@ -78,10 +78,10 @@ namespace TiltBrush
                 if (orientationsExist) orientations.Add(orientationsPath);
                 if (pressuresExist) pressures.Add(pressuresPath);
             }
-            MultiPositionPathsToStrokes(positions, orientations, pressures, origin, scale, rawStroke);
+            MultiPositionPathsToStrokes(positions, orientations, pressures, origin, scale, brushScale, rawStroke);
         }
 
-        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, bool breakOnOrigin = false)
+        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, Vector3 origin, float scale = 1f, float brushScale = 1f, bool breakOnOrigin = false)
         {
             var positions = new List<List<Vector3>>();
             foreach (List<Vector2> positionList in polylines2d)
@@ -93,10 +93,17 @@ namespace TiltBrush
                 }
                 positions.Add(path);
             }
-            MultiPositionPathsToStrokes(positions, null, null, origin, scale, breakOnOrigin);
+            MultiPositionPathsToStrokes(positions, null, null, origin, scale, brushScale, breakOnOrigin);
         }
 
-        public static void MultiPositionPathsToStrokes(List<List<Vector3>> positions, List<List<Quaternion>> orientations, List<List<float>> pressures, Vector3 origin, float scale = 1f, bool breakOnOrigin = false, bool rawStrokes = false)
+        public static void MultiPositionPathsToStrokes(
+            List<List<Vector3>> positions,
+            List<List<Quaternion>> orientations,
+            List<List<float>> pressures, Vector3 origin,
+            float scale = 1f,
+            float brushScale = 1f,
+            bool breakOnOrigin = false,
+            bool rawStrokes = false)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
@@ -160,7 +167,7 @@ namespace TiltBrush
                     m_Type = Stroke.Type.NotCreated,
                     m_IntendedCanvas = App.Scene.ActiveCanvas,
                     m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = 1f,
+                    m_BrushScale = brushScale,
                     m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
                     m_Color = App.BrushColor.CurrentColor,
                     m_Seed = 0,

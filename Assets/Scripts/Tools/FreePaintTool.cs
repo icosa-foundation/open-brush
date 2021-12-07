@@ -220,25 +220,25 @@ namespace TiltBrush
 
             // Script script = ApiManager.Instance.LuaScripts[0];
             // DynValue result = script.Call(script.Globals["foo"], pos);
-            string scriptCode = @"
-                function foo(x, y, z)
-                    return x, y, z+math.sin(x*10)
-                end
-            ";
-            Script script = new Script();
-            script.DoString(scriptCode);
-            DynValue result = script.Call(script.Globals["foo"], pos.x, pos.y, pos.z);
+            // string scriptCode = @"
+            //     function foo(x, y, z)
+            //         return x, y, z+math.sin(x*10)
+            //     end
+            // ";
+            // Script script = new Script();
+            // script.DoString(scriptCode);
+
+            string activePointerScriptName = LuaManager.Instance.PointerScripts.Keys.Last(); // TODO
+            Script activePointerScript = LuaManager.Instance.PointerScripts[activePointerScriptName];
+            Closure activePointerFunction = activePointerScript.Globals.Get(activePointerScriptName).Function;
+            Table activePointerWidgets = activePointerScript.Globals.Get("Widgets").Table;
+            DynValue result = activePointerFunction.Call(pos.x, pos.y, pos.z, 1);
             var coords = result.Tuple;
             pos = new Vector3(
                 (float)coords[0].Number,
                 (float)coords[1].Number,
                 (float)coords[2].Number
             );
-
-            // foreach (var foo in script.Globals.Keys) Debug.Log(foo);
-            // Debug.Log("----");
-            // foreach (var foo in script.Registry.Keys) Debug.Log(foo);
-            // var result = script.Call(script.Globals["foo"], pos);
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
