@@ -219,7 +219,7 @@ jobs:
           # version 2.1.6; must be updated if the version changes
           # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
           mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.1.4.tgz -O tmp.plugin/plugin.tgz
+          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.1.6.tgz -O tmp.plugin/plugin.tgz
           tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
           mkdir tmp.package
           tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
