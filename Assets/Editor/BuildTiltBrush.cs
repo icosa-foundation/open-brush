@@ -712,6 +712,8 @@ static class BuildTiltBrush
         // there!
         OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
         string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
+
+        EditorUserBuildSettings.androidCreateSymbolsZip = true;
 #endif
 
         {
