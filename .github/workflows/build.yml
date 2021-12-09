@@ -2,6 +2,8 @@
 ---
 name: Builds
 
+concurrency: build-{{ github.ref }}
+
 on:  # yamllint disable-line rule:truthy
   pull_request: {}
   push:
