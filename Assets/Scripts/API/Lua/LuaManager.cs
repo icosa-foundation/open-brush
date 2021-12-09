@@ -43,9 +43,13 @@ namespace TiltBrush
 
         public List<string> ApiCategories = new List<string>
         {
-            "PointerScript",
-            "ToolScript",
-            "SymmetryScript"
+            "PointerScript", // Modifies the pointer position on every frame
+            "ToolScript",    // A scriptable tool that can create strokes based on click/drag/release
+            "SymmetryScript" // Generates copies of each new stroke with different transforms
+            // Scripts that modify brush settings for each new stroke (JitterScript?)
+            // Scripts that modify existing strokes (RepaintScript?)
+            // Scriptable Brush mesh generation (BrushScript?)
+            // Same as above but applies to the current selection with maybe some logic based on index within selection
         };
         public Dictionary<string, Script> PointerScripts;
         public Dictionary<string, Script> ToolScripts;
