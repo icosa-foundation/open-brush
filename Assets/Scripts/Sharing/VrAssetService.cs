@@ -527,6 +527,8 @@ namespace TiltBrush
 
         private static async Task<PolyStatus> GetPolyStatus()
         {
+            return PolyStatus.Disabled;
+
             // UserConfig override
             if (App.UserConfig.Flags.DisablePoly ||
                 string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))

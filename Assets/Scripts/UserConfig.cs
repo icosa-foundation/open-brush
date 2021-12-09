@@ -209,7 +209,21 @@ namespace TiltBrush
 
             public string[] IncludeTags
             {
-                get => m_IncludeTags ?? (m_IncludeTags = new string[] { "default" });
+                get
+                {
+                    if (m_IncludeTags == null)
+                    {
+                        if (App.Config.m_IsExperimental)
+                        {
+                            m_IncludeTags = new[] { "default", "experimental" };
+                        }
+                        else
+                        {
+                            m_IncludeTags = new[] { "default" };
+                        }
+                    }
+                    return m_IncludeTags;
+                }
                 set => m_IncludeTags = value;
             }
 
