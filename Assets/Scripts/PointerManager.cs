@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
@@ -41,6 +42,7 @@ namespace TiltBrush
             SinglePlane,
             FourAroundY,
             DebugMultiple,
+            ScriptedSymmetryMode = 6000
         }
 
         // Modifying this struct has implications for binary compatibility.
@@ -466,6 +468,11 @@ namespace TiltBrush
                         m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
                         m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
                     }
+                    else if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
+                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                    }
                 }
             }
 
@@ -712,6 +719,9 @@ namespace TiltBrush
                 case SymmetryMode.FourAroundY:
                     active = 4;
                     break;
+                case SymmetryMode.ScriptedSymmetryMode:
+                    active = LuaManager.Instance.CallCurrentSymmetryScript()?.Count ?? 1;
+                    break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
@@ -792,6 +802,11 @@ namespace TiltBrush
                         }
                         return aboutY * xfMain;
                     }
+                case SymmetryMode.ScriptedSymmetryMode:
+                    {
+                        var transforms = LuaManager.Instance.CallCurrentSymmetryScript();
+                        return transforms != null ? transforms[child] * xfMain : xfMain;
+                    }
 
                 case SymmetryMode.DebugMultiple:
                     {
@@ -846,6 +861,37 @@ namespace TiltBrush
                             cur = aboutY * cur;         // stack another rotation on top
                             var tmp = (cur * pointer0); // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
+                        }
+                        break;
+                    }
+                case SymmetryMode.ScriptedSymmetryMode:
+                    {
+                        // Transform of pointer 0 in global space
+                        var xf0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+
+                        var transforms = LuaManager.Instance.CallCurrentSymmetryScript();
+                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+
+                        if (transforms != null)
+                        {
+                            int numCopies = transforms.Count;
+
+                            for (int i = 0; i < numCopies; i++)
+                            {
+                                // // Pose of face i, in object space
+                                // TrTransform face_i_OS = new TrTransform(); //asFrame(faces[i]);
+                                // // Active transform from face 0 to face i; acts on object-space things
+                                // TrTransform face_i_from_bestface_OS = face_i_OS; // * m_bestface_OS.inverse;
+                                // // Active transform from face 0 to face i; acts on global-space things
+                                // TrTransform face_i_from_bestface_GS = xfWidget * face_i_from_bestface_OS * xfWidget.inverse;
+                                // // apply face 0->face i transform to pointer 0 to get pointer i
+                                // TrTransform xf_i_GS = face_i_from_bestface_GS * xf0_GS;
+                                // // TODO - how to scale strokes in the plane of each face?
+                                // // var faceScalingFactor = (faces[i].GetBestEdge().Midpoint - faces[i].Centroid).magnitude;
+                                // // var trScale = TrTransform.S(faceScalingFactor);
+                                // // xf_i_GS *= trScale;
+                                transforms[i].ToTransform(m_Pointers[i].m_Script.transform);
+                            }
                         }
                         break;
                     }

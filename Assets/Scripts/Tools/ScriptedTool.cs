@@ -134,39 +134,11 @@ namespace TiltBrush
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
 
-
-                    var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+                    // var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
                     var pos = m_FirstPositionClicked_CS.translation;
 
-                    Vector3 TableToVector3(Table t)
-                    {
-                        return rotation_CS * new Vector3(
-                            (float)t.Get(1).Number,
-                            (float)t.Get(2).Number,
-                            (float)t.Get(3).Number
-                        );
-                    };
-
-                    // string scriptCode = @"
-                    //         function circle(x, y, z, r)
-                    //         points = {}
-                    //         for i = 1, 360, 10 do
-                    //             angle = i * math.pi / 180
-                    //             table.insert(points, {x+r*math.cos(angle), y+r*math.sin(angle), z})
-                    //         end
-                    //         return points
-                    //         end
-                    //     ";
-                    // Script script = new Script();
-                    // script.DoString(scriptCode);
-
-                    string activeToolScriptName = LuaManager.Instance.ToolScripts.Keys.Last(); // TODO
-                    Script activeToolScript = LuaManager.Instance.ToolScripts[activeToolScriptName];
-                    Closure activeToolFunction = activeToolScript.Globals.Get(activeToolScriptName).Function;
-                    Table activeToolWidgets = activeToolScript.Globals.Get("Widgets").Table;
-                    DynValue result = activeToolFunction.Call(0, 0, 0, 1);
-                    List<Vector3> points = result.Table.Values.Select(x => TableToVector3(x.Table)).ToList();
-
+                    List<Vector3> points = LuaManager.Instance.CallCurrentToolScript();
+                    if (points == null) return;
                     DrawStrokes.PositionPathsToStroke(points, pos, scale_CS, 1f / App.ActiveCanvas.Pose.scale);
                 }
             }

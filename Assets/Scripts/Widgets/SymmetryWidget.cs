@@ -122,6 +122,9 @@ namespace TiltBrush
                             (m_GuideBeams[i].m_Direction != BeamDirection.Down));
                     }
                     break;
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    // TODO visualize the result somehow
+                    break;
             }
         }
 

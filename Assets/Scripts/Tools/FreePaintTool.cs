@@ -218,27 +218,8 @@ namespace TiltBrush
                 ApplyLazyInput(ref pos, ref rot);
             }
 
-            // Script script = ApiManager.Instance.LuaScripts[0];
-            // DynValue result = script.Call(script.Globals["foo"], pos);
-            // string scriptCode = @"
-            //     function foo(x, y, z)
-            //         return x, y, z+math.sin(x*10)
-            //     end
-            // ";
-            // Script script = new Script();
-            // script.DoString(scriptCode);
-
-            string activePointerScriptName = LuaManager.Instance.PointerScripts.Keys.Last(); // TODO
-            Script activePointerScript = LuaManager.Instance.PointerScripts[activePointerScriptName];
-            Closure activePointerFunction = activePointerScript.Globals.Get(activePointerScriptName).Function;
-            Table activePointerWidgets = activePointerScript.Globals.Get("Widgets").Table;
-            DynValue result = activePointerFunction.Call(pos.x, pos.y, pos.z, 1);
-            var coords = result.Tuple;
-            pos = new Vector3(
-                (float)coords[0].Number,
-                (float)coords[1].Number,
-                (float)coords[2].Number
-            );
+            var newPos = LuaManager.Instance.CallCurrentPointerScript();
+            pos = newPos == Vector3.negativeInfinity ? pos : newPos;
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {

@@ -8,6 +8,7 @@ using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
 using CommandTerminal;
 using System.Linq;
+using UnityEngine.UIElements;
 
 namespace TiltBrush
 {
@@ -95,6 +96,7 @@ namespace TiltBrush
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
             InitTerminal();
+            LuaCustomConverters.RegisterAll();
             LoadScripts();
         }
 
@@ -150,7 +152,6 @@ namespace TiltBrush
             foreach (string scriptPath in files)
                 LoadScript(scriptPath, globals);
 
-            Debug.Log($"Loaded {loadedScripts.Count} scripts");
         }
 
         /// <summary>
@@ -261,9 +262,6 @@ namespace TiltBrush
             apiManager.InvokeEndpoint(new KeyValuePair<string, string>(key, cmd));
         }
 
-
-
-
         static void CommandHelp(CommandArg[] args)
         {
             if (args.Length == 0)
@@ -334,6 +332,7 @@ namespace TiltBrush
             }
 
         }
+
         private Dictionary<string, object> GetGlobals()
         {
 
@@ -409,5 +408,61 @@ namespace TiltBrush
         }
 
         #endregion
+
+
+        public Script SetScriptContext(Script script)
+        {
+            var pointerTr = PointerManager.m_Instance.MainPointer.transform;
+            var xfMain_CS = Coords.AsCanvas[pointerTr];
+
+            DynValue pointer = DynValue.NewTable(new Table(script));
+            pointer.Table["position"] = xfMain_CS.translation;
+            pointer.Table["rotation"] = xfMain_CS.rotation.eulerAngles;
+            script.Globals.Set("pointer", pointer);
+            return script;
+        }
+
+        public void SetupScriptWidgets(Script script)
+        {
+            // TODO
+            Table widgets = script.Globals.Get("Widgets").Table;
+        }
+
+        private DynValue _CallCurrentScript(Dictionary<string, Script> scriptMap)
+        {
+            if (scriptMap.Count == 0) return null;
+            string activeScriptName = scriptMap.Keys.Last(); // TODO
+            Script activeScript = scriptMap[activeScriptName];
+            activeScript = SetScriptContext(activeScript);
+            SetupScriptWidgets(activeScript);
+            Closure activeFunction = activeScript.Globals.Get(activeScriptName).Function;
+            DynValue result = activeFunction.Call();
+            return result;
+        }
+
+        public List<Vector3> CallCurrentToolScript()
+        {
+            DynValue result = _CallCurrentScript(LuaManager.Instance.ToolScripts);
+            return result.ToObject<List<Vector3>>();
+        }
+
+        public List<TrTransform> CallCurrentSymmetryScript()
+        {
+            DynValue result = _CallCurrentScript(LuaManager.Instance.SymmetryScripts);
+            return result.ToObject<List<TrTransform>>();
+        }
+
+        public Vector3 CallCurrentPointerScript()
+        {
+            DynValue result = _CallCurrentScript(LuaManager.Instance.PointerScripts);
+            if (result != null)
+            {
+                return result.ToObject<Vector3>();
+            }
+            else
+            {
+                return Vector3.negativeInfinity;
+            }
+        }
     }
 }

@@ -143,6 +143,7 @@ namespace TiltBrush
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
+            ScriptedSymmetryCommand = 6003,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000
@@ -1399,6 +1400,7 @@ namespace TiltBrush
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
                         : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
+                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.ScriptedSymmetryMode
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -4346,6 +4348,19 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.ScriptedSymmetryCommand:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.ScriptedSymmetryMode);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
                 case GlobalCommands.StraightEdge:
                     PointerManager.m_Instance.StraightEdgeModeEnabled = !PointerManager.m_Instance.StraightEdgeModeEnabled;
                     if (PointerManager.m_Instance.StraightEdgeModeEnabled)
@@ -4976,6 +4991,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
