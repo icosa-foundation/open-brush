@@ -156,11 +156,11 @@ jobs:
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            extraoptions: -setDefaultPlatformTextureFormat astc
           - name: Oculus Quest Experimental
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-experimental
 
 
     steps:
