@@ -56,9 +56,19 @@ public static class LuaCustomConverters
             dynVal =>
             {
                 Table table = dynVal.Table;
-                float x = (float)((Double)table["x"]);
-                float y = (float)((Double)table["y"]);
-                float z = (float)((Double)table["z"]);
+                float x, y, z;
+                if (table.Keys.First().String == "x")
+                {
+                    x = (float)(Double)table["x"];
+                    y = (float)(Double)table["y"];
+                    z = (float)(Double)table["z"];
+                }
+                else
+                {
+                    x = (float)(Double)table[1];
+                    y = (float)(Double)table[2];
+                    z = (float)(Double)table[3];
+                }
                 return new Vector3(x, y, z);
             }
         );
@@ -66,9 +76,9 @@ public static class LuaCustomConverters
         Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector3>(
             (script, vector) =>
             {
-                DynValue x = DynValue.NewNumber((double)vector.x);
-                DynValue y = DynValue.NewNumber((double)vector.y);
-                DynValue z = DynValue.NewNumber((double)vector.z);
+                DynValue x = DynValue.NewNumber(vector.x);
+                DynValue y = DynValue.NewNumber(vector.y);
+                DynValue z = DynValue.NewNumber(vector.z);
                 DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
                 dynVal.Table.Set("x", x);
                 dynVal.Table.Set("y", y);

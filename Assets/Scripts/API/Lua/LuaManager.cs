@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using UnityEngine;
 using NaughtyAttributes;
@@ -8,7 +7,6 @@ using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
 using CommandTerminal;
 using System.Linq;
-using UnityEngine.UIElements;
 
 namespace TiltBrush
 {
@@ -52,9 +50,13 @@ namespace TiltBrush
             // Scriptable Brush mesh generation (BrushScript?)
             // Same as above but applies to the current selection with maybe some logic based on index within selection
         };
-        public Dictionary<string, Script> PointerScripts;
-        public Dictionary<string, Script> ToolScripts;
-        public Dictionary<string, Script> SymmetryScripts;
+
+        [NonSerialized] public List<Script> PointerScripts;
+        [NonSerialized] public List<Script> ToolScripts;
+        [NonSerialized] public List<Script> SymmetryScripts;
+        [NonSerialized] public int CurrentPointerScript = 0;
+        [NonSerialized] public int CurrentToolScript = 0;
+        [NonSerialized] public int CurrentSymmetryScript = 0;
         // apiFunctions = new Dictionary<string, Dictionary<Script, Closure>>();
 
         private LuaDebugger debugger;
@@ -86,9 +88,9 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            PointerScripts = new Dictionary<string, Script>();
-            ToolScripts = new Dictionary<string, Script>();
-            SymmetryScripts = new Dictionary<string, Script>();
+            PointerScripts = new List<Script>();
+            ToolScripts = new List<Script>();
+            SymmetryScripts = new List<Script>();
         }
 
         private void Start()
@@ -228,13 +230,13 @@ namespace TiltBrush
                 switch (category)
                 {
                     case "PointerScript":
-                        PointerScripts[scriptName] = script;
+                        PointerScripts.Add(script);
                         break;
                     case "ToolScript":
-                        ToolScripts[scriptName] = script;
+                        ToolScripts.Add(script);
                         break;
                     case "SymmetryScript":
-                        SymmetryScripts[scriptName] = script;
+                        SymmetryScripts.Add(script);
                         break;
                 }
 
@@ -412,13 +414,42 @@ namespace TiltBrush
 
         public Script SetScriptContext(Script script)
         {
-            var pointerTr = PointerManager.m_Instance.MainPointer.transform;
-            var xfMain_CS = Coords.AsCanvas[pointerTr];
+            // var pointerTr = PointerManager.m_Instance.MainPointer.transform;
+            // var xfMain_CS = Coords.AsCanvas[pointerTr];
+            var pointerColor = PointerManager.m_Instance.PointerColor;
+            float hue, S, V;
+            Color.RGBToHSV(pointerColor, out hue, out S, out V);
+
+            // Angle the pointer according to the user-defined pointer angle.
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos = rAttachPoint.position;
+            Quaternion rot = rAttachPoint.rotation * Quaternion.Euler(new Vector3(0, 180, 0));
+
+
 
             DynValue pointer = DynValue.NewTable(new Table(script));
-            pointer.Table["position"] = xfMain_CS.translation;
-            pointer.Table["rotation"] = xfMain_CS.rotation.eulerAngles;
+            // pointer.Table["position"] = xfMain_CS.translation;
+            // pointer.Table["rotation"] = xfMain_CS.rotation.eulerAngles;
+            pointer.Table["position"] = pos;
+            pointer.Table["rotation"] = rot.eulerAngles;
+            pointer.Table["rgb"] = new Vector3(pointerColor.r, pointerColor.g, pointerColor.b);
+            pointer.Table["hsv"] = new Vector3(hue, S, V);
+            pointer.Table["size01"] = PointerManager.m_Instance.MainPointer.BrushSize01;
+            pointer.Table["size"] = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            pointer.Table["brush"] = PointerManager.m_Instance.MainPointer.CurrentBrush.m_Description;
+            script.Globals.Remove("pointer");
             script.Globals.Set("pointer", pointer);
+
+            DynValue app = DynValue.NewTable(new Table(script));
+            app.Table["time"] = Time.realtimeSinceStartup;
+            script.Globals.Set("app", app);
+
+            DynValue canvas = DynValue.NewTable(new Table(script));
+            canvas.Table["scale"] = App.ActiveCanvas.Pose.scale;
+            canvas.Table["strokes"] = SketchMemoryScript.m_Instance.StrokeCount;
+            script.Globals.Set("canvas", canvas);
+
+            // Debug.Log($"pointer.position: {script.Globals.Get("pointer").Table.Get("position").ToObject<Vector3>()}");
             return script;
         }
 
@@ -428,41 +459,48 @@ namespace TiltBrush
             Table widgets = script.Globals.Get("Widgets").Table;
         }
 
-        private DynValue _CallCurrentScript(Dictionary<string, Script> scriptMap)
+        private Script _GetScript(List<Script> scriptList, int scriptIndex)
         {
-            if (scriptMap.Count == 0) return null;
-            string activeScriptName = scriptMap.Keys.Last(); // TODO
-            Script activeScript = scriptMap[activeScriptName];
+            if (scriptIndex > scriptList.Count - 1) return null;
+            Script script = scriptList[scriptIndex];
+            return script;
+
+        }
+
+        private DynValue _CallScript(List<Script> scriptList, int scriptIndex)
+        {
+            var activeScript = _GetScript(scriptList, scriptIndex);
             activeScript = SetScriptContext(activeScript);
             SetupScriptWidgets(activeScript);
-            Closure activeFunction = activeScript.Globals.Get(activeScriptName).Function;
+            Closure activeFunction = activeScript.Globals.Get("Main").Function;
             DynValue result = activeFunction.Call();
             return result;
         }
 
+        private void InjectGlobal(List<Script> scriptList, int scriptIndex, Vector3 pos)
+        {
+            var activeScript = _GetScript(scriptList, scriptIndex);
+        }
+
+
         public List<Vector3> CallCurrentToolScript()
         {
-            DynValue result = _CallCurrentScript(LuaManager.Instance.ToolScripts);
-            return result.ToObject<List<Vector3>>();
+            DynValue result = _CallScript(ToolScripts, CurrentToolScript);
+            return result?.ToObject<List<Vector3>>();
         }
 
         public List<TrTransform> CallCurrentSymmetryScript()
         {
-            DynValue result = _CallCurrentScript(LuaManager.Instance.SymmetryScripts);
-            return result.ToObject<List<TrTransform>>();
+            DynValue result = _CallScript(SymmetryScripts, CurrentSymmetryScript);
+            return result?.ToObject<List<TrTransform>>(); //.Select(tr=>tr.TransformBy(App.ActiveCanvas.Pose)).ToList();
         }
 
-        public Vector3 CallCurrentPointerScript()
+        public Vector3? CallCurrentPointerScript(Vector3 pos)
         {
-            DynValue result = _CallCurrentScript(LuaManager.Instance.PointerScripts);
-            if (result != null)
-            {
-                return result.ToObject<Vector3>();
-            }
-            else
-            {
-                return Vector3.negativeInfinity;
-            }
+            // InjectGlobal(PointerScripts, CurrentPointerScript, pos);
+            DynValue result = _CallScript(PointerScripts, CurrentPointerScript);
+            return result?.ToObject<Vector3>();
         }
+
     }
 }

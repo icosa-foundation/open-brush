@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Linq;
-using MoonSharp.Interpreter;
 using UnityEngine;
 
 namespace TiltBrush
@@ -218,8 +215,8 @@ namespace TiltBrush
                 ApplyLazyInput(ref pos, ref rot);
             }
 
-            var newPos = LuaManager.Instance.CallCurrentPointerScript();
-            pos = newPos == Vector3.negativeInfinity ? pos : newPos;
+            Vector3? newPos = LuaManager.Instance.CallCurrentPointerScript(pos);
+            pos = newPos ?? pos;
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
