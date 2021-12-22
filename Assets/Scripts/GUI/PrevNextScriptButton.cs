@@ -12,15 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
+using TMPro;
 using UnityEngine;
 namespace TiltBrush
 {
-    public class ScriptsPanel : BasePanel
+    public class PrevNextScriptButton : BaseButton
     {
-        public void TogglePointerScript(ToggleButton btn)
+
+        public int increment;
+        private ScriptUiNav nav;
+
+        protected override void OnButtonPressed()
         {
-            LuaManager.Instance.EnablePointerScript(btn.m_IsToggledOn);
+            base.OnButtonPressed();
+            if (nav == null) nav = transform.parent.GetComponent<ScriptUiNav>();
+            nav.ChangeScript(increment);
         }
 
     }

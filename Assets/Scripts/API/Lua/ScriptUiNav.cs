@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
+using System.Collections;
+using System.Collections.Generic;
+using TiltBrush;
+using TMPro;
 using UnityEngine;
-namespace TiltBrush
-{
-    public class ScriptsPanel : BasePanel
-    {
-        public void TogglePointerScript(ToggleButton btn)
-        {
-            LuaManager.Instance.EnablePointerScript(btn.m_IsToggledOn);
-        }
 
+public class ScriptUiNav : MonoBehaviour
+{
+
+    private TextMeshPro textMesh;
+    public LuaManager.ApiCategories ApiCategory;
+    public List<string> names;
+
+    public void Start()
+    {
+        textMesh = GetComponentInChildren<TextMeshPro>();
+        textMesh.text = LuaManager.Instance.GetScriptName(ApiCategory, 0);
+        names = LuaManager.Instance.GetScriptNames(ApiCategory);
+    }
+
+    public void ChangeScript(int increment)
+    {
+        var text = LuaManager.Instance.ChangeCurrentScript(ApiCategory, increment);
+        textMesh.text = text;
     }
 }
