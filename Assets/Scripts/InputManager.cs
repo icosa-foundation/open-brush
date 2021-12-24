@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using CommandTerminal;
 using UnityEngine;
 using Valve.VR;
 using KeyMap = System.Collections.Generic.Dictionary<
@@ -40,8 +39,6 @@ namespace TiltBrush
         const float kSwapForwardAngle = 130f;  // degrees
         const float kSwapVelocityAngle = 150f; // degrees
         const float kSwapAcceleration = 10f;   // decimeters / second^2
-
-        private Terminal terminal;
 
         public enum ControllerName
         {
@@ -610,7 +607,6 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcut(KeyboardShortcut shortcut)
         {
-            if (!AllowKeyboardShortcuts()) return false;
             KeyCode[] codes;
             if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
             {
@@ -629,7 +625,6 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcutDown(KeyboardShortcut shortcut)
         {
-            if (!AllowKeyboardShortcuts()) return false;
             KeyCode[] codes;
             if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
             {
@@ -646,15 +641,8 @@ namespace TiltBrush
             return false;
         }
 
-        public bool AllowKeyboardShortcuts()
-        {
-            if (terminal == null) terminal = FindObjectOfType<Terminal>();
-            return terminal.IsClosed;
-        }
-
         public bool GetAnyShift()
         {
-            if (!AllowKeyboardShortcuts()) return false;
             return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         }
 
