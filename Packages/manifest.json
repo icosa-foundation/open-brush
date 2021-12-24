@@ -4,13 +4,11 @@
       "name": "package.openupm.com",
       "url": "https://package.openupm.com",
       "scopes": [
-        "com.dbrizov.naughtyattributes",
         "com.openupm"
       ]
     }
   ],
   "dependencies": {
-    "com.dbrizov.naughtyattributes": "2.1.1",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "0.0.2-preview.1",

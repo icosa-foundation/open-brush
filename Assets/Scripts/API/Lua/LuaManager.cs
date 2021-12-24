@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using NaughtyAttributes;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
 
@@ -72,7 +71,6 @@ namespace TiltBrush
             LoadScripts();
         }
 
-        [Button("Reload Scripts")]
         public void LoadScripts()
         {
             PointerScripts = new List<Script>();
