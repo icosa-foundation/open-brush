@@ -100,6 +100,7 @@ namespace TiltBrush
             // Check actions if we're not hot.
             if (!m_CurrentlyHot)
             {
+                m_BatchFilter = null;
                 // If intersecting with selection widget
                 if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
                 {
@@ -203,6 +204,15 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
+            if (altSelect)
+            {
+                if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
+                    m_BatchFilter = rGroup.m_ParentBatch;
+                if (!ReferenceEquals(m_BatchFilter, rGroup.m_ParentBatch))
+                    return true;
+            }
+            else
+                m_BatchFilter = null;
             var stroke = rGroup.m_Stroke;
             var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();

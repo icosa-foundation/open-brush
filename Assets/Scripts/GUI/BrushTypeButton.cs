@@ -147,8 +147,9 @@ namespace TiltBrush
                 m_AudioReactiveIconRenderer.material.SetFloat("_Activated", 0.0f);
                 m_ExperimentalIconRenderer.material.SetFloat("_Activated", 0.0f);
             }
-            //only set our texture if we're deactivated-- otherwise we'll get it when we turn off the preview
-            if (m_DescriptionState == DescriptionState.Deactivated)
+            // only set our texture if we're deactivated-- otherwise we'll get it when we turn off the preview
+            // The brush can be null if we have less than 1 page of brushes
+            if (m_DescriptionState == DescriptionState.Deactivated && m_Brush != null)
             {
                 if (m_AtlasTexture)
                 {

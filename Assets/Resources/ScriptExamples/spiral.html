@@ -1,0 +1,88 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charSet="UTF-8">
+</head>
+<body>
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".5"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
+
+<label>Angle: <input id="angle" value="20"></label>
+<label>Steps: <input id="steps" value="50"></label>
+<label>Scale: <input id="scale" value=".01"></label>
+<button id="runButton">Run</button>
+<br><br>
+<button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        if (brush==='SoftHighlighter') option.selected=true;
+        menu.add(option);
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+
+    function run() {
+
+
+        sendCommands([
+            'color.set.html=' + document.getElementById("brush.color").value,
+            'brush.size.set=' + document.getElementById("brush.size").value,
+            'brush.type=' + document.getElementById("brush.type").value,
+            'brush.turn.y=90'
+        ]);
+
+        var angle = parseFloat(document.getElementById('angle').value);
+        var steps = parseInt(document.getElementById('steps').value);
+        var scale = parseFloat(document.getElementById('scale').value);
+
+        for (var i=0; i<steps; i++) {
+            sendCommands([
+                'brush.draw=' + (steps - i) * scale,
+                'brush.turn.x=' + angle,
+                'brush.turn.z=1',
+                'color.add.hsv=0.05,0,0'
+            ]);
+        }
+        sendCommands([
+            `strokes.join=0,-${steps}`
+        ]);
+
+    }
+
+     function sendCommand(command) {
+         sendCommands([command]);
+     }
+
+    function sendCommands(commands) {
+        var xhr = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xhr.open('GET', url, true);
+        log(commands.join('\n'));
+        xhr.onload = () => log('<' + xhr.responseText + '>');
+        xhr.send(null);
+    }
+
+    var button = document.getElementById('runButton');
+    button.onclick = run;
+</script>
+
+
+</body>
+</html>

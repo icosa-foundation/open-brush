@@ -136,6 +136,11 @@ namespace TiltBrush
             StrokePlaybackByDistance playback = new StrokePlaybackByDistance(this);
             foreach (var stroke in strokes)
             {
+                // When additively loading a sketch, deleted strokes will belong to deleted subsets
+                // Strokes from the merged sketch never do and also are never assigned to a subset
+                // So - skip any strokes with a subset if that subset is not active
+                if (stroke.m_BatchSubset != null && !stroke.m_BatchSubset.m_Active) continue;
+
                 m_MemoryObjectsDrawn++;
                 var pointer = PointerManager.m_Instance.GetPointer(InputManager.ControllerName.Brush);
                 playback.Init(stroke, pointer, targetCanvas);

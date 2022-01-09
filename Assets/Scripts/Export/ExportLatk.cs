@@ -60,6 +60,7 @@ namespace TiltBrush
                     sb.Add(string.Join("\n", sbbHeader.ToArray()));
 
                     LinkedListNode<Stroke> node = SketchMemoryScript.m_Instance.GetMemoryList.First;
+                    if (node == null) continue;
                     Stroke stroke = node.Value;
 
                     for (int i = 0; i < SketchMemoryScript.m_Instance.StrokeCount; i++)
@@ -80,7 +81,7 @@ namespace TiltBrush
                         float b = stroke.m_Color.b;
                         sbb.Add("\t\t\t\t\t\t\t\t\t\"color\":[" + r + ", " + g + ", " + b + "],");
 
-                        if (stroke.m_ControlPoints.Length > 0)
+                        if (stroke.IsGeometryEnabled && stroke.m_ControlPoints.Length > 0)
                         {
                             sbb.Add("\t\t\t\t\t\t\t\t\t\"points\":[");
                             for (int j = 0; j < stroke.m_ControlPoints.Length; j++)

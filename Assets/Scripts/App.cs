@@ -36,7 +36,7 @@ using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
 [assembly: InternalsVisibleTo("Assembly-CSharp-Editor")]
 namespace TiltBrush
 {
-    public class App : MonoBehaviour
+    public partial class App : MonoBehaviour
     {
         // ------------------------------------------------------------
         // Constants and types
@@ -602,7 +602,6 @@ namespace TiltBrush
             {
                 HttpServer.AddHttpHandler("/load", HttpLoadSketchCallback);
             }
-
             m_AutosaveRestoreFileExists = File.Exists(AutosaveRestoreFilePath());
 
             m_GoogleUserSettings = new GoogleUserSettings(m_GoogleIdentity);

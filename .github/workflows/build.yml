@@ -39,6 +39,7 @@ jobs:
       changelog: ${{ steps.changelog.outputs.changelog }}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
+      itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -58,9 +59,12 @@ jobs:
             STAMP=""
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "::set-output name=prerelease::false"
+            echo "::set-output name=itchchannelname::release"
+
           else
             echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
             echo "::set-output name=prerelease::true"
+            echo "::set-output name=itchchannelname::beta"
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "::set-output name=version::$VERSION"
@@ -172,6 +176,7 @@ jobs:
           #echo "Listing 100 largest packages"
           #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing large packages"
+          sudo apt-get update
           sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
           sudo apt-get autoremove -y
           sudo apt-get clean
@@ -189,9 +194,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 27.0
+          # version 34.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=4231499270194643 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=4585423734833742 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -241,7 +246,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -320,7 +325,7 @@ jobs:
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2.0-alpha-13
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -522,6 +527,104 @@ jobs:
           name: steamcmd logs
           path: build_output/
 
+
+  publish_itch:
+    name: Publish Itch.io Release
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    env:
+      ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
+      BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+      ITCH_GAME: openbrush
+      ITCH_USER: openbrush
+      VERSION: ${{ needs.configuration.outputs.version }}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Download Build Artifacts (Windows SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR
+          path: build_windows_steamvr
+
+      - name: Download Build Artifacts (Windows SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR Experimental
+          path: build_windows_steamvr_experimental
+
+      - name: Download Build Artifacts (Linux SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR
+          path: build_linux_steamvr
+
+      - name: Download Build Artifacts (Linux SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR Experimental
+          path: build_linux_steamvr_experimental
+
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+
+      - name: Download Build Artifacts (Oculus Quest Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest Experimental
+          path: build_oculus_quest_experimental
+
+      - name: Package Artifacts for release
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
+          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
+          cd releases
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
+      - name: Publish Windows
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
+      - name: Publish Windows Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
+      - name: Publish Linux
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Linux_${{ needs.configuration.outputs.version }}
+      - name: Publish Linux Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Linux_Experimental_${{ needs.configuration.outputs.version }}
+      - name: Publish Quest
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Quest Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus:
     name: Publish Oculus Release

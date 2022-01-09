@@ -783,7 +783,9 @@ namespace TiltBrush
                 case SketchCommands.SwapControls:
                     return HasSwapGestureCompleted();
                 case SketchCommands.AltActivate:
-                    return GetMouseButtonDown(1);
+                    return GetMouseButtonDown(1) || Wand.GetCommandDown(rCommand);
+                case SketchCommands.ShowPinCushion:
+                    return Brush.GetCommandDown(rCommand);
             }
 
             return false;

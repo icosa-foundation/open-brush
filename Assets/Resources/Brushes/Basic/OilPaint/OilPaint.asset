@@ -18,6 +18,8 @@ MonoBehaviour:
   m_CreationVersion: 15.0
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 486c6801b0558714fa4a188e0747d682, type: 3}
+  m_Tags:
+  - default
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 11400000, guid: c1105f80e6e305d42a2368476c5e8948, type: 2}
   m_LooksIdentical: 1

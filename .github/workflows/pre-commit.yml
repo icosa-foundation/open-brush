@@ -13,14 +13,5 @@ jobs:
       - uses: actions/setup-python@v2
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '3.1.x'
-      - name: "HACK: manually install dotnet-format into pre-commit's cache"
-        run: |
-          pip install pre-commit
-          set +e
-          pre-commit run dotnet-format # This will fail, so ignore it, but we need it to create the "random" directory for the dotnet-format
-          set -e
-          PRE_COMMIT_PATH="$(echo 'SELECT path FROM repos WHERE repo == "https://github.com/dotnet/format";' | sqlite3 ~/.cache/pre-commit/db.db)/dotnetenv-default/bin"
-          dotnet tool install dotnet-format --tool-path $PRE_COMMIT_PATH --version 5.1.225507
-          echo '{"additional_dependencies": []}' > $PRE_COMMIT_PATH/../.install_state_v1
+          dotnet-version: '6.0.100'
       - uses: pre-commit/action@v2.0.0

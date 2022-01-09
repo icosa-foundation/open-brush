@@ -596,9 +596,8 @@ namespace TiltBrush
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
             Debug.LogFormat("Loading {0} {1}", fileInfo.HumanName, fileInfo.FullPath);
-            m_LastSceneFile = fileInfo;
             m_LastThumbnailBytes = null;
-            if (!m_LastSceneFile.IsHeaderValid())
+            if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load: {0}", fileInfo.HumanName);
@@ -606,7 +605,7 @@ namespace TiltBrush
             }
 
             m_LastSceneIsLegacy = false;
-            Stream metadata = GetMetadataReadStream(m_LastSceneFile);
+            Stream metadata = GetMetadataReadStream(fileInfo);
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
@@ -639,52 +638,57 @@ namespace TiltBrush
                     }
                 }
 
-                var environment = EnvironmentCatalog.m_Instance
-                    .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
-                if (environment != null)
+                if (!bAdditive)
                 {
-                    SceneSettings.m_Instance.RecordSkyColorsForFading();
-                    if (jsonData.Environment != null)
+                    var environment = EnvironmentCatalog.m_Instance
+                        .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
+                    if (environment != null)
                     {
-                        SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
+                        SceneSettings.m_Instance.RecordSkyColorsForFading();
+                        if (jsonData.Environment != null)
+                        {
+                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
+                        }
+                        SceneSettings.m_Instance.SetDesiredPreset(
+                            environment, forceTransition: true,
+                            keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
+                        );
                     }
-                    SceneSettings.m_Instance.SetDesiredPreset(
-                        environment, forceTransition: true,
-                        keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                    );
-                }
-                else
-                {
-                    Debug.LogWarningFormat("Unknown environment preset {0}",
-                        jsonData.EnvironmentPreset);
-                }
-
-                App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
-                    jsonData.SceneTransformInRoomSpace);
-                App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
-                Coords.CanvasLocalPose = TrTransform.identity;
-                if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                {
-                    Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
+                    else
+                    {
+                        Debug.LogWarningFormat("Unknown environment preset {0}",
+                            jsonData.EnvironmentPreset);
+                    }
+                    App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
+                        jsonData.SceneTransformInRoomSpace);
+                    App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                    Coords.CanvasLocalPose = TrTransform.identity;
+                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
+                    {
+                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    if (Config.IsExperimental)
-                    {
-                        Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                    }
+                        if (Config.IsExperimental)
+                        {
+                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
+                        }
 #endif
+                    }
+                    LastThumbnail_SS = App.Scene.Pose.inverse *
+                        jsonData.ThumbnailCameraTransformInRoomSpace;
+
                 }
-                LastThumbnail_SS = App.Scene.Pose.inverse *
-                    jsonData.ThumbnailCameraTransformInRoomSpace;
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
 
+                var oldGroupToNewGroup = new Dictionary<int, int>();
+
                 // Load sketch
-                using (var stream = m_LastSceneFile.GetReadStream(TiltFile.FN_SKETCH))
+                using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -696,58 +700,72 @@ namespace TiltBrush
                     }
                 }
 
-                ModelCatalog.m_Instance.ClearMissingModels();
-                SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
 
-                if (jsonData.ModelIndex != null)
-                {
-                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                }
+                // It's proving to be rather complex to merge widgets/models etc. 
+                // For now skip all that when loading additively with the if (!bAdditive) below
+                // This should cover the majority of use cases.
 
-                if (jsonData.GuideIndex != null)
+                // (For when we do support merging widgets:)
+                // It's much simpler to change the group ids in the JSON
+                // before we pass it to WidgetManager
+                //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
+
+                if (!bAdditive)
                 {
-                    foreach (Guides guides in jsonData.GuideIndex)
+                    ModelCatalog.m_Instance.ClearMissingModels();
+                    SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+
+                    if (jsonData.ModelIndex != null)
                     {
-                        StencilWidget.FromGuideIndex(guides);
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                     }
-                }
-                if (jsonData.Lights != null)
-                {
-                    LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
-                }
-                // Pass even if null; null is treated as empty
-                CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
-                // Images are not stored on Poly either.
-                if (!(fileInfo is PolySceneFileInfo))
-                {
-                    if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+
+                    if (jsonData.GuideIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                        foreach (Guides guides in jsonData.GuideIndex)
+                        {
+                            StencilWidget.FromGuideIndex(guides);
+                        }
                     }
-                    if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                    if (jsonData.Lights != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                        LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
                     }
-                }
-                if (jsonData.Mirror != null)
-                {
-                    PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
-                }
-                if (jsonData.CameraPaths != null)
-                {
-                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
-                }
-                if (m_LastSceneFile is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
-                {
-                    gdInfo.SourceId = jsonData.SourceId;
-                }
-                if (WidgetManager.m_Instance.CreatingMediaWidgets)
-                {
-                    StartCoroutine(
-                        OverlayManager.m_Instance.RunInCompositor(
-                            OverlayType.LoadMedia,
-                            WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
-                            0.5f));
+                    // Pass even if null; null is treated as empty
+                    CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
+                    // Images are not stored on Poly either.
+                    if (!(fileInfo is PolySceneFileInfo))
+                    {
+                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                        }
+                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                        {
+                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                        }
+                    }
+                    if (jsonData.Mirror != null)
+                    {
+                        PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
+                    }
+                    if (jsonData.CameraPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                    }
+                    if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                    {
+                        gdInfo.SourceId = jsonData.SourceId;
+                    }
+                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
+                    {
+                        StartCoroutine(
+                            OverlayManager.m_Instance.RunInCompositor(
+                                OverlayType.LoadMedia,
+                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
+                                0.5f));
+                    }
+                    m_LastSceneFile = fileInfo;
                 }
             }
 

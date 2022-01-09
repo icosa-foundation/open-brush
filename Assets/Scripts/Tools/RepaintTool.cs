@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -19,14 +20,17 @@ namespace TiltBrush
 
     public class RepaintTool : StrokeModificationTool
     {
-        [SerializeField] private bool m_Recolor;
-        [SerializeField] private bool m_Rebrush;
         public float m_SpinSpeedAcceleration;
         public float m_MaxSpinSpeed;
         public float m_SpinSpeedDecay;
         private float m_SpinSpeedVel;
         private float m_SpinSpeed;
         private float m_SpinAmount;
+
+        [NonSerialized] public bool RecolorOn = true;
+        [NonSerialized] public bool RebrushOn = false;
+        [NonSerialized] public bool ResizeOn = false;
+        [NonSerialized] public bool JitterOn = false;
 
         override protected void Awake()
         {
@@ -105,6 +109,7 @@ namespace TiltBrush
                 float speedDelta = m_SpinSpeedDecay * Time.deltaTime;
                 m_SpinSpeed = Mathf.Sign(m_SpinSpeed) * Mathf.Max(Mathf.Abs(m_SpinSpeed) - speedDelta, 0.0f);
                 m_SpinSpeedVel = 0.0f;
+                m_BatchFilter = null;
             }
             m_SpinAmount += m_SpinSpeed * Time.deltaTime;
         }
@@ -130,8 +135,18 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
+            if (altSelect)
+            {
+                if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
+                    m_BatchFilter = rGroup.m_ParentBatch;
+
+                if (!ReferenceEquals(m_BatchFilter, rGroup.m_ParentBatch))
+                    return true;
+            }
+            else
+                m_BatchFilter = null;
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGroup.m_Stroke, m_Recolor, m_Rebrush);
+                rGroup.m_Stroke, RecolorOn, RebrushOn, ResizeOn, JitterOn);
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
         }
@@ -139,7 +154,7 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject)
         {
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGameObject, m_Recolor, m_Rebrush);
+                rGameObject, RecolorOn, RebrushOn, ResizeOn, JitterOn);
             PlayModifyStrokeSound();
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
