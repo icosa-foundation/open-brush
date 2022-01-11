@@ -239,21 +239,82 @@ namespace TiltBrush
                 }
                 m_CatalogChanged = true;
             }
+
+        public Brush[] GetTagFilteredBrushList()
+        {
+            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
+            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+
+            Dictionary<string, string[]> test = App.UserConfig.Brushes.AddTagsToBrushes;
+
+            if (includeTags == null)
+            {
+                Debug.LogError("There will be no brushes because there are no 'include' tags.");
+            }
+
+            // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
+            Brush[] filteredList = m_GuiBrushList.Where((brush) =>
+            {
+                // Is this brush excluded?
+                bool? excluded = excludeTags?.Intersect(brush.m_Tags).Any();
+                if (excluded == true || includeTags == null)
+                {
+                    return false;
+                }
+
+                // Is this brush included?
+                return includeTags.Intersect(brush.m_Tags).Any();
+            }).ToArray();
+
+            return filteredList;
+        }
+
             if (m_CatalogChanged)
             {
                 m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
                 m_CatalogChanged = false;
                 Resources.UnloadUnusedAssets();
-                if (BrushCatalogChanged != null)
+                ModifyBrushTags();
+                BrushCatalogChanged?.Invoke();
+            }
+        }
+        private void ModifyBrushTags()
+        {
+            Dictionary<string, string[]> tagsToAddMap = App.UserConfig.Brushes.AddTagsToBrushes;
+            Dictionary<string, string[]> tagsToRemoveMap = App.UserConfig.Brushes.RemoveTagsFromBrushes;
+
+            // Add tags
+            foreach (KeyValuePair<string, string[]> brushTagsPair in tagsToAddMap)
+            {
+                Brush brush = _FindBrushByDescription(brushTagsPair.Key);
+                if (brush)
                 {
-                    BrushCatalogChanged();
+                    string[] tagsToAdd = brushTagsPair.Value;
+                    brush.m_Tags.AddRange(tagsToAdd);
+                    brush.m_Tags = brush.m_Tags.Distinct().ToList();
                 }
-                StartCoroutine(
-                    OverlayManager.m_Instance.RunInCompositorWithProgress(
-                        OverlayType.LoadGeneric,
-                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes, true),
+                {
+                    Debug.LogError($"Could not find brush ({brushTagsPair.Key}) to add tags to");
+                }
+            }
+
+            // Remove tags
+                Brush brush = _FindBrushByDescription(brushTagsPair.Key);
+                if (brush)
+                {
+                    string[] tagsToRemove = brushTagsPair.Value;
+                    brush.m_Tags = brush.m_Tags.Except(tagsToRemove).ToList();
+                }
+                else
+                {
+                    Debug.LogError($"Could not find brush ({brushTagsPair.Key}) to remove tags from");
+                }
+            }
+
                         0.25f)
-                );
+                string searchString = brushDescription.Trim();
+                StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
+                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.m_Description.Equals(searchString, comparison));
             }
             m_ChangedBrushes.Clear();
 

@@ -96,7 +96,9 @@ namespace TiltBrush
                 binary: false,
                 doExtras: true,
                 gltfVersion: 1,
-                includeLocalMediaContent: false);
+                includeLocalMediaContent: false,
+                selfContained: true
+            );
         }
 
         [MenuItem("Tilt/glTF/Export Brush Strokes to glb v1", false, 3)]
@@ -108,7 +110,9 @@ namespace TiltBrush
                 binary: true,
                 doExtras: false,
                 gltfVersion: 1,
-                includeLocalMediaContent: true);
+                includeLocalMediaContent: true,
+                selfContained: true
+            );
         }
 
         [MenuItem("Tilt/glTF/Export Brush Strokes to glTF v1", true)]

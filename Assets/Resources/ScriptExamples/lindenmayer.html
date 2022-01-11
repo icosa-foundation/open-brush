@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".025"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br><br>
+
+
+<label>Presets:<select id="presets" onchange="lsysPreset(this);"></select></label><br>
+<label>Axiom: <input id="axiom" value="F++F++F"></label><br>
+<label>Angle: <input id="angle" value="60"></label><br>
+<label>Iterations: <input id="iterations" value="2"></label><br>
+<label>Scale: <input id="scale" value="1"></label><br><br>
+<!--<label>Branch Scale: <input id="branchScale" value="1.3"></label> (Only used by the &lt; and &gt; rules)<br><br>-->
+
+
+<label>Rules: <textarea cols="40" rows="3" id="rules">F -> F-F++F-F</textarea></label><br><br>
+<button id="runButton" onclick="Run();">Run</button>
+<br><br>
+<button onclick="sendCommands([['strokes.join', `0, ${-strokeCount}`]]);">Join last set of strokes</button>
+<button onclick="sendCommands([['new'], ['brush.home']]);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script src='https://nylki.github.io/lindenmayer/examples/lindenmayer.js'></script>
+<script>
+
+    function populateSelect(id, items, selected) {
+        var select = document.getElementById(id);
+        for (var item of items) {
+            var option = document.createElement("option");
+            option.text = item;
+            option.name = item;
+            if (option.name.toLowerCase()===selected.toLowerCase()) {option.selected = true}
+            select.add(option);
+        }
+    }
+
+    var brushes = {{brushesJson}};
+
+    var presets = {
+        'tree': {
+            axiom: 'BBBBBA',
+            rules: [
+                'A -> [++BFBF[--CF][++CF][&&CF][^^CF]AF]/////+BFBFBF[--CF][++CF][&&CF][^^CF]AF',
+                'B -> \\BF',
+                'B -> BF',
+                'C -> X',
+            ],
+            angle: 18,
+            iterations: 4,
+        },
+        'snowflake': {
+            axiom: 'F++F++F',
+            rules: [
+                'F -> F-F++F-F',
+            ],
+            angle: 60,
+            iterations: 2,
+        },
+    };
+
+    populateSelect('brush.type',  brushes, "Icing");
+    populateSelect('presets', Object.keys(presets), "Snowflake");
+
+    var strokeCount = 0;
+
+    function sendCommand(cmd, param) {
+        sendCommands([[cmd, param]]);
+    }
+
+
+    function lsysPreset(el)
+    {
+        var preset = presets[el.value.toLowerCase()];
+        document.getElementById('axiom').value = preset.axiom;
+        document.getElementById('rules').value = preset.rules.join('\n');
+        document.getElementById('angle').value = preset.angle;
+        document.getElementById('iterations').value = preset.iterations;
+    }
+
+    function sendCommands(commands) {
+        var xhr = new XMLHttpRequest();
+        var url = '/api/v1';
+        xhr.open('POST', url);
+        xhr.onload = () => log('<' + xhr.responseText + '>');
+        var commandData = [];
+        for (var command of commands) {
+            var cmd = command[0];
+            if (cmd==="brush.draw") strokeCount++;
+            var param = command[1]===undefined ? '' : command[1];
+            var pair = `${cmd}=${param}`;
+            commandData.push(pair)
+            log(pair);
+        }
+        xhr.send(commandData.join("&"));
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+    function Run() {
+
+        strokeCount = 0;
+
+        var brushColor = document.getElementById("brush.color").value;
+        var brushType = document.getElementById("brush.type").value;
+        var brushSize = parseFloat(document.getElementById('brush.size').value);
+
+        sendCommands([
+            ['color.set.html', brushColor],
+            ['brush.size.set', brushSize],
+            ['brush.type', brushType],
+            ['brush.turn.x', '90'],
+        ]);
+
+        commands = [];
+
+        var scale = parseFloat(document.getElementById("scale").value);
+        //var branchScale = parseFloat(document.getElementById("branchScale").value);
+        var angle = parseFloat(document.getElementById("angle").value);
+        var iterations = parseInt(document.getElementById("iterations").value);
+        var axiom = document.getElementById('axiom').value;
+
+        var rules = {};
+        var lines = document.getElementById("rules").value.split("\n");
+
+        for (let line of lines) {
+            var parts = line.split("->");
+            rules[parts[0].trim()] = parts[1].trim();
+        }
+
+        var tree = new LSystem({
+
+            axiom: axiom,
+            productions: rules,
+
+            finals: {
+                'F': () => sendCommand('brush.draw', scale / (tree.iterations + 1)),
+                'f': () => sendCommand('brush.move', scale / (tree.iterations + 1)),
+                '+': () => sendCommand('brush.turn.y', angle),
+                '-': () => sendCommand('brush.turn.y', -angle),
+                '/': () => sendCommand('brush.turn.z', angle),
+                '\\': () => sendCommand('brush.turn.z', -angle),
+                '^': () => sendCommand('brush.turn.x', angle),
+                '&': () => sendCommand('brush.turn.x', -angle),
+                '[': () => sendCommand('brush.transform.push'),
+                ']': () => sendCommand('brush.transform.pop'),
+                '|': () => sendCommand('brush.turn.y=180'),
+                '#': () => sendCommand('brush.size.add', brushSize/10),
+                '!': () => sendCommand('brush.size.add', -(brushSize/10)),
+                'T': () => sendCommand('draw.polygon', `${3},${scale / (tree.iterations + 1)},0`),
+                'S': () => sendCommand('draw.polygon', `${4},${scale / (tree.iterations + 1)},0`),
+                'P': () => sendCommand('draw.polygon', `${5},${scale / (tree.iterations + 1)},0`),
+                'H': () => sendCommand('draw.polygon', `${6},${scale / (tree.iterations + 1)},0`),
+                '.': () => angle=-angle,
+                //'>': () => scale *= branchScale,
+                //'<': () => scale /= branchScale,
+
+            },
+            finalsOB: {
+                'F': () => {
+                    sendCommand('new');
+                    sendCommand('brush.home');
+                    sendCommand('brush.draw', scale / (tree.iterations + 1));
+                    sendCommand('brush.draw', scale / (tree.iterations + 1));
+                },
+                '+': () => sendCommand(`brush.turn.y=${angle}`),
+                '-': () => sendCommand(`brush.turn.y=${-angle}`)
+            }
+        });
+
+        tree.iterate(iterations);
+        tree.final();
+
+    }
+
+
+</script>
+</body>
+</html>

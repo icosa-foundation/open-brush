@@ -75,6 +75,7 @@ from unitybuild.vcs import create as vcs_create
 
 VENDOR_NAME = "Icosa"
 EXE_BASE_NAME = "OpenBrush"
+is_linux = sys.platform.startswith("linux")
 
 # ----------------------------------------------------------------------
 # Build logic
@@ -250,6 +251,13 @@ def iter_editors_and_versions():  # pylint: disable=too-many-branches
         for editor_dir in app_list:
             exe = os.path.join(editor_dir, "Contents/MacOS/Unity")
             editor_data_dir = os.path.join(editor_dir, "Contents")
+            if os.path.exists(editor_dir):
+                yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
+    elif sys.platform.startswith("linux"):
+        app_list = [os.path.expanduser("~/Unity/Hub/Editor/2019.*")]
+        for editor_dir in app_list:
+            exe = os.path.join(editor_dir, "Editor/Unity")
+            editor_data_dir = os.path.join(editor_dir, "Editor")
             if os.path.exists(editor_dir):
                 yield (exe, get_editor_unity_version(editor_dir, editor_data_dir))
 
@@ -535,7 +543,9 @@ def build(
     exe_name = os.path.join(output_dir, get_exe_name(platform, exe_base_name))
     cmd_env = os.environ.copy()
     cmdline = [
-        get_unity_exe(get_project_unity_version(project_dir), lenient=is_jenkins),
+        get_unity_exe(
+            get_project_unity_version(project_dir), lenient=is_jenkins or is_linux
+        ),
         "-logFile",
         logfile,
         "-batchmode",
@@ -743,7 +753,7 @@ def parse_args(args):
         "--platform",
         action="append",
         dest="platforms",
-        choices=["OSX", "Windows", "Android", "iOS"],
+        choices=["OSX", "Windows", "Android", "iOS", "Linux"],
         help="Can pass multiple times; defaults to Windows",
     )
     parser.add_argument(
@@ -890,7 +900,7 @@ def maybe_prompt_and_set_version_code(project_dir):
 def sanity_check_build(build_dir):
     # We've had issues with Unity dying(?) or exiting(?) before emitting an exe
     exes = []
-    for pat in ("*.app", "*.exe", "*.apk"):
+    for pat in ("*.app", "*.exe", "*.apk", "OpenBrush"):
         exes.extend(glob.glob(os.path.join(build_dir, pat)))
     if len(exes) == 0:
         raise BuildFailed("Cannot find any executables in %s" % build_dir)

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ControllerName = TiltBrush.InputManager.ControllerName;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -151,6 +152,10 @@ namespace TiltBrush
         private SymmetryMode m_CurrentSymmetryMode;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
+        private Color m_lastChosenColor { get; set; }
+        public Vector3 colorJitter { get; set; }
+        public float sizeJitter { get; set; }
+        public float positionJitter { get; set; }
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -177,15 +182,23 @@ namespace TiltBrush
             get { return m_MainPointerData.m_Script; }
         }
 
+        /// Only call this if you don't want to update m_lastChosenColor
+        /// Used by color jitter on new stroke
+        private void ChangeAllPointerColorsDirectly(Color value)
+        {
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                m_Pointers[i].m_Script.SetColor(value);
+            }
+        }
+
         public Color PointerColor
         {
             get { return m_MainPointerData.m_Script.GetCurrentColor(); }
             set
             {
-                for (int i = 0; i < m_NumActivePointers; ++i)
-                {
-                    m_Pointers[i].m_Script.SetColor(value);
-                }
+                ChangeAllPointerColorsDirectly(value);
+                m_lastChosenColor = value;
                 OnPointerColorChange();
             }
         }
@@ -269,6 +282,7 @@ namespace TiltBrush
                 PlayerPrefs.SetFloat(PLAYER_PREFS_POINTER_ANGLE, m_FreePaintPointerAngle);
             }
         }
+        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
         static public void ClearPlayerPrefs()
         {
@@ -311,6 +325,18 @@ namespace TiltBrush
         public bool IsMainPointerProcessingLine()
         {
             return m_CurrentLineCreationState == LineCreationState.ProcessingStraightEdge;
+        }
+
+        public static bool MainPointerIsPainting()
+        {
+            if (
+                m_Instance.IsMainPointerProcessingLine()
+                || m_Instance.IsMainPointerCreatingStroke()
+                || m_Instance.IsLineEnabled()
+            )
+                return true;
+
+            return false;
         }
 
         public void SetInPlaybackMode(bool bInPlaybackMode)
@@ -997,6 +1023,21 @@ namespace TiltBrush
 
         private void Transition_WaitingForInput_RecordingInput()
         {
+            // Can't check for null as Color is a struct
+            // But it's harmless to call this if the color really has been set to black
+            if (m_lastChosenColor == Color.black)
+            {
+                m_lastChosenColor = PointerColor;
+            }
+
+            if (JitterEnabled)
+            {
+                // Bypass the code in the PointerColor setter
+                // Size is jittered in PointerScript. Should we also do color there?
+                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
+            }
+
+
             if (m_StraightEdgeEnabled)
             {
                 StraightEdgeGuide.SetTempShape(StraightEdgeGuideScript.Shape.Line);
@@ -1009,6 +1050,33 @@ namespace TiltBrush
             InitiateLine();
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
+        }
+        public Color GenerateJitteredColor(float colorLuminanceMin)
+        {
+            Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
+            return ColorPickerUtils.ClampLuminance(
+                Random.ColorHSV(
+                    h - colorJitter.x, h + colorJitter.x,
+                    s - colorJitter.y, s + colorJitter.y,
+                    v - colorJitter.z, v + colorJitter.z
+                ),
+                colorLuminanceMin
+            );
+        }
+
+        public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
+        {
+            float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
+            float sizeJitter = PointerManager.m_Instance.sizeJitter;
+            float jitterValue = Random.Range(-sizeJitter * range, sizeJitter * range) * 0.5f;
+            float jitteredBrushSize = currentSize + jitterValue;
+            jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
+            return jitteredBrushSize;
+        }
+
+        public Vector3 GenerateJitteredPosition(Vector3 currentPos, float jitterAmount)
+        {
+            return currentPos + (Random.insideUnitSphere * jitterAmount);
         }
 
         private void Transition_RecordingInput_ProcessingStraightEdge(List<ControlPoint> cps)

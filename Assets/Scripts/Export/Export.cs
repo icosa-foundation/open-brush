@@ -121,6 +121,9 @@ URL=" + kExportDocumentationUrl;
 #if USD_SUPPORTED
             if (App.PlatformConfig.EnableExportUsd) { progress.SetWork("usd"); }
 #endif
+#if LATK_SUPPORTED
+            if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
+#endif
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
@@ -167,6 +170,16 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("usd");
 #endif
 
+#if LATK_SUPPORTED
+            if (App.PlatformConfig.EnableExportLatk &&
+                (filename = MakeExportPath(parent, basename, "latk")) != null)
+                using (var unused = new AutoTimer("latk export"))
+                {
+                    ExportLatk.Export(filename);
+                }
+            progress.CompleteWork("latk");
+#endif
+
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
@@ -210,7 +223,9 @@ URL=" + kExportDocumentationUrl;
                         exporter.ExportBrushStrokes(
                             filename, AxisConvention.kGltf2, binary: true, doExtras: false,
                             includeLocalMediaContent: true,
-                            gltfVersion: gltfVersion);
+                            gltfVersion: gltfVersion,
+                            selfContained: true
+                        );
                         progress.CompleteWork("glb");
                     }
                 }

@@ -206,6 +206,16 @@ namespace TiltBrush
             get { return LayerMask.GetMask(m_StencilLayerName); }
         }
 
+        public float StencilAttractDist
+        {
+            get => m_StencilAttractDist;
+            set
+            {
+                m_StencilAttractDist = value;
+                App.Switchboard.TriggerStencilAttractDistChanged();
+            }
+        }
+
         public List<GrabWidgetData> WidgetsNearBrush
         {
             get { return m_WidgetsNearBrush; }
@@ -857,7 +867,7 @@ namespace TiltBrush
                     Collider collider = stencil.m_WidgetScript.GrabCollider;
                     float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
                     if (centerDist >
-                        (m_StencilAttractDist * m_StencilAttractDist + collider.bounds.extents.sqrMagnitude))
+                        (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
                     {
                         continue;
                     }
@@ -867,7 +877,7 @@ namespace TiltBrush
 
                     // Find out how far we are from this point and save it as a score.
                     float distToSurfactPoint = (m_StencilContactInfos[sIndex].pos - samplePos).magnitude;
-                    float score = 1.0f - (distToSurfactPoint / m_StencilAttractDist);
+                    float score = 1.0f - (distToSurfactPoint / StencilAttractDist);
                     if (score > fBestScore)
                     {
                         iPrimaryIndex = sIndex;

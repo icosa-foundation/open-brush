@@ -128,6 +128,12 @@ namespace TiltBrush
             RefreshRenderers();
         }
 
+        public void ShowInstantly(bool bShow)
+        {
+            gameObject.SetActive(bShow);
+            m_CurrentState = bShow ? State.Showing : State.Hiding;
+        }
+
         override protected void OnShow()
         {
             base.OnShow();

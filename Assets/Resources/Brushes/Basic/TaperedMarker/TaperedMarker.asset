@@ -18,6 +18,9 @@ MonoBehaviour:
   m_CreationVersion: 0.0
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 486c6801b0558714fa4a188e0747d682, type: 3}
+  m_Tags:
+  - whiteboard
+  - default
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 11400000, guid: e617036dc63ede649a1c716ac255dd88, type: 2}
   m_LooksIdentical: 0

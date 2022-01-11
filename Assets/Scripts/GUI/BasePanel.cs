@@ -104,7 +104,9 @@ namespace TiltBrush
             ReferenceMobile,
             CameraPath,
             BrushLab,
-            EditBrush = 9000
+            Scripts = 6000,
+            EditBrush = 9000,
+            StencilSettings = 20200
         }
 
         private enum FixedTransitionState
@@ -692,7 +694,7 @@ namespace TiltBrush
 
         public void InvalidateIfActivePopup(PopUpWindow activePopup)
         {
-            // If this popup isn't the active one, don't bother. 
+            // If this popup isn't the active one, don't bother.
             if (activePopup == m_ActivePopUp)
             {
                 m_ActivePopUp = null;

@@ -409,7 +409,7 @@ public class GltfMaterialConverter {
   private static IEnumerable ConvertTextureCoroutine(
       GltfTextureBase gltfTexture, IUriLoader loader) {
     if (gltfTexture.unityTexture != null) {
-      throw new InvalidOperationException("Already converted");
+      Debug.LogWarning($"Texture already converted: {gltfTexture.unityTexture.name}");
     }
 
     if (gltfTexture.SourcePtr == null) {

@@ -253,7 +253,7 @@ namespace TiltBrush
         }
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
-        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, out bool isLegacy)
+        public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -280,6 +280,7 @@ namespace TiltBrush
             }
 #endif
 
+            oldGroupToNewGroup = new Dictionary<int, int>();
             var strokes = GetStrokes(bufferedStream, brushList, allowFastPath);
             if (strokes == null) { return false; }
 
@@ -307,6 +308,7 @@ namespace TiltBrush
 
             // stopwatch.Stop();
             // Debug.LogFormat("Reading took {0}", stopwatch.Elapsed);
+            GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
             return true;
         }
 

@@ -1,0 +1,115 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta charset="UTF-8"></head>
+<body>
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".025"></label><br>
+<label>Brush color: <input id="brush.color" value="LightBlue"></label><br>
+
+<label>Iterations: <input id="iterations" value="0"></label>
+<button id = "runButton">Run</button>
+<br><br>
+<button onclick="sendCommands(['new']);">Clear Current Scene</button>
+
+<p><em>Thanks to <a href="https://twitter.com/Shoseki/">Shoseki</a> for the script</em></p>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        menu.add(option);
+    }
+
+    var run = function() {
+
+        sendCommands([
+            'color.set.html=' + document.getElementById("brush.color").value,
+            'brush.size.set=' + document.getElementById("brush.size").value,
+            'brush.type=' + document.getElementById("brush.type").value
+        ]);
+
+        var iterations = parseInt(document.getElementById('iterations').value);
+
+        // Original
+        var commands = [
+            generateCommand('brush.draw', 10.0),
+            generateCommand('brush.turn.y', -120),
+            generateCommand('brush.draw', 10.0),
+            generateCommand('brush.turn.y', -120),
+            generateCommand('brush.draw', 10.0)
+        ];
+
+        for (var iterationCounter = 0; iterationCounter < iterations; iterationCounter ++) {
+            commands = applyTransformation(commands);
+        }
+
+        var commandStrings = generateStringCommands(commands);
+
+        sendCommands(commandStrings);
+    };
+
+    var applyTransformation = function(commands) { 
+
+        var newCommands = [];
+        for (var commandsCounter = 0; commandsCounter < commands.length; commandsCounter ++) {
+            var command = commands[commandsCounter];
+            if (command.command == 'brush.draw') {
+                // Replace
+                var tempCommands = generateTransformationCommands(command.parameter);
+                for (var tempCommandsCounter = 0; tempCommandsCounter < tempCommands.length; tempCommandsCounter ++) {
+                    newCommands.push(tempCommands[tempCommandsCounter]);    
+                }
+            }
+            else {
+                newCommands.push(command);
+            }
+        }
+
+        return newCommands;
+    };
+
+    // d(l) => d(l/3), tl(30), d(1/3), tr(90), d(1/3), tl(30), d(1/3)
+    var generateTransformationCommands = function(length) {
+        return [
+            generateCommand('brush.draw', length/3),
+            generateCommand('brush.turn.y', 60),
+            generateCommand('brush.draw', length/3),
+            generateCommand('brush.turn.y', -120),
+            generateCommand('brush.draw', length/3),
+            generateCommand('brush.turn.y', 60),
+            generateCommand('brush.draw', length/3)
+        ];
+    };
+
+    var generateCommand = function(commandString, parameter) {
+        return {
+          'command' : commandString,
+          'parameter' : parameter
+        };
+    };
+
+    var generateStringCommands = function(commands) {
+        var commandStrings = [];
+        for (var i = 0; i < commands.length; i++) {
+            commandStrings.push([commands[i].command, commands[i].parameter].join('='));
+        }
+        return commandStrings;
+    }
+
+    var sendCommands = function(commandStrings) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commandStrings.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    };
+
+    var button = document.getElementById('runButton');
+    button.onclick = run;
+</script>
+
+
+</body></html>
