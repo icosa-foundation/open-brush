@@ -700,8 +700,7 @@ namespace TiltBrush
                                            ? new Guid[0]
                                            : jsonData.FallbackBrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch);
-                        out legacySketch);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {

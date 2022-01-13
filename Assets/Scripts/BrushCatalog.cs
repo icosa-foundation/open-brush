@@ -63,6 +63,9 @@ namespace TiltBrush
 
         [SerializeField] private Brush m_DefaultBrush;
         private bool m_CatalogChanged;
+        private bool m_IsLoading;
+        private Dictionary<Guid, Brush> m_GuidToBrush;
+        private HashSet<Brush> m_AllBrushes;
         private List<Brush> m_GuiBrushList;
 
         private Dictionary<Guid, Brush> m_BuiltinBrushes;
@@ -133,7 +136,10 @@ namespace TiltBrush
             m_BuiltinBrushes = new Dictionary<Guid, Brush>();
             m_LibraryBrushes = new Dictionary<Guid, Brush>();
             m_SceneBrushes = new Dictionary<Guid, Brush>();
+            m_GuidToBrush = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
+            m_AllBrushes = new HashSet<Brush>();
+            m_GuiBrushList = new List<Brush>();
             m_ChangedBrushes = new List<string>();
 
             // Move blocks materials in to a dictionary for quick lookup.
@@ -183,15 +189,27 @@ namespace TiltBrush
 
             // Recreate m_GuidToBrush
             {
-                var builtinBrushes = LoadBrushesInManifest();
-                builtinBrushes.Add(DefaultBrush);
-                m_BuiltinBrushes = KeepOrderDistinct(builtinBrushes).ToDictionary<Brush, Guid>(x => x.m_Guid);
+                var manifestBrushes = LoadBrushesInManifest();
+                manifestBrushes.Add(DefaultBrush);
+                m_BuiltinBrushes = KeepOrderDistinct(manifestBrushes).ToDictionary<Brush, Guid>(x => x.m_Guid);
                 LoadUserLibraryBrushes();
 
+                m_GuidToBrush.Clear();
+                m_AllBrushes = null;
+                foreach (var brush in manifestBrushes)
+                {
+                    Brush tmp;
+                    if (m_GuidToBrush.TryGetValue(brush.m_Guid, out tmp) && tmp != brush)
+                    {
+                        Debug.LogErrorFormat("Guid collision: {0}, {1}", tmp, brush);
+                        continue;
+                    }
+                    m_GuidToBrush[brush.m_Guid] = brush;
+                }
                 // Add reverse links to the brushes
                 // Auto-add brushes as compat brushes
-                foreach (var brush in builtinBrushes) { brush.m_SupersededBy = null; }
-                foreach (var brush in builtinBrushes)
+                foreach (var brush in manifestBrushes) { brush.m_SupersededBy = null; }
+                foreach (var brush in manifestBrushes)
                 {
                     var older = brush.m_Supersedes;
                     if (older == null) { continue; }
@@ -217,28 +235,21 @@ namespace TiltBrush
                         older.m_SupersededBy = brush;
                     }
                 }
+
+                m_AllBrushes = new HashSet<Brush>(m_GuidToBrush.Values);
             }
 
             // Postprocess: put brushes into parse-friendly list
-            m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
-        }
 
-        void Update()
-        {
-            HandleChangedBrushes();
-        }
-        
-        public void HandleChangedBrushes()
-        {
-            if (m_ChangedBrushes.Count > 0)
+            foreach (var brush in m_GuidToBrush.Values)
             {
-                for (var i = 0; i < m_ChangedBrushes.Count; i++)
+                if (brush.m_HiddenInGui)
                 {
-                    var path = m_ChangedBrushes[i];
-                    LoadUserLibraryBrush(path);
+                    continue;
                 }
-                m_CatalogChanged = true;
+                m_GuiBrushList.Add(brush);
             }
+        }
 
         public Brush[] GetTagFilteredBrushList()
         {
@@ -269,15 +280,12 @@ namespace TiltBrush
             return filteredList;
         }
 
-            if (m_CatalogChanged)
-            {
-                m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
-                m_CatalogChanged = false;
-                Resources.UnloadUnusedAssets();
-                ModifyBrushTags();
-                BrushCatalogChanged?.Invoke();
-            }
+        void Update()
+        {
+            HandleChangedBrushes();
+            ModifyBrushTags();
         }
+        
         private void ModifyBrushTags()
         {
             Dictionary<string, string[]> tagsToAddMap = App.UserConfig.Brushes.AddTagsToBrushes;
@@ -293,12 +301,15 @@ namespace TiltBrush
                     brush.m_Tags.AddRange(tagsToAdd);
                     brush.m_Tags = brush.m_Tags.Distinct().ToList();
                 }
+                else
                 {
                     Debug.LogError($"Could not find brush ({brushTagsPair.Key}) to add tags to");
                 }
             }
 
             // Remove tags
+            foreach (KeyValuePair<string, string[]> brushTagsPair in tagsToRemoveMap)
+            {
                 Brush brush = _FindBrushByDescription(brushTagsPair.Key);
                 if (brush)
                 {
@@ -311,10 +322,40 @@ namespace TiltBrush
                 }
             }
 
-                        0.25f)
+            Brush _FindBrushByDescription(string brushDescription)
+            {
                 string searchString = brushDescription.Trim();
                 StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
                 return m_AllBrushes.FirstOrDefault(descriptor => descriptor.m_Description.Equals(searchString, comparison));
+            }
+	}
+	    
+        public void HandleChangedBrushes()
+        {
+            if (m_ChangedBrushes.Count > 0)
+            {
+                for (var i = 0; i < m_ChangedBrushes.Count; i++)
+                {
+                    var path = m_ChangedBrushes[i];
+                    LoadUserLibraryBrush(path);
+                }
+                m_CatalogChanged = true;
+            }
+            if (m_CatalogChanged)
+            {
+                m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
+                m_CatalogChanged = false;
+                Resources.UnloadUnusedAssets();
+                if (BrushCatalogChanged != null)
+                {
+                    BrushCatalogChanged();
+                }
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositorWithProgress(
+                        OverlayType.LoadGeneric,
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes, true),
+                        0.25f)
+                );
             }
             m_ChangedBrushes.Clear();
 
@@ -450,3 +491,4 @@ namespace TiltBrush
 
     }
 }  // namespace TiltBrush
+
