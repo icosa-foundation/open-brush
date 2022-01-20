@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.IO;
-using UnityEditor.Experimental.AssetImporters;
+using UnityEditor.AssetImporters;
 
 namespace TiltBrush
 {
