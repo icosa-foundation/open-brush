@@ -7,7 +7,6 @@ using System.Text;
 using TiltBrush;
 using UnityEditor;
 using UnityEngine;
-using Valve.Newtonsoft.Json.Utilities;
 using Object = UnityEngine.Object;
 
 public class PanelLister : MonoBehaviour

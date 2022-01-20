@@ -18,7 +18,6 @@
 /// </summary>
 
 using UnityEngine;
-using UnityEngine.VR;
 using System;
 using System.Runtime.InteropServices;
 #if UNITY_EDITOR

@@ -15,7 +15,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Valve.VR;
 #if !OCULUS_SUPPORTED
 using OVROverlay = UnityEngine.MonoBehaviour;
 #endif // !OCULUS_SUPPORTED
@@ -55,7 +54,9 @@ namespace TiltBrush
     public class VrSdk : MonoBehaviour
     {
         [SerializeField] private float m_AnalogGripBinaryThreshold_Rift;
-        [SerializeField] private SteamVR_Overlay m_SteamVROverlay;
+        
+        // TODO:Mike - commmented this overlay as class is from SteamVR, what does it do?
+        //[SerializeField] private SteamVR_Overlay m_SteamVROverlay;
         [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
         [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
         [SerializeField] private float m_OverlayMaxSize = 8;
@@ -100,8 +101,9 @@ namespace TiltBrush
 
         private Bounds? m_RoomBoundsAabbCached;
 
+        // TODO:Mike - another object to comment out - seems to be for measuring dropped frames.
         // Cached object to avoid interop overhead
-        private Compositor_FrameTiming m_FrameTiming;
+        //private Compositor_FrameTiming m_FrameTiming;
 
         private Action[] m_OldOnPoseApplied;
 
@@ -162,10 +164,11 @@ namespace TiltBrush
                 m_MobileOverlay = Instantiate(m_GvrOverlayPrefab);
                 m_MobileOverlay.gameObject.SetActive(false);
             }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR && m_SteamVROverlay != null)
-            {
-                m_OverlayMode = OverlayMode.Steam;
-            }
+            // TODO:Mike - Mmore overlay stuff to turn off
+            // else if (App.Config.m_SdkMode == SdkMode.SteamVR && m_SteamVROverlay != null)
+            // {
+            //     m_OverlayMode = OverlayMode.Steam;
+            // }
 #if OCULUS_SUPPORTED
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
@@ -227,7 +230,8 @@ namespace TiltBrush
                 {
                     SetControllerStyle(TiltBrush.ControllerStyle.InitializingSteamVR);
                 }
-                m_VrCamera.gameObject.AddComponent<SteamVR_Camera>();
+                // TODO:Mike - Did SteamVR need to have some special component on the camera?
+                // m_VrCamera.gameObject.AddComponent<SteamVR_Camera>();
             }
             else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
@@ -286,16 +290,17 @@ namespace TiltBrush
         {
             if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                if (SteamVR.instance != null)
-                {
-                    SteamVR_Events.InputFocus.Listen(OnInputFocusSteam);
-                    SteamVR_Events.NewPosesApplied.Listen(OnNewPoses);
-                }
-                m_FrameTiming = new Compositor_FrameTiming
-                {
-                    m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(
-                        typeof(Compositor_FrameTiming))
-                };
+                // TODO:Mike - SteamVR init. Needs new XR init
+                // if (SteamVR.instance != null)
+                // {
+                //     SteamVR_Events.InputFocus.Listen(OnInputFocusSteam);
+                //     SteamVR_Events.NewPosesApplied.Listen(OnNewPoses);
+                // }
+                // m_FrameTiming = new Compositor_FrameTiming
+                // {
+                //     m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(
+                //         typeof(Compositor_FrameTiming))
+                // };
             }
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
@@ -324,8 +329,9 @@ namespace TiltBrush
         {
             if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                SteamVR_Events.InputFocus.Remove(OnInputFocusSteam);
-                SteamVR_Events.NewPosesApplied.Remove(OnNewPoses);
+                // TODO:Mike - SteamVR cleanup process, investiage
+                // SteamVR_Events.InputFocus.Remove(OnInputFocusSteam);
+                // SteamVR_Events.NewPosesApplied.Remove(OnNewPoses);
             }
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
@@ -405,14 +411,15 @@ namespace TiltBrush
         {
             if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                SteamVR vr = SteamVR.instance;
-                if (vr != null)
-                {
-                    if (vr.compositor.GetFrameTiming(ref m_FrameTiming, 0 /* most recent frame */))
-                    {
-                        return (int)m_FrameTiming.m_nNumDroppedFrames;
-                    }
-                }
+                // TODO:Mike - More SteamVR specific stuff.
+                // SteamVR vr = SteamVR.instance;
+                // if (vr != null)
+                // {
+                //     if (vr.compositor.GetFrameTiming(ref m_FrameTiming, 0 /* most recent frame */))
+                //     {
+                //         return (int)m_FrameTiming.m_nNumDroppedFrames;
+                //     }
+                // }
             }
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
@@ -483,20 +490,21 @@ namespace TiltBrush
             }
             else if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                var chaperone = OpenVR.Chaperone;
-                if (chaperone != null)
-                {
-                    HmdQuad_t rect = new HmdQuad_t();
-                    // 4 points, undocumented winding, undocumented convexity
-                    // Undocumented if it's an AABB
-                    // In practice, seems to always be an axis-aligned clockwise box.
-                    chaperone.GetPlayAreaRect(ref rect);
-                    var steamPoints = new[]
-                    {
-                        rect.vCorners0, rect.vCorners1, rect.vCorners2, rect.vCorners3
-                    };
-                    points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
-                }
+                // TODO:Mike - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
+                // var chaperone = OpenVR.Chaperone;
+                // if (chaperone != null)
+                // {
+                //     HmdQuad_t rect = new HmdQuad_t();
+                //     // 4 points, undocumented winding, undocumented convexity
+                //     // Undocumented if it's an AABB
+                //     // In practice, seems to always be an axis-aligned clockwise box.
+                //     chaperone.GetPlayAreaRect(ref rect);
+                //     var steamPoints = new[]
+                //     {
+                //         rect.vCorners0, rect.vCorners1, rect.vCorners2, rect.vCorners3
+                //     };
+                //     points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
+                // }
             }
 
             if (points_RS == null)
@@ -548,11 +556,12 @@ namespace TiltBrush
             return true;
         }
 
-        /// Converts from SteamVR axis conventions and units to Unity
-        static private Vector3 UnityFromSteamVr(HmdVector3_t v)
-        {
-            return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
-        }
+        // TODO:Mike - This function is only used in SteamVR's version of RefreshRoomBoundsCache
+        // /// Converts from SteamVR axis conventions and units to Unity
+        // static private Vector3 UnityFromSteamVr(HmdVector3_t v)
+        // {
+        //     return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
+        // }
 
         /// Converts from Oculus axis conventions and units to Unity
         static private Vector3 UnityFromOculus(Vector3 v)
@@ -729,7 +738,9 @@ namespace TiltBrush
         {
             if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                return new SteamControllerInfo(behavior);
+                // TODO:Mike - set to return the default instead.
+                return new NonVrControllerInfo(behavior);
+                //return new SteamControllerInfo(behavior);
             }
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
@@ -757,40 +768,41 @@ namespace TiltBrush
             {
                 VrControls.GetComponent<OculusHandTrackingManager>().SwapLeftRight();
             }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                // Don't swap controller input sources while we're initializing because it screws up
-                // the actions when the proper controllers are instantiated.
-                // TODO : Figure out why this screws up and fix it.  Note that this is
-                // unnecessary unless we support hot-swapping of controller types.
-                if (!IsInitializingSteamVr)
-                {
-                    BaseControllerBehavior[] behaviors = VrControls.GetBehaviors();
-                    for (int i = 0; i < behaviors.Length; ++i)
-                    {
-                        SteamVR_Behaviour_Pose pose = behaviors[i].GetComponent<SteamVR_Behaviour_Pose>();
-                        switch (pose.inputSource)
-                        {
-                            case SteamVR_Input_Sources.LeftHand:
-                                pose.inputSource = SteamVR_Input_Sources.RightHand;
-                                break;
-                            case SteamVR_Input_Sources.RightHand:
-                                pose.inputSource = SteamVR_Input_Sources.LeftHand;
-                                break;
-                            default:
-                                Debug.LogWarningFormat(
-                                    "Controller is configured as {0}.  Should be LeftHand or RightHand.",
-                                    pose.inputSource);
-                                break;
-                        }
-                    }
-                }
-                else
-                {
-                    // Don't commit to swapping controller styles.
-                    leftRightSwapped = false;
-                }
-            }
+            // TODO:Mike - swapping controller hands in SteamVR
+            // else if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            // {
+            //     // Don't swap controller input sources while we're initializing because it screws up
+            //     // the actions when the proper controllers are instantiated.
+            //     // TODO : Figure out why this screws up and fix it.  Note that this is
+            //     // unnecessary unless we support hot-swapping of controller types.
+            //     if (!IsInitializingSteamVr)
+            //     {
+            //         BaseControllerBehavior[] behaviors = VrControls.GetBehaviors();
+            //         for (int i = 0; i < behaviors.Length; ++i)
+            //         {
+            //             SteamVR_Behaviour_Pose pose = behaviors[i].GetComponent<SteamVR_Behaviour_Pose>();
+            //             switch (pose.inputSource)
+            //             {
+            //                 case SteamVR_Input_Sources.LeftHand:
+            //                     pose.inputSource = SteamVR_Input_Sources.RightHand;
+            //                     break;
+            //                 case SteamVR_Input_Sources.RightHand:
+            //                     pose.inputSource = SteamVR_Input_Sources.LeftHand;
+            //                     break;
+            //                 default:
+            //                     Debug.LogWarningFormat(
+            //                         "Controller is configured as {0}.  Should be LeftHand or RightHand.",
+            //                         pose.inputSource);
+            //                     break;
+            //             }
+            //         }
+            //     }
+            //     else
+            //     {
+            //         // Don't commit to swapping controller styles.
+            //         leftRightSwapped = false;
+            //     }
+            // }
             else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 var tmp = InputManager.Controllers[0];
@@ -829,10 +841,11 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.Steam:
-                    m_SteamVROverlay.alpha = ratio * m_OverlayMaxAlpha;
-                    OverlayEnabled = ratio > 0.0f;
-                    break;
+                // TODO:Mike overlay disable
+                // case OverlayMode.Steam:
+                //     m_SteamVROverlay.alpha = ratio * m_OverlayMaxAlpha;
+                //     OverlayEnabled = ratio > 0.0f;
+                //     break;
                 case OverlayMode.OVR:
                     OverlayEnabled = ratio == 1;
                     break;
@@ -871,8 +884,9 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    case OverlayMode.Steam:
-                        return m_SteamVROverlay.gameObject.activeSelf;
+                    // TODO:Mike overlay disable
+                    // case OverlayMode.Steam:
+                    //     return m_SteamVROverlay.gameObject.activeSelf;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                         return m_OVROverlay.enabled;
@@ -889,9 +903,10 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    case OverlayMode.Steam:
-                        m_SteamVROverlay.gameObject.SetActive(value);
-                        break;
+                    // TODO:Mike - disable overlay
+                    // case OverlayMode.Steam:
+                    //     m_SteamVROverlay.gameObject.SetActive(value);
+                    //     break;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                         m_OVROverlay.enabled = value;
@@ -908,10 +923,11 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.Steam:
-                    m_SteamVROverlay.texture = tex;
-                    m_SteamVROverlay.UpdateOverlay();
-                    break;
+                // TODO:Mike - disable overlay
+                // case OverlayMode.Steam:
+                //     m_SteamVROverlay.texture = tex;
+                //     m_SteamVROverlay.UpdateOverlay();
+                //     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                     m_OVROverlay.textures = new[] { tex };
@@ -930,12 +946,13 @@ namespace TiltBrush
 
             switch (m_OverlayMode)
             {
-                case OverlayMode.Steam:
-                    vOverlayPosition += (vOverlayDirection * distance);
-                    vOverlayPosition.y = height;
-                    m_SteamVROverlay.transform.position = vOverlayPosition;
-                    m_SteamVROverlay.transform.forward = vOverlayDirection;
-                    break;
+                // TODO:Mike - disable overlay
+                // case OverlayMode.Steam:
+                //     vOverlayPosition += (vOverlayDirection * distance);
+                //     vOverlayPosition.y = height;
+                //     m_SteamVROverlay.transform.position = vOverlayPosition;
+                //     m_SteamVROverlay.transform.forward = vOverlayDirection;
+                //     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                     vOverlayPosition += (vOverlayDirection * distance / 10);
@@ -962,13 +979,14 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.Steam:
-                    SteamVR rVR = SteamVR.instance;
-                    if (rVR != null && rVR.compositor != null)
-                    {
-                        rVR.compositor.FadeGrid(fadeTime, fadeToCompositor);
-                    }
-                    break;
+                // TODO:Mike - Overlay disable
+                // case OverlayMode.Steam:
+                //     SteamVR rVR = SteamVR.instance;
+                //     if (rVR != null && rVR.compositor != null)
+                //     {
+                //         rVR.compositor.FadeGrid(fadeTime, fadeToCompositor);
+                //     }
+                //     break;
                 case OverlayMode.OVR:
                     FadeBlack(fadeTime, fadeToCompositor);
                     break;
@@ -979,9 +997,10 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.Steam:
-                    SteamVR_Render.pauseRendering = bPause;
-                    break;
+                // TODO:Mike - Disable overlay
+                // case OverlayMode.Steam:
+                //     SteamVR_Render.pauseRendering = bPause;
+                //     break;
                 case OverlayMode.OVR:
                     // :(
                     break;
@@ -1004,9 +1023,10 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.SteamVR:
-                    SteamVR_Fade.Start(fadeToBlack ? Color.black : Color.clear, fadeTime);
-                    break;
+                // TODO:Mike - Fading to... what?
+                // case SdkMode.SteamVR:
+                //     SteamVR_Fade.Start(fadeToBlack ? Color.black : Color.clear, fadeTime);
+                //     break;
                 case SdkMode.Oculus:
                     // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
                     // to other Tilt Brush components.
@@ -1034,11 +1054,12 @@ namespace TiltBrush
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
-            {
-                return false;
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
+            // TODO:Mike - More SteamVR specific setup
+            // if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
+            // {
+            //     return false;
+            // }
+            /* else */ if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 // We used to be able to check the GvrViewer state, but this has been moved internal to Unity.
                 // Now just return true and hope for the best.
@@ -1063,8 +1084,9 @@ namespace TiltBrush
             {
                 case SdkMode.Oculus:
                     return 90;
-                case SdkMode.SteamVR:
-                    return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
+                // TODO:Mike - Interesting that steamvr has the ability to override fps. surely XR can do that too
+                // case SdkMode.SteamVR:
+                //     return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
                 case SdkMode.Gvr:
                     return 75;
                 case SdkMode.Monoscopic:
@@ -1105,7 +1127,8 @@ namespace TiltBrush
             scale = Mathf.Clamp(scale, 0.1f, 2f);
             if (App.Config.m_SdkMode == SdkMode.SteamVR)
             {
-                SteamVR_Camera.sceneResolutionScale = scale;
+                // TODO:Mike - Steamvr camera specific stuff again
+                // SteamVR_Camera.sceneResolutionScale = scale;
             }
         }
 

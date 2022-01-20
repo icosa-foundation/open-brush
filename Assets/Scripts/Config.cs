@@ -157,16 +157,18 @@ namespace TiltBrush
                             m_VrHardware = VrHardware.Rift;
                         }
                     }
+                    // TODO:Mike - Replace with OpenXR callout
                     else if (m_SdkMode == SdkMode.SteamVR)
                     {
                         // If SteamVR fails for some reason we will discover it here.
                         try
-                        {
-                            if (Valve.VR.OpenVR.System == null)
-                            {
-                                m_VrHardware = VrHardware.None;
-                                return m_VrHardware;
-                            }
+                        {      
+                            // TODO:Mike - commented out as namespace no longer available.                      
+                            // if (Valve.VR.OpenVR.System == null)
+                            // {
+                            //     m_VrHardware = VrHardware.None;
+                            //     return m_VrHardware;
+                            // }
                         }
                         catch (Exception)
                         {
@@ -196,8 +198,12 @@ namespace TiltBrush
             get
             {
                 if (string.IsNullOrEmpty(m_HeadsetModelName))
-                {
-                    m_HeadsetModelName = UnityEngine.XR.XRDevice.model;
+                {   
+                    // TODO:Mike - is this the correct way to get the headset name?
+                    // Pulled from https://forum.unity.com/threads/openxr-is-it-no-longer-possible-to-get-descriptive-device-names.1051493/
+
+                    //m_HeadsetModelName = UnityEngine.XR.XRDevice.model;
+                    m_HeadsetModelName = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name;
                 }
                 return m_HeadsetModelName;
             }
@@ -642,52 +648,57 @@ namespace TiltBrush
 #endif
         }
 
-        private string GetSteamVrDeviceStringProperty(Valve.VR.ETrackedDeviceProperty property)
-        {
-            uint index = 0; // Index 0 is always the headset
-            var system = Valve.VR.OpenVR.System;
-            // If system == null, then somehow, the SteamVR SDK was not properly loaded in.
-            Debug.Assert(system != null, "OpenVR System not found, check \"Virtual Reality Supported\"");
+        // TODO:Mike - This function had zero references, let's see if it's true later
 
-            var error = Valve.VR.ETrackedPropertyError.TrackedProp_Success;
+        // private string GetSteamVrDeviceStringProperty(Valve.VR.ETrackedDeviceProperty property)
+        // {
+        //     uint index = 0; // Index 0 is always the headset
+        //     var system = Valve.VR.OpenVR.System;
+        //     // If system == null, then somehow, the SteamVR SDK was not properly loaded in.
+        //     Debug.Assert(system != null, "OpenVR System not found, check \"Virtual Reality Supported\"");
 
-            var capacity = system.GetStringTrackedDeviceProperty(index, property, null, 0, ref error);
-            System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)capacity);
-            system.GetStringTrackedDeviceProperty(index, property, buffer, capacity, ref error);
-            if (error == Valve.VR.ETrackedPropertyError.TrackedProp_Success)
-            {
-                return buffer.ToString();
-            }
-            else
-            {
-                Debug.LogErrorFormat("GetStringTrackedDeviceProperty error {0}", error.ToString());
-                return null;
-            }
-        }
+        //     var error = Valve.VR.ETrackedPropertyError.TrackedProp_Success;
+
+        //     var capacity = system.GetStringTrackedDeviceProperty(index, property, null, 0, ref error);
+        //     System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)capacity);
+        //     system.GetStringTrackedDeviceProperty(index, property, buffer, capacity, ref error);
+        //     if (error == Valve.VR.ETrackedPropertyError.TrackedProp_Success)
+        //     {
+        //         return buffer.ToString();
+        //     }
+        //     else
+        //     {
+        //         Debug.LogErrorFormat("GetStringTrackedDeviceProperty error {0}", error.ToString());
+        //         return null;
+        //     }
+        // }
 
         // Checking what kind of hardware (Rift, Vive, of WMR) is being used in SteamVR.
         private VrHardware GetHwTrackedInSteamVr()
         {
-            string manufacturer = GetSteamVrDeviceStringProperty(
-                Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
+            // TODO:Mike - Do we need this, or can the xr subsystem provide these details instead?
+            return VrHardware.Vive;
+            
+            // string manufacturer = GetSteamVrDeviceStringProperty(
+            //     Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
 
-            if (string.IsNullOrEmpty(manufacturer))
-            {
-                OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
-                return VrHardware.Vive;
-            }
-            else if (manufacturer.Contains("Oculus"))
-            {
-                return VrHardware.Rift;
-            }
-            else if (manufacturer.Contains("WindowsMR"))
-            {
-                return VrHardware.Wmr;
-            }
-            else
-            {
-                return VrHardware.Vive;
-            }
+            // if (string.IsNullOrEmpty(manufacturer))
+            // {
+            //     OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
+            //     return VrHardware.Vive;
+            // }
+            // else if (manufacturer.Contains("Oculus"))
+            // {
+            //     return VrHardware.Rift;
+            // }
+            // else if (manufacturer.Contains("WindowsMR"))
+            // {
+            //     return VrHardware.Wmr;
+            // }
+            // else
+            // {
+            //     return VrHardware.Vive;
+            // }
         }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value
@@ -814,11 +825,14 @@ namespace TiltBrush
                     break;
             }
 
-            foreach (var group in buildTargetGroups)
-            {
-                // TODO use the public api (see BuildTiltBrush)
-                UnityEditorInternal.VR.VREditor.SetVirtualRealitySDKs(group, newDevices);
-            }
+            // TODO:Mike - This appears to be auto-setting what used to be the VR plugin menu in old unity. Do we need this?
+            // Or, it needs converted to the equivalent XR subsystem selection.
+
+            // foreach (var group in buildTargetGroups)
+            // {
+            //     // TODO use the public api (see BuildTiltBrush)
+            //     UnityEditorInternal.VR.VREditor.SetVirtualRealitySDKs(group, newDevices);
+            // }
         }
 
         /// Called at build time, just before this Config instance is saved to Main.unity

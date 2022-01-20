@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using UnityEngine;
-using UnityEngine.VR;
 
 // Recenter only the controller.
 // Usage: Set GvrControllerPointer > Controller as the pointer field, and

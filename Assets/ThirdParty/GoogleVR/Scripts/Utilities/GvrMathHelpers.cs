@@ -14,7 +14,6 @@
 
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.VR;
 using System.Collections;
 
 /// Helper functions to perform common math operations for Gvr.

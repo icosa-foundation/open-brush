@@ -14,7 +14,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.VR;
 
 /// Implementation of _GvrPointerInputModule_
 public class GvrPointerInputModuleImpl {

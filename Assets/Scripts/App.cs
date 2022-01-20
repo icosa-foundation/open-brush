@@ -656,8 +656,10 @@ namespace TiltBrush
             }
             else
             {
+                //TODO: Mike - Updated this reference to attempt to find headset name in new XR system
                 Debug.LogFormat("Sdk mode: {0} XRDevice.model: {1}",
-                    App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
+                    //App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
+                    App.Config.m_SdkMode, UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name);
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
