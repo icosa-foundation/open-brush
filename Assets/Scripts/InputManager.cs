@@ -15,9 +15,10 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using KeyMap = System.Collections.Generic.Dictionary<
     int,
-    UnityEngine.KeyCode[]>;
+    UnityEngine.InputSystem.Key[]>;
 
 namespace TiltBrush
 {
@@ -163,68 +164,68 @@ namespace TiltBrush
         // active.
         private static readonly KeyMap m_KeyMap = new KeyMap
         {
-            { (int)KeyboardShortcut.LockToHead, new[] { KeyCode.LeftShift } },
-            { (int)KeyboardShortcut.PivotRotation, new[] { KeyCode.LeftControl } },
-            { (int)KeyboardShortcut.Scale, new[] { KeyCode.Tab } },
+            { (int)KeyboardShortcut.LockToHead, new[] { Key.LeftShift } },
+            { (int)KeyboardShortcut.PivotRotation, new[] { Key.LeftCtrl } },
+            { (int)KeyboardShortcut.Scale, new[] { Key.Tab } },
 
-            { (int)KeyboardShortcut.RewindTimeline, new[] { KeyCode.Minus } },
-            { (int)KeyboardShortcut.AdvanceTimeline, new[] { KeyCode.Plus } },
-            { (int)KeyboardShortcut.TimelineHome, new[] { KeyCode.Home } },
-            { (int)KeyboardShortcut.TimelineEnd, new[] { KeyCode.End } },
-            { (int)KeyboardShortcut.Reset, new[] { KeyCode.Space } },
-            { (int)KeyboardShortcut.Undo, new[] { KeyCode.Z } },
-            { (int)KeyboardShortcut.Redo, new[] { KeyCode.X } },
-            { (int)KeyboardShortcut.Delete, new[] { KeyCode.Delete } },
-            { (int)KeyboardShortcut.Abort, new[] { KeyCode.Escape } },
+            { (int)KeyboardShortcut.RewindTimeline, new[] { Key.Minus } },
+            { (int)KeyboardShortcut.AdvanceTimeline, new[] { Key.Equals } },
+            { (int)KeyboardShortcut.TimelineHome, new[] { Key.Home } },
+            { (int)KeyboardShortcut.TimelineEnd, new[] { Key.End } },
+            { (int)KeyboardShortcut.Reset, new[] { Key.Space } },
+            { (int)KeyboardShortcut.Undo, new[] { Key.Z } },
+            { (int)KeyboardShortcut.Redo, new[] { Key.X } },
+            { (int)KeyboardShortcut.Delete, new[] { Key.Delete } },
+            { (int)KeyboardShortcut.Abort, new[] { Key.Escape } },
 
-            { (int)KeyboardShortcut.SaveNew, new[] { KeyCode.S } },
-            { (int)KeyboardShortcut.ExportAll, new[] { KeyCode.A } },
-            { (int)KeyboardShortcut.ToggleProfile, new[] { KeyCode.K } },
+            { (int)KeyboardShortcut.SaveNew, new[] { Key.S } },
+            { (int)KeyboardShortcut.ExportAll, new[] { Key.A } },
+            { (int)KeyboardShortcut.ToggleProfile, new[] { Key.K } },
             // Context-dependent
-            { (int)KeyboardShortcut.SwitchCamera, new[] { KeyCode.C } },
-            { (int)KeyboardShortcut.CycleCanvas, new[] { KeyCode.C } },
-            { (int)KeyboardShortcut.ViewOnly, new[] { KeyCode.H } },
-            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { KeyCode.M } },
-            { (int)KeyboardShortcut.PreviousTool, new[] { KeyCode.LeftArrow } },
-            { (int)KeyboardShortcut.NextTool, new[] { KeyCode.RightArrow } },
-            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { KeyCode.F2 } },
-            { (int)KeyboardShortcut.Export, new[] { KeyCode.E } },
-            { (int)KeyboardShortcut.StoreHeadTransform, new[] { KeyCode.O } }, // Also checks for shift
-            { (int)KeyboardShortcut.RecallHeadTransform, new[] { KeyCode.O } },
-            { (int)KeyboardShortcut.ToggleLightType, new[] { KeyCode.P } },
+            { (int)KeyboardShortcut.SwitchCamera, new[] { Key.C } },
+            { (int)KeyboardShortcut.CycleCanvas, new[] { Key.C } },
+            { (int)KeyboardShortcut.ViewOnly, new[] { Key.H } },
+            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { Key.M } },
+            { (int)KeyboardShortcut.PreviousTool, new[] { Key.LeftArrow } },
+            { (int)KeyboardShortcut.NextTool, new[] { Key.RightArrow } },
+            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { Key.F2 } },
+            { (int)KeyboardShortcut.Export, new[] { Key.E } },
+            { (int)KeyboardShortcut.StoreHeadTransform, new[] { Key.O } }, // Also checks for shift
+            { (int)KeyboardShortcut.RecallHeadTransform, new[] { Key.O } },
+            { (int)KeyboardShortcut.ToggleLightType, new[] { Key.P } },
 
-            { (int)KeyboardShortcut.CheckStrokes, new[] { KeyCode.V } },
+            { (int)KeyboardShortcut.CheckStrokes, new[] { Key.V } },
 
-            { (int)KeyboardShortcut.ResetScene, new[] { KeyCode.Return } },
-            { (int)KeyboardShortcut.StraightEdge, new[] { KeyCode.CapsLock } },
+            { (int)KeyboardShortcut.ResetScene, new[] { Key.Enter } },
+            { (int)KeyboardShortcut.StraightEdge, new[] { Key.CapsLock } },
 
-            { (int)KeyboardShortcut.Save, new[] { KeyCode.S } },
-            { (int)KeyboardShortcut.Load, new[] { KeyCode.L } },
+            { (int)KeyboardShortcut.Save, new[] { Key.S } },
+            { (int)KeyboardShortcut.Load, new[] { Key.L } },
 
-            { (int)KeyboardShortcut.Forward, new[] { KeyCode.N } },
-            { (int)KeyboardShortcut.Backward, new[] { KeyCode.M } },
+            { (int)KeyboardShortcut.Forward, new[] { Key.N } },
+            { (int)KeyboardShortcut.Backward, new[] { Key.M } },
 
-            { (int)KeyboardShortcut.PositionMonoCamera, new[] { KeyCode.LeftAlt, KeyCode.RightAlt } },
+            { (int)KeyboardShortcut.PositionMonoCamera, new[] { Key.LeftAlt, Key.RightAlt } },
 
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { Key.Q } },
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { Key.W } },
 
-            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { KeyCode.E } },
-            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { KeyCode.R } },
+            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { Key.E } },
+            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { Key.R } },
 
-            { (int)KeyboardShortcut.ToggleGVRAudio, new[] { KeyCode.BackQuote } },
+            { (int)KeyboardShortcut.ToggleGVRAudio, new[] { Key.Backquote } },
 
-            { (int)KeyboardShortcut.TossWidget, new[] { KeyCode.Y } },
+            { (int)KeyboardShortcut.TossWidget, new[] { Key.Y } },
         };
 
         // Separate keymap for when demo mode is enabled.
         // Determined by DemoManager.m_Instance.DemoModeEnabled == true
         private static readonly KeyMap m_DemoKeyMap = new KeyMap
         {
-            { (int)KeyboardShortcut.ResetEverything, new KeyCode[] { KeyCode.Delete, KeyCode.Backspace } },
-            { (int)KeyboardShortcut.GotoInitialPosition, new KeyCode[] { KeyCode.P } },
-            { (int)KeyboardShortcut.ExtendDemoTimer, new KeyCode[] { KeyCode.E } },
-            { (int)KeyboardShortcut.InstantUpload, new KeyCode[] { KeyCode.U } },
+            { (int)KeyboardShortcut.ResetEverything, new Key[] { Key.Delete, Key.Backspace } },
+            { (int)KeyboardShortcut.GotoInitialPosition, new Key[] { Key.P } },
+            { (int)KeyboardShortcut.ExtendDemoTimer, new Key[] { Key.E } },
+            { (int)KeyboardShortcut.InstantUpload, new Key[] { Key.U } },
         };
 
         private KeyMap ActiveKeyMap
@@ -553,7 +554,7 @@ namespace TiltBrush
                 }
 
                 //cache touch inputs so we can control their usage
-                m_Touch.m_Valid = (Input.touchCount > 0) && (Input.GetTouch(0).phase == TouchPhase.Began);
+                m_Touch.m_Valid = (Input.touchCount > 0) && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
                 if (m_Touch.m_Valid)
                 {
                     m_Touch.m_Pos = Input.GetTouch(0).position;
@@ -610,15 +611,13 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcut(KeyboardShortcut shortcut)
         {
-            KeyCode[] codes;
-            if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
+            if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
             }
             for (int i = 0; i < codes.Length; ++i)
             {
-                KeyCode code = codes[i];
-                if (Input.GetKey(code))
+                if (Keyboard.current[codes[i]].wasPressedThisFrame)
                 {
                     return true;
                 }
@@ -628,15 +627,13 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcutDown(KeyboardShortcut shortcut)
         {
-            KeyCode[] codes;
-            if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
+            if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
             }
             for (int i = 0; i < codes.Length; ++i)
             {
-                KeyCode code = codes[i];
-                if (Input.GetKeyDown(code))
+                if (Keyboard.current[codes[i]].wasPressedThisFrame)
                 {
                     return true;
                 }
@@ -843,7 +840,7 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
-            Vector2 mv = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+            Vector2 mv = Mouse.current.delta.ReadValue();
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
         }
@@ -857,14 +854,27 @@ namespace TiltBrush
         /// presses when you fiddle with the joystick.
         public bool GetMouseButton(int button)
         {
-            return !App.Config.IsMobileHardware && Input.GetMouseButton(button);
+            if (App.Config.IsMobileHardware)
+            {
+                return false;
+            }
+
+            switch (button)
+            {
+                case 0:
+                    return Mouse.current.leftButton.wasPressedThisFrame;
+                case 1:
+                    return Mouse.current.rightButton.wasPressedThisFrame;
+                default:
+                    return false;
+            }
         }
 
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
         /// presses when you fiddle with the joystick.
         public bool GetMouseButtonDown(int button)
         {
-            return !App.Config.IsMobileHardware && Input.GetMouseButtonDown(button);
+            return GetMouseButton(button);
         }
 
         public bool IsBrushScrollActive()
