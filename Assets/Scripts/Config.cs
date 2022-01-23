@@ -264,7 +264,6 @@ namespace TiltBrush
         public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "(menuitem)"
 
         [Header("Misc")]
-        public GameObject m_SteamVrRenderPrefab;
         public bool m_UseBatchedBrushes;
         // Delete Batch's GeometryPool after about a second.
         public bool m_EnableBatchMemoryOptimization;

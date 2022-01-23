@@ -217,7 +217,7 @@ namespace TiltBrush
                 // Ideally, this instantiation would occur in a place that is guaranteed to happen first but
                 // since we don't have an appropriate place for that now, it's being placed right before the
                 // first call that would otherwise instantiate it.
-                Instantiate(App.Config.m_SteamVrRenderPrefab);
+                // Instantiate(App.Config.m_SteamVrRenderPrefab);
                 if (App.Config.VrHardware == VrHardware.Rift)
                 {
                     SetControllerStyle(TiltBrush.ControllerStyle.OculusTouch);
