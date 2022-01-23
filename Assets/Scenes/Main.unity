@@ -3208,7 +3208,7 @@ MonoBehaviour:
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
   m_IsExperimental: 1
-  m_SdkMode: 1
+  m_SdkMode: 6
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: 2f5f8e93c6bc7be49a5023148b50e7a0, type: 2}

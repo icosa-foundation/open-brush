@@ -263,6 +263,13 @@ namespace TiltBrush
                 // Custom controls parenting for GVR.
                 m_VrControls.transform.parent = m_VrCamera.transform.parent;
             }
+            else if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+
+                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
+                SetControllerStyle(ControllerStyle.None);
+            }
             else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
                 // ---------------------------------------------------------------------------------------- //
@@ -820,6 +827,7 @@ namespace TiltBrush
             {
                 case SdkMode.Oculus:
                 case SdkMode.SteamVR:
+                case SdkMode.UnityXR:
                     return DoF.Six;
 
                 case SdkMode.Gvr:
@@ -1053,13 +1061,18 @@ namespace TiltBrush
         // Returns false if SDK Mode uses an HMD, but it is not initialized.
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
-        {
+        {   
+            // TODO:Mike - Is there a real way to determine if initialised at start like the other SDKs?
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                return true;
+            }
             // TODO:Mike - More SteamVR specific setup
             // if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
             // {
             //     return false;
             // }
-            /* else */ if (App.Config.m_SdkMode == SdkMode.Gvr)
+            else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 // We used to be able to check the GvrViewer state, but this has been moved internal to Unity.
                 // Now just return true and hope for the best.
@@ -1094,6 +1107,8 @@ namespace TiltBrush
                 case SdkMode.Ods:
                     // TODO: 30 would be correct, buf feels too slow.
                     return 60;
+                case SdkMode.UnityXR:
+                    return 60;
                 default:
                     throw new NotImplementedException("Unknown VR SDK Mode");
             }
@@ -1106,6 +1121,7 @@ namespace TiltBrush
             {
                 case SdkMode.Oculus:
                 case SdkMode.SteamVR:
+                case SdkMode.UnityXR:
                     return DoF.Six;
                 case SdkMode.Gvr:
                     return DoF.Six;
