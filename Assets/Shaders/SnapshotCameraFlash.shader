@@ -73,6 +73,7 @@ Shader "Unlit/Snapshot Camera Flash"
                 col.a *= _Alpha;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
+                col.a = 1.0;
                 return col;
             }
             ENDCG
