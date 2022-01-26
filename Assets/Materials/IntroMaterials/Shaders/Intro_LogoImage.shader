@@ -19,7 +19,7 @@ Shader "Custom/Intro_Image" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
-    Tags { "RenderType"="Transparent" }
+    Tags { "Queue"="Transparent" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha
     LOD 100
     Pass {
@@ -124,8 +124,8 @@ Shader "Custom/Intro_Image" {
   
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
         if (c.a < 0.5) discard;
-        c *= _Color * theta < ((1 - _IntroDissolve) * TWO_PI) ? 1 : 0.75;
   
+        c *= _Color * theta < ((1 - _IntroDissolve) * TWO_PI) ? 1 : 0.0;
         // Uncomment out the next two lines to test out the boundaries.
         //c.r += a > 0 && a < 1 ? .5 : 0;
         //c.g += b > 0 && b < 1 ? .5 : 0;
