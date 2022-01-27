@@ -41,7 +41,7 @@ GameObject:
   - component: {fileID: 4000011949354466}
   - component: {fileID: 114000011240657384}
   m_Layer: 0
-  m_Name: SteamRiftControls
+  m_Name: UnityXRRiftControls
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -79,8 +79,8 @@ MonoBehaviour:
   m_Wand: {fileID: 114000010919708240}
   m_Brush: {fileID: 114000013332822508}
   m_TrackingComponents:
-  - {fileID: 114720003944561922}
-  - {fileID: 114085569844023974}
+  - {fileID: 0}
+  - {fileID: 0}
   m_HapticsDurationScale: 0.02
   m_HapticAmplitudeScale: 0.04
   m_TriggerActivationRange: {x: 0.15, y: 0.8}
@@ -99,7 +99,7 @@ GameObject:
   - component: {fileID: 4000010915250370}
   - component: {fileID: 114000013332822508}
   - component: {fileID: 114000013512061632}
-  - component: {fileID: 114085569844023974}
+  - component: {fileID: 5930003304251376106}
   m_Layer: 14
   m_Name: Controller (brush)
   m_TagString: Untagged
@@ -156,7 +156,7 @@ MonoBehaviour:
     type: 2}
   m_TriggerMaterialInactive: {fileID: 2100000, guid: 7bf3a526ba1bdde47832897820afe252,
     type: 2}
---- !u!114 &114085569844023974
+--- !u!114 &5930003304251376106
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -165,40 +165,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000012863469616}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a5fb0ca93b55ef4b8d54b512b103341, type: 3}
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poseAction:
-    actionPath: /actions/TiltBrush/in/Pose
-    needsReinit: 1
-  inputSource: 2
-  origin: {fileID: 0}
-  onTransformUpdated:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_PoseEvent, SteamVR, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  onTransformChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_PoseEvent, SteamVR, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  onConnectedChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_ConnectedChangedEvent, SteamVR, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  onTrackingChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_TrackingChangedEvent, SteamVR, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  onDeviceIndexChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_DeviceIndexChangedEvent, SteamVR,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-  broadcastDeviceChanges: 1
+  m_Device: 1
+  m_PoseSource: 5
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
 --- !u!1 &1000013186975256
 GameObject:
   m_ObjectHideFlags: 0
@@ -210,7 +185,7 @@ GameObject:
   - component: {fileID: 4000010267600154}
   - component: {fileID: 114000010919708240}
   - component: {fileID: 114000011013631904}
-  - component: {fileID: 114720003944561922}
+  - component: {fileID: 3064074687988356757}
   m_Layer: 14
   m_Name: Controller (wand)
   m_TagString: Untagged
@@ -267,7 +242,7 @@ MonoBehaviour:
     type: 2}
   m_TriggerMaterialInactive: {fileID: 2100000, guid: 7bf3a526ba1bdde47832897820afe252,
     type: 2}
---- !u!114 &114720003944561922
+--- !u!114 &3064074687988356757
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -276,37 +251,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000013186975256}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a5fb0ca93b55ef4b8d54b512b103341, type: 3}
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poseAction:
-    actionPath: /actions/TiltBrush/in/Pose
-    needsReinit: 1
-  inputSource: 1
-  origin: {fileID: 0}
-  onTransformUpdated:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_PoseEvent, SteamVR, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  onTransformChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_PoseEvent, SteamVR, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  onConnectedChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_ConnectedChangedEvent, SteamVR, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  onTrackingChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_TrackingChangedEvent, SteamVR, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  onDeviceIndexChanged:
-    m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: Valve.VR.SteamVR_Behaviour_Pose_DeviceIndexChangedEvent, SteamVR,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-  broadcastDeviceChanges: 1
+  m_Device: 1
+  m_PoseSource: 4
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
