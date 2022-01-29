@@ -17577,19 +17577,19 @@ MonoBehaviour:
   m_OverlayMaxAlpha: 0.5
   m_OverlayMaxSize: 8
   m_VrSystem: {fileID: 17776372}
-  m_SteamUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
+  m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}
-  m_SteamViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
+  m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
     type: 3}
-  m_SteamRiftControlsPrefab: {fileID: 1000010438099326, guid: 69c3c19f56c3e5a42906ce154be66897,
+  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: 69c3c19f56c3e5a42906ce154be66897,
     type: 3}
-  m_SteamQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
+  m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
-  m_SteamWmrControlsPrefab: {fileID: 1000010438099326, guid: 9511be86b17c61c48866b3c74ef77cba,
+  m_UnityXRWmrControlsPrefab: {fileID: 1000010438099326, guid: 9511be86b17c61c48866b3c74ef77cba,
     type: 3}
-  m_SteamKnucklesControlsPrefab: {fileID: 1268974758188984, guid: 138e87a2f1028a34caeb87d79a452b35,
+  m_UnityXRKnucklesControlsPrefab: {fileID: 1268974758188984, guid: 138e87a2f1028a34caeb87d79a452b35,
     type: 3}
-  m_SteamCosmoControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
+  m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
   m_OculusRiftControlsPrefab: {fileID: 1000010438099326, guid: 131d871a617b1fe4eabf58454bc37ff2,
     type: 3}

@@ -31,6 +31,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.XR;
+using UnityEngine.InputSystem;
 
 namespace TiltBrush
 {
@@ -64,6 +66,7 @@ namespace TiltBrush
         Daydream,
         Wmr,
         Quest,
+        OpenXR,
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -145,7 +148,7 @@ namespace TiltBrush
             // This is set lazily the first time VrHardware is accessed.
             get
             {
-                if (m_VrHardware == TiltBrush.VrHardware.Unset)
+                if (m_VrHardware == VrHardware.Unset)
                 {
                     if (m_SdkMode == SdkMode.Oculus)
                     {
@@ -157,6 +160,10 @@ namespace TiltBrush
                         {
                             m_VrHardware = VrHardware.Rift;
                         }
+                    }
+                    else if (m_SdkMode == SdkMode.UnityXR)
+                    {
+                        m_VrHardware = VrHardware.OpenXR;
                     }
                     // TODO:Mike - Replace with OpenXR callout
                     else if (m_SdkMode == SdkMode.SteamVR)

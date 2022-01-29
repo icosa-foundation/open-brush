@@ -206,7 +206,8 @@ namespace TiltBrush
                 // to be set properly in the prefab. Perhaps we can remove this last mutable case
                 // and detect the initializing case differently.
                 else if (m_ControllerStyle == ControllerStyle.None &&
-                    value == ControllerStyle.InitializingSteamVR)
+                    ((value == ControllerStyle.InitializingSteamVR) ||
+                    (value == ControllerStyle.InitializingUnityXR)))
                 {
                     /* no warning */
                 }
