@@ -1152,6 +1152,11 @@ namespace TiltBrush
                 // TODO:Mike - None, or just ignore?
                 // SetControllerStyle(ControllerStyle.None);
             }
+
+            InputManager.m_Instance.CreateControllerInfos();
+
+            PointerManager.m_Instance.RefreshFreePaintPointerAngle();
+            PointerManager.m_Instance.RequestPointerRendering(true);
         }
 
         private void OnUnityXRDeviceDisconnected(InputDevice device)

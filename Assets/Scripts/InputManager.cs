@@ -401,7 +401,7 @@ namespace TiltBrush
             ShowControllers(false);
         }
 
-        void CreateControllerInfos()
+        public void CreateControllerInfos()
         {
             VrControllers vrControllers = App.VrSdk.VrControls;
             if (vrControllers != null)
