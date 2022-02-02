@@ -309,21 +309,6 @@ jobs:
           SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
           sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
 
-      - name: Enable the use of a custom keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-        if: |
-          github.event_name == 'push' &&
-          env.ANDROID_KEYSTORE_BASE64 != null &&
-          env.ANDROID_KEYSTORE_PASS != null &&
-          env.ANDROID_KEYALIAS_NAME != null &&
-          env.ANDROID_KEYALIAS_PASS != null
-        run: |
-          sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
-
       - name: Build project
         uses: game-ci/unity-builder@v2.0-alpha-13
         env:
@@ -337,10 +322,10 @@ jobs:
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
           androidKeystoreName: openbrush.keystore
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
