@@ -650,6 +650,16 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Download Build Artifacts (Windows Rift)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Rift
+          path: build_windows_rift
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
