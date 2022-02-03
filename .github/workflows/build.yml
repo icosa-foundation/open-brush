@@ -366,7 +366,6 @@ jobs:
           docker cp ${docker_image}:/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Symbols/armeabi-v7a/libunity.sym.so build/symbols/
           docker cp ${docker_image}:/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Symbols/armeabi-v7a/libmain.sym.so build/symbols/
           docker rm ${docker_image}
-          find build
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
@@ -639,7 +638,6 @@ jobs:
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
           PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
-
 
   publish_oculus:
     name: Publish Oculus Release
