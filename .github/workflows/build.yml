@@ -354,10 +354,13 @@ jobs:
           rm -rf build/*
           mv OpenBrush.tgz build/
 
+      # We have to do this here, because only this worker has docker installed
       - name: Extract Android symbol files
         if: matrix.targetPlatform == 'Android'
         run: |
-          # We have to do this here, because only this worker has docker installed
+          # Change permissions for the build directory, which was created as root only
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod o+w build
           mkdir build/symbols
           docker_image=$(docker create unityci/editor:${UNITY_VERSION}-android-0)
           docker cp ${docker_image}:/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Symbols/armeabi-v7a/libunity.sym.so build/symbols/
