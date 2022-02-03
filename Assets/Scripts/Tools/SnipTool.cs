@@ -25,8 +25,8 @@ namespace TiltBrush
         [SerializeField] private Renderer m_DropperRenderer;
         [SerializeField] private float m_DropperBrushSelectRadius;
         private Renderer m_DropperColorDescriptionSwatchRenderer;
-        
-        
+
+
         private bool m_ValidBrushFoundThisFrame;
         private bool m_SelectionValid;
         private Color m_SelectionColor;

@@ -22,11 +22,11 @@ namespace TiltBrush
     {
         private Stroke m_InitialStroke;
         private Stroke m_NewStroke;
-        
+
         private PointerManager.ControlPoint[] m_InitialCP;
         private PointerManager.ControlPoint[] m_SnippedCP1;
         private PointerManager.ControlPoint[] m_SnippedCP2;
-        
+
         private int m_SnipIndex;
 
         public SnipStrokeCommand(
@@ -45,11 +45,11 @@ namespace TiltBrush
             ModifyStroke(m_InitialStroke, m_SnippedCP1);
             ModifyStroke(m_NewStroke, m_SnippedCP2);
         }
-        
+
         protected override void OnUndo()
         {
             ModifyStroke(m_InitialStroke, m_InitialCP);
-            
+
             switch (m_NewStroke.m_Type)
             {
                 case Stroke.Type.BrushStroke:
@@ -64,7 +64,7 @@ namespace TiltBrush
                     break;
             }
         }
-        
+
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
         {
             stroke.m_ControlPoints = newControlPoints.ToArray();
@@ -72,8 +72,8 @@ namespace TiltBrush
             stroke.Uncreate();
             stroke.Recreate();
         }
-        
+
         public override bool NeedsSave { get { return true; } }
-        
+
     }
 }
