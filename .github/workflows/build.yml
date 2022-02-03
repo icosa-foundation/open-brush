@@ -641,46 +641,6 @@ jobs:
           PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
 
-  test_publish_oculus:
-    name: Test Publish Oculus Release
-    needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
-
-    strategy:
-      fail-fast: false
-
-    steps:
-      - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows Rift
-          path: build_windows_rift
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest
-          path: build_oculus_quest
-      - name: Publish Oculus Builds
-        env:
-          VERSION: ${{ needs.configuration.outputs.version }}
-          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
-          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
-          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
-          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
-        run: |
-          mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          cd releases
-          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
-          chmod 755 ovr-platform-util
-
-          find ../build_oculus_quest/symbols
-          echo Everything
-          find ../
-
   publish_oculus:
     name: Publish Oculus Release
     needs: [configuration, build]
