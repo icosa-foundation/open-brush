@@ -993,7 +993,7 @@ namespace TiltBrush
 
             // Verify controllers are available and prune state if they're not.
             if (App.VrSdk.GetControllerDof() == VrSdk.DoF.Six &&
-                App.VrSdk.IsInitializingSteamVr)
+                App.VrSdk.IsInitializingUnityXR)
             {
                 m_PanelManager.SetVisible(false);
                 PointerManager.m_Instance.RequestPointerRendering(false);

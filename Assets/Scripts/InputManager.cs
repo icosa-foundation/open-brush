@@ -461,8 +461,8 @@ namespace TiltBrush
         void Start()
         {
             App.VrSdk.NewControllerPosesApplied += OnControllerPosesApplied;
-            // If we're initializing SteamVR, defer this call until our controller type is determined.
-            if (!App.VrSdk.IsInitializingSteamVr)
+            // If we're initializing UnityXR, defer this call until our controller type is determined.
+            if (!App.VrSdk.IsInitializingUnityXR)
             {
                 WandOnRight = (PlayerPrefs.GetInt(PLAYER_PREF_WAND_ON_RIGHT, 0) != 0);
             }
@@ -484,66 +484,9 @@ namespace TiltBrush
         void Update()
         {
             // If we're initializing our controllers, continue to look for them.
-            if (App.VrSdk.IsInitializingSteamVr)
+            if (App.VrSdk.IsInitializingUnityXR)
             {
-                if (m_ControllerInfos[0].IsTrackedObjectValid && m_ControllerInfos[1].IsTrackedObjectValid)
-                {
-                    // Determine controllers from the 0 controller.  If that isn't recognized,
-                    // try the 1 controller.  If *that* isn't recognized, default to Vive.
-
-                    // TODO:Mike Disabled to remove SteamControllerInfo.
-
-                    // string controllerStyle0 = "";
-                    // SteamControllerInfo steamInfo0 = m_ControllerInfos[0] as SteamControllerInfo;
-                    // if (!SetSteamControllerStyle(steamInfo0, out controllerStyle0))
-                    // {
-                    //     string controllerStyle1 = "";
-                    //     SteamControllerInfo steamInfo1 = m_ControllerInfos[1] as SteamControllerInfo;
-                    //     if (!SetSteamControllerStyle(steamInfo1, out controllerStyle1))
-                    //     {
-                    //         Debug.LogWarningFormat(
-                    //             "Controller styles {0} and {1} not recognized.  Defaulting to Vive.",
-                    //             controllerStyle0, controllerStyle1);
-                    //         App.VrSdk.SetControllerStyle(ControllerStyle.Vive);
-                    //     }
-                    // }
-
-                    // Null out controller infos to start fresh.
-                    for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                    {
-                        m_ControllerInfos[i] = null;
-                    }
-
-                    // Create new one controller infos.
-                    CreateControllerInfos();
-
-                    // Swap geometry if any of our controllers is a logipen.
-                    bool foundLogipen = false;
-
-                    // TODO:Mike - turned off more logitech pen detection stuff
-                    // for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                    // {
-                    //     SteamControllerInfo info = m_ControllerInfos[i] as SteamControllerInfo;
-                    //     DetectLogitechVrPen pen = info.Behavior.GetComponent<DetectLogitechVrPen>();
-                    //     if (pen != null)
-                    //     {
-                    //         pen.Initialize(info.TrackedPose.GetDeviceIndex());
-                    //         foundLogipen = foundLogipen || pen.IsPen;
-                    //     }
-                    // }
-
-                    // // Initialize handedness.
-                    // // The logitech pen stomps handedness because it is a handed controller, so don't
-                    // // respect this if we've got a pen.
-                    // if (!foundLogipen)
-                    // {
-                    //     WandOnRight = (PlayerPrefs.GetInt(PLAYER_PREF_WAND_ON_RIGHT, 0) != 0);
-                    // }
-
-                    // Refresh pointer angle and rendering.
-                    PointerManager.m_Instance.RefreshFreePaintPointerAngle();
-                    PointerManager.m_Instance.RequestPointerRendering(true);
-                }
+                // TODO:Mike - is this holding state needed?
             }
             else
             {

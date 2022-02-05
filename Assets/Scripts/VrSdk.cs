@@ -146,14 +146,6 @@ namespace TiltBrush
 
         public bool OverlayIsOVR { get { return m_OverlayMode == OverlayMode.OVR; } }
 
-        public bool IsInitializingSteamVr
-        {
-            get
-            {
-                return VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingSteamVR;
-            }
-        }
-
         public bool IsInitializingUnityXR
         {
             get

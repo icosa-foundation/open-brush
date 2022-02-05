@@ -28,7 +28,7 @@ namespace TiltBrush
         {
             get
             {
-                return false;
+                return true;
             }
             set
             {
