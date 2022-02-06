@@ -179,14 +179,14 @@ namespace TiltBrush
 
         #region Menus
 
-        [MenuItem("Tilt/Toolkit/Export FBX", true)]
+        [MenuItem("OpenBrush/Toolkit/Export FBX", true)]
         private static bool ExportBrushStrokesFbx_Enabled()
         {
             return Application.isPlaying;
         }
 
 #if FBX_SUPPORTED
-  [MenuItem("Tilt/Toolkit/Export FBX")]
+  [MenuItem("OpenBrush/Toolkit/Export FBX")]
   private static void ExportBrushStrokesFbx() {
     var current = SaveLoadScript.m_Instance.SceneFile;
     string basename = (current.Valid)
@@ -205,7 +205,7 @@ namespace TiltBrush
 #endif
 
         // Collects all brushes and their assets, and exports them into a folder that can be copied into into Tilt Brush Toolkit's Unity SDK
-        [MenuItem("Tilt/Toolkit/Export Brushes for Toolkit")]
+        [MenuItem("OpenBrush/Toolkit/Export Brushes for Toolkit")]
         static void CollectBrushes()
         {
             ExportToToolkit(
@@ -216,7 +216,7 @@ namespace TiltBrush
 
         // Collects all environments as scenes with the right preferences, and their assets, and exports them into a folder that can be copied into Tilt Brush Toolkit's Unity SDK
         // This is dead and unsupported code at the moment
-        // [MenuItem("Tilt/Toolkit/Export Environments for Toolkit")]
+        // [MenuItem("OpenBrush/Toolkit/Export Environments for Toolkit")]
         static void CollectEnvironments()
         {
             ExportToToolkit(

@@ -29,7 +29,7 @@ namespace TiltBrush
 public static class TurnOffGpuEmulation {
 
   private const string kGpuMenuString = "Edit/Graphics Emulation/No Emulation";
-  private const string kTurnOffGpuEmulation = "Tilt/Keep GPU Emulation Turned Off";
+  private const string kTurnOffGpuEmulation = "OpenBrush/Keep GPU Emulation Turned Off";
 
   public static bool Enabled {
     get {

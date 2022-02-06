@@ -132,7 +132,7 @@ namespace TiltBrush
                     }
                     else if (Directory.Exists(m_fullpath))
                     {
-                        // It's possible for an implementation to save a .tilt/ such that the
+                        // It's possible for an implementation to save a .OpenBrush/ such that the
                         // directory's mtime doesn't change, so check a file's mtime.
                         m_creationTime = File.GetLastWriteTime(Path.Combine(m_fullpath, TiltFile.FN_SKETCH));
                     }

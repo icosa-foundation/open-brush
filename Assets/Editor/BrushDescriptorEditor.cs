@@ -30,7 +30,7 @@ namespace TiltBrush
         string m_noEditWarning;
         string m_appVersion;
 
-        [MenuItem("Tilt/Set Brush release version")]
+        [MenuItem("OpenBrush/Set Brush release version")]
         static void MenuItem_SetBrushReleaseVersions()
         {
             // Go through brushes we're about to release, and set their "first released version"

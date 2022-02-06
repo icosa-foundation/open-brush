@@ -28,7 +28,7 @@ namespace TiltBrush
 
         private class DebugWindow : EditorWindow
         {
-            [MenuItem("Tilt/Poly Asset Catalog Debug Window")]
+            [MenuItem("OpenBrush/Poly Asset Catalog Debug Window")]
             private static void OpenDebugWindow() => GetWindow<DebugWindow>();
 
             private static string ToString(AssetGetter ag)

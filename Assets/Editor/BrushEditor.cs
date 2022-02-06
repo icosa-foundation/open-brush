@@ -58,7 +58,7 @@ namespace TiltBrush
             return asset;
         }
 
-        [MenuItem("Tilt/New Brush")]
+        [MenuItem("OpenBrush/New Brush")]
         static void MenuItem_CreateBrushDescriptor()
         {
             var asset = CreateAsset<BrushDescriptor>("Assets/Resources/Brushes");
@@ -66,7 +66,7 @@ namespace TiltBrush
             asset.m_Guid = new Guid(guidTxt);
         }
 
-        [MenuItem("Tilt/New Environment")]
+        [MenuItem("OpenBrush/New Environment")]
         static void MenuItem_CreateEnvironment()
         {
             var asset = CreateAsset<Environment>("Assets/Resources/Environments");

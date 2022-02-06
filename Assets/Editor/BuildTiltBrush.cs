@@ -60,22 +60,22 @@ static class BuildTiltBrush
         }
     }
 
-    const string kMenuBackgroundBuild = "Tilt/Build/Background Build";
-    const string kMenuSdkPref = "Tilt/Build/Sdk";
-    const string kMenuSdkMonoscopic = "Tilt/Build/Sdk: Monoscopic";
-    const string kMenuSdkOculus = "Tilt/Build/Sdk: OVR";
-    const string kMenuSdkSteamVr = "Tilt/Build/Sdk: SteamVR";
-    const string kMenuSdkGoogleVr = "Tilt/Build/Sdk: GoogleVR";
-    const string kMenuPlatformPref = "Tilt/Build/Platform";
-    const string kMenuPlatformWindows = "Tilt/Build/Platform: Windows";
-    const string kMenuPlatformLinux = "Tilt/Build/Platform: Linux";
-    const string kMenuPlatformOsx = "Tilt/Build/Platform: OSX";
-    const string kMenuPlatformAndroid = "Tilt/Build/Platform: Android";
-    const string kMenuExperimental = "Tilt/Build/Experimental";
-    const string kMenuDevelopment = "Tilt/Build/Development";
-    const string kMenuMono = "Tilt/Build/Runtime: Mono";
-    const string kMenuIl2cpp = "Tilt/Build/Runtime: IL2CPP";
-    const string kMenuAutoProfile = "Tilt/Build/Auto Profile";
+    const string kMenuBackgroundBuild = "OpenBrush/Build/Background Build";
+    const string kMenuSdkPref = "OpenBrush/Build/Sdk";
+    const string kMenuSdkMonoscopic = "OpenBrush/Build/Sdk: Monoscopic";
+    const string kMenuSdkOculus = "OpenBrush/Build/Sdk: OVR";
+    const string kMenuSdkSteamVr = "OpenBrush/Build/Sdk: SteamVR";
+    const string kMenuSdkGoogleVr = "OpenBrush/Build/Sdk: GoogleVR";
+    const string kMenuPlatformPref = "OpenBrush/Build/Platform";
+    const string kMenuPlatformWindows = "OpenBrush/Build/Platform: Windows";
+    const string kMenuPlatformLinux = "OpenBrush/Build/Platform: Linux";
+    const string kMenuPlatformOsx = "OpenBrush/Build/Platform: OSX";
+    const string kMenuPlatformAndroid = "OpenBrush/Build/Platform: Android";
+    const string kMenuExperimental = "OpenBrush/Build/Experimental";
+    const string kMenuDevelopment = "OpenBrush/Build/Development";
+    const string kMenuMono = "OpenBrush/Build/Runtime: Mono";
+    const string kMenuIl2cpp = "OpenBrush/Build/Runtime: IL2CPP";
+    const string kMenuAutoProfile = "OpenBrush/Build/Auto Profile";
 
     const string kBuildCopyDir = "BuildCopy";
     private static string[] kBuildDirs = { "Assets", "Packages", "ProjectSettings", "Support" };
@@ -309,7 +309,7 @@ static class BuildTiltBrush
     }
 
     // Menu items
-    [MenuItem("Tilt/Build/Do Build... #&b", false, 2)]
+    [MenuItem("OpenBrush/Build/Do Build... #&b", false, 2)]
     public static void MenuItem_Build()
     {
         TiltBuildOptions tiltOptions = GetGuiOptions();
@@ -1158,7 +1158,7 @@ static class BuildTiltBrush
         }
     }
 
-    // [MenuItem("Tilt/Show Brush Export Textures")]
+    // [MenuItem("OpenBrush/Show Brush Export Textures")]
     [UsedImplicitly]
     static void ShowBrushExportTextures()
     {

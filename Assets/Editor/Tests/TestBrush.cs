@@ -194,7 +194,7 @@ namespace TiltBrush
     // Unit tests run inside an ephemeral scene, so if you want to examine
     // the results you need to manually run the test
     static public class TestBrushHelper {
-      [MenuItem("Tilt/Run Tests In Scene")]
+      [MenuItem("OpenBrush/Run Tests In Scene")]
       public static void RunTestsInScene() {
         var tb = new TestBrush();
         tb.RunBeforeAnyTests();

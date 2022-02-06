@@ -26,7 +26,7 @@ public class ToggleMonoscopic : MonoBehaviour
 {
     private static Scene MainScene => EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
 
-    [MenuItem("Tilt/Enable Monoscopic Mode in Editor")]
+    [MenuItem("OpenBrush/Enable Monoscopic Mode in Editor")]
     public static void EnableMono()
     {
         SetConfigSDKMode(SdkMode.Monoscopic);
@@ -37,7 +37,7 @@ public class ToggleMonoscopic : MonoBehaviour
         AssetDatabase.Refresh();
     }
 
-    [MenuItem("Tilt/Disable Monoscopic Mode in Editor")]
+    [MenuItem("OpenBrush/Disable Monoscopic Mode in Editor")]
     public static void DisableMono()
     {
         // TODO Update this when we switch to OpenXR branch

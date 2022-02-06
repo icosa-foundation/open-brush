@@ -165,7 +165,7 @@ namespace TiltBrush
 
         private Histogram m_Histogram;
 
-        [MenuItem("Tilt/Open New Profile Analyzer")]
+        [MenuItem("OpenBrush/Open New Profile Analyzer")]
         public static void OpenProfileAnalyzer()
         {
             ProfileAnalyzer analyzer = CreateInstance<ProfileAnalyzer>();

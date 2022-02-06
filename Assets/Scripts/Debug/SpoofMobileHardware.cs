@@ -23,7 +23,7 @@ namespace TiltBrush
     public static class SpoofMobileHardware
     {
 #if UNITY_EDITOR
-        private const string kSpoofMobileHardware = "Tilt/Spoof Mobile Hardware";
+        private const string kSpoofMobileHardware = "OpenBrush/Spoof Mobile Hardware";
 
         public static bool MobileHardware
         {

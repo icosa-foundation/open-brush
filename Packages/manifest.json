@@ -14,6 +14,7 @@
     "com.unity.timeline": "1.4.8",
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.management": "4.2.0",
+    "com.unity.xr.oculus": "1.10.0",
     "com.unity.xr.openxr": "1.2.8",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
@@ -52,6 +53,6 @@
       "scopes": [
         "com.htc.upm"
       ]
-  }
+    }
   ]
 }

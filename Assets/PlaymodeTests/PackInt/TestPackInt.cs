@@ -41,7 +41,7 @@ namespace TiltBrush
         const int kUnpackRepack = 5;
 
 #if UNITY_EDITOR && false
-  [UnityEditor.MenuItem("Tilt/Run PackInt unit test")]
+  [UnityEditor.MenuItem("OpenBrush/Run PackInt unit test")]
   static void UnitTestMenuItem() {
     Material material = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
         "Assets/PlaymodeTests/PackInt/TestPackInt.mat");
