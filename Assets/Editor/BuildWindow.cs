@@ -19,7 +19,10 @@ using UnityEngine;
 using UnityEditor;
 using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using UnityEngine.XR;
+using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
 {
@@ -66,7 +69,7 @@ namespace TiltBrush
             public bool Succeeded { get; private set; }
             public bool Running
             {
-                get { return m_future != null; }
+                get => m_future != null;
             }
             public bool HasRun { get; private set; }
             public DateTime FinishTime { get; private set; }
@@ -76,8 +79,7 @@ namespace TiltBrush
             // Called when a build process is completed, with success/failure as the parameter.
             public event Action<bool> Completed;
 
-            public AndroidOperation(
-                string name, Func<string[], bool> successTest, params string[] arguments)
+            public AndroidOperation(string name, Func<string[], bool> successTest, params string[] arguments)
             {
                 m_successTest = successTest;
                 m_name = name;
@@ -222,26 +224,37 @@ namespace TiltBrush
         private int? m_buildLogPosition;
         private System.IntPtr m_hwnd;
         private DateTime m_buildCompleteTime;
-        private static string m_adbPath;
 
-        private bool AndroidConnected
+        private string CurrentBuildStatus => BuildTiltBrush.BuildStatus;
+
+        private static bool AdbExists
         {
             get
             {
-                return !string.IsNullOrEmpty(m_selectedAndroid) && m_androidDevices.Length > 0;
+                string path = BuildTiltBrush.AdbPath;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return File.Exists(path);
+                }
+                return false;
             }
+        }
+
+        private bool AndroidConnected
+        {
+            get => !string.IsNullOrEmpty(m_selectedAndroid) && m_androidDevices.Length > 0;
         }
 
         private bool UploadAfterBuild
         {
-            get { return EditorPrefs.GetBool(kAutoUploadAfterBuild, false); }
-            set { EditorPrefs.SetBool(kAutoUploadAfterBuild, value); }
+            get => EditorPrefs.GetBool(kAutoUploadAfterBuild, false);
+            set => EditorPrefs.SetBool(kAutoUploadAfterBuild, value);
         }
 
         private bool RunAfterUpload
         {
-            get { return EditorPrefs.GetBool(kAutoRunAfterUpload, false); }
-            set { EditorPrefs.SetBool(kAutoRunAfterUpload, value); }
+            get => EditorPrefs.GetBool(kAutoRunAfterUpload, false);
+            set => EditorPrefs.SetBool(kAutoRunAfterUpload, value);
         }
 
         [MenuItem("OpenBrush/Build/Build Window", false, 1)]
@@ -269,21 +282,18 @@ namespace TiltBrush
         {
             EditorGUILayout.BeginVertical();
 
-            BuildSetupGui();
+            MakeBuildConfigGui();
 
-            MakeBuildsGui();
+            MakeDeviceGui();
 
-            if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
-            {
-                DeviceGui();
-            }
+            MakeBuildActionsGui();
 
-            BuildActionsGui();
+            MakeBuildStatusGui();
 
             EditorGUILayout.EndVertical();
         }
 
-        private void BuildSetupGui()
+        private void MakeBuildConfigGui()
         {
             GUILayoutOption[] options = new GUILayoutOption[]
             {
@@ -365,17 +375,20 @@ namespace TiltBrush
             }
         }
 
-
-
-        private void MakeBuildsGui()
+        private void MakeBuildActionsGui()
         {
-            using (var buildBar = new HeaderedVerticalLayout("Build"))
+            using (var buildBar = new HeaderedVerticalLayout("Build Actions"))
             {
                 using (var buttonBar = new GUILayout.HorizontalScope())
                 {
                     bool build = GUILayout.Button("Build");
                     GUI.enabled = !BuildTiltBrush.DoingBackgroundBuild;
                     bool buildBackground = GUILayout.Button("Background Build");
+
+                    if (GUILayout.Button("Show Build Folder") && !String.IsNullOrEmpty(m_currentBuildPath))
+                    {
+                        Process.Start(Path.GetDirectoryName(m_currentBuildPath));
+                    }
 
                     GUI.enabled = BuildTiltBrush.DoingBackgroundBuild;
                     if (GUILayout.Button("Cancel"))
@@ -415,6 +428,23 @@ namespace TiltBrush
                 {
                     UploadAfterBuild = GUILayout.Toggle(UploadAfterBuild, "Upload after Build");
                     RunAfterUpload = GUILayout.Toggle(RunAfterUpload, "Run after Upload");
+                }
+                GUILayout.Space(12);
+
+                // Android support buttons
+                if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android && !string.IsNullOrEmpty(BuildTiltBrush.AdbPath))
+                {
+                    using (var buildBar2 = new HeaderedVerticalLayout("Android Actions"))
+                    {
+                        GUI.enabled = AndroidConnected && !BuildTiltBrush.DoingBackgroundBuild;
+                        m_upload.OnGUI();
+                        m_launch.OnGUI();
+                        m_turnOnAdbDebugging.OnGUI();
+                        m_launchWithProfile.OnGUI();
+                        m_terminate.OnGUI();
+                        GUI.enabled = true;
+
+                    }
                 }
 
                 int start = Mathf.Clamp(m_buildLog.Count - 11, 0, int.MaxValue);
@@ -482,35 +512,55 @@ namespace TiltBrush
             m_buildLog.Clear();
         }
 
-
-
-        private void DeviceGui()
+        private void MakeDeviceGui()
         {
-            using (var droids = new HeaderedVerticalLayout("Android devices"))
+            // Show the devices supported by Unity XR.
+            using (var unused = new HeaderedVerticalLayout("Supported XR Devices"))
             {
-                foreach (string device in m_androidDevices)
+                EditorGUILayout.LabelField("XR Plugins Selected", BuildTiltBrush.GetXrPlugins());
+
+                EditorGUILayout.LabelField(
+                    "XR Plugin Devices", string.Join(", ", XRSettings.supportedDevices),
+                    EditorStyles.wordWrappedLabel);
+            }
+
+            if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+            {
+                using (var droids = new HeaderedVerticalLayout("Android devices"))
                 {
-                    bool selected = device == m_selectedAndroid;
-                    bool newSelected = GUILayout.Toggle(selected, device);
-                    if (selected != newSelected)
+                    foreach (string device in m_androidDevices)
                     {
-                        m_selectedAndroid = device;
+                        bool selected = device == m_selectedAndroid;
+                        bool newSelected = GUILayout.Toggle(selected, device);
+                        if (selected != newSelected)
+                        {
+                            m_selectedAndroid = device;
+                        }
                     }
                 }
             }
+
         }
 
-        private void BuildActionsGui()
+        private void MakeBuildStatusGui()
         {
-            using (var builds = new HeaderedVerticalLayout("Build"))
+            using (var builds = new HeaderedVerticalLayout("Build Status"))
             {
-                EditorGUILayout.LabelField("Build Path", m_currentBuildPath);
-                if (!String.IsNullOrEmpty(m_adbPath))
+                EditorGUILayout.LabelField("Status", CurrentBuildStatus);
+
+                EditorGUILayout.LabelField("Build Output", m_currentBuildPath);
+
+                // Android specific information
+                if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
                 {
-                    EditorGUILayout.LabelField("Adb Path", m_adbPath);
-                    if (!File.Exists(m_adbPath))
-                        EditorGUILayout.LabelField("Adb status", "ADB not found in expected path.");
+                    EditorGUILayout.LabelField("Adb Path", BuildTiltBrush.AdbPath ?? "Unset");
+                    if (!String.IsNullOrEmpty(BuildTiltBrush.AdbPath))
+                    {
+                        if (!File.Exists(BuildTiltBrush.AdbPath))
+                            EditorGUILayout.LabelField("Adb status", "ADB not found in expected path.");
+                    }
                 }
+
                 if (m_currentBuildTime.HasValue)
                 {
                     TimeSpan age = DateTime.Now - m_currentBuildTime.Value;
@@ -521,17 +571,6 @@ namespace TiltBrush
                     if (age.Minutes > 0) { textAge.AppendFormat("{0}m ", age.Minutes); }
                     textAge.AppendFormat("{0}s", age.Seconds);
                     EditorGUILayout.LabelField("Age", textAge.ToString());
-
-                    if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
-                    {
-                        GUI.enabled = AndroidConnected && !BuildTiltBrush.DoingBackgroundBuild;
-                        m_upload.OnGUI();
-                        m_launch.OnGUI();
-                        m_turnOnAdbDebugging.OnGUI();
-                        m_launchWithProfile.OnGUI();
-                        m_terminate.OnGUI();
-                        GUI.enabled = true;
-                    }
                 }
                 else
                 {
@@ -571,17 +610,6 @@ namespace TiltBrush
         private void OnBuildSettingsChanged()
         {
             // Only set this if supporting SDK that needs Android (and is installed!).
-#if UNITY_ANDROID
-#if UNITY_EDITOR_WIN
-      string adbExe = "adb.exe";
-#else
-      string adbExe = "adb";
-#endif
-      // If we're on Android cache the path to adb as it used during building. Need to do it pre-work so on main thread.
-      m_adbPath = BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android
-        ? Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", adbExe)
-        : null;
-#endif
 
             m_currentBuildPath = BuildTiltBrush.GetAppPathForGuiBuild();
             if (File.Exists(m_currentBuildPath))
@@ -647,16 +675,20 @@ namespace TiltBrush
 
         public static string[] RunAdb(params string[] arguments)
         {
-            var process = new System.Diagnostics.Process();
-            process.StartInfo =
-                new System.Diagnostics.ProcessStartInfo(m_adbPath, String.Join(" ", arguments));
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
-            process.Start();
-            process.WaitForExit();
-            return process.StandardOutput.ReadToEnd().Split('\n').Concat(process.StandardError.ReadToEnd().Split('\n')).ToArray();
+            if (AdbExists)
+            {
+                var process = new System.Diagnostics.Process();
+                process.StartInfo = new System.Diagnostics.ProcessStartInfo(BuildTiltBrush.AdbPath, String.Join(" ", arguments));
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                process.WaitForExit();
+                return process.StandardOutput.ReadToEnd().Split('\n').Concat(process.StandardError.ReadToEnd().Split('\n')).ToArray();
+            }
+
+            return new string[] { "" };
         }
 
         private void Update()
@@ -756,11 +788,8 @@ namespace TiltBrush
 
         private float SuccessfulBuildSeconds
         {
-            get { return EditorPrefs.GetFloat(kSuccessfulBuildTime, 300); }
-            set
-            {
-                EditorPrefs.SetFloat(kSuccessfulBuildTime, Mathf.Lerp(value, SuccessfulBuildSeconds, 0.8f));
-            }
+            get => EditorPrefs.GetFloat(kSuccessfulBuildTime, 300);
+            set => EditorPrefs.SetFloat(kSuccessfulBuildTime, Mathf.Lerp(value, SuccessfulBuildSeconds, 0.8f));
         }
 
         private DateTime BuildStartTime
@@ -774,10 +803,7 @@ namespace TiltBrush
                 }
                 return DateTime.Parse(datetimeString);
             }
-            set
-            {
-                EditorPrefs.SetString(kBuildStartTime, value.ToString());
-            }
+            set => EditorPrefs.SetString(kBuildStartTime, value.ToString());
         }
 
 #if UNITY_EDITOR_WIN
