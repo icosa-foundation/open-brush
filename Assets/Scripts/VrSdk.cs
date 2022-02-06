@@ -792,7 +792,7 @@ namespace TiltBrush
             }
             else if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                return new UnityXRControllerInfo(behavior);
+                return new UnityXRControllerInfo(behavior, isLeftHand);
             }
             else
             {

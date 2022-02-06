@@ -497,10 +497,10 @@ namespace TiltBrush
                 }
 
                 //cache touch inputs so we can control their usage
-                m_Touch.m_Valid = (Input.touchCount > 0) && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
+                m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
                 if (m_Touch.m_Valid)
                 {
-                    m_Touch.m_Pos = Input.GetTouch(0).position;
+                    m_Touch.m_Pos = Touchscreen.current.primaryTouch.ReadValue().position;
                 }
 
                 // Update touch locators.
@@ -586,7 +586,7 @@ namespace TiltBrush
 
         public bool GetAnyShift()
         {
-            return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            return Keyboard.current[Key.LeftShift].wasPressedThisFrame || Keyboard.current[Key.RightShift].wasPressedThisFrame;
         }
 
         private KeyboardShortcut? MapCommandToKeyboard(SketchCommands rCommand)
@@ -636,7 +636,7 @@ namespace TiltBrush
                 case SketchCommands.Scale:
                     return GetKeyboardShortcut(shortcut.Value) || Brush.GetCommand(rCommand);
                 case SketchCommands.Sensitivity:
-                    return Mathf.Abs(Input.GetAxis("Mouse ScrollWheel")) > m_InputThreshold;
+                    return Mathf.Abs(Mouse.current.scroll.x.ReadValue()) > m_InputThreshold;
                 case SketchCommands.Panic:
                     return GetMouseButton(1) || Wand.GetCommand(rCommand);
                 case SketchCommands.MultiCamSelection:
@@ -790,7 +790,7 @@ namespace TiltBrush
 
         public float GetMouseWheel()
         {
-            return Input.GetAxis("Mouse ScrollWheel");
+            return Mouse.current.scroll.x.ReadValue();
         }
 
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
@@ -830,7 +830,7 @@ namespace TiltBrush
             // Check mouse first.
             if (!App.Config.IsMobileHardware)
             {
-                float fMouse = Input.GetAxis("Mouse X");
+                float fMouse = Mouse.current.delta.x.ReadValue();
                 if (Mathf.Abs(fMouse) > m_InputThreshold)
                 {
                     return fMouse;
@@ -869,7 +869,7 @@ namespace TiltBrush
 
         public float GetToolSelection()
         {
-            float fScrollWheel = Input.GetAxis("Mouse ScrollWheel");
+            float fScrollWheel = Mouse.current.scroll.x.ReadValue();
             if (Mathf.Abs(fScrollWheel) > m_InputThreshold)
             {
                 return fScrollWheel;
