@@ -61,18 +61,6 @@ namespace TiltBrush
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
-        // Executable Base
-        public const string kGuiBuildExecutableName = "OpenBrush";
-        // Windows Executable
-        public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
-        // Linux Executable
-        public const string kGuiBuildLinuxExecutableName = kGuiBuildExecutableName;
-        // OSX Executable
-        public const string kGuiBuildOSXExecutableName = kGuiBuildExecutableName + ".app";
-        // Android Application Identifier
-        public const string kGuiBuildAndroidApplicationIdentifier = "com." + kVendorName + "." + kGuiBuildExecutableName;
-        // Android Executable
-        public const string kGuiBuildAndroidExecutableName = kGuiBuildAndroidApplicationIdentifier + ".apk";
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
         public const string kReferenceImagesSeeded = "Reference Images seeded";
