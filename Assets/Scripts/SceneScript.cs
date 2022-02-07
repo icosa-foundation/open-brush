@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using TiltBrush.Layers;
 
 namespace TiltBrush
 {
@@ -24,10 +25,21 @@ namespace TiltBrush
     // (e.g. component enabled vs. game object active).
     public class SceneScript : MonoBehaviour
     {
-        public delegate void PoseChangedEventHandler(
-            TrTransform prev, TrTransform current);
-        public delegate void ActiveCanvasChangedEventHandler(
-            CanvasScript prev, CanvasScript current);
+        
+        public delegate void PoseChangedEventHandler(TrTransform prev, TrTransform current);
+        public event PoseChangedEventHandler PoseChanged;
+
+        public delegate void ActiveCanvasChangedEventHandler(CanvasScript prev, CanvasScript current);
+        public event ActiveCanvasChangedEventHandler ActiveCanvasChanged;
+
+        public delegate void LayerCanvasesUpdateEventHandler(List<CanvasScript> layerCanvases);
+        public event LayerCanvasesUpdateEventHandler LayerCanvasesUpdate;
+
+        public delegate void LayerCanvasAddedEventHandler(CanvasScript layerCanvas);
+        public event LayerCanvasAddedEventHandler LayerCanvasAdded;
+
+        public delegate void LayerCanvasDeletedEventHandler(CanvasScript layerCanvas);
+        public event LayerCanvasDeletedEventHandler LayerCanvasDeleted;
 
         [SerializeField] private CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
@@ -37,9 +49,6 @@ namespace TiltBrush
 
         private CanvasScript m_ActiveCanvas;
         private List<CanvasScript> m_LayerCanvases;
-
-        public event PoseChangedEventHandler PoseChanged;
-        public event ActiveCanvasChangedEventHandler ActiveCanvasChanged;
 
         /// Helper for getting and setting transforms on Transform components.
         /// Transform natively allows you to access parent-relative ("local")
@@ -124,7 +133,7 @@ namespace TiltBrush
                     m_ActiveCanvas = value;
                     if (ActiveCanvasChanged != null)
                     {
-                        ActiveCanvasChanged(prev, m_ActiveCanvas);
+                        ActiveCanvasChanged?.Invoke(prev, m_ActiveCanvas);
                         // This will be incredibly irritating, but until we have some other feedback...
                         OutputWindowScript.m_Instance.CreateInfoCardAtController(
                             InputManager.ControllerName.Brush,
@@ -158,6 +167,23 @@ namespace TiltBrush
                 }
             }
         }
+
+        public IEnumerable<CanvasScript> LayerCanvases
+        {
+            get
+            {
+                yield return MainCanvas;
+
+                if (m_LayerCanvases != null)
+                {
+                    for (int i = 0; i < m_LayerCanvases.Count; ++i)
+                    {
+                        yield return m_LayerCanvases[i];
+                    }
+                }
+            }
+        }
+
 
         // Init unless already initialized. Safe to call zero or multiple times.
         public void Init()
@@ -196,7 +222,7 @@ namespace TiltBrush
             m_Lights[(int)LightMode.Shadow].renderMode = LightRenderMode.ForcePixel;
             m_Lights[(int)LightMode.NoShadow].shadows = LightShadows.None;
             m_Lights[(int)LightMode.NoShadow].renderMode = LightRenderMode.ForceVertex;
-        }
+        }   
 
         public CanvasScript Test_AddLayer()
         {
@@ -214,6 +240,44 @@ namespace TiltBrush
             }
 #endif
             return null;
+        }
+        
+        // Adds a canvas layer to the scene
+        public CanvasScript AddLayer()
+        {
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            if (Config.IsExperimental)
+            {
+                var go = new GameObject(string.Format("Layer {0}", m_LayerCanvases.Count));
+
+                go.transform.parent = transform;
+                Coords.AsLocal[go.transform] = TrTransform.identity;
+                go.transform.hasChanged = false;
+              
+                var layer = go.AddComponent<CanvasScript>();
+                m_LayerCanvases.Add(layer);
+                App.Scene.ActiveCanvas = layer;
+
+                LayerCanvasAdded?.Invoke(layer);
+                LayerCanvasesUpdate?.Invoke(m_LayerCanvases);
+                return layer;             
+            }
+#endif
+            return null;
+        }
+
+        // Deletes a canvas from the scene
+        public void DeleteLayer(CanvasScript layer)
+        {
+            if (m_LayerCanvases.Contains(layer))
+            {
+                m_LayerCanvases.Remove(layer);
+                foreach (Batch b in layer.BatchManager.AllBatches())
+                    b.Destroy();
+                Destroy(layer.gameObject);
+            }
+
+            LayerCanvasesUpdate?.Invoke(m_LayerCanvases);
         }
 
         public void Test_SquashCurrentLayer()
