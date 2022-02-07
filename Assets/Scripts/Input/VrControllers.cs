@@ -40,15 +40,9 @@ namespace TiltBrush
 
         // VR headsets (e.g., Rift, Vive, Wmr) use different hardware for their controllers,
         // they require a scaled duration for the haptics to be felt in users hand.
-        public float HapticsDurationScale
-        {
-            get { return m_HapticsDurationScale; }
-        }
+        public float HapticsDurationScale => m_HapticsDurationScale;
 
-        public float HapticsAmplitudeScale
-        {
-            get { return m_HapticAmplitudeScale; }
-        }
+        public float HapticsAmplitudeScale => m_HapticAmplitudeScale;
 
         public BaseControllerBehavior GetBehavior(InputManager.ControllerName name)
         {
@@ -92,29 +86,29 @@ namespace TiltBrush
 
         public Vector2 TouchpadActivationRange
         {
-            get { return m_TouchpadActivationRange; }
+            get => m_TouchpadActivationRange;
         }
 
         public float WandRotateJoystickPercent
         {
-            get { return m_WandRotateJoystickPercent; }
+            get => m_WandRotateJoystickPercent;
         }
 
         /// The usable range of the raw grip value.
         /// This is currently only used as the threshold for analog -> boolean conversion.
         public Vector2 GripActivationRange
         {
-            get { return m_GripActivationRange; }
+            get => m_GripActivationRange;
         }
 
         public ControllerBehaviorWand Wand
         {
-            get { return m_Wand; }
+            get => m_Wand;
         }
 
         public ControllerBehaviorBrush Brush
         {
-            get { return m_Brush; }
+            get => m_Brush;
         }
 
         public bool LogitechPenIsPresent()

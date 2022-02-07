@@ -83,9 +83,9 @@ namespace TiltBrush
         [SerializeField] private Camera m_VrCamera;
 
         // Runtime VR Spawned Controllers
-        // This is the source of truth for controllers.  InputManager.m_ControllerInfos stores
-        // links to some of these components, but may be out of date for a frame when
-        // controllers change.
+        //  - This is the source of truth for controllers.
+        //  - InputManager.m_ControllerInfos stores links to some of these components, but may be
+        //    out of date for a frame when controllers change.
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
 
@@ -144,14 +144,11 @@ namespace TiltBrush
             get { return m_AnalogGripBinaryThreshold_Rift; }
         }
 
-        public bool OverlayIsOVR { get { return m_OverlayMode == OverlayMode.OVR; } }
+        public bool OverlayIsOVR => m_OverlayMode == OverlayMode.OVR;
 
         public bool IsInitializingUnityXR
         {
-            get
-            {
-                return VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
-            }
+            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -348,8 +345,7 @@ namespace TiltBrush
 
             if (m_NeedsToAttachConsoleScript && m_VrControls != null)
             {
-                ControllerConsoleScript.m_Instance.AttachToController(
-                    m_VrControls.Brush);
+                ControllerConsoleScript.m_Instance.AttachToController(m_VrControls.Brush);
                 m_NeedsToAttachConsoleScript = false;
             }
         }
@@ -379,8 +375,10 @@ namespace TiltBrush
 
         private void OnInputFocus(params object[] args)
         {
-            InputManager.m_Instance.AllowVrControllers = (bool)args[0];
-            m_HasVrFocus = (bool)args[0];
+            bool value = (bool)args[0];
+            App.Log($"VrSdk.OnInputFocus -> {value}");
+            InputManager.m_Instance.AllowVrControllers = value;
+            m_HasVrFocus = value;
         }
 
         private void OnNewPoses()
@@ -435,10 +433,7 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
 
         // Returns a string representing the user's hardware and SDK configuration.
-        public string GetDisplayIdentifier()
-        {
-            return string.Format("{0}; {1}", App.Config.m_SdkMode, App.Config.VrHardware);
-        }
+        public string DisplayIdentifier => $"{App.Config.m_SdkMode}; {App.Config.VrHardware}";
 
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
@@ -573,6 +568,7 @@ namespace TiltBrush
             }
         }
 
+        // Used for debugging.
         static private bool IsClockwiseConvex(Vector3[] points)
         {
             for (int i = 0; i < points.Length; ++i)
@@ -747,8 +743,7 @@ namespace TiltBrush
                 m_VrControls = controlsObject.GetComponent<VrControllers>();
                 if (m_VrControls == null)
                 {
-                    throw new InvalidOperationException(
-                        string.Format("Bad prefab for {0} {1}", style, controlsPrefab));
+                    throw new InvalidOperationException($"Bad prefab for {style} {controlsPrefab}");
                 }
                 m_VrControls.transform.parent = m_VrSystem.transform;
             }
@@ -757,8 +752,7 @@ namespace TiltBrush
             {
                 if (m_NeedsToAttachConsoleScript && ControllerConsoleScript.m_Instance)
                 {
-                    ControllerConsoleScript.m_Instance.AttachToController(
-                        m_VrControls.Brush);
+                    ControllerConsoleScript.m_Instance.AttachToController(m_VrControls.Brush);
                     m_NeedsToAttachConsoleScript = false;
                 }
 
@@ -1217,7 +1211,7 @@ namespace TiltBrush
                     // TODO: 30 would be correct, buf feels too slow.
                     return 60;
                 case SdkMode.UnityXR:
-                    return 60;
+                    return 60; // 90?
                 default:
                     throw new NotImplementedException("Unknown VR SDK Mode");
             }
@@ -1230,9 +1224,8 @@ namespace TiltBrush
             {
                 case SdkMode.Oculus:
                 case SdkMode.SteamVR:
-                case SdkMode.UnityXR:
-                    return DoF.Six;
                 case SdkMode.Gvr:
+                case SdkMode.UnityXR:
                     return DoF.Six;
                 default:
                     return DoF.None;

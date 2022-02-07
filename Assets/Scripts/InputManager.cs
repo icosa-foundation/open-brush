@@ -264,10 +264,10 @@ namespace TiltBrush
         // Note that m_ControllerInfos is not the source of truth for controllers.  That's located
         // in VrSdk.m_VrControls.  These are potentially out of date for a frame when controllers
         // change.
-        public static ControllerInfo[] Controllers { get { return m_Instance.m_ControllerInfos; } }
-        public static ControllerInfo Wand { get { return Controllers[(int)ControllerName.Wand]; } }
-        public static ControllerInfo Brush { get { return Controllers[(int)ControllerName.Brush]; } }
-        static public event Action OnSwapControllers;
+        public static ControllerInfo[] Controllers { get => m_Instance.m_ControllerInfos; }
+        public static ControllerInfo Wand { get => Controllers[(int)ControllerName.Wand]; }
+        public static ControllerInfo Brush { get => Controllers[(int)ControllerName.Brush]; }
+        public static event Action OnSwapControllers;
 
         //
         // Inspector configurables
@@ -297,7 +297,7 @@ namespace TiltBrush
         // Public properties
         //
 
-        static public void ControllersHaveChanged()
+        public static void ControllersHaveChanged()
         {
             OnSwapControllers();
         }
@@ -306,7 +306,7 @@ namespace TiltBrush
 
         public bool AllowVrControllers
         {
-            get { return m_AllowVrControllers; }
+            get => m_AllowVrControllers;
             set
             {
                 m_AllowVrControllers = value;
@@ -325,10 +325,7 @@ namespace TiltBrush
 
         public bool WandOnRight
         {
-            get
-            {
-                return m_WandOnRight;
-            }
+            get => m_WandOnRight;
 
             set
             {
@@ -532,13 +529,14 @@ namespace TiltBrush
 
                 // Update velocity and acceleration.
                 Vector3 currPosition = info.Transform.position;
+
                 // TODO: should this take velocity straight from the controller?
                 // Might be more accurate
                 Vector3 currVelocity = (currPosition - info.m_Position) / Time.deltaTime;
-                info.m_Acceleration =
-                    (currVelocity - info.m_Velocity) / Time.deltaTime;
+                info.m_Acceleration = (currVelocity - info.m_Velocity) / Time.deltaTime;
                 info.m_Velocity = currVelocity;
                 info.m_Position = currPosition;
+
                 if (info.m_WasTracked != info.IsTrackedObjectValid)
                 {
                     info.ShowController(info.IsTrackedObjectValid && App.Instance.ShowControllers);

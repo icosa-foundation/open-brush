@@ -37,8 +37,9 @@ using UnityEngine.InputSystem;
 namespace TiltBrush
 {
 
-    // These names are used in our analytics, so they must be protected from obfuscation.
-    // Do not change the names of any of them, unless they've never been released.
+    // The sdk mode indicates which SDK (UnityXr, OVR, SteamVR, etc.) that we're using to drive the display.
+    //  - These names are used in our analytics, so they must be protected from obfuscation.
+    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
@@ -47,8 +48,8 @@ namespace TiltBrush
         SteamVR,
         Cardboard_Deprecated,
         Monoscopic,
-        Ods,
-        Gvr,
+        Ods,    // Video rendering
+        Gvr,    // Google VR
         UnityXR,
     }
 
@@ -59,12 +60,13 @@ namespace TiltBrush
     [Serializable]
     public enum VrHardware
     {
-        Unset,
+        Unset,       // Not set yet.
+        Unsupported, // We did not recognise the hardware.        
         None,
         Rift,
         Vive,
         Daydream,
-        Wmr,
+        Wmr, // Windows Mixed Reality
         Quest,
         OpenXR,
     }
@@ -123,7 +125,7 @@ namespace TiltBrush
         // Public to allow App.cs and BuildTiltBrush.cs to access it; do not use it otherwise.
         public bool m_IsExperimental;
 
-        // The sdk mode indicates which SDK (OVR, SteamVR, etc.) that we're using to drive the display.
+        // The sdk mode indicates which SDK (UnityXr, OVR, SteamVR, etc.) that we're using to drive the display.
         public SdkMode m_SdkMode;
 
         // Whether or not to just do an automatic profile and then exit.
@@ -238,13 +240,9 @@ namespace TiltBrush
             // Only sadness will ensue if the user tries to set Override.MobileHardware=true
             // but their editor platform is still set to Windows.
 #if UNITY_EDITOR && UNITY_ANDROID
-            get
-            {
-                return Application.platform == RuntimePlatform.Android
-                    || SpoofMobileHardware.MobileHardware;
-            }
+            get => Application.platform == RuntimePlatform.Android || SpoofMobileHardware.MobileHardware;
 #else
-            get { return Application.platform == RuntimePlatform.Android; }
+            get => Application.platform == RuntimePlatform.Android;
 #endif
         }
 
@@ -368,10 +366,7 @@ namespace TiltBrush
 
         public bool OfflineRender
         {
-            get
-            {
-                return !string.IsNullOrEmpty(m_VideoPathToRender) && m_SdkMode != SdkMode.Ods;
-            }
+            get => !string.IsNullOrEmpty(m_VideoPathToRender) && m_SdkMode != SdkMode.Ods;
         }
 
         public PlatformConfig PlatformConfig
@@ -604,7 +599,7 @@ namespace TiltBrush
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public static bool IsExperimental
         {
-            get { return App.Config.m_IsExperimental; }
+            get => App.Config.m_IsExperimental;
         }
 #endif
 

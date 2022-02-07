@@ -38,8 +38,7 @@ namespace TiltBrush
         [FormerlySerializedAs("m_Offset")] [SerializeField] private Vector3 m_GeometryOffset;
         [FormerlySerializedAs("m_Rotation")]
         [SerializeField]
-        private Quaternion m_GeometryRotation
-            = Quaternion.identity;
+        private Quaternion m_GeometryRotation = Quaternion.identity;
 
         // -------------------------------------------------------------------------------------------- //
         // Private Fields
@@ -54,15 +53,9 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Public Properties
         // -------------------------------------------------------------------------------------------- //
-        public InputManager.ControllerName ControllerName
-        {
-            get { return m_ControllerName; }
-        }
+        public InputManager.ControllerName ControllerName => m_ControllerName;
 
-        private GameObject TransformVisuals
-        {
-            get { return ControllerGeometry.TransformVisualsRenderer.gameObject; }
-        }
+        private GameObject TransformVisuals => ControllerGeometry.TransformVisualsRenderer.gameObject;
 
         public ControllerGeometry ControllerGeometry
         {
@@ -171,7 +164,7 @@ namespace TiltBrush
             // If the transform visuals are active and the user is interacting with a widget, add the
             // transform visuals to the highlight queue. Eventually, we may:
             //
-            // (a) only have the post process higlight in which case these transform visuals will not need
+            // (a) only have the post process highlight in which case these transform visuals will not need
             //     a renderer/material or
             // (b) modify the highlight queue to a dynamic list that retains state across frames in which
             //     case this logic can be moved into EnableTransformVisuals().
@@ -209,7 +202,7 @@ namespace TiltBrush
 
         virtual public void ActivateHint(bool bActivate) { }
 
-        // Displays the swap effect on the controller. This may be overridden in sublcasses
+        // Displays the swap effect on the controller. This may be overridden in subclasses
         // if specific controllers have different implementations.
         virtual public void DisplayControllerSwapAnimation()
         {
@@ -313,6 +306,7 @@ namespace TiltBrush
                 // This value assumes loc is normalized to the range [-1,1].
                 Vector2 offset = new Vector2(loc.x * m_ControllerGeometry.TouchLocatorTranslateScale,
                     loc.y * m_ControllerGeometry.TouchLocatorTranslateScale);
+
                 if (offset.magnitude > m_ControllerGeometry.TouchLocatorTranslateClamp)
                 {
                     offset = offset.normalized * m_ControllerGeometry.TouchLocatorTranslateClamp;

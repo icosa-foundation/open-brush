@@ -28,7 +28,11 @@ namespace TiltBrush
         private bool m_IsValid = false;
         private Coroutine m_VibrationCoroutine = null;
 
-        public override bool IsTrackedObjectValid { get { return m_IsValid; } set { m_IsValid = value; } }
+        public override bool IsTrackedObjectValid
+        {
+            get => m_IsValid;
+            set => m_IsValid = value;
+        }
 
         public OVRInput_Controller m_ControllerType = 0;
 
@@ -46,10 +50,13 @@ namespace TiltBrush
             bool bothTouchControllersConnected =
                 (OVRInput.GetConnectedControllers() & OVRInput.Controller.Touch)
                 == OVRInput.Controller.Touch;
+            
             OVRInput.Controller input = m_ControllerType;
+            
             IsTrackedObjectValid = OVRInput.GetControllerOrientationTracked(input) ||
                 OVRInput.GetControllerPositionTracked(input) &&
                 bothTouchControllersConnected;
+            
             Transform t = Behavior.transform;
             t.localRotation = OVRInput.GetLocalControllerRotation(input);
             t.localPosition = OVRInput.GetLocalControllerPosition(input);
