@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using TiltBrush.Layers;
 
 namespace TiltBrush
 {
@@ -243,7 +243,7 @@ namespace TiltBrush
         }
         
         // Adds a canvas layer to the scene
-        public CanvasScript AddLayer()
+        public CanvasScript AddLayer(bool makeActive=true)
         {
             var go = new GameObject(string.Format("Layer {0}", m_LayerCanvases.Count));
 
@@ -253,7 +253,7 @@ namespace TiltBrush
           
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
-            App.Scene.ActiveCanvas = layer;
+            if (makeActive) App.Scene.ActiveCanvas = layer;
 
             LayerCanvasAdded?.Invoke(layer);
             LayerCanvasesUpdate?.Invoke(m_LayerCanvases);
@@ -327,6 +327,32 @@ namespace TiltBrush
         public Light GetLight(int index)
         {
             return m_Lights[index];
+        }
+        
+        public uint LayerForCanvas(Stroke stroke)
+        {
+            // IndexOf doesn't work so match on name
+            var layerIndex = m_LayerCanvases.FindIndex(x => x.name == stroke.Canvas.name) + 1;
+            // The main layer isn't in m_LayerCanvases
+            if (layerIndex < 0) layerIndex = 0;
+            return Convert.ToUInt32(layerIndex);
+            
+        }
+        
+        public CanvasScript GetOrCreateLayer(int layerIndex)
+        {
+            for (int i = m_LayerCanvases.Count; i<=layerIndex; i++)
+            {
+                AddLayer(makeActive: false);
+            }
+            if (layerIndex == 0)
+            {
+                return App.Scene.MainCanvas;
+            }
+            else
+            {
+                return m_LayerCanvases[layerIndex - 1];
+            }
         }
     }
 

@@ -74,6 +74,7 @@ namespace TiltBrush
             Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
+            Layer = 1 << 4, // uint32;
         }
 
         [Flags]
@@ -86,6 +87,7 @@ namespace TiltBrush
 
         public struct AdjustedMemoryBrushStroke
         {
+            public uint layerIndex;
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
         }
@@ -139,6 +141,7 @@ namespace TiltBrush
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
                 snapshot.strokeData = stroke.GetCopyForSaveThread();
                 snapshot.adjustedStrokeFlags = stroke.m_Flags;
+                snapshot.layerIndex = App.Scene.LayerForCanvas(stroke);
                 if (resetGroupContinue)
                 {
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
@@ -179,7 +182,7 @@ namespace TiltBrush
 
             // strokes
             writer.Int32(strokeCopies.Count);
-            foreach (var copy in strokeCopies)
+            foreach (AdjustedMemoryBrushStroke copy in strokeCopies)
             {
                 var stroke = copy.strokeData;
                 int brushIndex;
@@ -199,6 +202,7 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
+                strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -218,6 +222,10 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Seed) != 0)
                 {
                     writer.Int32(stroke.m_Seed);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                {
+                    writer.UInt32(copy.layerIndex);
                 }
 
                 // Control points
@@ -398,6 +406,11 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
+                        case StrokeExtension.Layer:
+                            UInt32 layerIndex = reader.UInt32();
+                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+                            stroke.m_IntendedCanvas = canvas;
+                            break;
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;

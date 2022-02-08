@@ -415,7 +415,6 @@ namespace TiltBrush
             }
 
             m_LastSceneFile = info;
-            Debug.LogFormat("Saving {0}", info.HumanName);
             AbortAutosave();
 
             m_SaveCoroutine = ThreadedSave(info, bNotify, snapshot);
@@ -595,7 +594,6 @@ namespace TiltBrush
         /// which may not be the canvas of the original strokes.
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
-            Debug.LogFormat("Loading {0} {1}", fileInfo.HumanName, fileInfo.FullPath);
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {

@@ -12,7 +12,6 @@ namespace TiltBrush.Layers
         public delegate void OnActiveSceneChanged(GameObject layer);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
-        [SerializeField] private SceneScript sceneScript;
         [SerializeField] private GameObject layerPrefab;
 
         private List<GameObject> layerObjects = new List<GameObject>();
@@ -25,36 +24,36 @@ namespace TiltBrush.Layers
 
         private void Start()
         {
-            sceneScript = FindObjectOfType<SceneScript>();
 
-            // create main canvas layer ui
-            if (sceneScript)
-            {
-                // pair maincanvas to layer prefab
-                CanvasScript mainCanvas = sceneScript.MainCanvas;
-                GameObject mainLayer = Instantiate(layerPrefab, this.transform);
+            // pair maincanvas to layer prefab
+            CanvasScript mainCanvas = App.Scene.MainCanvas;
+            GameObject mainLayer = Instantiate(layerPrefab, this.transform);
 
-                if (debug) Debug.Log("Creating Layer " + mainLayer.name);
+            // put it into the dict
+            layerMap.Add(mainLayer, mainCanvas);
+            layerObjects.Add(mainLayer);
+            App.Scene.LayerCanvasAdded += OnLayerAdded;
 
-                // put it into the dict
-                layerMap.Add(mainLayer, mainCanvas);
-                layerObjects.Add(mainLayer);
-
-                // set the name in the ui
-                mainLayer.GetComponentInChildren<TMPro.TMP_Text>().text = GetLayerCanvas(mainLayer).name;
-            }
+            // set the name in the ui
+            mainLayer.GetComponentInChildren<TMPro.TMP_Text>().text = GetLayerCanvas(mainLayer).name;
 
             // create layer on start
             if (createLayersOnStart)
-                for (int i = 0; i < howManyLayers; i++)
-                    CreateLayer();            
+            {
+                for (int i = 0; i < howManyLayers; i++) CreateLayer();
+            }
+        }
+        private void OnLayerAdded(CanvasScript newLayer)
+        {
+            if (!layerMap.ContainsKey(newLayer.gameObject))
+            {
+                AddLayerToUI(newLayer);
+            }
         }
 
         //! Subscribes to events
         private void OnEnable()
         {
-            sceneScript = FindObjectOfType<SceneScript>();
-
             AddLayerButton.onAddLayer += CreateLayer;
             ClearLayerButton.onClearLayer += ClearLayer;
             DeleteLayerButton.onDeleteLayer += RemoveLayer;
@@ -63,7 +62,8 @@ namespace TiltBrush.Layers
 
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
         }
-        //! UnSubsricbes to events
+        //! Unsubscribes to events
+        
         private void OnDisable()
         {
             AddLayerButton.onAddLayer -= CreateLayer;
@@ -74,38 +74,38 @@ namespace TiltBrush.Layers
 
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
         }
-
-
-        //! Create a Canvas from the SceneScript reference, and instantiates layer UI prefab, then zips them together in a dictionary with the Layer Ui as the Key and the Canvas a its value.
-        public void CreateLayer()
+        
+        private void CreateLayer()
+        {
+            App.Scene.AddLayer();
+        }
+        
+        // Instantiates layer UI prefab, then zips it and the layer CanvasScript together
+        // in a dictionary with the Layer Ui as the Key and the Canvas a its value.
+        public void AddLayerToUI(CanvasScript newLayer)
         {
             if (layerMap.Count >= maxLayers) return;
 
-            CanvasScript canvas = sceneScript.AddLayer();
-            GameObject layer = Instantiate(layerPrefab, this.transform);
+            GameObject layer = Instantiate(layerPrefab, transform);
 
-            if (debug) Debug.Log("Creating Layer " + layer.name);
-
-            // put it into the dict
-            layerMap.Add(layer, canvas);
+            // Put it into the dict
+            layerMap.Add(layer, newLayer);
             layerObjects.Add(layer);
 
             // set the layer name on the ui
             if(GetLayerCanvas(layer))
                 layer.GetComponentInChildren<TMPro.TMP_Text>().text = GetLayerCanvas(layer).name;
-
-            // create layer command
         }
 
         //! Deletes the canvas from the SceneScript reference. Removes the KyeValuePair from the Dictionary and destroys the layer Ui object
         public void RemoveLayer(GameObject layer)
         {
-            if (!GetLayerCanvas(layer)) return; // ensure that the canvas exists
-            if (GetLayerCanvas(layer) == sceneScript.MainCanvas) return; // Dont delete the main canvas
+            if (!GetLayerCanvas(layer)) return;                        // ensure that the canvas exists
+            if (GetLayerCanvas(layer) == App.Scene.MainCanvas) return; // Dont delete the main canvas
 
             if (debug) Debug.Log("Removed Layer " + layer.name);
 
-            sceneScript.DeleteLayer(GetLayerCanvas(layer));
+            App.Scene.DeleteLayer(GetLayerCanvas(layer));
 
             // remove from the dict
             layerMap.Remove(layer);
@@ -145,10 +145,8 @@ namespace TiltBrush.Layers
         {
             if (!GetLayerCanvas(layer)) return;
 
-            sceneScript.ActiveCanvas = GetLayerCanvas(layer);
-
-            if (debug) Debug.Log("Set Active Layer to " + sceneScript.ActiveCanvas);
-
+            App.Scene.ActiveCanvas = GetLayerCanvas(layer);
+            
             // set active layer command
         }
 
