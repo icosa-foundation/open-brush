@@ -245,25 +245,19 @@ namespace TiltBrush
         // Adds a canvas layer to the scene
         public CanvasScript AddLayer()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                var go = new GameObject(string.Format("Layer {0}", m_LayerCanvases.Count));
+            var go = new GameObject(string.Format("Layer {0}", m_LayerCanvases.Count));
 
-                go.transform.parent = transform;
-                Coords.AsLocal[go.transform] = TrTransform.identity;
-                go.transform.hasChanged = false;
-              
-                var layer = go.AddComponent<CanvasScript>();
-                m_LayerCanvases.Add(layer);
-                App.Scene.ActiveCanvas = layer;
+            go.transform.parent = transform;
+            Coords.AsLocal[go.transform] = TrTransform.identity;
+            go.transform.hasChanged = false;
+          
+            var layer = go.AddComponent<CanvasScript>();
+            m_LayerCanvases.Add(layer);
+            App.Scene.ActiveCanvas = layer;
 
-                LayerCanvasAdded?.Invoke(layer);
-                LayerCanvasesUpdate?.Invoke(m_LayerCanvases);
-                return layer;             
-            }
-#endif
-            return null;
+            LayerCanvasAdded?.Invoke(layer);
+            LayerCanvasesUpdate?.Invoke(m_LayerCanvases);
+            return layer;             
         }
 
         // Deletes a canvas from the scene
