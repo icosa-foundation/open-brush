@@ -114,7 +114,7 @@ namespace TiltBrush
             ExportAll,
             SwitchCamera,
             _Unused_1,
-            CycleCanvas,
+            _Unused_4,
             ViewOnly,
             ToggleScreenMirroring,
             PreviousTool,
@@ -183,7 +183,6 @@ namespace TiltBrush
             { (int)KeyboardShortcut.ToggleProfile, new[] { KeyCode.K } },
             // Context-dependent
             { (int)KeyboardShortcut.SwitchCamera, new[] { KeyCode.C } },
-            { (int)KeyboardShortcut.CycleCanvas, new[] { KeyCode.C } },
             { (int)KeyboardShortcut.ViewOnly, new[] { KeyCode.H } },
             { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { KeyCode.M } },
             { (int)KeyboardShortcut.PreviousTool, new[] { KeyCode.LeftArrow } },
