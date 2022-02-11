@@ -1352,28 +1352,7 @@ namespace TiltBrush
                     camTool.ExternalObjectNextCameraStyle(); // For monoscopic mode
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.CycleCanvas))
-                {
-                    if (InputManager.m_Instance.GetAnyShift())
-                    {
-                        // Create new layer if on main canvas,
-                        // otherwise squash current layer to main
-                        if (App.Scene.ActiveCanvas == App.Scene.MainCanvas)
-                        {
-                            App.Scene.Test_AddLayer();
-                        }
-                        else
-                        {
-                            App.Scene.Test_SquashCurrentLayer();
-                        }
-                    }
-                    else
-                    {
-                        App.Scene.Test_CycleCanvas();
-                    }
-                }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.ViewOnly))
+                             InputManager.KeyboardShortcut.ViewOnly))
                 {
                     IssueGlobalCommand(GlobalCommands.ViewOnly);
                 }
