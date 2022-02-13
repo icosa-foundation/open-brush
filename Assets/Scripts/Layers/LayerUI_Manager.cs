@@ -86,7 +86,7 @@ namespace TiltBrush.Layers
         private void OnEnable()
         {
             AddLayerButton.onAddLayer += AddLayer;
-            ClearLayerButton.onClearLayer += ClearLayer;
+            ClearLayerContentsButton.onClearLayerContents += ClearLayerContentsContents;
             DeleteLayerButton.onDeleteLayer += DeleteLayer;
             FocusLayerButton.onFocusedLayer += SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle += ToggleVisibility;
@@ -100,7 +100,7 @@ namespace TiltBrush.Layers
         private void OnDisable()
         {
             AddLayerButton.onAddLayer -= AddLayer;
-            ClearLayerButton.onClearLayer -= ClearLayer;
+            ClearLayerContentsButton.onClearLayerContents -= ClearLayerContentsContents;
             DeleteLayerButton.onDeleteLayer -= DeleteLayer;
             FocusLayerButton.onFocusedLayer -= SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle -= ToggleVisibility;
@@ -149,7 +149,7 @@ namespace TiltBrush.Layers
         }
 
         // Resets the pools of the canvas, clearing all paint within it
-        public void ClearLayer(GameObject widget)
+        public void ClearLayerContentsContents(GameObject widget)
         {
             if (!GetCanvasFromWidget(widget)) return;
 
@@ -157,7 +157,7 @@ namespace TiltBrush.Layers
             //canvas.BatchManager.ResetPools();
 
             // Clear layer command
-            new ClearLayerCommand(canvas.BatchManager);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
         }
         
         private void AddLayer()

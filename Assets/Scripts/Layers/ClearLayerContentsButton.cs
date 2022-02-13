@@ -5,16 +5,16 @@ using UnityEngine;
 
 namespace TiltBrush.Layers
 {
-    public class ClearLayerButton : BaseButton
+    public class ClearLayerContentsButton : BaseButton
     {
         public delegate void OnClearLayer(GameObject layer);
-        public static event OnClearLayer onClearLayer;
+        public static event OnClearLayer onClearLayerContents;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
 
-            onClearLayer?.Invoke(transform.parent.gameObject);
+            onClearLayerContents?.Invoke(transform.parent.gameObject);
         }
     }
 }
