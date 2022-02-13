@@ -19,7 +19,8 @@ namespace TiltBrush
 {
     public class UnityXRControllerInfo : ControllerInfo
     {
-        public InputDevice device;
+        private InputDevice device;
+        
         public UnityXRControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
             : base(behavior)
         {
