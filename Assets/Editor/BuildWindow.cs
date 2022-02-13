@@ -75,6 +75,7 @@ namespace TiltBrush
             public DateTime FinishTime { get; private set; }
             public string Title { get; set; }
             public bool Enabled { get; set; }
+            public bool Verbose { get; set; } = true;
 
             // Called when a build process is completed, with success/failure as the parameter.
             public event Action<bool> Completed;
@@ -90,6 +91,9 @@ namespace TiltBrush
             public void Execute()
             {
                 Debug.Assert(m_future == null);
+                if (Verbose)
+                    Debug.Log("adb " + String.Join(" ", m_arguments));
+
                 m_future = new Future<string[]>(() => RunAdb(m_arguments));
             }
 
@@ -201,7 +205,7 @@ namespace TiltBrush
             }
         }
 
-        private const double kSecondsBetweenDeviceScan = 1;
+        private const double kSecondsBetweenDeviceScan = 3;
         private const string kAutoUploadAfterBuild = "BuildWindow.AutoUploadAfterBuild";
         private const string kAutoRunAfterUpload = "BuildWindow.AutoRunAfterUpload";
         private const string kSuccessfulBuildTime = "BuildWindow.SuccessfulBuildTime";
@@ -631,63 +635,62 @@ namespace TiltBrush
             m_upload = new AndroidOperation(
                 string.Format("Upload {0} to {1}", exeName, m_selectedAndroid),
                 (results) => results.Any(x => x.StartsWith("Success")),
-                "-s", m_selectedAndroid,
-                "install", "-r", "-g", m_currentBuildPath
+                // adb args:
+                "-s", m_selectedAndroid, "install", "-r", "-g", m_currentBuildPath
             );
 
             if (m_launch != null) { m_launch.Cancel(); }
             m_launch = new AndroidOperation(
                 string.Format("Launch {0}", exeName),
                 (results) => results.Any(x => x.Contains("Starting: Intent")),
+                // adb args:
                 "-s", m_selectedAndroid,
-                "shell", "am", "start",
-                string.Format("{0}/com.unity3d.player.UnityPlayerActivity", exeTitle)
-            );
-
-            if (m_turnOnAdbDebugging != null) { m_turnOnAdbDebugging.Cancel(); }
-            m_turnOnAdbDebugging = new AndroidOperation(
-                "Turn on adb debugging/profiling",
-                (results) => true,
-                "-s", m_selectedAndroid,
-                "forward", "tcp:34999",
-                string.Format("localabstract:Unity-{0}", exeTitle)
-            );
-
-            if (m_launchWithProfile != null) { m_launchWithProfile.Cancel(); }
-            m_launchWithProfile = new AndroidOperation(
-                string.Format("Launch with deep profile {0}", exeName),
-                (results) => results.Any(x => x.Contains("Starting: Intent")),
-                "-s", m_selectedAndroid,
-                "shell", "am", "start",
-                string.Format("{0}/com.unity3d.player.UnityPlayerActivity", exeTitle),
-                "-e", "unity", "-deepprofiling"
+                "shell", "am", "start", exeTitle + "/com.unity3d.player.UnityPlayerActivity"
             );
 
             if (m_terminate != null) { m_terminate.Cancel(); }
             m_terminate = new AndroidOperation(
                 string.Format("Terminate {0}", exeName),
                 (results) => true,
+                // adb args:
                 "-s", m_selectedAndroid,
                 "shell", "am", "force-stop", exeTitle
+            );
+
+            if (m_turnOnAdbDebugging != null) { m_turnOnAdbDebugging.Cancel(); }
+            m_turnOnAdbDebugging = new AndroidOperation(
+                "Turn on adb debugging/profiling",
+                (results) => true,
+                // adb args:
+                "-s", m_selectedAndroid,
+                "forward", "tcp:34999", "localabstract:Unity-" + exeTitle
+            );
+
+            if (m_launchWithProfile != null) { m_launchWithProfile.Cancel(); }
+            m_launchWithProfile = new AndroidOperation(
+                string.Format("Launch with deep profile {0}", exeName),
+                (results) => results.Any(x => x.Contains("Starting: Intent")),
+                // adb args:
+                "-s", m_selectedAndroid,
+                "shell", "am", "start", exeTitle + "/com.unity3d.player.UnityPlayerActivity",
+                "-e", "unity", "-deepprofiling"
             );
         }
 
         public static string[] RunAdb(params string[] arguments)
         {
-            if (AdbExists)
-            {
-                var process = new System.Diagnostics.Process();
-                process.StartInfo = new System.Diagnostics.ProcessStartInfo(BuildTiltBrush.AdbPath, String.Join(" ", arguments));
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.Start();
-                process.WaitForExit();
-                return process.StandardOutput.ReadToEnd().Split('\n').Concat(process.StandardError.ReadToEnd().Split('\n')).ToArray();
-            }
-
-            return new string[] { "" };
+            if (!AdbExists)
+                return new string[] { "" };
+            
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = new System.Diagnostics.ProcessStartInfo(BuildTiltBrush.AdbPath, String.Join(" ", arguments));
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            process.WaitForExit();
+            return process.StandardOutput.ReadToEnd().Split('\n').Concat(process.StandardError.ReadToEnd().Split('\n')).ToArray();
         }
 
         private void Update()
