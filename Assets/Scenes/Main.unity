@@ -3188,7 +3188,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
-  m_IsExperimental: 1
+  m_IsExperimental: 0
   m_SdkMode: 6
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
@@ -30263,7 +30263,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877483
 MonoBehaviour:
@@ -30322,7 +30321,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877484
 MonoBehaviour:
@@ -30381,7 +30379,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!4 &1915877485
 Transform:
@@ -30454,7 +30451,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877487
 MonoBehaviour:
@@ -30513,7 +30509,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877488
 MonoBehaviour:
@@ -30572,7 +30567,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!1001 &1916224247
 PrefabInstance:
