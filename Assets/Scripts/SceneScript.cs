@@ -282,7 +282,6 @@ namespace TiltBrush
         {
             if (canvas.gameObject.activeSelf) canvas.gameObject.SetActive(false);
             else canvas.gameObject.SetActive(true);
-            App.Scene.LayerCanvasesUpdate?.Invoke();
         }
         
         public void ShowLayer(int canvasIndex) {ShowLayer(GetCanvasByLayerIndex(canvasIndex));}

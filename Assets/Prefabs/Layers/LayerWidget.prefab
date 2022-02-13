@@ -279,8 +279,18 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 444151169322757034, guid: 1c86458d1a7525744b384f8816d516f5,
         type: 3}
+      propertyPath: m_ToggleButton
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 444151169322757034, guid: 1c86458d1a7525744b384f8816d516f5,
+        type: 3}
       propertyPath: m_RequiresPopup
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 444151169322757034, guid: 1c86458d1a7525744b384f8816d516f5,
+        type: 3}
+      propertyPath: m_LongPressReleaseButton
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4315672031706450571, guid: 1c86458d1a7525744b384f8816d516f5,
         type: 3}
@@ -499,9 +509,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5424936402947707933, guid: 372c04dc31129fd43bfcb500fbbaff68,
         type: 3}
+      propertyPath: m_ToggleButton
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5424936402947707933, guid: 372c04dc31129fd43bfcb500fbbaff68,
+        type: 3}
       propertyPath: activatedButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: 6158c15f403caf7408664782be08f46f, type: 3}
+    - target: {fileID: 5424936402947707933, guid: 372c04dc31129fd43bfcb500fbbaff68,
+        type: 3}
+      propertyPath: m_LongPressReleaseButton
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 372c04dc31129fd43bfcb500fbbaff68, type: 3}
 --- !u!4 &7049855811970622108 stripped

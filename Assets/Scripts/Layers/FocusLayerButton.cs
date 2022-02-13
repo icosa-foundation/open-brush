@@ -27,7 +27,7 @@ namespace TiltBrush.Layers
                 onFocusedLayer?.Invoke(transform.parent.gameObject);
         }  
 
-        private void ParentIsActiveLayerToggleActivation(GameObject activeLayer)
+        public void ParentIsActiveLayerToggleActivation(GameObject activeLayer)
         {
             if (activeLayer == transform.parent.gameObject)
             {

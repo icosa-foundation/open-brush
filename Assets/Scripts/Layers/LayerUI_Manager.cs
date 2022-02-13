@@ -30,6 +30,7 @@ namespace TiltBrush.Layers
             CanvasScript mainCanvas = App.Scene.MainCanvas;
             GameObject mainLayerWidget = Instantiate(m_LayerUiPrefab, transform);
             mainLayerWidget.GetComponentInChildren<DeleteLayerButton>().gameObject.SetActive(false);
+            mainLayerWidget.GetComponentInChildren<FocusLayerButton>().ParentIsActiveLayerToggleActivation(mainLayerWidget);
             m_Widgets.Add(mainLayerWidget);
             m_Canvases.Add(mainCanvas);
             var mainLayerName = mainCanvas.name;
