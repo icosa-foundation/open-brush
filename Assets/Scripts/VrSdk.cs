@@ -157,6 +157,13 @@ namespace TiltBrush
 
         void Awake()
         {
+            // If we're using Oculus SDK mode we need to have OCULUS_SUPPORTED defined or we get silent failures.  
+#if !OCULUS_SUPPORTED
+            if (App.Config.m_SdkMode == SdkMode.Oculus)
+                // To fix this, add OCULUS_SUPPORTED to Project Settings > Player > Other > Defines.
+                throw new Exception("You have chosen Oculus SDK mode, but do not have OCULUS_SUPPORTED defined.");
+#endif // OCULUS_SUPPORTED
+            
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
