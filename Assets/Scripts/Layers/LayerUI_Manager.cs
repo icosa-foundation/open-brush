@@ -1,191 +1,214 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 namespace TiltBrush.Layers
 {
     public class LayerUI_Manager : MonoBehaviour
     {
-        public bool debug = false;
 
-        public delegate void OnActiveSceneChanged(GameObject layer);
+        public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
-        [SerializeField] private GameObject layerPrefab;
-
-        private List<GameObject> layerObjects = new List<GameObject>();
-        private Dictionary<GameObject, CanvasScript> layerMap = new Dictionary<GameObject, CanvasScript>();
-
-        [SerializeField] private bool createLayersOnStart = true;
-        [SerializeField] private int howManyLayers = 4;
-        [SerializeField] private int maxLayers = 5;
-
+        [FormerlySerializedAs("layerPrefab")] [SerializeField] private GameObject m_LayerUiPrefab;
+        [SerializeField] private bool m_CreateLayersOnStart = true;
+        [SerializeField] private int m_InitialLayers = 2;
+        [SerializeField] private int m_MaxLayers = 5;
+        
+        private List<GameObject> m_Widgets;
+        private List<CanvasScript> m_Canvases;
 
         private void Start()
         {
+            m_Widgets = new List<GameObject>();
+            m_Canvases = new List<CanvasScript>();
 
-            // pair maincanvas to layer prefab
+            // Pair mainCanvas to layer prefab
             CanvasScript mainCanvas = App.Scene.MainCanvas;
-            GameObject mainLayer = Instantiate(layerPrefab, this.transform);
-
-            // put it into the dict
-            layerMap.Add(mainLayer, mainCanvas);
-            layerObjects.Add(mainLayer);
-            App.Scene.LayerCanvasAdded += OnLayerAdded;
-
-            // set the name in the ui
-            mainLayer.GetComponentInChildren<TMPro.TMP_Text>().text = GetLayerCanvas(mainLayer).name;
-
-            // create layer on start
-            if (createLayersOnStart)
+            GameObject mainLayerWidget = Instantiate(m_LayerUiPrefab, transform);
+            mainLayerWidget.GetComponentInChildren<DeleteLayerButton>().gameObject.SetActive(false);
+            m_Widgets.Add(mainLayerWidget);
+            m_Canvases.Add(mainCanvas);
+            var mainLayerName = mainCanvas.name;
+            mainLayerWidget.GetComponentInChildren<TMPro.TMP_Text>().text = mainLayerName;
+            
+            // Create initial layers
+            if (m_CreateLayersOnStart)
             {
-                for (int i = 0; i < howManyLayers; i++) CreateLayer();
+                for (int i = 0; i < m_InitialLayers - 1; i++) App.Scene.AddLayer();
             }
         }
-        private void OnLayerAdded(CanvasScript newLayer)
+        
+        
+        
+        private void ResetUI()
         {
-            if (!layerMap.ContainsKey(newLayer.gameObject))
+            if (m_Widgets != null)
             {
-                AddLayerToUI(newLayer);
+                foreach (var widget in m_Widgets)
+                {
+                    Destroy(widget);
+                }
+                
+                m_Widgets = new List<GameObject>();
+                m_Canvases = new List<CanvasScript>();
+                
+                var canvases = App.Scene.LayerCanvases.ToArray();
+                for (uint i=0; i < canvases.Length; i++)
+                {
+                    var canvas = canvases[i];
+                    GameObject widget = Instantiate(m_LayerUiPrefab, transform);
+                    if (i==0) widget.GetComponentInChildren<DeleteLayerButton>().gameObject.SetActive(false);
+                    m_Widgets.Add(widget);
+                    m_Canvases.Add(canvas);
+                }
             }
         }
+        
+        private void LayerAdded(CanvasScript layer)
+        {
+            if (GetWidgetFromLayer(layer)==null)
+            {
+                AddLayerToUI(layer);
+            }
+        }
+        
+        private void OnLayerCanvasesUpdate()
+        {
+            ResetUI();
+        }
 
-        //! Subscribes to events
+        // Subscribes to events
         private void OnEnable()
         {
-            AddLayerButton.onAddLayer += CreateLayer;
+            AddLayerButton.onAddLayer += AddLayer;
             ClearLayerButton.onClearLayer += ClearLayer;
-            DeleteLayerButton.onDeleteLayer += RemoveLayer;
+            DeleteLayerButton.onDeleteLayer += DeleteLayer;
             FocusLayerButton.onFocusedLayer += SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle += ToggleVisibility;
 
+            App.Scene.LayerCanvasAdded += LayerAdded;
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
+            App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
-        //! Unsubscribes to events
-        
+
+        // Unsubscribes to events
         private void OnDisable()
         {
-            AddLayerButton.onAddLayer -= CreateLayer;
+            AddLayerButton.onAddLayer -= AddLayer;
             ClearLayerButton.onClearLayer -= ClearLayer;
-            DeleteLayerButton.onDeleteLayer -= RemoveLayer;
+            DeleteLayerButton.onDeleteLayer -= DeleteLayer;
             FocusLayerButton.onFocusedLayer -= SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle -= ToggleVisibility;
 
+            App.Scene.LayerCanvasAdded -= LayerAdded;
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
+            App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
         }
         
-        private void CreateLayer()
-        {
-            App.Scene.AddLayer();
-        }
-        
-        // Instantiates layer UI prefab, then zips it and the layer CanvasScript together
-        // in a dictionary with the Layer Ui as the Key and the Canvas a its value.
+        // Instantiates layer UI prefab, then zips it and the layer CanvasScript
+        // together in a dictionary with the Layer Ui as the Key and the Canvas a its value.
         public void AddLayerToUI(CanvasScript newLayer)
         {
-            if (layerMap.Count >= maxLayers) return;
+            if (m_Widgets.Count >= m_MaxLayers) return;
 
-            GameObject layer = Instantiate(layerPrefab, transform);
+            GameObject widget = Instantiate(m_LayerUiPrefab, transform);
 
-            // Put it into the dict
-            layerMap.Add(layer, newLayer);
-            layerObjects.Add(layer);
+            m_Widgets.Add(widget);
+            m_Canvases.Add(newLayer);
 
             // set the layer name on the ui
-            if(GetLayerCanvas(layer))
-                layer.GetComponentInChildren<TMPro.TMP_Text>().text = GetLayerCanvas(layer).name;
+            if (GetCanvasFromWidget(widget))
+                widget.GetComponentInChildren<TMPro.TMP_Text>().text = GetCanvasFromWidget(widget).name;
         }
 
-        //! Deletes the canvas from the SceneScript reference. Removes the KyeValuePair from the Dictionary and destroys the layer Ui object
-        public void RemoveLayer(GameObject layer)
+        public void DeleteLayer(GameObject widget)
         {
-            if (!GetLayerCanvas(layer)) return;                        // ensure that the canvas exists
-            if (GetLayerCanvas(layer) == App.Scene.MainCanvas) return; // Dont delete the main canvas
-
-            if (debug) Debug.Log("Removed Layer " + layer.name);
-
-            App.Scene.DeleteLayer(GetLayerCanvas(layer));
-
-            // remove from the dict
-            layerMap.Remove(layer);
-            layerObjects.Remove(layer);
-
-            Destroy(layer);
-
-            // Remove Layer Command
+            if (!GetCanvasFromWidget(widget)) return; // Ensure that the canvas exists
+            if (GetCanvasFromWidget(widget) == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            var layer = GetCanvasFromWidget(widget);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(layer));
+            
+            // Remove from the dict
+            // m_LayerWidgetToCanvasMap.Remove(widget);
+            // Destroy(widget);
+        }
+        
+        public void SquashLayer(GameObject widget)
+        {
+            var canvas = GetCanvasFromWidget(widget);
+            var index = m_Widgets.IndexOf(widget);
+            var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new SquashLayerCommand(canvas, prevCanvas)
+            ); 
         }
 
-        //! Resets the pools of the canvas, clearing all paint within it
-        public void ClearLayer(GameObject layer)
+        // Resets the pools of the canvas, clearing all paint within it
+        public void ClearLayer(GameObject widget)
         {
-            if (!GetLayerCanvas(layer)) return;
+            if (!GetCanvasFromWidget(widget)) return;
 
-            CanvasScript canvas = GetLayerCanvas(layer);
+            CanvasScript canvas = GetCanvasFromWidget(widget);
             //canvas.BatchManager.ResetPools();
 
-            // clear layer command
+            // Clear layer command
             new ClearLayerCommand(canvas.BatchManager);
         }
-
-        //! Toggles the visibility of the Canvas
-        public void ToggleVisibility(GameObject layer)
+        
+        private void AddLayer()
         {
-            if (!GetLayerCanvas(layer)) return;
-
-            if (debug) Debug.Log("Toggled Layer Visibility of " + layer.name);
-
-            CanvasScript canvasScript = GetLayerCanvas(layer);
-            if (canvasScript.gameObject.activeSelf) canvasScript.gameObject.SetActive(false);
-            else canvasScript.gameObject.SetActive(true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
+        }
+        
+        // Toggles the visibility of the Canvas
+        public void ToggleVisibility(GameObject widget)
+        {
+            if (!GetCanvasFromWidget(widget)) return;
+            CanvasScript canvas = GetCanvasFromWidget(widget);
+            App.Scene.ToggleLayerVisibility(canvas);
         }
 
-        //! Changes the active layer on the SceneScript reference
-        public void SetActiveLayer(GameObject layer)
+        public void SetActiveLayer(GameObject widget)
         {
-            if (!GetLayerCanvas(layer)) return;
-
-            App.Scene.ActiveCanvas = GetLayerCanvas(layer);
-            
-            // set active layer command
+            var layer = GetCanvasFromWidget(widget);
+            if (!layer) return;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(layer));
         }
 
-        //! Utitlity to print out the dictionary to view its contents
-        public void PrintDictionary()
-        {
-            foreach (var layer in layerMap)
-            {
-                if (debug) Debug.Log("Key: " + layer.Key + "Value: " + layer.Value);
-                if (debug) Debug.Log("Key's HashCode: " + layer.Key.GetHashCode());
-            }
-        }
-
-        //! Looks through the values of the layerMap dictionary to find its key 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)
         {
-            // unOptimized code.... searched trhough the dictionary to find a value and return a key, invoke a message with that key as its parameter
-            foreach (var layer in layerMap)
-                if (layer.Value == current)
-                    onActiveSceneChanged?.Invoke(layer.Key);
+            onActiveSceneChanged?.Invoke(GetWidgetFromLayer(current));
         }
 
-        // Utils
-        //! Returns the canvas value of a layer Ui key
-        [SerializeField] 
-        private CanvasScript GetLayerCanvas(GameObject layer)
+        // Returns the canvas value of a layer UI key
+        private CanvasScript GetCanvasFromWidget(GameObject widget)
         {      
             try
             {
-                if (debug) Debug.Log("Canvas Value: " + layerMap[layer]);
-
-                return layerMap[layer];
+                return m_Canvases[m_Widgets.IndexOf(widget)];
             }
             catch (KeyNotFoundException e)
             {
-                if (debug) Debug.LogException(e);
                 return null;
             }
-            
+        }
+        
+        private GameObject GetWidgetFromLayer(CanvasScript canvas)
+        {
+            // TODO: Not sure why we need this here
+            // Something odd happening with the dict not being initialised when a sketch is loaded
+            if (m_Widgets == null)
+            {
+                m_Canvases = new List<CanvasScript>();
+                m_Widgets = new List<GameObject>();
+            }
+            var index = m_Canvases.IndexOf(canvas);
+            return index >= 0 ? m_Widgets[index]: null;
+
         }
     }
 }

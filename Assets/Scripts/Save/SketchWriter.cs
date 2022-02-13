@@ -44,6 +44,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Valve.Newtonsoft.Json.Utilities;
 using StrokeFlags = TiltBrush.SketchMemoryScript.StrokeFlags;
 using ControlPoint = TiltBrush.PointerManager.ControlPoint;
 
@@ -136,12 +137,21 @@ namespace TiltBrush
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
             bool resetGroupContinue = false;
+            var canvases = App.Scene.LayerCanvases.ToArray();
+            var canvasToIndexMap = new Dictionary<CanvasScript, uint>();
+            for (uint index = 0; index < canvases.Length; index++)
+            {
+                var canvas = canvases[index];
+                canvasToIndexMap[canvas] = index;
+            }
             foreach (var stroke in strokes)
             {
+                if (App.Scene.IsLayerDeleted(stroke.Canvas)) continue;
+                
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
+                snapshot.layerIndex = canvasToIndexMap[stroke.Canvas]; // Don't use the methods in SceneScript as they count deleted layers
                 snapshot.strokeData = stroke.GetCopyForSaveThread();
                 snapshot.adjustedStrokeFlags = stroke.m_Flags;
-                snapshot.layerIndex = App.Scene.LayerForCanvas(stroke);
                 if (resetGroupContinue)
                 {
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
