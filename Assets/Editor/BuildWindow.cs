@@ -554,10 +554,9 @@ namespace TiltBrush
                 if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
                 {
                     EditorGUILayout.LabelField("Adb Path", BuildTiltBrush.AdbPath ?? "Unset");
-                    if (!String.IsNullOrEmpty(BuildTiltBrush.AdbPath))
+                    if (!AdbExists)
                     {
-                        if (!File.Exists(BuildTiltBrush.AdbPath))
-                            EditorGUILayout.LabelField("Adb status", "ADB not found in expected path.");
+                        EditorGUILayout.LabelField("Adb status", "ADB not found in expected path.");
                     }
                 }
 
