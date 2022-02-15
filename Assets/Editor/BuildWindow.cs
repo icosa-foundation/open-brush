@@ -539,6 +539,7 @@ namespace TiltBrush
                         if (selected != newSelected)
                         {
                             m_selectedAndroid = device;
+                            MakeBuildActionsGui();
                         }
                     }
                 }
