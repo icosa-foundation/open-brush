@@ -12,33 +12,36 @@ namespace TiltBrush.Layers
 
         private void OnEnable()
         {
-            LayerUI_Manager.onActiveSceneChanged += ParentIsActiveLayerToggleActivation;
+            LayerUI_Manager.onActiveSceneChanged += ToggleIfActive;
         }
         protected override void OnDisable()
         {
-            LayerUI_Manager.onActiveSceneChanged -= ParentIsActiveLayerToggleActivation;
+            LayerUI_Manager.onActiveSceneChanged -= ToggleIfActive;
         }
 
         protected override void OnButtonPressed()
         {
             if (activated) return;
-
-            if (!activated)
-                onFocusedLayer?.Invoke(transform.parent.gameObject);
+            if (!activated) onFocusedLayer?.Invoke(transform.parent.gameObject);
         }  
 
-        public void ParentIsActiveLayerToggleActivation(GameObject activeLayer)
+        public void ToggleIfActive(GameObject activeLayerWidget)
         {
-            if (activeLayer == transform.parent.gameObject)
+            if (activeLayerWidget == transform.parent.gameObject)
             {
                 activated = true;
-                ToggleButtonTexture(activated);
             }
             else
             {
                 activated = false;
-                ToggleButtonTexture(activated);
             }
+            SetVisualState();
+        }
+        
+        public void SetAsActive(bool active)
+        {
+            activated = active;
+            SetVisualState();
         }
     }
 }

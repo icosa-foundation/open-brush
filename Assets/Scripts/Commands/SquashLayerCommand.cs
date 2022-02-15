@@ -62,15 +62,12 @@ namespace TiltBrush
 
             protected override void OnUndo()
             {
-                if (!m_SquashedLayer.gameObject.activeSelf)
+                foreach (var stroke in m_OriginalStrokes)
                 {
-                    m_SquashedLayer.gameObject.SetActive(true);
-                    foreach (var stroke in m_OriginalStrokes)
-                    {
-                        stroke.SetParentKeepWorldPosition(m_SquashedLayer);
-                    }
-                    App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
+                    stroke.SetParentKeepWorldPosition(m_SquashedLayer);
                 }
+                m_SquashedLayer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
             }
         }
 

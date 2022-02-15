@@ -17,18 +17,16 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             ToggleActivation();
-
-            if (activated) ToggleButtonTexture(true);
-            else ToggleButtonTexture(false);
         }
 
-        protected void ToggleActivation()
+        public void ToggleActivation()
         {
             if (activated) activated = false;
             else activated = true;
+            SetVisualState();
         }
 
-        protected void ToggleButtonTexture(bool active)
+        protected void SetVisualState()
         {
             switch (activated)
             {

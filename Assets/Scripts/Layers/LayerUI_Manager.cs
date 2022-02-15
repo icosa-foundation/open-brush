@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -14,8 +13,6 @@ namespace TiltBrush.Layers
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
         [FormerlySerializedAs("layerPrefab")] [SerializeField] private GameObject m_LayerUiPrefab;
-        [SerializeField] private bool m_CreateLayersOnStart = true;
-        [SerializeField] private int m_InitialLayers = 2;
         [SerializeField] private int m_MaxLayers = 5;
         
         private List<GameObject> m_Widgets;
@@ -25,25 +22,9 @@ namespace TiltBrush.Layers
         {
             m_Widgets = new List<GameObject>();
             m_Canvases = new List<CanvasScript>();
-
-            // Pair mainCanvas to layer prefab
-            CanvasScript mainCanvas = App.Scene.MainCanvas;
-            GameObject mainLayerWidget = Instantiate(m_LayerUiPrefab, transform);
-            mainLayerWidget.GetComponentInChildren<DeleteLayerButton>().gameObject.SetActive(false);
-            mainLayerWidget.GetComponentInChildren<FocusLayerButton>().ParentIsActiveLayerToggleActivation(mainLayerWidget);
-            m_Widgets.Add(mainLayerWidget);
-            m_Canvases.Add(mainCanvas);
-            var mainLayerName = mainCanvas.name;
-            mainLayerWidget.GetComponentInChildren<TMPro.TMP_Text>().text = mainLayerName;
+            ResetUI();
             
-            // Create initial layers
-            if (m_CreateLayersOnStart)
-            {
-                for (int i = 0; i < m_InitialLayers - 1; i++) App.Scene.AddLayer();
-            }
         }
-        
-        
         
         private void ResetUI()
         {
@@ -63,6 +44,20 @@ namespace TiltBrush.Layers
                     var canvas = canvases[i];
                     GameObject widget = Instantiate(m_LayerUiPrefab, transform);
                     if (i==0) widget.GetComponentInChildren<DeleteLayerButton>().gameObject.SetActive(false);
+                    if (i==0) widget.GetComponentInChildren<SquashLayerButton>().gameObject.SetActive(false);
+                    widget.GetComponentInChildren<FocusLayerButton>().SetAsActive(canvas==App.ActiveCanvas);
+                    if (i == 0)
+                    {
+                        widget.GetComponentInChildren<TMPro.TextMeshPro>().text = "Main Layer";
+                    }
+                    else
+                    {
+                        widget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"Layer {i}";
+                    }
+                    if (canvas.isActiveAndEnabled)
+                    {
+                        widget.GetComponentInChildren<ToggleVisibilityLayerButton>().ToggleActivation();
+                    }
                     m_Widgets.Add(widget);
                     m_Canvases.Add(canvas);
                 }
@@ -71,7 +66,7 @@ namespace TiltBrush.Layers
         
         private void LayerAdded(CanvasScript layer)
         {
-            if (GetWidgetFromLayer(layer)==null)
+            if (GetWidgetFromCanvas(layer)==null)
             {
                 AddLayerToUI(layer);
             }
@@ -87,6 +82,7 @@ namespace TiltBrush.Layers
         {
             AddLayerButton.onAddLayer += AddLayer;
             ClearLayerContentsButton.onClearLayerContents += ClearLayerContentsContents;
+            SquashLayerButton.onSquashLayer += SquashLayer;
             DeleteLayerButton.onDeleteLayer += DeleteLayer;
             FocusLayerButton.onFocusedLayer += SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle += ToggleVisibility;
@@ -101,6 +97,7 @@ namespace TiltBrush.Layers
         {
             AddLayerButton.onAddLayer -= AddLayer;
             ClearLayerContentsButton.onClearLayerContents -= ClearLayerContentsContents;
+            SquashLayerButton.onSquashLayer -= SquashLayer;
             DeleteLayerButton.onDeleteLayer -= DeleteLayer;
             FocusLayerButton.onFocusedLayer -= SetActiveLayer;
             ToggleVisibilityLayerButton.onVisiblityToggle -= ToggleVisibility;
@@ -182,7 +179,7 @@ namespace TiltBrush.Layers
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)
         {
-            onActiveSceneChanged?.Invoke(GetWidgetFromLayer(current));
+            onActiveSceneChanged?.Invoke(GetWidgetFromCanvas(current));
         }
 
         // Returns the canvas value of a layer UI key
@@ -198,7 +195,7 @@ namespace TiltBrush.Layers
             }
         }
         
-        private GameObject GetWidgetFromLayer(CanvasScript canvas)
+        private GameObject GetWidgetFromCanvas(CanvasScript canvas)
         {
             // TODO: Not sure why we need this here
             // Something odd happening with the dict not being initialised when a sketch is loaded

@@ -60,7 +60,7 @@ Transform:
   m_Children:
   - {fileID: 6320849008148252349}
   - {fileID: 2192849509508401034}
-  - {fileID: 4978905396965861059}
+  - {fileID: 3771433571907711244}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -76,8 +76,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9aeb2c80443c4314bb3cbe128f0857a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneScript: {fileID: 0}
-  layerPrefab: {fileID: 7144845905706091852}
+  m_LayerUiPrefab: {fileID: 7144845905706091852}
+  m_MaxLayers: 6
 --- !u!1001 &435578048921834538
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -149,6 +149,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Layer
       value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.04
       objectReference: {fileID: 0}
     - target: {fileID: 4833448688558633705, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
         type: 3}
@@ -228,9 +238,9 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 435578048921834538}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &4978905396965861059 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4833448688558633705, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+--- !u!224 &3771433571907711244 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
     type: 3}
   m_PrefabInstance: {fileID: 435578048921834538}
   m_PrefabAsset: {fileID: 0}

@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -184,17 +185,28 @@ namespace TiltBrush
             }
         }
 
+        public void ResetLayers(bool notify=false)
+        {
+            if (m_LayerCanvases != null)
+            {
+                foreach (var canvas in m_LayerCanvases.ToArray())
+                {
+                    DestroyLayer(canvas);
+                }
+            }
+            m_LayerCanvases = new List<CanvasScript>();
+            m_DeletedLayers = new HashSet<int>();
+            m_ActiveCanvas = MainCanvas;
+            if (notify) App.Scene.LayerCanvasesUpdate?.Invoke(); 
+        }
+
 
         // Init unless already initialized. Safe to call zero or multiple times.
         public void Init()
         {
-            if (m_bInitialized)
-            {
-                return;
-            }
+            if (m_bInitialized) return;
             m_bInitialized = true;
-            m_LayerCanvases = new List<CanvasScript>();
-            m_DeletedLayers = new HashSet<int>();
+            ResetLayers();
             AsScene = new TransformExtensions.RelativeAccessor(transform);
             m_ActiveCanvas = m_MainCanvas;
             foreach (var c in AllCanvases)
@@ -241,15 +253,13 @@ namespace TiltBrush
         }
 
         // Destructive delete - no undo possible
-        public void RemoveLayer(CanvasScript layer)
+        public void DestroyLayer(CanvasScript layer)
         {
-            // TODO Update indexes in m_DeletedLayers
             if (layer == MainCanvas) return;
             m_LayerCanvases.Remove(layer);
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
-            LayerCanvasesUpdate?.Invoke();
         }
         
         public bool IsLayerDeleted(CanvasScript layer)
@@ -282,13 +292,19 @@ namespace TiltBrush
         {
             if (canvas.gameObject.activeSelf) canvas.gameObject.SetActive(false);
             else canvas.gameObject.SetActive(true);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
         }
         
-        public void ShowLayer(int canvasIndex) {ShowLayer(GetCanvasByLayerIndex(canvasIndex));}
+        public void ShowLayer(int canvasIndex) {ShowLayer(GetCanvasByLayerIndex(canvasIndex));            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
         public void ShowLayer(CanvasScript canvas) {canvas.gameObject.SetActive(true);}
         
-        public void HideLayer(int canvasIndex) {HideLayer(GetCanvasByLayerIndex(canvasIndex));}
-        public void HideLayer(CanvasScript canvas) { canvas.gameObject.SetActive(false);}
+        public void HideLayer(int canvasIndex) {HideLayer(GetCanvasByLayerIndex(canvasIndex));            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+        public void HideLayer(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(false);
+        }
         
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
