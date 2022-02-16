@@ -37,7 +37,8 @@ namespace TiltBrush
                 {
                     batch.EnableSubset(subset);
                 }
-            }        }
+            }
+        }
 
     }
 }

@@ -32,7 +32,7 @@ namespace TiltBrush
 
             protected override void OnRedo()
             {
-                m_Layer = App.Scene.AddLayer();
+                m_Layer = App.Scene.AddLayerNow();
                 App.Scene.ActiveCanvas = m_Layer;
             }
 

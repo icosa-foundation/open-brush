@@ -6,8 +6,6 @@ namespace TiltBrush.Layers
 {
     public class ToggleButton : BaseButton
     {
-        public bool debug;
-
         [Header("State")]
         [SerializeField] protected bool activated;
 
@@ -16,27 +14,19 @@ namespace TiltBrush.Layers
 
         protected override void OnButtonPressed()
         {
-            ToggleActivation();
+            ToggleButtonActivation();
         }
 
-        public void ToggleActivation()
+        public void ToggleButtonActivation()
         {
-            if (activated) activated = false;
-            else activated = true;
-            SetVisualState();
+            activated = !activated;
+            SetButtonActivation(activated);
         }
 
-        protected void SetVisualState()
+        public void SetButtonActivation(bool active)
         {
-            switch (activated)
-            {
-                case true:
-                    if (activatedButtonTexture) SetButtonTexture(activatedButtonTexture);
-                    break;
-                case false:
-                    if (activatedButtonTexture) SetButtonTexture(m_ButtonTexture);
-                    break;
-            }
+            activated = active;
+            SetButtonTexture(activated ? activatedButtonTexture : m_ButtonTexture);
         }
     }
 }

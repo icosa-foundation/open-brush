@@ -36,9 +36,6 @@ namespace TiltBrush
         public delegate void LayerCanvasesUpdateEventHandler();
         public event LayerCanvasesUpdateEventHandler LayerCanvasesUpdate;
 
-        public delegate void LayerCanvasAddedEventHandler(CanvasScript layerCanvas);
-        public event LayerCanvasAddedEventHandler LayerCanvasAdded;
-        
         [SerializeField] private CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
 
@@ -237,10 +234,9 @@ namespace TiltBrush
             m_Lights[(int)LightMode.NoShadow].renderMode = LightRenderMode.ForceVertex;
         }
 
-        public CanvasScript AddLayer()
+        public CanvasScript AddLayerNow()
         {
             var go = new GameObject(string.Format("Layer {0}", LayerCanvases.Count()));
-
             go.transform.parent = transform;
             Coords.AsLocal[go.transform] = TrTransform.identity;
             go.transform.hasChanged = false;
@@ -248,7 +244,7 @@ namespace TiltBrush
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
 
-            LayerCanvasAdded?.Invoke(layer);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
             return layer;
         }
 
@@ -295,34 +291,37 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
         
-        public void ShowLayer(int canvasIndex) {ShowLayer(GetCanvasByLayerIndex(canvasIndex));            App.Scene.LayerCanvasesUpdate?.Invoke();
+        public void ShowLayer(int canvasIndex) {ShowLayer(GetCanvasByLayerIndex(canvasIndex));}
+        public void ShowLayer(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(true);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
         }
-        public void ShowLayer(CanvasScript canvas) {canvas.gameObject.SetActive(true);}
         
-        public void HideLayer(int canvasIndex) {HideLayer(GetCanvasByLayerIndex(canvasIndex));            App.Scene.LayerCanvasesUpdate?.Invoke();
-        }
+        public void HideLayer(int canvasIndex) {HideLayer(GetCanvasByLayerIndex(canvasIndex));}
         public void HideLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
         }
         
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
             for (int i = m_LayerCanvases.Count; i<layerIndex; i++)
             {
-                AddLayer();
+                AddLayerNow();
             }
             
-            if (layerIndex == 0)
-            {
-                return App.Scene.MainCanvas;
-            }
-            else
-            {
-                return m_LayerCanvases[layerIndex - 1];
-            }
+            if (layerIndex == 0) return App.Scene.MainCanvas;
+            return m_LayerCanvases[layerIndex - 1];
         }
         
+        public void ClearLayerContents(CanvasScript canvas)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
         public bool IsLayerVisible(CanvasScript layer)
         {
             return layer.gameObject.activeSelf;

@@ -1,47 +1,29 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
+﻿using UnityEngine;
 
 namespace TiltBrush.Layers
 {
     public class FocusLayerButton : ToggleButton
     {
-        public delegate void OnFocusedLayer(GameObject layerUi);
-        public static event OnFocusedLayer onFocusedLayer;
-
         private void OnEnable()
         {
-            LayerUI_Manager.onActiveSceneChanged += ToggleIfActive;
+            LayerUI_Manager.onActiveSceneChanged += SyncButtonStateWithWidget;
         }
         protected override void OnDisable()
         {
-            LayerUI_Manager.onActiveSceneChanged -= ToggleIfActive;
+            LayerUI_Manager.onActiveSceneChanged -= SyncButtonStateWithWidget;
         }
 
         protected override void OnButtonPressed()
         {
-            if (activated) return;
-            if (!activated) onFocusedLayer?.Invoke(transform.parent.gameObject);
+            base.OnButtonPressed();
+            GetComponentInParent<LayerUI_Manager>().SetActiveLayer(transform.parent.gameObject);
         }  
 
-        public void ToggleIfActive(GameObject activeLayerWidget)
+        public void SyncButtonStateWithWidget(GameObject activeLayerWidget)
         {
-            if (activeLayerWidget == transform.parent.gameObject)
-            {
-                activated = true;
-            }
-            else
-            {
-                activated = false;
-            }
-            SetVisualState();
+            // Active button means hidden layer
+            SetButtonActivation(activeLayerWidget != transform.parent.gameObject);
         }
-        
-        public void SetAsActive(bool active)
-        {
-            activated = active;
-            SetVisualState();
-        }
+
     }
 }
