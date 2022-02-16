@@ -660,6 +660,7 @@ namespace TiltBrush
                     App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                    App.Scene.ResetLayers(true);
                     Coords.CanvasLocalPose = TrTransform.identity;
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
