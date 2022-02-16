@@ -679,6 +679,20 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
 
+                if (!bAdditive)
+                {
+                    // Create Layers
+                    if (jsonData.Layers != null)
+                    {
+                        foreach (var layer in jsonData.Layers)
+                        {
+                            var canvas = App.Scene.AddLayerNow();
+                            canvas.gameObject.name = layer.Name;
+                            canvas.gameObject.SetActive(layer.Visible);
+                        }
+                    }
+                }
+                
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch

@@ -349,7 +349,22 @@ namespace TiltBrush
         {
             return LayerCanvases.ToArray()[layerIndex];
         }
-        
+
+        public LayerMetadata[] LayerCanvasesSerialized()
+        {
+            var layers = LayerCanvases.ToArray();
+            var meta = new LayerMetadata[layers.Count()];
+            for (var i = 0; i < layers.Length; i++)
+            {
+                var layer = layers[i];
+                meta[i] = new LayerMetadata
+                {
+                    Visible = layer.gameObject.activeSelf,
+                    Name = layer.name
+                };
+            }
+            return meta;
+        }
     }
 
 } // namespace TiltBrush

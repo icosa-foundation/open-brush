@@ -296,7 +296,7 @@ namespace TiltBrush
 #endif
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath);
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -330,7 +330,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath)
+            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -417,7 +417,11 @@ namespace TiltBrush
                                 break;
                             }
                         case StrokeExtension.Layer:
-                            UInt32 layerIndex = reader.UInt32();
+                            UInt32 layerIndex = 0;
+                            if (!squashLayers)
+                            {
+                                layerIndex = reader.UInt32();
+                            }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
