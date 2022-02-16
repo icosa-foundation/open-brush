@@ -1043,7 +1043,7 @@ namespace TiltBrush
                 Vector3.zero
             );
         }
-        
+
         [ApiEndpoint("layer.add", "")]
         public static void AddLayer()
         {
@@ -1057,7 +1057,7 @@ namespace TiltBrush
             DeleteLayerCommand cmd = new DeleteLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.squash", "")]
         public static void SquashLayer(int squashedLayer, int destinationLayer)
         {
@@ -1065,26 +1065,26 @@ namespace TiltBrush
             SquashLayerCommand cmd = new SquashLayerCommand(squashedLayer, destinationLayer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.activate", "")]
         public static void ActivateLayer(int layer)
         {
             ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.show", "")]
         public static void ShowLayer(int layer)
         {
             App.Scene.ShowLayer(layer);
         }
-        
+
         [ApiEndpoint("layer.hide", "")]
         public static void HideLayer(int layer)
         {
             App.Scene.HideLayer(layer);
         }
-        
+
         [ApiEndpoint("layer.toggle", "")]
         public static void ToggleLayer(int layer)
         {

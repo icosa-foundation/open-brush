@@ -692,7 +692,7 @@ namespace TiltBrush
                         }
                     }
                 }
-                
+
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch

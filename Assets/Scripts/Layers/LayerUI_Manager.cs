@@ -31,12 +31,12 @@ namespace TiltBrush.Layers
             m_Canvases = new List<CanvasScript>();
             ResetUI();
         }
-        
+
         private void ResetUI()
         {
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
-            for (int i=0; i < m_Widgets.Count; i++)
+            for (int i = 0; i < m_Widgets.Count; i++)
             {
                 var widget = m_Widgets[i];
                 if (i >= canvases.Length)
@@ -46,9 +46,9 @@ namespace TiltBrush.Layers
                 }
                 widget.SetActive(true);
                 var canvas = canvases[i];
-                if (i==0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                if (i==0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas==App.ActiveCanvas);
+                if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
+                if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
+                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
                 widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? "Main Layer" : $"Layer {i}";
                 // Active button means hidden layer
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
@@ -74,14 +74,14 @@ namespace TiltBrush.Layers
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
         }
-        
+
         public void DeleteLayer(GameObject widget)
         {
             if (GetCanvasFromWidget(widget) == App.Scene.MainCanvas) return; // Don't delete the main canvas
             var layer = GetCanvasFromWidget(widget);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(layer));
         }
-        
+
         public void SquashLayer(GameObject widget)
         {
             var canvas = GetCanvasFromWidget(widget);
@@ -89,7 +89,7 @@ namespace TiltBrush.Layers
             var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SquashLayerCommand(canvas, prevCanvas)
-            ); 
+            );
         }
 
         public void ClearLayerContents(GameObject widget)
@@ -97,12 +97,12 @@ namespace TiltBrush.Layers
             CanvasScript canvas = GetCanvasFromWidget(widget);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
         }
-        
+
         public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
         }
-        
+
         public void ToggleVisibility(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
@@ -121,14 +121,14 @@ namespace TiltBrush.Layers
         }
 
         private CanvasScript GetCanvasFromWidget(GameObject widget)
-        {      
+        {
             return m_Canvases[m_Widgets.IndexOf(widget)];
         }
-        
+
         private GameObject GetWidgetFromCanvas(CanvasScript canvas)
         {
             var index = m_Canvases.IndexOf(canvas);
-            return index >= 0 ? m_Widgets[index]: null;
+            return index >= 0 ? m_Widgets[index] : null;
         }
     }
 }

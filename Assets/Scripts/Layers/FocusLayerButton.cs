@@ -22,7 +22,7 @@ namespace TiltBrush.Layers
         {
             LayerUI_Manager.onActiveSceneChanged += SyncButtonStateWithWidget;
         }
-        
+
         protected override void OnDisable()
         {
             LayerUI_Manager.onActiveSceneChanged -= SyncButtonStateWithWidget;
@@ -32,7 +32,7 @@ namespace TiltBrush.Layers
         {
             base.OnButtonPressed();
             GetComponentInParent<LayerUI_Manager>().SetActiveLayer(transform.parent.gameObject);
-        }  
+        }
 
         public void SyncButtonStateWithWidget(GameObject activeLayerWidget)
         {

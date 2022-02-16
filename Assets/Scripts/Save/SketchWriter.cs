@@ -147,7 +147,7 @@ namespace TiltBrush
             foreach (var stroke in strokes)
             {
                 if (App.Scene.IsLayerDeleted(stroke.Canvas)) continue;
-                
+
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
                 snapshot.layerIndex = canvasToIndexMap[stroke.Canvas]; // Don't use the methods in SceneScript as they count deleted layers
                 snapshot.strokeData = stroke.GetCopyForSaveThread();

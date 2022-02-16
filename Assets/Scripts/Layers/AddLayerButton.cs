@@ -25,5 +25,5 @@ namespace TiltBrush.Layers
             base.OnButtonPressed();
             UiManager.AddLayer();
         }
-    } 
+    }
 }

@@ -15,40 +15,40 @@
 using System.Linq;
 using UnityEngine;
 namespace TiltBrush
+{
+    public class DeleteLayerCommand : BaseCommand
     {
-        public class DeleteLayerCommand : BaseCommand
+        private CanvasScript m_Layer;
+
+        public DeleteLayerCommand(int layerIndex, BaseCommand parent = null) : base(parent)
         {
-            private CanvasScript m_Layer;
+            m_Layer = App.Scene.GetCanvasByLayerIndex(layerIndex);
+        }
 
-            public DeleteLayerCommand(int layerIndex, BaseCommand parent = null) : base(parent)
-            {
-                m_Layer = App.Scene.GetCanvasByLayerIndex(layerIndex);
-            }
-            
-            public DeleteLayerCommand(CanvasScript layer, BaseCommand parent = null) : base(parent)
-            {
-                m_Layer = layer;
-            }
-            
-            public override bool NeedsSave { get { return true; } }
+        public DeleteLayerCommand(CanvasScript layer, BaseCommand parent = null) : base(parent)
+        {
+            m_Layer = layer;
+        }
 
-            protected override void OnRedo()
-            {
-                if (m_Layer.gameObject.activeSelf)
-                {
-                    m_Layer.gameObject.SetActive(false);
-                    App.Scene.MarkLayerAsDeleted(m_Layer);
-                }
-            }
+        public override bool NeedsSave { get { return true; } }
 
-            protected override void OnUndo()
+        protected override void OnRedo()
+        {
+            if (m_Layer.gameObject.activeSelf)
             {
-                if (!m_Layer.gameObject.activeSelf)
-                {
-                    m_Layer.gameObject.SetActive(true);
-                    App.Scene.MarkLayerAsNotDeleted(m_Layer);
-                }
+                m_Layer.gameObject.SetActive(false);
+                App.Scene.MarkLayerAsDeleted(m_Layer);
             }
         }
 
-    } // namespace TiltBrush
+        protected override void OnUndo()
+        {
+            if (!m_Layer.gameObject.activeSelf)
+            {
+                m_Layer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(m_Layer);
+            }
+        }
+    }
+
+} // namespace TiltBrush

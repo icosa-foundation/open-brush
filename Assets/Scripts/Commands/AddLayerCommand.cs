@@ -15,33 +15,33 @@
 using System.Linq;
 using UnityEngine;
 namespace TiltBrush
+{
+    public class AddLayerCommand : BaseCommand
     {
-        public class AddLayerCommand : BaseCommand
+        private CanvasScript m_prevActiveLayer;
+        private CanvasScript m_Layer;
+        private bool m_MakeActive;
+
+        public AddLayerCommand(bool makeActive, BaseCommand parent = null) : base(parent)
         {
-            private CanvasScript m_prevActiveLayer;
-            private CanvasScript m_Layer;
-            private bool m_MakeActive;
-
-            public AddLayerCommand(bool makeActive, BaseCommand parent = null) : base(parent)
-            {
-                m_MakeActive = makeActive;
-                m_prevActiveLayer = App.Scene.ActiveCanvas;
-            }
-            
-            public override bool NeedsSave { get { return true; } }
-
-            protected override void OnRedo()
-            {
-                m_Layer = App.Scene.AddLayerNow();
-                App.Scene.ActiveCanvas = m_Layer;
-            }
-
-            protected override void OnUndo()
-            {
-                m_Layer.gameObject.SetActive(false);
-                App.Scene.MarkLayerAsDeleted(m_Layer);
-                App.Scene.ActiveCanvas = m_prevActiveLayer;
-            }
+            m_MakeActive = makeActive;
+            m_prevActiveLayer = App.Scene.ActiveCanvas;
         }
 
-    } // namespace TiltBrush
+        public override bool NeedsSave { get { return true; } }
+
+        protected override void OnRedo()
+        {
+            m_Layer = App.Scene.AddLayerNow();
+            App.Scene.ActiveCanvas = m_Layer;
+        }
+
+        protected override void OnUndo()
+        {
+            m_Layer.gameObject.SetActive(false);
+            App.Scene.MarkLayerAsDeleted(m_Layer);
+            App.Scene.ActiveCanvas = m_prevActiveLayer;
+        }
+    }
+
+} // namespace TiltBrush

@@ -206,7 +206,7 @@ namespace TiltBrush
         {
             // Only select from the active layer
             if (rGroup.Canvas != App.Scene.ActiveCanvas) return true;
-            
+
             if (altSelect)
             {
                 if (m_BatchFilter == null && rGroup.m_ParentBatch != null)

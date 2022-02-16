@@ -13,29 +13,29 @@
 // limitations under the License.
 
 namespace TiltBrush
+{
+    public class ActivateLayerCommand : BaseCommand
     {
-        public class ActivateLayerCommand : BaseCommand
+        private CanvasScript m_NewActiveLayer;
+        private CanvasScript m_PrevActiveLayer;
+
+        public ActivateLayerCommand(CanvasScript layer, BaseCommand parent = null) : base(parent)
         {
-            private CanvasScript m_NewActiveLayer;
-            private CanvasScript m_PrevActiveLayer;
-            
-            public ActivateLayerCommand(CanvasScript layer, BaseCommand parent = null) : base(parent)
-            {
-                m_PrevActiveLayer = App.Scene.ActiveCanvas;
-                m_NewActiveLayer = layer;
-            }
-            
-            public override bool NeedsSave { get { return true; } }
-
-            protected override void OnRedo()
-            {
-                App.Scene.ActiveCanvas = m_NewActiveLayer;
-            }
-
-            protected override void OnUndo()
-            {
-                App.Scene.ActiveCanvas = m_PrevActiveLayer;
-            }
+            m_PrevActiveLayer = App.Scene.ActiveCanvas;
+            m_NewActiveLayer = layer;
         }
 
-    } // namespace TiltBrush
+        public override bool NeedsSave { get { return true; } }
+
+        protected override void OnRedo()
+        {
+            App.Scene.ActiveCanvas = m_NewActiveLayer;
+        }
+
+        protected override void OnUndo()
+        {
+            App.Scene.ActiveCanvas = m_PrevActiveLayer;
+        }
+    }
+
+} // namespace TiltBrush
