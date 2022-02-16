@@ -194,7 +194,7 @@ namespace TiltBrush
             m_LayerCanvases = new List<CanvasScript>();
             m_DeletedLayers = new HashSet<int>();
             m_ActiveCanvas = MainCanvas;
-            if (notify) App.Scene.LayerCanvasesUpdate?.Invoke(); 
+            if (notify) App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
 
@@ -337,6 +337,11 @@ namespace TiltBrush
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
             m_DeletedLayers.Remove(m_LayerCanvases.IndexOf(layer));
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public void BroadcastCanvasUpdate()
+        {
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
