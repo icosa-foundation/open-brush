@@ -85,7 +85,7 @@ namespace TiltBrush.Layers
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
         }
         
-        private void AddLayer()
+        public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
         }
@@ -98,9 +98,8 @@ namespace TiltBrush.Layers
 
         public void SetActiveLayer(GameObject widget)
         {
-            var layer = GetCanvasFromWidget(widget);
-            if (!layer) return;
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(layer));
+            var newActiveCanvas = GetCanvasFromWidget(widget);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
         }
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)

@@ -8,6 +8,7 @@ namespace TiltBrush.Layers
         {
             LayerUI_Manager.onActiveSceneChanged += SyncButtonStateWithWidget;
         }
+        
         protected override void OnDisable()
         {
             LayerUI_Manager.onActiveSceneChanged -= SyncButtonStateWithWidget;
@@ -21,8 +22,7 @@ namespace TiltBrush.Layers
 
         public void SyncButtonStateWithWidget(GameObject activeLayerWidget)
         {
-            // Active button means hidden layer
-            SetButtonActivation(activeLayerWidget != transform.parent.gameObject);
+            SetButtonActivation(activeLayerWidget == transform.parent.gameObject);
         }
 
     }

@@ -16,30 +16,25 @@ namespace TiltBrush
     {
         public class ActivateLayerCommand : BaseCommand
         {
-            private CanvasScript m_Layer;
-            private CanvasScript m_PreviousLayer;
-
-            public ActivateLayerCommand(int layerIndex, BaseCommand parent = null) : base(parent)
-            {
-                m_PreviousLayer = App.Scene.ActiveCanvas;
-                m_Layer = App.Scene.GetCanvasByLayerIndex(layerIndex);
-            }
+            private CanvasScript m_NewActiveLayer;
+            private CanvasScript m_PrevActiveLayer;
             
             public ActivateLayerCommand(CanvasScript layer, BaseCommand parent = null) : base(parent)
             {
-                m_Layer = layer;
+                m_PrevActiveLayer = App.Scene.ActiveCanvas;
+                m_NewActiveLayer = layer;
             }
             
             public override bool NeedsSave { get { return true; } }
 
             protected override void OnRedo()
             {
-                App.Scene.ActiveCanvas = m_Layer;
+                App.Scene.ActiveCanvas = m_NewActiveLayer;
             }
 
             protected override void OnUndo()
             {
-                App.Scene.ActiveCanvas = m_PreviousLayer;
+                App.Scene.ActiveCanvas = m_PrevActiveLayer;
             }
         }
 

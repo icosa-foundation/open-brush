@@ -1069,7 +1069,7 @@ namespace TiltBrush
         [ApiEndpoint("layer.activate", "")]
         public static void ActivateLayer(int layer)
         {
-            ActivateLayerCommand cmd = new ActivateLayerCommand(layer);
+            ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
         

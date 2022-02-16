@@ -21,6 +21,7 @@ namespace TiltBrush
             private CanvasScript m_SquashedLayer;
             private CanvasScript m_DestinationLayer;
             private IEnumerable<Stroke> m_OriginalStrokes;
+            private bool SquashedLayerWasActive;
 
             public SquashLayerCommand(int squashedLayerIndex, int destinationLayerIndex, BaseCommand parent = null) : base(parent)
             {
@@ -39,25 +40,20 @@ namespace TiltBrush
                 m_DestinationLayer = destinationLayer;
                 m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                     .Where(x => x.Canvas == m_SquashedLayer);
+                SquashedLayerWasActive = App.Scene.ActiveCanvas == m_SquashedLayer;
             }
             
             public override bool NeedsSave { get { return true; } }
 
             protected override void OnRedo()
             {
-                // TODO: this should defer updates to the batches until the end
-                foreach (var stroke in SketchMemoryScript.AllStrokes())
+                foreach (var stroke in m_OriginalStrokes)
                 {
-                    if (stroke.Canvas == m_SquashedLayer)
-                    {
-                        stroke.SetParentKeepWorldPosition(m_DestinationLayer);
-                    }
+                    stroke.SetParentKeepWorldPosition(m_DestinationLayer);
                 }
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush,
-                    string.Format("Squashed {0}", m_SquashedLayer.gameObject.name));
                 App.Scene.ActiveCanvas = m_DestinationLayer;
                 App.Scene.MarkLayerAsDeleted(m_SquashedLayer);
+                if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_DestinationLayer;
             }
 
             protected override void OnUndo()
@@ -68,6 +64,7 @@ namespace TiltBrush
                 }
                 m_SquashedLayer.gameObject.SetActive(true);
                 App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
+                if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_SquashedLayer;
             }
         }
 
