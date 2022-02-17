@@ -527,7 +527,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -30193,8 +30193,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1915877485}
-  - component: {fileID: 1915877482}
-  - component: {fileID: 1915877483}
   - component: {fileID: 1915877486}
   - component: {fileID: 1915877484}
   - component: {fileID: 1915877487}
@@ -30206,122 +30204,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1915877482
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915877481}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4444ce35d262aa648ad0c425a559b931, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 0
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  _previewInEditor: 0
---- !u!114 &1915877483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915877481}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4444ce35d262aa648ad0c425a559b931, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 0
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  _previewInEditor: 0
 --- !u!114 &1915877484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30379,6 +30261,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
+  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!4 &1915877485
 Transform:
@@ -30451,6 +30334,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
+  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877487
 MonoBehaviour:
@@ -30509,6 +30393,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
+  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!114 &1915877488
 MonoBehaviour:
@@ -30567,6 +30452,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   isAlphaPremultiplied: 0
+  useBicubicFiltering: 0
   _previewInEditor: 0
 --- !u!1001 &1916224247
 PrefabInstance:
@@ -31331,7 +31217,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -32071,7 +31957,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 1
+  inputIsHDR: 0
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
