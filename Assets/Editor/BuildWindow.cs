@@ -206,6 +206,7 @@ namespace TiltBrush
         }
 
         private const double kSecondsBetweenDeviceScan = 3;
+        private const string kClearConsoleOnBuild = "BuildWindow.ClearConsoleOnBuild";
         private const string kAutoUploadAfterBuild = "BuildWindow.AutoUploadAfterBuild";
         private const string kAutoRunAfterUpload = "BuildWindow.AutoRunAfterUpload";
         private const string kSuccessfulBuildTime = "BuildWindow.SuccessfulBuildTime";
@@ -247,6 +248,12 @@ namespace TiltBrush
         private bool AndroidConnected
         {
             get => !string.IsNullOrEmpty(m_selectedAndroid) && m_androidDevices.Length > 0;
+        }
+        
+        private bool ClearConsoleOnBuild
+        {
+            get => EditorPrefs.GetBool(kClearConsoleOnBuild, false);
+            set => EditorPrefs.SetBool(kClearConsoleOnBuild, value);
         }
 
         private bool UploadAfterBuild
@@ -430,6 +437,7 @@ namespace TiltBrush
 
                 using (var optionsBar = new GUILayout.HorizontalScope())
                 {
+                    ClearConsoleOnBuild = GUILayout.Toggle(ClearConsoleOnBuild, "Clear console on build");
                     UploadAfterBuild = GUILayout.Toggle(UploadAfterBuild, "Upload after Build");
                     RunAfterUpload = GUILayout.Toggle(RunAfterUpload, "Run after Upload");
                 }
@@ -506,6 +514,11 @@ namespace TiltBrush
 
         private void ResetBuildLog()
         {
+            if (ClearConsoleOnBuild)
+            {
+                Debug.ClearDeveloperConsole();
+            }
+            
             m_buildLogPosition = null;
             if (m_buildLogReader != null)
             {
