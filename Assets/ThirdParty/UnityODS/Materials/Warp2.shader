@@ -19,6 +19,7 @@ Shader "Hidden/Warp2"
                
             v2f_img vert_img_rect( appdata_img v )
             {
+                UNITY_INITIALIZE_OUTPUT(appdata_img, v);
                 v2f_img o;
                 
                 // Position quad in rect
