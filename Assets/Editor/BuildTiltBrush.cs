@@ -335,7 +335,7 @@ static class BuildTiltBrush
             sdk += "Mobile";
 
         var directoryName = string.Format(
-            "{0}_{1}_{5}{2}{3}{4}_FromGui",
+            "{0}_{1}_{5}{2}{3}{4}",
             sdk,
             GuiDevelopment ? "Debug" : "Release",
             GuiExperimental ? "_Experimental" : "",
