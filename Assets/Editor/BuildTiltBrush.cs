@@ -1259,6 +1259,15 @@ static class BuildTiltBrush
             config.OnValidate();
             config.DoBuildTimeConfiguration(target);
 
+            if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+            {
+                if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
+                {
+                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                    Debug.Log("Set Android architecturer to ARM64.");
+                }
+            }
+
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
