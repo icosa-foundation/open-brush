@@ -197,6 +197,7 @@ namespace TiltBrush
                 m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
                 m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
 
+                gameObject.AddComponent<OculusMRCCameraUpdate>();
                 //Add an OVRCameraRig to the VrSystem for Mixed Reality Capture.
                 // var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
                 //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
