@@ -359,8 +359,20 @@ namespace TiltBrush
                     using (var runtimeBar = new HeaderedVerticalLayout("Runtime", options))
                     {
                         bool isIl2cpp = BuildTiltBrush.GuiRuntimeIl2cpp;
-                        bool newIsMono = GUILayout.Toggle(!isIl2cpp, "Mono", toggleOpt);
+                        bool newIsMono = false;
+                        
+                        // Android OpenXR requires IL2CPP
+                        if (BuildTiltBrush.GuiSelectedSdk == SdkMode.UnityXR && BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+                        {
+                            isIl2cpp = true;
+                        }
+                        else
+                        {
+                            newIsMono = GUILayout.Toggle(!isIl2cpp, "Mono", toggleOpt);
+                        }
+                        
                         bool newIsIl2cpp = GUILayout.Toggle(isIl2cpp, "IL2CPP", toggleOpt);
+                        
                         if (isIl2cpp != newIsIl2cpp || isIl2cpp != !newIsMono)
                         {
                             BuildTiltBrush.GuiRuntimeIl2cpp = !isIl2cpp;
