@@ -54,6 +54,7 @@ namespace TiltBrush
         //this is the list of meshes that make up the standard pointer look: cone + ring
         [SerializeField] private Renderer[] m_PrimaryMeshes;
         [SerializeField] private Transform m_BrushSizeIndicator;
+        [SerializeField] private Transform m_BrushPressureIndicator;
         [SerializeField] private bool m_PreviewLineEnabled;
         [SerializeField] private float m_PreviewLineControlPointLife = 1.0f;
         [SerializeField] private float m_PreviewLineIdealLength = 1.0f;
@@ -322,6 +323,18 @@ namespace TiltBrush
                     // Adjust volume of each layer based on brush speed
                     m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
                     m_AudioSources[i].pitch += fPitchAdjust;
+                }
+            }
+
+
+            // match pressure with indicator
+            if (App.Instance.IsInStateThatAllowsPainting())
+            {
+                if (m_BrushPressureIndicator != null)
+                {
+                    //m_BrushPressureIndicator.localScale = new Vector3(GetPressure(), GetPressure(), GetPressure());
+                    float scaledPressure = Remap(GetPressure(), 0, 1, m_BrushSizeRange.x, m_CurrentBrushSize);
+                    m_BrushPressureIndicator.localScale = new Vector3(scaledPressure, scaledPressure, scaledPressure);
                 }
             }
         }
