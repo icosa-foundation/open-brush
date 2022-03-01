@@ -687,6 +687,18 @@ namespace TiltBrush
             m_CurrentPressure = fPressure;
         }
 
+        public float GetPressure()
+        {
+            return m_CurrentPressure;
+        }
+
+        // utillity that maps one range into another
+        float Remap(float value, float from1, float to1, float from2, float to2)
+        {
+            return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+        }
+
+
         public void SetColor(Color rColor)
         {
             m_CurrentColor = rColor;
