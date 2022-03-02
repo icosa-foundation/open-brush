@@ -26,7 +26,7 @@ public class ToggleMonoscopic : MonoBehaviour
 {
     private static Scene MainScene => EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
 
-    [MenuItem("OpenBrush/Enable Monoscopic Mode in Editor")]
+    [MenuItem("Open Brush/Enable Monoscopic Mode in Editor")]
     public static void EnableMono()
     {
         SetConfigSDKMode(SdkMode.Monoscopic);
@@ -37,7 +37,7 @@ public class ToggleMonoscopic : MonoBehaviour
         AssetDatabase.Refresh();
     }
 
-    [MenuItem("OpenBrush/Disable Monoscopic Mode in Editor")]
+    [MenuItem("Open Brush/Disable Monoscopic Mode in Editor")]
     public static void DisableMono()
     {
         SetConfigSDKMode(SdkMode.UnityXR);

@@ -34,7 +34,7 @@ using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
 #endif
 
 #if !UNITY_2020_3_OR_NEWER
-xxx "This is the minimal Unity supported by OpenBrush" xxx
+xxx "This is the minimal Unity supported by Open Brush" xxx
 #endif
 
 [assembly: InternalsVisibleTo("Assembly-CSharp-Editor")]

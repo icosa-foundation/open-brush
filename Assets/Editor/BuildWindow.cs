@@ -268,7 +268,7 @@ namespace TiltBrush
             set => EditorPrefs.SetBool(kAutoRunAfterUpload, value);
         }
 
-        [MenuItem("OpenBrush/Build/Build Window", false, 1)]
+        [MenuItem("Open Brush/Build/Build Window", false, 1)]
         public static void CreateWindow()
         {
             BuildWindow window = EditorWindow.GetWindow<BuildWindow>();

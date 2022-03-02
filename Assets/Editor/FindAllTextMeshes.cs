@@ -28,7 +28,7 @@ namespace TiltBrush
     public class FindAllTextMeshes
     {
         // Uncomment to use this
-        // [MenuItem("OpenBrush/Find all Text Meshes")]
+        // [MenuItem("Open Brush/Find all Text Meshes")]
         public static void Find()
         {
             FindAllInScene();

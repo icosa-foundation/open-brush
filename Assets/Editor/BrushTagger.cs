@@ -21,7 +21,7 @@ namespace TiltBrush
 {
     public class BrushTagger
     {
-        [MenuItem("OpenBrush/Rewrite Brush Tags")]
+        [MenuItem("Open Brush/Rewrite Brush Tags")]
         private static void TagBrushes()
         {
             var whiteboardBrushes = new List<string>

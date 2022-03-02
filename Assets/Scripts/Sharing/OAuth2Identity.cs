@@ -69,19 +69,19 @@ namespace TiltBrush
         }
 
 #if UNITY_EDITOR
-        [MenuItem("OpenBrush/Cloud/Log in (Google)")]
+        [MenuItem("Open Brush/Cloud/Log in (Google)")]
         private static void LogInGoogle() => App.GoogleIdentity.LoginAsync();
-        [MenuItem("OpenBrush/Cloud/Log in (Sketchfab)")]
+        [MenuItem("Open Brush/Cloud/Log in (Sketchfab)")]
         private static void LogInSketchfab() => App.SketchfabIdentity.LoginAsync();
-        [MenuItem("OpenBrush/Cloud/Log out (All)")]
+        [MenuItem("Open Brush/Cloud/Log out (All)")]
         private static void LogOutAll()
         {
             App.GoogleIdentity.Logout();
             App.SketchfabIdentity.Logout();
         }
-        [MenuItem("OpenBrush/Cloud/Log in (Sketchfab)", true)]
-        [MenuItem("OpenBrush/Cloud/Log in (Google)", true)]
-        [MenuItem("OpenBrush/Cloud/Log out (All)", true)]
+        [MenuItem("Open Brush/Cloud/Log in (Sketchfab)", true)]
+        [MenuItem("Open Brush/Cloud/Log in (Google)", true)]
+        [MenuItem("Open Brush/Cloud/Log out (All)", true)]
         private static bool EnablePlayModeOnly() => Application.isPlaying;
 #endif
 

@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 public class PanelLister : MonoBehaviour
 {
 
-    [MenuItem("OpenBrush/Info/Panel Lister")]
+    [MenuItem("Open Brush/Info/Panel Lister")]
     static void ListPanels()
     {
         StringBuilder panelList = new StringBuilder();
@@ -30,7 +30,7 @@ public class PanelLister : MonoBehaviour
         Debug.Log($"{panelList}");
     }
 
-    [MenuItem("OpenBrush/Info/Popup Lister")]
+    [MenuItem("Open Brush/Info/Popup Lister")]
     static void ListPopups()
     {
         StringBuilder popupList = new StringBuilder();

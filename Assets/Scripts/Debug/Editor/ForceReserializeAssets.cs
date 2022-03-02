@@ -20,7 +20,7 @@ namespace TiltBrush
     {
 
         // Ensures all assets in the project are read in, and reserialized in the most recent format.
-        [MenuItem("OpenBrush/Force reserialization of all assets")]
+        [MenuItem("Open Brush/Force reserialization of all assets")]
         public static void ReserializeAll()
         {
             EditorUtility.DisplayProgressBar(
