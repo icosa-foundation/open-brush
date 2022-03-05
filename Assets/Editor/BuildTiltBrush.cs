@@ -1398,8 +1398,16 @@ static class BuildTiltBrush
                     vrSdk = vrSdk,
                     copyRequests = copyRequests
                 };
-
-                m_buildStatus = "Building player";
+                
+                // Some information on what we are building
+                var buildDesc = $"Building player: {target}";
+                if (target == BuildTarget.Android)
+                {
+                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}";
+                }
+                m_buildStatus = buildDesc;
+                
+                // Start building
                 var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))

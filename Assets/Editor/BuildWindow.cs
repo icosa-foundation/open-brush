@@ -360,19 +360,20 @@ namespace TiltBrush
                     {
                         bool isIl2cpp = BuildTiltBrush.GuiRuntimeIl2cpp;
                         bool newIsMono = false;
+                        bool newIsIl2cpp = false;
                         
                         // Android OpenXR requires IL2CPP
                         if (BuildTiltBrush.GuiSelectedSdk == SdkMode.UnityXR && BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
                         {
-                            isIl2cpp = true;
+                            newIsIl2cpp = true;
+                            GUILayout.Toggle(newIsIl2cpp, "IL2CPP", toggleOpt);
                         }
                         else
                         {
                             newIsMono = GUILayout.Toggle(!isIl2cpp, "Mono", toggleOpt);
+                            newIsIl2cpp = GUILayout.Toggle(isIl2cpp, "IL2CPP", toggleOpt);
                         }
-                        
-                        bool newIsIl2cpp = GUILayout.Toggle(isIl2cpp, "IL2CPP", toggleOpt);
-                        
+
                         if (isIl2cpp != newIsIl2cpp || isIl2cpp != !newIsMono)
                         {
                             BuildTiltBrush.GuiRuntimeIl2cpp = !isIl2cpp;
@@ -479,7 +480,6 @@ namespace TiltBrush
 
                 if (m_buildLog.Count > 0)
                 {
-
                     int width = (int)(position.width - 35);
                     int end = Mathf.Clamp(start + 10, 0, m_buildLog.Count);
                     using (var horizSection = new GUILayout.HorizontalScope())
