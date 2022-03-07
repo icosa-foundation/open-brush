@@ -210,7 +210,7 @@ namespace TiltBrush
             {
                 cat.Add(desc.m_Guid, desc);
             }
-            
+
             TiltBrushManifest experimentalManifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>(
                 "Assets/Manifest_Experimental.asset");
 
@@ -333,7 +333,7 @@ namespace TiltBrush
             {
                 return null;
             }
-            
+
             // Only use the first value
             // TODO TubeToonInverted has two cull values
             string value = values[0];

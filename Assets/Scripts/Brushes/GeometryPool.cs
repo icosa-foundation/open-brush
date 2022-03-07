@@ -938,7 +938,7 @@ namespace TiltBrush
             if (stroke.m_Type == Stroke.Type.BrushStroke)
             {
                 var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
-                if (mesh!=null) return mesh.vertexCount;
+                if (mesh != null) return mesh.vertexCount;
                 Debug.LogWarning($"Stroke of type {BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid)} has no mesh");
                 return 0;
             }
