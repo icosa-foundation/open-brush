@@ -1352,28 +1352,7 @@ namespace TiltBrush
                     camTool.ExternalObjectNextCameraStyle(); // For monoscopic mode
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.CycleCanvas))
-                {
-                    if (InputManager.m_Instance.GetAnyShift())
-                    {
-                        // Create new layer if on main canvas,
-                        // otherwise squash current layer to main
-                        if (App.Scene.ActiveCanvas == App.Scene.MainCanvas)
-                        {
-                            App.Scene.Test_AddLayer();
-                        }
-                        else
-                        {
-                            App.Scene.Test_SquashCurrentLayer();
-                        }
-                    }
-                    else
-                    {
-                        App.Scene.Test_CycleCanvas();
-                    }
-                }
-                else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                    InputManager.KeyboardShortcut.ViewOnly))
+                             InputManager.KeyboardShortcut.ViewOnly))
                 {
                     IssueGlobalCommand(GlobalCommands.ViewOnly);
                 }
@@ -5025,6 +5004,7 @@ namespace TiltBrush
             SaveLoadScript.m_Instance.ResetLastFilename();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
+            App.Scene.ResetLayers(notify: true);
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SVGMeshUnity.Internals;
 using SVGMeshUnity.Internals.Cdt2d;
 using UnityEditor;
@@ -27,7 +28,12 @@ namespace SVGMeshUnity
             Polyline.Clear();
             BezierToPolyline.Scale = Scale;
             BezierToPolyline.GetContours(svg, Polyline);
-            
+            // Flip Y
+            Polyline = Polyline.Select(
+                el => el.Select(
+                    v => new Vector2(v.x, v.y * -1)
+                ).ToList()
+            ).ToList();
         }
     }
 }
