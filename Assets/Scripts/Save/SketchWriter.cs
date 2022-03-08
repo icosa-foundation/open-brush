@@ -146,10 +146,7 @@ namespace TiltBrush
             }
             foreach (var stroke in strokes)
             {
-                if (App.Scene.IsLayerDeleted(stroke.Canvas)) continue;
-
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
-                snapshot.layerIndex = canvasToIndexMap[stroke.Canvas]; // Don't use the methods in SceneScript as they count deleted layers
                 snapshot.strokeData = stroke.GetCopyForSaveThread();
                 snapshot.adjustedStrokeFlags = stroke.m_Flags;
                 if (resetGroupContinue)
@@ -159,6 +156,16 @@ namespace TiltBrush
                 }
                 if (stroke.IsGeometryEnabled)
                 {
+                    if (stroke.Canvas == App.Scene.SelectionCanvas)
+                    {
+                        // Assume selected strokes belong to the current canvas.
+                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                    }
+                    else
+                    {
+                        // Don't use the method in SceneScript as they count deleted layers
+                        snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
+                    }
                     yield return snapshot;
                 }
                 else
