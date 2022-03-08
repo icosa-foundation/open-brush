@@ -204,9 +204,6 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
-            // Only select from the active layer
-            if (rGroup.Canvas != App.Scene.ActiveCanvas) return true;
-
             if (altSelect)
             {
                 if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
@@ -219,6 +216,10 @@ namespace TiltBrush
             var stroke = rGroup.m_Stroke;
             var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
+            
+            // Only select from the active layer
+            if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas)) return true;
+
             if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
             {
                 // I think it's actually expected that this happens every now and then.
