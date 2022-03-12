@@ -1098,16 +1098,22 @@ namespace TiltBrush
             const InputDeviceCharacteristics kHeadset =
                 InputDeviceCharacteristics.HeadMounted | InputDeviceCharacteristics.TrackedDevice;
 
-            if (device.isValid && (device.characteristics & kHeadset) == kHeadset)
-            {
-                Debug.Log($"Headset connected: {device.manufacturer}, {device.name}");
-            }
-
             // Left Hand Connected
             const InputDeviceCharacteristics kLeftHandController =
                 InputDeviceCharacteristics.Left | InputDeviceCharacteristics.HeldInHand;
 
-            if (device.isValid && (device.characteristics & kLeftHandController) == kLeftHandController)
+            // Right Hand Connected
+            const InputDeviceCharacteristics kRightHandController =
+                InputDeviceCharacteristics.Right | InputDeviceCharacteristics.HeldInHand;
+
+            if (!device.isValid)
+                return;
+
+            if ((device.characteristics & kHeadset) == kHeadset)
+            {
+                Debug.Log($"Headset connected: {device.manufacturer}, {device.name}");
+            }
+            else if ((device.characteristics & kLeftHandController) == kLeftHandController)
             {
                 Debug.Log($"Left Controller: {device.manufacturer}, {device.name}");
                 if(IsInitializingUnityXR)
@@ -1115,12 +1121,7 @@ namespace TiltBrush
                     SetUnityXRControllerStyle(device);
                 }
             }
-
-            // Right Hand Connected
-            const InputDeviceCharacteristics kRightHandController =
-                InputDeviceCharacteristics.Right | InputDeviceCharacteristics.HeldInHand;
-
-            if (device.isValid && (device.characteristics & kRightHandController) == kRightHandController)
+            else if ((device.characteristics & kRightHandController) == kRightHandController)
             {
                 Debug.Log($"Right Controller: {device.manufacturer}, {device.name}");
                 if(IsInitializingUnityXR)
@@ -1128,22 +1129,26 @@ namespace TiltBrush
                     SetUnityXRControllerStyle(device);
                 }
             }
+            else
+            {
+                Debug.LogError("Unrecognised device connected: {device.manufacturer}, {device.name}");
+            }
         }
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
-            Debug.Log($"Attempting to parse {device.name}");
             if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
             }
-
-            // TODO:Mike - work through values to find the right controllers.
-
+            else if (device.name.StartsWith("Index Controller OpenXR"))
+            {
+                SetControllerStyle(ControllerStyle.InitializingSteamVR);
+            }
             else
             {
-                // TODO:Mike - None, or just ignore?
                 // SetControllerStyle(ControllerStyle.None);
+                Debug.LogError("Unrecognised controller device name: " + device.name);
             }
 
             InputManager.m_Instance.CreateControllerInfos();
