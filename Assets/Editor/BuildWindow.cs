@@ -459,16 +459,18 @@ namespace TiltBrush
                 // Android support buttons
                 if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android && !string.IsNullOrEmpty(BuildTiltBrush.AdbPath))
                 {
-                    using (var buildBar2 = new HeaderedVerticalLayout("Android Actions"))
+                    if (AndroidConnected)
                     {
-                        GUI.enabled = AndroidConnected && !BuildTiltBrush.DoingBackgroundBuild;
-                        m_upload.OnGUI();
-                        m_launch.OnGUI();
-                        m_turnOnAdbDebugging.OnGUI();
-                        m_launchWithProfile.OnGUI();
-                        m_terminate.OnGUI();
-                        GUI.enabled = true;
-
+                        using (var buildBar2 = new HeaderedVerticalLayout("Android Actions"))
+                        {
+                            GUI.enabled = AndroidConnected && !BuildTiltBrush.DoingBackgroundBuild;
+                            m_upload.OnGUI();
+                            m_launch.OnGUI();
+                            m_turnOnAdbDebugging.OnGUI();
+                            m_launchWithProfile.OnGUI();
+                            m_terminate.OnGUI();
+                            GUI.enabled = true;
+                        }
                     }
                 }
 
@@ -565,6 +567,7 @@ namespace TiltBrush
                         {
                             m_selectedAndroid = device;
                             MakeBuildActionsGui();
+                            OnBuildSettingsChanged();
                         }
                     }
                 }
