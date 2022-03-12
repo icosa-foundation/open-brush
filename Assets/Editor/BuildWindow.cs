@@ -655,6 +655,9 @@ namespace TiltBrush
 
             string exeName = Path.GetFileName(m_currentBuildPath);
             string exeTitle = Path.GetFileNameWithoutExtension(exeName);
+            
+            // Note, we add "unityeditor" to the package name - Unity appends this.
+            string packageName = exeTitle + "unityeditor";
 
             if (m_upload != null)
             {
@@ -674,7 +677,8 @@ namespace TiltBrush
                 (results) => results.Any(x => x.Contains("Starting: Intent")),
                 // adb args:
                 "-s", m_selectedAndroid,
-                "shell", "am", "start", exeTitle + "/com.unity3d.player.UnityPlayerActivity"
+                //  -S will force stop any previous instance.
+                "shell", "am", "start", "-S", packageName + "/com.unity3d.player.UnityPlayerActivity"
             );
 
             if (m_terminate != null) { m_terminate.Cancel(); }
@@ -683,7 +687,7 @@ namespace TiltBrush
                 (results) => true,
                 // adb args:
                 "-s", m_selectedAndroid,
-                "shell", "am", "force-stop", exeTitle
+                "shell", "am", "force-stop", packageName
             );
 
             if (m_turnOnAdbDebugging != null) { m_turnOnAdbDebugging.Cancel(); }
@@ -692,7 +696,7 @@ namespace TiltBrush
                 (results) => true,
                 // adb args:
                 "-s", m_selectedAndroid,
-                "forward", "tcp:34999", "localabstract:Unity-" + exeTitle
+                "forward", "tcp:34999", "localabstract:Unity-" + packageName
             );
 
             if (m_launchWithProfile != null) { m_launchWithProfile.Cancel(); }
@@ -701,7 +705,7 @@ namespace TiltBrush
                 (results) => results.Any(x => x.Contains("Starting: Intent")),
                 // adb args:
                 "-s", m_selectedAndroid,
-                "shell", "am", "start", exeTitle + "/com.unity3d.player.UnityPlayerActivity",
+                "shell", "am", "start", packageName + "/com.unity3d.player.UnityPlayerActivity",
                 "-e", "unity", "-deepprofiling"
             );
         }
