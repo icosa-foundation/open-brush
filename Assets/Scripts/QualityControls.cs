@@ -121,7 +121,7 @@ namespace TiltBrush
             get
             {
 #if UNITY_ANDROID
-      return m_MobileQualityLevels;
+                return m_MobileQualityLevels;
 #else
                 return m_QualityLevels;
 #endif
@@ -201,11 +201,12 @@ namespace TiltBrush
 
             // Set up the OVR overlay for the dynamic quality debug readout.
 #if OCULUS_SUPPORTED
-    if (m_DebugText && m_DebugText.gameObject.activeInHierarchy) {
-      OVROverlay overlay = m_DebugText.gameObject.AddComponent<OVROverlay>();
-      overlay.textures = new Texture[] { m_DebugText.RenderedTexture };
-      overlay.isDynamic = true;
-    }
+            if (m_DebugText && m_DebugText.gameObject.activeInHierarchy)
+            {
+                OVROverlay overlay = m_DebugText.gameObject.AddComponent<OVROverlay>();
+                overlay.textures = new Texture[] { m_DebugText.RenderedTexture };
+                overlay.isDynamic = true;
+            }
 #endif // OCULUS_SUPPORTED
 
             // Push current level to camera settings.

@@ -53,8 +53,7 @@ namespace TiltBrush
                 case InputManager.ControllerName.Wand:
                     return m_Wand;
                 default:
-                    throw new System.ArgumentException(
-                        string.Format("Unknown controller behavior {0}", name));
+                    throw new System.ArgumentException($"Unknown controller behavior {name}");
             }
         }
 

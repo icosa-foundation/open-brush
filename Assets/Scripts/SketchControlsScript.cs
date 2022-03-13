@@ -1275,13 +1275,11 @@ namespace TiltBrush
             //allow tool scaling if we're not drawing and our input device is active
             bool bScaleInputActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Scale);
             bool bScaleCommandActive =
-                !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
+                bScaleInputActive
+                && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
                 && m_GrabBrush.grabbingWorld == false
-                && bScaleInputActive
                 && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
-                && ((m_ControlsType != ControlsType.SixDofControllers)
-                || InputManager.Brush.IsTrackedObjectValid
-                );
+                && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid);
 
             if (m_EatToolScaleInput)
             {

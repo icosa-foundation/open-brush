@@ -40,8 +40,7 @@ public class ToggleMonoscopic : MonoBehaviour
     [MenuItem("OpenBrush/Disable Monoscopic Mode in Editor")]
     public static void DisableMono()
     {
-        // TODO Update this when we switch to OpenXR branch
-        SetConfigSDKMode(SdkMode.SteamVR);
+        SetConfigSDKMode(SdkMode.UnityXR);
         // TODO:Mike - Mono toggling mode expects SteamVR for some reason
         // SteamVrSettings.autoEnableVR = true;
         // EditorUtility.SetDirty(SteamVrSettings);

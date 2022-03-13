@@ -355,7 +355,7 @@ namespace TiltBrush
             if (m_CurrentGripState != state)
             {
                 ControllerStyle style = ControllerGeometry.Style;
-                if (style != ControllerStyle.InitializingSteamVR &&
+                if (style != ControllerStyle.InitializingUnityXR &&
                     style != ControllerStyle.None &&
                     style != ControllerStyle.Unset)
                 {

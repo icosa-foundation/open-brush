@@ -420,45 +420,10 @@ namespace TiltBrush
             }
         }
 
-        // bool SetSteamControllerStyle(SteamControllerInfo steamInfo, out string style)
-        // {
-        //     //TODO:Mike This code sets the style of controller. may be best done at the XR level now
-        //     // SteamVR steamVR = SteamVR.instance;
-        //     // style = steamVR.GetStringProperty(ETrackedDeviceProperty.Prop_ControllerType_String,
-        //     //    (uint)steamInfo.TrackedPose.GetDeviceIndex());
-        //     style = string.Empty;
-        //     if (style == "oculus_touch")
-        //     {
-        //         App.VrSdk.SetControllerStyle(ControllerStyle.OculusTouch);
-        //     }
-        //     else if (style == "knuckles")
-        //     {
-        //         App.VrSdk.SetControllerStyle(ControllerStyle.Knuckles);
-        //     }
-        //     else if (style == "vive_controller" || style == "vive_pro")
-        //     {
-        //         App.VrSdk.SetControllerStyle(ControllerStyle.Vive);
-        //     }
-        //     else if (style == "vive_cosmos_controller")
-        //     {
-        //         App.VrSdk.SetControllerStyle(ControllerStyle.OculusTouch);
-        //     }
-        //     else if (style == "wmr")
-        //     {
-        //         App.VrSdk.SetControllerStyle(ControllerStyle.Wmr);
-        //     }
-        //     else
-        //     {
-        //         // Not recognized.  This is not necessarily bad.
-        //         return false;
-        //     }
-        //     return true;
-        // }
-
         void Start()
         {
             App.VrSdk.NewControllerPosesApplied += OnControllerPosesApplied;
-            // If we're initializing UnityXR, defer this call until our controller type is determined.
+            // If we're initializing UnityXR, defer this call until our controller type is determined.  XRXR
             if (!App.VrSdk.IsInitializingUnityXR)
             {
                 WandOnRight = (PlayerPrefs.GetInt(PLAYER_PREF_WAND_ON_RIGHT, 0) != 0);
@@ -494,7 +459,8 @@ namespace TiltBrush
                 }
 
                 //cache touch inputs so we can control their usage
-                m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
+                m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) 
+                    && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
                 if (m_Touch.m_Valid)
                 {
                     m_Touch.m_Pos = Touchscreen.current.primaryTouch.ReadValue().position;

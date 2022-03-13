@@ -52,7 +52,7 @@ namespace TiltBrush
     public enum SdkMode
     {
         Unset = -1,
-        SteamVR,
+        //SteamVR,
         Cardboard_Deprecated,
         Monoscopic,
         Ods,    // Video rendering
@@ -175,28 +175,28 @@ namespace TiltBrush
                     {
                         m_VrHardware = VrHardware.OpenXR;
                     }
-                    // TODO:Mike - Replace with OpenXR callout
-                    else if (m_SdkMode == SdkMode.SteamVR)
-                    {
-                        // If SteamVR fails for some reason we will discover it here.
-                        try
-                        {      
-                            // TODO:Mike - commented out as namespace no longer available.                      
-                            // if (Valve.VR.OpenVR.System == null)
-                            // {
-                            //     m_VrHardware = VrHardware.None;
-                            //     return m_VrHardware;
-                            // }
-                        }
-                        catch (Exception)
-                        {
-                            m_VrHardware = VrHardware.None;
-                            return m_VrHardware;
-                        }
-
-                        // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
-                        m_VrHardware = GetHwTrackedInSteamVr();
-                    }
+                    // // TODO:Mike - Replace with OpenXR callout
+                    // else if (m_SdkMode == SdkMode.SteamVR)
+                    // {
+                    //     // If SteamVR fails for some reason we will discover it here.
+                    //     try
+                    //     {      
+                    //         // TODO:Mike - commented out as namespace no longer available.                      
+                    //         // if (Valve.VR.OpenVR.System == null)
+                    //         // {
+                    //         //     m_VrHardware = VrHardware.None;
+                    //         //     return m_VrHardware;
+                    //         // }
+                    //     }
+                    //     catch (Exception)
+                    //     {
+                    //         m_VrHardware = VrHardware.None;
+                    //         return m_VrHardware;
+                    //     }
+                    //
+                    //     // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
+                    //     m_VrHardware = GetHwTrackedInSteamVr();
+                    // }
                     else if (m_SdkMode == SdkMode.Gvr)
                     {
                         m_VrHardware = VrHardware.Daydream;
@@ -684,32 +684,32 @@ namespace TiltBrush
         // }
 
         // Checking what kind of hardware (Rift, Vive, of WMR) is being used in SteamVR.
-        private VrHardware GetHwTrackedInSteamVr()
-        {
-            // TODO:Mike - Do we need this, or can the xr subsystem provide these details instead?
-            return VrHardware.Vive;
-            
-            // string manufacturer = GetSteamVrDeviceStringProperty(
-            //     Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
-
-            // if (string.IsNullOrEmpty(manufacturer))
-            // {
-            //     OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
-            //     return VrHardware.Vive;
-            // }
-            // else if (manufacturer.Contains("Oculus"))
-            // {
-            //     return VrHardware.Rift;
-            // }
-            // else if (manufacturer.Contains("WindowsMR"))
-            // {
-            //     return VrHardware.Wmr;
-            // }
-            // else
-            // {
-            //     return VrHardware.Vive;
-            // }
-        }
+        // private VrHardware GetHwTrackedInSteamVr()
+        // {
+        //     // TODO:Mike - Do we need this, or can the xr subsystem provide these details instead?
+        //     return VrHardware.Vive;
+        //     
+        //     // string manufacturer = GetSteamVrDeviceStringProperty(
+        //     //     Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
+        //
+        //     // if (string.IsNullOrEmpty(manufacturer))
+        //     // {
+        //     //     OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
+        //     //     return VrHardware.Vive;
+        //     // }
+        //     // else if (manufacturer.Contains("Oculus"))
+        //     // {
+        //     //     return VrHardware.Rift;
+        //     // }
+        //     // else if (manufacturer.Contains("WindowsMR"))
+        //     // {
+        //     //     return VrHardware.Wmr;
+        //     // }
+        //     // else
+        //     // {
+        //     //     return VrHardware.Vive;
+        //     // }
+        // }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value
         /// Where Section and Setting should be valid members of UserConfig.
