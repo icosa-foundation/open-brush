@@ -969,11 +969,15 @@ static class BuildTiltBrush
 
     class TempSetXrPlugins : IDisposable
     {
-        List<XRLoader> plugins;
-        BuildTargetGroup targetGroup;
-        public TempSetXrPlugins(BuildTargetGroup targetGroup, string[] tempLoaders)
+        List<XRLoader> m_plugins;
+        BuildTargetGroup m_targetGroup;
+        string m_spatializerName;
+        
+        public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] tempLoaders)
         {
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(targetGroup);
+            BuildTargetGroup targetToGroup = TargetToGroup(tiltOptions.Target);
+            
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(targetToGroup);
  
             // TODO:Mike - perhaps a bit verbose - needed if we've definitely got a settings manager committed?
             // if (targetSettings == null)
@@ -988,17 +992,29 @@ static class BuildTiltBrush
             //     targetSettings.Manager = managerSettings;
             // }
 
-            this.targetGroup = targetGroup;
-            plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
+            this.m_targetGroup = targetToGroup;
+            m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
             // Clear current loaders
-            foreach (var loader in plugins)
+            foreach (var loader in m_plugins)
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, targetGroup);
+                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, targetToGroup);
             }
             // Add in new ones
             foreach (var loader in tempLoaders.ToList())
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader, targetGroup);
+                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader, targetToGroup);
+            }
+
+            // If we don't set the spatializer name it won't be copied into the target plugins.
+            m_spatializerName = AudioSettings.GetSpatializerPluginName();
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Oculus:
+                    AudioSettings.SetSpatializerPluginName("OculusSpatializer");
+                    break;
+                default:
+                    break;
             }
 
             EditorUtility.SetDirty(targetSettings);
@@ -1006,17 +1022,20 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(targetGroup);
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
             // Remove temp
             foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, targetGroup);
+                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
             }
             // Restore
-            foreach (var loader in plugins)
+            foreach (var loader in m_plugins)
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, targetGroup);
+                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
             }
+            
+            // Restore spatializer.
+            AudioSettings.SetSpatializerPluginName(m_spatializerName);
         }
     }
 
@@ -1262,16 +1281,16 @@ static class BuildTiltBrush
             options == BuildOptions.None ? "None" : options.ToString());
 
         var copyRequests = new List<CopyRequest>(kToCopy);
-        string[] tempXrPlugins;
+        string[] targetXrPluginsRequired;
 
         switch(xrSdk)
         {
             case XrSdkMode.OpenXR:
             default:
-                tempXrPlugins = new string[] {"UnityEngine.XR.OpenXR.OpenXRLoader"};
+                targetXrPluginsRequired = new string[] {"UnityEngine.XR.OpenXR.OpenXRLoader"};
                 break;
             case XrSdkMode.Oculus:
-                tempXrPlugins = new string[] {"UnityEngine.XR.Oculus.OculusLoader"};
+                targetXrPluginsRequired = new string[] {"UnityEngine.XR.Oculus.OculusLoader"};
                 break;
         }
 
@@ -1292,7 +1311,7 @@ static class BuildTiltBrush
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
-        using (var unused7 = new TempSetXrPlugins(TargetToGroup(target), tempXrPlugins))
+        using (var unused7 = new TempSetXrPlugins(tiltOptions, targetXrPluginsRequired))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
                 "ProjectSettings/GraphicsSettings.asset")))
@@ -1579,6 +1598,7 @@ static class BuildTiltBrush
                     if (info.xrSdk == XrSdkMode.Oculus)
                     {
                         // TODO:Mike - do we even have openvr dlls anymore?
+                        //      - @bill - I think these should be gone with SteamVR being removed, but they are benign for now.
                         // Will Oculus complain about OpenXR dlls instead?
                         // Oculus will reject submissions that have openvr dlls
                         string openvrDll = Path.Combine(Path.Combine(dataDir, "Plugins"), "openvr_api.dll");
@@ -1592,6 +1612,7 @@ static class BuildTiltBrush
                             FileUtil.DeleteFileOrDirectory(openvrDll64);
                         }
                         
+                        // Required.
                         string audioPluginOculusSpatializer = Path.Combine(Path.Combine(dataDir, "Plugins", "x86_64"), "AudioPluginOculusSpatializer.dll");
                         if (!File.Exists(audioPluginOculusSpatializer))
                         {
