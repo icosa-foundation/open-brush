@@ -62,7 +62,6 @@ static class BuildTiltBrush
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
 
-
     public class TiltBuildOptions
     {
         public bool Experimental;
@@ -953,7 +952,7 @@ static class BuildTiltBrush
                 PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, new_identifier);
             }
             PlayerSettings.productName = new_name;
-            PlayerSettings.companyName = kDisplayVendorName;
+            PlayerSettings.companyName = kVendorName;
         }
 
         public void Dispose()

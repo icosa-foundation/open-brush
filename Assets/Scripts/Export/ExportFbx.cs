@@ -176,10 +176,10 @@ public static class ExportFbx {
       String version = string.Format("{0}.{1}", App.Config.m_VersionNumber,
                                      App.Config.m_BuildStamp);
       FbxDocumentInfo info = FbxDocumentInfo.Create(G.m_manager, "DocInfo");
-      info.Original_ApplicationVendor.Set(new FbxString(App.kDisplayVendorName));
+      info.Original_ApplicationVendor.Set(new FbxString("Icosa Gallery"));
       info.Original_ApplicationName.Set(new FbxString(App.kAppDisplayName));
       info.Original_ApplicationVersion.Set(new FbxString(version));
-      info.LastSaved_ApplicationVendor.Set(new FbxString(App.kDisplayVendorName));
+      info.LastSaved_ApplicationVendor.Set(new FbxString("Icosa Gallery"));
       info.LastSaved_ApplicationName.Set(new FbxString(App.kAppDisplayName));
       info.LastSaved_ApplicationVersion.Set(new FbxString(version));
       // The toolkit's FBX parser is too simple to be able to read anything but
