@@ -518,6 +518,7 @@ namespace TiltBrush
                 //     points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
                 // }
             }
+#endif // OCULUS_SUPPORTED
 
             if (points_RS == null)
             {
@@ -531,7 +532,6 @@ namespace TiltBrush
             // m_RoomBoundsPointsCached = points_RS.
 
             m_RoomBoundsAabbCached = FromPoints(points_RS);
-#endif // OCULUS_SUPPORTED
         }
 
         /// If points is empty, returns the default (empty) Bounds
