@@ -201,8 +201,7 @@ namespace TiltBrush
 
             // Set up the OVR overlay for the dynamic quality debug readout.
 #if OCULUS_SUPPORTED
-    if (m_DebugText && m_DebugText.gameObject.activeInHierarchy
-                    && App.Config.m_SdkMode == SdkMode.Oculus) {
+    if (m_DebugText && m_DebugText.gameObject.activeInHierarchy) {
       OVROverlay overlay = m_DebugText.gameObject.AddComponent<OVROverlay>();
       overlay.textures = new Texture[] { m_DebugText.RenderedTexture };
       overlay.isDynamic = true;
@@ -320,9 +319,8 @@ namespace TiltBrush
                     }
                 }
             }
-
-            if (m_DebugText != null && m_DebugText.gameObject.activeInHierarchy
-                && App.Config.m_SdkMode == SdkMode.Oculus)
+#if OCULUS_SUPPORTED
+            if (m_DebugText != null && m_DebugText.gameObject.activeInHierarchy)
             {
                 m_DebugText.SetData(0, fps);
                 m_DebugText.SetData(1, gpuUtilization);
@@ -336,6 +334,7 @@ namespace TiltBrush
                 m_DebugText.SetData(9, m_NumFramesGpuTooHigh);
                 m_DebugText.SetData(10, AppQualityLevels.LowerQualityGpuTrigger);
             }
+#endif // OCULUS_SUPPORTED
         }
 
         void SetQualityLevel(int value)
