@@ -28,6 +28,7 @@ using UnityEditor.iOS.Xcode;
 using UnityEditor.SceneManagement;
 using UnityEditor.XR.Management;
 using UnityEngine;
+using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using Environment = System.Environment;
 
@@ -972,12 +973,19 @@ static class BuildTiltBrush
         BuildTargetGroup m_targetGroup;
         string m_spatializerName;
         
-        public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] tempLoaders)
+        public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] targetXrPluginsRequired)
         {
-            BuildTargetGroup targetToGroup = TargetToGroup(tiltOptions.Target);
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
             
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(targetToGroup);
- 
+            // @bill - We currently need to uninstall the OpenXR plugin when building Oculus for Android. Gradle breaks. Find alternative solution.
+            if (tiltOptions.XrSdk == XrSdkMode.Oculus && m_targetGroup == BuildTargetGroup.Android)
+            {
+                if (XRSettings.supportedDevices.Any(s => s == "OpenXR Input"))
+                    throw new BuildFailedException("Please uninstall the OpenXR plugin, it is incompatible with the OculusXR plugin on Android.");
+            }
+
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+
             // TODO:Mike - perhaps a bit verbose - needed if we've definitely got a settings manager committed?
             // if (targetSettings == null)
             // {
@@ -991,20 +999,29 @@ static class BuildTiltBrush
             //     targetSettings.Manager = managerSettings;
             // }
 
-            this.m_targetGroup = targetToGroup;
             m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
-            // Clear current loaders
+            // Remove unwanted loaders
             foreach (var loader in m_plugins)
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, targetToGroup);
+                // If loader not in required list, remove it.
+                if (!targetXrPluginsRequired.Any(s => s == loader.GetType().FullName))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
+                
             }
-            // Add in new ones
-            foreach (var loader in tempLoaders.ToList())
+            // Add any missing loaders.
+            foreach (var loaderName in targetXrPluginsRequired.ToList())
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader, targetToGroup);
+                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType().FullName == loaderName))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup);
+                }
             }
+            
+            Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
 
-            // If we don't set the spatializer name it won't be copied into the target plugins.
+            // If we don't set the spatializer name correctly for the target it won't be copied into the target plugins.
             m_spatializerName = AudioSettings.GetSpatializerPluginName();
 
             switch (tiltOptions.XrSdk)
@@ -1022,15 +1039,22 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
-            // Remove temp
+            // Remove build loaders.
             foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                // Remove plugins not in the original list.
+                if (!m_plugins.Any(s => s.GetType() == loader.GetType()))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
             }
-            // Restore
+            // Restore any missing plugins
             foreach (var loader in m_plugins)
             {
-                UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType() == loader.GetType()))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
             }
             
             // Restore spatializer.
