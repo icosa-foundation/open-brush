@@ -57,9 +57,7 @@ namespace TiltBrush
                     return m_PlatformConfigMobile;
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.StandaloneWindows64:
-                case BuildTarget.StandaloneLinux:
                 case BuildTarget.StandaloneLinux64:
-                case BuildTarget.StandaloneLinuxUniversal:
                 case BuildTarget.StandaloneOSX:
                     return m_PlatformConfigPc;
                 default:

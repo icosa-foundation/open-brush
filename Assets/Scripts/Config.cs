@@ -36,6 +36,14 @@ using UnityEngine.InputSystem;
 
 namespace TiltBrush
 {
+    public enum XrSdkMode
+    {
+        Mono = -1,
+        OpenXR = 0,
+        Oculus,
+        Wave,
+        Pico,
+    }
 
     // The sdk mode indicates which SDK (UnityXr, OVR, SteamVR, etc.) that we're using to drive the display.
     //  - These names are used in our analytics, so they must be protected from obfuscation.
@@ -44,7 +52,6 @@ namespace TiltBrush
     public enum SdkMode
     {
         Unset = -1,
-        Oculus = 0,
         SteamVR,
         Cardboard_Deprecated,
         Monoscopic,
@@ -60,13 +67,13 @@ namespace TiltBrush
     [Serializable]
     public enum VrHardware
     {
-        Unset,       // Not set yet.
-        Unsupported, // We did not recognise the hardware.        
+        Unset,          // Not set yet.
+        Unsupported,    // We did not recognise the hardware.        
         None,
         Rift,
         Vive,
         Daydream,
-        Wmr, // Windows Mixed Reality
+        Wmr,            // Windows Mixed Reality
         Quest,
         OpenXR,
     }
@@ -152,18 +159,19 @@ namespace TiltBrush
             {
                 if (m_VrHardware == VrHardware.Unset)
                 {
-                    if (m_SdkMode == SdkMode.Oculus)
-                    {
-                        if (App.Config.IsMobileHardware)
-                        {
-                            m_VrHardware = VrHardware.Quest;
-                        }
-                        else
-                        {
-                            m_VrHardware = VrHardware.Rift;
-                        }
-                    }
-                    else if (m_SdkMode == SdkMode.UnityXR)
+                    // TODO:Mike - may want to pinch the IsMobileHardware for other things hardware selection related.
+                    // if (m_SdkMode == SdkMode.Oulus)
+                    // {
+                    //     if (App.Config.IsMobileHardware)
+                    //     {
+                    //         m_VrHardware = VrHardware.Quest;
+                    //     }
+                    //     else
+                    //     {
+                    //         m_VrHardware = VrHardware.Rift;
+                    //     }
+                    // }
+                    if (m_SdkMode == SdkMode.UnityXR)
                     {
                         m_VrHardware = VrHardware.OpenXR;
                     }
@@ -191,7 +199,7 @@ namespace TiltBrush
                     }
                     else if (m_SdkMode == SdkMode.Gvr)
                     {
-                        m_VrHardware = TiltBrush.VrHardware.Daydream;
+                        m_VrHardware = VrHardware.Daydream;
                     }
                     else
                     {
@@ -786,57 +794,6 @@ namespace TiltBrush
         }
 
 #if UNITY_EDITOR
-        public void OnValidate()
-        {
-            // This is now getting run when entering playmode.
-            // Unity doesn't allow VR SDKs to change at runtime.
-            if (UnityEditor.EditorApplication.isPlaying)
-            {
-                return;
-            }
-            bool useVrSdk = m_SdkMode == SdkMode.Oculus
-                || m_SdkMode == SdkMode.SteamVR
-                || m_SdkMode == SdkMode.Gvr;
-
-            // Writing to this sets the scene-dirty flag, so don't do it unless necessary
-            if (UnityEditor.PlayerSettings.virtualRealitySupported != useVrSdk)
-            {
-                UnityEditor.PlayerSettings.virtualRealitySupported = useVrSdk;
-            }
-
-            // This hotswaps vr sdks based on selection.
-            var buildTargetGroups = new List<UnityEditor.BuildTargetGroup>();
-            string[] newDevices;
-            switch (m_SdkMode)
-            {
-                case SdkMode.Gvr:
-                    newDevices = new string[] { "daydream" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Android);
-                    break;
-                case SdkMode.Oculus:
-                    newDevices = new string[] { "Oculus" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Android);
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Standalone);
-                    break;
-                case SdkMode.SteamVR:
-                    newDevices = new string[] { "OpenVR" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Standalone);
-                    break;
-                default:
-                    newDevices = new string[] { "" };
-                    break;
-            }
-
-            // TODO:Mike - This appears to be auto-setting what used to be the VR plugin menu in old unity. Do we need this?
-            // Or, it needs converted to the equivalent XR subsystem selection.
-
-            // foreach (var group in buildTargetGroups)
-            // {
-            //     // TODO use the public api (see BuildTiltBrush)
-            //     UnityEditorInternal.VR.VREditor.SetVirtualRealitySDKs(group, newDevices);
-            // }
-        }
-
         /// Called at build time, just before this Config instance is saved to Main.unity
         public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {

@@ -321,10 +321,10 @@ namespace TiltBrush
                 using (var setupBar = new GUILayout.HorizontalScope(GUILayout.Height(110)))
                 {
                     // Sdk Modes
-                    using (var sdkBar = new HeaderedVerticalLayout("VR SDK", options))
+                    using (var sdkBar = new HeaderedVerticalLayout("XR Plugin", options))
                     {
-                        SdkMode[] sdks = BuildTiltBrush.SupportedSdkModes();
-                        SdkMode selectedSdk = BuildTiltBrush.GuiSelectedSdk;
+                        XrSdkMode[] sdks = BuildTiltBrush.SupportedSdkModes();
+                        XrSdkMode selectedSdk = BuildTiltBrush.GuiSelectedSdk;
                         foreach (var sdk in sdks)
                         {
                             bool selected = sdk == selectedSdk;
@@ -341,7 +341,7 @@ namespace TiltBrush
                     {
                         BuildTarget[] targets = BuildTiltBrush.SupportedBuildTargets();
                         BuildTarget selectedTarget = BuildTiltBrush.GuiSelectedBuildTarget;
-                        SdkMode selectedSdk = BuildTiltBrush.GuiSelectedSdk;
+                        XrSdkMode selectedSdk = BuildTiltBrush.GuiSelectedSdk;
                         foreach (var target in targets)
                         {
                             GUI.enabled = BuildTiltBrush.BuildTargetSupported(selectedSdk, target);
@@ -362,8 +362,8 @@ namespace TiltBrush
                         bool newIsMono = false;
                         bool newIsIl2cpp = false;
                         
-                        // Android OpenXR requires IL2CPP
-                        if (BuildTiltBrush.GuiSelectedSdk == SdkMode.UnityXR && BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+                        // Android requires IL2CPP
+                        if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
                         {
                             newIsIl2cpp = true;
                             GUILayout.Toggle(newIsIl2cpp, "IL2CPP", toggleOpt);
@@ -641,8 +641,8 @@ namespace TiltBrush
 
         private void OnBuildSettingsChanged()
         {
-            // Only set this if supporting SDK that needs Android (and is installed!).
-
+            // TODO: check correct plugins for XR mode
+            
             m_currentBuildPath = BuildTiltBrush.GetAppPathForGuiBuild();
             if (File.Exists(m_currentBuildPath))
             {
