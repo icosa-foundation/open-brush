@@ -1015,7 +1015,8 @@ static class BuildTiltBrush
             {
                 if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType().FullName == loaderName))
                 {
-                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup);
+                    if (!UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup))
+                        throw new BuildFailedException($"Could not load XR plugin {loaderName}. Is it installed?");
                 }
             }
             
