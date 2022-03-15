@@ -52,12 +52,12 @@ namespace TiltBrush
     public enum SdkMode
     {
         Unset = -1,
+        UnityXR,
         //SteamVR,
         Cardboard_Deprecated,
         Monoscopic,
         Ods,    // Video rendering
         Gvr,    // Google VR
-        UnityXR,
     }
 
     // These names are used in our analytics, so they must be protected from obfuscation.
