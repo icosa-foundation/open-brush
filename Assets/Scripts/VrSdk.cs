@@ -1122,6 +1122,10 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Knuckles);
             }
+            else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
+            {
+                SetControllerStyle(ControllerStyle.Vive);
+            }
             else
             {
                 // SetControllerStyle(ControllerStyle.None);
