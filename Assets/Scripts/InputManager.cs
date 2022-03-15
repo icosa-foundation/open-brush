@@ -458,13 +458,14 @@ namespace TiltBrush
                     m_ControllerInfos[i].Update();
                 }
 
-                //cache touch inputs so we can control their usage
-                m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) 
-                    && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
-                if (m_Touch.m_Valid)
-                {
-                    m_Touch.m_Pos = Touchscreen.current.primaryTouch.ReadValue().position;
-                }
+                // // TODO:Mike - what is this even for?
+                // //cache touch inputs so we can control their usage
+                // m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) 
+                //     && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
+                // if (m_Touch.m_Valid)
+                // {
+                //     m_Touch.m_Pos = Touchscreen.current.primaryTouch.ReadValue().position;
+                // }
 
                 // Update touch locators.
                 // Controller pad touch locator should be active if thumb is on the pad.
