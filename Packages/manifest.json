@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.ixxy.polyhydra.core": "1.0.2",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "0.0.2-preview.1",
@@ -12,6 +13,7 @@
     "com.unity.test-framework": "1.1.24",
     "com.unity.textmeshpro": "2.1.4",
     "com.unity.timeline": "1.2.18",
+    "com.unity.toolchain.win-x86_64-linux-x86_64": "1.0.0",
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.oculus.android": "2.38.6",
     "com.unity.xr.oculus.standalone": "2.38.4",
@@ -47,5 +49,15 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ixxy.polyhydra.core",
+        "com.openupm"
+      ]
+    }
+  ]
 }

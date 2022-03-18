@@ -522,7 +522,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -9971,6 +9971,8 @@ MonoBehaviour:
   m_ObjLoaderStandardMaterial: {fileID: 2100000, guid: 33cc179da6d3a704496d940766650951,
     type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270,
+    type: 2}
+  m_ObjLoaderVertexColorMaterial: {fileID: 2100000, guid: d6a564b70f9de0845bd0c573cb7e8011,
     type: 2}
 --- !u!114 &652605563
 MonoBehaviour:
@@ -31658,7 +31660,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -32395,7 +32397,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0

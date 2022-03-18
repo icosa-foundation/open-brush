@@ -20,19 +20,29 @@ MonoBehaviour:
     m_Url: https://packages.unity.com
     m_Scopes: []
     m_IsDefault: 1
+  - m_Id: scoped:package.openupm.com
+    m_Name: package.openupm.com
+    m_Url: https://package.openupm.com
+    m_Scopes:
+    - com.ixxy.polyhydra.core
+    - com.openupm
+    m_IsDefault: 0
   m_UserSelectedRegistryName: 
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_ErrorMessage: 
     m_Original:
-      m_Id: 
-      m_Name: 
-      m_Url: 
-      m_Scopes: []
+      m_Id: scoped:package.openupm.com
+      m_Name: package.openupm.com
+      m_Url: https://package.openupm.com
+      m_Scopes:
+      - com.ixxy.polyhydra.core
+      - com.openupm
       m_IsDefault: 0
     m_Modified: 0
-    m_Name: 
-    m_Url: 
+    m_Name: package.openupm.com
+    m_Url: https://package.openupm.com
     m_Scopes:
-    - 
+    - com.ixxy.polyhydra.core
+    - com.openupm
     m_SelectedScopeIndex: 0
