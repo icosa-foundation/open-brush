@@ -85,24 +85,38 @@ namespace TiltBrush
 
                 mesh.SetTriangles(new []
                     {
-                        // top 031 135
-                        body.cornerIndices[0], body.cornerIndices[3], body.cornerIndices[1],
-                        body.cornerIndices[1], body.cornerIndices[3], body.cornerIndices[5],
-                        // bottom 264 467
-                        body.cornerIndices[2], body.cornerIndices[6], body.cornerIndices[4],
-                        body.cornerIndices[4], body.cornerIndices[6], body.cornerIndices[7],
-                        // left 536 567
-                        body.cornerIndices[5], body.cornerIndices[3], body.cornerIndices[6],
-                        body.cornerIndices[5], body.cornerIndices[6], body.cornerIndices[7],
-                        // right 012 142
-                        body.cornerIndices[0], body.cornerIndices[1], body.cornerIndices[2],
-                        body.cornerIndices[1], body.cornerIndices[4], body.cornerIndices[2],
-                        // front 032 236
-                        body.cornerIndices[0], body.cornerIndices[3], body.cornerIndices[2],
-                        body.cornerIndices[2], body.cornerIndices[3], body.cornerIndices[6],
-                        // back 154 457
-                        body.cornerIndices[1], body.cornerIndices[5], body.cornerIndices[4],
-                        body.cornerIndices[4], body.cornerIndices[5], body.cornerIndices[7]
+                        body.cornerIndices[BACK],
+                        body.cornerIndices[RIGHT],
+                        body.cornerIndices[TOP],
+                        
+                        body.cornerIndices[RIGHT],
+                        body.cornerIndices[FRONT],
+                        body.cornerIndices[TOP],
+                        
+                        body.cornerIndices[FRONT],
+                        body.cornerIndices[LEFT],
+                        body.cornerIndices[TOP],
+                        
+                        body.cornerIndices[LEFT],
+                        body.cornerIndices[BACK],
+                        body.cornerIndices[TOP],
+                        
+                        body.cornerIndices[BACK],
+                        body.cornerIndices[RIGHT],
+                        body.cornerIndices[BOTTOM],
+                        
+                        body.cornerIndices[RIGHT],
+                        body.cornerIndices[FRONT],
+                        body.cornerIndices[BOTTOM],
+                        
+                        body.cornerIndices[FRONT],
+                        body.cornerIndices[LEFT],
+                        body.cornerIndices[BOTTOM],
+                        
+                        body.cornerIndices[LEFT],
+                        body.cornerIndices[BACK],
+                        body.cornerIndices[BOTTOM],
+                        
                     },
                     1);
 
@@ -124,6 +138,14 @@ namespace TiltBrush
             DoubleX, DoubleY, DoubleZ,
             Data8, Data16, Data32, Data64
         }
+
+        const int RIGHT = 0;
+        const int LEFT = 1;
+        const int TOP = 2;
+        const int BOTTOM = 3;
+        const int FRONT = 4;
+        const int BACK = 5;
+        
         
         class DataHeader
         {
@@ -144,8 +166,8 @@ namespace TiltBrush
                 vertices = new List<Vector3>(vertexCount);
                 colors = new List<Color32>(vertexCount);
                 bounds = new Bounds();
-                cornerIndices = new int[8];
-                corners = new Vector3[8];
+                cornerIndices = new int[6];
+                corners = new Vector3[6];
             }
 
             public void AddPoint(
@@ -155,51 +177,37 @@ namespace TiltBrush
             {
                 var point = new Vector3(x, y, z);
                 vertices.Add(point);
-                if (!bounds.Contains(point))
+                int idx = vertices.Count - 1;
+                    
+                if (point.x >= corners[RIGHT].x)
                 {
-                    bounds.Encapsulate(point);
-                    int idx = vertices.Count - 1;
-                        
-                    if (point.x >= corners[0].x && point.y >= corners[0].y && point.z >= corners[0].z)
-                    { // rtf
-                        cornerIndices[0] = idx;
-                        corners[0] = point;
-                    }
-                    if (point.x >= corners[1].x && point.y >= corners[1].y && point.z <= corners[1].z)
-                    { // rtb
-                        cornerIndices[1] = idx;
-                        corners[1] = point;
-                    }
-                    if (point.x >= corners[2].x && point.y <= corners[2].y && point.z >= corners[2].z)
-                    { // rbf
-                        cornerIndices[2] = idx;
-                        corners[2] = point;
-                    }
-                    if (point.x <= corners[3].x && point.y >= corners[3].y && point.z >= corners[3].z)
-                    { // ltf
-                        cornerIndices[3] = idx;
-                        corners[3] = point;
-                    }
-                    if (point.x >= corners[4].x && point.y <= corners[4].y && point.z <= corners[4].z)
-                    { // rbb
-                        cornerIndices[4] = idx;
-                        corners[4] = point;
-                    }
-                    if (point.x <= corners[5].x && point.y >= corners[5].y && point.z <= corners[5].z)
-                    { // ltb
-                        cornerIndices[5] = idx;
-                        corners[5] = point;
-                    }
-                    if (point.x <= corners[6].x && point.y <= corners[6].y && point.z >= corners[6].z)
-                    { // lbf
-                        cornerIndices[6] = idx;
-                        corners[6] = point;
-                    }
-                    if (point.x <= corners[7].x && point.y <= corners[7].y && point.z <= corners[7].z)
-                    { // lbb
-                        cornerIndices[7] = idx;
-                        corners[7] = point;
-                    }
+                    cornerIndices[RIGHT] = idx;
+                    corners[RIGHT] = point;
+                }
+                else if (point.x <= corners[LEFT].x)
+                {
+                    cornerIndices[LEFT] = idx;
+                    corners[LEFT] = point;
+                }
+                else if (point.y >= corners[TOP].y)
+                {
+                    cornerIndices[TOP] = idx;
+                    corners[TOP] = point;
+                }
+                else if (point.y <= corners[BOTTOM].y)
+                {
+                    cornerIndices[BOTTOM] = idx;
+                    corners[BOTTOM] = point;
+                }
+                else if (point.z >= corners[FRONT].z)
+                {
+                    cornerIndices[FRONT] = idx;
+                    corners[FRONT] = point;
+                }
+                else if (point.z <= corners[BACK].z)
+                {
+                    cornerIndices[BACK] = idx;
+                    corners[BACK] = point;
                 }
                 colors.Add(new Color32(r, g, b, a));
             }
