@@ -25,6 +25,7 @@ MonoBehaviour:
     m_Url: https://package.openupm.com
     m_Scopes:
     - com.ixxy.polyhydra.core
+    - com.nition.unity-octree
     - com.openupm
     m_IsDefault: 0
   m_UserSelectedRegistryName: 
@@ -37,6 +38,7 @@ MonoBehaviour:
       m_Url: https://package.openupm.com
       m_Scopes:
       - com.ixxy.polyhydra.core
+      - com.nition.unity-octree
       - com.openupm
       m_IsDefault: 0
     m_Modified: 0
@@ -44,5 +46,6 @@ MonoBehaviour:
     m_Url: https://package.openupm.com
     m_Scopes:
     - com.ixxy.polyhydra.core
+    - com.nition.unity-octree
     - com.openupm
     m_SelectedScopeIndex: 0
