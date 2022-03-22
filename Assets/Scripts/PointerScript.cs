@@ -332,7 +332,6 @@ namespace TiltBrush
             {
                 if (m_BrushPressureIndicator != null)
                 {
-                    //m_BrushPressureIndicator.localScale = new Vector3(GetPressure(), GetPressure(), GetPressure());
                     float scaledPressure = Remap(GetPressure(), 0, 1, m_BrushSizeRange.x, m_CurrentBrushSize);
                     m_BrushPressureIndicator.localScale = new Vector3(scaledPressure, scaledPressure, scaledPressure);
                 }
@@ -705,7 +704,7 @@ namespace TiltBrush
             return m_CurrentPressure;
         }
 
-        // utillity that maps one range into another
+        // Utility that maps one range into another
         float Remap(float value, float from1, float to1, float from2, float to2)
         {
             return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
