@@ -44,12 +44,12 @@ namespace TiltBrush
             GameObject go = new GameObject();
             var mf = go.AddComponent<MeshFilter>();
             var mr = go.AddComponent<MeshRenderer>();
-            mr.materials = new []
+            mr.materials = new[]
             {
                 ModelCatalog.m_Instance.m_ObjLoaderPointCloudMaterial,
                 ModelCatalog.m_Instance.m_ObjLoaderPointCloudInvisibleMaterial
             };
-            
+
             Mesh mesh;
             mesh = ImportAsMesh(m_path);
             mf.mesh = mesh;
@@ -57,7 +57,7 @@ namespace TiltBrush
             collider.size = mesh.bounds.size;
             return (go, warnings.Distinct().ToList(), m_collector);
         }
-        
+
         Mesh ImportAsMesh(string path)
         {
             try
@@ -73,7 +73,7 @@ namespace TiltBrush
                     IndexFormat.UInt32 : IndexFormat.UInt16;
 
                 mesh.subMeshCount = 2;
-                
+
                 mesh.SetVertices(body.vertices);
                 mesh.SetColors(body.colors);
 
@@ -83,40 +83,40 @@ namespace TiltBrush
                     0
                 );
 
-                mesh.SetTriangles(new []
+                mesh.SetTriangles(new[]
                     {
                         body.cornerIndices[BACK],
                         body.cornerIndices[RIGHT],
                         body.cornerIndices[TOP],
-                        
+
                         body.cornerIndices[RIGHT],
                         body.cornerIndices[FRONT],
                         body.cornerIndices[TOP],
-                        
+
                         body.cornerIndices[FRONT],
                         body.cornerIndices[LEFT],
                         body.cornerIndices[TOP],
-                        
+
                         body.cornerIndices[LEFT],
                         body.cornerIndices[BACK],
                         body.cornerIndices[TOP],
-                        
+
                         body.cornerIndices[BACK],
                         body.cornerIndices[RIGHT],
                         body.cornerIndices[BOTTOM],
-                        
+
                         body.cornerIndices[RIGHT],
                         body.cornerIndices[FRONT],
                         body.cornerIndices[BOTTOM],
-                        
+
                         body.cornerIndices[FRONT],
                         body.cornerIndices[LEFT],
                         body.cornerIndices[BOTTOM],
-                        
+
                         body.cornerIndices[LEFT],
                         body.cornerIndices[BACK],
                         body.cornerIndices[BOTTOM],
-                        
+
                     },
                     1);
 
@@ -129,8 +129,9 @@ namespace TiltBrush
                 return null;
             }
         }
-        
-        enum DataProperty {
+
+        enum DataProperty
+        {
             Invalid,
             R8, G8, B8, A8,
             R16, G16, B16, A16,
@@ -145,8 +146,8 @@ namespace TiltBrush
         const int BOTTOM = 3;
         const int FRONT = 4;
         const int BACK = 5;
-        
-        
+
+
         class DataHeader
         {
             public List<DataProperty> properties = new List<DataProperty>();
@@ -158,8 +159,8 @@ namespace TiltBrush
             public List<Vector3> vertices;
             public List<Color32> colors;
             public Bounds bounds;
-            public int[] cornerIndices; 
-            public Vector3[] corners; 
+            public int[] cornerIndices;
+            public Vector3[] corners;
 
             public DataBody(int vertexCount)
             {
@@ -178,7 +179,7 @@ namespace TiltBrush
                 var point = new Vector3(x, y, z);
                 vertices.Add(point);
                 int idx = vertices.Count - 1;
-                    
+
                 if (point.x >= corners[RIGHT].x)
                 {
                     cornerIndices[RIGHT] = idx;
@@ -212,7 +213,7 @@ namespace TiltBrush
                 colors.Add(new Color32(r, g, b, a));
             }
         }
-        
+
         static int GetPropertySize(DataProperty p)
         {
             switch (p)
@@ -260,7 +261,7 @@ namespace TiltBrush
                     "Should be binary/little endian.");
 
             // Read header contents.
-            for (var skip = false;;)
+            for (var skip = false; ;)
             {
                 // Read a line and split it with white space.
                 line = reader.ReadLine();
@@ -293,13 +294,13 @@ namespace TiltBrush
                     // Parse the property name entry.
                     switch (col[2])
                     {
-                        case "red"  : prop = DataProperty.R8; break;
+                        case "red": prop = DataProperty.R8; break;
                         case "green": prop = DataProperty.G8; break;
-                        case "blue" : prop = DataProperty.B8; break;
+                        case "blue": prop = DataProperty.B8; break;
                         case "alpha": prop = DataProperty.A8; break;
-                        case "x"    : prop = DataProperty.SingleX; break;
-                        case "y"    : prop = DataProperty.SingleY; break;
-                        case "z"    : prop = DataProperty.SingleZ; break;
+                        case "x": prop = DataProperty.SingleX; break;
+                        case "y": prop = DataProperty.SingleY; break;
+                        case "z": prop = DataProperty.SingleZ; break;
                     }
 
                     // Check the property type.
@@ -325,7 +326,7 @@ namespace TiltBrush
                         if (GetPropertySize(prop) != 2)
                             throw new ArgumentException("Invalid property type ('" + line + "').");
                     }
-                    else if (col[1] == "int"   || col[1] == "uint"   || col[1] == "float" ||
+                    else if (col[1] == "int" || col[1] == "uint" || col[1] == "float" ||
                              col[1] == "int32" || col[1] == "uint32" || col[1] == "float32")
                     {
                         if (prop == DataProperty.Invalid)
@@ -333,7 +334,7 @@ namespace TiltBrush
                         else if (GetPropertySize(prop) != 4)
                             throw new ArgumentException("Invalid property type ('" + line + "').");
                     }
-                    else if (col[1] == "int64"  || col[1] == "uint64" ||
+                    else if (col[1] == "int64" || col[1] == "uint64" ||
                              col[1] == "double" || col[1] == "float64")
                     {
                         switch (prop)
