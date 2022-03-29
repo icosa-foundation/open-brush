@@ -20,7 +20,7 @@ namespace TiltBrush
     public class UnityXRControllerInfo : ControllerInfo
     {
         private InputDevice device;
-        
+
         public UnityXRControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
             : base(behavior)
         {
@@ -46,7 +46,7 @@ namespace TiltBrush
 
         public override Vector2 GetThumbStickValue()
         {
-            if(device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
+            if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
             {
                 return thumbStickValue;
             }
@@ -61,7 +61,7 @@ namespace TiltBrush
 
         public override float GetScrollXDelta()
         {
-            if(device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
+            if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
             {
                 return thumbStickValue.x;
             }
@@ -70,7 +70,7 @@ namespace TiltBrush
 
         public override float GetScrollYDelta()
         {
-            if(device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
+            if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
             {
                 return thumbStickValue.y;
             }
@@ -79,7 +79,7 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
-            if(device.TryGetFeatureValue(CommonUsages.grip, out var gripValue))
+            if (device.TryGetFeatureValue(CommonUsages.grip, out var gripValue))
             {
                 return gripValue;
             }
@@ -93,7 +93,7 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
-            if(device.TryGetFeatureValue(CommonUsages.trigger, out var triggerValue))
+            if (device.TryGetFeatureValue(CommonUsages.trigger, out var triggerValue))
             {
                 return triggerValue;
             }
@@ -138,7 +138,7 @@ namespace TiltBrush
             return MapVrTouch(input);
         }
 
-        private bool MapVrInput (VrInput input)
+        private bool MapVrInput(VrInput input)
         {
             // This logic is inferred from OculusControllerInfo
             switch (input)

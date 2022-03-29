@@ -249,7 +249,7 @@ namespace TiltBrush
         {
             get => !string.IsNullOrEmpty(m_selectedAndroid) && m_androidDevices.Length > 0;
         }
-        
+
         private bool ClearConsoleOnBuild
         {
             get => EditorPrefs.GetBool(kClearConsoleOnBuild, false);
@@ -361,7 +361,7 @@ namespace TiltBrush
                         bool isIl2cpp = BuildTiltBrush.GuiRuntimeIl2cpp;
                         bool newIsMono = false;
                         bool newIsIl2cpp = false;
-                        
+
                         // Android requires IL2CPP
                         if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
                         {
@@ -532,7 +532,7 @@ namespace TiltBrush
             {
                 Debug.ClearDeveloperConsole();
             }
-            
+
             m_buildLogPosition = null;
             if (m_buildLogReader != null)
             {
@@ -642,7 +642,7 @@ namespace TiltBrush
         private void OnBuildSettingsChanged()
         {
             // TODO: check correct plugins for XR mode
-            
+
             m_currentBuildPath = BuildTiltBrush.GetAppPathForGuiBuild();
             if (File.Exists(m_currentBuildPath))
             {
@@ -655,7 +655,7 @@ namespace TiltBrush
 
             string exeName = Path.GetFileName(m_currentBuildPath);
             string exeTitle = Path.GetFileNameWithoutExtension(exeName);
-            
+
             // Note, we add "unityeditor" to the package name - Unity appends this.
             string packageName = exeTitle + "unityeditor";
 
@@ -714,7 +714,7 @@ namespace TiltBrush
         {
             if (!AdbExists)
                 return new string[] { "" };
-            
+
             var process = new System.Diagnostics.Process();
             process.StartInfo = new System.Diagnostics.ProcessStartInfo(BuildTiltBrush.AdbPath, String.Join(" ", arguments));
             process.StartInfo.UseShellExecute = false;

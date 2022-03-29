@@ -56,7 +56,7 @@ namespace TiltBrush
     public class VrSdk : MonoBehaviour
     {
         [SerializeField] private float m_AnalogGripBinaryThreshold_Rift;
-        
+
         // TODO:Mike - commmented this overlay as class is from SteamVR, what does it do?
         //[SerializeField] private SteamVR_Overlay m_SteamVROverlay;
         [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
@@ -156,7 +156,7 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
 
         void Awake()
-        {   
+        {
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
@@ -330,11 +330,11 @@ namespace TiltBrush
             OVRManager.VrFocusLost += () => { OnInputFocus(false); };
 #endif // OCULUS_SUPPORTED
 
-//            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-//            {
-//                var brushGeom = InputManager.Brush.Geometry;
-//                GvrControllerInput.OnPostControllerInputUpdated += OnNewPoses;
-//            }
+            //            else if (App.Config.m_SdkMode == SdkMode.Gvr)
+            //            {
+            //                var brushGeom = InputManager.Brush.Geometry;
+            //                GvrControllerInput.OnPostControllerInputUpdated += OnNewPoses;
+            //            }
 
             if (m_NeedsToAttachConsoleScript && m_VrControls != null)
             {
@@ -1093,7 +1093,7 @@ namespace TiltBrush
             else if ((device.characteristics & kLeftHandController) == kLeftHandController)
             {
                 Debug.Log($"Left Controller: {device.manufacturer}, {device.name}");
-                if(IsInitializingUnityXR)
+                if (IsInitializingUnityXR)
                 {
                     SetUnityXRControllerStyle(device);
                 }
@@ -1101,7 +1101,7 @@ namespace TiltBrush
             else if ((device.characteristics & kRightHandController) == kRightHandController)
             {
                 Debug.Log($"Right Controller: {device.manufacturer}, {device.name}");
-                if(IsInitializingUnityXR)
+                if (IsInitializingUnityXR)
                 {
                     SetUnityXRControllerStyle(device);
                 }
@@ -1157,7 +1157,7 @@ namespace TiltBrush
         // Returns false if SDK Mode uses an HMD, but it is not initialized.
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
-        {   
+        {
             // TODO:Mike - Is there a real way to determine if initialised at start like the other SDKs?
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {

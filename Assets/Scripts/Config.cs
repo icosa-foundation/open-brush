@@ -216,7 +216,7 @@ namespace TiltBrush
             get
             {
                 if (string.IsNullOrEmpty(m_HeadsetModelName))
-                {   
+                {
                     // TODO:Mike - is this the correct way to get the headset name?
                     // Pulled from https://forum.unity.com/threads/openxr-is-it-no-longer-possible-to-get-descriptive-device-names.1051493/
 

@@ -843,7 +843,7 @@ static class BuildTiltBrush
         {
             target = BuildTarget.StandaloneWindows64;
         }
-        
+
         tiltOptions.Target = target.Value;
         using (var unused = new TempSetCommandLineOnlyPlayerSettings(
             keystoreName, keystorePass,
@@ -972,11 +972,11 @@ static class BuildTiltBrush
         List<XRLoader> m_plugins;
         BuildTargetGroup m_targetGroup;
         string m_spatializerName;
-        
+
         public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] targetXrPluginsRequired)
         {
             m_targetGroup = TargetToGroup(tiltOptions.Target);
-            
+
             // @bill - We currently need to uninstall the OpenXR plugin when building Oculus for Android. Gradle breaks. Find alternative solution.
             if (tiltOptions.XrSdk == XrSdkMode.Oculus && m_targetGroup == BuildTargetGroup.Android)
             {
@@ -1008,7 +1008,7 @@ static class BuildTiltBrush
                 {
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
-                
+
             }
             // Add any missing loaders.
             foreach (var loaderName in targetXrPluginsRequired.ToList())
@@ -1019,7 +1019,7 @@ static class BuildTiltBrush
                         throw new BuildFailedException($"Could not load XR plugin {loaderName}. Is it installed?");
                 }
             }
-            
+
             Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
 
             // If we don't set the spatializer name correctly for the target it won't be copied into the target plugins.
@@ -1057,7 +1057,7 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
-            
+
             // Restore spatializer.
             AudioSettings.SetSpatializerPluginName(m_spatializerName);
         }
@@ -1307,14 +1307,14 @@ static class BuildTiltBrush
         var copyRequests = new List<CopyRequest>(kToCopy);
         string[] targetXrPluginsRequired;
 
-        switch(xrSdk)
+        switch (xrSdk)
         {
             case XrSdkMode.OpenXR:
             default:
-                targetXrPluginsRequired = new string[] {"UnityEngine.XR.OpenXR.OpenXRLoader"};
+                targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                 break;
             case XrSdkMode.Oculus:
-                targetXrPluginsRequired = new string[] {"UnityEngine.XR.Oculus.OculusLoader"};
+                targetXrPluginsRequired = new string[] { "UnityEngine.XR.Oculus.OculusLoader" };
                 break;
         }
 
@@ -1488,7 +1488,7 @@ static class BuildTiltBrush
                     xrSdk = xrSdk,
                     copyRequests = copyRequests
                 };
-                
+
                 // Some information on what we are building
                 var buildDesc = $"Building player: {target}";
                 if (target == BuildTarget.Android)
@@ -1496,7 +1496,7 @@ static class BuildTiltBrush
                     buildDesc += $", {PlayerSettings.Android.targetArchitectures}";
                 }
                 m_buildStatus = buildDesc;
-                
+
                 // Start building
                 var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
                 string error = FormatBuildReport(thing);
@@ -1635,7 +1635,7 @@ static class BuildTiltBrush
                         {
                             FileUtil.DeleteFileOrDirectory(openvrDll64);
                         }
-                        
+
                         // Required.
                         string audioPluginOculusSpatializer = Path.Combine(Path.Combine(dataDir, "Plugins", "x86_64"), "AudioPluginOculusSpatializer.dll");
                         if (!File.Exists(audioPluginOculusSpatializer))

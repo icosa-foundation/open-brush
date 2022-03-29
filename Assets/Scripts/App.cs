@@ -704,7 +704,7 @@ namespace TiltBrush
                 m_OdsPivot != null,
                 m_OdsPivot ? m_OdsPivot.GetComponent<OdsDriver>().FramesToCapture
                     : 0);
-            
+
             if (!AppAllowsCreation())
             {
                 TutorialManager.m_Instance.IntroState = IntroTutorialState.InitializeForNoCreation;
@@ -718,7 +718,7 @@ namespace TiltBrush
                 TutorialManager.m_Instance.ActivateControllerTutorial(InputManager.ControllerName.Brush, false);
                 TutorialManager.m_Instance.ActivateControllerTutorial(InputManager.ControllerName.Wand, false);
             }
-            
+
             ViewpointScript.m_Instance.Init();
             QualityControls.m_Instance.Init();
             bool bVR = VrSdk.GetHmdDof() != TiltBrush.VrSdk.DoF.None;
@@ -2129,19 +2129,19 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
         {
             var manifest = m_Manifest;
-// #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-//             if (Config.IsExperimental)
-//             {
-//                 // At build time, we don't want the user config to affect the build output.
-//                 if (consultUserConfig
-//                     && m_UserConfig.Flags.ShowDangerousBrushes
-//                     && m_ManifestExperimental != null)
-//                 {
-//                     manifest = Instantiate(m_Manifest);
-//                     manifest.AppendFrom(m_ManifestExperimental);
-//                 }
-//             }
-// #endif
+            // #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            //             if (Config.IsExperimental)
+            //             {
+            //                 // At build time, we don't want the user config to affect the build output.
+            //                 if (consultUserConfig
+            //                     && m_UserConfig.Flags.ShowDangerousBrushes
+            //                     && m_ManifestExperimental != null)
+            //                 {
+            //                     manifest = Instantiate(m_Manifest);
+            //                     manifest.AppendFrom(m_ManifestExperimental);
+            //                 }
+            //             }
+            // #endif
             return manifest;
         }
 
