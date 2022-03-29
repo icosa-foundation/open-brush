@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2019.4.25f1"
+  UNITY_VERSION: "2021.3.0f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -121,38 +121,19 @@ jobs:
       matrix:
         # We don't use an actual matrix because there's more exceptions than actual cases!
         include:
-          - name: Windows SteamVR
+          - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
-            vrsdk: SteamVR
+            vrsdk: OpenXR
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
-          - name: Windows SteamVR Experimental
+          - name: Windows OpenXR Experimental
             targetPlatform: StandaloneWindows64
-            vrsdk: SteamVR
+            vrsdk: OpenXR
             extraoptions: -btb-experimental
           - name: Windows Rift Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
-            extraoptions: -btb-experimental
-          - name: Windows Monoscopic Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            extraoptions: -btb-experimental
-          - name: Linux SteamVR
-            targetPlatform: StandaloneLinux64
-            vrsdk: SteamVR
-          - name: Linux SteamVR Experimental
-            targetPlatform: StandaloneLinux64
-            vrsdk: SteamVR
-            extraoptions: -btb-experimental
-          - name: Linux Monoscopic Experimental
-            targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic
-            extraoptions: -btb-experimental
-          - name: OSX Monoscopic Experimental
-            targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
-            vrsdk: Monoscopic
             extraoptions: -btb-experimental
           - name: Oculus Quest
             targetPlatform: Android
@@ -263,20 +244,6 @@ jobs:
         run:
           echo "filename=$BASENAME.exe" >> $GITHUB_ENV
 
-      - name: Set filename (for Linux)
-        if: matrix.targetPlatform == 'StandaloneLinux64'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME" >> $GITHUB_ENV
-
-      - name: Set filename (for OSX)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.app" >> $GITHUB_ENV
-
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
         env:
@@ -332,21 +299,10 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
-      - name: Prepare for packaging (permissions and compression, OSX only)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        run: |
-          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
-          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
-          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
-          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
-          # Compress, but skip the top directories
-          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
-          rm -rf build/*
-          mv OpenBrush.tgz build/
-
+      # TODO -- change this to use the il2cpp symbol files
       # We have to do this here, because only this worker has docker installed
       - name: Extract Android symbol files
-        if: matrix.targetPlatform == 'Android'
+        if: false  # matrix.targetPlatform == 'Android'
         run: |
           # Change permissions for the build directory, which was created as root only
           docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
@@ -373,17 +329,17 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Windows SteamVR)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
+          name: Windows OpenXR
+          path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
+      - name: Download Build Artifacts (Windows OpenXR Experimental)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
+          name: Windows OpenXR Experimental
+          path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Windows Rift)
         uses: actions/download-artifact@v2
@@ -396,18 +352,6 @@ jobs:
         with:
           name: Windows Rift Experimental
           path: build_windows_rift_experimental
-
-      - name: Download Build Artifacts (Linux SteamVR)
-        uses: actions/download-artifact@v2
-        with:
-          name: Linux SteamVR
-          path: build_linux_steamvr
-
-      - name: Download Build Artifacts (Linux SteamVR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Linux SteamVR Experimental
-          path: build_linux_steamvr_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v2
@@ -428,27 +372,19 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
           mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
-          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
-          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
-          tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
-          tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
           rm -rf OpenBrush_Rift_Experimental_$VERSION
-          rm -rf OpenBrush_Linux_$VERSION
-          rm -rf OpenBrush_Linux_Experimental_$VERSION
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
@@ -480,23 +416,23 @@ jobs:
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
-      - name: Download Build Artifacts (Windows SteamVR)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
+          name: Windows OpenXR
+          path: build_windows_openxr
+      - name: Download Build Artifacts (Windows OpenXR Experimental)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
+          name: Windows OpenXR Experimental
+          path: build_windows_openxr_experimental
       - name: Upload Regular Build
         run: |
           pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_steamvr/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr/main_depot.vdf
-          cp Support/steam/installscript_win.vdf build_windows_steamvr/
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr/app.vdf +quit
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_openxr/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
@@ -507,10 +443,10 @@ jobs:
       - name: Upload Experimental Build
         run: |
           pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_steamvr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr_experimental/main_depot.vdf
-          cp Support/steam/installscript_win.vdf build_windows_steamvr_experimental/
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr_experimental/app.vdf +quit
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_openxr_experimental/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
@@ -542,29 +478,17 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Windows SteamVR)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
+          name: Windows OpenXR
+          path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
+      - name: Download Build Artifacts (Windows OpenXR Experimental)
         uses: actions/download-artifact@v2
         with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
-
-      - name: Download Build Artifacts (Linux SteamVR)
-        uses: actions/download-artifact@v2
-        with:
-          name: Linux SteamVR
-          path: build_linux_steamvr
-
-      - name: Download Build Artifacts (Linux SteamVR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Linux SteamVR Experimental
-          path: build_linux_steamvr_experimental
+          name: Windows OpenXR Experimental
+          path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v2
@@ -583,13 +507,8 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
-          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
-          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
-          cd releases
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
+          mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
@@ -600,16 +519,6 @@ jobs:
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
           PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
-      - name: Publish Linux
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}
-          PACKAGE: releases/OpenBrush_Linux_${{ needs.configuration.outputs.version }}
-      - name: Publish Linux Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Linux_Experimental_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
