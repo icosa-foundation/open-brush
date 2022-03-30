@@ -170,10 +170,14 @@ static class BuildTiltBrush
         }
     }
 
+#if UNITY_ANDROID
 #if UNITY_EDITOR_WIN
     private static readonly string m_adbPath = Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb.exe");
 #else
     private static readonly string m_adbPath = Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb");
+#endif
+#else
+    private static readonly string m_adbPath = "ADB_NOT_AVAILABLE_WITHOUT_UNITY_ANDROID";
 #endif
     public static string AdbPath => m_adbPath;
 
