@@ -227,6 +227,14 @@ jobs:
           restore-keys: |
             Library-${{ matrix.targetPlatform }}-
 
+      - name: Manually delete OpenXR packages
+        if: matrix.vrsdk == 'Oculus'
+        run: |
+          cat Packages/manifest.json | jq 'del( .dependencies ["com.unity.xr.openxr"] )' | tee Packages/manifest.json.new
+          mv Packages/manifest.json.new Packages/manifest.json
+          cat Packages/packages-lock.json | jq 'del( .dependencies ["com.unity.xr.openxr"] )' | tee Packages/packages-lock.json.new
+          mv Packages/packages-lock.json.new Packages/packages-lock.json
+
       - name: Update Oculus OVR Plugin
         uses: game-ci/unity-builder@v2
         if: matrix.vrsdk == 'Oculus'
