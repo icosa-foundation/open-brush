@@ -986,7 +986,6 @@ static class BuildTiltBrush
     {
         List<XRLoader> m_plugins;
         BuildTargetGroup m_targetGroup;
-        string m_spatializerName;
 
         public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] targetXrPluginsRequired)
         {
@@ -1037,18 +1036,6 @@ static class BuildTiltBrush
 
             Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
 
-            // If we don't set the spatializer name correctly for the target it won't be copied into the target plugins.
-            m_spatializerName = AudioSettings.GetSpatializerPluginName();
-
-            switch (tiltOptions.XrSdk)
-            {
-                case XrSdkMode.Oculus:
-                    AudioSettings.SetSpatializerPluginName("OculusSpatializer");
-                    break;
-                default:
-                    break;
-            }
-
             EditorUtility.SetDirty(targetSettings);
         }
 
@@ -1072,9 +1059,6 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
-
-            // Restore spatializer.
-            AudioSettings.SetSpatializerPluginName(m_spatializerName);
         }
     }
 
@@ -1649,13 +1633,6 @@ static class BuildTiltBrush
                         if (File.Exists(openvrDll64))
                         {
                             FileUtil.DeleteFileOrDirectory(openvrDll64);
-                        }
-
-                        // Required.
-                        string audioPluginOculusSpatializer = Path.Combine(Path.Combine(dataDir, "Plugins", "x86_64"), "AudioPluginOculusSpatializer.dll");
-                        if (!File.Exists(audioPluginOculusSpatializer))
-                        {
-                            throw new BuildFailedException($"{audioPluginOculusSpatializer} should be in the build.");
                         }
                     }
 
