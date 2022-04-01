@@ -178,14 +178,12 @@ namespace TiltBrush
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
             if (commandPair.Length == 1 && commandPair[0] != "")
             {
-                Debug.Log($"Queuing {commandPair[0]}");
                 m_RequestedCommandQueue.Enqueue(
                     new KeyValuePair<string, string>(commandPair[0], "")
                 );
             }
             else if (commandPair.Length == 2)
             {
-                Debug.Log($"Queuing {commandPair[0]}={commandPair[1]}");
                 m_RequestedCommandQueue.Enqueue(
                     new KeyValuePair<string, string>(
                         commandPair[0],
@@ -611,7 +609,6 @@ namespace TiltBrush
             {
                 return false;
             }
-            Debug.Log($"Invoking {command.Key}={command.Value}");
             return Instance.InvokeEndpoint(command);
         }
 
