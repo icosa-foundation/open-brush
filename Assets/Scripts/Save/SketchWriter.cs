@@ -44,6 +44,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Valve.Newtonsoft.Json.Utilities;
 using StrokeFlags = TiltBrush.SketchMemoryScript.StrokeFlags;
 using ControlPoint = TiltBrush.PointerManager.ControlPoint;
 
@@ -74,6 +75,7 @@ namespace TiltBrush
             Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
+            Layer = 1 << 4, // uint32;
         }
 
         [Flags]
@@ -86,6 +88,7 @@ namespace TiltBrush
 
         public struct AdjustedMemoryBrushStroke
         {
+            public uint layerIndex;
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
         }
@@ -134,6 +137,13 @@ namespace TiltBrush
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
             bool resetGroupContinue = false;
+            var canvases = App.Scene.LayerCanvases.ToArray();
+            var canvasToIndexMap = new Dictionary<CanvasScript, uint>();
+            for (uint index = 0; index < canvases.Length; index++)
+            {
+                var canvas = canvases[index];
+                canvasToIndexMap[canvas] = index;
+            }
             foreach (var stroke in strokes)
             {
                 AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
@@ -146,6 +156,16 @@ namespace TiltBrush
                 }
                 if (stroke.IsGeometryEnabled)
                 {
+                    if (stroke.Canvas == App.Scene.SelectionCanvas)
+                    {
+                        // Assume selected strokes belong to the current canvas.
+                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                    }
+                    else
+                    {
+                        // Don't use the method in SceneScript as they count deleted layers
+                        snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
+                    }
                     yield return snapshot;
                 }
                 else
@@ -179,7 +199,7 @@ namespace TiltBrush
 
             // strokes
             writer.Int32(strokeCopies.Count);
-            foreach (var copy in strokeCopies)
+            foreach (AdjustedMemoryBrushStroke copy in strokeCopies)
             {
                 var stroke = copy.strokeData;
                 int brushIndex;
@@ -199,6 +219,7 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
+                strokeExtensionMask |= StrokeExtension.Layer;
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -218,6 +239,10 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Seed) != 0)
                 {
                     writer.Int32(stroke.m_Seed);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                {
+                    writer.UInt32(copy.layerIndex);
                 }
 
                 // Control points
@@ -278,7 +303,7 @@ namespace TiltBrush
 #endif
 
             oldGroupToNewGroup = new Dictionary<int, int>();
-            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath);
+            var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -312,7 +337,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath)
+            Stream stream, Guid[] brushList, bool allowFastPath, bool squashLayers = false)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -398,6 +423,15 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
+                        case StrokeExtension.Layer:
+                            UInt32 layerIndex = 0;
+                            if (!squashLayers)
+                            {
+                                layerIndex = reader.UInt32();
+                            }
+                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+                            stroke.m_IntendedCanvas = canvas;
+                            break;
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
