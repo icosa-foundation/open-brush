@@ -194,7 +194,7 @@ public static class ExportFbx {
       try {
         WriteObjectsAndConnections2(G);
         G.m_exporter.Export(G.m_scene);
-      } catch (GlbError e) {
+      } catch (InvalidOperationException e) {
         OutputWindowScript.Error("FBX export failed", e.Message);
         return false;
       } catch (IOException e) {
