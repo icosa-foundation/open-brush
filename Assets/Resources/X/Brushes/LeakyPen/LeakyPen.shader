@@ -19,48 +19,51 @@ Shader "Brush/Special/LeakyPen" {
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
 	}
-	SubShader {
-		Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+	Category {
+		Cull Back
+		SubShader {
+			Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
 
-		LOD 400
-		CGPROGRAM
-		#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
-		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-		#pragma target 3.0
+			LOD 400
+			CGPROGRAM
+			#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+			#pragma target 3.0
 
-		#include "UnityCG.cginc"
-		#include "Assets/Shaders/Include/Brush.cginc"
+			#include "UnityCG.cginc"
+			#include "Assets/Shaders/Include/Brush.cginc"
 
-		sampler2D _MainTex;
-		sampler2D _SecondaryTex;
+			sampler2D _MainTex;
+			sampler2D _SecondaryTex;
 
-		struct Input {
+			struct Input {
 
-		float2 uv_MainTex;
-		float2 uv_SecondaryTex;
-		float4 color : Color;
-		};
+			float2 uv_MainTex;
+			float2 uv_SecondaryTex;
+			float4 color : Color;
+			};
 
-		void vert(inout appdata_full i) {
-			PrepForOds(i.vertex);
-			i.color = TbVertToNative(i.color);
+			void vert(inout appdata_full i) {
+				PrepForOds(i.vertex);
+				i.color = TbVertToNative(i.color);
+			}
+
+			void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+				float3 secondary_tex = tex2D(_MainTex, IN.uv_SecondaryTex).rgb;
+
+				// Apply the alpha mask
+				float primary_tex = tex2D(_MainTex, IN.uv_MainTex).w;
+
+				// Combine the two texture elements
+				float3 tex = secondary_tex * primary_tex;
+				o.Specular = 0;
+				o.Albedo = IN.color.rgb;
+				o.Alpha = tex * IN.color.a;
+
+			}
+			ENDCG
 		}
-
-		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-
-			float3 secondary_tex = tex2D(_MainTex, IN.uv_SecondaryTex).rgb;
-
-			// Apply the alpha mask
-			float primary_tex = tex2D(_MainTex, IN.uv_MainTex).w;
-
-			// Combine the two texture elements
-			float3 tex = secondary_tex * primary_tex;
-			o.Specular = 0;
-			o.Albedo = IN.color.rgb;
-			o.Alpha = tex * IN.color.a;
-
-		}
-		ENDCG
 	}
 	FallBack "Diffuse"
 }

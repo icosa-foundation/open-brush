@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: 7c972c27-d3c2-8af4-7bf8-5d9db8f0b7bb
-  m_DurableName: 
+  m_DurableName: InkGeometry
   m_CreationVersion: 
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 73ce5c63e307d8d409ecd9cc7049457f, type: 3}
