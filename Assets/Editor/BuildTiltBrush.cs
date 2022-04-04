@@ -803,7 +803,7 @@ static class BuildTiltBrush
                 {
                     // Not supported in Open Brush (added to game-ci in https://github.com/game-ci/unity-builder/pull/298)
                     // By default, this field has no value, but if set, we need to skip it
-                    if (!args[i + 1].startswith("-"))
+                    if (!args[i + 1].StartsWith("-"))
                     {
                         i++;
                     }
