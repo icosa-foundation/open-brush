@@ -246,7 +246,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-13
+        uses: game-ci/unity-builder@v2.0
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -314,7 +314,7 @@ jobs:
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-13
+        uses: game-ci/unity-builder@v2.0
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
