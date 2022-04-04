@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using TiltBrushToolkit;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
@@ -457,13 +459,12 @@ namespace TiltBrush
             return null;
         }
 
-        GameObject LoadOff(List<string> warningsOut)
+        GameObject LoadOff(List<string> warningsOut, bool editable=false)
         {
-
             try
             {
                 var reader = new OffReader(m_Location.AbsolutePath);
-                var (gameObject, warnings, collector) = reader.Import();
+                var (gameObject, warnings, collector) = reader.Import(editable);
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
@@ -476,7 +477,26 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
+        }
 
+        GameObject LoadObj(List<string> warningsOut, bool editable)
+        {
+            try
+            {
+                var reader = new ObjReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import(editable);
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
         }
 
         ///  Load model using FBX SDK.
@@ -627,7 +647,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                CreatePrefab(go);
+                CreatePrefab(go, false);
             }
 
             // Even if an exception occurs above, return true because the return value indicates async load
@@ -637,9 +657,14 @@ namespace TiltBrush
 
         public void LoadModel()
         {
-            CreatePrefab(null);
+            CreatePrefab(null, false);
         }
 
+        public void LoadEditableModel()
+        {
+            CreatePrefab(null, true);
+        }
+        
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
         /// or take a previously (probably asynchronously-loaded) GameObject hierarchy and do the same.
         ///
@@ -649,7 +674,7 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private void CreatePrefab(GameObject go)
+        private void CreatePrefab(GameObject go, bool editable)
         {
             if (m_Valid)
             {
@@ -658,6 +683,12 @@ namespace TiltBrush
             }
 
             List<string> warnings = new List<string>();
+            
+            #if !FBX_SUPPORTED
+            bool nofbx = true;
+            #else
+            bool nofbx = false;
+            #endif
 
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
@@ -680,13 +711,17 @@ namespace TiltBrush
                     // If we pulled this from Poly, it's going to be a gltf file.
                     go = LoadGltf(warnings);
                 }
-                else if (ext == ".fbx" || ext == ".obj")
+                else if (editable && ext == ".obj" || nofbx)
+                {
+                    go = LoadObj(warnings, editable);
+                }
+                else if (ext == ".fbx" || ext == ".obj") 
                 {
                     go = LoadFbx(warnings);
                 }
                 else if (ext == ".off")
                 {
-                    go = LoadOff(warnings);
+                    go = LoadOff(warnings, editable);
                 }
                 else
                 {

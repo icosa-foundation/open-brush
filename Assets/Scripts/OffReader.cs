@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 using UObject = UnityEngine.Object;
 namespace TiltBrush
@@ -40,21 +41,20 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import()
+        public (GameObject, List<string> warnings, ImportMaterialCollector) Import(bool editable)
         {
-            GameObject go = new GameObject();
-            var mf = go.AddComponent<MeshFilter>();
-            var mr = go.AddComponent<MeshRenderer>();
-            Mesh mesh;
+            GameObject go = new GameObject($"Off model: {m_path}");
             using (StreamReader reader = new StreamReader(m_path))
             {
                 var poly = new PolyMesh(reader);
-                mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
-                mf.mesh = mesh;
-                mr.material = m_vertexColorMaterial;
+                EditableModelManager.m_Instance.GenerateMesh(
+                    go,
+                    poly,
+                    m_vertexColorMaterial,
+                    PolyMesh.ColorMethods.ByTags,
+                    editable
+                );
             }
-            var collider = go.AddComponent<BoxCollider>();
-            collider.size = mesh.bounds.size;
             return (go, warnings.Distinct().ToList(), m_collector);
         }
 

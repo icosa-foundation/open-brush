@@ -102,6 +102,7 @@ namespace TiltBrush
         static public WidgetManager m_Instance;
 
         [SerializeField] ModelWidget m_ModelWidgetPrefab;
+        [SerializeField] EditableModelWidget m_EditableModelWidgetPrefab;
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
@@ -141,6 +142,7 @@ namespace TiltBrush
         // Widgets will be in the most specific list.
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
+        private List<TypedWidgetData<EditableModelWidget>> m_EditableModelWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
@@ -296,6 +298,7 @@ namespace TiltBrush
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
+            m_EditableModelWidgets = new List<TypedWidgetData<EditableModelWidget>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
@@ -323,6 +326,7 @@ namespace TiltBrush
         }
 
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
+        public EditableModelWidget EditableModelWidgetPrefab { get { return m_EditableModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
@@ -344,7 +348,7 @@ namespace TiltBrush
                 return GetAllActiveGrabWidgets();
             }
         }
-
+        
         private IEnumerable<GrabWidgetData> GetAllActiveGrabWidgets()
         {
             for (int i = 0; i < m_GrabWidgets.Count; ++i)
@@ -359,6 +363,13 @@ namespace TiltBrush
                 if (m_ModelWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_ModelWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_EditableModelWidgets.Count; ++i)
+            {
+                if (m_EditableModelWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_EditableModelWidgets[i];
                 }
             }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)
@@ -396,7 +407,7 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets);
+                return ret.Concat(m_EditableModelWidgets).Concat(m_ImageWidgets).Concat(m_VideoWidgets);
             }
         }
 
@@ -596,7 +607,7 @@ namespace TiltBrush
 
         public bool HasSelectableWidgets()
         {
-            return (m_ModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
+            return (m_ModelWidgets.Count > 0) || (m_EditableModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -950,6 +961,16 @@ namespace TiltBrush
                     .Where(w => w != null);
             }
         }
+        
+        public IEnumerable<EditableModelWidget> EditableModelWidgets
+        {
+            get
+            {
+                return m_EditableModelWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
 
         public IEnumerable<VideoWidget> VideoWidgets
         {
@@ -1017,8 +1038,10 @@ namespace TiltBrush
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
+            GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
+            GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
             if (!m_StencilsDisabled)
             {
                 GetUnselectedActiveWidgetsInList(m_StencilWidgets);
@@ -1047,6 +1070,7 @@ namespace TiltBrush
                 m_CanBeUnpinnedWidgets.Clear();
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
+                RefreshPinUnpinWidgetList(m_EditableModelWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
                 RefreshPinUnpinWidgetList(m_StencilWidgets);
@@ -1110,7 +1134,11 @@ namespace TiltBrush
                 throw new InvalidOperationException($"Object {rWidget.name} is not a GrabWidget");
             }
 
-            if (generic is ModelWidget mw)
+            if (generic is EditableModelWidget emw)
+            {
+                m_EditableModelWidgets.Add(new TypedWidgetData<EditableModelWidget>(emw));
+            }
+            else if (generic is ModelWidget mw)
             {
                 m_ModelWidgets.Add(new TypedWidgetData<ModelWidget>(mw));
             }
@@ -1173,6 +1201,7 @@ namespace TiltBrush
             }
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_EditableModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
@@ -1320,6 +1349,7 @@ namespace TiltBrush
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
+            DestroyWidgetList(m_EditableModelWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_VideoWidgets);
             DestroyWidgetList(m_StencilWidgets);
@@ -1482,5 +1512,15 @@ namespace TiltBrush
                 Debug.Log("No media in sketch");
             }
         }
+
+        public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets => 
+            m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets => 
+            m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<EditableModelWidget>> ActiveEditableModelWidgets => 
+            m_EditableModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets => 
+            m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        
     }
 }

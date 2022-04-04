@@ -190,7 +190,17 @@ namespace TiltBrush
 
         public Stroke GetStrokeAtIndex(int index)
         {
-            return m_Instance.m_MemoryList.ElementAt(index);
+            // Supports Python-style negative indexing
+            
+            if (index < 0 && Mathf.Abs(index) < m_Instance.m_MemoryList.Count)
+            {
+                return m_Instance.m_MemoryList.ElementAt(m_Instance.m_MemoryList.Count - Mathf.Abs(index));
+            }
+            if (index >= 0 && index < m_Instance.m_MemoryList.Count)
+            {
+                return m_Instance.m_MemoryList.ElementAt(index);
+            }
+            return null;
         }
 
         public Stroke MostRecentStroke

@@ -13,12 +13,14 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using Newtonsoft.Json;
+using Polyhydra.Core;
 using SVGMeshUnity;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -49,12 +51,12 @@ namespace TiltBrush
         public static Quaternion CreateFromAxisAngle(Vector3 axis, float angle)
         {
             float halfAngle = angle * .5f;
-            float s = (float)System.Math.Sin(halfAngle);
+            float s = Mathf.Sin(halfAngle);
             Quaternion q;
             q.x = axis.x * s;
             q.y = axis.y * s;
             q.z = axis.z * s;
-            q.w = (float)System.Math.Cos(halfAngle);
+            q.w = Mathf.Cos(halfAngle);
             return q;
         }
 
@@ -772,77 +774,184 @@ namespace TiltBrush
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
         }
-
-
-
-        [ApiEndpoint("import.model", "Imports a model from your Open Brush\\Media Library\\Models folder")]
-        public static void ImportModel(string path)
+        
+        [ApiEndpoint("model.import", "Imports a model given a url, a filename in Media Library\\Models or Google Poly ID")]
+        public static void ImportModel(string location)
         {
-            path = Path.Combine(App.MediaLibraryPath(), "Models", path);
+            _ImportModel(location, false);
+        }
+        
+        [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
+        public static void ImportEditableModel(string location)
+        {
+            _ImportModel(location, true);
+        }
+        
+        private static void _ImportModel(string location, bool editable)
+        {
+            const string modelsFolder = "Models";
+            
+            if (location.StartsWith("poly:"))
+            {
+                location = location.Substring(5);
+                ApiManager.Instance.LoadPolyModel(location);
+                return;
+            }
+            
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            {
+                // You can't rely on urls ending with a file extension
+                // But try and fall back to assuming web models will be gltf/glb
+                // TODO Try deriving from MIME types
+                if (location.EndsWith(".off") || location.EndsWith(".obj"))
+                {
+                    location = DownloadMediaFileFromUrl(location, modelsFolder);
+                }
+                else
+                {
+                    Uri uri = new Uri(location);
+                    ApiManager.Instance.LoadPolyModel(uri);
+                }
+            }
+            
+            // At this point we've either returned or we've got a filename in Models
+            string path = Path.Combine(App.MediaLibraryPath(), modelsFolder, location);
+            
+            var tr = TrTransform.TR(
+                ApiManager.Instance.BrushPosition,
+                ApiManager.Instance.BrushRotation
+            );
+            
             var model = new Model(Model.Location.File(path));
-            model.LoadModel();
+            if (editable)
+            {
+                model.LoadEditableModel();
+                CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                    WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+                var widget = createCommand.Widget as EditableModelWidget;
+                if (widget != null)
+                {
+                    widget.Model = model;
+                    // var go = model.m_ModelParent.gameObject;
+                    // var polymesh = EditableModelManager.m_Instance.GetPolyMesh(go);
+                    // EditableModelManager.m_Instance.GenerateMesh(
+                    //     go,
+                    //     polymesh,
+                    //     ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial, 
+                    //     PolyMesh.ColorMethods.ByRole,
+                    //     true
+                    // );
+                    widget.Show(true);
+                    createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                }
+                else
+                {
+                    Debug.LogWarning("Failed to create EditableModelWidget");
+                    return;
+                }
+            
+                // go.transform.parent = widget.gameObject.transform;
+                // go.transform.localPosition = Vector3.zero;
+                
+                WidgetManager.m_Instance.WidgetsDormant = false;
+                SketchControlsScript.m_Instance.EatGazeObjectInput();
+                SelectionManager.m_Instance.RemoveFromSelection(false);
+            }
+            else
+            {
+                model.LoadModel();
+                CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                    WidgetManager.m_Instance.ModelWidgetPrefab, tr);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+                ModelWidget widget = createCommand.Widget as ModelWidget;
+                if (widget != null)
+                {
+                    widget.Model = model;
+                    widget.Show(true);
+                    createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                }
+                else
+                {
+                    Debug.LogWarning("Failed to create EditableModelWidget");
+                    return;
+                }
 
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ModelWidget modelWidget = createCommand.Widget as ModelWidget;
-            modelWidget.Model = model;
-            modelWidget.Show(true);
-            createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
-
-            WidgetManager.m_Instance.WidgetsDormant = false;
-            SketchControlsScript.m_Instance.EatGazeObjectInput();
-            SelectionManager.m_Instance.RemoveFromSelection(false);
-
+                WidgetManager.m_Instance.WidgetsDormant = false;
+                SketchControlsScript.m_Instance.EatGazeObjectInput();
+                SelectionManager.m_Instance.RemoveFromSelection(false);
+            }
         }
-
-        [ApiEndpoint("import.polymodel", "Imports a model from it's Google Poly ID")]
-        public static void ImportPolyModel(string assetId)
+        
+        private static string DownloadMediaFileFromUrl(string url, string destinationFolder)
         {
-            ApiManager.Instance.LoadPolyModel(assetId);
-        }
-
-        [ApiEndpoint("import.webmodel", "Imports a model from a public url")]
-        public static void ImportModelFromUrl(string url)
-        {
+            var request = System.Net.WebRequest.Create(url);
+            request.Method = "HEAD";
+            var response = request.GetResponse();
             Uri uri = new Uri(url);
-            ApiManager.Instance.LoadPolyModel(uri);
+            
+            string filename;
+            var contentDisposition = response.Headers["Content-Disposition"];
+            if (!String.IsNullOrEmpty(contentDisposition))
+            {
+                int idx = contentDisposition.IndexOf("filename=") + 10;
+                filename = contentDisposition.Substring(idx);
+                filename.Replace("\"", "");
+            }
+            else
+            {
+                filename = uri.AbsolutePath.Split('/').Last();
+            }
+            
+            var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
+            WebClient wc = new WebClient();
+            wc.DownloadFile(uri, path);
+            return filename;
         }
 
-        [ApiEndpoint("import.image", "Imports an image  from your Open Brush\\Media Library\\Images folder")]
-        public static void ImportImage(string path)
+        [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
+        public static void ImportImage(string location)
         {
-            path = Path.Combine(App.MediaLibraryPath(), "Images", path);
-            var image = new ReferenceImage(path);
+            if (location.StartsWith("http://") || location.StartsWith("https://"));
+            {
+                location = DownloadMediaFileFromUrl(location, "Images");
+            }
+            
+            location = Path.Combine(App.MediaLibraryPath(), "Images", location);
+            var image = new ReferenceImage(location);
             image.RequestLoad(allowMainThread: true);
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-            WidgetManager.m_Instance.ImageWidgetPrefab, tr);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ImageWidget imageWidget = createCommand.Widget as ImageWidget;
-            imageWidget.ReferenceImage = image;
-            imageWidget.Show(true);
-            createCommand.SetWidgetCost(imageWidget.GetTiltMeterCost());
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+            
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var imageWidget = cmd.Widget as ImageWidget;
+            if (imageWidget != null)
+            {
+                imageWidget.ReferenceImage = image;
+                imageWidget.Show(true);
+                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
+            }
 
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
-
         }
 
         // WIP
-        // [ApiEndpoint("import.video", "Imports a video from your Open Brush\\Media Library\\Video folder")]
-        // public static void ImportVideo(string path)
+        // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
+        // public static void ImportVideo(string location)
         // {
-        //     path = Path.Combine("Videos", path);
+        //     if (location.StartsWith("http://") || location.StartsWith("https://"));
+        //     {
+        //         location = DownloadMediaFileFromUrl(location, "Videos");
+        //     }
+        //     location = DownloadMediaFileFromUrl(location, "Videos");
+        //
+        //     location = Path.Combine("Videos", location);
         //     var video = new TiltVideo();
-        //     video.FilePath = path;
-        //     Debug.Log($"FilePath: {video.FilePath}");
+        //     video.FilePath = location;
         //     VideoWidget.FromTiltVideo(video);
         //     // var tr = new TrTransform();
         //     // tr.translation = ApiManager.Instance.BrushPosition;
@@ -856,7 +965,6 @@ namespace TiltBrush
         //     // WidgetManager.m_Instance.WidgetsDormant = false;
         //     // SketchControlsScript.m_Instance.EatGazeObjectInput();
         //     // SelectionManager.m_Instance.RemoveFromSelection(false);
-        //
         // }
 
         // Tools.
@@ -1089,6 +1197,159 @@ namespace TiltBrush
         public static void ToggleLayer(int layer)
         {
             App.Scene.ToggleLayerVisibility(layer);
+        }
+        
+        // Widgets
+        
+        // Indexing in the API supports Python style negative indexes
+        // (-1 being the last item in the list and so on)
+        private static int NegativeIndexing<T>(int index, IEnumerable<T> enumerable)
+        {
+            int count = enumerable.Count();
+            if (index < 0) index = count - Mathf.Abs(index);
+            return index;
+        }
+        
+        private static ImageWidget GetActiveImage(int index)
+        {
+            index = NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
+            return WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
+        }
+        
+        private static VideoWidget GetActiveVideo(int index)
+        {
+            index = NegativeIndexing(index, WidgetManager.m_Instance.ActiveVideoWidgets);
+            return WidgetManager.m_Instance.ActiveVideoWidgets[index].WidgetScript;
+        }
+        
+        private static ModelWidget GetActiveModel(int index)
+        {
+            index = NegativeIndexing(index, WidgetManager.m_Instance.ActiveModelWidgets);
+            return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
+        }
+        
+        private static EditableModelWidget GetActiveEditableModel(int index)
+        {
+            index = NegativeIndexing(index, WidgetManager.m_Instance.ActiveEditableModelWidgets);
+            // Debug.Log($"index: {index} of {WidgetManager.m_Instance.ActiveEditableModelWidgets.Count}");
+            // // Debug.Log($"{WidgetManager.m_Instance.ActiveEditableModelWidgets.First()}");
+            // Debug.Log($"{WidgetManager.m_Instance.ActiveEditableModelWidgets[0]}");
+            return WidgetManager.m_Instance.ActiveEditableModelWidgets[index].WidgetScript;
+        }
+
+        [ApiEndpoint("model.select", "Selects a widget by it's index. 0 is the most recent, -1 is second to last, 1 is the first.")]
+        private static void SelectModel(int index)
+        {
+            SelectWidget(GetActiveModel(index));
+        }
+
+        private static void SelectWidget(GrabWidget widget)
+        {
+            SelectionManager.m_Instance.SelectWidget(widget);
+        }
+
+        [ApiEndpoint("model.position", "Moves the chosen model but doesn't select it")]
+        public static void PositionModel(int index, Vector3 position)
+        {
+            PositionWidget(GetActiveModel(index), position);
+        }
+        
+        [ApiEndpoint("image.position", "Moves the chosen model but doesn't select it")]
+        public static void PositionImage(int index, Vector3 position)
+        {
+            PositionWidget(GetActiveImage(index), position);
+        }
+        
+        private static void PositionWidget(GrabWidget widget, Vector3 position)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(
+                    widget, 
+                    TrTransform.T(position),
+                    widget.CustomDimension, 
+                    true
+                )
+            );
+        }
+
+        [ApiEndpoint("editablemodel.create.grid", "Generates an editable grid model")]
+        public static void CreateGrid(int widthSegs, int depthSegs)
+        {
+            var type = GridEnums.GridTypes.K_4_4_4_4;
+            var shape = GridEnums.GridShapes.Plane;
+            var polymesh = Grids.MakeGrid(type, shape, widthSegs, depthSegs);
+            polymesh = polymesh.Loft(new OpParams(.3f, .3f));
+            
+            var tr = TrTransform.TR(
+                ApiManager.Instance.BrushPosition,
+                ApiManager.Instance.BrushRotation
+            );
+            
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var widget = createCommand.Widget as EditableModelWidget;
+            if (widget == null)
+            {
+                Debug.LogWarning("Failed to create EditableModelWidget");
+                return;
+            }
+            
+            var go = new GameObject
+            {
+                name = "New EditableModelWidget",
+            };
+
+            EditableModelManager.m_Instance.GenerateMesh(
+                go,
+                polymesh,
+                ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial, 
+                PolyMesh.ColorMethods.ByRole,
+                true
+            );
+            
+            go.transform.parent = widget.gameObject.transform;
+
+            widget.Show(true);
+            go.transform.localPosition = Vector3.zero;
+            createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
+
+        [ApiEndpoint("editablemodel.create.model", "Creates a new editable model from an existing normal model")]
+        public static void ConvertModelType(int index)
+        {
+            EditableModelWidget widget = GetActiveEditableModel(index);
+            widget.enabled = false;
+        }
+        
+        [ApiEndpoint("editablemodel.modify.conway", "Apply a Conway operator to a model")]
+        public static void ModifyModel(int index, string operation, float param1=float.NaN, float param2=float.NaN)
+        {
+            if (!Enum.TryParse(operation, true, out PolyMesh.ConwayOperator op)) return;
+            
+            EditableModelWidget widget = GetActiveEditableModel(index);
+            var polyMesh = EditableModelManager.m_Instance.GetPolyMesh(widget.gameObject);
+            if (polyMesh == null) return;
+
+            OpParams p;
+            if (float.IsNaN(param1) && float.IsNaN(param2))
+            {
+                p = new OpParams();
+            }
+            else if (float.IsNaN(param2))
+            {
+                p = new OpParams(param1);
+            }
+            else
+            {
+                p = new OpParams(param1, param2);
+            }
+            polyMesh = polyMesh.ApplyConwayOp(op, p);
+            EditableModelManager.m_Instance.RegenerateMesh(widget.gameObject, polyMesh);
         }
 
         // Example of calling a command and recording an undo step

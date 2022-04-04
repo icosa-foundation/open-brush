@@ -43,7 +43,7 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import()
+        public (GameObject, List<string> warnings, ImportMaterialCollector) Import(bool editable)
         {
             GameObject go = new GameObject($"Obj model: {m_path}");
             
@@ -62,7 +62,7 @@ namespace TiltBrush
                 var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, faceIndices.Count());
                 var poly = new PolyMesh(verts, faceIndices, faceRoles, vertexRoles);
                 //poly.MergeCoplanarFaces(0.01f);
-                EditableModelManager.m_Instance.GenerateMesh(go, poly, m_vertexColorMaterial, PolyMesh.ColorMethods.ByTags);
+                EditableModelManager.m_Instance.GenerateMesh(go, poly, m_vertexColorMaterial, PolyMesh.ColorMethods.ByTags, editable);
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }
