@@ -14,32 +14,34 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 namespace TiltBrush
 {
     public class SquashLayerCommand : BaseCommand
     {
         private CanvasScript m_SquashedLayer;
         private CanvasScript m_DestinationLayer;
-        private IEnumerable<Stroke> m_OriginalStrokes;
+        private Stroke[] m_OriginalStrokes;
         private bool SquashedLayerWasActive;
 
         public SquashLayerCommand(int squashedLayerIndex, int destinationLayerIndex, BaseCommand parent = null) : base(parent)
         {
-            var squashedLayer = App.Scene.GetCanvasByLayerIndex(squashedLayerIndex);
-            var destinationLayer = App.Scene.GetCanvasByLayerIndex(destinationLayerIndex);
-            new SquashLayerCommand(
-                squashedLayer,
-                destinationLayer,
-                parent
-            );
+            m_SquashedLayer = App.Scene.GetCanvasByLayerIndex(squashedLayerIndex);
+            m_DestinationLayer = App.Scene.GetCanvasByLayerIndex(destinationLayerIndex);
+            Init();
         }
 
         public SquashLayerCommand(CanvasScript squashedLayer, CanvasScript destinationLayer, BaseCommand parent = null) : base(parent)
         {
             m_SquashedLayer = squashedLayer;
             m_DestinationLayer = destinationLayer;
+            Init();
+        }
+
+        private void Init()
+        {
             m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
-                .Where(x => x.Canvas == m_SquashedLayer);
+                .Where(x => x.Canvas == m_SquashedLayer).ToArray();
             SquashedLayerWasActive = App.Scene.ActiveCanvas == m_SquashedLayer;
         }
 
@@ -58,13 +60,13 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            m_SquashedLayer.gameObject.SetActive(true);
+            App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
+            if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_SquashedLayer;
             foreach (var stroke in m_OriginalStrokes)
             {
                 stroke.SetParentKeepWorldPosition(m_SquashedLayer);
             }
-            m_SquashedLayer.gameObject.SetActive(true);
-            App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
-            if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_SquashedLayer;
         }
     }
 

@@ -20,7 +20,8 @@ Properties {
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 	_SqueezeAmount("Squeeze Amount", Range(0.0,1)) = 0.825
 }
-
+Category {
+	Cull Back
     SubShader {
 
 		CGPROGRAM
@@ -80,6 +81,6 @@ Properties {
 		}
 		ENDCG
     }
-
+}
 	  FallBack "Diffuse"
 }

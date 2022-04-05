@@ -423,7 +423,7 @@ def remove_stray_strokes(
 def get_most_similar_factors(n):
     """Factorize n into two numbers.
     Returns the best pair, in the sense that the numbers are the closest to each other."""
-    i = int(n ** 0.5 + 0.5)
+    i = int(n**0.5 + 0.5)
     while n % i != 0:
         i -= 1
     return i, n / i
