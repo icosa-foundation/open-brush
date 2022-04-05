@@ -59,7 +59,13 @@ namespace TiltBrush
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
+            var currentPointerScriptName = PointerScriptNames[CurrentPointerScript];
+            var currentSymmetryScriptName = SymmetryScriptNames[CurrentSymmetryScript];
+            var currentToolScriptName = ToolScriptNames[CurrentToolScript];
             LoadScript(e.FullPath);
+            CurrentPointerScript = PointerScriptNames.IndexOf(currentPointerScriptName);
+            CurrentSymmetryScript = SymmetryScriptNames.IndexOf(currentSymmetryScriptName);
+            CurrentToolScript = ToolScriptNames.IndexOf(currentToolScriptName);
         }
 
 
