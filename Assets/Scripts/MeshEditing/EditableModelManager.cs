@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -23,64 +22,64 @@ namespace TiltBrush.MeshEditing
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }
         
-        public void RegenerateMesh(GameObject widgetGameObject, PolyMesh poly)
+        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
         {
-            SetPolyMesh(widgetGameObject, poly);
-            var id = widgetGameObject.GetComponentInChildren<EditableModelId>();
-            var polyMeshGameObject = id.gameObject;
+            var id = widget.GetId();
             var emesh = m_EditableModels[id.guid];
-            var mat = polyMeshGameObject.GetComponent<MeshRenderer>().material;
-            GenerateMesh(polyMeshGameObject, emesh.polyMesh, mat, emesh.lastColorMethod, true);
+            
+            emesh.polyMesh = poly;
+            m_EditableModels[id.guid] = emesh;
+            
+            var polyGo = id.gameObject;
+            emesh = m_EditableModels[id.guid];
+            var mat = polyGo.GetComponent<MeshRenderer>().material;
+            var mesh = poly.BuildUnityMesh(colorMethod: emesh.lastColorMethod);
+            UpdateMesh(polyGo, mesh, mat);
+            UpdateEditableMeshRegistration(id, emesh.polyMesh, emesh.lastColorMethod);
         }
 
-        public void GenerateMesh(GameObject go, PolyMesh poly, Material mat, PolyMesh.ColorMethods colorMethod, bool editable)
+        public void UpdateMesh(GameObject go, Mesh mesh, Material mat)
         {
             var mf = go.GetComponent<MeshFilter>();
             var mr = go.GetComponent<MeshRenderer>();
+            var col = go.GetComponent<BoxCollider>();
             
             if (mf == null) mf = go.AddComponent<MeshFilter>();
             if (mr == null) mr = go.AddComponent<MeshRenderer>();
-            mr.material = mat;
-            mf.mesh = poly.BuildUnityMesh(colorMethod: colorMethod);
+            if (col == null) col = go.AddComponent<BoxCollider>();
             
-            var col = go.AddComponent<BoxCollider>();
-            col.size = mf.mesh.bounds.size;
-            var mcol = go.AddComponent<MeshCollider>();
-            mcol.sharedMesh = mf.mesh;
+            mr.material = mat;
+            mf.mesh = mesh;
+            col.size = mesh.bounds.size;
+        }
 
-            if (editable)
-            {
-                var emesh = new EditableModel();
-                emesh.polyMesh = poly;
-                emesh.lastColorMethod = colorMethod;
-                var id = go.GetComponent<EditableModelId>();
-                if (id==null)
-                {
-                    id = go.AddComponent<EditableModelId>();
-                    id.guid = Guid.NewGuid().ToString();
-                    m_EditableModels[id.guid] = emesh;
-                }
-            }
+        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, PolyMesh.ColorMethods colorMethod)
+        {
+            var id = modelGo.AddComponent<EditableModelId>();
+            id.guid = Guid.NewGuid().ToString();
+            UpdateEditableMeshRegistration(id, poly, colorMethod);
+
         }
         
-        public PolyMesh GetPolyMesh(GameObject go)
+        public void UpdateEditableMeshRegistration(EditableModelId id, PolyMesh poly, PolyMesh.ColorMethods colorMethod)
         {
-            var guid = go.GetComponentInChildren<EditableModelId>().guid;
+            var emesh = new EditableModel();
+            emesh.polyMesh = poly;
+            emesh.lastColorMethod = colorMethod;
+            id.guid = Guid.NewGuid().ToString();
+            m_EditableModels[id.guid] = emesh;
+        }
+
+        public PolyMesh GetPolyMesh(EditableModelId id)
+        {
+            var guid = id.guid;
             return m_EditableModels[guid].polyMesh;
         }
         
-        public PolyMesh.ColorMethods GetColorMethod(GameObject go)
+        public PolyMesh.ColorMethods GetColorMethod(EditableModelId id)
         {
-            var guid = go.GetComponentInChildren<EditableModelId>().guid;
+            var guid = id.guid;
             return m_EditableModels[guid].lastColorMethod;
-        }
-        
-        public void SetPolyMesh(GameObject widgetGameobject, PolyMesh polyMesh)
-        {
-            var guid = widgetGameobject.GetComponentInChildren<EditableModelId>().guid;
-            var emesh = m_EditableModels[guid];
-            emesh.polyMesh = polyMesh;
-            m_EditableModels[guid] = emesh;
         }
     }
 }

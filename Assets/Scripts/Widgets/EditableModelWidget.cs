@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
 using UnityEngine;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
@@ -25,23 +26,63 @@ namespace TiltBrush
 
         override public GrabWidget Clone()
         {
-            var clone = base.Clone();
-            var editableModelId = clone.GetComponentInChildren<EditableModelId>();
-            editableModelId.guid = Guid.NewGuid().ToString();
-            var polyMesh = EditableModelManager.m_Instance.GetPolyMesh(gameObject).Duplicate();
+            EditableModelWidget clone = Instantiate(WidgetManager.m_Instance.EditableModelWidgetPrefab);
             
-            // TODO clean this up
-            var colMethod = EditableModelManager.m_Instance.GetColorMethod(gameObject);
-            var mat = clone.gameObject.GetComponentInChildren<EditableModelId>().gameObject.GetComponent<MeshRenderer>().material;
-            
-            EditableModelManager.m_Instance.GenerateMesh(clone.gameObject, polyMesh, mat, colMethod, true);
+            // TODO everything after here and before var "editableModelId"
+            // is duplicated with ModelWidget.Clone
+            clone.transform.position = transform.position;
+            clone.transform.rotation = transform.rotation;
+            clone.Model = Model;
+            // We're obviously not loading from a sketch.  This is to prevent the intro animation.
+            // TODO: Change variable name to something more explicit of what this flag does.
+            clone.m_LoadingFromSketch = true;
+            clone.Show(true, false);
+            clone.transform.parent = transform.parent;
+            clone.SetSignedWidgetSize(this.m_Size);
+            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
+
+            CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
+            if (canvas != null)
+            {
+                var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
+                foreach (var material in materials)
+                {
+                    foreach (string keyword in canvas.BatchManager.MaterialKeywords)
+                    {
+                        material.EnableKeyword(keyword);
+                    }
+                }
+            }
+
+            if (!clone.Model.m_Valid)
+            {
+                App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
+                clone.m_PolyCallbackActive = true;
+            }
+            clone.CloneInitialMaterials(this);
+            clone.TrySetCanvasKeywordsFromObject(transform);
+
+            var polyGo = clone.GetId().gameObject;
+            var thisId = GetId();
+            var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
+            var col = polyGo.AddComponent<BoxCollider>();
+            col.size = m_BoxCollider.size;
+            var colMethod = EditableModelManager.m_Instance.GetColorMethod(thisId);
+            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
+            EditableModelManager.m_Instance.RegisterEditableMesh(polyGo, newPoly, colMethod);
             return clone;
+        }
+
+        public EditableModelId GetId()
+        {
+            return gameObject.GetComponentInChildren<EditableModelId>();
         }
 
         public override void RegisterHighlight()
         {
 #if !UNITY_ANDROID
-            var mf = GetComponentInChildren<EditableModelId>().GetComponent<MeshFilter>();
+            var mf = GetId().GetComponent<MeshFilter>();
             App.Instance.SelectionEffect.RegisterMesh(mf);
             return;
 #endif
@@ -51,7 +92,7 @@ namespace TiltBrush
         protected override void UnregisterHighlight()
         {
 #if !UNITY_ANDROID
-            var mf = GetComponentInChildren<EditableModelId>().GetComponent<MeshFilter>();
+            var mf = GetId().GetComponent<MeshFilter>();
             App.Instance.SelectionEffect.UnregisterMesh(mf);
             return;
 #endif

@@ -833,15 +833,6 @@ namespace TiltBrush
                 if (widget != null)
                 {
                     widget.Model = model;
-                    // var go = model.m_ModelParent.gameObject;
-                    // var polymesh = EditableModelManager.m_Instance.GetPolyMesh(go);
-                    // EditableModelManager.m_Instance.GenerateMesh(
-                    //     go,
-                    //     polymesh,
-                    //     ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial, 
-                    //     PolyMesh.ColorMethods.ByRole,
-                    //     true
-                    // );
                     widget.Show(true);
                     createCommand.SetWidgetCost(widget.GetTiltMeterCost());
                 }
@@ -851,9 +842,6 @@ namespace TiltBrush
                     return;
                 }
             
-                // go.transform.parent = widget.gameObject.transform;
-                // go.transform.localPosition = Vector3.zero;
-                
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
@@ -1277,8 +1265,8 @@ namespace TiltBrush
         {
             var type = GridEnums.GridTypes.K_4_4_4_4;
             var shape = GridEnums.GridShapes.Plane;
-            var polymesh = Grids.MakeGrid(type, shape, widthSegs, depthSegs);
-            polymesh = polymesh.Loft(new OpParams(.3f, .3f));
+            var poly = Grids.MakeGrid(type, shape, widthSegs, depthSegs);
+            poly = poly.Loft(new OpParams(.3f, .3f));
             
             var tr = TrTransform.TR(
                 ApiManager.Instance.BrushPosition,
@@ -1294,19 +1282,13 @@ namespace TiltBrush
                 Debug.LogWarning("Failed to create EditableModelWidget");
                 return;
             }
-            
-            var go = new GameObject
-            {
-                name = "New EditableModelWidget",
-            };
+            var go = new GameObject{name = "New EditableModelWidget"};
 
-            EditableModelManager.m_Instance.GenerateMesh(
-                go,
-                polymesh,
-                ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial, 
-                PolyMesh.ColorMethods.ByRole,
-                true
-            );
+            var colMethod = PolyMesh.ColorMethods.ByRole;
+            var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+            var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
+            EditableModelManager.m_Instance.UpdateMesh(go, mesh, mat);
+            EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, colMethod);
             
             go.transform.parent = widget.gameObject.transform;
 
@@ -1332,8 +1314,10 @@ namespace TiltBrush
             if (!Enum.TryParse(operation, true, out PolyMesh.ConwayOperator op)) return;
             
             EditableModelWidget widget = GetActiveEditableModel(index);
-            var polyMesh = EditableModelManager.m_Instance.GetPolyMesh(widget.gameObject);
-            if (polyMesh == null) return;
+            GameObject widgetGo = widget.gameObject;
+            var id = widget.GetId();
+            var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
+            if (poly == null) return;
 
             OpParams p;
             if (float.IsNaN(param1) && float.IsNaN(param2))
@@ -1348,8 +1332,10 @@ namespace TiltBrush
             {
                 p = new OpParams(param1, param2);
             }
-            polyMesh = polyMesh.ApplyConwayOp(op, p);
-            EditableModelManager.m_Instance.RegenerateMesh(widget.gameObject, polyMesh);
+            poly = poly.ApplyConwayOp(op, p);
+            var colMethod = EditableModelManager.m_Instance.GetColorMethod(id);
+            EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
+            EditableModelManager.m_Instance.UpdateEditableMeshRegistration(id, poly, colMethod);
         }
 
         // Example of calling a command and recording an undo step

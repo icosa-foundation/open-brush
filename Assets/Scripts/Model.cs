@@ -459,12 +459,12 @@ namespace TiltBrush
             return null;
         }
 
-        GameObject LoadOff(List<string> warningsOut, bool editable=false)
+        GameObject LoadOff(List<string> warningsOut)
         {
             try
             {
                 var reader = new OffReader(m_Location.AbsolutePath);
-                var (gameObject, warnings, collector) = reader.Import(editable);
+                var (gameObject, warnings, collector) = reader.Import();
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
@@ -721,7 +721,7 @@ namespace TiltBrush
                 }
                 else if (ext == ".off")
                 {
-                    go = LoadOff(warnings, editable);
+                    go = LoadOff(warnings);
                 }
                 else
                 {
@@ -780,6 +780,7 @@ namespace TiltBrush
                 m_Valid = true;
                 DisplayWarnings(warnings);
             }
+            
         }
 
         public void UnloadModel()

@@ -15,7 +15,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ObjLoader.Loader.Data.Elements;
 using ObjLoader.Loader.Loaders;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
@@ -61,8 +60,17 @@ namespace TiltBrush
                 var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, verts.Count());
                 var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, faceIndices.Count());
                 var poly = new PolyMesh(verts, faceIndices, faceRoles, vertexRoles);
-                //poly.MergeCoplanarFaces(0.01f);
-                EditableModelManager.m_Instance.GenerateMesh(go, poly, m_vertexColorMaterial, PolyMesh.ColorMethods.ByTags, editable);
+                var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
+                if (editable)
+                {
+                    poly.MergeCoplanarFaces(0.01f);
+                    EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
+                    EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, PolyMesh.ColorMethods.ByTags);
+                }
+                else
+                {
+                    EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
+                }
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }

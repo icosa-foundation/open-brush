@@ -41,19 +41,16 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import(bool editable)
+        public (GameObject, List<string> warnings, ImportMaterialCollector) Import()
         {
             GameObject go = new GameObject($"Off model: {m_path}");
             using (StreamReader reader = new StreamReader(m_path))
             {
                 var poly = new PolyMesh(reader);
-                EditableModelManager.m_Instance.GenerateMesh(
-                    go,
-                    poly,
-                    m_vertexColorMaterial,
-                    PolyMesh.ColorMethods.ByTags,
-                    editable
-                );
+                var colMethod = PolyMesh.ColorMethods.ByTags;
+                var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
+                EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
+                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, PolyMesh.ColorMethods.ByTags);
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }
