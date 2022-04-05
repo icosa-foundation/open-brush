@@ -79,6 +79,11 @@ namespace TiltBrush
                 .ToArray();
         }
 
+        public static LayerMetadata[] GetLayers()
+        {
+            return App.Scene.LayerCanvasesSerialized();
+        }
+
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)
         {
             var widgets =

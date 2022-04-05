@@ -66,7 +66,7 @@ MonoBehaviour:
   m_PlayBackAtStrokeGranularity: 0
   m_BlendMode: 1
   m_EmissiveFactor: 0
-  m_AllowExport: 1
+  m_AllowExport: 0
   m_SupportsSimplification: 1
   m_HeadMinPoints: 1
   m_HeadPointStep: 1
