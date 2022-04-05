@@ -38,7 +38,7 @@ namespace TiltBrush
 <body>{0}</body></html>";
 
 
-        private FileWatcher m_FileWatcher;
+        private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
@@ -86,10 +86,10 @@ namespace TiltBrush
             }
             if (Directory.Exists(m_UserScriptsPath))
             {
-                m_FileWatcher = new FileWatcher(m_UserScriptsPath, "*.html");
+                m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
-                m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
+                m_FileWatcher.Created += OnScriptsDirectoryChanged;
+                m_FileWatcher.Changed += OnScriptsDirectoryChanged;
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }

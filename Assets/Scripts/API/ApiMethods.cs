@@ -1044,12 +1044,59 @@ namespace TiltBrush
             );
         }
 
+        [ApiEndpoint("layer.add", "")]
+        public static void AddLayer()
+        {
+            AddLayerCommand cmd = new AddLayerCommand(makeActive: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("layer.delete", "")]
+        public static void DeleteLayer(int layer)
+        {
+            DeleteLayerCommand cmd = new DeleteLayerCommand(layer);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("layer.squash", "")]
+        public static void SquashLayer(int squashedLayer, int destinationLayer)
+        {
+            Debug.Log($"squashedLayer {squashedLayer} destinationLayer {destinationLayer}");
+            SquashLayerCommand cmd = new SquashLayerCommand(squashedLayer, destinationLayer);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("layer.activate", "")]
+        public static void ActivateLayer(int layer)
+        {
+            ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("layer.show", "")]
+        public static void ShowLayer(int layer)
+        {
+            App.Scene.ShowLayer(layer);
+        }
+
+        [ApiEndpoint("layer.hide", "")]
+        public static void HideLayer(int layer)
+        {
+            App.Scene.HideLayer(layer);
+        }
+
+        [ApiEndpoint("layer.toggle", "")]
+        public static void ToggleLayer(int layer)
+        {
+            App.Scene.ToggleLayerVisibility(layer);
+        }
+
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
         // {
-        //     FooCommand fooCommand = new FooCommand();
-        //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(fooCommand);
+        //     FooCommand cmd = new FooCommand();
+        //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         // }
 
     }

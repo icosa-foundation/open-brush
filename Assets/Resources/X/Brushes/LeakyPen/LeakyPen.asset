@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: ddda8745-4bb5-ac54-88b6-d1480370583e
-  m_DurableName: 
+  m_DurableName: LeakyPen
   m_CreationVersion: 
   m_ShaderVersion: 10.0
   m_BrushPrefab: {fileID: 100000, guid: 9a80aaa9630c74a4ab9a56b39c91417a, type: 3}

@@ -589,6 +589,15 @@ namespace TiltBrush
         public CameraPathFovKnotMetadata[] FovKnots { get; set; }
     }
 
+    [Serializable]
+    public class LayerMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string Name;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool Visible;
+    }
+
     // TODO: deprecate (7.5b-only)
     // Left just to avoid breaking trusted testers' art
     [Serializable]
@@ -761,6 +770,8 @@ namespace TiltBrush
         // Added in 22.0
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltVideo[] Videos { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public LayerMetadata[] Layers { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
 
