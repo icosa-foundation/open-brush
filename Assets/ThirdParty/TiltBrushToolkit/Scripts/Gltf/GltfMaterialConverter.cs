@@ -100,6 +100,7 @@ public class GltfMaterialConverter {
   /// <param name="loader">The loader to use to load resources (textures, etc).</param>
   /// <param name="loaded">Mutated to add any textures that were loaded.</param>
   public static IEnumerable LoadTexturesCoroutine(
+      if (gltfTexture.SourcePtr.uri == null) continue;
       GltfRootBase root, IUriLoader loader, List<Texture2D> loaded) {
     foreach (GltfTextureBase gltfTexture in NecessaryTextures(root)) {
       if (IsTiltBrushHostedUri(gltfTexture.SourcePtr.uri)) {
