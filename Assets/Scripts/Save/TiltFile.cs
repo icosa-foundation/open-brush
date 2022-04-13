@@ -21,7 +21,7 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
 #endif
 
 namespace TiltBrush

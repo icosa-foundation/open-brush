@@ -38,6 +38,7 @@ MonoBehaviour:
     m_Scopes:
     - org.nuget.google
     - org.nuget.newtonsoft
+    - org.nuget.sharpziplib
     m_IsDefault: 0
     m_Capabilities: 0
   m_UserSelectedRegistryName: Vive
