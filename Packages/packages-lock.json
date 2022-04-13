@@ -82,13 +82,6 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.nuget.newtonsoft-json": {
-      "version": "2.0.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
     "com.unity.performance.profile-analyzer": {
       "version": "1.1.1",
       "depth": 0,
@@ -188,6 +181,41 @@
         "com.unity.inputsystem": "1.0.2"
       },
       "url": "https://packages.unity.com"
+    },
+    "org.nuget.google.apis": {
+      "version": "1.57.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.google.apis.core": "1.57.0"
+      },
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
+    "org.nuget.google.apis.auth": {
+      "version": "1.57.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.google.apis.core": "1.57.0",
+        "org.nuget.google.apis": "1.57.0"
+      },
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
+    "org.nuget.google.apis.core": {
+      "version": "1.57.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.newtonsoft.json": "13.0.1"
+      },
+      "url": "https://unitynuget-registry.azurewebsites.net"
+    },
+    "org.nuget.newtonsoft.json": {
+      "version": "13.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unitynuget-registry.azurewebsites.net"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
