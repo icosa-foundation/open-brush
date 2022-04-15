@@ -74,7 +74,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f928d0d73a35f294fbe357ca17aa3547, type: 3}
   m_Name: MicrosoftHandInteraction Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Microsoft Hand Interaction Profile
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.handtracking
@@ -264,7 +264,7 @@ MonoBehaviour:
   - {fileID: -238312934105289492}
   - {fileID: -3768601675236611697}
   - {fileID: 4073621059260807014}
-  m_renderMode: 1
+  m_renderMode: 0
   m_depthSubmissionMode: 0
 --- !u!114 &-238312934105289492
 MonoBehaviour:
@@ -529,7 +529,7 @@ MonoBehaviour:
   - {fileID: 1638299284819138145}
   - {fileID: -5369529246399082918}
   - {fileID: -8850364997158714336}
-  m_renderMode: 1
+  m_renderMode: 0
   m_depthSubmissionMode: 0
 --- !u!114 &6370826120337889678
 MonoBehaviour:
@@ -629,7 +629,7 @@ MonoBehaviour:
   m_Name: WebGL
   m_EditorClassIdentifier: 
   features: []
-  m_renderMode: 1
+  m_renderMode: 0
   m_depthSubmissionMode: 0
 --- !u!114 &9128593777916537170
 MonoBehaviour:
