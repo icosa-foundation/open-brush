@@ -30,6 +30,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4374593136079346}
   m_RootOrder: 0
@@ -128,6 +129,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4499482680837000}
   - {fileID: 4213443773004250}
@@ -150,8 +152,8 @@ MonoBehaviour:
   m_Wand: {fileID: 114096517187107858}
   m_Brush: {fileID: 114587168986135948}
   m_TrackingComponents:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 114096517187107858}
+  - {fileID: 114587168986135948}
   m_HapticsDurationScale: 1
   m_HapticAmplitudeScale: 0.25
   m_TriggerActivationRange: {x: 0.15, y: 0.8}
@@ -189,6 +191,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4374593136079346}
   m_RootOrder: 1
@@ -286,6 +289,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4374593136079346}
   m_RootOrder: 2
