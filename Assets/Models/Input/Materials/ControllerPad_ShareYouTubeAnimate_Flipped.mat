@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ControllerPad_ShareAnimate_Flipped
+  m_Name: ControllerPad_ShareYouTubeAnimate_Flipped
   m_Shader: {fileID: 4800000, guid: 765f6d8123c90214a9ac23129b2202f3, type: 3}
   m_ShaderKeywords: _EMISSION _LIGHTMAPPING_REALTIME
   m_LightmapFlags: 1
@@ -40,7 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: ff814af8d16f020458c6f6fbf59a6c6a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 62d59dfe122f4ba41874173e09ea41bf, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskTex:
