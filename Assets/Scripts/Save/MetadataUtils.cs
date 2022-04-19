@@ -70,6 +70,20 @@ namespace TiltBrush
             Debug.LogWarning("Attempted to save model without asset id or filepath");
             return "";
         }
+        
+        private static string ByEditableModelLocation(TiltEditableModels models)
+        {
+            if (models.AssetId != null)
+            {
+                return "AssetId:" + models.AssetId;
+            }
+            else if (models.FilePath != null)
+            {
+                return "FilePath:" + models.FilePath;
+            }
+            Debug.LogWarning("Attempted to save model without asset id or filepath");
+            return "";
+        }
 
         public static CameraPathMetadata[] GetCameraPaths()
         {
@@ -134,6 +148,59 @@ namespace TiltBrush
             return models
                 .Concat(ModelCatalog.m_Instance.MissingModels)
                 .OrderBy(ByModelLocation).ToArray();
+        }
+
+        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)
+        {
+            var widgets =
+                WidgetManager.m_Instance.EditableModelWidgets.Where(w => w.gameObject.activeSelf).ToArray();
+            if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any())
+            {
+                return null;
+            }
+            var widgetModels = widgets.Select(w => w.Model).Distinct();
+
+            Dictionary<Model.Location, List<WidgetMetadata>> modelLocationMap =
+                new Dictionary<Model.Location, List<WidgetMetadata>>();
+            foreach (var model in widgetModels)
+            {
+                modelLocationMap[model.GetLocation()] = new List<WidgetMetadata>();
+            }
+            foreach (var widget in widgets)
+            {
+                WidgetMetadata newEntry = new WidgetMetadata();
+                newEntry.xf = widget.GetSaveTransform();
+                newEntry.pinned = widget.Pinned;
+                newEntry.groupId = groupIdMapping.GetId(widget.Group);
+                modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
+            }
+
+            var models = new List<TiltEditableModels>();
+            foreach (var elem in modelLocationMap)
+            {
+                var val = new TiltEditableModels
+                {
+                    Location = elem.Key,
+                };
+
+                // Order and align the metadata.
+                WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();
+                val.PinStates = new bool[ordered.Length];
+                val.RawTransforms = new TrTransform[ordered.Length];
+                val.GroupIds = new uint[ordered.Length];
+                for (int i = 0; i < ordered.Length; ++i)
+                {
+                    val.PinStates[i] = ordered[i].pinned;
+                    val.RawTransforms[i] = ordered[i].xf;
+                    val.GroupIds[i] = ordered[i].groupId;
+                }
+                models.Add(val);
+            }
+
+            return models
+                .Concat(ModelCatalog.m_Instance.MissingEditableModels)
+                .OrderBy(ByEditableModelLocation).ToArray();
+            
         }
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)

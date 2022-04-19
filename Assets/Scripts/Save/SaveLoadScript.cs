@@ -733,6 +733,11 @@ namespace TiltBrush
                         WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
                     }
 
+                    if (jsonData.EditableModelIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.EditableModelIndex);
+                    }
+                    
                     if (jsonData.GuideIndex != null)
                     {
                         foreach (Guides guides in jsonData.GuideIndex)

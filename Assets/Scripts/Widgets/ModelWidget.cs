@@ -460,7 +460,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static void CreateFromSaveData(TiltModels75 modelDatas)
+        public static void CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -538,8 +538,8 @@ namespace TiltBrush
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, string assetId = null)
+        protected static void CreateModel(Model model, TrTransform xf, bool pin,
+                                          bool isNonRawTransform, uint groupId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;

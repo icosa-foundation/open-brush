@@ -77,6 +77,28 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<TiltEditableModels> MissingEditableModels
+        {
+            get
+            {
+                var missingModels = m_MissingModelsByRelativePath.Select(e => new TiltEditableModels
+                {
+                    FilePath = e.Key,
+                    Transforms = m_MissingNormalizedModelsByRelativePath.ContainsKey(e.Key) ?
+                        m_MissingNormalizedModelsByRelativePath[e.Key] : null,
+                    RawTransforms = e.Value
+                });
+                var missingNormalizedModels = m_MissingNormalizedModelsByRelativePath.Select(e =>
+                    m_MissingModelsByRelativePath.ContainsKey(e.Key) ? null :
+                        new TiltEditableModels
+                        {
+                            FilePath = e.Key,
+                            Transforms = e.Value
+                        }).Where(m => m != null);
+                return missingModels.Concat(missingNormalizedModels);
+            }
+        }
+
         void Awake()
         {
             m_Instance = this;

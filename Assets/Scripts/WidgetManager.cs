@@ -33,7 +33,8 @@ namespace TiltBrush
         Cylinder,
         InteriorDome,
         Pyramid,
-        Ellipsoid
+        Ellipsoid,
+        Custom
     }
 
     [Serializable]
@@ -155,6 +156,7 @@ namespace TiltBrush
         public event Action RefreshPinAndUnpinAction;
 
         private TiltModels75[] m_loadingTiltModels75;
+        private TiltEditableModels[] m_loadingEditableTiltModels;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
 
@@ -706,6 +708,10 @@ namespace TiltBrush
         public void SetDataFromTilt(TiltModels75[] value)
         {
             m_loadingTiltModels75 = value;
+        }
+        public void SetDataFromTilt(TiltEditableModels[] value)
+        {
+            m_loadingEditableTiltModels = value;
         }
 
         // Used only at .tilt-loading time
@@ -1379,6 +1385,7 @@ namespace TiltBrush
         ///   the Model will be automatically replaced with the loaded Model some time later.
         public IEnumerator<Null> CreateMediaWidgetsFromLoadDataCoroutine()
         {
+            // TODO reduce code duplication with the next two if blocks
             if (m_loadingTiltModels75 != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);
@@ -1412,14 +1419,57 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    ModelWidget.CreateFromSaveData(m_loadingTiltModels75[i]);
+                    ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingTiltModels75.Length, true);
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
             }
+            
+            if (m_loadingEditableTiltModels != null)
+            {
+                OverlayManager.m_Instance.RefuseProgressBarChanges(true);
+
+                if (App.Config.kModelWidgetsWaitForLoad)
+                {
+                    var assetIds = m_loadingEditableTiltModels
+                        .Select(tm => tm.AssetId).Where(aid => aid != null).ToArray();
+                    // Kick off a bunch of loads...
+                    foreach (var assetId in assetIds)
+                    {
+                        if (App.PolyAssetCatalog.GetAssetLoadState(assetId)
+                            != PolyAssetCatalog.AssetLoadState.Loaded)
+                        {
+                            App.PolyAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                        }
+                    }
+                    // ... and wait for them to complete
+                    // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
+                    bool IsLoading(string assetId)
+                    {
+                        var state = App.PolyAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == PolyAssetCatalog.AssetLoadState.Downloading ||
+                            state == PolyAssetCatalog.AssetLoadState.Loading);
+                    }
+                    while (assetIds.Any(IsLoading))
+                    {
+                        yield return null;
+                    }
+                }
+
+                for (int i = 0; i < m_loadingEditableTiltModels.Length; i++)
+                {
+                    EditableModelWidget.CreateEditableModelFromSaveData(m_loadingEditableTiltModels[i]);
+                    OverlayManager.m_Instance.UpdateProgress(
+                        (float)(i + 1) / m_loadingEditableTiltModels.Length, true);
+                }
+                OverlayManager.m_Instance.RefuseProgressBarChanges(false);
+                m_loadingEditableTiltModels = null;
+            }
+            
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
+            
             if (m_loadingTiltImages75 != null)
             {
                 foreach (TiltImages75 import in m_loadingTiltImages75)
@@ -1521,6 +1571,8 @@ namespace TiltBrush
             m_EditableModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets => 
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets => 
+            m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         
     }
 }

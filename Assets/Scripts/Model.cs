@@ -36,7 +36,8 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                PolyAssetId
+                PolyAssetId,
+                Generated
             }
 
             private Type type;
@@ -59,6 +60,15 @@ namespace TiltBrush
                     type = Type.PolyAssetId,
                     path = path,
                     id = assetId
+                };
+            }
+
+            public static Location Generated(EditableModelId id)
+            {
+                return new Location
+                {
+                    type = Type.Generated,
+                    id = id.guid
                 };
             }
 
@@ -96,7 +106,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.PolyAssetId) { return id; }
+                    if (type == Type.PolyAssetId || type == Type.Generated) { return id; }
                     throw new Exception("Invalid Poly asset id request");
                 }
             }
@@ -234,6 +244,10 @@ namespace TiltBrush
         public Model(Location location)
         {
             m_Location = location;
+            if (location.GetLocationType() == Location.Type.Generated)
+            {
+                m_Valid = true;
+            }
         }
 
         public Location GetLocation() { return m_Location; }
@@ -660,9 +674,9 @@ namespace TiltBrush
             CreatePrefab(null, false);
         }
 
-        public void LoadEditableModel()
+        public void LoadEditableModel(GameObject go=null)
         {
-            CreatePrefab(null, true);
+            CreatePrefab(go, true);
         }
         
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"

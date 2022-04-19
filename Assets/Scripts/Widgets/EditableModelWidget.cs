@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Linq;
 using UnityEngine;
-using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 
 namespace TiltBrush
@@ -68,9 +66,7 @@ namespace TiltBrush
             var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
             var col = polyGo.AddComponent<BoxCollider>();
             col.size = m_BoxCollider.size;
-            var colMethod = EditableModelManager.m_Instance.GetColorMethod(thisId);
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
-            EditableModelManager.m_Instance.RegisterEditableMesh(polyGo, newPoly, colMethod);
             return clone;
         }
 
@@ -98,5 +94,67 @@ namespace TiltBrush
 #endif
             base.UnregisterHighlight();
         }
+        
+        // TODO reduce code duplication with CreateModelFromSaveData
+        public static void CreateEditableModelFromSaveData(TiltEditableModels modelDatas)
+        {
+            Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
+                "Model Data should not have an AssetID *and* a File Path");
+
+            bool ok;
+            if (modelDatas.FilePath != null)
+            {
+                ok = CreateModelsFromRelativePath(
+                    modelDatas.FilePath,
+                    modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
+                    modelDatas.GroupIds);
+            }
+            else if (modelDatas.AssetId != null)
+            {
+                CreateEditableModelsFromAssetId(
+                    modelDatas.AssetId,
+                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds);
+                ok = true;
+            }
+            else
+            {
+                Debug.LogError("Model Data doesn't contain an AssetID or File Path.");
+                ok = false;
+            }
+
+            if (!ok)
+            {
+                ModelCatalog.m_Instance.AddMissingModel(
+                    modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
+            }
+        }
+        
+        // Used when loading model assetIds from a serialized format (e.g. Tilt file).
+        private static void CreateEditableModelsFromAssetId(
+            string assetId, TrTransform[] rawXfs,
+            bool[] pinStates, uint[] groupIds)
+        {
+            // Request model from Poly and if it doesn't exist, ask to load it.
+            Model model = App.PolyAssetCatalog.GetModel(assetId);
+            if (model == null)
+            {
+                // This Model is transient; the Widget will replace it with a good Model from the PAC
+                // as soon as the PAC loads it.
+                model = new Model(Model.Location.PolyAsset(assetId, null));
+            }
+            if (!model.m_Valid)
+            {
+                App.PolyAssetCatalog.RequestModelLoad(assetId, "widget");
+            }
+
+            // Create a widget for each transform.
+            for (int i = 0; i < rawXfs.Length; ++i)
+            {
+                bool pin = (i < pinStates.Length) ? pinStates[i] : true;
+                uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
+                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, assetId: assetId);
+            }
+        }
+
     }
 } // namespace TiltBrush

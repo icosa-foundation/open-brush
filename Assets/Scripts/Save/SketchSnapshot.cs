@@ -101,6 +101,7 @@ namespace TiltBrush
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
                 ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping),
+                EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping),
                 ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
                 Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
                 Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),

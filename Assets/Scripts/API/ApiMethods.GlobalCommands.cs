@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@
 // limitations under the License.
 
 using System.IO;
-using UnityEngine;
 
 namespace TiltBrush
 {
-    public static class GlobalCommandsApi
+    public static partial class ApiMethods
     {
         // // Dangerous
         // [ApiEndpoint("save.slot")]
@@ -260,8 +259,8 @@ namespace TiltBrush
         }
 
         // TODO Why no "enabled" counterpart?
-        [ApiEndpoint("stencils.disabled", "Disables all stencils")]
-        public static void StencilsDisabled()
+        [ApiEndpoint("guides.disable", "Disables all guides")]
+        public static void StencilsDisable()
         {
             var rEnum = SketchControlsScript.GlobalCommands.StencilsDisabled;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
