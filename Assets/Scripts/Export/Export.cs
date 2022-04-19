@@ -191,7 +191,14 @@ URL=" + kExportDocumentationUrl;
             if (Config.IsExperimental &&
                 (filename = MakeExportPath(parent, basename, "stl")) != null)
             {
-                ExportStl.Export(filename);
+                try
+                {
+                    ExportStl.Export(filename);
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    OutputWindowScript.Error("STL export failed", e.Message);
+                }
                 progress.CompleteWork("stl");
             }
 

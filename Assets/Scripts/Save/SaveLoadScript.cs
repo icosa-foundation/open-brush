@@ -415,7 +415,6 @@ namespace TiltBrush
             }
 
             m_LastSceneFile = info;
-            Debug.LogFormat("Saving {0}", info.HumanName);
             AbortAutosave();
 
             m_SaveCoroutine = ThreadedSave(info, bNotify, snapshot);
@@ -595,7 +594,6 @@ namespace TiltBrush
         /// which may not be the canvas of the original strokes.
         public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
         {
-            Debug.LogFormat("Loading {0} {1}", fileInfo.HumanName, fileInfo.FullPath);
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {
@@ -662,6 +660,7 @@ namespace TiltBrush
                     App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                    App.Scene.ResetLayers(true);
                     Coords.CanvasLocalPose = TrTransform.identity;
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
@@ -680,6 +679,20 @@ namespace TiltBrush
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
                     SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
+
+                if (!bAdditive)
+                {
+                    // Create Layers
+                    if (jsonData.Layers != null)
+                    {
+                        foreach (var layer in jsonData.Layers)
+                        {
+                            var canvas = App.Scene.AddLayerNow();
+                            canvas.gameObject.name = layer.Name;
+                            canvas.gameObject.SetActive(layer.Visible);
+                        }
+                    }
+                }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 

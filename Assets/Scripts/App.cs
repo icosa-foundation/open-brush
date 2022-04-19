@@ -1299,6 +1299,8 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.RenderCameraPath);
             }
+
+            Scene.BroadcastCanvasUpdate();
         }
 
         private IEnumerator<Timeslice> DelayedSketchLoadedCard(float delay)

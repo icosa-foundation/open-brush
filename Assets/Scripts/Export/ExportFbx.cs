@@ -20,7 +20,7 @@ using System.Linq;
 using UnityEngine;
 
 using Autodesk.Fbx;
-
+using TiltBrushToolkit;
 using static TiltBrush.ExportUtils;
 
 namespace TiltBrush {

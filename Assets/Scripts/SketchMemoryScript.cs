@@ -592,7 +592,7 @@ namespace TiltBrush
             }
         }
 
-        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false)
+        public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false, bool force = false)
         {
 
             Guid currentBrushGuid = PointerManager.m_Instance
@@ -600,7 +600,7 @@ namespace TiltBrush
 
             float currentBrushSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
 
-            if ((recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
+            if (force || (recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
                 (jitter && PointerManager.m_Instance.JitterEnabled) ||
                 (rebrush && stroke.m_BrushGuid != currentBrushGuid) ||
                 (resize && stroke.m_BrushSize != currentBrushSize))

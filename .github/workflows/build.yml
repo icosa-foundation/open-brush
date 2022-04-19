@@ -309,6 +309,10 @@ jobs:
           SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
           sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
 
+      - name: Enable keystore
+        run: |
+          sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
+
       - name: Build project
         uses: game-ci/unity-builder@v2.0-alpha-13
         env:

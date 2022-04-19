@@ -483,7 +483,7 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 0, y: 0, z: 0}
+  m_InitialSpawnPos: {x: 0, y: 16, z: 5.34}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
