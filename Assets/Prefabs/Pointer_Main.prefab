@@ -91,7 +91,6 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!114 &11449678
@@ -222,12 +221,10 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -252,7 +249,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &133060
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,6 +303,7 @@ MonoBehaviour:
   m_PrimaryMeshes:
   - {fileID: 2315470}
   - {fileID: 2387706}
+  - {fileID: 6025406343638629600}
   m_BrushSizeIndicator: {fileID: 469164}
   m_BrushPressureIndicator: {fileID: 1775280239209501810}
   m_PreviewLineEnabled: 1
@@ -319,10 +316,6 @@ MonoBehaviour:
   m_BrushAudioPitchVelocityRange: {x: 10, y: 30}
   m_BrushPlaybackAudioClip: {fileID: 8300000, guid: d52d5fa13bdd38749b0cd828ae9a9193,
     type: 3}
-  m_CurrentBrush: {fileID: 0}
-  m_CurrentBrushSize: 0
-  m_BrushSizeRange: {x: 0, y: 0}
-  m_CurrentPressure: 0
 --- !u!1 &146746
 GameObject:
   m_ObjectHideFlags: 0
@@ -374,12 +367,10 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -404,7 +395,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1006578575455840
 GameObject:
   m_ObjectHideFlags: 0
@@ -687,12 +677,10 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -717,4 +705,3 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
