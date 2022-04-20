@@ -10155,6 +10155,7 @@ MonoBehaviour:
   - .mkv
   - .mov
   - .txt
+  - .webm
 --- !u!114 &652605572
 MonoBehaviour:
   m_ObjectHideFlags: 0
