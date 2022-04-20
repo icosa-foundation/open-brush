@@ -44,7 +44,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Valve.Newtonsoft.Json.Utilities;
 using StrokeFlags = TiltBrush.SketchMemoryScript.StrokeFlags;
 using ControlPoint = TiltBrush.PointerManager.ControlPoint;
 

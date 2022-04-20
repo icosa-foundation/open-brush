@@ -1,4 +1,5 @@
 # yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
 name: Builds
 
@@ -246,7 +247,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-13
+        uses: game-ci/unity-builder@v2
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -314,7 +315,7 @@ jobs:
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-13
+        uses: game-ci/unity-builder@v2
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -370,9 +371,6 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Download Build Artifacts (Windows SteamVR)
@@ -469,8 +467,6 @@ jobs:
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -544,9 +540,6 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Download Build Artifacts (Windows SteamVR)
@@ -636,9 +629,6 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
