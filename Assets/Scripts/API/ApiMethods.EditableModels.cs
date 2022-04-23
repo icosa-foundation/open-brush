@@ -17,9 +17,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using ObjLoader.Loader.Loaders;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -198,9 +200,7 @@ namespace TiltBrush
                     }
                 );
             }
-            var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.New, verts.Count);
-            var faceRoles = Enumerable.Repeat(PolyMesh.Roles.New, faces.Count);
-            var poly = new PolyMesh(verts, faces, faceRoles, vertexRoles);
+            var poly = new PolyMesh(verts, faces);
             // poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(stroke.m_Color);
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"StrokeMesh");
@@ -268,9 +268,7 @@ namespace TiltBrush
                 verts.Add(cameraPathB.GetPosition(new PathT(i*numKnotsB)));
             }
             var faces = PolyMesh.GenerateQuadStripIndices(verts.Count());
-            var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.New, verts.Count);
-            var faceRoles = Enumerable.Repeat(PolyMesh.Roles.New, faces.Count);
-            var poly = new PolyMesh(verts, faces, faceRoles, vertexRoles);
+            var poly = new PolyMesh(verts, faces);
             poly.InitTags(App.BrushColor.CurrentColor);
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"ConvertedCameraPath");
         }
@@ -292,7 +290,36 @@ namespace TiltBrush
             var poly = Shapes.MakePolygon(sides);
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"{sides}-sided Polygon");
         }
+
+        [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
+        public static void CreateOff(string offData)
+        {
+            var poly = new PolyMesh(new StringReader(offData));
+            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags, "generated off file");
+        }
         
+        [ApiEndpoint("editablemodel.create.obj", "Generates a obj from POST data")]
+        public static void CreateObj(string objData)
+        {
+        
+            var objLoaderFactory = new ObjLoaderFactory();
+            var objLoader = objLoaderFactory.Create();
+
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(objData);
+            writer.Flush();
+            stream.Position = 0;
+            var result = objLoader.Load(stream);
+            var verts = result.Vertices.Select(v => new Vector3(v.X, v.Y, v.Z));
+            var faceIndices = result
+                .Groups
+                .SelectMany(g => g.Faces)
+                .Select(f => f._vertices.Select(v => v.VertexIndex - 1));
+            var poly = new PolyMesh(verts, faceIndices);
+            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByRole, "generated obj file");
+        }
+
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
         public static void CreateGrid(int widthSegs, int depthSegs)
         {
@@ -332,13 +359,13 @@ namespace TiltBrush
         }
         
         [ApiEndpoint("editablemodel.modify.addnoise", "Moves the points of a model by adding noise in the chosen direction")]
-        public static void ModifyModelAddNoise(int index, string direction, float strength = 1, float xscale = 1, float yscale = 1)
+        public static void ModifyModelAddNoise(int index, string direction, float strength = 5, float xscale = .1f, float yscale = .1f)
         {
             var widget = _GetModelIdByIndex(index);
             var id = widget.GetId();
             if (!Enum.TryParse(direction, true, out PolyMesh.Axes axis)) return;
             var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            poly.ApplyNoise(axis, strength, xscale, yscale);
+            poly.ApplyNoise(axis, strength, xscale, yscale, Random.value, Random.value);
             EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
         }
         
@@ -346,7 +373,7 @@ namespace TiltBrush
         public static void ModifyModelConway(int index, string operation, float param1 = float.NaN, float param2 = float.NaN)
         {
             var widget = _GetModelIdByIndex(index);
-            if (!Enum.TryParse(operation, true, out PolyMesh.ConwayOperator op)) return;
+            if (!Enum.TryParse(operation, true, out PolyMesh.Operation op)) return;
             _ApplyOp(widget, op, param1, param2);
         }
         
@@ -380,9 +407,7 @@ namespace TiltBrush
                 }
             }
 
-            var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.New, verts.Count);
-            var faceRoles = Enumerable.Repeat(PolyMesh.Roles.New, faces.Count);
-            var poly = new PolyMesh(verts, faces, faceRoles, vertexRoles);
+            var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(App.BrushColor.CurrentColor);
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"ConvertedModel");

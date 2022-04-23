@@ -57,9 +57,7 @@ namespace TiltBrush
                     .Groups
                     .SelectMany(g => g.Faces)
                     .Select(f => f._vertices.Select(v=>v.VertexIndex-1));
-                var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, verts.Count());
-                var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, faceIndices.Count());
-                var poly = new PolyMesh(verts, faceIndices, faceRoles, vertexRoles);
+                var poly = new PolyMesh(verts, faceIndices);
                 var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
                 if (editable)
                 {

@@ -91,10 +91,8 @@ namespace TiltBrush
 
         private static void _PolyFromPath(List<Vector3> path, TrTransform tr, Color color)
         {
-            var faceRoles = new List<PolyMesh.Roles> { PolyMesh.Roles.New };
-            IEnumerable<PolyMesh.Roles> vertexRoles = Enumerable.Repeat(PolyMesh.Roles.New, path.Count);
             var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
-            var poly = new PolyMesh(path, face, faceRoles, vertexRoles);
+            var poly = new PolyMesh(path, face);
             poly.InitTags(color);
             _GeneratePolyMesh(poly, tr, PolyMesh.ColorMethods.ByTags, "Stroke Path");
         }
@@ -135,7 +133,7 @@ namespace TiltBrush
             }
         }
         
-        private static void _ApplyOp(EditableModelWidget widget, PolyMesh.ConwayOperator op, float param1 = float.NaN, float param2 = float.NaN)
+        private static void _ApplyOp(EditableModelWidget widget, PolyMesh.Operation op, float param1 = float.NaN, float param2 = float.NaN)
         {
             var id = widget.GetId();
             var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
@@ -152,7 +150,7 @@ namespace TiltBrush
             {
                 p = new OpParams(param1, param2);
             }
-            poly = poly.ApplyConwayOp(op, p);
+            poly = poly.AppyOperation(op, p);
             EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
         }
         
