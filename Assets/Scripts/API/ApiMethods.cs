@@ -338,18 +338,24 @@ namespace TiltBrush
         {
             _ImportModel(location, false);
         }
+
+        private static ReferenceImage _LoadReferenceImage(string location)
+        {
+            location = Path.Combine(App.MediaLibraryPath(), "Images", location);
+            var image = new ReferenceImage(location);
+            bool result;
+            int timeout = 0;
+            do
+            {
+                result = image.RequestLoad();
+            } while (result==false && timeout++ < 100000);
+            return image;
+        }
         
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
         public static void ImportImage(string location)
         {
-            if (location.StartsWith("http://") || location.StartsWith("https://")) ;
-            {
-                location = _DownloadMediaFileFromUrl(location, "Images");
-            }
-
-            location = Path.Combine(App.MediaLibraryPath(), "Images", location);
-            var image = new ReferenceImage(location);
-            image.RequestLoad(allowMainThread: true);
+            var image = _LoadReferenceImage(location);
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;

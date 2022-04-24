@@ -206,31 +206,55 @@ namespace TiltBrush
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"StrokeMesh");
         }
         
-        // Should not be used on anything other than small images.
-        // TODO What kind of limits should we enforce here?
-        // How big is too big?
-        [ApiEndpoint("editablemodel.create.fromimagewidget", "Creates a new editable model from an image widget")]
-        public static void ModelFromImageWidget(int index)
+        [ApiEndpoint("editablemodel.createfrom.imagewidget", "Creates a new editable model from an image widget")]
+        public static void ModelFromImageWidget(int index, float clip)
         {
             var imageWidget = _GetActiveImage(index);
             var image = imageWidget.ReferenceImage.FullSize;
-
+            _ModelFromImage(image, clip);
+        }
+        
+        [ApiEndpoint("editablemodel.createfrom.imagefile", "Creates a new editable model from an image widget")]
+        public static void ModelFromImageFile(string location, float clip)
+        {
+            var referenceImage = _LoadReferenceImage(location);
+            _ModelFromImage(referenceImage.FullSize, clip);
+        }
+        
+        // Should not be used on anything other than small images.
+        // TODO What kind of limits should we enforce here?
+        // How big is too big?
+        private static void _ModelFromImage(Texture2D image, float clip=0.5f)
+        {
             var type = GridEnums.GridTypes.K_4_4_4_4;
             var shape = GridEnums.GridShapes.Plane;
             var poly = Grids.Build(type, shape, image.width, image.height);
             var pixels = image.GetPixels();
+            var faceTags = new List<HashSet<Tuple<string, PolyMesh.TagType>>>();
+            var clippedFaces = new HashSet<int>();
             for (var i = 0; i < pixels.Length; i++)
             {
                 var pixelColor = pixels[i];
-                var tag = new HashSet<Tuple<string, PolyMesh.TagType>>
+                if (pixelColor.a < clip)
                 {
-                    new Tuple<string, PolyMesh.TagType>(
-                        $"#{ColorUtility.ToHtmlStringRGB(pixelColor)}",
-                        PolyMesh.TagType.Extrovert
-                    )
-                };
-                poly.FaceTags[i] = tag;
+                    clippedFaces.Add(i);
+                }
+                else
+                {
+                    var tag = new HashSet<Tuple<string, PolyMesh.TagType>>
+                    {
+                        new Tuple<string, PolyMesh.TagType>(
+                            $"#{ColorUtility.ToHtmlStringRGB(pixelColor)}",
+                            PolyMesh.TagType.Extrovert
+                        )
+                    };
+                    faceTags.Add(tag);
+                }
             }
+            poly = poly.FaceRemove(new OpParams(new Filter(p => {
+                return clippedFaces.Contains(p.index);
+            })));
+            poly.FaceTags = faceTags;
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"Grid");
         }
         
@@ -377,8 +401,7 @@ namespace TiltBrush
             _ApplyOp(widget, op, param1, param2);
         }
         
-        // WIP - needs a more robust "merge planar faces" algorithm in polyhydra
-        // [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]
+        [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]
         // TODO transfer color and/or textures
         public static void ConvertModelToEditable(int index, float smoothing = 0.01f)
         {
