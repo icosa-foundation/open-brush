@@ -201,7 +201,7 @@ namespace TiltBrush
                 );
             }
             var poly = new PolyMesh(verts, faces);
-            // poly.MergeCoplanarFaces(smoothing);
+            poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(stroke.m_Color);
             _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"StrokeMesh");
         }
@@ -214,7 +214,7 @@ namespace TiltBrush
             _ModelFromImage(image, clip);
         }
         
-        [ApiEndpoint("editablemodel.createfrom.imagefile", "Creates a new editable model from an image widget")]
+        [ApiEndpoint("editablemodel.createfrom.imagefile", "Creates a new editable model from a local image or a url")]
         public static void ModelFromImageFile(string location, float clip)
         {
             var referenceImage = _LoadReferenceImage(location);
