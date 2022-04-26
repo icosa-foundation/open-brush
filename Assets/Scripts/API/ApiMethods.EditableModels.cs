@@ -203,7 +203,7 @@ namespace TiltBrush
             var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(stroke.m_Color);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"StrokeMesh");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"StrokeMesh");
         }
         
         [ApiEndpoint("editablemodel.createfrom.imagewidget", "Creates a new editable model from an image widget")]
@@ -230,7 +230,7 @@ namespace TiltBrush
             var shape = GridEnums.GridShapes.Plane;
             var poly = Grids.Build(type, shape, image.width, image.height);
             var pixels = image.GetPixels();
-            var faceTags = new List<HashSet<Tuple<string, PolyMesh.TagType>>>();
+            var faceTags = new List<HashSet<Tuple<string, TagType>>>();
             var clippedFaces = new HashSet<int>();
             for (var i = 0; i < pixels.Length; i++)
             {
@@ -241,11 +241,11 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var tag = new HashSet<Tuple<string, PolyMesh.TagType>>
+                    var tag = new HashSet<Tuple<string, TagType>>
                     {
-                        new Tuple<string, PolyMesh.TagType>(
+                        new Tuple<string, TagType>(
                             $"#{ColorUtility.ToHtmlStringRGB(pixelColor)}",
-                            PolyMesh.TagType.Extrovert
+                            TagType.Extrovert
                         )
                     };
                     faceTags.Add(tag);
@@ -255,7 +255,7 @@ namespace TiltBrush
                 return clippedFaces.Contains(p.index);
             })));
             poly.FaceTags = faceTags;
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"Grid");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"Grid");
         }
         
         [ApiEndpoint("editablemodel.createfrom.camerapath", "Generates a filled path from a camera path")]
@@ -294,7 +294,7 @@ namespace TiltBrush
             var faces = PolyMesh.GenerateQuadStripIndices(verts.Count());
             var poly = new PolyMesh(verts, faces);
             poly.InitTags(App.BrushColor.CurrentColor);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"ConvertedCameraPath");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"ConvertedCameraPath");
         }
         
         [ApiEndpoint("editablemodel.create.path", "Generates a filled path")]
@@ -312,14 +312,14 @@ namespace TiltBrush
         public static void CreatePolygon(int sides)
         {
             var poly = Shapes.MakePolygon(sides);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"{sides}-sided Polygon");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"{sides}-sided Polygon");
         }
 
         [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
         public static void CreateOff(string offData)
         {
             var poly = new PolyMesh(new StringReader(offData));
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags, "generated off file");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, "generated off file");
         }
         
         [ApiEndpoint("editablemodel.create.obj", "Generates a obj from POST data")]
@@ -341,7 +341,7 @@ namespace TiltBrush
                 .SelectMany(g => g.Faces)
                 .Select(f => f._vertices.Select(v => v.VertexIndex - 1));
             var poly = new PolyMesh(verts, faceIndices);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByRole, "generated obj file");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByRole, "generated obj file");
         }
 
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
@@ -350,7 +350,7 @@ namespace TiltBrush
             var type = GridEnums.GridTypes.K_4_4_4_4;
             var shape = GridEnums.GridShapes.Plane;
             var poly = Grids.Build(type, shape, widthSegs, depthSegs);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"Grid");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"Grid");
         }
         
         [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
@@ -365,7 +365,7 @@ namespace TiltBrush
             var stencilWidget = createCommand.Widget as StencilWidget;
             var poly = EditableModelManager.m_Instance.GetPolyMesh(modelWidget);
             poly = poly.ConvexHull();
-            Mesh mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByRole);
+            Mesh mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByRole);
             var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
             collider.sharedMesh = mesh;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
@@ -387,7 +387,8 @@ namespace TiltBrush
         {
             var widget = _GetModelIdByIndex(index);
             var id = widget.GetId();
-            if (!Enum.TryParse(direction, true, out PolyMesh.Axes axis)) return;
+            Polyhydra.Core.Axis axis;
+            if (!Enum.TryParse(direction, true, out axis)) return;
             var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
             poly.ApplyNoise(axis, strength, xscale, yscale, Random.value, Random.value);
             EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
@@ -433,7 +434,7 @@ namespace TiltBrush
             var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(App.BrushColor.CurrentColor);
-            _GeneratePolyMesh(poly, _CurrentTransform(), PolyMesh.ColorMethods.ByTags,"ConvertedModel");
+            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"ConvertedModel");
         }
     }
 }

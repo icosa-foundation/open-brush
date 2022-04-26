@@ -47,10 +47,10 @@ namespace TiltBrush
             using (StreamReader reader = new StreamReader(m_path))
             {
                 var poly = new PolyMesh(reader);
-                var colMethod = PolyMesh.ColorMethods.ByTags;
+                var colMethod = ColorMethods.ByTags;
                 var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
                 EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
-                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, PolyMesh.ColorMethods.ByTags);
+                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, ColorMethods.ByTags);
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }

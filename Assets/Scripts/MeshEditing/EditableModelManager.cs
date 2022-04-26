@@ -23,7 +23,7 @@ namespace TiltBrush.MeshEditing
         private struct EditableModel
         {
             public PolyMesh polyMesh;
-            public PolyMesh.ColorMethods lastColorMethod;
+            public ColorMethods lastColorMethod;
             public List<EditableModelOperation> ops;
         }
         
@@ -66,7 +66,7 @@ namespace TiltBrush.MeshEditing
             col.size = mesh.bounds.size;
         }
 
-        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, PolyMesh.ColorMethods colorMethod)
+        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, ColorMethods colorMethod)
         {
             var id = modelGo.AddComponent<EditableModelId>();
             id.guid = Guid.NewGuid().ToString();
@@ -79,7 +79,7 @@ namespace TiltBrush.MeshEditing
             UpdateEditableMeshRegistration(id, poly, colMethod);
         }
 
-        public void UpdateEditableMeshRegistration(EditableModelId id, PolyMesh poly, PolyMesh.ColorMethods colorMethod)
+        public void UpdateEditableMeshRegistration(EditableModelId id, PolyMesh poly, ColorMethods colorMethod)
             {
             var emesh = new EditableModel();
             emesh.polyMesh = poly;
@@ -99,7 +99,7 @@ namespace TiltBrush.MeshEditing
             return m_EditableModels[guid].polyMesh;
         }
 
-        public PolyMesh.ColorMethods GetColorMethod(EditableModelId id)
+        public ColorMethods GetColorMethod(EditableModelId id)
         {
             var guid = id.guid;
             return m_EditableModels[guid].lastColorMethod;

@@ -58,12 +58,12 @@ namespace TiltBrush
                     .SelectMany(g => g.Faces)
                     .Select(f => f._vertices.Select(v=>v.VertexIndex-1));
                 var poly = new PolyMesh(verts, faceIndices);
-                var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
+                var mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByTags);
                 if (editable)
                 {
                     poly.MergeCoplanarFaces(0.01f);
                     EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
-                    EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, PolyMesh.ColorMethods.ByTags);
+                    EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, ColorMethods.ByTags);
                 }
                 else
                 {

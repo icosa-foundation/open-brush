@@ -94,10 +94,10 @@ namespace TiltBrush
             var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
             var poly = new PolyMesh(path, face);
             poly.InitTags(color);
-            _GeneratePolyMesh(poly, tr, PolyMesh.ColorMethods.ByTags, "Stroke Path");
+            _GeneratePolyMesh(poly, tr, ColorMethods.ByTags, "Stroke Path");
         }
         
-        private static void _GeneratePolyMesh(PolyMesh poly, TrTransform tr, PolyMesh.ColorMethods colMethod, string name)
+        private static void _GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, string name)
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
