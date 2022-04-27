@@ -71,13 +71,13 @@ public class SketchSurfacePanel : BasePanel {
   void Start() {
     //get all tools from our children
     m_Tools = GetComponentsInChildren<BaseTool>(true);
-
     m_ActiveToolIndex = 0;
     m_ToolSelectionAggregateValue = 0.0f;
 
     //init and then turn them all off
     for (int i = 0; i < m_Tools.Length; ++i) {
       m_Tools[i].Init();
+      Debug.Log("Initializing tool " + m_Tools[i].m_Type);
       m_Tools[i].gameObject.SetActive(false);
     }
 

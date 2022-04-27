@@ -48,7 +48,7 @@ public class App : MonoBehaviour {
   // As a minimum, you should change kAppDisplayName.
   
   // This is the name of the app, as displayed to the users running it.
-  public const string kAppDisplayName = "Open Source Tilt Brush";
+  public const string kAppDisplayName = "Tilt Brush BSc Project 39";
   // The vendor name - used for naming android builds - shouldn't have spaces.
   public const string kVendorName = "SomeCompany";
   // The vendor name - used for the company name in builds and fbx output. Can have spaces.

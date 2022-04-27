@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: concrete_lightpattern
   m_Shader: {fileID: 4800000, guid: 85879211e00239541bb63f3b43929f20, type: 3}
-  m_ShaderKeywords: _EMISSION _NORMALMAP _SPECGLOSSMAP
+  m_ShaderKeywords: _EMISSION
   m_LightmapFlags: 1
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
