@@ -5621,7 +5621,7 @@ MonoBehaviour:
   m_IntersectionResetBehavior: 2
   m_TimeSliceInMS: 1
   m_PointerForwardOffset: 0
-  m_ToolTransform: {fileID: 509619406}
+  m_ToolTransform: {fileID: 1427435344}
   m_ToolDescriptionText: {fileID: 93838084}
   m_SizeRange: {x: 0.1, y: 0.4}
   m_ToolColdMaterial: {fileID: 2100000, guid: a0fee68e9219a024f9ed7800b4ccb3f4, type: 2}
@@ -18234,10 +18234,10 @@ MonoBehaviour:
   listenerDirectivitySharpness: 1
   gainDb: 0
   occlusionEnabled: 0
-  playOnAwake: 1
+  playOnAwake: 0
   disableOnStop: 0
   sourceClip: {fileID: 8300000, guid: 57c01e7292d1a9344b49c44422dc657c, type: 3}
-  sourceLoop: 0
+  sourceLoop: 1
   sourceMute: 0
   sourcePitch: 1
   sourcePriority: 128
