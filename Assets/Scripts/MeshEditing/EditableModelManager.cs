@@ -1,33 +1,42 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
 namespace TiltBrush.MeshEditing
 {
+    public enum GeneratorTypes
+    {
+        FileSystem,
+        GeometryData,
+        Grid,
+        Polygon,
+    }
+    
     public class EditableModelManager : MonoBehaviour
     {
         public static EditableModelManager m_Instance;
 
-        private struct EditableModelOperation
+        public struct EditableModel
         {
-            public int OperationType;
-            public int Operation;
-            public List<int> intParams;
-            public List<float> floatParams;
-            public List<string> stringParams;
-        }
-        
-        private struct EditableModel
-        {
-            public PolyMesh polyMesh;
-            public ColorMethods lastColorMethod;
-            public List<EditableModelOperation> ops;
+            public GeneratorTypes GeneratorType { get;}
+            public PolyMesh PolyMesh { get; private set;}
+            public ColorMethods ColorMethod { get;}
+
+            public EditableModel(PolyMesh polyMesh, ColorMethods colorMethod, GeneratorTypes type)
+            {
+                GeneratorType = type;
+                PolyMesh = polyMesh;
+                ColorMethod = colorMethod;
+            }
+            public void SetPolyMesh(PolyMesh poly)
+            {
+                PolyMesh = poly;
+            }
         }
         
         private Dictionary<string, EditableModel> m_EditableModels;
+        public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
 
         void Awake()
         {
@@ -40,15 +49,15 @@ namespace TiltBrush.MeshEditing
             var id = widget.GetId();
             var emesh = m_EditableModels[id.guid];
             
-            emesh.polyMesh = poly;
+            emesh.SetPolyMesh(poly);
             m_EditableModels[id.guid] = emesh;
             
             var polyGo = id.gameObject;
             emesh = m_EditableModels[id.guid];
             var mat = polyGo.GetComponent<MeshRenderer>().material;
-            var mesh = poly.BuildUnityMesh(colorMethod: emesh.lastColorMethod);
+            var mesh = poly.BuildUnityMesh(colorMethod: emesh.ColorMethod);
             UpdateMesh(polyGo, mesh, mat);
-            UpdateEditableMeshRegistration(id, emesh.polyMesh, emesh.lastColorMethod);
+            UpdateEditableMeshEntry(id, emesh.PolyMesh);
         }
 
         public void UpdateMesh(GameObject polyGo, Mesh mesh, Material mat)
@@ -66,25 +75,18 @@ namespace TiltBrush.MeshEditing
             col.size = mesh.bounds.size;
         }
 
-        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, ColorMethods colorMethod)
+        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, ColorMethods colorMethod, GeneratorTypes type)
         {
             var id = modelGo.AddComponent<EditableModelId>();
             id.guid = Guid.NewGuid().ToString();
-            UpdateEditableMeshRegistration(id, poly, colorMethod);
+            var emesh = new EditableModel(poly, colorMethod, type);
+            m_EditableModels[id.guid] = emesh;
         }
 
-        public void UpdateEditableMeshRegistration(EditableModelId id, PolyMesh poly)
+        public void UpdateEditableMeshEntry(EditableModelId id, PolyMesh poly)
         {
-            var colMethod = GetColorMethod(id);
-            UpdateEditableMeshRegistration(id, poly, colMethod);
-        }
-
-        public void UpdateEditableMeshRegistration(EditableModelId id, PolyMesh poly, ColorMethods colorMethod)
-            {
-            var emesh = new EditableModel();
-            emesh.polyMesh = poly;
-            emesh.lastColorMethod = colorMethod;
-            id.guid = Guid.NewGuid().ToString();
+            var emesh = m_EditableModels[id.guid];
+            emesh.SetPolyMesh(poly);
             m_EditableModels[id.guid] = emesh;
         }
 
@@ -96,13 +98,49 @@ namespace TiltBrush.MeshEditing
         public PolyMesh GetPolyMesh(EditableModelId id)
         {
             var guid = id.guid;
-            return m_EditableModels[guid].polyMesh;
+            return m_EditableModels[guid].PolyMesh;
         }
 
         public ColorMethods GetColorMethod(EditableModelId id)
         {
             var guid = id.guid;
-            return m_EditableModels[guid].lastColorMethod;
+            return m_EditableModels[guid].ColorMethod;
+        }
+        
+        public static void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type)
+        {
+            // Create Mesh from PolyMesh
+            var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+            var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
+
+            // Create the EditableModel gameobject 
+            var polyGo = new GameObject();
+            EditableModelManager.m_Instance.UpdateMesh(polyGo, mesh, mat);
+            EditableModelManager.m_Instance.RegisterEditableMesh(polyGo, poly, colMethod, type);
+
+            // Create the widget
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var widget = createCommand.Widget as EditableModelWidget;
+            if (widget != null)
+            {
+                var model = new Model(Model.Location.Generated(polyGo.GetComponent<EditableModelId>()));
+                model.LoadEditableModel(polyGo);
+                widget.Model = model;
+                widget.Show(true);
+                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+                
+                // TODO Do we need to do this?
+                // Also see _ImportModel 
+                // WidgetManager.m_Instance.WidgetsDormant = false;
+                // SketchControlsScript.m_Instance.EatGazeObjectInput();
+                // SelectionManager.m_Instance.RemoveFromSelection(false);
+            }
+            else
+            {
+                Debug.LogWarning("Failed to create EditableModelWidget");
+            }
         }
     }
 }

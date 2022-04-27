@@ -14,7 +14,10 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -429,7 +432,7 @@ namespace TiltBrush
         public string FilePath { get; set; }
         
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string AssetId { get; set; }
+        public string AssetId { get; private set; }
         
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
@@ -459,7 +462,7 @@ namespace TiltBrush
             {
                 if (AssetId != null)
                 {
-                    return Model.Location.PolyAsset(AssetId, null);
+                    return Model.Location.Generated(AssetId);
                 }
                 else if (FilePath != null)
                 {
@@ -477,15 +480,10 @@ namespace TiltBrush
                     FilePath = value.RelativePath;
                     AssetId = null;
                 }
-                else if (value.GetLocationType() == Model.Location.Type.PolyAssetId)
-                {
-                    FilePath = null;
-                    AssetId = value.AssetId;
-                }
                 else if (value.GetLocationType() == Model.Location.Type.Generated)
                 {
                     FilePath = null;
-                    AssetId = value.AssetId;
+                    AssetId = $"{value.AssetId}";
                 }
             }
         }
@@ -734,6 +732,33 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class EditableModelDefinition
+    {
+        public EditableModelDefinition(
+            Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles, 
+            List<Roles> vertexRoles, List<List<string>> faceTags, 
+            ColorMethods colorMethod, GeneratorTypes generatorType)
+        {
+            Vertices = vertices;
+            Faces = faces;
+            FaceRoles = faceRoles;
+            VertexRoles = vertexRoles;
+            FaceTags = faceTags;
+            ColorMethod = colorMethod;
+            GeneratorType = generatorType;
+        }
+        
+        public Vector3[] Vertices { get; }
+        public List<int>[] Faces { get; }
+        public ColorMethods ColorMethod { get; }
+        public GeneratorTypes GeneratorType { get; }
+        public List<Roles> FaceRoles { get; }
+        public List<Roles> VertexRoles { get; }
+        public List<List<string>> FaceTags { get; }
+
+    }
+    
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
@@ -781,6 +806,9 @@ namespace TiltBrush
                 ThumbnailCameraTransformInRoomSpace = xf;
             }
         }
+        
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, EditableModelDefinition> EditableModelDefinitions;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int SchemaVersion { get; set; }

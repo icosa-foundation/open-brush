@@ -709,9 +709,9 @@ namespace TiltBrush
         {
             m_loadingTiltModels75 = value;
         }
-        public void SetDataFromTilt(TiltEditableModels[] value)
+        public void SetDataFromTilt(IEnumerable<TiltEditableModels> value)
         {
-            m_loadingEditableTiltModels = value;
+            m_loadingEditableTiltModels = value.ToArray();
         }
 
         // Used only at .tilt-loading time

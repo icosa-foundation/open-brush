@@ -20,6 +20,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -735,9 +737,40 @@ namespace TiltBrush
 
                     if (jsonData.EditableModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.EditableModelIndex);
+                        var generatedModels = new List<TiltEditableModels>(); 
+                        var filesystemModels = new List<TiltEditableModels>();
+                        foreach (var model in jsonData.EditableModelIndex)
+                        {
+                            if (jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            {
+                                generatedModels.Add(model);
+                            }
+                            else
+                            {
+                                filesystemModels.Add(model);
+                            }
+                        }
+                        // Queue filesystem models for loading
+                        WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
+                        Debug.Log($"{generatedModels.Count()} generatedModels, {filesystemModels.Count()} filesystemModels.");
+                        foreach (var model in generatedModels)
+                        {
+                            var emd = jsonData.EditableModelDefinitions[model.AssetId];
+                            var faceTags = new List<HashSet<Tuple<string, TagType>>>();
+                            foreach (var t in emd.FaceTags)
+                            {
+                                // var tags = new HashSet<Tuple<string, TagType>>();
+                                var tagSet = new HashSet<Tuple<string, TagType>>(t.Select(x => new Tuple<string, TagType>(x, TagType.Extrovert)).ToList());
+                                faceTags.Add(tagSet);
+                            }
+                            var poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
+                            foreach (var tr in model.RawTransforms)
+                            {
+                                EditableModelManager.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
+                            }
+                        }
                     }
-                    
+
                     if (jsonData.GuideIndex != null)
                     {
                         foreach (Guides guides in jsonData.GuideIndex)

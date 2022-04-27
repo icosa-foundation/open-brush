@@ -203,7 +203,7 @@ namespace TiltBrush
             var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(stroke.m_Color);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"StrokeMesh");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
         
         [ApiEndpoint("editablemodel.createfrom.imagewidget", "Creates a new editable model from an image widget")]
@@ -255,7 +255,7 @@ namespace TiltBrush
                 return clippedFaces.Contains(p.index);
             })));
             poly.FaceTags = faceTags;
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"Grid");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
         
         [ApiEndpoint("editablemodel.createfrom.camerapath", "Generates a filled path from a camera path")]
@@ -294,7 +294,7 @@ namespace TiltBrush
             var faces = PolyMesh.GenerateQuadStripIndices(verts.Count());
             var poly = new PolyMesh(verts, faces);
             poly.InitTags(App.BrushColor.CurrentColor);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"ConvertedCameraPath");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
         
         [ApiEndpoint("editablemodel.create.path", "Generates a filled path")]
@@ -312,14 +312,14 @@ namespace TiltBrush
         public static void CreatePolygon(int sides)
         {
             var poly = Shapes.MakePolygon(sides);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"{sides}-sided Polygon");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Polygon);
         }
 
         [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
         public static void CreateOff(string offData)
         {
             var poly = new PolyMesh(new StringReader(offData));
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, "generated off file");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
         
         [ApiEndpoint("editablemodel.create.obj", "Generates a obj from POST data")]
@@ -341,7 +341,7 @@ namespace TiltBrush
                 .SelectMany(g => g.Faces)
                 .Select(f => f._vertices.Select(v => v.VertexIndex - 1));
             var poly = new PolyMesh(verts, faceIndices);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByRole, "generated obj file");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByRole, GeneratorTypes.GeometryData);
         }
 
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
@@ -350,7 +350,7 @@ namespace TiltBrush
             var type = GridEnums.GridTypes.K_4_4_4_4;
             var shape = GridEnums.GridShapes.Plane;
             var poly = Grids.Build(type, shape, widthSegs, depthSegs);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"Grid");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Grid);
         }
         
         [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
@@ -434,7 +434,7 @@ namespace TiltBrush
             var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
             poly.InitTags(App.BrushColor.CurrentColor);
-            _GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags,"ConvertedModel");
+            EditableModelManager.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
     }
 }

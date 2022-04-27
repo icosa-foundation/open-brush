@@ -71,6 +71,20 @@ namespace TiltBrush
                     id = id.guid
                 };
             }
+            
+            public static Location Generated(string guid)
+            {
+                if (!EditableModelManager.m_Instance.EditableModels.ContainsKey(guid))
+                {
+                    Debug.LogError($"Failed to generate editable model location for id: {guid}");
+                    return new Location();
+                }
+                return new Location
+                {
+                    type = Type.Generated,
+                    id = guid
+                };
+            }
 
             /// Can return null if this is a location for a fake Model (like the ones ModelWidget
             /// assigns itself while the real Model content is in progress of being loaded).
@@ -120,7 +134,7 @@ namespace TiltBrush
 
             public override string ToString()
             {
-                if (type == Type.PolyAssetId)
+                if (type == Type.PolyAssetId || type == Type.Generated)
                 {
                     return $"{type}:{id}";
                 }

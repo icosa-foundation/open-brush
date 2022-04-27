@@ -15,6 +15,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using TiltBrush.MeshEditing;
 
 namespace TiltBrush
 {
@@ -148,6 +149,30 @@ namespace TiltBrush
             return models
                 .Concat(ModelCatalog.m_Instance.MissingModels)
                 .OrderBy(ByModelLocation).ToArray();
+        }
+
+        public static Dictionary<string, EditableModelDefinition> GetEditableModelDefinitions()
+        {
+            var dict = new Dictionary<string, EditableModelDefinition>();
+            foreach (var em in EditableModelManager.m_Instance.EditableModels)
+            {
+                if (em.Value.GeneratorType == GeneratorTypes.FileSystem) continue;
+                var polyMesh = em.Value.PolyMesh;
+                dict[em.Key] = new EditableModelDefinition
+                (
+                    polyMesh.ListVerticesByPoints(),
+                    polyMesh.ListFacesByVertexIndices(),
+                    polyMesh.FaceRoles,
+                    polyMesh.VertexRoles,
+                    polyMesh.FaceTags.Select(
+                        taglist => taglist.Select(
+                            t => t.Item1).ToList()
+                    ).ToList(),
+                    em.Value.ColorMethod,
+                    em.Value.GeneratorType
+                );
+            }
+            return dict;
         }
 
         public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)

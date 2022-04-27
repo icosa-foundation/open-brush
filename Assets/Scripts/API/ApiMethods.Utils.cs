@@ -94,45 +94,9 @@ namespace TiltBrush
             var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
             var poly = new PolyMesh(path, face);
             poly.InitTags(color);
-            _GeneratePolyMesh(poly, tr, ColorMethods.ByTags, "Stroke Path");
+            EditableModelManager.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
-        private static void _GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, string name)
-        {
-            // Create Mesh from PolyMesh
-            var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-            var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
 
-            // Create the EditableModel gameobject 
-            var polyGo = new GameObject();
-            EditableModelManager.m_Instance.UpdateMesh(polyGo, mesh, mat);
-            EditableModelManager.m_Instance.RegisterEditableMesh(polyGo, poly, colMethod);
-
-            // Create the widget
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            var widget = createCommand.Widget as EditableModelWidget;
-            if (widget != null)
-            {
-                var model = new Model(Model.Location.Generated(polyGo.GetComponent<EditableModelId>()));
-                model.LoadEditableModel(polyGo);
-                widget.Model = model;
-                widget.Show(true);
-                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
-                
-                // TODO Do we need to do this?
-                // Also see _ImportModel 
-                // WidgetManager.m_Instance.WidgetsDormant = false;
-                // SketchControlsScript.m_Instance.EatGazeObjectInput();
-                // SelectionManager.m_Instance.RemoveFromSelection(false);
-            }
-            else
-            {
-                Debug.LogWarning("Failed to create EditableModelWidget");
-            }
-        }
-        
         private static void _ApplyOp(EditableModelWidget widget, PolyMesh.Operation op, float param1 = float.NaN, float param2 = float.NaN)
         {
             var id = widget.GetId();
