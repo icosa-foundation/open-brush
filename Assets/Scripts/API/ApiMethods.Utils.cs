@@ -94,7 +94,7 @@ namespace TiltBrush
             var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
             var poly = new PolyMesh(path, face);
             poly.InitTags(color);
-            EditableModelManager.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
 
         private static void _ApplyOp(EditableModelWidget widget, PolyMesh.Operation op, float param1 = float.NaN, float param2 = float.NaN)

@@ -7,27 +7,43 @@ namespace TiltBrush.MeshEditing
 {
     public enum GeneratorTypes
     {
-        FileSystem,
-        GeometryData,
-        Grid,
-        Polygon,
+        FileSystem = 0,
+        GeometryData = 1,
+        Grid = 2,
+        Polygon = 3,
+        
+        Rotational = 4,
+        Waterman = 5,
+        Johnson = 6,
+        ConwayString = 7,
+        Wythoff = 8,
     }
     
     public class EditableModelManager : MonoBehaviour
     {
         public static EditableModelManager m_Instance;
 
+        public struct EditableModelOperation
+        {
+            public PolyMesh.Operation Operation;
+            public List<float> floatParams;
+        }
+
         public struct EditableModel
         {
             public GeneratorTypes GeneratorType { get;}
             public PolyMesh PolyMesh { get; private set;}
             public ColorMethods ColorMethod { get;}
+            public Dictionary<string, object> GeneratorParameters { get; set; }
+            // private List<EditableModelOperation> Ops;
 
-            public EditableModel(PolyMesh polyMesh, ColorMethods colorMethod, GeneratorTypes type)
+            public EditableModel(PolyMesh polyMesh, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> generatorParameters)
             {
                 GeneratorType = type;
                 PolyMesh = polyMesh;
                 ColorMethod = colorMethod;
+                GeneratorParameters = generatorParameters;
+                // Ops = ops;
             }
             public void SetPolyMesh(PolyMesh poly)
             {
@@ -75,15 +91,15 @@ namespace TiltBrush.MeshEditing
             col.size = mesh.bounds.size;
         }
 
-        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, ColorMethods colorMethod, GeneratorTypes type)
+        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> parameters=null)
         {
             var id = modelGo.AddComponent<EditableModelId>();
             id.guid = Guid.NewGuid().ToString();
-            var emesh = new EditableModel(poly, colorMethod, type);
+            var emesh = new EditableModel(poly, colorMethod, type, parameters);
             m_EditableModels[id.guid] = emesh;
         }
 
-        public void UpdateEditableMeshEntry(EditableModelId id, PolyMesh poly)
+        private void UpdateEditableMeshEntry(EditableModelId id, PolyMesh poly)
         {
             var emesh = m_EditableModels[id.guid];
             emesh.SetPolyMesh(poly);
@@ -107,7 +123,7 @@ namespace TiltBrush.MeshEditing
             return m_EditableModels[guid].ColorMethod;
         }
         
-        public static void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type)
+        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type, Dictionary<string, object> parameters=null)
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
@@ -115,8 +131,8 @@ namespace TiltBrush.MeshEditing
 
             // Create the EditableModel gameobject 
             var polyGo = new GameObject();
-            EditableModelManager.m_Instance.UpdateMesh(polyGo, mesh, mat);
-            EditableModelManager.m_Instance.RegisterEditableMesh(polyGo, poly, colMethod, type);
+            UpdateMesh(polyGo, mesh, mat);
+            RegisterEditableMesh(polyGo, poly, colMethod, type, parameters);
 
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(

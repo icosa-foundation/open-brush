@@ -735,9 +735,10 @@ namespace TiltBrush
     public class EditableModelDefinition
     {
         public EditableModelDefinition(
-            Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles, 
-            List<Roles> vertexRoles, List<List<string>> faceTags, 
-            ColorMethods colorMethod, GeneratorTypes generatorType)
+            Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
+            List<Roles> vertexRoles, List<List<string>> faceTags,
+            ColorMethods colorMethod, GeneratorTypes generatorType,
+            Dictionary<string, object> generatorParameters)
         {
             Vertices = vertices;
             Faces = faces;
@@ -746,6 +747,7 @@ namespace TiltBrush
             FaceTags = faceTags;
             ColorMethod = colorMethod;
             GeneratorType = generatorType;
+            GeneratorParameters = generatorParameters;
         }
         
         public Vector3[] Vertices { get; }
@@ -755,6 +757,7 @@ namespace TiltBrush
         public List<Roles> FaceRoles { get; }
         public List<Roles> VertexRoles { get; }
         public List<List<string>> FaceTags { get; }
+        public Dictionary<string, object> GeneratorParameters { get; }
 
     }
     

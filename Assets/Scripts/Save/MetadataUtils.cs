@@ -169,8 +169,8 @@ namespace TiltBrush
                             t => t.Item1).ToList()
                     ).ToList(),
                     em.Value.ColorMethod,
-                    em.Value.GeneratorType
-                );
+                    em.Value.GeneratorType,
+                    em.Value.GeneratorParameters);
             }
             return dict;
         }

@@ -750,23 +750,43 @@ namespace TiltBrush
                                 filesystemModels.Add(model);
                             }
                         }
+                        
                         // Queue filesystem models for loading
                         WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
-                        Debug.Log($"{generatedModels.Count()} generatedModels, {filesystemModels.Count()} filesystemModels.");
+                        
+                        // Rebuild generated models
                         foreach (var model in generatedModels)
                         {
                             var emd = jsonData.EditableModelDefinitions[model.AssetId];
-                            var faceTags = new List<HashSet<Tuple<string, TagType>>>();
-                            foreach (var t in emd.FaceTags)
+                            PolyMesh poly = null;
+                            var p = emd.GeneratorParameters;
+                            
+                            switch (emd.GeneratorType)
                             {
-                                // var tags = new HashSet<Tuple<string, TagType>>();
-                                var tagSet = new HashSet<Tuple<string, TagType>>(t.Select(x => new Tuple<string, TagType>(x, TagType.Extrovert)).ToList());
-                                faceTags.Add(tagSet);
+                                case GeneratorTypes.GeometryData:
+                                    
+                                    // TODO simplify face tag data structure
+                                    var faceTags = new List<HashSet<Tuple<string, TagType>>>();
+                                    foreach (var t in emd.FaceTags)
+                                    {
+                                        var tagSet = new HashSet<Tuple<string, TagType>>(t.Select(x => new Tuple<string, TagType>(x, TagType.Extrovert)).ToList());
+                                        faceTags.Add(tagSet);
+                                    }
+                                    poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
+                                    break;
+                                case GeneratorTypes.Grid:
+                                    poly = Grids.Build(
+                                        (GridEnums.GridTypes)Convert.ToInt32(p["type"]),
+                                        (GridEnums.GridShapes)Convert.ToInt32(p["shape"]),
+                                        Convert.ToInt32(p["xrepeats"]),
+                                        Convert.ToInt32(p["yrepeats"])
+                                    );
+                                    break;
                             }
-                            var poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
+                            
                             foreach (var tr in model.RawTransforms)
                             {
-                                EditableModelManager.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
+                                EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
                             }
                         }
                     }
