@@ -156,21 +156,36 @@ namespace TiltBrush
             var dict = new Dictionary<string, EditableModelDefinition>();
             foreach (var em in EditableModelManager.m_Instance.EditableModels)
             {
-                if (em.Value.GeneratorType == GeneratorTypes.FileSystem) continue;
-                var polyMesh = em.Value.PolyMesh;
-                dict[em.Key] = new EditableModelDefinition
-                (
-                    polyMesh.ListVerticesByPoints(),
-                    polyMesh.ListFacesByVertexIndices(),
-                    polyMesh.FaceRoles,
-                    polyMesh.VertexRoles,
-                    polyMesh.FaceTags.Select(
-                        taglist => taglist.Select(
-                            t => t.Item1).ToList()
-                    ).ToList(),
-                    em.Value.ColorMethod,
-                    em.Value.GeneratorType,
-                    em.Value.GeneratorParameters);
+                switch (em.Value.GeneratorType)
+                {
+                    case GeneratorTypes.FileSystem:
+                        break;
+                    case GeneratorTypes.Grid:
+                        dict[em.Key] = new EditableModelDefinition
+                        (
+                            em.Value.ColorMethod,
+                            em.Value.GeneratorType,
+                            em.Value.GeneratorParameters
+                        );
+                        break;
+                    case GeneratorTypes.GeometryData:
+                        var polyMesh = em.Value.PolyMesh;
+                        dict[em.Key] = new EditableModelDefinition
+                        (
+                            polyMesh.ListVerticesByPoints(),
+                            polyMesh.ListFacesByVertexIndices(),
+                            polyMesh.FaceRoles,
+                            polyMesh.VertexRoles,
+                            polyMesh.FaceTags.Select(
+                                taglist => taglist.Select(
+                                    t => t.Item1).ToList()
+                            ).ToList(),
+                            em.Value.ColorMethod,
+                            em.Value.GeneratorType,
+                            em.Value.GeneratorParameters
+                        );
+                        break;
+                }
             }
             return dict;
         }

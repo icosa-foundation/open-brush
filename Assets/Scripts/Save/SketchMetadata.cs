@@ -734,6 +734,7 @@ namespace TiltBrush
     [Serializable]
     public class EditableModelDefinition
     {
+        [JsonConstructor]
         public EditableModelDefinition(
             Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
             List<Roles> vertexRoles, List<List<string>> faceTags,
@@ -750,15 +751,23 @@ namespace TiltBrush
             GeneratorParameters = generatorParameters;
         }
         
-        public Vector3[] Vertices { get; }
-        public List<int>[] Faces { get; }
+        public EditableModelDefinition(ColorMethods colorMethod, GeneratorTypes generatorType,
+                                       Dictionary<string, object> generatorParameters)
+        {
+            ColorMethod = colorMethod;
+            GeneratorType = generatorType;
+            GeneratorParameters = generatorParameters;
+        }
+        
         public ColorMethods ColorMethod { get; }
         public GeneratorTypes GeneratorType { get; }
+        public Dictionary<string, object> GeneratorParameters { get; }
+        public Vector3[] Vertices { get; }
+        public List<int>[] Faces { get; }
         public List<Roles> FaceRoles { get; }
         public List<Roles> VertexRoles { get; }
         public List<List<string>> FaceTags { get; }
-        public Dictionary<string, object> GeneratorParameters { get; }
-
+        
     }
     
     [Serializable]
