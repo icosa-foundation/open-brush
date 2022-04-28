@@ -44,9 +44,11 @@ namespace TiltBrush
             
             var newVertices =  parentBatch.m_MeshFilter.mesh.vertices;
             for (int i = firstIdx; i < lastIdx; i++) {
-                if (Vector3.Distance(newVertices[i], m_ToolTransform.position)  < 0.5) // close enough to pointer
+                if (Vector3.Distance(newVertices[i], m_ToolTransform.position) < 0.5) // close enough to pointer
                 {
-                    Vector3 newVert = newVertices[i] + Vector3.forward * 0.2f; 
+                    // CTODO: the math is scuffed.
+                    Vector3 direction = (newVertices[i] - m_ToolTransform.position).normalized;
+                    Vector3 newVert = newVertices[i] + direction * 0.2f; 
                     newVertices[i] = newVert;
                 }
             }
