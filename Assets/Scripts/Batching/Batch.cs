@@ -26,7 +26,7 @@ public class Batch : MonoBehaviour {
   const int MAX_VERTS_HARD = 0xfffe;    // This is the Unity limit
 
   private BatchPool m_ParentPool;
-  private MeshFilter m_MeshFilter;
+  public MeshFilter m_MeshFilter; //CTODO: Used to be private. making this public might be a horrible idea
   private bool m_bVertexDataDirty;
   private bool m_bTopologyDirty;
   private GeometryPool m_Geometry;

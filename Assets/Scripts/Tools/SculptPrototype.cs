@@ -19,9 +19,12 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+
+
     public class SculptPrototype : ToggleStrokeModificationTool
     {
-          override public void Init() {
+
+        override public void Init() {
             base.Init();
             Debug.Log("Sculpt prototype initialized!");
         }
@@ -31,6 +34,24 @@ namespace TiltBrush
             // Call this after setting up our tool's state.
             base.EnableTool(bEnable);
             HideTool(!bEnable);
+        }
+
+        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
+            var stroke = rGroup.m_Stroke;
+            Batch parentBatch = rGroup.m_ParentBatch;
+            int firstIdx = rGroup.m_StartVertIndex;
+            int lastIdx = firstIdx + rGroup.m_VertLength;
+            
+            var newVertices =  parentBatch.m_MeshFilter.mesh.vertices;
+            for (int i = firstIdx; i < lastIdx; i++) {
+                if (Vector3.Distance(newVertices[i], m_ToolTransform.position)  < 0.5) // close enough to pointer
+                {
+                    Vector3 newVert = newVertices[i] + Vector3.forward * 0.2f; 
+                    newVertices[i] = newVert;
+                }
+            }
+            parentBatch.m_MeshFilter.mesh.vertices = newVertices;
+            return true;
         }
     }
 
