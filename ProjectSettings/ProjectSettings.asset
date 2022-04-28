@@ -750,7 +750,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    Android: TILT_BRUSH;OCULUS_SUPPORTED
+    Android: TILT_BRUSH
     Standalone: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
     Windows Store Apps: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
   additionalCompilerArguments: {}

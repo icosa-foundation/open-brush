@@ -135,6 +135,10 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             extraoptions: -btb-experimental
+          - name: Android OpenXR
+            targetPlatform: Android
+            vrsdk: OpenXR
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
