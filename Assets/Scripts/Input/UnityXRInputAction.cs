@@ -57,9 +57,18 @@ namespace TiltBrush
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""PadAxis"",
+                    ""name"": ""ThumbAxis"",
                     ""type"": ""Value"",
                     ""id"": ""3b226d8b-8fc0-4879-84d7-1c25db6e34b5"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""PadAxis"",
+                    ""type"": ""Value"",
+                    ""id"": ""a081885f-255a-4817-a12c-b6d9dd842582"",
                     ""expectedControlType"": ""Vector2"",
                     ""processors"": """",
                     ""interactions"": """",
@@ -168,29 +177,7 @@ namespace TiltBrush
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""PadAxis"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""5ec0d137-cf65-41f1-8e28-1f86408ec2be"",
-                    ""path"": ""<XRController>{RightHand}/touchpad"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""PadAxis"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""7dbe38a7-20a5-4b2f-8ebb-4e444d0bf8a3"",
-                    ""path"": ""<XRController>{RightHand}/trackpad"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""PadAxis"",
+                    ""action"": ""ThumbAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -201,7 +188,7 @@ namespace TiltBrush
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""PadAxis"",
+                    ""action"": ""ThumbAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -358,6 +345,373 @@ namespace TiltBrush
                     ""action"": ""PadButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f8f0b458-eaf4-48b6-b8c7-18e189a62831"",
+                    ""path"": ""<XRController>{RightHand}/touchpad"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f29e1937-1a11-4fa8-aecd-f392c83be231"",
+                    ""path"": ""<XRController>{RightHand}/trackpad"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Wand"",
+            ""id"": ""41556884-8b0f-4112-9d11-154bffb66fc5"",
+            ""actions"": [
+                {
+                    ""name"": ""TriggerAxis"",
+                    ""type"": ""Value"",
+                    ""id"": ""6f3c2146-e8c7-48df-84d4-29901c1cf05d"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""TriggerButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""0234ab5e-3ce9-4679-98a0-fc488101d967"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""TriggerTouch"",
+                    ""type"": ""Button"",
+                    ""id"": ""914734cd-5995-4916-b266-800c79239de4"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ThumbAxis"",
+                    ""type"": ""Value"",
+                    ""id"": ""e41c4f21-7ab6-4aca-b44c-c0104cf6220f"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""PadAxis"",
+                    ""type"": ""Value"",
+                    ""id"": ""ce8f3b76-f6a2-4f34-810e-0d25b17edeba"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""PadButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""92125b9c-717c-4d2b-830d-40d45f19e488"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PadTouch"",
+                    ""type"": ""Button"",
+                    ""id"": ""f719a045-3f3b-4061-a603-65486c14ac6a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""GripAxis"",
+                    ""type"": ""Value"",
+                    ""id"": ""7bce9bba-4f1b-4564-b97f-746b1703f963"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""GripButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""6e87be1c-8de3-4a76-b980-87e0915d518e"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PrimaryTouch"",
+                    ""type"": ""Button"",
+                    ""id"": ""190b2b7c-7906-43b4-8816-fce1b637abd6"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PrimaryButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""3db202da-1c68-4d82-8791-59f71c8087d4"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SecondaryTouch"",
+                    ""type"": ""Button"",
+                    ""id"": ""2e4c62b6-e52b-4df2-b25b-937c3000e9f1"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SecondaryButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""39846e4e-38e0-4d04-a16b-73a2dfa49299"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""1d36f7c4-e15f-44e6-9b43-be5aa1f31506"",
+                    ""path"": ""<XRController>{LeftHand}/trigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0628fcd0-02fd-46a5-908d-be872ee44fc1"",
+                    ""path"": ""<XRController>{LeftHand}/triggerPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""018af670-cf00-4c9d-b244-282db1a6451d"",
+                    ""path"": ""<XRController>{LeftHand}/touchpad"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""adeeb6c7-82ae-42ee-a782-3acf394099c1"",
+                    ""path"": ""<XRController>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e29be70f-1153-420f-926c-927b472a4610"",
+                    ""path"": ""<XRController>{LeftHand}/grip"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c16d376c-ec23-4bc6-9424-9296529d2793"",
+                    ""path"": ""<XRController>{LeftHand}/gripPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9731457f-5459-4529-8c6b-270417cf667e"",
+                    ""path"": ""<XRController>{LeftHand}/primaryTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""81341afd-de4e-480d-955c-6187281e6042"",
+                    ""path"": ""<XRController>{LeftHand}/secondaryTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0eff34a3-b731-49fe-b613-0ab518b11f1b"",
+                    ""path"": ""<XRController>{LeftHand}/triggerTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TriggerTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7904b06f-c66c-4f23-8f3c-0d7b0048ba88"",
+                    ""path"": ""<XRController>{LeftHand}/secondaryButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7df85a5a-db19-43e1-8a23-10289ec655db"",
+                    ""path"": ""<XRController>{LeftHand}/primaryButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""094e043e-aa39-42cc-979d-4121c9492f66"",
+                    ""path"": ""<XRController>{LeftHand}/touchpadTouch"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2c77ac70-3fc9-496e-93c8-eb8f5ea4ff4a"",
+                    ""path"": ""<XRController>{LeftHand}/trackpadTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""11ed09ea-9d13-40c3-851e-001d13a11f90"",
+                    ""path"": ""<XRController>{LeftHand}/thumbstickTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e2bda33b-a593-44d7-a4ff-9f17e469d3be"",
+                    ""path"": ""<XRController>{LeftHand}/thumbstickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7d663301-739f-4527-b71e-9e419eda5c00"",
+                    ""path"": ""<XRController>{LeftHand}/touchpadClick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d15cbbc8-5139-449a-a348-6cda45ffd92a"",
+                    ""path"": ""<XRController>{LeftHand}/joystickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9c308136-c1af-45a0-b5f5-9e804331f1ca"",
+                    ""path"": ""<XRController>{LeftHand}/trackpadClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""15d6fc3c-b403-487d-b3fb-329ad6c3c2da"",
+                    ""path"": ""<XRController>{LeftHand}/joystick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a3fb06e5-2137-4e33-977d-a229b3578b56"",
+                    ""path"": ""<XRController>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -369,6 +723,7 @@ namespace TiltBrush
             m_Brush_TriggerAxis = m_Brush.FindAction("TriggerAxis", throwIfNotFound: true);
             m_Brush_TriggerButton = m_Brush.FindAction("TriggerButton", throwIfNotFound: true);
             m_Brush_TriggerTouch = m_Brush.FindAction("TriggerTouch", throwIfNotFound: true);
+            m_Brush_ThumbAxis = m_Brush.FindAction("ThumbAxis", throwIfNotFound: true);
             m_Brush_PadAxis = m_Brush.FindAction("PadAxis", throwIfNotFound: true);
             m_Brush_PadButton = m_Brush.FindAction("PadButton", throwIfNotFound: true);
             m_Brush_PadTouch = m_Brush.FindAction("PadTouch", throwIfNotFound: true);
@@ -378,6 +733,21 @@ namespace TiltBrush
             m_Brush_PrimaryButton = m_Brush.FindAction("PrimaryButton", throwIfNotFound: true);
             m_Brush_SecondaryTouch = m_Brush.FindAction("SecondaryTouch", throwIfNotFound: true);
             m_Brush_SecondaryButton = m_Brush.FindAction("SecondaryButton", throwIfNotFound: true);
+            // Wand
+            m_Wand = asset.FindActionMap("Wand", throwIfNotFound: true);
+            m_Wand_TriggerAxis = m_Wand.FindAction("TriggerAxis", throwIfNotFound: true);
+            m_Wand_TriggerButton = m_Wand.FindAction("TriggerButton", throwIfNotFound: true);
+            m_Wand_TriggerTouch = m_Wand.FindAction("TriggerTouch", throwIfNotFound: true);
+            m_Wand_ThumbAxis = m_Wand.FindAction("ThumbAxis", throwIfNotFound: true);
+            m_Wand_PadAxis = m_Wand.FindAction("PadAxis", throwIfNotFound: true);
+            m_Wand_PadButton = m_Wand.FindAction("PadButton", throwIfNotFound: true);
+            m_Wand_PadTouch = m_Wand.FindAction("PadTouch", throwIfNotFound: true);
+            m_Wand_GripAxis = m_Wand.FindAction("GripAxis", throwIfNotFound: true);
+            m_Wand_GripButton = m_Wand.FindAction("GripButton", throwIfNotFound: true);
+            m_Wand_PrimaryTouch = m_Wand.FindAction("PrimaryTouch", throwIfNotFound: true);
+            m_Wand_PrimaryButton = m_Wand.FindAction("PrimaryButton", throwIfNotFound: true);
+            m_Wand_SecondaryTouch = m_Wand.FindAction("SecondaryTouch", throwIfNotFound: true);
+            m_Wand_SecondaryButton = m_Wand.FindAction("SecondaryButton", throwIfNotFound: true);
         }
 
         public void Dispose()
@@ -440,6 +810,7 @@ namespace TiltBrush
         private readonly InputAction m_Brush_TriggerAxis;
         private readonly InputAction m_Brush_TriggerButton;
         private readonly InputAction m_Brush_TriggerTouch;
+        private readonly InputAction m_Brush_ThumbAxis;
         private readonly InputAction m_Brush_PadAxis;
         private readonly InputAction m_Brush_PadButton;
         private readonly InputAction m_Brush_PadTouch;
@@ -456,6 +827,7 @@ namespace TiltBrush
             public InputAction @TriggerAxis => m_Wrapper.m_Brush_TriggerAxis;
             public InputAction @TriggerButton => m_Wrapper.m_Brush_TriggerButton;
             public InputAction @TriggerTouch => m_Wrapper.m_Brush_TriggerTouch;
+            public InputAction @ThumbAxis => m_Wrapper.m_Brush_ThumbAxis;
             public InputAction @PadAxis => m_Wrapper.m_Brush_PadAxis;
             public InputAction @PadButton => m_Wrapper.m_Brush_PadButton;
             public InputAction @PadTouch => m_Wrapper.m_Brush_PadTouch;
@@ -483,6 +855,9 @@ namespace TiltBrush
                     @TriggerTouch.started -= m_Wrapper.m_BrushActionsCallbackInterface.OnTriggerTouch;
                     @TriggerTouch.performed -= m_Wrapper.m_BrushActionsCallbackInterface.OnTriggerTouch;
                     @TriggerTouch.canceled -= m_Wrapper.m_BrushActionsCallbackInterface.OnTriggerTouch;
+                    @ThumbAxis.started -= m_Wrapper.m_BrushActionsCallbackInterface.OnThumbAxis;
+                    @ThumbAxis.performed -= m_Wrapper.m_BrushActionsCallbackInterface.OnThumbAxis;
+                    @ThumbAxis.canceled -= m_Wrapper.m_BrushActionsCallbackInterface.OnThumbAxis;
                     @PadAxis.started -= m_Wrapper.m_BrushActionsCallbackInterface.OnPadAxis;
                     @PadAxis.performed -= m_Wrapper.m_BrushActionsCallbackInterface.OnPadAxis;
                     @PadAxis.canceled -= m_Wrapper.m_BrushActionsCallbackInterface.OnPadAxis;
@@ -523,6 +898,9 @@ namespace TiltBrush
                     @TriggerTouch.started += instance.OnTriggerTouch;
                     @TriggerTouch.performed += instance.OnTriggerTouch;
                     @TriggerTouch.canceled += instance.OnTriggerTouch;
+                    @ThumbAxis.started += instance.OnThumbAxis;
+                    @ThumbAxis.performed += instance.OnThumbAxis;
+                    @ThumbAxis.canceled += instance.OnThumbAxis;
                     @PadAxis.started += instance.OnPadAxis;
                     @PadAxis.performed += instance.OnPadAxis;
                     @PadAxis.canceled += instance.OnPadAxis;
@@ -554,11 +932,157 @@ namespace TiltBrush
             }
         }
         public BrushActions @Brush => new BrushActions(this);
+
+        // Wand
+        private readonly InputActionMap m_Wand;
+        private IWandActions m_WandActionsCallbackInterface;
+        private readonly InputAction m_Wand_TriggerAxis;
+        private readonly InputAction m_Wand_TriggerButton;
+        private readonly InputAction m_Wand_TriggerTouch;
+        private readonly InputAction m_Wand_ThumbAxis;
+        private readonly InputAction m_Wand_PadAxis;
+        private readonly InputAction m_Wand_PadButton;
+        private readonly InputAction m_Wand_PadTouch;
+        private readonly InputAction m_Wand_GripAxis;
+        private readonly InputAction m_Wand_GripButton;
+        private readonly InputAction m_Wand_PrimaryTouch;
+        private readonly InputAction m_Wand_PrimaryButton;
+        private readonly InputAction m_Wand_SecondaryTouch;
+        private readonly InputAction m_Wand_SecondaryButton;
+        public struct WandActions
+        {
+            private @UnityXRInputAction m_Wrapper;
+            public WandActions(@UnityXRInputAction wrapper) { m_Wrapper = wrapper; }
+            public InputAction @TriggerAxis => m_Wrapper.m_Wand_TriggerAxis;
+            public InputAction @TriggerButton => m_Wrapper.m_Wand_TriggerButton;
+            public InputAction @TriggerTouch => m_Wrapper.m_Wand_TriggerTouch;
+            public InputAction @ThumbAxis => m_Wrapper.m_Wand_ThumbAxis;
+            public InputAction @PadAxis => m_Wrapper.m_Wand_PadAxis;
+            public InputAction @PadButton => m_Wrapper.m_Wand_PadButton;
+            public InputAction @PadTouch => m_Wrapper.m_Wand_PadTouch;
+            public InputAction @GripAxis => m_Wrapper.m_Wand_GripAxis;
+            public InputAction @GripButton => m_Wrapper.m_Wand_GripButton;
+            public InputAction @PrimaryTouch => m_Wrapper.m_Wand_PrimaryTouch;
+            public InputAction @PrimaryButton => m_Wrapper.m_Wand_PrimaryButton;
+            public InputAction @SecondaryTouch => m_Wrapper.m_Wand_SecondaryTouch;
+            public InputAction @SecondaryButton => m_Wrapper.m_Wand_SecondaryButton;
+            public InputActionMap Get() { return m_Wrapper.m_Wand; }
+            public void Enable() { Get().Enable(); }
+            public void Disable() { Get().Disable(); }
+            public bool enabled => Get().enabled;
+            public static implicit operator InputActionMap(WandActions set) { return set.Get(); }
+            public void SetCallbacks(IWandActions instance)
+            {
+                if (m_Wrapper.m_WandActionsCallbackInterface != null)
+                {
+                    @TriggerAxis.started -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerAxis;
+                    @TriggerAxis.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerAxis;
+                    @TriggerAxis.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerAxis;
+                    @TriggerButton.started -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerButton;
+                    @TriggerButton.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerButton;
+                    @TriggerButton.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerButton;
+                    @TriggerTouch.started -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerTouch;
+                    @TriggerTouch.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerTouch;
+                    @TriggerTouch.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnTriggerTouch;
+                    @ThumbAxis.started -= m_Wrapper.m_WandActionsCallbackInterface.OnThumbAxis;
+                    @ThumbAxis.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnThumbAxis;
+                    @ThumbAxis.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnThumbAxis;
+                    @PadAxis.started -= m_Wrapper.m_WandActionsCallbackInterface.OnPadAxis;
+                    @PadAxis.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnPadAxis;
+                    @PadAxis.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnPadAxis;
+                    @PadButton.started -= m_Wrapper.m_WandActionsCallbackInterface.OnPadButton;
+                    @PadButton.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnPadButton;
+                    @PadButton.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnPadButton;
+                    @PadTouch.started -= m_Wrapper.m_WandActionsCallbackInterface.OnPadTouch;
+                    @PadTouch.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnPadTouch;
+                    @PadTouch.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnPadTouch;
+                    @GripAxis.started -= m_Wrapper.m_WandActionsCallbackInterface.OnGripAxis;
+                    @GripAxis.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnGripAxis;
+                    @GripAxis.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnGripAxis;
+                    @GripButton.started -= m_Wrapper.m_WandActionsCallbackInterface.OnGripButton;
+                    @GripButton.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnGripButton;
+                    @GripButton.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnGripButton;
+                    @PrimaryTouch.started -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryTouch;
+                    @PrimaryTouch.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryTouch;
+                    @PrimaryTouch.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryTouch;
+                    @PrimaryButton.started -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryButton;
+                    @PrimaryButton.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryButton;
+                    @PrimaryButton.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnPrimaryButton;
+                    @SecondaryTouch.started -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryTouch;
+                    @SecondaryTouch.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryTouch;
+                    @SecondaryTouch.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryTouch;
+                    @SecondaryButton.started -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryButton;
+                    @SecondaryButton.performed -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryButton;
+                    @SecondaryButton.canceled -= m_Wrapper.m_WandActionsCallbackInterface.OnSecondaryButton;
+                }
+                m_Wrapper.m_WandActionsCallbackInterface = instance;
+                if (instance != null)
+                {
+                    @TriggerAxis.started += instance.OnTriggerAxis;
+                    @TriggerAxis.performed += instance.OnTriggerAxis;
+                    @TriggerAxis.canceled += instance.OnTriggerAxis;
+                    @TriggerButton.started += instance.OnTriggerButton;
+                    @TriggerButton.performed += instance.OnTriggerButton;
+                    @TriggerButton.canceled += instance.OnTriggerButton;
+                    @TriggerTouch.started += instance.OnTriggerTouch;
+                    @TriggerTouch.performed += instance.OnTriggerTouch;
+                    @TriggerTouch.canceled += instance.OnTriggerTouch;
+                    @ThumbAxis.started += instance.OnThumbAxis;
+                    @ThumbAxis.performed += instance.OnThumbAxis;
+                    @ThumbAxis.canceled += instance.OnThumbAxis;
+                    @PadAxis.started += instance.OnPadAxis;
+                    @PadAxis.performed += instance.OnPadAxis;
+                    @PadAxis.canceled += instance.OnPadAxis;
+                    @PadButton.started += instance.OnPadButton;
+                    @PadButton.performed += instance.OnPadButton;
+                    @PadButton.canceled += instance.OnPadButton;
+                    @PadTouch.started += instance.OnPadTouch;
+                    @PadTouch.performed += instance.OnPadTouch;
+                    @PadTouch.canceled += instance.OnPadTouch;
+                    @GripAxis.started += instance.OnGripAxis;
+                    @GripAxis.performed += instance.OnGripAxis;
+                    @GripAxis.canceled += instance.OnGripAxis;
+                    @GripButton.started += instance.OnGripButton;
+                    @GripButton.performed += instance.OnGripButton;
+                    @GripButton.canceled += instance.OnGripButton;
+                    @PrimaryTouch.started += instance.OnPrimaryTouch;
+                    @PrimaryTouch.performed += instance.OnPrimaryTouch;
+                    @PrimaryTouch.canceled += instance.OnPrimaryTouch;
+                    @PrimaryButton.started += instance.OnPrimaryButton;
+                    @PrimaryButton.performed += instance.OnPrimaryButton;
+                    @PrimaryButton.canceled += instance.OnPrimaryButton;
+                    @SecondaryTouch.started += instance.OnSecondaryTouch;
+                    @SecondaryTouch.performed += instance.OnSecondaryTouch;
+                    @SecondaryTouch.canceled += instance.OnSecondaryTouch;
+                    @SecondaryButton.started += instance.OnSecondaryButton;
+                    @SecondaryButton.performed += instance.OnSecondaryButton;
+                    @SecondaryButton.canceled += instance.OnSecondaryButton;
+                }
+            }
+        }
+        public WandActions @Wand => new WandActions(this);
         public interface IBrushActions
         {
             void OnTriggerAxis(InputAction.CallbackContext context);
             void OnTriggerButton(InputAction.CallbackContext context);
             void OnTriggerTouch(InputAction.CallbackContext context);
+            void OnThumbAxis(InputAction.CallbackContext context);
+            void OnPadAxis(InputAction.CallbackContext context);
+            void OnPadButton(InputAction.CallbackContext context);
+            void OnPadTouch(InputAction.CallbackContext context);
+            void OnGripAxis(InputAction.CallbackContext context);
+            void OnGripButton(InputAction.CallbackContext context);
+            void OnPrimaryTouch(InputAction.CallbackContext context);
+            void OnPrimaryButton(InputAction.CallbackContext context);
+            void OnSecondaryTouch(InputAction.CallbackContext context);
+            void OnSecondaryButton(InputAction.CallbackContext context);
+        }
+        public interface IWandActions
+        {
+            void OnTriggerAxis(InputAction.CallbackContext context);
+            void OnTriggerButton(InputAction.CallbackContext context);
+            void OnTriggerTouch(InputAction.CallbackContext context);
+            void OnThumbAxis(InputAction.CallbackContext context);
             void OnPadAxis(InputAction.CallbackContext context);
             void OnPadButton(InputAction.CallbackContext context);
             void OnPadTouch(InputAction.CallbackContext context);

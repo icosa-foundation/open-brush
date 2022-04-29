@@ -14,85 +14,85 @@
 
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.InputSystem;
 
 namespace TiltBrush
 {
     public class UnityXRControllerInfo : ControllerInfo
     {
-        private InputDevice device;
-        private readonly UnityXRInputAction actions;
+        private UnityEngine.XR.InputDevice device;
+        private readonly UnityXRInputAction actionSet;
 
         private Vector2 padAxisPrevious = new Vector2();
         private const float kInputScrollScalar = 0.5f;
 
+        private bool isBrush = false;
+
+        private string actionMap
+        {
+            get => isBrush ? "Brush": "Wand";
+        }
+
         public UnityXRControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
             : base(behavior)
         {
-            // XRController controller = isLeftHand ? XRController.leftHand : XRController.rightHand;
-            // foreach ( var d in controller.allControls)
-            // {
-            //     Debug.Log(d.name);
-            // }
-            //asdasd
-
+            isBrush = !isLeftHand;
             device = InputDevices.GetDeviceAtXRNode(isLeftHand ? XRNode.LeftHand : XRNode.RightHand);
-            actions = new UnityXRInputAction();
-            if (true)
+            actionSet = new UnityXRInputAction();
+            if (!isLeftHand)
             {
-                actions.Brush.Enable();
+                actionSet.Brush.Enable();
             }
+            else
+            {
+                actionSet.Wand.Enable();
+            }
+        }
+
+        private InputAction FindAction(string actionName)
+        {
+            return actionSet.asset.FindActionMap($"{actionMap}").FindAction($"{actionName}");
         }
 
         public override bool IsTrackedObjectValid
         {
-            get
-            {
-                return device.isValid;
-            }
+            get => device.isValid;
             set
             {
-
+                
             }
         }
 
         public override Vector2 GetPadValue()
         {
-            //return actions.Brush.PadAxis.ReadValue<Vector2>();
             return GetThumbStickValue();
         }
 
         public override Vector2 GetThumbStickValue()
         {
-            return actions.Brush.PadAxis.ReadValue<Vector2>();
-            // if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
-            // {
-            //     return thumbStickValue;
-            // }
-
-            // return new Vector2();
+            return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
         public override Vector2 GetPadValueDelta()
         {
-            if (false)
+            var action = FindAction("ThumbAxis");
+            if (action.inProgress)
             {
-                if (actions.Brush.PadAxis.inProgress)
-                {
-                    Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                    Vector2 stick = actions.Brush.PadAxis.ReadValue<Vector2>();
-                    return new Vector2(Mathf.Clamp(stick.x, range.x, range.y), Mathf.Clamp(stick.y, range.x, range.y));
-                }
+                Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
+                Vector2 stick = action.ReadValue<Vector2>();
+                return new Vector2(Mathf.Clamp(stick.x, range.x, range.y), Mathf.Clamp(stick.y, range.x, range.y));
             }
             else
             {
-                if (!actions.Brush.PadAxis.inProgress)
+                action = FindAction("PadAxis");
+                if (!action.inProgress)
                 {
                     padAxisPrevious = Vector2.zero;
                     return padAxisPrevious;
                 }
 
                 Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                Vector2 padAxisCurrent = actions.Brush.PadAxis.ReadValue<Vector2>();
+                Vector2 padAxisCurrent = action.ReadValue<Vector2>();
 
                 if (padAxisPrevious == Vector2.zero)
                 {
@@ -105,10 +105,6 @@ namespace TiltBrush
                 delta.x = Mathf.Clamp(delta.x, range.x, range.y);
                 delta.y = Mathf.Clamp(delta.y, range.x, range.y);
                 return delta * kInputScrollScalar;
-
-                // var newState = actions.Brush.PadAxis.ReadValue<Vector2>();
-                // padAxisState = newState;
-                // return delta;
             }
             return Vector2.zero;
         }
@@ -116,31 +112,16 @@ namespace TiltBrush
         public override float GetScrollXDelta()
         {
             return GetPadValueDelta().x;
-            // if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
-            // {
-            //     return thumbStickValue.x;
-            // }
-            // return 0.0f;
         }
 
         public override float GetScrollYDelta()
         {
             return GetPadValueDelta().y;
-            // if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out var thumbStickValue))
-            // {
-            //     return thumbStickValue.y;
-            // }
-            // return 0.0f;
         }
 
         public override float GetGripValue()
         {
-            return actions.Brush.GripAxis.ReadValue<float>();
-            // if (device.TryGetFeatureValue(CommonUsages.grip, out var gripValue))
-            // {
-            //     return gripValue;
-            // }
-            // return 0.0f;
+            return FindAction("GripAxis").ReadValue<float>();
         }
 
         public override float GetTriggerRatio()
@@ -150,12 +131,7 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
-            return actions.Brush.TriggerAxis.ReadValue<float>();
-            // if (device.TryGetFeatureValue(CommonUsages.trigger, out var triggerValue))
-            // {
-            //     return triggerValue;
-            // }
-            // return 0.0f;
+            return FindAction("TriggerAxis").ReadValue<float>();
         }
 
         private bool MapVrTouch(VrInput input)
@@ -165,31 +141,15 @@ namespace TiltBrush
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-                    return actions.Brush.PrimaryTouch.inProgress;
-                // if (device.TryGetFeatureValue(CommonUsages.primaryTouch, out var primaryTouch))
-                // {
-                //     return primaryTouch;
-                // }
-                // break;
-
+                    return FindAction("PrimaryTouch").inProgress;
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    return actions.Brush.SecondaryTouch.inProgress;
-                // if (device.TryGetFeatureValue(CommonUsages.secondaryTouch, out var secondaryTouch))
-                // {
-                //     return secondaryTouch;
-                // }
-                // break;
+                    return FindAction("SecondaryTouch").inProgress;
+                case VrInput.Touchpad:
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                case VrInput.Touchpad:
-                    return actions.Brush.PadTouch.inProgress;
-                    // if (device.TryGetFeatureValue(CommonUsages.primary2DAxisTouch, out var primary2DAxisTouch))
-                    // {
-                    //     return primary2DAxisTouch;
-                    // }
-                    // break;
+                    return FindAction("PadTouch").inProgress;
             }
             return false;
         }
@@ -207,48 +167,19 @@ namespace TiltBrush
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
                 case VrInput.Touchpad:
-                    return actions.Brush.PadButton.IsPressed();
-                // if (device.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out var primaryThumbstick))
-                // {
-                //     return primaryThumbstick;
-                // }
-                // break;
-
+                    return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
-                    return actions.Brush.TriggerButton.IsPressed();
-                // if (device.TryGetFeatureValue(CommonUsages.triggerButton, out var triggerButton))
-                // {
-                //     return triggerButton;
-                // }
-                // break;
-
+                    return FindAction("TriggerButton").IsPressed();
                 case VrInput.Grip:
-                    return actions.Brush.GripButton.IsPressed();
-                // if (device.TryGetFeatureValue(CommonUsages.gripButton, out var gripButton))
-                // {
-                //     return gripButton;
-                // }
-                // break;
-
+                    return FindAction("GripButton").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button06:
-                    return actions.Brush.PrimaryButton.IsPressed();
-                // if (device.TryGetFeatureValue(CommonUsages.primaryButton, out var primaryButton))
-                // {
-                //     return primaryButton;
-                // }
-                // break;
-
+                    return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button04:
                 case VrInput.Button05:
-                    return actions.Brush.SecondaryButton.IsPressed();
-                    // if (device.TryGetFeatureValue(CommonUsages.secondaryButton, out var secondaryButton))
-                    // {
-                    //     return secondaryButton;
-                    // }
-                    // break;
+                    return FindAction("SecondaryButton").IsPressed();
             }
             return false;
         }
@@ -262,64 +193,35 @@ namespace TiltBrush
 
         private bool MapVrInputPerFrame(VrInput input, bool down)
         {
-            UnityEngine.InputSystem.InputAction selectedAction = null;
+            string selectedAction = string.Empty;
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
                 case VrInput.Touchpad:
-                    selectedAction = actions.Brush.PadButton;
+                    selectedAction = "PadButton";
                     break;
-                // if (device.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out var primaryThumbstick))
-                // {
-                //     return primaryThumbstick;
-                // }
-                // break;
-
                 case VrInput.Trigger:
-                    selectedAction = actions.Brush.TriggerButton;
+                    selectedAction = "TriggerButton";
                     break;
-                // if (device.TryGetFeatureValue(CommonUsages.triggerButton, out var triggerButton))
-                // {
-                //     return triggerButton;
-                // }
-                // break;
-
                 case VrInput.Grip:
-                    selectedAction = actions.Brush.GripButton;
+                    selectedAction = "GripButton";
                     break;
-                // if (device.TryGetFeatureValue(CommonUsages.gripButton, out var gripButton))
-                // {
-                //     return gripButton;
-                // }
-                // break;
-
                 case VrInput.Button01:
                 case VrInput.Button06:
-                    selectedAction = actions.Brush.PrimaryButton;
+                    selectedAction = "PrimaryButton";
                     break;
-                // if (device.TryGetFeatureValue(CommonUsages.primaryButton, out var primaryButton))
-                // {
-                //     return primaryButton;
-                // }
-                // break;
-
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button04:
                 case VrInput.Button05:
-                    selectedAction = actions.Brush.SecondaryButton;
+                    selectedAction = "SecondaryButton";
                     break;
-                    // if (device.TryGetFeatureValue(CommonUsages.secondaryButton, out var secondaryButton))
-                    // {
-                    //     return secondaryButton;
-                    // }
-                    // break;
             }
 
-            if (selectedAction != null)
+            if (!string.IsNullOrEmpty(selectedAction))
             {
-                return down ? selectedAction.WasPressedThisFrame() : selectedAction.WasReleasedThisFrame();
+                return down ? FindAction(selectedAction).WasPressedThisFrame() : FindAction(selectedAction).WasReleasedThisFrame();
             }
             return false;
         }
