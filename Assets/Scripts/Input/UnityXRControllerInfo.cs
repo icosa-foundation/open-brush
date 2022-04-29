@@ -30,7 +30,7 @@ namespace TiltBrush
 
         private string actionMap
         {
-            get => isBrush ? "Brush": "Wand";
+            get => isBrush ? "Brush" : "Wand";
         }
 
         public UnityXRControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
@@ -59,7 +59,7 @@ namespace TiltBrush
             get => device.isValid;
             set
             {
-                
+
             }
         }
 
