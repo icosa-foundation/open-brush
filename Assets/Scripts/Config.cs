@@ -263,15 +263,6 @@ namespace TiltBrush
         [NonSerialized] public bool m_OdsCollapseIpd = true;
         [NonSerialized] public float m_OdsTurnTableDegrees = 0.0f;
 
-#if UNITY_EDITOR
-        [Header("Editor-only")]
-        // Force use of a particular controller geometry, for testing
-        [Tooltip("Set this to a prefab in Assets/Prefabs/VrSystems/VrControllers/OVR")]
-        public GameObject m_ControlsPrefabOverrideOvr;
-        [Tooltip("Set this to a prefab in Assets/Prefabs/VrSystems/VrControllers/SteamVr")]
-        public GameObject m_ControlsPrefabOverrideSteamVr;
-#endif
-
         [Header("Versioning")]
         public string m_VersionNumber; // eg "17.0b", "18.3"
         public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "(menuitem)"

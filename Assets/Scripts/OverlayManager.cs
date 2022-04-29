@@ -16,9 +16,6 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-#if !OCULUS_SUPPORTED
-using OVROverlay = UnityEngine.MonoBehaviour;
-#endif // !OCULUS_SUPPORTED
 
 namespace TiltBrush
 {

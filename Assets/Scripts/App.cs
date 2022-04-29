@@ -611,7 +611,7 @@ namespace TiltBrush
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
-            if (VrSdk.GetHmdDof() == TiltBrush.VrSdk.DoF.None)
+            if (VrSdk.GetHmdDof() == VrSdk.DoF.None)
             {
                 Application.targetFrameRate = m_TargetFrameRate;
             }

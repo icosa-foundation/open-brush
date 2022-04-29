@@ -15,9 +15,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if !OCULUS_SUPPORTED
-using OVROverlay = UnityEngine.MonoBehaviour;
-#endif // !OCULUS_SUPPORTED
 using UnityEngine.XR;
 
 namespace TiltBrush
@@ -196,43 +193,36 @@ namespace TiltBrush
 
             // adding components to the VR Camera needed for fading view and getting controller poses.
             m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
-            m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
 
             //Add an OVRCameraRig to the VrSystem for Mixed Reality Capture.
             var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
 #endif // OCULUS_SUPPORTED
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
+                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+                if (!tryGetUnityXRController.isValid)
+                {
+                    // Try the right hand instead
+                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+                }
 
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // ---------------------------------------------------------------------------------------- //
-            //     // SteamVR
-            //     // ---------------------------------------------------------------------------------------- //
-            //     // SteamVR_Render needs to be instantiated from our version of the prefab before any other
-            //     // SteamVR objects are instantiated because otherwise, those other objects will instantiate
-            //     // their own version of SteamVR_Render, which won't have the same connections as our prefab.
-            //     // Ideally, this instantiation would occur in a place that is guaranteed to happen first but
-            //     // since we don't have an appropriate place for that now, it's being placed right before the
-            //     // first call that would otherwise instantiate it.
-            //     // Instantiate(App.Config.m_SteamVrRenderPrefab);
-            //     if (App.Config.VrHardware == VrHardware.Rift)
-            //     {
-            //         SetControllerStyle(ControllerStyle.OculusTouch);
-            //     }
-            //     else if (App.Config.VrHardware == VrHardware.Wmr)
-            //     {
-            //         SetControllerStyle(ControllerStyle.Wmr);
-            //     }
-            //     else
-            //     {
-            //         SetControllerStyle(ControllerStyle.InitializingUnityXR);
-            //     }
-            //     // TODO:Mike - Did SteamVR need to have some special component on the camera?
-            //     // m_VrCamera.gameObject.AddComponent<SteamVR_Camera>();
-            // }
-            //else 
-            if (App.Config.m_SdkMode == SdkMode.Gvr)
+                // @bill - I don't believe this will ever be valid under UnityXR as I believe the devices are
+                //         registered after Awake()
+                if (!tryGetUnityXRController.isValid)
+                {
+                    // Leave for when UnityXR is ready.
+                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
+                }
+                else
+                {
+                    SetUnityXRControllerStyle(tryGetUnityXRController);
+                }
+            }
+            else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 // ---------------------------------------------------------------------------------------- //
                 // GoogleVR
@@ -260,29 +250,6 @@ namespace TiltBrush
 #endif
                 // Custom controls parenting for GVR.
                 m_VrControls.transform.parent = m_VrCamera.transform.parent;
-            }
-            else if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
-                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
-                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Try the right hand instead
-                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-                }
-
-                // @bill - I don't believe this will ever be valid under UnityXR as I believe the devices are
-                //         registered after Awake()
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Leave for when UnityXR is ready.
-                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
-                }
-                else
-                {
-                    SetUnityXRControllerStyle(tryGetUnityXRController);
-                }
             }
             else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
@@ -324,7 +291,6 @@ namespace TiltBrush
             //     // };
             // }
 #if OCULUS_SUPPORTED
-            OculusHandTrackingManager.NewPosesApplied += OnNewPoses;
             // We shouldn't call this frequently, hence the local cache and callbacks.
             OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
             OVRManager.VrFocusLost += () => { OnInputFocus(false); };
@@ -357,10 +323,6 @@ namespace TiltBrush
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
             }
-
-#if OCULUS_SUPPORTED
-            OculusHandTrackingManager.NewPosesApplied -= OnNewPoses;
-#endif // OCULUS_SUPPORTED
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -455,13 +417,6 @@ namespace TiltBrush
 #else // OCULUS_SUPPORTED
 
             return null;
-#endif // OCULUS_SUPPORTED
-        }
-
-        public void ResetPerfStats()
-        {
-#if OCULUS_SUPPORTED
-                OVRPlugin.ResetAppPerfStats();
 #endif // OCULUS_SUPPORTED
         }
 
@@ -691,38 +646,6 @@ namespace TiltBrush
                     break;
             }
 
-#if UNITY_EDITOR
-            // This is _just_ robust enough to be able to switch between the Rift and Touch
-            // controllers. To force (for example) a Wmr controller when using a Touch will
-            // probably require being able to specify an override style as well, because TB
-            // might act funny if we spawn a Wmr prefab with style OculusTouch.
-            // TODO:Mike - the above comment might be why our UnityXR SdkMode has issues on Quest!
-
-            // Additionally, the Logitech Pen override happens after this, so there's no way
-            // to override it.
-
-            // Wait for the "real" SetControllerStyle to come through.
-            //if (style != ControllerStyle.InitializingSteamVR)
-            if (style != ControllerStyle.InitializingUnityXR)
-            {
-                GameObject overridePrefab = null;
-                // switch (App.Config.m_SdkMode)
-                // {
-                //     case SdkMode.SteamVR:
-                //         overridePrefab = App.Config.m_ControlsPrefabOverrideSteamVr;
-                //         break;
-                // }
-#if OCULUS_SUPPORTED
-                overridePrefab = App.Config.m_ControlsPrefabOverrideOvr;
-#endif
-                if (overridePrefab != null)
-                {
-                    Debug.LogWarning("Overriding Vr controls with {0}", overridePrefab);
-                    controlsPrefab = overridePrefab;
-                }
-            }
-#endif
-
             if (controlsPrefab != null)
             {
                 Debug.Assert(m_VrControls == null);
@@ -768,11 +691,6 @@ namespace TiltBrush
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
             }
-            // TODO:Mike - Is there anything oculus specific we need to incorporate into UnityXRControllerInfo?
-            // else if (App.Config.m_SdkMode == SdkMode.Oulus)
-            // {
-            //     return new OculusControllerInfo(behavior, isLeftHand);
-            // }
             /*else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 return new GvrControllerInfo(behavior, isLeftHand);
@@ -791,49 +709,12 @@ namespace TiltBrush
         public bool TrySwapLeftRightTracking()
         {
             bool leftRightSwapped = true;
-#if OCULUS_SUPPORTED
-                VrControls.GetComponent<OculusHandTrackingManager>().SwapLeftRight();
-                return leftRightSwapped;
-#endif
-            // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? ^
+
+            // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 leftRightSwapped = false;
             }
-            // else if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // Don't swap controller input sources while we're initializing because it screws up
-            //     // the actions when the proper controllers are instantiated.
-            //     // TODO : Figure out why this screws up and fix it.  Note that this is
-            //     // unnecessary unless we support hot-swapping of controller types.
-            //     if (!IsInitializingSteamVr)
-            //     {
-            //         BaseControllerBehavior[] behaviors = VrControls.GetBehaviors();
-            //         for (int i = 0; i < behaviors.Length; ++i)
-            //         {
-            //             SteamVR_Behaviour_Pose pose = behaviors[i].GetComponent<SteamVR_Behaviour_Pose>();
-            //             switch (pose.inputSource)
-            //             {
-            //                 case SteamVR_Input_Sources.LeftHand:
-            //                     pose.inputSource = SteamVR_Input_Sources.RightHand;
-            //                     break;
-            //                 case SteamVR_Input_Sources.RightHand:
-            //                     pose.inputSource = SteamVR_Input_Sources.LeftHand;
-            //                     break;
-            //                 default:
-            //                     Debug.LogWarningFormat(
-            //                         "Controller is configured as {0}.  Should be LeftHand or RightHand.",
-            //                         pose.inputSource);
-            //                     break;
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         // Don't commit to swapping controller styles.
-            //         leftRightSwapped = false;
-            //     }
-            // }
             else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 var tmp = InputManager.Controllers[0];
@@ -1174,12 +1055,6 @@ namespace TiltBrush
                 // Now just return true and hope for the best.
                 return true;
             }
-#if OCULUS_SUPPORTED
-            else if (!OVRManager.isHmdPresent)
-            {
-                return false;
-            }
-#endif // OCULUS_SUPPORTED
 
             /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
               return false;

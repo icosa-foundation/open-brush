@@ -70,7 +70,7 @@ namespace TiltBrush
             // Oculus only computes cumulative frames dropped, so we reset the perf stats
             // each frame after recording.
 #if OCULUS_SUPPORTED
-                App.VrSdk.ResetPerfStats();
+                OVRPlugin.ResetAppPerfStats();
 #endif // OCULUS_SUPPORTED
         }
 
