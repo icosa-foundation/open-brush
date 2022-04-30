@@ -857,7 +857,7 @@ static class BuildTiltBrush
             target = BuildTarget.StandaloneWindows64;
         }
 
-        if(target == BuildTarget.Android)
+        if (target == BuildTarget.Android)
         {
             EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Debugging;
         }
@@ -997,11 +997,11 @@ static class BuildTiltBrush
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
 
-            switch(tiltOptions.XrSdk)
+            switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Oculus:
                     requiredFeatures.Add("com.oculus.openxr.feature.oculusxr");
-                    if(m_targetGroup == BuildTargetGroup.Android)
+                    if (m_targetGroup == BuildTargetGroup.Android)
                     {
                         requiredFeatures.Add("com.unity.openxr.feature.oculusquest");
                     }
@@ -1009,12 +1009,15 @@ static class BuildTiltBrush
             }
 
             // Locate and enable features, fail if not found.
-            foreach(string requiredFeature in requiredFeatures)
+            foreach (string requiredFeature in requiredFeatures)
             {
                 var foundFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeature);
-                if(foundFeature == null)
+                if (foundFeature == null)
+                {
                     Die(6, "Could not find required OpenXR Feature \"{0}\"", requiredFeature);
-                if(!foundFeature.enabled)
+                }
+
+                if (!foundFeature.enabled)
                 {
                     // TODO: This is as good as we can do without the API suggested below to 'restore' the state.
                     m_FeaturesNotEnabled.Add(foundFeature);
@@ -1028,7 +1031,7 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
-            foreach(var feature in m_FeaturesNotEnabled)
+            foreach (var feature in m_FeaturesNotEnabled)
             {
                 feature.enabled = false;
             }
@@ -1044,11 +1047,11 @@ static class BuildTiltBrush
         {
             string[] targetXrPluginsRequired;
 
-            switch(tiltOptions.XrSdk)
+            switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Oculus:
                 case XrSdkMode.OpenXR:
-                    targetXrPluginsRequired = new string[] {"UnityEngine.XR.OpenXR.OpenXRLoader"};
+                    targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
                 default:
                     return;
