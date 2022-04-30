@@ -114,10 +114,11 @@ static class BuildTiltBrush
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
 
+#if OCULUS_SUPPORTED
             // Oculus
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.Android),
-
+#endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
 
@@ -713,15 +714,12 @@ static class BuildTiltBrush
         string keystorePass = Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS");
         string keyaliasPass = Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS");
 
-
 #if OCULUS_SUPPORTED
         // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
         // [UnityEditor.InitializeOnLoad], but in case they're missing, like in CI, make sure they're
         // there!
         OVRProjectConfig defaultOculusProjectConfig = OVRProjectConfig.GetProjectConfig();
         string useless_app_id = Assets.Oculus.VR.Editor.OVRPlatformToolSettings.AppID;
-
-        EditorUserBuildSettings.androidCreateSymbolsZip = true;
 #endif
 
         {
@@ -859,6 +857,11 @@ static class BuildTiltBrush
             target = BuildTarget.StandaloneWindows64;
         }
 
+        if(target == BuildTarget.Android)
+        {
+            EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Debugging;
+        }
+
         tiltOptions.Target = target.Value;
         using (var unused = new TempSetCommandLineOnlyPlayerSettings(
             keystoreName, keystorePass,
@@ -982,36 +985,77 @@ static class BuildTiltBrush
         }
     }
 
-    class TempSetXrPlugins : IDisposable
+    class TempSetOpenXrFeatureGroup : IDisposable
+    {
+        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> m_FeaturesNotEnabled;
+        readonly BuildTargetGroup m_targetGroup;
+
+        public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
+        {
+            List<string> requiredFeatures = new();
+            m_FeaturesNotEnabled = new();
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
+
+            switch(tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Oculus:
+                    requiredFeatures.Add("com.oculus.openxr.feature.oculusxr");
+                    if(m_targetGroup == BuildTargetGroup.Android)
+                    {
+                        requiredFeatures.Add("com.unity.openxr.feature.oculusquest");
+                    }
+                    break;
+            }
+
+            // Locate and enable features, fail if not found.
+            foreach(string requiredFeature in requiredFeatures)
+            {
+                var foundFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeature);
+                if(foundFeature == null)
+                    Die(6, "Could not find required OpenXR Feature \"{0}\"", requiredFeature);
+                if(!foundFeature.enabled)
+                {
+                    // TODO: This is as good as we can do without the API suggested below to 'restore' the state.
+                    m_FeaturesNotEnabled.Add(foundFeature);
+                    foundFeature.enabled = true;
+                }
+            }
+
+            // TODO: There currently isn't a way to get a list of all features for target group without giving it a list of known feature IDs.
+            // I'm not sure if we need it but we may need to disable all other non-required features per SdkMode.
+        }
+
+        public void Dispose()
+        {
+            foreach(var feature in m_FeaturesNotEnabled)
+            {
+                feature.enabled = false;
+            }
+        }
+    }
+
+    class TempSetXrPlugin : IDisposable
     {
         List<XRLoader> m_plugins;
         BuildTargetGroup m_targetGroup;
 
-        public TempSetXrPlugins(TiltBuildOptions tiltOptions, string[] targetXrPluginsRequired)
+        public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
-            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            string[] targetXrPluginsRequired;
 
-            // @bill - We currently need to uninstall the OpenXR plugin when building Oculus for Android. Gradle breaks. Find alternative solution.
-            if (tiltOptions.XrSdk == XrSdkMode.Oculus && m_targetGroup == BuildTargetGroup.Android)
+            switch(tiltOptions.XrSdk)
             {
-                if (XRSettings.supportedDevices.Any(s => s == "OpenXR Input"))
-                    throw new BuildFailedException("Please uninstall the OpenXR plugin, it is incompatible with the OculusXR plugin on Android.");
+                case XrSdkMode.Oculus:
+                case XrSdkMode.OpenXR:
+                    targetXrPluginsRequired = new string[] {"UnityEngine.XR.OpenXR.OpenXRLoader"};
+                    break;
+                default:
+                    return;
             }
 
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
-
-            // TODO:Mike - perhaps a bit verbose - needed if we've definitely got a settings manager committed?
-            // if (targetSettings == null)
-            // {
-            //     targetSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
-            //     EditorBuildSettings.TryGetConfigObject<XRGeneralSettingsPerBuildTarget>(XRGeneralSettings.k_SettingsKey, out var buildTargetSettings);
-            // }
-
-            // if(targetSettings.Manager == null)
-            // {
-            //     var managerSettings = ScriptableObject.CreateInstance<XRManagerSettings>();
-            //     targetSettings.Manager = managerSettings;
-            // }
 
             m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
             // Remove unwanted loaders
@@ -1304,18 +1348,6 @@ static class BuildTiltBrush
             options == BuildOptions.None ? "None" : options.ToString());
 
         var copyRequests = new List<CopyRequest>(kToCopy);
-        string[] targetXrPluginsRequired;
-
-        switch (xrSdk)
-        {
-            case XrSdkMode.OpenXR:
-            default:
-                targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
-                break;
-            case XrSdkMode.Oculus:
-                targetXrPluginsRequired = new string[] { "UnityEngine.XR.Oculus.OculusLoader" };
-                break;
-        }
 
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
@@ -1326,7 +1358,6 @@ static class BuildTiltBrush
             ? StereoRenderingPath.SinglePass : StereoRenderingPath.MultiPass))
         using (var unused3 = new TempDefineSymbols(
             target,
-            tiltOptions.XrSdk == XrSdkMode.Oculus ? "OCULUS_SUPPORTED" : null,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
             tiltOptions.Experimental ? "EXPERIMENTAL_ENABLED" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
@@ -1334,7 +1365,8 @@ static class BuildTiltBrush
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
-        using (var unused7 = new TempSetXrPlugins(tiltOptions, targetXrPluginsRequired))
+        using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
                 "ProjectSettings/GraphicsSettings.asset")))
@@ -1615,27 +1647,8 @@ static class BuildTiltBrush
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
                 {
+                    // Not used right now
                     looseFilesDest = Path.GetDirectoryName(path);
-                    // TODO:Mike - OCULUS_SUPPORTED may not be available/set depending on how we construct the build pipeline.
-                    // Should we bind the SdkMode in the PostBuildInfo above?
-                    if (info.xrSdk == XrSdkMode.Oculus)
-                    {
-                        // TODO:Mike - do we even have openvr dlls anymore?
-                        //      - @bill - I think these should be gone with SteamVR being removed, but they are benign for now.
-                        // Will Oculus complain about OpenXR dlls instead?
-                        // Oculus will reject submissions that have openvr dlls
-                        string openvrDll = Path.Combine(Path.Combine(dataDir, "Plugins"), "openvr_api.dll");
-                        if (File.Exists(openvrDll))
-                        {
-                            FileUtil.DeleteFileOrDirectory(openvrDll);
-                        }
-                        string openvrDll64 = Path.Combine(Path.Combine(dataDir, "Plugins", "x86_64"), "openvr_api.dll");
-                        if (File.Exists(openvrDll64))
-                        {
-                            FileUtil.DeleteFileOrDirectory(openvrDll64);
-                        }
-                    }
-
 
                     break;
                 }
