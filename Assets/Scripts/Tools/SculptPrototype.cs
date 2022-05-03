@@ -43,7 +43,7 @@ namespace TiltBrush
             int firstIdx = rGroup.m_StartVertIndex;
             int lastIdx = firstIdx + rGroup.m_VertLength;
             
-            var newVertices =  parentBatch.m_MeshFilter.mesh.vertices;
+            var newVertices =  parentBatch.m_Geometry.m_Vertices;
             var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
             for (int i = firstIdx; i < lastIdx; i++) {
                 if (Vector3.Distance(newVertices[i], toolPos) < 0.5) // close enough to pointer
@@ -54,7 +54,9 @@ namespace TiltBrush
                     newVertices[i] = newVert;
                 }
             }
-            parentBatch.m_MeshFilter.mesh.vertices = newVertices;
+            Debug.Log("Sculpting modification made");
+            parentBatch.m_Geometry.m_Vertices = newVertices;
+            parentBatch.DelayedUpdateMesh();
             return true;
         }
     }

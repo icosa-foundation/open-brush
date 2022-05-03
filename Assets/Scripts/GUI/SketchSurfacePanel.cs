@@ -77,7 +77,6 @@ public class SketchSurfacePanel : BasePanel {
     //init and then turn them all off
     for (int i = 0; i < m_Tools.Length; ++i) {
       m_Tools[i].Init();
-      Debug.Log("Initializing tool " + m_Tools[i].m_Type);
       m_Tools[i].gameObject.SetActive(false);
     }
 

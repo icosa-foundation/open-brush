@@ -5623,7 +5623,7 @@ MonoBehaviour:
   m_PointerForwardOffset: 0
   m_ToolTransform: {fileID: 1427435344}
   m_ToolDescriptionText: {fileID: 93838084}
-  m_SizeRange: {x: 0.1, y: 0.4}
+  m_SizeRange: {x: 0.1, y: 2}
   m_ToolColdMaterial: {fileID: 2100000, guid: a0fee68e9219a024f9ed7800b4ccb3f4, type: 2}
   m_ToolHotMaterial: {fileID: 2100000, guid: 8edcc1cc602f51b4b8195cfcd465578e, type: 2}
   m_HapticInterval: 0.1
@@ -8362,7 +8362,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 509619405}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: 6d46d4696180d094389928219008da34, type: 3}
 --- !u!114 &511823185
 MonoBehaviour:
   m_ObjectHideFlags: 0

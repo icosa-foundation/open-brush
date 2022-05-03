@@ -1,0 +1,17 @@
+{
+    "name": "Oculus.VR.Scripts.Editor",
+    "references": [
+        "Oculus.VR",
+        "Oculus.VR.Editor"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
