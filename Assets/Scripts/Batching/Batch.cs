@@ -256,7 +256,6 @@ public class Batch : MonoBehaviour {
   }
 
   public void DelayedUpdateMesh() {
-    Debug.Log("Batch::DelayedUpdateMesh() called");
     // Mark it dirty and it'll get taken care of later unless we're inactive.
     m_bVertexDataDirty = true;
     m_bTopologyDirty = true;
@@ -274,7 +273,6 @@ public class Batch : MonoBehaviour {
   }
 
   void UpdateMesh() {
-    Debug.Log("Batch::UpdateMesh Called");
     // Intro sketch is weird and has Batch components with no parents, m_Geometry, etc
     if (m_ParentPool == null) {
       return;
@@ -282,7 +280,6 @@ public class Batch : MonoBehaviour {
 
     SelfCheck();
     if (m_bVertexDataDirty) {
-      Debug.Log("Dirty update!");
       // Making !resident clears dirtiness; and adding dirtiness requires resident.
       Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
       m_bVertexDataDirty = false;
@@ -321,7 +318,6 @@ public class Batch : MonoBehaviour {
   /// Pass:
   ///   rMasterBrush - Geometry, all of which will be copied into the new subset
   public BatchSubset AddSubset(int nVert, int nTris, MasterBrush rMasterBrush) {
-    Debug.Log("Batch::AddSubset() called");
     SelfCheck();
     // If we're not empty, the caller should never have tried to add the subset,
     // because it's caller's responsibility to check HasSpaceFor().

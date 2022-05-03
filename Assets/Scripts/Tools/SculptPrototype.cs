@@ -38,17 +38,25 @@ namespace TiltBrush
         }
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
+            // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
             Batch parentBatch = rGroup.m_ParentBatch;
             int firstIdx = rGroup.m_StartVertIndex;
             int lastIdx = firstIdx + rGroup.m_VertLength;
             
             var newVertices =  parentBatch.m_Geometry.m_Vertices;
+            // Tool position adjusted by canvas transformations
             var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+            
             for (int i = firstIdx; i < lastIdx; i++) {
-                if (Vector3.Distance(newVertices[i], toolPos) < 0.5) // close enough to pointer
+
+                // Distance from vertex to pointer
+                float distance = Vector3.Distance(newVertices[i], toolPos);                
+                if (distance <= GetSize() / m_CurrentCanvas.Pose.scale) 
                 {
-                    // CTODO: the math is scuffed.
+                    //Debug.Log("Canvas scale now: " + m_CurrentCanvas.Pose.scale);
+                    // CTODO: Make this depend on distance
+                    float strength = 0.2f;
                     Vector3 direction = (newVertices[i] - toolPos).normalized;
                     Vector3 newVert = newVertices[i] + direction * 0.2f; 
                     newVertices[i] = newVert;
