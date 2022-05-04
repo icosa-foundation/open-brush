@@ -24,7 +24,6 @@ using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
-using Types = Polyhydra.Wythoff.Types;
 
 namespace TiltBrush
 {
@@ -797,7 +796,7 @@ namespace TiltBrush
                                     );
                                     break;
                                 case GeneratorTypes.Uniform:
-                                    var wythoff = new WythoffPoly((Types)Convert.ToInt32(p["type"]));
+                                    var wythoff = new WythoffPoly((UniformTypes)Convert.ToInt32(p["type"]));
                                     poly = wythoff.Build();
                                     break;
                                 case GeneratorTypes.Waterman:

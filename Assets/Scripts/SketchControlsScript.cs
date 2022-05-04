@@ -140,6 +140,15 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            CustomSymmetryCommand = 5000,
+            PolyhydraOpenShapeTypesPopup = 5001,
+            PolyhydraOpenUniformsPopup = 5002,
+            PolyhydraGridTypesPopup = 5003,
+            PolyhydraGridShapesPopup = 5004,
+            PolyhydraJohnsonTypesPopup = 5005,
+            PolyhydraOtherTypesPopup = 5006,
+            PolyhydraConwayOpTypesPopup = 5007,
+            PolyhydraConwayOpFaceSelPopup = 5008,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -1378,6 +1387,7 @@ namespace TiltBrush
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
                         : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
+                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.CustomSymmetryMode
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -4325,6 +4335,19 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.CustomSymmetryCommand:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.CustomSymmetryMode)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.CustomSymmetryMode);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
                 case GlobalCommands.StraightEdge:
                     PointerManager.m_Instance.StraightEdgeModeEnabled = !PointerManager.m_Instance.StraightEdgeModeEnabled;
                     if (PointerManager.m_Instance.StraightEdgeModeEnabled)
@@ -4896,6 +4919,18 @@ namespace TiltBrush
                     CameraPathCaptureRig.RecordPath();
                     EatGazeObjectInput();
                     break;
+                case GlobalCommands.PolyhydraOpenShapeTypesPopup:
+                case GlobalCommands.PolyhydraOpenUniformsPopup:
+                case GlobalCommands.PolyhydraGridTypesPopup:
+                case GlobalCommands.PolyhydraGridShapesPopup:
+                case GlobalCommands.PolyhydraJohnsonTypesPopup:
+                case GlobalCommands.PolyhydraOtherTypesPopup:
+                case GlobalCommands.PolyhydraConwayOpTypesPopup:
+                    // TODO we don't really need to use commands at all here
+                    // As we can take action in the popup script
+                    // But is it better to use commands?
+                    // Debug.Log($"{rEnum}: iParam1={iParam1} iParam2={iParam2}");
+                    break;
                 case GlobalCommands.OpenScriptsCommandsList:
                     // TODO refactor code above to use this method
                     OpenUrl("http://localhost:40074/help/commands");
@@ -4955,6 +4990,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.CustomSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();

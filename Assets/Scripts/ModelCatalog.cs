@@ -30,9 +30,9 @@ namespace TiltBrush
         public event Action CatalogChanged;
         public Material m_ObjLoaderStandardMaterial;
         public Material m_ObjLoaderTransparentMaterial;
-        public Material m_ObjLoaderVertexColorMaterial;
         public Material m_ObjLoaderPointCloudMaterial;
         public Material m_ObjLoaderPointCloudInvisibleMaterial;
+        public Material m_ObjLoaderVertexColorMaterial;
         [NonSerialized] public Dictionary<string, Model> m_ModelsByRelativePath;
 
         // Transforms for missing models.
@@ -258,7 +258,7 @@ namespace TiltBrush
                 //look for .obj files
                 string[] aFiles = Directory.GetFiles(sPath);
                 // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".off", ".ply" };
+                string[] extensions = { ".obj", ".fbx", ".gltf2", ".gltf", ".glb", ".ply", ".off" };
 
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 if (Config.IsExperimental)

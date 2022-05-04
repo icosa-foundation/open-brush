@@ -487,7 +487,7 @@ namespace TiltBrush
             return null;
         }
 
-        GameObject LoadOff(List<string> warningsOut)
+        GameObject LoadPly(List<string> warningsOut)
         {
             try
             {
@@ -507,6 +507,27 @@ namespace TiltBrush
             }
         }
 
+        GameObject LoadOff(List<string> warningsOut)
+        {
+            try
+            {
+                var reader = new OffReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        // New Obj loader for editable models
         GameObject LoadObj(List<string> warningsOut, bool editable)
         {
             try
@@ -747,13 +768,13 @@ namespace TiltBrush
                 {
                     go = LoadFbx(warnings);
                 }
-                else if (ext == ".off")
-                {
-                    go = LoadOff(warnings);
-                }
                 else if (ext == ".ply")
                 {
                     go = LoadPly(warnings);
+                }
+                else if (ext == ".off")
+                {
+                    go = LoadOff(warnings);
                 }
                 else
                 {
