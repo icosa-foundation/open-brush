@@ -180,9 +180,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 38.0
+          # version 39.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=5029409037101874 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=5124847327558044 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -230,14 +230,6 @@ jobs:
           key: Library-${{ matrix.targetPlatform }}-${{ env.UNITY_VERSION }}
           restore-keys: |
             Library-${{ matrix.targetPlatform }}-
-
-      - name: Manually delete OpenXR packages
-        if: matrix.vrsdk == 'Oculus'
-        run: |
-          cat Packages/manifest.json | jq 'del( .dependencies ["com.unity.xr.openxr"] )' | tee Packages/manifest.json.new
-          mv Packages/manifest.json.new Packages/manifest.json
-          cat Packages/packages-lock.json | jq 'del( .dependencies ["com.unity.xr.openxr"] )' | tee Packages/packages-lock.json.new
-          mv Packages/packages-lock.json.new Packages/packages-lock.json
 
       - name: Update Oculus OVR Plugin
         uses: game-ci/unity-builder@v2

@@ -456,7 +456,7 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 // N points, clockwise winding (but axis is undocumented), undocumented convexity
                 // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
+                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.PlayArea)
                     .Select(v => UnityFromOculus(v)).ToArray();
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
@@ -1175,7 +1175,7 @@ namespace TiltBrush
             Debug.Assert(level >= 0 && level <= 3);
             if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
             {
-                OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
+                OVRManager.fixedFoveatedRenderingLevel = (OVRManager.FixedFoveatedRenderingLevel)level;
             }
 #endif // OCULUS_SUPPORTED
         }
@@ -1197,7 +1197,7 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
             if (App.Config.IsMobileHardware)
             {
-                OVRManager.gpuLevel = level;
+                OVRManager.suggestedGpuPerfLevel = (OVRManager.ProcessorPerformanceLevel)level;
             }
 #endif // OCULUS_SUPPORTED
         }
