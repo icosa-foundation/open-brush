@@ -491,7 +491,7 @@ namespace TiltBrush
         {
             try
             {
-                var reader = new OffReader(m_Location.AbsolutePath);
+                var reader = new PlyReader(m_Location.AbsolutePath);
                 var (gameObject, warnings, collector) = reader.Import();
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
@@ -750,6 +750,10 @@ namespace TiltBrush
                 else if (ext == ".off")
                 {
                     go = LoadOff(warnings);
+                }
+                else if (ext == ".ply")
+                {
+                    go = LoadPly(warnings);
                 }
                 else
                 {

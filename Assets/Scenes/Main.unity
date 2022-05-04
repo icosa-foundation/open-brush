@@ -9987,6 +9987,9 @@ MonoBehaviour:
     type: 2}
   m_ObjLoaderVertexColorMaterial: {fileID: 2100000, guid: d6a564b70f9de0845bd0c573cb7e8011,
     type: 2}
+  m_ObjLoaderPointCloudMaterial: {fileID: 2100000, guid: d1e87607973227546a7ed606b4221a8f,
+    type: 2}
+  m_ObjLoaderPointCloudInvisibleMaterial: {fileID: 2100000, guid: c78434c164254064e9fb50e75b4a2737,
 --- !u!114 &652605563
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10166,6 +10169,7 @@ MonoBehaviour:
   - .mkv
   - .mov
   - .txt
+  - .webm
 --- !u!114 &652605572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28359,15 +28363,6 @@ MonoBehaviour:
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1513704753240124, guid: 16a494a2ae54cba4d94ef4c0515bdaee,
-      type: 3}
-    m_ModeVr: 1
-    m_ModeVrExperimental: 1
-    m_ModeMono: 1
-    m_ModeQuest: 0
-    m_ModeGvr: 0
-    m_Basic: 0
-    m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: 87deb34c3f9672645984b6032a6c1f8d, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
@@ -28390,7 +28385,7 @@ MonoBehaviour:
     m_ModeMono: 1
     m_ModeQuest: 1
     m_ModeGvr: 1
-    m_Basic: 1
+    m_Basic: 0
     m_Advanced: 1
   m_WandPanelsRotationFeedbackInterval: 20
   m_WandPanelsRotationScalar: 200

@@ -799,6 +799,15 @@ static class BuildTiltBrush
                     // set externally?
                     i++;
                 }
+                else if (args[i] == "-androidTargetSdkVersion")
+                {
+                    // Not supported in Open Brush (added to game-ci in https://github.com/game-ci/unity-builder/pull/298)
+                    // By default, this field has no value, but if set, we need to skip it
+                    if (!args[i + 1].StartsWith("-"))
+                    {
+                        i++;
+                    }
+                }
                 else if (args[i] == "-androidVersionCode")
                 {
                     PlayerSettings.Android.bundleVersionCode = Int32.Parse(args[++i]);
