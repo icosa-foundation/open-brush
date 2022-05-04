@@ -156,35 +156,38 @@ namespace TiltBrush
             var dict = new Dictionary<string, EditableModelDefinition>();
             foreach (var em in EditableModelManager.m_Instance.EditableModels)
             {
-                switch (em.Value.GeneratorType)
+                if (em.Value.GeneratorType == GeneratorTypes.FileSystem)
                 {
-                    case GeneratorTypes.FileSystem:
-                        break;
-                    case GeneratorTypes.Grid:
-                        dict[em.Key] = new EditableModelDefinition
-                        (
-                            em.Value.ColorMethod,
-                            em.Value.GeneratorType,
-                            em.Value.GeneratorParameters
-                        );
-                        break;
-                    case GeneratorTypes.GeometryData:
-                        var polyMesh = em.Value.PolyMesh;
-                        dict[em.Key] = new EditableModelDefinition
-                        (
-                            polyMesh.ListVerticesByPoints(),
-                            polyMesh.ListFacesByVertexIndices(),
-                            polyMesh.FaceRoles,
-                            polyMesh.VertexRoles,
-                            polyMesh.FaceTags.Select(
-                                taglist => taglist.Select(
-                                    t => t.Item1).ToList()
-                            ).ToList(),
-                            em.Value.ColorMethod,
-                            em.Value.GeneratorType,
-                            em.Value.GeneratorParameters
-                        );
-                        break;
+                    dict[em.Key] = new EditableModelDefinition(em.Value.Operations);
+                }
+                else if (em.Value.GeneratorType == GeneratorTypes.GeometryData)
+                {
+                    // TODO Store mesh data in a file
+                    var polyMesh = em.Value.PolyMesh;
+                    dict[em.Key] = new EditableModelDefinition
+                    (
+                        polyMesh.ListVerticesByPoints(),
+                        polyMesh.ListFacesByVertexIndices(),
+                        polyMesh.FaceRoles,
+                        polyMesh.VertexRoles,
+                        polyMesh.FaceTags.Select(
+                            taglist => taglist.Select(
+                                t => t.Item1).ToList()
+                        ).ToList(),
+                        em.Value.ColorMethod,
+                        em.Value.GeneratorType,
+                        em.Value.GeneratorParameters,
+                        em.Value.Operations);
+                }
+                else
+                {
+                    dict[em.Key] = new EditableModelDefinition
+                    (
+                        em.Value.ColorMethod,
+                        em.Value.GeneratorType,
+                        em.Value.GeneratorParameters,
+                        em.Value.Operations
+                    );
                 }
             }
             return dict;

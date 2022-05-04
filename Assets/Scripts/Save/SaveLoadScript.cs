@@ -21,8 +21,10 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Polyhydra.Core;
+using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using Types = Polyhydra.Wythoff.Types;
 
 namespace TiltBrush
 {
@@ -764,7 +766,6 @@ namespace TiltBrush
                             switch (emd.GeneratorType)
                             {
                                 case GeneratorTypes.GeometryData:
-                                    
                                     // TODO simplify face tag data structure
                                     var faceTags = new List<HashSet<Tuple<string, TagType>>>();
                                     foreach (var t in emd.FaceTags)
@@ -774,19 +775,73 @@ namespace TiltBrush
                                     }
                                     poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
                                     break;
+                                case GeneratorTypes.Johnson:
+                                    poly = JohnsonSolids.Build(
+                                        Convert.ToInt32(p["type"])
+                                    );
+                                    break;
+                                case GeneratorTypes.Shapes:
+                                    poly = Shapes.Build(
+                                        (ShapeTypes)Convert.ToInt32(p["type"]),
+                                        Convert.ToSingle(p["a"]),
+                                        Convert.ToSingle(p["b"]),
+                                        Convert.ToSingle(p["c"])
+                                    );
+                                    break;
+                                case GeneratorTypes.Rotational:
+                                    poly = RotationalSolids.Build(
+                                        (RotationalSolids.RotationalPolyType)Convert.ToInt32(p["type"]),
+                                        Convert.ToInt32(p["sides"]),
+                                        Convert.ToSingle(p["height"]),
+                                        Convert.ToSingle(p["capheight"])
+                                    );
+                                    break;
+                                case GeneratorTypes.Uniform:
+                                    var wythoff = new WythoffPoly((Types)Convert.ToInt32(p["type"]));
+                                    poly = wythoff.Build();
+                                    break;
+                                case GeneratorTypes.Waterman:
+                                    poly = WatermanPoly.Build(
+                                       Convert.ToSingle(p["root"]),
+                                        Convert.ToInt32(p["c"])
+                                    );
+                                    break;
                                 case GeneratorTypes.Grid:
                                     poly = Grids.Build(
                                         (GridEnums.GridTypes)Convert.ToInt32(p["type"]),
                                         (GridEnums.GridShapes)Convert.ToInt32(p["shape"]),
-                                        Convert.ToInt32(p["xrepeats"]),
-                                        Convert.ToInt32(p["yrepeats"])
+                                        Convert.ToInt32(p["x"]),
+                                        Convert.ToInt32(p["y"])
+                                    );
+                                    break;
+                                case GeneratorTypes.Various:
+                                    poly = VariousSolids.Build(
+                                        (VariousSolidTypes)Convert.ToInt32(p["type"]),
+                                        Convert.ToInt32(p["x"]),
+                                        Convert.ToInt32(p["y"]),
+                                        Convert.ToInt32(p["z"])
                                     );
                                     break;
                             }
-                            
-                            foreach (var tr in model.RawTransforms)
+
+                            if (poly != null && emd.Operations!=null)
                             {
-                                EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
+                                foreach (var opDict in emd.Operations)
+                                {
+                                    var op = (PolyMesh.Operation)Convert.ToInt32(opDict["type"]);
+                                    float param1 = Convert.ToSingle(opDict["param1"]);
+                                    float param2 = Convert.ToSingle(opDict["param2"]);
+                                    var parameters = new OpParams(param1, param2);
+                                    poly = poly.AppyOperation(op, parameters);
+                                }
+                            }
+
+                            if (poly != null)
+                            {
+                                foreach (var tr in model.RawTransforms)
+                                {
+                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
+                                }
                             }
                         }
                     }

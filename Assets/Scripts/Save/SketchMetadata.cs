@@ -735,11 +735,11 @@ namespace TiltBrush
     public class EditableModelDefinition
     {
         [JsonConstructor]
-        public EditableModelDefinition(
-            Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
-            List<Roles> vertexRoles, List<List<string>> faceTags,
-            ColorMethods colorMethod, GeneratorTypes generatorType,
-            Dictionary<string, object> generatorParameters)
+        public EditableModelDefinition(Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
+                                       List<Roles> vertexRoles, List<List<string>> faceTags,
+                                       ColorMethods colorMethod, GeneratorTypes generatorType,
+                                       Dictionary<string, object> generatorParameters,
+                                       List<Dictionary<string, object>> operations)
         {
             Vertices = vertices;
             Faces = faces;
@@ -749,14 +749,22 @@ namespace TiltBrush
             ColorMethod = colorMethod;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
+            Operations = operations;
         }
         
         public EditableModelDefinition(ColorMethods colorMethod, GeneratorTypes generatorType,
-                                       Dictionary<string, object> generatorParameters)
+                                       Dictionary<string, object> generatorParameters,
+                                       List<Dictionary<string, object>> operations)
         {
             ColorMethod = colorMethod;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
+            Operations = operations;
+        }
+
+        public EditableModelDefinition(List<Dictionary<string, object>> operations)
+        {
+            Operations = operations;
         }
         
         public ColorMethods ColorMethod { get; }
@@ -767,6 +775,7 @@ namespace TiltBrush
         public List<Roles> FaceRoles { get; }
         public List<Roles> VertexRoles { get; }
         public List<List<string>> FaceTags { get; }
+        public List<Dictionary<string, object>> Operations { get; }
         
     }
     

@@ -19,9 +19,10 @@ using System.Linq;
 using Newtonsoft.Json;
 using ObjLoader.Loader.Loaders;
 using Polyhydra.Core;
+using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
-using Random = UnityEngine.Random;
+using Types = UnityEngine.Types;
 
 namespace TiltBrush
 {
@@ -311,8 +312,8 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.create.polygon", "Generates a regular polygon")]
         public static void CreatePolygon(int sides)
         {
-            var poly = Shapes.MakePolygon(sides);
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Polygon);
+            var poly = Shapes.Polygon(sides);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Shapes);
         }
 
         [ApiEndpoint("editablemodel.create.off", "Generates a off from POST data")]
@@ -345,20 +346,121 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
-        public static void CreateGrid(int widthSegs, int depthSegs)
+        public static void CreateGrid(int width, int depth, string type=null, string shape=null)
         {
-            var type = GridEnums.GridTypes.K_4_4_4_4;
-            var shape = GridEnums.GridShapes.Plane;
-            var poly = Grids.Build(type, shape, widthSegs, depthSegs);
+            GridEnums.GridTypes gridType;
+            GridEnums.GridShapes gridShape;
+            
+            if (string.IsNullOrEmpty(type))
+            {
+                gridType = GridEnums.GridTypes.K_4_4_4_4;
+            }
+            else
+            {
+                type = type.Replace(",", "_").ToUpper();
+                gridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type);
+            }
+            
+            if (string.IsNullOrEmpty(shape))
+            {
+                gridShape = GridEnums.GridShapes.Plane;
+            }
+            else
+            {
+                type = type.Replace(",", "_").ToUpper();
+                gridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape);
+            }
+            
+            var poly = Grids.Build(gridType, gridShape, width, depth);
             var parameters = new Dictionary<string, object>
             {
                 {"type", type},
                 {"shape", shape},
-                {"xrepeats", widthSegs},
-                {"yrepeats", depthSegs},
+                {"x", width},
+                {"y", depth},
             };
+            
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Grid, parameters);
         }
+        
+        [ApiEndpoint("editablemodel.create.box", "Generates a box")]
+        public static void CreateBox(int width, int height, int depth)
+        {
+            var type = VariousSolidTypes.Box;
+            var poly = VariousSolids.Build(type, width, height, depth);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+                {"x", width},
+                {"y", height},
+                {"z", depth},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, parameters);
+        }
+        
+        [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
+        public static void CreateSphere(int width, int height)
+        {
+            var type = VariousSolidTypes.UvSphere;
+            var poly = VariousSolids.Build(type, width, height, 0);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+                {"x", width},
+                {"y", height},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, parameters);
+        }
+        
+        [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
+        public static void CreateHemiphere(int width, int height)
+        {
+            var type = VariousSolidTypes.UvHemisphere;
+            var poly = VariousSolids.Build(type, width, height, 0);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+                {"x", width},
+                {"y", height},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, parameters);
+        }
+        
+        [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
+        public static void CreatePolyhedron(string type)
+        {
+            var wythoff = new WythoffPoly(type);
+            var poly = wythoff.Build();
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Uniform, parameters);
+        }
+        
+        [ApiEndpoint("editablemodel.create.johnsonsolid", "Generates a Johnson Solid")]
+        public static void CreateJohnsonSolid(string type)
+        {
+            var poly = JohnsonSolids.Build(type);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, parameters);
+        }
+        
+        [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
+        public static void CreateRotationalSolid(string type, int sides)
+        {
+            if (!Enum.TryParse(type, true, out PolyMesh.Operation solidType)) return;
+            var poly = RotationalSolids.Build((RotationalSolids.RotationalPolyType)solidType, sides);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", type},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Rotational, parameters);
+        }
+
         
         [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
         public static void CustomGuideFromEditableModel(int index)
@@ -382,31 +484,54 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.modify.color", "Changes the color of an editable model")]
         public static void ModifyModelColor(int index, Vector3 rgb)
         {
-            var widget = _GetModelIdByIndex(index);
-            var id = widget.GetId();
-            var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            poly.InitTags(new Color(rgb.x, rgb.y, rgb.z));
-            EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
+            var parameters = new Dictionary<string, object>
+            {
+                {"color", rgb}
+            };
+            _ApplyOp(index, parameters);
         }
         
         [ApiEndpoint("editablemodel.modify.addnoise", "Moves the points of a model by adding noise in the chosen direction")]
         public static void ModifyModelAddNoise(int index, string direction, float strength = 5, float xscale = .1f, float yscale = .1f)
         {
-            var widget = _GetModelIdByIndex(index);
-            var id = widget.GetId();
-            Polyhydra.Core.Axis axis;
-            if (!Enum.TryParse(direction, true, out axis)) return;
-            var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            poly.ApplyNoise(axis, strength, xscale, yscale, Random.value, Random.value);
-            EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
+            Vector3 axis;
+            
+            // Create "mask" vector that contains 0 in the chosen direction and 1 in the others
+            switch (direction.ToLower())
+            {
+                case "x":
+                    axis = Vector3.right;
+                    break;
+                // Not sure why y and z need to be swapped but it works...
+                case "y":
+                    axis = Vector3.forward;
+                    break;
+                default:
+                    axis = Vector3.up;
+                    break;
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", PolyMesh.Operation.PerlinNoise},
+                {"axis-x", axis.x},
+                {"axis-y", axis.y},
+                {"axis-z", axis.z},
+            };
+            // poly.PerlinNoise(axis, strength, xscale, yscale);
+            _ApplyOp(index, parameters);
         }
         
         [ApiEndpoint("editablemodel.modify.conway", "Apply a Conway operator to a model")]
         public static void ModifyModelConway(int index, string operation, float param1 = float.NaN, float param2 = float.NaN)
         {
-            var widget = _GetModelIdByIndex(index);
             if (!Enum.TryParse(operation, true, out PolyMesh.Operation op)) return;
-            _ApplyOp(widget, op, param1, param2);
+            var parameters = new Dictionary<string, object>
+            {
+                {"type", op},
+                {"param1", param1},
+                {"param2", param2},
+            };
+            _ApplyOp(index, parameters);
         }
         
         [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -10,24 +11,19 @@ namespace TiltBrush.MeshEditing
         FileSystem = 0,
         GeometryData = 1,
         Grid = 2,
-        Polygon = 3,
+        Shapes = 3,
         
         Rotational = 4,
         Waterman = 5,
         Johnson = 6,
         ConwayString = 7,
-        Wythoff = 8,
+        Uniform = 8,
+        Various = 9,
     }
     
     public class EditableModelManager : MonoBehaviour
     {
         public static EditableModelManager m_Instance;
-
-        public struct EditableModelOperation
-        {
-            public PolyMesh.Operation Operation;
-            public List<float> floatParams;
-        }
 
         public struct EditableModel
         {
@@ -35,7 +31,7 @@ namespace TiltBrush.MeshEditing
             public PolyMesh PolyMesh { get; private set;}
             public ColorMethods ColorMethod { get;}
             public Dictionary<string, object> GeneratorParameters { get; set; }
-            // private List<EditableModelOperation> Ops;
+            public List<Dictionary<string, object>> Operations { get; }
 
             public EditableModel(PolyMesh polyMesh, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> generatorParameters)
             {
@@ -43,7 +39,7 @@ namespace TiltBrush.MeshEditing
                 PolyMesh = polyMesh;
                 ColorMethod = colorMethod;
                 GeneratorParameters = generatorParameters;
-                // Ops = ops;
+                Operations = new List<Dictionary<string, object>>();
             }
             public void SetPolyMesh(PolyMesh poly)
             {
@@ -73,7 +69,22 @@ namespace TiltBrush.MeshEditing
             var mat = polyGo.GetComponent<MeshRenderer>().material;
             var mesh = poly.BuildUnityMesh(colorMethod: emesh.ColorMethod);
             UpdateMesh(polyGo, mesh, mat);
-            UpdateEditableMeshEntry(id, emesh.PolyMesh);
+            emesh.SetPolyMesh(poly);
+            m_EditableModels[id.guid] = emesh;
+        }
+        
+        public void RecordOperation(EditableModelWidget widget, Dictionary<string, object> parameters)
+        {
+            var id = widget.GetId();
+            var emesh = m_EditableModels[id.guid];
+            emesh.Operations.Add(parameters);
+        }
+        
+        public void RemoveLastOperation(EditableModelWidget widget)
+        {
+            var id = widget.GetId();
+            var emesh = m_EditableModels[id.guid];
+            emesh.Operations.RemoveAt(emesh.Operations.Count - 1);
         }
 
         public void UpdateMesh(GameObject polyGo, Mesh mesh, Material mat)
@@ -98,14 +109,7 @@ namespace TiltBrush.MeshEditing
             var emesh = new EditableModel(poly, colorMethod, type, parameters);
             m_EditableModels[id.guid] = emesh;
         }
-
-        private void UpdateEditableMeshEntry(EditableModelId id, PolyMesh poly)
-        {
-            var emesh = m_EditableModels[id.guid];
-            emesh.SetPolyMesh(poly);
-            m_EditableModels[id.guid] = emesh;
-        }
-
+        
         public PolyMesh GetPolyMesh(EditableModelWidget widget)
         {
             return GetPolyMesh(widget.GetComponentInChildren<EditableModelId>());
@@ -146,12 +150,6 @@ namespace TiltBrush.MeshEditing
                 widget.Model = model;
                 widget.Show(true);
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
-                
-                // TODO Do we need to do this?
-                // Also see _ImportModel 
-                // WidgetManager.m_Instance.WidgetsDormant = false;
-                // SketchControlsScript.m_Instance.EatGazeObjectInput();
-                // SelectionManager.m_Instance.RemoveFromSelection(false);
             }
             else
             {

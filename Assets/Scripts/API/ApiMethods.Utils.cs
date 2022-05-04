@@ -97,25 +97,12 @@ namespace TiltBrush
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
 
-        private static void _ApplyOp(EditableModelWidget widget, PolyMesh.Operation op, float param1 = float.NaN, float param2 = float.NaN)
+        private static void _ApplyOp(int index, Dictionary<string, object> parameters)
         {
-            var id = widget.GetId();
-            var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            OpParams p;
-            if (float.IsNaN(param1) && float.IsNaN(param2))
-            {
-                p = new OpParams();
-            }
-            else if (float.IsNaN(param2))
-            {
-                p = new OpParams(param1);
-            }
-            else
-            {
-                p = new OpParams(param1, param2);
-            }
-            poly = poly.AppyOperation(op, p);
-            EditableModelManager.m_Instance.RegenerateMesh(widget, poly);
+            var widget = _GetModelIdByIndex(index);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new EditableModelAddModifierCommand(widget, parameters)
+            );
         }
         
         private static EditableModelWidget _GetModelIdByIndex(int index)
