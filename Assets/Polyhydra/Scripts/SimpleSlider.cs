@@ -24,9 +24,7 @@ namespace TiltBrush
 
 
     [Serializable]
-    public class simpleSliderEvent : UnityEvent<float>
-    {
-    }
+    public class simpleSliderEvent : UnityEvent<float>{}
 
     public class SimpleSlider : BaseSlider
     {
@@ -82,11 +80,6 @@ namespace TiltBrush
             onUpdateValue.Invoke(fValue);
             m_CurrentValue = Mathf.InverseLerp(min, max, fValue);
             SetSliderPositionToReflectValue();
-        }
-
-        public override void ResetState()
-        {
-            base.ResetState();
         }
     }
 } // namespace TiltBrush

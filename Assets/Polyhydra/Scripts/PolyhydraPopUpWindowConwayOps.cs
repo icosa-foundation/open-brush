@@ -59,7 +59,7 @@ namespace TiltBrush
             ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(relativeButtonIndex));
             ParentPanel.ButtonsConwayOps[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);
 
-            if (opConfig.usesFaces)
+            if (opConfig.usesFilter)
             {
                 ParentPanel.ButtonsFaceSel[OpStackIndex].gameObject.SetActive(true);
             }

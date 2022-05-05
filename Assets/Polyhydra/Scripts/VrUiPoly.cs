@@ -14,7 +14,6 @@ public class VrUiPoly : MonoBehaviour
 
     public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
-    public PolyHydraEnums.UniformCategories UniformPolyTypeCategory;
     public PolyHydraEnums.JohnsonPolyTypes JohnsonPolyType;
     public PolyHydraEnums.OtherPolyTypes OtherPolyType;
     public GridEnums.GridTypes GridType;
@@ -35,11 +34,6 @@ public class VrUiPoly : MonoBehaviour
     public ColorMethods PreviewColorMethod;
 
     public Material SymmetryWidgetMaterial;
-
-    public bool vertexGizmos;
-    public bool faceGizmos;
-    public bool edgeGizmos;
-    public bool faceCenterGizmos;
 
     void Start()
     {
@@ -181,7 +175,6 @@ public class VrUiPoly : MonoBehaviour
 
     public void Validate()
     {
-
         ColorSetup();
 
         if (GeneratorType == GeneratorTypes.Uniform)

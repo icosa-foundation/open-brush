@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class PolyhydraTool : BaseTool
+    public class PolyhydraTool : SelectionTool
     {
 
         //the parent of all of our tool's visual indicator objects
@@ -137,63 +139,85 @@ namespace TiltBrush
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
 
+                    bool strokeShapeMode = false; // TODO
+
                     var poly = uiPoly._conwayPoly;
-
-                    var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-                    uint time = 0;
-                    float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
-                    float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
-
-                    var group = App.GroupManager.NewUnusedGroup();
-
-                    foreach (var (face, faceIndex) in poly.Faces.WithIndex())
+                    
+                    if (!strokeShapeMode)
                     {
-                        float lineLength = 0;
-                        var controlPoints = new List<PointerManager.ControlPoint>();
-                        var faceVerts = face.GetVertices();
-                        faceVerts.Add(faceVerts[0]);
-                        for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
-                        {
-                            var vert = faceVerts[vertexIndex];
-                            var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
+                        var creationTr = TrTransform.TRS(
+                            m_FirstPositionClicked_CS.translation,
+                            rotation_CS,
+                            scale_CS
+                        );
+                        var shapeType = GeneratorTypes.Uniform;
+                        var parameters = new Dictionary<string,object>
+                        {  
+                        };
+                        EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr, 
+                            ColorMethods.ByRole, shapeType, parameters);
+                    }
+                    else
+                    {
 
-                            for (float step = 0; step < 1f; step += .25f)
+                        var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+                        uint time = 0;
+                        float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
+                        float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
+
+                        var group = App.GroupManager.NewUnusedGroup();
+
+                        foreach (var (face, faceIndex) in poly.Faces.WithIndex())
+                        {
+                            float lineLength = 0;
+                            var controlPoints = new List<PointerManager.ControlPoint>();
+                            var faceVerts = face.GetVertices();
+                            faceVerts.Add(faceVerts[0]);
+                            for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
                             {
-                                var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
-                                vertexPos = vertexPos * scale_CS;
-                                vertexPos = rotation_CS * vertexPos;
-                                controlPoints.Add(new PointerManager.ControlPoint
+                                var vert = faceVerts[vertexIndex];
+                                var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
+
+                                for (float step = 0; step < 1f; step += .25f)
                                 {
-                                    m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
-                                    m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
-                                    m_Pressure = pressure,
-                                    m_TimestampMs = time
-                                });
+                                    var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
+                                    vertexPos = vertexPos * scale_CS;
+                                    vertexPos = rotation_CS * vertexPos;
+                                    controlPoints.Add(new PointerManager.ControlPoint
+                                    {
+                                        m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
+                                        m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
+                                        m_Pressure = pressure,
+                                        m_TimestampMs = time
+                                    });
+                                }
+
+                                lineLength += (nextVert.Position - vert.Position).magnitude; // TODO Does this need scaling? Should be in Canvas space
                             }
 
-                            lineLength += (nextVert.Position - vert.Position).magnitude; // TODO Does this need scaling? Should be in Canvas space
+                            var stroke = new Stroke
+                            {
+                                m_Type = Stroke.Type.NotCreated,
+                                m_IntendedCanvas = App.Scene.ActiveCanvas,
+                                m_BrushGuid = brush.m_Guid,
+                                m_BrushScale = 1f,
+                                m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
+                                m_Color = uiPoly.GetFaceColor(faceIndex),
+                                m_Seed = 0,
+                                m_ControlPoints = controlPoints.ToArray(),
+                            };
+                            stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
+                            stroke.Group = group;
+                            stroke.Recreate(null, App.Scene.ActiveCanvas);
+                            if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                            SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                                new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
+                            );
                         }
-
-                        var stroke = new Stroke
-                        {
-                            m_Type = Stroke.Type.NotCreated,
-                            m_IntendedCanvas = App.Scene.ActiveCanvas,
-                            m_BrushGuid = brush.m_Guid,
-                            m_BrushScale = 1f,
-                            m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                            m_Color = uiPoly.GetFaceColor(faceIndex),
-                            m_Seed = 0,
-                            m_ControlPoints = controlPoints.ToArray(),
-                        };
-                        stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                        stroke.Group = group;
-                        stroke.Recreate(null, App.Scene.ActiveCanvas);
-                        if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
-                        SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
-                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                            new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
-                        );
                     }
+                    
+                    
                 }
             }
         }
@@ -235,6 +259,18 @@ namespace TiltBrush
                 transform.position = SketchSurfacePanel.m_Instance.transform.position;
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
             }
+        }
+
+        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
+        {
+            return false;
+        }
+
+        override protected bool HandleIntersectionWithWidget(GrabWidget widget)
+        {
+            
+            bool result = base.HandleIntersectionWithWidget(widget);
+            return result;
         }
     }
 }

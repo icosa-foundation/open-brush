@@ -3,17 +3,6 @@ using Polyhydra.Core;
 
 public static class PolyHydraEnums
 {
-    public enum UniformCategories
-    {
-        All,
-        Platonic,
-        Prismatic,
-        Archimedean,
-        KeplerPoinsot,
-        Convex,
-        Star,
-    }
-
     public enum FaceSelections
     {
         All,
@@ -77,14 +66,6 @@ public static class PolyHydraEnums
 
         None,
     }
-    public enum UVMethods
-	{
-		FirstEdge,
-		BestEdge,
-		FirstVertex,
-		BestVertex,
-		ObjectAligned
-	}
 
     public enum PolyhedraCategory
     {
@@ -156,8 +137,7 @@ public static class PolyHydraEnums
 	    public float amount2Max = 20;
 	    public float amount2SafeMin = -10;
 	    public float amount2SafeMax = 0.999f;
-	    public bool usesFaces = false;
-	    public bool usesRandomize = false;
+	    public bool usesFilter = false;
 	    public FaceSelections faceSelection = FaceSelections.All;
 	    public int[,] matrix;
     }
@@ -186,10 +166,9 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Kis,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
 				amountMin = -6, amountMax = 6, amountSafeMin = -0.5f, amountSafeMax = 0.999f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,0,1},{0,3,0},{0,2,0}}
 			}
 		},
@@ -209,7 +188,6 @@ public static class PolyHydraEnums
 			{
 				amountDefault = 0.5f,
 				amountMin = -2f, amountMax = 2f, amountSafeMin = 0.0001f, amountSafeMax = .999f,
-				usesRandomize = true,
 				matrix = new int[,]{{0,2,0},{0,3,0},{1,0,1}}
 			}
 		},
@@ -231,7 +209,6 @@ public static class PolyHydraEnums
 				usesAmount2 = true,
 				amount2Default = 0.25f,
 				amount2Min = -6, amount2Max = 6, amount2SafeMin = 0.001f, amount2SafeMax = 0.4999f,
-				usesRandomize = true,
 				matrix = new int[,]{{0,4,0},{0,6,0},{1,1,1}}
 
 			}
@@ -251,7 +228,6 @@ public static class PolyHydraEnums
 			{
 				amountDefault = 0f,
 				amountMin = -6, amountMax = 6, amountSafeMin = -0.5f, amountSafeMax = 0.5f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,0,1},{0,3,0},{0,2,0}}
 }
 		},
@@ -261,7 +237,6 @@ public static class PolyHydraEnums
 			{
 				amountDefault = 0.1f,
 				amountMin = -6, amountMax = 6, amountSafeMin = -0.5f, amountSafeMax = 0.999f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,1,1},{0,4,0},{0,2,0}}
 			}
 		},
@@ -274,7 +249,6 @@ public static class PolyHydraEnums
 				usesAmount2 = true,
 				amount2Default = 0f,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 0.99f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,1,1},{0,6,0},{0,4,0}}
 
 			}
@@ -283,10 +257,9 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Truncate,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.3f,
 				amountMin = -6, amountMax = 6, amountSafeMin = 0.001f, amountSafeMax = 0.499f,
-				usesRandomize = true,
 				matrix = new int[,]{{0,2,0},{0,3,0},{1,0,1}},
 			}
 		},
@@ -320,12 +293,11 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Loft,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1,
-				usesRandomize = true,
 				matrix = new int[,]{{1,2,0},{0,5,0},{0,2,1}}
 			}
 		},
@@ -346,7 +318,6 @@ public static class PolyHydraEnums
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1,
-				usesRandomize = true,
 				matrix = new int[,]{{1,3,0},{0,6,0},{0,2,1}}
 			}
 		},
@@ -354,12 +325,11 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Lace,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1,
-				usesRandomize = true,
 				matrix = new int[,]{{1,2,0},{0,7,0},{0,4,1}}
 			}
 		},
@@ -371,7 +341,6 @@ public static class PolyHydraEnums
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1,
-				usesRandomize = true,
 				matrix = new int[,]{{1,2,0},{0,6,0},{0,3,1}}
 			}
 		},
@@ -383,7 +352,6 @@ public static class PolyHydraEnums
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
 				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1,
-				usesRandomize = true,
 				matrix = new int[,]{{1,2,0},{0,7,0},{0,4,1}}
 			}
 		},
@@ -402,7 +370,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Stake,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f, amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				matrix = new int[,]{{1,2,1},{0,7,0},{0,4,0}}
 			}
@@ -479,10 +447,9 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Exalt,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
 				amountMin = -6, amountMax = 6, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,2,1},{0,9,0},{3,4,0}}
 			}
 		},
@@ -490,10 +457,9 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Yank,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.33f,
 				amountMin = -6, amountMax = 6, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
-				usesRandomize = true,
 				matrix = new int[,]{{3,4,0},{0,9,0},{1,2,1}}
 			}
 		},
@@ -503,7 +469,6 @@ public static class PolyHydraEnums
 			{
 				amountDefault = 0.5f,
 				amountMin = -1, amountMax = 1, amountSafeMin = -1, amountSafeMax = 0.999f,
-				usesRandomize = true,
 				matrix = new int[,]{{1,3,1},{0,10,0},{0,6,0}}
 			}
 		},
@@ -532,7 +497,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.SplitFaces,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				usesAmount = false,
 			}
 		},
@@ -540,22 +505,20 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Gable,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
 				usesAmount2 = true,
-				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1,
-				usesRandomize = true
+				amount2Min = -3, amount2Max = 3, amount2SafeMin = -0.5f, amount2SafeMax = 1
 			}
 		},
 		{
 			PolyMesh.Operation.FaceOffset,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
-				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f,
-				usesRandomize = true
+				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
 			}
 		},
 		//{PolyMesh.Operation.Ribbon, new OpConfig{}},
@@ -563,10 +526,9 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Extrude,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
-				amountMin = -12, amountMax = 12, amountSafeMin = -6f, amountSafeMax = 6f,
-				usesRandomize = true
+				amountMin = -12, amountMax = 12, amountSafeMin = -6f, amountSafeMax = 6f
 			}
 		},
 		{
@@ -581,7 +543,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Skeleton,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
 				amountMin = -6, amountSafeMin = 0.001f, amountSafeMax = 0.999f, amountMax = 6
 			}
@@ -590,7 +552,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Segment,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -3, amountSafeMin = 0, amountSafeMax = 1, amountMax = 3,
 				usesAmount2 = true,
@@ -602,39 +564,35 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.VertexScale,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
-				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f,
-				usesRandomize = true
+				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
 			}
 		},
 		{
 			PolyMesh.Operation.VertexRotate,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
-				amountMin = -4, amountMax = 4, amountSafeMin = -1, amountSafeMax = 1,
-				usesRandomize = true
+				amountMin = -4, amountMax = 4, amountSafeMin = -1, amountSafeMax = 1
 			}
 		},
 		{
 			PolyMesh.Operation.VertexFlex,
 			new OpConfig
 			{
-				usesFaces = true,
-				amountDefault = 0.1f, amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f,
-				usesRandomize = true
+				usesFilter = true,
+				amountDefault = 0.1f, amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
 			}
 		},
 		{
 			PolyMesh.Operation.VertexStellate,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = -0.5f,
-				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0,
-				usesRandomize = true
+				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0
 			}
 		},
 		//{PolyMesh.Operation.FaceTranslate, new OpConfig{usesFaces=true, amountDefault=0.1f, amountMin=-6, amountMax=6}},
@@ -642,40 +600,36 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.FaceScale,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = -0.5f,
-				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0,
-				usesRandomize = true
+				amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0
 			}
 		},
 		{
 			PolyMesh.Operation.FaceRotate,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 45f,
-				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1,
-				usesRandomize = true
+				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1
 			}
 		},
 		{
 			PolyMesh.Operation.FaceRotateX,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 45f,
-				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1,
-				usesRandomize = true
+				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1
 			}
 		},
 		{
 			PolyMesh.Operation.FaceRotateY,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 45f,
-				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1,
-				usesRandomize = true
+				amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1
 			}
 		},
 		// {
@@ -691,17 +645,16 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.FaceSlide,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -4, amountMax = 4, amountSafeMin = -1f, amountSafeMax = 1f,
 				usesAmount2 = true,
-				amount2Min = -4f, amount2Max = 4f, amount2SafeMin = -2f, amount2SafeMax = 2f,
-				usesRandomize = true
+				amount2Min = -4f, amount2Max = 4f, amount2SafeMin = -2f, amount2SafeMax = 2f
 			}
 		},
 //			{PolyMesh.Operation.FaceRotateX, new OpConfig{usesFaces=true, amountDefault=0.1f, amountMin=-180, amountMax=180}},
 //			{PolyMesh.Operation.FaceRotateY, new OpConfig{usesFaces=true, amountDefault=0.1f, amountMin=-180, amountMax=180}},
-		{PolyMesh.Operation.FaceRemove, new OpConfig {usesFaces = true, usesAmount = false}},
+		{PolyMesh.Operation.FaceRemove, new OpConfig {usesFilter = true, usesAmount = false}},
 		{PolyMesh.Operation.FaceRemoveX, new OpConfig
 			{
 				amountDefault = 0.5f,
@@ -763,20 +716,19 @@ public static class PolyHydraEnums
 				amount2Min = 0, amount2Max = 1, amount2SafeMin = 0, amount2SafeMax = 1,
 			}
 		},
-		{PolyMesh.Operation.FaceMerge, new OpConfig {usesFaces = true, usesAmount = false}},
-		{PolyMesh.Operation.FaceKeep, new OpConfig {usesFaces = true, usesAmount = false}},
-		{PolyMesh.Operation.VertexRemove, new OpConfig {usesFaces = true, usesAmount = false}},
-		{PolyMesh.Operation.VertexKeep, new OpConfig {usesFaces = true, usesAmount = false}},
+		{PolyMesh.Operation.FaceMerge, new OpConfig {usesFilter = true, usesAmount = false}},
+		{PolyMesh.Operation.FaceKeep, new OpConfig {usesFilter = true, usesAmount = false}},
+		{PolyMesh.Operation.VertexRemove, new OpConfig {usesFilter = true, usesAmount = false}},
+		{PolyMesh.Operation.VertexKeep, new OpConfig {usesFilter = true, usesAmount = false}},
 		{
 			PolyMesh.Operation.Layer,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.1f,
 				amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
 				usesAmount2 = true,
-				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1,
-				usesRandomize = true
+				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
 			}
 		},
 		{
@@ -799,7 +751,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddCopyX,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
@@ -808,7 +760,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddCopyY,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
@@ -817,7 +769,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddCopyZ,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
@@ -826,7 +778,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddMirrorX,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
@@ -835,7 +787,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddMirrorY,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
@@ -844,14 +796,14 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.AddMirrorZ,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
 			}
 		},
 		{PolyMesh.Operation.Stash, new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				usesAmount = false
 			}
 		},
@@ -859,7 +811,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Unstash,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
 				usesAmount2 = true,
@@ -870,7 +822,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.UnstashToFaces,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
 				usesAmount2 = true,
@@ -881,7 +833,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.UnstashToVerts,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0,
 				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
 				usesAmount2 = true,
@@ -890,14 +842,14 @@ public static class PolyHydraEnums
 		},
 		{PolyMesh.Operation.TagFaces, new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 			}
 		},
 		{
 			PolyMesh.Operation.Stack,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 0.5f,
 				amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
 				usesAmount2 = true,
@@ -916,7 +868,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.ConvexHull,
 			new OpConfig
 			{
-				usesFaces = false,
+				usesFilter = false,
 				usesAmount = false,
 			}
 		},
@@ -924,7 +876,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Spherize,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 1.0f, amountMin = -2, amountMax = 2, amountSafeMin = -2,
 				amountSafeMax = 2f
 			}
@@ -933,7 +885,7 @@ public static class PolyHydraEnums
 			PolyMesh.Operation.Cylinderize,
 			new OpConfig
 			{
-				usesFaces = true,
+				usesFilter = true,
 				amountDefault = 1.0f, amountMin = -2, amountMax = 2, amountSafeMin = -2,
 				amountSafeMax = 2f
 			}

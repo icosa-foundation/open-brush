@@ -23,9 +23,7 @@ namespace TiltBrush
 {
 
     [Serializable]
-    public class sliderEvent : UnityEvent<Vector3>
-    {
-    }
+    public class sliderEvent : UnityEvent<Vector3>{}
 
     [Serializable]
     public enum SliderTypes
@@ -109,11 +107,6 @@ namespace TiltBrush
             onUpdateValue.Invoke(new Vector3(opIndex, paramIndex, fValue));
             m_CurrentValue = Mathf.InverseLerp(min, Max, fValue);
             SetSliderPositionToReflectValue();
-        }
-
-        public override void ResetState()
-        {
-            base.ResetState();
         }
     }
 } // namespace TiltBrush
