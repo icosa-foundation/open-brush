@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@ using System;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using UnityEngine.Serialization;
 namespace TiltBrush
 {
 
     public class PolyhydraPanel : BasePanel
     {
-        [NonSerialized] public VrUiPoly PolyhydraModel;
-        [NonSerialized] public PolyHydraEnums.PolyhedraCategory CurrentShapeCategory;
+        [NonSerialized] public PreviewPolyhedron PolyhydraModel;
+        [NonSerialized] public PreviewPolyhedron.MainCategories CurrentShapeCategory;
 
         public PolyhydraOptionButton ButtonShapeType;
         public PolyhydraOptionButton ButtonUniformType;
-        public PolyhydraOptionButton ButtonJohnsonType;
+        [FormerlySerializedAs("ButtonJohnsonType")] public PolyhydraOptionButton ButtonRotationalType;
         public PolyhydraOptionButton ButtonGridType;
         public PolyhydraOptionButton ButtonOtherPolyType;
         public PolyhydraOptionButton ButtonGridShape;
@@ -42,7 +43,7 @@ namespace TiltBrush
         override public void InitPanel()
         {
             base.InitPanel();
-            PolyhydraModel = gameObject.GetComponentInChildren<VrUiPoly>(true);
+            PolyhydraModel = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetPanelButtonVisibility();
         }
@@ -92,10 +93,9 @@ namespace TiltBrush
             switch (CurrentShapeCategory)
             {
                 // All the shapeCategories that use the Uniform popup
-                case PolyHydraEnums.PolyhedraCategory.Archimedean:
-                case PolyHydraEnums.PolyhedraCategory.Platonic:
-                case PolyHydraEnums.PolyhedraCategory.Prisms:
-                case PolyHydraEnums.PolyhedraCategory.KeplerPoinsot:
+                case PreviewPolyhedron.MainCategories.Archimedean:
+                case PreviewPolyhedron.MainCategories.Platonic:
+                case PreviewPolyhedron.MainCategories.KeplerPoinsot:
                     foreach (var button in buttons)
                     {
                         switch (button.m_Command)
@@ -108,7 +108,7 @@ namespace TiltBrush
 
                             case SketchControlsScript.GlobalCommands.PolyhydraGridShapesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraGridTypesPopup:
-                            case SketchControlsScript.GlobalCommands.PolyhydraJohnsonTypesPopup:
+                            case SketchControlsScript.GlobalCommands.PolyhydraRotationalTypesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraOtherTypesPopup:
                                 button.gameObject.SetActive(false);
                                 break;
@@ -116,7 +116,7 @@ namespace TiltBrush
                     }
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Grids:
+                case PreviewPolyhedron.MainCategories.Grids:
                     foreach (var button in buttons)
                     {
                         switch (button.m_Command)
@@ -129,7 +129,7 @@ namespace TiltBrush
                                 break;
 
                             case SketchControlsScript.GlobalCommands.PolyhydraOpenUniformsPopup:
-                            case SketchControlsScript.GlobalCommands.PolyhydraJohnsonTypesPopup:
+                            case SketchControlsScript.GlobalCommands.PolyhydraRotationalTypesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraOtherTypesPopup:
                                 button.gameObject.SetActive(false);
                                 break;
@@ -137,7 +137,7 @@ namespace TiltBrush
                     }
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Various:
+                case PreviewPolyhedron.MainCategories.Various:
                     foreach (var button in buttons)
                     {
                         switch (button.m_Command)
@@ -149,7 +149,7 @@ namespace TiltBrush
                                 break;
 
                             case SketchControlsScript.GlobalCommands.PolyhydraOpenUniformsPopup:
-                            case SketchControlsScript.GlobalCommands.PolyhydraJohnsonTypesPopup:
+                            case SketchControlsScript.GlobalCommands.PolyhydraRotationalTypesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraGridShapesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraGridTypesPopup:
                                 button.gameObject.SetActive(false);
@@ -158,14 +158,14 @@ namespace TiltBrush
                     }
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Johnson:
+                case PreviewPolyhedron.MainCategories.Rotational:
                     foreach (var button in buttons)
                     {
                         switch (button.m_Command)
                         {
                             case SketchControlsScript.GlobalCommands.PolyhydraOpenShapeTypesPopup:
                             // case SketchControlsScript.GlobalCommands.PolyhydraConwayOpTypesPopup:
-                            case SketchControlsScript.GlobalCommands.PolyhydraJohnsonTypesPopup:
+                            case SketchControlsScript.GlobalCommands.PolyhydraRotationalTypesPopup:
                                 button.gameObject.SetActive(true);
                                 break;
 
@@ -179,7 +179,7 @@ namespace TiltBrush
                     }
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Waterman:
+                case PreviewPolyhedron.MainCategories.Waterman:
                     foreach (var button in buttons)
                     {
                         switch (button.m_Command)
@@ -189,7 +189,7 @@ namespace TiltBrush
                                 button.gameObject.SetActive(true);
                                 break;
 
-                            case SketchControlsScript.GlobalCommands.PolyhydraJohnsonTypesPopup:
+                            case SketchControlsScript.GlobalCommands.PolyhydraRotationalTypesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraOtherTypesPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraOpenUniformsPopup:
                             case SketchControlsScript.GlobalCommands.PolyhydraGridShapesPopup:
@@ -207,40 +207,36 @@ namespace TiltBrush
         {
             switch (CurrentShapeCategory)
             {
-                case PolyHydraEnums.PolyhedraCategory.Platonic:
+                case PreviewPolyhedron.MainCategories.Platonic:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Uniform;
                     PolyhydraModel.UniformPolyType = (UniformTypes)Uniform.Platonic[0].Index - 1;
                     break;
-                case PolyHydraEnums.PolyhedraCategory.Prisms:
-                    PolyhydraModel.GeneratorType = GeneratorTypes.Uniform;
-                    PolyhydraModel.UniformPolyType = (UniformTypes)Uniform.Prismatic[0].Index - 1;
-                    break;
-                case PolyHydraEnums.PolyhedraCategory.Archimedean:
+                case PreviewPolyhedron.MainCategories.Archimedean:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Uniform;
                     PolyhydraModel.UniformPolyType = (UniformTypes)Uniform.Archimedean[0].Index - 1;
                     break;
                 // case PolyhedraTypes.UniformConvex:
-                //     PolyhydraModel.ShapeType = PolyHydraEnums.PolyhedraTypes.Uniform;
+                //     PolyhydraModel.ShapeType = VrUiPoly.PolyhedraTypes.Uniform;
                 //     PolyhydraModel.UniformPolyType = (UniformTypes) Uniform.Convex[0].Index - 1;
                 //     break;
-                case PolyHydraEnums.PolyhedraCategory.KeplerPoinsot:
+                case PreviewPolyhedron.MainCategories.KeplerPoinsot:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Uniform;
                     PolyhydraModel.UniformPolyType = (UniformTypes)Uniform.KeplerPoinsot[0].Index - 1;
                     break;
                 // case PolyhedraTypes.UniformStar:
-                //     PolyhydraModel.ShapeType = PolyHydraEnums.PolyhedraTypes.Uniform;
+                //     PolyhydraModel.ShapeType = VrUiPoly.PolyhedraTypes.Uniform;
                 //     PolyhydraModel.UniformPolyType = (UniformTypes) Uniform.Star[0].Index - 1;
                 //     break;
-                case PolyHydraEnums.PolyhedraCategory.Johnson:
+                case PreviewPolyhedron.MainCategories.Rotational:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Rotational;
                     break;
-                case PolyHydraEnums.PolyhedraCategory.Waterman:
+                case PreviewPolyhedron.MainCategories.Waterman:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Waterman;
                     break;
-                case PolyHydraEnums.PolyhedraCategory.Grids:
+                case PreviewPolyhedron.MainCategories.Grids:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Grid;
                     break;
-                case PolyHydraEnums.PolyhedraCategory.Various:
+                case PreviewPolyhedron.MainCategories.Various:
                     PolyhydraModel.GeneratorType = GeneratorTypes.Various;
                     break;
             }
@@ -251,7 +247,7 @@ namespace TiltBrush
         {
             switch (CurrentShapeCategory)
             {
-                case PolyHydraEnums.PolyhedraCategory.Platonic:
+                case PreviewPolyhedron.MainCategories.Platonic:
 
                     SliderP.gameObject.SetActive(false);
                     SliderQ.gameObject.SetActive(false);
@@ -286,7 +282,7 @@ namespace TiltBrush
                 //
                 //     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Archimedean:
+                case PreviewPolyhedron.MainCategories.Archimedean:
 
                     SliderP.gameObject.SetActive(false);
                     SliderQ.gameObject.SetActive(false);
@@ -295,11 +291,11 @@ namespace TiltBrush
                     break;
 
                 // case PolyhedraTypes.UniformConvex:
-                //     PolyhydraModel.ShapeType = PolyHydraEnums.PolyhedraTypes.Uniform;
+                //     PolyhydraModel.ShapeType = VrUiPoly.PolyhedraTypes.Uniform;
                 //     PolyhydraModel.UniformPolyType = (UniformTypes) Uniform.Convex[0].Index - 1;
                 //     break;
 
-                case PolyHydraEnums.PolyhedraCategory.KeplerPoinsot:
+                case PreviewPolyhedron.MainCategories.KeplerPoinsot:
 
                     SliderP.gameObject.SetActive(false);
                     SliderQ.gameObject.SetActive(false);
@@ -308,11 +304,11 @@ namespace TiltBrush
                     break;
 
                 // case PolyhedraTypes.UniformStar:
-                //     PolyhydraModel.ShapeType = PolyHydraEnums.PolyhedraTypes.Uniform;
+                //     PolyhydraModel.ShapeType = VrUiPoly.PolyhedraTypes.Uniform;
                 //     PolyhydraModel.UniformPolyType = (UniformTypes) Uniform.Star[0].Index - 1;
                 //     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Johnson:
+                case PreviewPolyhedron.MainCategories.Rotational:
 
                     SliderP.gameObject.SetActive(true);
                     SliderQ.gameObject.SetActive(false);
@@ -323,7 +319,7 @@ namespace TiltBrush
                     SliderQ.SliderType = SliderTypes.Int;
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Waterman:
+                case PreviewPolyhedron.MainCategories.Waterman:
 
                     SliderP.gameObject.SetActive(true);
                     SliderQ.gameObject.SetActive(true);
@@ -337,7 +333,7 @@ namespace TiltBrush
                     SliderQ.SliderType = SliderTypes.Int;
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Grids:
+                case PreviewPolyhedron.MainCategories.Grids:
 
                     var p = SliderP.GetCurrentValue();
                     var q = SliderQ.GetCurrentValue();
@@ -355,21 +351,21 @@ namespace TiltBrush
                     SliderQ.UpdateValueAbsolute(2);
                     break;
 
-                case PolyHydraEnums.PolyhedraCategory.Various:
+                case PreviewPolyhedron.MainCategories.Various:
 
                     SliderP.SliderType = SliderTypes.Int;
                     SliderQ.SliderType = SliderTypes.Int;
 
                     switch (PolyhydraModel.OtherPolyType)
                     {
-                        case PolyHydraEnums.OtherPolyTypes.Polygon:
+                        case PreviewPolyhedron.OtherPolyTypes.Polygon:
                             SliderP.gameObject.SetActive(true);
                             SliderQ.gameObject.SetActive(false);
                             SliderP.Min = 3;
                             SliderP.Max = 16;
                             SliderP.SetDescriptionText("Sides");
                             break;
-                        case PolyHydraEnums.OtherPolyTypes.GriddedCube:
+                        case PreviewPolyhedron.OtherPolyTypes.Box:
                             SliderP.gameObject.SetActive(true);
                             SliderQ.gameObject.SetActive(true);
                             SliderP.Min = 1;
@@ -379,8 +375,8 @@ namespace TiltBrush
                             SliderP.SetDescriptionText("X Resolution");
                             SliderP.SetDescriptionText("Y Resolution");
                             break;
-                        case PolyHydraEnums.OtherPolyTypes.UvSphere:
-                        case PolyHydraEnums.OtherPolyTypes.UvHemisphere:
+                        case PreviewPolyhedron.OtherPolyTypes.UvSphere:
+                        case PreviewPolyhedron.OtherPolyTypes.UvHemisphere:
                             SliderP.gameObject.SetActive(true);
                             SliderQ.gameObject.SetActive(true);
                             SliderP.Min = 1;

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,17 +24,15 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
     {
 
-        private Uniform[] GetCurrentUniformList(PolyHydraEnums.PolyhedraCategory shapeCategory)
+        private Uniform[] GetCurrentUniformList(PreviewPolyhedron.MainCategories shapeCategory)
         {
             switch (shapeCategory)
             {
-                case PolyHydraEnums.PolyhedraCategory.Platonic:
+                case PreviewPolyhedron.MainCategories.Platonic:
                     return Uniform.Platonic;
-                case PolyHydraEnums.PolyhedraCategory.Archimedean:
+                case PreviewPolyhedron.MainCategories.Archimedean:
                     return Uniform.Archimedean;
-                case PolyHydraEnums.PolyhedraCategory.Prisms:
-                    return Uniform.Prismatic;
-                case PolyHydraEnums.PolyhedraCategory.KeplerPoinsot:
+                case PreviewPolyhedron.MainCategories.KeplerPoinsot:
                     return Uniform.KeplerPoinsot;
                     // case ShapeCategories.UniformConvex:
                     //   return Uniform.Convex;

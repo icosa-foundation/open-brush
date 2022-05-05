@@ -21,7 +21,7 @@ MonoBehaviour:
   poseUpdateMode: 8
   activateFirstActionSetOnStart: 1
   editorAppKey: application.generated.unity.openbrush.exe
-  autoEnableVR: 1
+  autoEnableVR: 0
   legacyMixedRealityCamera: 1
   mixedRealityCameraPose:
     actionPath: /actions/mixedreality/in/ExternalCamera

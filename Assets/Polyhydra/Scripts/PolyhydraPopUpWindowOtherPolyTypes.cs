@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Linq;
 
@@ -24,17 +23,17 @@ namespace TiltBrush
 
         protected override string[] GetButtonList()
         {
-            return Enum.GetNames(typeof(PolyHydraEnums.OtherPolyTypes)).ToArray();
+            return Enum.GetNames(typeof(PreviewPolyhedron.OtherPolyTypes)).ToArray();
         }
 
         protected override string GetButtonTexturePath(int i)
         {
-            return $"ShapeButtons/poly_other_{(PolyHydraEnums.OtherPolyTypes)i}";
+            return $"ShapeButtons/poly_other_{(PreviewPolyhedron.OtherPolyTypes)i}";
         }
 
         public override void HandleButtonPress(int buttonIndex)
         {
-            ParentPanel.PolyhydraModel.OtherPolyType = (PolyHydraEnums.OtherPolyTypes)buttonIndex;
+            ParentPanel.PolyhydraModel.OtherPolyType = (PreviewPolyhedron.OtherPolyTypes)buttonIndex;
             ParentPanel.ButtonOtherPolyType.SetButtonTexture(GetButtonTexture(buttonIndex));
             ParentPanel.SetSliderConfiguration();
         }

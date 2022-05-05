@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Linq;
 
@@ -19,24 +18,24 @@ using System.Linq;
 namespace TiltBrush
 {
 
-    public class PolyhydraPopUpWindowJohnsonTypes : PolyhydraPopUpWindowBase
+    public class PolyhydraPopUpWindowRotationalTypes : PolyhydraPopUpWindowBase
     {
 
         protected override string[] GetButtonList()
         {
-            return Enum.GetNames(typeof(PolyHydraEnums.JohnsonPolyTypes)).ToArray();
+            return Enum.GetNames(typeof(RotationalSolids.RotationalPolyType)).ToArray();
         }
 
         protected override string GetButtonTexturePath(int i)
         {
-            return $"ShapeButtons/poly_johnson_{(PolyHydraEnums.JohnsonPolyTypes)i}";
+            return $"ShapeButtons/poly_johnson_{(RotationalSolids.RotationalPolyType)i}";
 
         }
 
         public override void HandleButtonPress(int buttonIndex)
         {
-            ParentPanel.PolyhydraModel.JohnsonPolyType = (PolyHydraEnums.JohnsonPolyTypes)buttonIndex;
-            ParentPanel.ButtonJohnsonType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.PolyhydraModel.rotationalPolyType = (RotationalSolids.RotationalPolyType)buttonIndex;
+            ParentPanel.ButtonRotationalType.SetButtonTexture(GetButtonTexture(buttonIndex));
             ParentPanel.SetSliderConfiguration();
         }
 

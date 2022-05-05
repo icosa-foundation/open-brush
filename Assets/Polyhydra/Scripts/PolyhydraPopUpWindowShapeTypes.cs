@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,24 +25,18 @@ namespace TiltBrush
 
         protected override string[] GetButtonList()
         {
-            var names = Enum.GetNames(typeof(PolyHydraEnums.PolyhedraCategory)).ToArray();
-            for (var i = 0; i < names.Length; i++)
-            {
-                // Not really Johnson Polyhedra, are they?
-                names[i] = names[i] == "Johnson" ? "Radial" : names[i];
-            }
-
+            var names = Enum.GetNames(typeof(PreviewPolyhedron.MainCategories)).ToArray();
             return names;
         }
 
         protected override string GetButtonTexturePath(int i)
         {
-            return $"ShapeTypeButtons/{(PolyHydraEnums.PolyhedraCategory)i}";
+            return $"ShapeTypeButtons/{(PreviewPolyhedron.MainCategories)i}";
         }
 
         public override void HandleButtonPress(int buttonIndex)
         {
-            var shapeCategory = (PolyHydraEnums.PolyhedraCategory)buttonIndex;
+            var shapeCategory = (PreviewPolyhedron.MainCategories)buttonIndex;
             ParentPanel.CurrentShapeCategory = shapeCategory;
             ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(buttonIndex));
             ParentPanel.SetPanelButtonVisibility();

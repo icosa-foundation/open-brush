@@ -709,7 +709,7 @@ namespace TiltBrush
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
-            VrUiPoly vrPoly = null;
+            PreviewPolyhedron vrPoly = null;
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -723,7 +723,7 @@ namespace TiltBrush
                     active = 4;
                     break;
                 case SymmetryMode.CustomSymmetryMode:
-                    vrPoly = (VrUiPoly) FindObjectOfType(typeof(VrUiPoly));
+                    vrPoly = (PreviewPolyhedron) FindObjectOfType(typeof(PreviewPolyhedron));
                     active = vrPoly._conwayPoly.Faces.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
@@ -837,7 +837,7 @@ namespace TiltBrush
                     }
                 case SymmetryMode.CustomSymmetryMode:
                     {
-                        var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
+                        var vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
       
                         TrTransform aboutY; {
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
@@ -948,7 +948,7 @@ namespace TiltBrush
                         var xf0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var xf0_OS = xfWidget.inverse * xf0_GS;
 
-                        var vrPoly = (VrUiPoly)FindObjectOfType(typeof(VrUiPoly));
+                        var vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
                         if (vrPoly == null || vrPoly._conwayPoly == null) return;
                         var faces = vrPoly._conwayPoly.Faces;
 

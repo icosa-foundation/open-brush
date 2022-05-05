@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ namespace TiltBrush
 
         protected override string[] GetButtonList()
         {
-            return Enum.GetNames(typeof(PolyHydraEnums.FaceSelections)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
+            return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
         }
 
         public override void SetPopupCommandParameters(int commandParam, int commandParam2)
@@ -87,7 +87,7 @@ namespace TiltBrush
             var ops = ParentPanel.PolyhydraModel.ConwayOperators;
 
             var op = ops[OpStackIndex];
-            op.faceSelections = (PolyHydraEnums.FaceSelections)absoluteButtonIndex;
+            op.filters = (PreviewPolyhedron.AvailableFilters)absoluteButtonIndex;
             ops[OpStackIndex] = op;
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
             ParentPanel.ButtonsFaceSel[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);

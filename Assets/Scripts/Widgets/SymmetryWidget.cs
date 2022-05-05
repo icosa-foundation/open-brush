@@ -37,7 +37,7 @@ namespace TiltBrush
         [SerializeField] private GrabWidgetHome m_Home;
         private MeshRenderer m_SymmetryGuideMeshRenderer;
         private MeshFilter m_SymmetryGuideMeshFilter;
-        private VrUiPoly vrUiPoly;
+        private PreviewPolyhedron _previewPolyhedron;
 
         public enum BeamDirection
         {
@@ -130,15 +130,15 @@ namespace TiltBrush
                     }
                     break;
                 case PointerManager.SymmetryMode.CustomSymmetryMode:
-                    if (vrUiPoly == null)
+                    if (_previewPolyhedron == null)
                     {
-                        vrUiPoly = FindObjectOfType<VrUiPoly>();
+                        _previewPolyhedron = FindObjectOfType<PreviewPolyhedron>();
                     }
                     m_LeftRightMesh.enabled = false;
                     m_SymmetryGuideMeshRenderer.enabled = true;
-                    m_SymmetryGuideMeshFilter.mesh = vrUiPoly.GetComponent<MeshFilter>().mesh;
+                    m_SymmetryGuideMeshFilter.mesh = _previewPolyhedron.GetComponent<MeshFilter>().mesh;
                     m_SymmetryGuideMeshFilter.transform.localScale = Vector3.one * 2.0f;
-                    m_SymmetryGuideMeshRenderer.material = vrUiPoly.SymmetryWidgetMaterial;
+                    m_SymmetryGuideMeshRenderer.material = _previewPolyhedron.SymmetryWidgetMaterial;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&

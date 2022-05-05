@@ -1,3 +1,17 @@
+// Copyright 2022 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,16 +20,17 @@ using Polyhydra.Wythoff;
 using TiltBrush;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
-public class VrUiPoly : MonoBehaviour
+public class PreviewPolyhedron : MonoBehaviour
 {
     public bool GenerateSubmeshes = false;
 
     public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
-    public PolyHydraEnums.JohnsonPolyTypes JohnsonPolyType;
-    public PolyHydraEnums.OtherPolyTypes OtherPolyType;
+    public RotationalSolids.RotationalPolyType rotationalPolyType;
+    public OtherPolyTypes OtherPolyType;
     public GridEnums.GridTypes GridType;
     public GridEnums.GridShapes GridShape;
     public int PrismP;
@@ -34,7 +49,98 @@ public class VrUiPoly : MonoBehaviour
     public ColorMethods PreviewColorMethod;
 
     public Material SymmetryWidgetMaterial;
+    private Dictionary<string, object> Parameters;
 
+    public enum AvailableFilters
+    {
+        All,
+
+        // Sides
+        ThreeSided,
+        FourSided,
+        FiveSided,
+        SixSided,
+        SevenSided,
+        EightSided,
+        NineSided,
+        TenSided,
+        ElevenSided,
+        TwelveSided,
+        PSided,
+        QSided,
+        EvenSided,
+        OddSided,
+
+        // Direction
+        FacingUp,
+        FacingStraightUp,
+        FacingDown,
+        FacingStraightDown,
+        FacingForward,
+        FacingBackward,
+        FacingStraightForward,
+        FacingStraightBackward,
+        FacingLevel,
+        FacingCenter,
+        FacingIn,
+        FacingOut,
+
+        // Role
+        Ignored,
+        Existing,
+        New,
+        NewAlt,
+        AllNew,
+
+        // Index
+        Odd,
+        Even,
+        OnlyFirst,
+        ExceptFirst,
+        OnlyLast,
+        ExceptLast,
+        Random,
+
+        // Edges
+        Inner,
+        Outer,
+
+        // Distance or position
+        TopHalf,
+
+        // Area
+        Smaller,
+        Larger,
+
+        None,
+    }
+
+    public enum MainCategories
+    {
+        Platonic,
+        Archimedean,
+        KeplerPoinsot,
+        // UniformConvex,
+        // UniformStar,
+        Rotational,
+        Waterman,
+        Grids,
+        Various
+    }
+
+    public enum OtherPolyTypes
+    {
+        Polygon,
+        UvSphere,
+        UvHemisphere,
+        Box,
+
+        C_Shape,
+        L_Shape,
+        L_Alt_Shape,
+        H_Shape,
+    }
+    
     void Start()
     {
         Init();
@@ -90,12 +196,12 @@ public class VrUiPoly : MonoBehaviour
     public struct ConwayOperator
     {
         public PolyMesh.Operation opType;
-        public PolyHydraEnums.FaceSelections faceSelections;
+        [FormerlySerializedAs("faceSelections")] public AvailableFilters filters;
         public float amount;
         public float amount2;
         public bool disabled;
 
-        public ConwayOperator ClampAmount(PolyHydraEnums.OpConfig config, bool safe = false)
+        public ConwayOperator ClampAmount(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amountSafeMin : config.amountMin;
             float max = safe ? config.amountSafeMax : config.amountMax;
@@ -103,7 +209,7 @@ public class VrUiPoly : MonoBehaviour
             return this;
         }
 
-        public ConwayOperator ClampAmount2(PolyHydraEnums.OpConfig config, bool safe = false)
+        public ConwayOperator ClampAmount2(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amount2SafeMin : config.amount2Min;
             float max = safe ? config.amount2SafeMax : config.amount2Max;
@@ -131,14 +237,14 @@ public class VrUiPoly : MonoBehaviour
         }
         public ConwayOperator ChangeFaceSelection(int val)
         {
-            faceSelections += val;
-            faceSelections = (PolyHydraEnums.FaceSelections)Mathf.Clamp(
-                (int)faceSelections, 0, Enum.GetNames(typeof(PolyHydraEnums.FaceSelections)).Length - 1
+            filters += val;
+            filters = (AvailableFilters)Mathf.Clamp(
+                (int)filters, 0, Enum.GetNames(typeof(AvailableFilters)).Length - 1
             );
             return this;
         }
 
-        public ConwayOperator SetDefaultValues(PolyHydraEnums.OpConfig config)
+        public ConwayOperator SetDefaultValues(OpConfig config)
         {
             amount = config.amountDefault;
             amount2 = config.amount2Default;
@@ -188,9 +294,9 @@ public class VrUiPoly : MonoBehaviour
         // Control the amount variables to some degree
         for (var i = 0; i < ConwayOperators.Count; i++)
         {
-            if (PolyHydraEnums.OpConfigs == null) continue;
+            if (OpConfigs.Configs == null) continue;
             var op = ConwayOperators[i];
-            if (PolyHydraEnums.OpConfigs[op.opType].usesAmount)
+            if (OpConfigs.Configs[op.opType].usesAmount)
             {
                 op.amount = Mathf.Round(op.amount * 1000) / 1000f;
                 op.amount2 = Mathf.Round(op.amount2 * 1000) / 1000f;
@@ -198,13 +304,13 @@ public class VrUiPoly : MonoBehaviour
                 float opMin, opMax;
                 if (SafeLimits)
                 {
-                    opMin = PolyHydraEnums.OpConfigs[op.opType].amountSafeMin;
-                    opMax = PolyHydraEnums.OpConfigs[op.opType].amountSafeMax;
+                    opMin = OpConfigs.Configs[op.opType].amountSafeMin;
+                    opMax = OpConfigs.Configs[op.opType].amountSafeMax;
                 }
                 else
                 {
-                    opMin = PolyHydraEnums.OpConfigs[op.opType].amountMin;
-                    opMax = PolyHydraEnums.OpConfigs[op.opType].amountMax;
+                    opMin = OpConfigs.Configs[op.opType].amountMin;
+                    opMax = OpConfigs.Configs[op.opType].amountMax;
                 }
                 if (op.amount < opMin) op.amount = opMin;
                 if (op.amount > opMax) op.amount = opMax;
@@ -229,6 +335,8 @@ public class VrUiPoly : MonoBehaviour
         );
     }
 
+    
+
     public void MakePolyhedron()
     {
         switch (GeneratorType)
@@ -238,8 +346,8 @@ public class VrUiPoly : MonoBehaviour
                 _conwayPoly = wythoff.Build();
                 _conwayPoly = _conwayPoly.SitLevel();
                 break;
-            case GeneratorTypes.Johnson:
-                _conwayPoly = JohnsonSolids.Build((int)JohnsonPolyType);
+            case GeneratorTypes.Rotational:
+                _conwayPoly = RotationalSolids.Build(rotationalPolyType, PrismP);
                 break;
             case GeneratorTypes.Grid:
                 _conwayPoly = Grids.Build(GridType, GridShape, PrismP, PrismQ);
@@ -250,16 +358,16 @@ public class VrUiPoly : MonoBehaviour
             case GeneratorTypes.Various:
                 switch (OtherPolyType)
                 {
-                    case PolyHydraEnums.OtherPolyTypes.GriddedCube:
+                    case OtherPolyTypes.Box:
                         _conwayPoly = VariousSolids.Build(VariousSolidTypes.Box, PrismP, PrismP, PrismQ);
                         break;
-                    case PolyHydraEnums.OtherPolyTypes.UvSphere:
+                    case OtherPolyTypes.UvSphere:
                         _conwayPoly = VariousSolids.Build(VariousSolidTypes.UvSphere, PrismP, PrismP, PrismQ);
                         break;
-                    case PolyHydraEnums.OtherPolyTypes.UvHemisphere:
+                    case OtherPolyTypes.UvHemisphere:
                         _conwayPoly = VariousSolids.Build(VariousSolidTypes.UvHemisphere, PrismP, PrismP, PrismQ);
                         break;
-                    case PolyHydraEnums.OtherPolyTypes.Polygon:
+                    case OtherPolyTypes.Polygon:
                         _conwayPoly = Shapes.Build(ShapeTypes.Polygon, PrismP);
                         break;
                 }

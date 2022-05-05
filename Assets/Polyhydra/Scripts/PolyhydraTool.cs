@@ -1,4 +1,18 @@
-﻿using System.Collections.Generic;
+﻿// Copyright 2022 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
@@ -96,7 +110,7 @@ namespace TiltBrush
             {
                 m_WasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
-                VrUiPoly uiPoly = FindObjectOfType<VrUiPoly>();
+                PreviewPolyhedron uiPoly = FindObjectOfType<PreviewPolyhedron>();
                 if (uiPoly == null) return;
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
@@ -130,7 +144,7 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    VrUiPoly uiPoly = FindObjectOfType<VrUiPoly>();
+                    PreviewPolyhedron uiPoly = FindObjectOfType<PreviewPolyhedron>();
                     if (uiPoly == null) return;
 
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
@@ -150,11 +164,21 @@ namespace TiltBrush
                             rotation_CS,
                             scale_CS
                         );
-                        var shapeType = GeneratorTypes.Uniform;
-                        var parameters = new Dictionary<string,object>
-                        {  
+                        
+                        // Debug
+                        GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                        capsule.transform.parent = App.Scene.ActiveCanvas.transform;
+                        capsule.transform.position = m_FirstPositionClicked_CS.translation;
+                        capsule.transform.rotation = rotation_CS;
+                        capsule.transform.localScale = Vector3.one * scale_CS;
+
+                        var shapeType = uiPoly.GeneratorType;
+                        var parameters = new Dictionary<string, object>
+                        { 
+                            // TODO
                         };
-                        EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr, 
+                        
+                        EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr,
                             ColorMethods.ByRole, shapeType, parameters);
                     }
                     else
