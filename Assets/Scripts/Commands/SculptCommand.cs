@@ -14,10 +14,40 @@
 // limitations under the License.
 
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 
 namespace TiltBrush {
-public class SculptCommand : BaseCommand {
-    //CTODO:
-} 
+  public class SculptCommand : BaseCommand {
 
+    private BatchSubset m_TargetBatchSubset;
+    private List<Vector3> m_OldVerts;
+    private List<Vector3> m_NewVerts;
+
+    // CTODO: maybe just pass the transformation data instead? (to call GeometryPool.ApplyVertexTransformation or whatever it was called.)
+    public SculptCommand(
+        BatchSubset batchSubset, List<Vector3> newVerts, BaseCommand parent = null) : base(parent) {
+      m_TargetBatchSubset = batchSubset;
+      m_OldVerts = new List<Vector3>(m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices);
+      m_NewVerts = newVerts;
+    }
+
+    public override bool NeedsSave { get { return true; } }
+
+    private void ApplySculptModification(List<Vector3> vertices) {
+      m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices = vertices;
+      m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
+      m_TargetBatchSubset.m_Stroke.InvalidateCopy();
+      // m_TargetBatchSubset.m_Stroke.Uncreate();
+      //m_TargetBatchSubset.m_Stroke.Recreate();
+    }
+
+    protected override void OnRedo() {
+      ApplySculptModification(m_NewVerts);
+    }
+
+    protected override void OnUndo() {
+      ApplySculptModification(m_OldVerts);
+    }
+}
 } // namespace TiltBrush

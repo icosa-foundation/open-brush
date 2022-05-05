@@ -117,6 +117,8 @@ public class SketchMemoryScript : MonoBehaviour {
   // TODO: give this the same treatment as m_DeleteStrokes?
   private BaseCommand m_RepaintStrokeParent;
 
+  private BaseCommand m_SculptParent;
+
   private TrTransform m_xfSketchInitial_RS;
 
   private Coroutine m_RepaintCoroutine;
@@ -287,6 +289,7 @@ public class SketchMemoryScript : MonoBehaviour {
   }
 
   public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false) {
+    Debug.Log("SketchMemoryScript::PerformAndRecordCommand() executed");
     bool discardCommand = discardIfNotMerged;
     BaseCommand delta = command;
     ClearRedo();
@@ -397,6 +400,8 @@ public class SketchMemoryScript : MonoBehaviour {
       StencilWidget stencil, float lineLength, int seed) {
     // NOTE: PointerScript calls ClearRedo() in batch case
 
+    Debug.Log("SketchMemoryScript::MemorizeBatchedBrtushStroke() called");
+
     Stroke rNewStroke = new Stroke();
     rNewStroke.m_Type = Stroke.Type.BatchedBrushStroke;
     rNewStroke.m_BatchSubset = subset;
@@ -429,6 +434,8 @@ public class SketchMemoryScript : MonoBehaviour {
       StrokeFlags strokeFlags,
       StencilWidget stencil, float lineLength) {
     ClearRedo();
+
+    Debug.Log("SketchMemoryScript::MemorizeBatchedBrtushStroke() called");
 
     Stroke rNewStroke = new Stroke();
     rNewStroke.m_Type = Stroke.Type.BrushStroke;
@@ -504,6 +511,14 @@ public class SketchMemoryScript : MonoBehaviour {
       return true;
     }
     return false;
+  }
+
+  public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices) {
+    if (m_SculptParent == null) { 
+      m_SculptParent = new BaseCommand();
+    }
+    PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, m_SculptParent));
+    return true;
   }
 
   /// Removes stroke from our list only.

@@ -73,3 +73,5 @@
 
 # Google process
 .gitbugtraq
+
+.vscode/*

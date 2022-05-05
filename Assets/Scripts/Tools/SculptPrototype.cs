@@ -19,54 +19,58 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+  public class SculptPrototype : ToggleStrokeModificationTool
+  {
 
-
-    public class SculptPrototype : ToggleStrokeModificationTool
+    override public void Init()
     {
-
-        override public void Init() {
-            base.Init();
-            Debug.Log("Sculpt prototype initialized!");
-        }
-
-        override public void EnableTool(bool bEnable) {
-
-            // Call this after setting up our tool's state.
-            base.EnableTool(bEnable);
-            //change the material of all tools to some wireframe shader.
-            HideTool(!bEnable);
-        }
-
-        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
-            // Metadata of target stroke
-            var stroke = rGroup.m_Stroke;
-            Batch parentBatch = rGroup.m_ParentBatch;
-            int firstIdx = rGroup.m_StartVertIndex;
-            int lastIdx = firstIdx + rGroup.m_VertLength;
-            
-            var newVertices =  parentBatch.m_Geometry.m_Vertices;
-            // Tool position adjusted by canvas transformations
-            var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
-            
-            for (int i = firstIdx; i < lastIdx; i++) {
-
-                // Distance from vertex to pointer
-                float distance = Vector3.Distance(newVertices[i], toolPos);                
-                if (distance <= GetSize() / m_CurrentCanvas.Pose.scale) 
-                {
-                    //Debug.Log("Canvas scale now: " + m_CurrentCanvas.Pose.scale);
-                    // CTODO: Make this depend on distance
-                    float strength = 0.2f;
-                    Vector3 direction = (newVertices[i] - toolPos).normalized;
-                    Vector3 newVert = newVertices[i] + direction * 0.2f; 
-                    newVertices[i] = newVert;
-                }
-            }
-            Debug.Log("Sculpting modification made");
-            parentBatch.m_Geometry.m_Vertices = newVertices;
-            parentBatch.DelayedUpdateMesh();
-            return true;
-        }
+      base.Init();
+      Debug.Log("Sculpt prototype initialized!");
     }
+
+    override public void EnableTool(bool bEnable)
+    {
+      // Call this after setting up our tool's state.
+      base.EnableTool(bEnable);
+      //change the material of all tools to some wireframe shader.
+      HideTool(!bEnable);
+    }
+
+    override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
+    {
+      // Metadata of target stroke
+      var stroke = rGroup.m_Stroke;
+      Batch parentBatch = rGroup.m_ParentBatch;
+      int firstIdx = rGroup.m_StartVertIndex;
+      int lastIdx = firstIdx + rGroup.m_VertLength;
+
+      var newVertices = parentBatch.m_Geometry.m_Vertices;
+      // Tool position adjusted by canvas transformations
+      var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+
+      for (int i = firstIdx; i < lastIdx; i++)
+      {
+
+          // Distance from vertex to pointer
+          float distance = Vector3.Distance(newVertices[i], toolPos);
+          if (distance <= GetSize() / m_CurrentCanvas.Pose.scale)
+          {
+              //Debug.Log("Canvas scale now: " + m_CurrentCanvas.Pose.scale);
+              // CTODO: Make this depend on distance
+              float strength = 0.2f;
+              Vector3 direction = (newVertices[i] - toolPos).normalized;
+              Vector3 newVert = newVertices[i] + direction * 0.2f;
+              newVertices[i] = newVert;
+          }
+      }
+      Debug.Log("Sculpting modification made");
+      ;
+
+      SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices);
+      // parentBatch.m_Geometry.m_Vertices = newVertices;
+      // parentBatch.DelayedUpdateMesh();
+      return true;
+    }
+  }
 
 } // namespace TiltBrush
