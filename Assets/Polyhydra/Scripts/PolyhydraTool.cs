@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
-using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class PolyhydraTool : SelectionTool
+    public class PolyhydraTool : BaseStrokeIntersectionTool
     {
 
         //the parent of all of our tool's visual indicator objects
         private GameObject m_toolDirectionIndicator;
-
-        //whether this tool should follow the controller or not
-        private bool m_LockToController;
 
         //the controller that this tool is attached to
         private Transform m_BrushController;
@@ -38,22 +35,21 @@ namespace TiltBrush
 
         // The position of the pointed when m_ClickedLastUpdate was set to true;
         private TrTransform m_FirstPositionClicked_CS;
-        private Vector3 m_FirstPositionClicked_GS;
 
         private Mesh previewMesh;
         private Material previewMaterial;
-
-
-        private float[] angleSnaps;
-        private int currentSnap;
-        private float angleSnappingAngle;
+        
+        //whether this tool should follow the controller or not
+        private bool m_LockToController;
+        
+        private bool m_ValidWidgetFoundThisFrame;
+        private EditableModelWidget LastIntersectedEditableModelWidget;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
         {
             base.Init();
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
-            angleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
         }
 
         //What to do when the tool is enabled or disabled
@@ -82,7 +78,7 @@ namespace TiltBrush
             base.HideTool(bHide);
             m_toolDirectionIndicator.SetActive(!bHide);
         }
-
+        
         //What to do when all the tools run their update functions. Note that this is separate from Unity's Update script
         //All input handling should be done here
         override public void UpdateTool()
@@ -90,22 +86,48 @@ namespace TiltBrush
 
             base.UpdateTool();
 
-            Vector3 rAttachPoint_GS = InputManager.Brush.Geometry.ToolAttachPoint.position;
+            //keep description locked to controller
+            SnapIntersectionObjectToController();
+
+            //always default to resetting detection
+            m_ResetDetection = true;
+            m_ValidWidgetFoundThisFrame = false;
+
+            if (App.Config.m_UseBatchedBrushes)
+            {
+                // Required to trigger widget detection
+                UpdateBatchedBrushDetection(InputManager.Brush.Geometry.ToolAttachPoint.position);
+            }
+            else
+            {
+                // Doesn't seem to handle widget detect so m_UseBatchedBrushes==false is probably a broken code path now
+                UpdateSolitaryBrushDetection(InputManager.Brush.Geometry.ToolAttachPoint.position);
+            }
+
+            if (m_ResetDetection)
+            {
+                ResetDetection();
+            }
+            
             TrTransform rAttachPoint_CS = App.Scene.ActiveCanvas.AsCanvas[InputManager.Brush.Geometry.ToolAttachPoint];
 
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
-
-            if (InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Undo))
+            
+            
+            
+            // TODO WIP... 
+            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                currentSnap++;
-                currentSnap %= angleSnaps.Length;
-                angleSnappingAngle = angleSnaps[currentSnap];
-                GetComponentInChildren<TextMeshPro>().text = angleSnappingAngle.ToString();
+                Debug.Log($"{LastIntersectedEditableModelWidget.name}");
+                AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
             }
-            bool angleSnap = !(currentSnap == 0);
-
+            
+            
+            
+            
+                
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
@@ -113,30 +135,31 @@ namespace TiltBrush
                 PreviewPolyhedron uiPoly = FindObjectOfType<PreviewPolyhedron>();
                 if (uiPoly == null) return;
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
-                m_FirstPositionClicked_GS = rAttachPoint_GS;
-                previewMesh = uiPoly.GetComponent<MeshFilter>().mesh;
-                previewMaterial = uiPoly.GetComponent<MeshRenderer>().material;
+                previewMesh = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshFilter>().mesh;
+                previewMaterial = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshRenderer>().material;
             }
+
+            Vector3 SnapToGrid(Vector3 v)
+            {
+                return SelectionManager.m_Instance.SnapToGrid(v);
+            }
+            
+            var position_CS = SnapToGrid(m_FirstPositionClicked_CS.translation);
+            var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+            var rotation_CS = SelectionManager.m_Instance.QuantizeAngle(
+                Quaternion.LookRotation(drawnVector_CS, Vector3.up)
+            );
+            var scale_CS = SelectionManager.m_Instance.ScalarSnap(drawnVector_CS.magnitude);
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
-                var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
-
-                // Snapping needs compensating for the different rotation between global space and canvas space
-                var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
-                rotation_CS *= Quaternion.Euler(-CS_GS_offset);
-                rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
-                rotation_CS *= Quaternion.Euler(CS_GS_offset);
-
-                Matrix4x4 transform_GS = Matrix4x4.TRS(
-                    m_FirstPositionClicked_GS,
+                Matrix4x4 mat_CS = Matrix4x4.TRS(
+                    position_CS,
                     rotation_CS,
-                    Vector3.one * drawnVector_GS.magnitude
+                    Vector3.one * scale_CS
                 );
-                Graphics.DrawMesh(previewMesh, transform_GS, previewMaterial, 0);
+                Matrix4x4 mat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * mat_CS;
+                Graphics.DrawMesh(previewMesh, mat_GS, previewMaterial, 0);
 
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -144,48 +167,19 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    PreviewPolyhedron uiPoly = FindObjectOfType<PreviewPolyhedron>();
-                    if (uiPoly == null) return;
 
-                    var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
-                    var scale_CS = drawnVector_CS.magnitude;
-                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
+                    // Create editable model (false) or brush strokes (true)
+                    bool strokeShapeMode = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
 
-                    bool strokeShapeMode = false; // TODO
+                    var poly = EditableModelManager.m_Instance.m_PreviewPolyhedron.m_PolyMesh;
 
-                    var poly = uiPoly._conwayPoly;
-                    
                     if (!strokeShapeMode)
                     {
-                        var creationTr = TrTransform.TRS(
-                            m_FirstPositionClicked_CS.translation,
-                            rotation_CS,
-                            scale_CS
-                        );
-                        
-                        // Debug
-                        GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                        capsule.transform.parent = App.Scene.ActiveCanvas.transform;
-                        capsule.transform.position = m_FirstPositionClicked_CS.translation;
-                        capsule.transform.rotation = rotation_CS;
-                        capsule.transform.localScale = Vector3.one * scale_CS;
-
-                        var shapeType = uiPoly.GeneratorType;
-                        var parameters = new Dictionary<string, object>
-                        { 
-                            // TODO
-                        };
-                        
-                        EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr,
-                            ColorMethods.ByRole, shapeType, parameters);
+                        PolyhydraPanel.CreateWidgetForPolyhedron(position_CS, rotation_CS, scale_CS, poly);
                     }
                     else
                     {
-
                         var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-                        uint time = 0;
                         float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
                         float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
 
@@ -212,7 +206,7 @@ namespace TiltBrush
                                         m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
                                         m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
                                         m_Pressure = pressure,
-                                        m_TimestampMs = time
+                                        m_TimestampMs = (uint)(Time.unscaledTime * 1000)
                                     });
                                 }
 
@@ -226,7 +220,7 @@ namespace TiltBrush
                                 m_BrushGuid = brush.m_Guid,
                                 m_BrushScale = 1f,
                                 m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                                m_Color = uiPoly.GetFaceColor(faceIndex),
+                                m_Color = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetFaceColor(faceIndex),
                                 m_Seed = 0,
                                 m_ControlPoints = controlPoints.ToArray(),
                             };
@@ -240,18 +234,8 @@ namespace TiltBrush
                             );
                         }
                     }
-                    
-                    
                 }
             }
-        }
-        private Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            float round(float val) { return Mathf.Round(val / angleSnappingAngle) * angleSnappingAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
@@ -284,17 +268,15 @@ namespace TiltBrush
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
             }
         }
-
-        override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
-        {
-            return false;
-        }
-
+        
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
-            
-            bool result = base.HandleIntersectionWithWidget(widget);
-            return result;
+            ResetDetection();
+            // Only intersect with EditableModelWidget instances
+            var editableModelWidget = widget as EditableModelWidget;
+            LastIntersectedEditableModelWidget = editableModelWidget;
+            m_ValidWidgetFoundThisFrame = widget != null;
+            return m_ValidWidgetFoundThisFrame;
         }
     }
 }

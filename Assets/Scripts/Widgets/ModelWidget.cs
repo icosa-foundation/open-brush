@@ -311,13 +311,12 @@ namespace TiltBrush
         {
             base.OnShow();
 
-            if (m_Model != null && m_Model.m_Valid)
-            {
-                SetSignedWidgetSize(0.0f);
-            }
-
             if (!m_LoadingFromSketch)
             {
+                if (m_Model != null && m_Model.m_Valid)
+                {
+                    SetSignedWidgetSize(0.0f);
+                }
                 m_IntroAnimState = IntroAnimState.In;
                 Debug.Assert(!IsMoving(), "Shouldn't have velocity!");
                 ClearVelocities();

@@ -28,6 +28,28 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        private static void _PolyFromPath(List<Vector3> path, TrTransform tr, Color color)
+        {
+            var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
+            var poly = new PolyMesh(path, face);
+            poly.InitTags(color);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
+        }
+        
+        private static void _ApplyOp(int index, Dictionary<string, object> parameters)
+        {
+            var widget = _GetModelIdByIndex(index);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new EditableModelAddModifierCommand(widget, parameters)
+            );
+        }
+        
+        private static EditableModelWidget _GetModelIdByIndex(int index)
+        {
+            EditableModelWidget widget = GetActiveEditableModel(index);
+            return widget;
+        }
+        
         [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
         public static void ImportEditableModel(string location)
         {
@@ -449,16 +471,29 @@ namespace TiltBrush
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, parameters);
         }
         
+        [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
+        public static void CreateWatermanSolid(int root, int c)
+        {
+            var poly = WatermanPoly.Build(1f, root, c);
+            var parameters = new Dictionary<string, object>
+            {
+                {"root", root},
+                {"c", c},
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, parameters);
+        }
+        
         [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
         public static void CreateRotationalSolid(string type, int sides)
         {
             if (!Enum.TryParse(type, true, out PolyMesh.Operation solidType)) return;
-            var poly = RotationalSolids.Build((RotationalSolids.RotationalPolyType)solidType, sides);
+            var poly = RadialSolids.Build((RadialSolids.RadialPolyType)solidType, sides);
             var parameters = new Dictionary<string, object>
             {
                 {"type", type},
+                {"sides", sides},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Rotational, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Radial, parameters);
         }
 
         
@@ -466,18 +501,9 @@ namespace TiltBrush
         public static void CustomGuideFromEditableModel(int index)
         {
             EditableModelWidget modelWidget = GetActiveEditableModel(index);
-
-            var tr = _CurrentTransform();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            var stencilWidget = createCommand.Widget as StencilWidget;
             var poly = EditableModelManager.m_Instance.GetPolyMesh(modelWidget);
-            poly = poly.ConvexHull();
-            Mesh mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByRole);
-            var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
-            collider.sharedMesh = mesh;
-            collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
+            var tr = _CurrentTransform();
+            var stencilWidget = EditableModelManager.AddCustomGuide(poly, tr);
             stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
         }
         

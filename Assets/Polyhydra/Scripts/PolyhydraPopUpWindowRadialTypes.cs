@@ -18,24 +18,24 @@ using System.Linq;
 namespace TiltBrush
 {
 
-    public class PolyhydraPopUpWindowRotationalTypes : PolyhydraPopUpWindowBase
+    public class PolyhydraPopUpWindowRadialTypes : PolyhydraPopUpWindowBase
     {
 
         protected override string[] GetButtonList()
         {
-            return Enum.GetNames(typeof(RotationalSolids.RotationalPolyType)).ToArray();
+            return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToArray();
         }
 
         protected override string GetButtonTexturePath(int i)
         {
-            return $"ShapeButtons/poly_johnson_{(RotationalSolids.RotationalPolyType)i}";
+            return $"ShapeButtons/poly_johnson_{(RadialSolids.RadialPolyType)i}";
 
         }
 
         public override void HandleButtonPress(int buttonIndex)
         {
-            ParentPanel.PolyhydraModel.rotationalPolyType = (RotationalSolids.RotationalPolyType)buttonIndex;
-            ParentPanel.ButtonRotationalType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.PolyhydraModel.RadialPolyType = (RadialSolids.RadialPolyType)buttonIndex;
+            ParentPanel.ButtonRadialType.SetButtonTexture(GetButtonTexture(buttonIndex));
             ParentPanel.SetSliderConfiguration();
         }
 

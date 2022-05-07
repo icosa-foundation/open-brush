@@ -14,6 +14,7 @@
 using System;
 using System.Linq;
 using Polyhydra.Core;
+using UnityEngine;
 
 
 namespace TiltBrush
@@ -29,6 +30,7 @@ namespace TiltBrush
 
         protected override string GetButtonTexturePath(int i)
         {
+            Debug.Log($"Loading: ShapeButtons/poly_gridshape_{(GridEnums.GridShapes)i}");
             return $"ShapeButtons/poly_gridshape_{(GridEnums.GridShapes)i}";
         }
 

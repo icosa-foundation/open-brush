@@ -980,7 +980,34 @@ namespace TiltBrush
                 m_SnapGridVisualization.enabled = false;
             }
         }
+        
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            if (SnappingAngle == 0) return rotation;
+            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle;}
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
 
+        public Vector3 SnapToGrid(Vector3 position)
+        {
+            if (SnappingGridSize == 0) return position;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / SnappingGridSize) * SnappingGridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+
+        public float ScalarSnap(float val)
+        {
+            if (SnappingGridSize == 0) return val;
+            return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
+        }
 
     }
 

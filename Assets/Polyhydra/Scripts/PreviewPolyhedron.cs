@@ -29,18 +29,22 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
-    public RotationalSolids.RotationalPolyType rotationalPolyType;
+    public RadialSolids.RadialPolyType RadialPolyType;
     public OtherPolyTypes OtherPolyType;
     public GridEnums.GridTypes GridType;
     public GridEnums.GridShapes GridShape;
-    public int PrismP;
-    public int PrismQ;
+    public int Param1Int;
+    public int Param2Int;
+    public int Param3Int = 3;
+    public float Param1Float;
+    public float Param2Float;
+    public float Param3Float = 1f;
 
     public Gradient colors;
     public float ColorRange;
     public float ColorOffset;
 
-    public PolyMesh _conwayPoly;
+    public PolyMesh m_PolyMesh;
     public bool Rescale;
     private MeshFilter meshFilter;
     private Color[] previewColors;
@@ -49,7 +53,8 @@ public class PreviewPolyhedron : MonoBehaviour
     public ColorMethods PreviewColorMethod;
 
     public Material SymmetryWidgetMaterial;
-    private Dictionary<string, object> Parameters;
+    public Dictionary<string, object> m_Parameters;
+    public List<Dictionary<string, object>> m_Operations;
 
     public enum AvailableFilters
     {
@@ -115,6 +120,11 @@ public class PreviewPolyhedron : MonoBehaviour
         None,
     }
 
+    private void Awake()
+    {
+        EditableModelManager.m_Instance.m_PreviewPolyhedron = this;
+    }
+
     public enum MainCategories
     {
         Platonic,
@@ -122,7 +132,7 @@ public class PreviewPolyhedron : MonoBehaviour
         KeplerPoinsot,
         // UniformConvex,
         // UniformStar,
-        Rotational,
+        Radial,
         Waterman,
         Grids,
         Various
@@ -131,13 +141,14 @@ public class PreviewPolyhedron : MonoBehaviour
     public enum OtherPolyTypes
     {
         Polygon,
+        Star,
+        
         UvSphere,
         UvHemisphere,
         Box,
-
+        
         C_Shape,
         L_Shape,
-        L_Alt_Shape,
         H_Shape,
     }
     
@@ -151,6 +162,8 @@ public class PreviewPolyhedron : MonoBehaviour
         ColorSetup();
         meshFilter = gameObject.GetComponent<MeshFilter>();
         MakePolyhedron();
+        
+        
     }
 
     private void ColorSetup()
@@ -285,10 +298,10 @@ public class PreviewPolyhedron : MonoBehaviour
 
         if (GeneratorType == GeneratorTypes.Uniform)
         {
-            if (PrismP < 3) { PrismP = 3; }
-            if (PrismP > 16) PrismP = 16;
-            if (PrismQ > PrismP - 2) PrismQ = PrismP - 2;
-            if (PrismQ < 2) PrismQ = 2;
+            if (Param1Int < 3) { Param1Int = 3; }
+            if (Param1Int > 16) Param1Int = 16;
+            if (Param2Int > Param1Int - 2) Param2Int = Param1Int - 2;
+            if (Param2Int < 2) Param2Int = 2;
         }
 
         // Control the amount variables to some degree
@@ -324,66 +337,177 @@ public class PreviewPolyhedron : MonoBehaviour
     }
 
     public bool SafeLimits;
-    private PolyMesh stashed;
 
     public Color GetFaceColor(int faceIndex)
     {
-        return _conwayPoly.CalcFaceColor(
+        return m_PolyMesh.CalcFaceColor(
             previewColors,
             PreviewColorMethod,
             faceIndex
         );
     }
 
-    
-
     public void MakePolyhedron()
     {
+
+        // TODO Unify this with similar code in SaveLoadScript.cs
+        
         switch (GeneratorType)
         {
             case GeneratorTypes.Uniform:
-                var wythoff = new WythoffPoly(UniformPolyType, PrismP, PrismQ);
-                _conwayPoly = wythoff.Build();
-                _conwayPoly = _conwayPoly.SitLevel();
-                break;
-            case GeneratorTypes.Rotational:
-                _conwayPoly = RotationalSolids.Build(rotationalPolyType, PrismP);
-                break;
-            case GeneratorTypes.Grid:
-                _conwayPoly = Grids.Build(GridType, GridShape, PrismP, PrismQ);
+                
+                var wythoff = new WythoffPoly(UniformPolyType);
+                m_PolyMesh = wythoff.Build();
+                m_PolyMesh = m_PolyMesh.SitLevel();
+                m_Parameters = new Dictionary<string, object>
+                {
+                    {"type", UniformPolyType},
+                };
                 break;
             case GeneratorTypes.Waterman:
-                _conwayPoly = WatermanPoly.Build(1f, PrismP, PrismQ);
+                m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int);
+                m_Parameters = new Dictionary<string, object>
+                {
+                    {"root", Param1Int},
+                    {"c", Param2Int},
+                };
+                break;
+            case GeneratorTypes.Grid:
+                m_PolyMesh = Grids.Build(GridType, GridShape, Param1Int, Param2Int);
+                m_Parameters = new Dictionary<string, object>
+                {
+                    {"type", GridType},
+                    {"shape", GridShape},
+                    {"x", Param1Int},
+                    {"y", Param2Int},
+                };
+                break;
+            case GeneratorTypes.Radial:
+                Param1Int = Mathf.Max(Param1Int, 3);
+                float height, capHeight;
+                switch (RadialPolyType)
+                {
+                    case RadialSolids.RadialPolyType.Prism:
+                    case RadialSolids.RadialPolyType.Antiprism:
+                    case RadialSolids.RadialPolyType.Pyramid:
+                    case RadialSolids.RadialPolyType.Dipyramid:
+                    case RadialSolids.RadialPolyType.OrthoBicupola:
+                    case RadialSolids.RadialPolyType.GyroBicupola:
+                    case RadialSolids.RadialPolyType.Cupola:
+                        height = Param2Float;
+                        capHeight = Param2Float;
+                        break;
+                    default:
+                        height = Param2Float;
+                        capHeight = Param3Float;
+                        break;
+                }
+                
+                m_PolyMesh = RadialSolids.Build(RadialPolyType, Param1Int, height, capHeight);
+                m_Parameters = new Dictionary<string, object>
+                {
+                    {"type", RadialPolyType},
+                    {"sides", Param1Int},
+                    {"height", height},
+                    {"capheight", capHeight},
+                };
+                
                 break;
             case GeneratorTypes.Various:
                 switch (OtherPolyType)
                 {
                     case OtherPolyTypes.Box:
-                        _conwayPoly = VariousSolids.Build(VariousSolidTypes.Box, PrismP, PrismP, PrismQ);
+                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Box, Param1Int, Param2Int, Param3Int);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"type", VariousSolidTypes.Box},
+                            {"x", Param1Int},
+                            {"y", Param2Int},
+                            {"z", Param3Int},
+                        };
                         break;
                     case OtherPolyTypes.UvSphere:
-                        _conwayPoly = VariousSolids.Build(VariousSolidTypes.UvSphere, PrismP, PrismP, PrismQ);
+                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"type", VariousSolidTypes.UvSphere},
+                            {"x", Param1Int},
+                            {"y", Param2Int},
+                        };
                         break;
                     case OtherPolyTypes.UvHemisphere:
-                        _conwayPoly = VariousSolids.Build(VariousSolidTypes.UvHemisphere, PrismP, PrismP, PrismQ);
+                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param1Int, Param2Int);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"type", VariousSolidTypes.UvHemisphere},
+                            {"x", Param1Int},
+                            {"y", Param2Int},
+                        };
                         break;
                     case OtherPolyTypes.Polygon:
-                        _conwayPoly = Shapes.Build(ShapeTypes.Polygon, PrismP);
+                        m_PolyMesh = Shapes.Build(ShapeTypes.Polygon, Param1Int);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"sides", Param1Int},
+                        };
+                        break;
+                    case OtherPolyTypes.Star:
+                        m_PolyMesh = Shapes.Build(ShapeTypes.Star, Param1Int, Param2Float);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"sides", Param1Int},
+                            {"sharpness", Param2Float},
+                        };
+                        break;
+                    case OtherPolyTypes.L_Shape:
+                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"a", Param1Float},
+                            {"b", Param2Float},
+                            {"c", Param3Float},
+                        };
+                        break;
+                    case OtherPolyTypes.C_Shape:
+                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"a", Param1Float},
+                            {"b", Param2Float},
+                            {"c", Param3Float},
+                        };
+                        break;
+                    case OtherPolyTypes.H_Shape:
+                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
+                        m_Parameters = new Dictionary<string, object>
+                        {
+                            {"a", Param1Float},
+                            {"b", Param2Float},
+                            {"c", Param3Float},
+                        };
                         break;
                 }
                 break;
         }
-        ////_conwayPoly.basePolyhedraInfo = new PolyMesh.BasePolyhedraInfo { P = PrismP, Q = PrismQ };
-        if (_conwayPoly==null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
 
+        if (m_PolyMesh==null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
+
+        m_Operations = new List<Dictionary<string, object>>();
         foreach (var op in ConwayOperators.ToList())
         {
+            m_Operations.Add(new Dictionary<string, object>
+            {
+                {"operation", op.opType},
+                {"param1", op.amount},
+                {"param2", op.amount2},
+                {"disabled", op.disabled},
+                {"filter", op.filters},
+            });
             if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
-            _conwayPoly = ApplyOp(_conwayPoly, ref stashed, op);
-            ////_conwayPoly.basePolyhedraInfo = new PolyMesh.BasePolyhedraInfo { P = PrismP, Q = PrismQ };
+            m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
 
-        var mesh = _conwayPoly.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
+        var mesh = m_PolyMesh.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
         if (mesh != null)
         {
             AssignFinishedMesh(mesh);
@@ -419,7 +543,7 @@ public class PreviewPolyhedron : MonoBehaviour
         }
     }
 
-    public static PolyMesh ApplyOp(PolyMesh conway, ref PolyMesh stash, ConwayOperator op)
+    public static PolyMesh ApplyOp(PolyMesh conway, ConwayOperator op)
     {
         //// TODO filter based on op
         conway = conway.AppyOperation(op.opType, new OpParams(op.amount, op.amount2));

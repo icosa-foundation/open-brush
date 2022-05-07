@@ -3191,7 +3191,7 @@ MonoBehaviour:
   m_FakeCommandLineArgsInEditor: 
   m_PlatformConfig: {fileID: 11400000, guid: 0764a106823cbec4e8d75b2816f3cbd3, type: 2}
   m_IsExperimental: 1
-  m_SdkMode: 3
+  m_SdkMode: 1
   m_AutoProfile: 0
   m_AutoProfileWaitTime: 10
   Secrets: {fileID: 11400000, guid: 2f5f8e93c6bc7be49a5023148b50e7a0, type: 2}
@@ -6298,6 +6298,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5613725442812470861, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_ModifyStrokeSounds.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5613725442812470861, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_ModifyStrokeSounds.Array.data[0]
+      value: 
+      objectReference: {fileID: 8300000, guid: df636f4dcacb9c34ca1a10d3c11cb6ae, type: 3}
     - target: {fileID: 8856218895317601196, guid: 7a27a11733f068248b6137d124e53cb5,
         type: 3}
       propertyPath: m_fontAsset
@@ -7271,8 +7281,6 @@ MonoBehaviour:
   m_DropperConeRenderer: {fileID: 957799543}
   m_DropperRenderer: {fileID: 1372392206}
   m_DropperBrushSelectRadius: 0.1
-  m_EnterSpeed: 16
-  m_OffsetTransform: {fileID: 562640338}
 --- !u!1 &409849876
 GameObject:
   m_ObjectHideFlags: 0

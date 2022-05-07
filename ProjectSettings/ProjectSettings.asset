@@ -773,7 +773,6 @@ PlayerSettings:
   managedStrippingLevel: {}
   incrementalIl2cppBuild:
     iPhone: 1
-  suppressCommonWarnings: 1
   allowUnsafeCode: 1
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1

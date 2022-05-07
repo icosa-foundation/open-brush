@@ -758,6 +758,9 @@ namespace TiltBrush
                         // Rebuild generated models
                         foreach (var model in generatedModels)
                         {
+                            
+                            // TODO Unify this with similar code in PreviewPolyedron.cs
+                            
                             var emd = jsonData.EditableModelDefinitions[model.AssetId];
                             PolyMesh poly = null;
                             var p = emd.GeneratorParameters;
@@ -787,9 +790,9 @@ namespace TiltBrush
                                         Convert.ToSingle(p["c"])
                                     );
                                     break;
-                                case GeneratorTypes.Rotational:
-                                    poly = RotationalSolids.Build(
-                                        (RotationalSolids.RotationalPolyType)Convert.ToInt32(p["type"]),
+                                case GeneratorTypes.Radial:
+                                    poly = RadialSolids.Build(
+                                        (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]),
                                         Convert.ToInt32(p["sides"]),
                                         Convert.ToSingle(p["height"]),
                                         Convert.ToSingle(p["capheight"])
@@ -798,6 +801,7 @@ namespace TiltBrush
                                 case GeneratorTypes.Uniform:
                                     var wythoff = new WythoffPoly((UniformTypes)Convert.ToInt32(p["type"]));
                                     poly = wythoff.Build();
+                                    poly = poly.SitLevel();
                                     break;
                                 case GeneratorTypes.Waterman:
                                     poly = WatermanPoly.Build(
@@ -827,10 +831,15 @@ namespace TiltBrush
                             {
                                 foreach (var opDict in emd.Operations)
                                 {
-                                    var op = (PolyMesh.Operation)Convert.ToInt32(opDict["type"]);
+                                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
+                                    if (disabled) continue;
+                                    var op = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
                                     float param1 = Convert.ToSingle(opDict["param1"]);
                                     float param2 = Convert.ToSingle(opDict["param2"]);
-                                    var parameters = new OpParams(param1, param2);
+                                    // TODO
+                                    //// var filter = MakeFilterFromEnum((PreviewPolyhedron.AvailableFilters)Convert.ToInt32(opDict["filter"]));
+                                    var filter = Filter.All;
+                                    var parameters = new OpParams(param1, param2, filter);
                                     poly = poly.AppyOperation(op, parameters);
                                 }
                             }
@@ -839,7 +848,7 @@ namespace TiltBrush
                             {
                                 foreach (var tr in model.RawTransforms)
                                 {
-                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType);
+                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, emd.GeneratorParameters, emd.Operations);
                                 }
                             }
                         }

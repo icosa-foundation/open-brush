@@ -145,7 +145,7 @@ namespace TiltBrush
             PolyhydraOpenUniformsPopup = 5002,
             PolyhydraGridTypesPopup = 5003,
             PolyhydraGridShapesPopup = 5004,
-            PolyhydraRotationalTypesPopup = 5005,
+            PolyhydraRadialTypesPopup = 5005,
             PolyhydraOtherTypesPopup = 5006,
             PolyhydraConwayOpTypesPopup = 5007,
             PolyhydraConwayOpFaceSelPopup = 5008,
@@ -4923,7 +4923,7 @@ namespace TiltBrush
                 case GlobalCommands.PolyhydraOpenUniformsPopup:
                 case GlobalCommands.PolyhydraGridTypesPopup:
                 case GlobalCommands.PolyhydraGridShapesPopup:
-                case GlobalCommands.PolyhydraRotationalTypesPopup:
+                case GlobalCommands.PolyhydraRadialTypesPopup:
                 case GlobalCommands.PolyhydraOtherTypesPopup:
                 case GlobalCommands.PolyhydraConwayOpTypesPopup:
                     // TODO we don't really need to use commands at all here

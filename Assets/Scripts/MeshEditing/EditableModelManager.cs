@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -13,7 +12,7 @@ namespace TiltBrush.MeshEditing
         Grid = 2,
         Shapes = 3,
         
-        Rotational = 4,
+        Radial = 4,
         Waterman = 5,
         Johnson = 6,
         ConwayString = 7,
@@ -48,6 +47,7 @@ namespace TiltBrush.MeshEditing
         }
         
         private Dictionary<string, EditableModel> m_EditableModels;
+        [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
 
         void Awake()
@@ -127,7 +127,9 @@ namespace TiltBrush.MeshEditing
             return m_EditableModels[guid].ColorMethod;
         }
         
-        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type, Dictionary<string, object> parameters=null)
+        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type, 
+                                     Dictionary<string, object> parameters=null, 
+                                     List<Dictionary<string, object>> operations=null)
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
@@ -137,10 +139,10 @@ namespace TiltBrush.MeshEditing
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
             RegisterEditableMesh(polyGo, poly, colMethod, type, parameters);
-
+            
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
+                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, spawnAtEnd: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var widget = createCommand.Widget as EditableModelWidget;
             if (widget != null)
@@ -149,12 +151,30 @@ namespace TiltBrush.MeshEditing
                 model.LoadEditableModel(polyGo);
                 widget.Model = model;
                 widget.Show(true);
+                foreach (var op in operations)
+                {
+                    RecordOperation(widget, op);
+                }
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
             }
+        }
+        
+        public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr)
+        {
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var stencilWidget = createCommand.Widget as StencilWidget;
+            poly = poly.ConvexHull();
+            Mesh mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByRole);
+            var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
+            collider.sharedMesh = mesh;
+            collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
+            return stencilWidget;
         }
     }
 }

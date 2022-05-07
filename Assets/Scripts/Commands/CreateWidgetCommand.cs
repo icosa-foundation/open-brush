@@ -36,6 +36,7 @@ namespace TiltBrush
             GrabWidget widgetPrefab,
             TrTransform spawnXf,
             Quaternion? desiredEndForward = null,
+            bool spawnAtEnd = false,
             BaseCommand parent = null)
             : base(parent)
         {
@@ -43,7 +44,7 @@ namespace TiltBrush
                 InputManager.ControllerName.Brush).transform;
             m_Canvas = App.ActiveCanvas;
             m_SpawnXf = spawnXf;
-            m_EndXf = TrTransform.TRS(
+            m_EndXf = spawnAtEnd ? spawnXf : TrTransform.TRS(
                 Vector3.Lerp(m_SpawnXf.translation, controller.position, m_SpawnAggression),
                 controller.rotation,
                 m_SpawnXf.scale);
@@ -90,6 +91,13 @@ namespace TiltBrush
                 {
                     m_Widget.transform.parent = m_Canvas.transform;
                     m_Widget.Show(true);
+                }
+                else if (m_Widget is EditableModelWidget)
+                {
+                    var em = (EditableModelWidget)m_Widget;
+                    em.LoadingFromSketch = true;
+                    m_Widget.transform.parent = m_Canvas.transform;
+                    m_Widget.LocalTransform = m_EndXf;
                 }
                 else if (m_Widget is ModelWidget)
                 {

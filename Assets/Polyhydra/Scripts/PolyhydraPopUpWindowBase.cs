@@ -77,7 +77,7 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
 
-            m_ColorBackground = m_Background.GetComponent<MeshRenderer>().material;
+            m_ColorBackground = m_Background.GetComponent<MeshRenderer>().sharedMaterial;
             base.Init(rParent, sText);
             ParentPanel = FindObjectOfType<PolyhydraPanel>();
             _buttons = new List<GameObject>();

@@ -17,8 +17,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using Polyhydra.Core;
-using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -89,28 +87,6 @@ namespace TiltBrush
             return tr;
         }
 
-        private static void _PolyFromPath(List<Vector3> path, TrTransform tr, Color color)
-        {
-            var face = new List<IEnumerable<int>> { Enumerable.Range(0, path.Count) };
-            var poly = new PolyMesh(path, face);
-            poly.InitTags(color);
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
-        }
-
-        private static void _ApplyOp(int index, Dictionary<string, object> parameters)
-        {
-            var widget = _GetModelIdByIndex(index);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new EditableModelAddModifierCommand(widget, parameters)
-            );
-        }
-        
-        private static EditableModelWidget _GetModelIdByIndex(int index)
-        {
-            EditableModelWidget widget = GetActiveEditableModel(index);
-            return widget;
-        }
-        
         private static Vector3 _QuantizePosition(Vector3 pos, Vector3 grid)
         {
             float round(float val, float res) { return Mathf.Round(val / res) * res; }

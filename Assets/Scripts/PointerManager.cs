@@ -724,7 +724,7 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.CustomSymmetryMode:
                     vrPoly = (PreviewPolyhedron) FindObjectOfType(typeof(PreviewPolyhedron));
-                    active = vrPoly._conwayPoly.Faces.Count;
+                    active = vrPoly.m_PolyMesh.Faces.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -764,11 +764,11 @@ namespace TiltBrush
                 {
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
-                if (vrPoly != null && vrPoly._conwayPoly!=null)
+                if (vrPoly != null && vrPoly.m_PolyMesh!=null)
                 {
-                    if (i < vrPoly._conwayPoly.Faces.Count)
+                    if (i < vrPoly.m_PolyMesh.Faces.Count)
                     {
-                        var face = vrPoly._conwayPoly.Faces[i];
+                        var face = vrPoly.m_PolyMesh.Faces[i];
                         // We could scale brushes by face size?
                         // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
                         if (vrPoly)
@@ -841,7 +841,7 @@ namespace TiltBrush
       
                         TrTransform aboutY; {
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            var face =  vrPoly._conwayPoly.Faces[child];
+                            var face =  vrPoly.m_PolyMesh.Faces[child];
                             TrTransform foo = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(33, Vector3.up));
                             aboutY = TrTransform.TR(face.Centroid, Quaternion.AngleAxis(0, Vector3.up));
                             // convert from widget-local coords to world coords
@@ -949,8 +949,8 @@ namespace TiltBrush
                         var xf0_OS = xfWidget.inverse * xf0_GS;
 
                         var vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
-                        if (vrPoly == null || vrPoly._conwayPoly == null) return;
-                        var faces = vrPoly._conwayPoly.Faces;
+                        if (vrPoly == null || vrPoly.m_PolyMesh == null) return;
+                        var faces = vrPoly.m_PolyMesh.Faces;
 
                         if (!m_Instance.MainPointer.IsCreatingStroke())
                         {
