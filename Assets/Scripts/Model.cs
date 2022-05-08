@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Autodesk.Fbx;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 using TiltBrushToolkit;
@@ -239,7 +240,11 @@ namespace TiltBrush
 
         public string HumanName
         {
-            get { return Path.GetFileNameWithoutExtension(m_Location.RelativePath); }
+            get
+            {
+                if (GetLocation().GetLocationType() == Location.Type.Generated) { return "[Generated]";}
+                return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
+            }
         }
 
         public bool AllowExport
@@ -739,6 +744,14 @@ namespace TiltBrush
             bool nofbx = false;
             #endif
 
+            if (m_Location.GetLocationType() == Location.Type.Generated)
+            {
+                m_AllowExport = true;
+                m_ImportMaterialCollector = new ImportMaterialCollector("generated", "generated");
+                var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+                m_ImportMaterialCollector.Add(mat);
+            }
+            
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
             {
