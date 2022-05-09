@@ -769,10 +769,10 @@ namespace TiltBrush
                             {
                                 case GeneratorTypes.GeometryData:
                                     // TODO simplify face tag data structure
-                                    var faceTags = new List<HashSet<Tuple<string, TagType>>>();
+                                    var faceTags = new List<HashSet<string>>();
                                     foreach (var t in emd.FaceTags)
                                     {
-                                        var tagSet = new HashSet<Tuple<string, TagType>>(t.Select(x => new Tuple<string, TagType>(x, TagType.Extrovert)).ToList());
+                                        var tagSet = new HashSet<string>(t);
                                         faceTags.Add(tagSet);
                                     }
                                     poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);

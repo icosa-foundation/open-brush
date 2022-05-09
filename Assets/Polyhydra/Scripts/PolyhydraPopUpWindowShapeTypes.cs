@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -23,22 +24,22 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowShapeTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            var names = Enum.GetNames(typeof(PreviewPolyhedron.MainCategories)).ToArray();
+            var names = Enum.GetNames(typeof(PreviewPolyhedron.MainCategories)).ToList();
             return names;
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeTypeButtons/{(PreviewPolyhedron.MainCategories)i}";
+            return $"ShapeTypeButtons/{action}";
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(string action)
         {
-            var shapeCategory = (PreviewPolyhedron.MainCategories)buttonIndex;
+            var shapeCategory = (PreviewPolyhedron.MainCategories)Enum.Parse(typeof(PreviewPolyhedron.MainCategories), action);
             ParentPanel.CurrentShapeCategory = shapeCategory;
-            ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(action));
             ParentPanel.SetPanelButtonVisibility();
             ParentPanel.ConfigureGeometry();
             ParentPanel.SetSliderConfiguration();

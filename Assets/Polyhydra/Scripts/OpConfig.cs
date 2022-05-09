@@ -471,14 +471,14 @@ public static class OpConfigs
 				amountMin = -4, amountMax = 4, amountSafeMin = -1, amountSafeMax = 1
 			}
 		},
-		{
-			PolyMesh.Operation.VertexFlex,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0.1f, amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
-			}
-		},
+		// {
+		// 	PolyMesh.Operation.VertexFlex,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0.1f, amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
+		// 	}
+		// },
 		{
 			PolyMesh.Operation.VertexStellate,
 			new OpConfig
@@ -548,208 +548,208 @@ public static class OpConfigs
 //			{PolyMesh.Operation.FaceRotateX, new OpConfig{usesFaces=true, amountDefault=0.1f, amountMin=-180, amountMax=180}},
 //			{PolyMesh.Operation.FaceRotateY, new OpConfig{usesFaces=true, amountDefault=0.1f, amountMin=-180, amountMax=180}},
 		{PolyMesh.Operation.FaceRemove, new OpConfig {usesFilter = true, usesAmount = false}},
-		{PolyMesh.Operation.FaceRemoveX, new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
-				usesAmount2 = true,
-				amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
-			}
-		},
-		{PolyMesh.Operation.FaceRemoveY, new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
-				usesAmount2 = true,
-				amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
-			}
-		},
-		{PolyMesh.Operation.FaceRemoveZ, new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
-				usesAmount2 = true,
-				amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
-			}
-		},
-		{PolyMesh.Operation.FaceRemoveDistance, new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
-				usesAmount2 = true,
-				amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
-			}
-		},
-		{PolyMesh.Operation.FaceRemovePolar, new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -360, amountMax = 360, amountSafeMin = -360f, amountSafeMax = 360f,
-				usesAmount2 = true,
-				amount2Min = -360, amount2Max = 360, amount2SafeMin = -360f, amount2SafeMax = 360,
-			}
-		},
+		// {PolyMesh.Operation.FaceRemoveX, new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
+		// 	}
+		// },
+		// {PolyMesh.Operation.FaceRemoveY, new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
+		// 	}
+		// },
+		// {PolyMesh.Operation.FaceRemoveZ, new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
+		// 	}
+		// },
+		// {PolyMesh.Operation.FaceRemoveDistance, new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -1, amountMax = 1, amountSafeMin = -1f, amountSafeMax = 1f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -1, amount2Max = 1, amount2SafeMin = -1f, amount2SafeMax = 1,
+		// 	}
+		// },
+		// {PolyMesh.Operation.FaceRemovePolar, new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -360, amountMax = 360, amountSafeMin = -360f, amountSafeMax = 360f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -360, amount2Max = 360, amount2SafeMin = -360f, amount2SafeMax = 360,
+		// 	}
+		// },
 		{PolyMesh.Operation.FillHoles, new OpConfig {usesAmount = false}},
-		{
-			PolyMesh.Operation.ExtendBoundaries,
-			new OpConfig
-			{
-				amountDefault = 0.5f,
-				amountMin = -4, amountMax = 4, amountSafeMin = -1f, amountSafeMax = 1f,
-				usesAmount2 = true,
-				amount2Min = -180, amount2Max = 180, amount2SafeMin = -100f, amount2SafeMax = 100,
-			}
-		},
-		{
-			PolyMesh.Operation.ConnectFaces,
-			new OpConfig
-			{
-				amountDefault = 0f,
-				amountMin = 0, amountMax = 1, amountSafeMin = 0, amountSafeMax = 1,
-				usesAmount2 = true,
-				amount2Min = 0, amount2Max = 1, amount2SafeMin = 0, amount2SafeMax = 1,
-			}
-		},
-		{PolyMesh.Operation.FaceMerge, new OpConfig {usesFilter = true, usesAmount = false}},
+		// {
+		// 	PolyMesh.Operation.ExtendBoundaries,
+		// 	new OpConfig
+		// 	{
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -4, amountMax = 4, amountSafeMin = -1f, amountSafeMax = 1f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -180, amount2Max = 180, amount2SafeMin = -100f, amount2SafeMax = 100,
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.ConnectFaces,
+		// 	new OpConfig
+		// 	{
+		// 		amountDefault = 0f,
+		// 		amountMin = 0, amountMax = 1, amountSafeMin = 0, amountSafeMax = 1,
+		// 		usesAmount2 = true,
+		// 		amount2Min = 0, amount2Max = 1, amount2SafeMin = 0, amount2SafeMax = 1,
+		// 	}
+		// },
+		// {PolyMesh.Operation.FaceMerge, new OpConfig {usesFilter = true, usesAmount = false}},
 		{PolyMesh.Operation.FaceKeep, new OpConfig {usesFilter = true, usesAmount = false}},
 		{PolyMesh.Operation.VertexRemove, new OpConfig {usesFilter = true, usesAmount = false}},
 		{PolyMesh.Operation.VertexKeep, new OpConfig {usesFilter = true, usesAmount = false}},
-		{
-			PolyMesh.Operation.Layer,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0.1f,
-				amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
-				usesAmount2 = true,
-				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
-			}
-		},
-		{
-			PolyMesh.Operation.Hinge,
-			new OpConfig
-			{
-				amountDefault = 15f,
-				amountMin = -180, amountMax = 180, amountSafeMin = 0, amountSafeMax = 180
-			}
-		},
-		{
-			PolyMesh.Operation.AddDual,
-			new OpConfig
-			{
-				amountDefault = 1f,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddCopyX,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddCopyY,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddCopyZ,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddMirrorX,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddMirrorY,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.AddMirrorZ,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-			}
-		},
-		{PolyMesh.Operation.Stash, new OpConfig
-			{
-				usesFilter = true,
-				usesAmount = false
-			}
-		},
-		{
-			PolyMesh.Operation.Unstash,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
-				usesAmount2 = true,
-				amount2Min = -6, amount2Max = 6, amount2SafeMin = -2, amount2SafeMax = 2
-			}
-		},
-		{
-			PolyMesh.Operation.UnstashToFaces,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
-				usesAmount2 = true,
-				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
-			}
-		},
-		{
-			PolyMesh.Operation.UnstashToVerts,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0,
-				amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
-				usesAmount2 = true,
-				amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
-			}
-		},
-		{PolyMesh.Operation.TagFaces, new OpConfig
-			{
-				usesFilter = true,
-			}
-		},
-		{
-			PolyMesh.Operation.Stack,
-			new OpConfig
-			{
-				usesFilter = true,
-				amountDefault = 0.5f,
-				amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
-				usesAmount2 = true,
-				amount2Default =  0.8f,
-				amount2Min = 0.1f, amount2Max = .9f, amount2SafeMin = .01f, amount2SafeMax = .99f
-			}
-		},
+		// {
+		// 	PolyMesh.Operation.Layer,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0.1f,
+		// 		amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.Hinge,
+		// 	new OpConfig
+		// 	{
+		// 		amountDefault = 15f,
+		// 		amountMin = -180, amountMax = 180, amountSafeMin = 0, amountSafeMax = 180
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddDual,
+		// 	new OpConfig
+		// 	{
+		// 		amountDefault = 1f,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddCopyX,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddCopyY,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddCopyZ,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddMirrorX,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddMirrorY,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.AddMirrorZ,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+		// 	}
+		// },
+		// {PolyMesh.Operation.Stash, new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		usesAmount = false
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.Unstash,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -6, amount2Max = 6, amount2SafeMin = -2, amount2SafeMax = 2
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.UnstashToFaces,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.UnstashToVerts,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0,
+		// 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2,
+		// 		usesAmount2 = true,
+		// 		amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
+		// 	}
+		// },
+		// {PolyMesh.Operation.TagFaces, new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 	}
+		// },
+		// {
+		// 	PolyMesh.Operation.Stack,
+		// 	new OpConfig
+		// 	{
+		// 		usesFilter = true,
+		// 		amountDefault = 0.5f,
+		// 		amountMin = -2f, amountMax = 2f, amountSafeMin = -2f, amountSafeMax = 2f,
+		// 		usesAmount2 = true,
+		// 		amount2Default =  0.8f,
+		// 		amount2Min = 0.1f, amount2Max = .9f, amount2SafeMin = .01f, amount2SafeMax = .99f
+		// 	}
+		// },
 		{
 			PolyMesh.Operation.Canonicalize,
 			new OpConfig
@@ -783,14 +783,14 @@ public static class OpConfigs
 				amountSafeMax = 2f
 			}
 		},
-		{
-			PolyMesh.Operation.Stretch,
-			new OpConfig
-			{
-				amountDefault = 1.0f,
-				amountMin = -6f, amountMax = 6f, amountSafeMin = -3f, amountSafeMax = 3f
-			}
-		},
+		// {
+		// 	PolyMesh.Operation.Stretch,
+		// 	new OpConfig
+		// 	{
+		// 		amountDefault = 1.0f,
+		// 		amountMin = -6f, amountMax = 6f, amountSafeMin = -3f, amountSafeMax = 3f
+		// 	}
+		// },
 		{PolyMesh.Operation.Recenter, new OpConfig {usesAmount = false}},
 		{PolyMesh.Operation.SitLevel, new OpConfig
 		{

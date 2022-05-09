@@ -30,9 +30,9 @@ namespace TiltBrush
         public float xSpacing = 2.5f;
         public float ySpacing = .25f;
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
+            return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
 
         public override void SetPopupCommandParameters(int commandParam, int commandParam2)
@@ -41,7 +41,7 @@ namespace TiltBrush
             OpStackIndex = commandParam;
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
             return $"IconButtons/Spherize";
         }
@@ -53,9 +53,9 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            string[] buttonLabels = GetButtonList();
+            List<string> buttonLabels = GetButtonList();
             int columns = 2;
-            for (int buttonIndex = 0; buttonIndex < buttonLabels.Length; buttonIndex++)
+            for (int buttonIndex = 0; buttonIndex < buttonLabels.Count; buttonIndex++)
             {
                 GameObject rButton = Instantiate(ButtonPrefab);
                 rButton.transform.parent = transform;
@@ -72,25 +72,24 @@ namespace TiltBrush
                 // rButtonRenderer.material.mainTexture = GetButtonTexture(buttonIndex);
 
                 PolyhydraThingButton rButtonScript = rButton.GetComponent<PolyhydraThingButton>();
-                rButtonScript.ButtonIndex = buttonIndex;
                 rButtonScript.parentPopup = this;
                 rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonLabels[buttonIndex];
                 rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
+                rButtonScript.ButtonAction = buttonLabels[buttonIndex];
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }
         }
 
-        public override void HandleButtonPress(int relativeButtonIndex)
+        public override void HandleButtonPress(string action)
         {
-            int absoluteButtonIndex = relativeButtonIndex + FirstButtonIndex;
             var ops = ParentPanel.PolyhydraModel.ConwayOperators;
 
             var op = ops[OpStackIndex];
-            op.filters = (PreviewPolyhedron.AvailableFilters)absoluteButtonIndex;
+            op.filters = (PreviewPolyhedron.AvailableFilters)Enum.Parse(typeof(PreviewPolyhedron.AvailableFilters), action);
             ops[OpStackIndex] = op;
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
-            ParentPanel.ButtonsFaceSel[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);
+            ParentPanel.ButtonsFaceSel[OpStackIndex].SetDescriptionText(action);
         }
 
         public void NextPage()

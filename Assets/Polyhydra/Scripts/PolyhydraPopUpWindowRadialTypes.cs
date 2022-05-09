@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 
@@ -21,21 +22,21 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowRadialTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToArray();
+            return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList();
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_johnson_{(RadialSolids.RadialPolyType)i}";
+            return $"ShapeButtons/poly_johnson_{action}";
 
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(string action)
         {
-            ParentPanel.PolyhydraModel.RadialPolyType = (RadialSolids.RadialPolyType)buttonIndex;
-            ParentPanel.ButtonRadialType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.PolyhydraModel.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
+            ParentPanel.ButtonRadialType.SetButtonTexture(GetButtonTexture(action));
             ParentPanel.SetSliderConfiguration();
         }
 

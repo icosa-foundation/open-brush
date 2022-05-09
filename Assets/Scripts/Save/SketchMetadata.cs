@@ -736,7 +736,7 @@ namespace TiltBrush
     {
         [JsonConstructor]
         public EditableModelDefinition(Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
-                                       List<Roles> vertexRoles, List<List<string>> faceTags,
+                                       List<Roles> vertexRoles, List<HashSet<string>> faceTags,
                                        ColorMethods colorMethod, GeneratorTypes generatorType,
                                        Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
@@ -774,7 +774,7 @@ namespace TiltBrush
         public List<int>[] Faces { get; }
         public List<Roles> FaceRoles { get; }
         public List<Roles> VertexRoles { get; }
-        public List<List<string>> FaceTags { get; }
+        public List<HashSet<string>> FaceTags { get; }
         public List<Dictionary<string, object>> Operations { get; }
         
     }

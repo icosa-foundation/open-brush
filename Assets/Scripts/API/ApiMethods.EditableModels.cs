@@ -253,7 +253,7 @@ namespace TiltBrush
             var shape = GridEnums.GridShapes.Plane;
             var poly = Grids.Build(type, shape, image.width, image.height);
             var pixels = image.GetPixels();
-            var faceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var faceTags = new List<HashSet<string>>();
             var clippedFaces = new HashSet<int>();
             for (var i = 0; i < pixels.Length; i++)
             {
@@ -264,13 +264,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var tag = new HashSet<Tuple<string, TagType>>
-                    {
-                        new Tuple<string, TagType>(
-                            $"#{ColorUtility.ToHtmlStringRGB(pixelColor)}",
-                            TagType.Extrovert
-                        )
-                    };
+                    var tag = new HashSet<string>{$"#{ColorUtility.ToHtmlStringRGB(pixelColor)}"};
                     faceTags.Add(tag);
                 }
             }
@@ -516,37 +510,7 @@ namespace TiltBrush
             };
             _ApplyOp(index, parameters);
         }
-        
-        [ApiEndpoint("editablemodel.modify.addnoise", "Moves the points of a model by adding noise in the chosen direction")]
-        public static void ModifyModelAddNoise(int index, string direction, float strength = 5, float xscale = .1f, float yscale = .1f)
-        {
-            Vector3 axis;
-            
-            // Create "mask" vector that contains 0 in the chosen direction and 1 in the others
-            switch (direction.ToLower())
-            {
-                case "x":
-                    axis = Vector3.right;
-                    break;
-                // Not sure why y and z need to be swapped but it works...
-                case "y":
-                    axis = Vector3.forward;
-                    break;
-                default:
-                    axis = Vector3.up;
-                    break;
-            }
-            var parameters = new Dictionary<string, object>
-            {
-                {"type", PolyMesh.Operation.PerlinNoise},
-                {"axis-x", axis.x},
-                {"axis-y", axis.y},
-                {"axis-z", axis.z},
-            };
-            // poly.PerlinNoise(axis, strength, xscale, yscale);
-            _ApplyOp(index, parameters);
-        }
-        
+
         [ApiEndpoint("editablemodel.modify.conway", "Apply a Conway operator to a model")]
         public static void ModifyModelConway(int index, string operation, float param1 = float.NaN, float param2 = float.NaN)
         {

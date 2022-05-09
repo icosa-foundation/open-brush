@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
@@ -23,21 +24,20 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowGridShapes : PolyhydraPopUpWindowBase
     {
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(GridEnums.GridShapes)).ToArray();
+            return Enum.GetNames(typeof(GridEnums.GridShapes)).ToList();
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            Debug.Log($"Loading: ShapeButtons/poly_gridshape_{(GridEnums.GridShapes)i}");
-            return $"ShapeButtons/poly_gridshape_{(GridEnums.GridShapes)i}";
+            return $"ShapeButtons/poly_gridshape_{action}";
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(string action)
         {
-            ParentPanel.PolyhydraModel.GridShape = (GridEnums.GridShapes)buttonIndex;
-            ParentPanel.ButtonGridShape.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.PolyhydraModel.GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), action);
+            ParentPanel.ButtonGridShape.SetButtonTexture(GetButtonTexture(action));
         }
 
     }

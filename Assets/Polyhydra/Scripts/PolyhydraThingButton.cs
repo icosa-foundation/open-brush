@@ -18,13 +18,13 @@ namespace TiltBrush
 {
     public class PolyhydraThingButton : BaseButton
     {
-        [NonSerialized] public int ButtonIndex;
+        [NonSerialized] public string ButtonAction;
         [NonSerialized] public PolyhydraPopUpWindowBase parentPopup;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            parentPopup.PolyhydraThingButtonPressed(ButtonIndex);
+            parentPopup.PolyhydraThingButtonPressed(ButtonAction);
             parentPopup.RequestClose();
         }
     }

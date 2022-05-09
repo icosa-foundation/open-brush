@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -84,7 +83,7 @@ namespace TiltBrush
             CreateButtons();
         }
 
-        protected abstract string[] GetButtonList();
+        protected abstract List<string> GetButtonList();
 
         protected virtual void CreateButtons()
         {
@@ -93,9 +92,9 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            string[] buttonLabels = GetButtonList();
+            List<string> buttonLabels = GetButtonList();
             int columns = 4;
-            for (int buttonIndex = 0; buttonIndex < buttonLabels.Length; buttonIndex++)
+            for (int buttonIndex = 0; buttonIndex < buttonLabels.Count; buttonIndex++)
             {
 
                 GameObject rButton = Instantiate(ButtonPrefab);
@@ -110,23 +109,24 @@ namespace TiltBrush
                 rButton.transform.localScale = Vector3.one * .3f;
 
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
-                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonIndex);
 
                 PolyhydraThingButton rButtonScript = rButton.GetComponent<PolyhydraThingButton>();
-                rButtonScript.ButtonIndex = buttonIndex;
                 rButtonScript.parentPopup = this;
                 rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
+                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonLabels[buttonIndex]);
+                rButtonScript.ButtonAction = buttonLabels[buttonIndex];
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }
         }
 
-        protected Texture2D GetButtonTexture(int buttonIndex)
+        protected Texture2D GetButtonTexture(string action)
         {
-            return Resources.Load<Texture2D>(GetButtonTexturePath(buttonIndex + FirstButtonIndex));
+            var path = GetButtonTexturePath(action);
+            return Resources.Load<Texture2D>(path);
         }
 
-        protected abstract string GetButtonTexturePath(int i);
+        protected abstract string GetButtonTexturePath(string action);
         override public void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
         {
             if (m_IsLongPressPopUp)
@@ -146,11 +146,11 @@ namespace TiltBrush
             base.UpdateUIComponents(rCastRay, inputValid, parentCollider);
         }
 
-        public abstract void HandleButtonPress(int ButtonIndex);
+        public abstract void HandleButtonPress(string action);
 
-        public void PolyhydraThingButtonPressed(int ButtonIndex)
+        public void PolyhydraThingButtonPressed(string action)
         {
-            HandleButtonPress(ButtonIndex);
+            HandleButtonPress(action);
             ParentPanel.PolyhydraModel.RebuildPoly();
         }
 

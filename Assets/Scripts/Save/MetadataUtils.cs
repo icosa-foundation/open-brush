@@ -170,10 +170,7 @@ namespace TiltBrush
                         polyMesh.ListFacesByVertexIndices(),
                         polyMesh.FaceRoles,
                         polyMesh.VertexRoles,
-                        polyMesh.FaceTags.Select(
-                            taglist => taglist.Select(
-                                t => t.Item1).ToList()
-                        ).ToList(),
+                        polyMesh.FaceTags,
                         em.Value.ColorMethod,
                         em.Value.GeneratorType,
                         em.Value.GeneratorParameters,

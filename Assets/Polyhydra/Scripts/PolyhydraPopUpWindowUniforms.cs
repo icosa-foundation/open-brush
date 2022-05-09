@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Polyhydra.Wythoff;
@@ -42,25 +43,22 @@ namespace TiltBrush
 
             return null;
         }
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return GetCurrentUniformList(ParentPanel.CurrentShapeCategory).Select(x => x.Name).ToArray();
+            return GetCurrentUniformList(ParentPanel.CurrentShapeCategory).Select(x => x.Name).ToList();
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            string name = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[i].Name;
-            return $"ShapeButtons/poly_uniform_{name}".Replace(" ", "_");
+            return $"ShapeButtons/poly_uniform_{action}".Replace(" ", "_");
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(string action)
         {
-            var enumName = GetCurrentUniformList(ParentPanel.CurrentShapeCategory)[buttonIndex].Name;
-            enumName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(enumName.ToLower());
-            enumName = enumName.Replace(" ", "_");
-            UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName);
+            string enumName = action.Replace(" ", "_");
+            UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName, true);
             ParentPanel.PolyhydraModel.UniformPolyType = polyType;
-            ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(action));
             ParentPanel.SetSliderConfiguration();
         }
 

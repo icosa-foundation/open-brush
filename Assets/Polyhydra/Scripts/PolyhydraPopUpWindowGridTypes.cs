@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
 
@@ -22,20 +23,20 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowGridTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(GridEnums.GridTypes)).ToArray();
+            return Enum.GetNames(typeof(GridEnums.GridTypes)).ToList();
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_grid_{(GridEnums.GridTypes)i}";
+            return $"ShapeButtons/poly_grid_{action}";
         }
 
-        public override void HandleButtonPress(int buttonIndex)
+        public override void HandleButtonPress(string action)
         {
-            ParentPanel.PolyhydraModel.GridType = (GridEnums.GridTypes)buttonIndex;
-            ParentPanel.ButtonGridType.SetButtonTexture(GetButtonTexture(buttonIndex));
+            ParentPanel.PolyhydraModel.GridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), action);
+            ParentPanel.ButtonGridType.SetButtonTexture(GetButtonTexture(action));
             ParentPanel.SetSliderConfiguration();
         }
 

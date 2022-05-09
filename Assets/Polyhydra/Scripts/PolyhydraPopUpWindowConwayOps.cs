@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
@@ -26,9 +27,9 @@ namespace TiltBrush
 
         [NonSerialized] protected int OpStackIndex = 0;
 
-        protected override string[] GetButtonList()
+        protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToArray();
+            return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
 
         public override void SetPopupCommandParameters(int commandParam, int commandParam2)
@@ -37,27 +38,25 @@ namespace TiltBrush
             OpStackIndex = commandParam;
         }
 
-        protected override string GetButtonTexturePath(int i)
+        protected override string GetButtonTexturePath(string action)
         {
-            return $"IconButtons/{(PolyMesh.Operation)i}";
+            return $"IconButtons/{action}";
         }
 
-        public override void HandleButtonPress(int relativeButtonIndex)
+        public override void HandleButtonPress(string action)
         {
-            int absoluteButtonIndex = relativeButtonIndex + FirstButtonIndex;
             var ops = ParentPanel.PolyhydraModel.ConwayOperators;
 
-            OpConfig opConfig = OpConfigs.Configs[(PolyMesh.Operation)absoluteButtonIndex];
-
             var op = ops[OpStackIndex];
-            op.opType = (PolyMesh.Operation)absoluteButtonIndex;
+            op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), action);
+            OpConfig opConfig = OpConfigs.Configs[op.opType];
             op.amount = opConfig.amountDefault;
             op.amount2 = opConfig.amount2Default;
 
             ops[OpStackIndex] = op;
             ParentPanel.PolyhydraModel.ConwayOperators = ops;
-            ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(relativeButtonIndex));
-            ParentPanel.ButtonsConwayOps[OpStackIndex].SetDescriptionText(GetButtonList()[relativeButtonIndex]);
+            ParentPanel.ButtonsConwayOps[OpStackIndex].SetButtonTexture(GetButtonTexture(action));
+            ParentPanel.ButtonsConwayOps[OpStackIndex].SetDescriptionText(action);
 
             if (opConfig.usesFilter)
             {
