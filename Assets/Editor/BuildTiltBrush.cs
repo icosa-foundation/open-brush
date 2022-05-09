@@ -1014,6 +1014,11 @@ static class BuildTiltBrush
                 //     break;
             }
 
+            if (requiredFeatures.Count == 0)
+            {
+                return;
+            }
+
             // Locate and enable features, fail if not found.
             foreach (string requiredFeature in requiredFeatures)
             {
@@ -1060,6 +1065,9 @@ static class BuildTiltBrush
                     break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    break;
+                case XrSdkMode.Pico:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
                 default:
                     return;
