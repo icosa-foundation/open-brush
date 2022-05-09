@@ -35,6 +35,7 @@ namespace TiltBrush
         Gvr,
         LogitechPen,
         Cosmos,
+        Pico
     }
 
     //
@@ -68,6 +69,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRWmrControlsPrefab;
         [SerializeField] private GameObject m_UnityXRKnucklesControlsPrefab;
         [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRPicoControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -578,7 +580,8 @@ namespace TiltBrush
             return style == ControllerStyle.Wmr ||
                 style == ControllerStyle.OculusTouch ||
                 style == ControllerStyle.Knuckles ||
-                style == ControllerStyle.Cosmos;
+                style == ControllerStyle.Cosmos ||
+                style == ControllerStyle.Pico;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -656,6 +659,9 @@ namespace TiltBrush
                     }
                 case ControllerStyle.Wmr:
                     controlsPrefab = m_UnityXRWmrControlsPrefab;
+                    break;
+                case ControllerStyle.Pico:
+                    controlsPrefab = m_UnityXRPicoControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -1037,6 +1043,10 @@ namespace TiltBrush
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
             {
                 SetControllerStyle(ControllerStyle.Vive);
+            }
+            else if (device.name.Contains("PicoXR Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Pico);
             }
             else
             {
