@@ -19,8 +19,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Autodesk.Fbx;
-using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 using TiltBrushToolkit;
 using Debug = UnityEngine.Debug;
