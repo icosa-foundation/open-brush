@@ -174,6 +174,7 @@ public class SelectionTool : ToggleStrokeModificationTool {
   }
 
   override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
+    Debug.Log("SelectionTool:HandleIntersectionWithBatchedStroke() called!");
     var stroke = rGroup.m_Stroke;
     var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
     bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
@@ -217,17 +218,21 @@ public class SelectionTool : ToggleStrokeModificationTool {
   /// To be called after a series of (de)selections to store the series as a single
   /// command on the undo stack. It also updates the selection widget box.
   private void FinalizeSelectionBatch() {
+    Debug.Log("SelecitonTool::FinalizeSelectionBatch() executed");
     // If we've asked to finalize a batch, deselect if nothing was selected and we're in move mode.
     if (SelectionManager.m_Instance.SelectionWasTransformed &&
         !SelectionManager.m_Instance.ShouldRemoveFromSelection()) {
+      Debug.Log("Case 1");
       EndSelection();
     } else {
+      Debug.Log("Case 2");
       SelectionManager.m_Instance.UpdateSelectionWidget();
     }
     m_ActiveSelectionHasAtLeastOneObject = false;
 
     // Only allow deselection if we have strokes.
     if (!SelectionManager.m_Instance.HasSelection) {
+      Debug.Log("Deselection Disallowed");
       SelectionManager.m_Instance.RemoveFromSelection(false);
     }
   }

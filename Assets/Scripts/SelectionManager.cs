@@ -530,11 +530,13 @@ public class SelectionManager : MonoBehaviour {
   }
 
   public void DeselectStrokes(IEnumerable<Stroke> strokes) {
+    int debugCounter = 0; //CTODO:: remove
     foreach (var stroke in strokes) {
       if (!IsStrokeSelected(stroke)) {
         Debug.LogWarning("Attempted to deselect stroke that is not selected.");
         continue;
       }
+      debugCounter++;
 
       stroke.SetParentKeepWorldPosition(App.ActiveCanvas, SelectionTransform);
       m_SelectedStrokes.Remove(stroke);
@@ -545,6 +547,7 @@ public class SelectionManager : MonoBehaviour {
         m_GroupToSelectedStrokes.Remove(stroke.Group);
       }
     }
+    Debug.Log(debugCounter + " strokes removed");
 
     if (!HasSelection) {
       SelectionTransform = TrTransform.identity;

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+using UnityEngine; //CTODO: remove after removing debug statements
 using System.Collections.Generic;
 
 namespace TiltBrush {
@@ -173,6 +173,7 @@ namespace TiltBrush {
         }
       } else {
         if (m_Strokes != null) {
+          Debug.Log("OnUndo, Deselecting strokes");
           SelectionManager.m_Instance.DeselectStrokes(m_Strokes);
         }
         if (m_Widgets != null) {
@@ -192,6 +193,7 @@ namespace TiltBrush {
     }
 
     public override bool Merge(BaseCommand other) {
+      Debug.Log("SelectCommand::Merge() executed");
       var newSelectCommand = other as SelectCommand;
       if (m_Final) { return false; }
       if (m_IsGrabbingGroup) {

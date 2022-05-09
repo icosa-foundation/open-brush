@@ -24,12 +24,15 @@ namespace TiltBrush {
     private List<Vector3> m_OldVerts;
     private List<Vector3> m_NewVerts;
 
+    private bool m_Initial;
+
     // CTODO: maybe just pass the transformation data instead? (to call GeometryPool.ApplyVertexTransformation or whatever it was called.)
     public SculptCommand(
-        BatchSubset batchSubset, List<Vector3> newVerts, BaseCommand parent = null) : base(parent) {
+        BatchSubset batchSubset, List<Vector3> newVerts, bool isInitial, BaseCommand parent = null) : base(parent) {
       m_TargetBatchSubset = batchSubset;
       m_OldVerts = new List<Vector3>(m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices);
       m_NewVerts = newVerts;
+      m_Initial = isInitial;
     }
 
     public override bool NeedsSave { get { return true; } }
@@ -37,7 +40,7 @@ namespace TiltBrush {
     private void ApplySculptModification(List<Vector3> vertices) {
       m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices = vertices;
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
-      m_TargetBatchSubset.m_Stroke.InvalidateCopy();
+      m_TargetBatchSubset.m_Stroke.InvalidateCopy(); //CTODO: not sure if this line is necessary.
       // m_TargetBatchSubset.m_Stroke.Uncreate();
       //m_TargetBatchSubset.m_Stroke.Recreate();
     }
@@ -48,6 +51,20 @@ namespace TiltBrush {
 
     protected override void OnUndo() {
       ApplySculptModification(m_OldVerts);
+    }
+
+    public override bool Merge(BaseCommand other) {
+      Debug.Log("SculptCommand::Merge() executed");
+      
+      if (base.Merge(other)) { return true; }
+      var newSculptCommand = other as SculptCommand;
+
+      if (newSculptCommand.m_Initial) { 
+        return false; 
+      }
+
+      m_Children.Add(other);
+      return true;
     }
 }
 } // namespace TiltBrush

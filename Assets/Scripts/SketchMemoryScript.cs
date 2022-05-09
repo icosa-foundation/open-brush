@@ -435,7 +435,7 @@ public class SketchMemoryScript : MonoBehaviour {
       StencilWidget stencil, float lineLength) {
     ClearRedo();
 
-    Debug.Log("SketchMemoryScript::MemorizeBatchedBrtushStroke() called");
+    Debug.Log("SketchMemoryScript::MemorizeBrtushStroke() called");
 
     Stroke rNewStroke = new Stroke();
     rNewStroke.m_Type = Stroke.Type.BrushStroke;
@@ -513,11 +513,11 @@ public class SketchMemoryScript : MonoBehaviour {
     return false;
   }
 
-  public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices) {
+  public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices, bool isInitial) {
     if (m_SculptParent == null) { 
       m_SculptParent = new BaseCommand();
     }
-    PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, m_SculptParent));
+    PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, isInitial, m_SculptParent));
     return true;
   }
 

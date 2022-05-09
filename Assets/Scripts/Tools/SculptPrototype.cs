@@ -21,6 +21,7 @@ namespace TiltBrush
 {
   public class SculptPrototype : ToggleStrokeModificationTool
   {
+    private bool m_AtLeastOneModificationMade = false;
 
     override public void Init()
     {
@@ -36,6 +37,21 @@ namespace TiltBrush
       HideTool(!bEnable);
     }
 
+    public void FinalizeSculptingBatch()
+    {
+      m_AtLeastOneModificationMade = false;
+    }
+
+    override public void OnUpdateDetection() {
+      if (!m_CurrentlyHot && m_ToolWasHot) {
+        FinalizeSculptingBatch();
+        ResetToolRotation();
+        ClearGpuFutureLists();
+      }
+    }
+
+
+    //CTODO: This is an absolute mess.
     override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
     {
       // Metadata of target stroke
@@ -55,7 +71,6 @@ namespace TiltBrush
           float distance = Vector3.Distance(newVertices[i], toolPos);
           if (distance <= GetSize() / m_CurrentCanvas.Pose.scale)
           {
-              //Debug.Log("Canvas scale now: " + m_CurrentCanvas.Pose.scale);
               // CTODO: Make this depend on distance
               float strength = 0.2f;
               Vector3 direction = (newVertices[i] - toolPos).normalized;
@@ -64,9 +79,9 @@ namespace TiltBrush
           }
       }
       Debug.Log("Sculpting modification made");
-      ;
 
-      SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices);
+      SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, !m_AtLeastOneModificationMade);
+      m_AtLeastOneModificationMade = true;
       // parentBatch.m_Geometry.m_Vertices = newVertices;
       // parentBatch.DelayedUpdateMesh();
       return true;

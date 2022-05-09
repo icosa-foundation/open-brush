@@ -135,7 +135,8 @@ public class CanvasScript : MonoBehaviour {
 #if UNITY_EDITOR
     // All changes must go through .Pose accessor
     if (transform.hasChanged) {
-      Debug.LogError("Detected unsanctioned change to transform");
+      // CTODO: This used to be an error that has been going off even before I made any changes. Change it back to Error when done.
+      Debug.LogWarning("Detected unsanctioned change to transform");
       transform.hasChanged = false;
     }
 #endif

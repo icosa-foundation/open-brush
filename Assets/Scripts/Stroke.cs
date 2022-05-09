@@ -238,7 +238,9 @@ public class Stroke : StrokeData {
       // "5" is the most-likely to be unused. It's terrible that this
       // needs to go through a pointer.
       var pointer = PointerManager.m_Instance.GetTransientPointer(5);
+      Debug.Log("GotHere2");
       pointer.RecreateLineFromMemory(this);
+      Debug.Log("GotHere3");
     } else if (canvas != null) {
       SetParent(canvas);
     } else {

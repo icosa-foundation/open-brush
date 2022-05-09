@@ -907,6 +907,7 @@ public class PointerManager : MonoBehaviour {
   // of a previous line -- ie, previous line ran out of verts and we transparently
   // stopped and started a new one.
   void InitiateLine(bool isContinue = false) {
+    Debug.Log("PointerManager::FinalizeLine() called");
     // Turn off the preview when we start drawing
     for (int i = 0; i < m_NumActivePointers; ++i) {
       m_Pointers[i].m_Script.DisablePreviewLine();
@@ -966,6 +967,7 @@ public class PointerManager : MonoBehaviour {
 
   // Detach and record lines for all active pointers.
   void FinalizeLine(bool isContinue = false, bool discard = false) {
+    Debug.Log("PointerManager::FinalizeLine() called");
     PointerScript groupStart = null;
     uint groupStartTime = 0;
     //discard or solidify every pointer's active line
