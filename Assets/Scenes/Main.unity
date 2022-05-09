@@ -10080,7 +10080,8 @@ MonoBehaviour:
     type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270,
     type: 2}
-  m_ObjLoaderPointCloudMaterial: {fileID: 0}
+  m_ObjLoaderPointCloudMaterial: {fileID: 2100000, guid: d1e87607973227546a7ed606b4221a8f,
+    type: 2}
   m_ObjLoaderPointCloudInvisibleMaterial: {fileID: 0}
   m_ObjLoaderVertexColorMaterial: {fileID: 2100000, guid: d6a564b70f9de0845bd0c573cb7e8011,
     type: 2}
