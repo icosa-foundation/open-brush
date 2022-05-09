@@ -35,9 +35,10 @@ namespace TiltBrush {
       m_Initial = isInitial;
     }
 
-    public override bool NeedsSave { get { return true; } }
+    public override bool NeedsSave { get { return true; } } // should always save
 
     private void ApplySculptModification(List<Vector3> vertices) {
+      
       m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices = vertices;
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
       m_TargetBatchSubset.m_Stroke.InvalidateCopy(); //CTODO: not sure if this line is necessary.
@@ -50,6 +51,9 @@ namespace TiltBrush {
     }
 
     protected override void OnUndo() {
+      if (m_Initial) {
+        Debug.Log("Initial parent undone");
+      }
       ApplySculptModification(m_OldVerts);
     }
 
@@ -57,9 +61,10 @@ namespace TiltBrush {
       Debug.Log("SculptCommand::Merge() executed");
       
       if (base.Merge(other)) { return true; }
+
       var newSculptCommand = other as SculptCommand;
 
-      if (newSculptCommand.m_Initial) { 
+      if (newSculptCommand == null || newSculptCommand.m_Initial) { 
         return false; 
       }
 

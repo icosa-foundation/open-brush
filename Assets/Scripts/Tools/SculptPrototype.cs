@@ -33,7 +33,7 @@ namespace TiltBrush
     {
       // Call this after setting up our tool's state.
       base.EnableTool(bEnable);
-      //change the material of all tools to some wireframe shader.
+      // CTODO: change the material of all strokes to some wireframe shader.
       HideTool(!bEnable);
     }
 
@@ -60,7 +60,7 @@ namespace TiltBrush
       int firstIdx = rGroup.m_StartVertIndex;
       int lastIdx = firstIdx + rGroup.m_VertLength;
 
-      var newVertices = parentBatch.m_Geometry.m_Vertices;
+      var newVertices = new List<Vector3>(parentBatch.m_Geometry.m_Vertices);
       // Tool position adjusted by canvas transformations
       var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
@@ -76,6 +76,8 @@ namespace TiltBrush
               Vector3 direction = (newVertices[i] - toolPos).normalized;
               Vector3 newVert = newVertices[i] + direction * 0.2f;
               newVertices[i] = newVert;
+              PlayModifyStrokeSound();
+              InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
           }
       }
       Debug.Log("Sculpting modification made");

@@ -514,10 +514,12 @@ public class SketchMemoryScript : MonoBehaviour {
   }
 
   public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices, bool isInitial) {
-    if (m_SculptParent == null) { 
-      m_SculptParent = new BaseCommand();
+    if (m_SculptParent == null || isInitial) { 
+      m_SculptParent = new SculptCommand(rGroup, newVertices, isInitial, null);
+      PerformAndRecordCommand(m_SculptParent);
+    } else {
+      PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, isInitial, m_SculptParent));
     }
-    PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, isInitial, m_SculptParent));
     return true;
   }
 
