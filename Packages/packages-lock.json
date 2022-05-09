@@ -145,6 +145,15 @@
       "source": "registry",
       "dependencies": {
         "com.unity.modules.xr": "1.0.0"
+      }
+    },
+    "com.unity.xr.interaction.toolkit": {
+      "version": "0.9.4-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.xr.legacyinputhelpers": "1.3.11"
       },
       "url": "https://packages.unity.com"
     },
@@ -190,6 +199,17 @@
         "com.unity.inputsystem": "1.3.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.xr.picoxr": {
+      "version": "file:com.unity.xr.picoxr",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.xr.management": "3.2.16",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.subsystemregistration": "1.0.6",
+        "com.unity.xr.interaction.toolkit": "0.9.4-preview"
+      }
     },
     "org.nuget.google.apis": {
       "version": "1.57.0",
