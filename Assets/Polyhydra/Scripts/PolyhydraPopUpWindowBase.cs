@@ -110,7 +110,7 @@ namespace TiltBrush
 
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
 
-                PolyhydraThingButton rButtonScript = rButton.GetComponent<PolyhydraThingButton>();
+                PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
                 rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
                 rButtonRenderer.material.mainTexture = GetButtonTexture(buttonLabels[buttonIndex]);
@@ -120,7 +120,7 @@ namespace TiltBrush
             }
         }
 
-        protected Texture2D GetButtonTexture(string action)
+        public virtual Texture2D GetButtonTexture(string action)
         {
             var path = GetButtonTexturePath(action);
             return Resources.Load<Texture2D>(path);
@@ -151,7 +151,7 @@ namespace TiltBrush
         public void PolyhydraThingButtonPressed(string action)
         {
             HandleButtonPress(action);
-            ParentPanel.PolyhydraModel.RebuildPoly();
+            ParentPanel.CurrentPolyhedra.RebuildPoly();
         }
 
     }

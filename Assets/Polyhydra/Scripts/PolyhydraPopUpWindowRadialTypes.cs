@@ -35,7 +35,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            ParentPanel.PolyhydraModel.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
+            ParentPanel.CurrentPolyhedra.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
             ParentPanel.ButtonRadialType.SetButtonTexture(GetButtonTexture(action));
             ParentPanel.SetSliderConfiguration();
         }

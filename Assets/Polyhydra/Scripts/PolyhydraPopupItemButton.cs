@@ -11,30 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
+using System;
 
 namespace TiltBrush
 {
-
-    public class PolyhydraPopUpWindowOtherPolyTypes : PolyhydraPopUpWindowBase
+    public class PolyhydraPopupItemButton : BaseButton
     {
+        [NonSerialized] public string ButtonAction;
+        [NonSerialized] public PolyhydraPopUpWindowBase parentPopup;
 
-        protected override List<string> GetButtonList()
+        protected override void OnButtonPressed()
         {
-            return ParentPanel.GetOtherSolidCategoryNames();
-        }
-
-        protected override string GetButtonTexturePath(string action)
-        {
-            return $"ShapeButtons/poly_other_{action}";
-        }
-
-        public override void HandleButtonPress(string action)
-        {
-            ParentPanel.HandleOtherSolidsButtonPress(action, GetButtonTexture(action));
+            base.OnButtonPressed();
+            parentPopup.PolyhydraThingButtonPressed(ButtonAction);
+            parentPopup.RequestClose();
         }
     }
 } // namespace TiltBrush

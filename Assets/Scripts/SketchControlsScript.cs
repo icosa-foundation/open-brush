@@ -141,14 +141,14 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             CustomSymmetryCommand = 5000,
-            PolyhydraOpenShapeTypesPopup = 5001,
+            PolyhydraOpenMainCategoryPopup = 5001,
             PolyhydraOpenUniformsPopup = 5002,
             PolyhydraGridTypesPopup = 5003,
             PolyhydraGridShapesPopup = 5004,
             PolyhydraRadialTypesPopup = 5005,
             PolyhydraOtherTypesPopup = 5006,
-            PolyhydraConwayOpTypesPopup = 5007,
-            PolyhydraConwayOpFaceSelPopup = 5008,
+            PolyhydraOperatorTypesPopup = 5007,
+            PolyhydraOperatorFaceSelPopup = 5008,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -4919,13 +4919,13 @@ namespace TiltBrush
                     CameraPathCaptureRig.RecordPath();
                     EatGazeObjectInput();
                     break;
-                case GlobalCommands.PolyhydraOpenShapeTypesPopup:
+                case GlobalCommands.PolyhydraOpenMainCategoryPopup:
                 case GlobalCommands.PolyhydraOpenUniformsPopup:
                 case GlobalCommands.PolyhydraGridTypesPopup:
                 case GlobalCommands.PolyhydraGridShapesPopup:
                 case GlobalCommands.PolyhydraRadialTypesPopup:
                 case GlobalCommands.PolyhydraOtherTypesPopup:
-                case GlobalCommands.PolyhydraConwayOpTypesPopup:
+                case GlobalCommands.PolyhydraOperatorTypesPopup:
                     // TODO we don't really need to use commands at all here
                     // As we can take action in the popup script
                     // But is it better to use commands?

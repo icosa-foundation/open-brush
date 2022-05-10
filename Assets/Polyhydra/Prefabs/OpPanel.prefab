@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5184217821460874205}
   - component: {fileID: 8983121326378588166}
   m_Layer: 16
-  m_Name: Button_ConwayOp1
+  m_Name: Button_OperatorType
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -147,12 +147,12 @@ GameObject:
   - component: {fileID: 1614504203203248460}
   - component: {fileID: 9181803849324506574}
   m_Layer: 16
-  m_Name: Button_ConwayOp1FaceSel
+  m_Name: Button_OperatorFilter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &230950493050001955
 Transform:
   m_ObjectHideFlags: 0
@@ -291,7 +291,7 @@ Transform:
   m_GameObject: {fileID: 4543081419084864862}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.67, y: -1.58, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_Children:
   - {fileID: 8750587548945569494}
   - {fileID: 230950493050001955}
@@ -410,12 +410,12 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: SliderOp1Amount2
+      value: SliderOperatorAmount2
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -695,12 +695,12 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: SliderOp1Amount1
+      value: SliderOperatorAmount1
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}

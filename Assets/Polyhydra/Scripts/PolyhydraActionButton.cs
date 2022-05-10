@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
+using UnityEngine;
 namespace TiltBrush
 {
-    public class PolyhydraThingButton : BaseButton
+    public class PolyhydraActionButton : BaseButton
     {
-        [NonSerialized] public string ButtonAction;
-        [NonSerialized] public PolyhydraPopUpWindowBase parentPopup;
 
+        public int OpIndex;
+        public PolyhydraPanel ParentPanel;
         protected override void OnButtonPressed()
         {
-            base.OnButtonPressed();
-            parentPopup.PolyhydraThingButtonPressed(ButtonAction);
-            parentPopup.RequestClose();
+            ParentPanel.HandleSelectOpButton(OpIndex);
         }
+        
     }
-} // namespace TiltBrush
+    
+}

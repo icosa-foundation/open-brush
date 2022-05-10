@@ -14,33 +14,31 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using Polyhydra.Wythoff;
+using UnityEngine;
 
 
 namespace TiltBrush
 {
 
-    public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
+    public class PolyhydraPopUpWindowMainCategory : PolyhydraPopUpWindowBase
     {
+
         protected override List<string> GetButtonList()
         {
-            return ParentPanel.GetUniformPolyNames();
+            var names = ParentPanel.GetMainCategoryNames();
+            return names;
         }
 
         protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_uniform_{action}".Replace(" ", "_");
+            return $"ShapeTypeButtons/{action}";
         }
 
         public override void HandleButtonPress(string action)
         {
-            string enumName = action.Replace(" ", "_");
-            UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName, true);
-            ParentPanel.CurrentPolyhedra.UniformPolyType = polyType;
-            ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(action));
-            ParentPanel.SetSliderConfiguration();
+            ParentPanel.HandleMainCategoryButtonPress(action);
+            ParentPanel.ButtonMainCategory.SetButtonTexture(GetButtonTexture(action));
         }
 
     }

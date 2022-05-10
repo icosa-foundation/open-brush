@@ -15,34 +15,47 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
 using UnityEngine;
 
 
 namespace TiltBrush
 {
 
-    public class PolyhydraPopUpWindowShapeTypes : PolyhydraPopUpWindowBase
+    public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
+
 
         protected override List<string> GetButtonList()
         {
-            var names = Enum.GetNames(typeof(PreviewPolyhedron.MainCategories)).ToList();
-            return names;
+            return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
 
         protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeTypeButtons/{action}";
+            return $"IconButtons/{action}";
         }
 
         public override void HandleButtonPress(string action)
         {
-            var shapeCategory = (PreviewPolyhedron.MainCategories)Enum.Parse(typeof(PreviewPolyhedron.MainCategories), action);
-            ParentPanel.CurrentShapeCategory = shapeCategory;
-            ParentPanel.ButtonShapeType.SetButtonTexture(GetButtonTexture(action));
-            ParentPanel.SetPanelButtonVisibility();
-            ParentPanel.ConfigureGeometry();
-            ParentPanel.SetSliderConfiguration();
+            var texture = GetButtonTexture(action);
+            ParentPanel.ChangeCurrentOpType(action);
+        }
+
+        public void NextPage()
+        {
+            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(PolyMesh.Operation)).Length)
+            {
+                FirstButtonIndex += ButtonsPerPage;
+                CreateButtons();
+
+            }
+        }
+        public void PrevPage()
+        {
+            FirstButtonIndex -= ButtonsPerPage;
+            FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
+            CreateButtons();
         }
 
     }

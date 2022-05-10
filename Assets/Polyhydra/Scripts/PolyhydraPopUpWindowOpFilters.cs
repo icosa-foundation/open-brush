@@ -23,22 +23,15 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class PolyhydraPopUpWindowConwayFaceSel : PolyhydraPopUpWindowBase
+    public class PolyhydraPopUpWindowOpFilters : PolyhydraPopUpWindowBase
     {
 
-        [NonSerialized] protected int OpStackIndex = 0;
         public float xSpacing = 2.5f;
         public float ySpacing = .25f;
 
         protected override List<string> GetButtonList()
         {
             return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
-        }
-
-        public override void SetPopupCommandParameters(int commandParam, int commandParam2)
-        {
-            base.SetPopupCommandParameters(commandParam, commandParam2);
-            OpStackIndex = commandParam;
         }
 
         protected override string GetButtonTexturePath(string action)
@@ -71,7 +64,7 @@ namespace TiltBrush
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
                 // rButtonRenderer.material.mainTexture = GetButtonTexture(buttonIndex);
 
-                PolyhydraThingButton rButtonScript = rButton.GetComponent<PolyhydraThingButton>();
+                PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
                 rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonLabels[buttonIndex];
                 rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
@@ -83,13 +76,13 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            var ops = ParentPanel.PolyhydraModel.ConwayOperators;
+            var ops = ParentPanel.CurrentPolyhedra.Operators;
 
-            var op = ops[OpStackIndex];
-            op.filters = (PreviewPolyhedron.AvailableFilters)Enum.Parse(typeof(PreviewPolyhedron.AvailableFilters), action);
-            ops[OpStackIndex] = op;
-            ParentPanel.PolyhydraModel.ConwayOperators = ops;
-            ParentPanel.ButtonsFaceSel[OpStackIndex].SetDescriptionText(action);
+            var op = ops[ParentPanel.CurrentActiveOpIndex];
+            op.filterType = (PreviewPolyhedron.AvailableFilters)Enum.Parse(typeof(PreviewPolyhedron.AvailableFilters), action);
+            ops[ParentPanel.CurrentActiveOpIndex] = op;
+            ParentPanel.CurrentPolyhedra.Operators = ops;
+            ParentPanel.ButtonOpFilter.SetDescriptionText(action);
         }
 
         public void NextPage()

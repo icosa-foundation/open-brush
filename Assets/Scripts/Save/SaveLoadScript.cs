@@ -818,12 +818,26 @@ namespace TiltBrush
                                     );
                                     break;
                                 case GeneratorTypes.Various:
-                                    poly = VariousSolids.Build(
-                                        (VariousSolidTypes)Convert.ToInt32(p["type"]),
-                                        Convert.ToInt32(p["x"]),
-                                        Convert.ToInt32(p["y"]),
-                                        Convert.ToInt32(p["z"])
-                                    );
+                                    var type = (VariousSolidTypes)Convert.ToInt32(p["type"]);
+                                    switch (type)
+                                    {
+                                        case VariousSolidTypes.Box:
+                                            poly = VariousSolids.Build(
+                                                type,
+                                                Convert.ToInt32(p["x"]),
+                                                Convert.ToInt32(p["y"]),
+                                                Convert.ToInt32(p["z"])
+                                            );
+                                            break;
+                                        case VariousSolidTypes.UvSphere:
+                                        case VariousSolidTypes.UvHemisphere:
+                                            poly = VariousSolids.Build(
+                                                type,
+                                                Convert.ToInt32(p["x"]),
+                                                Convert.ToInt32(p["y"])
+                                            );
+                                            break;
+                                    }
                                     break;
                             }
 

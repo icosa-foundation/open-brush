@@ -49,6 +49,9 @@ namespace TiltBrush.MeshEditing
         private Dictionary<string, EditableModel> m_EditableModels;
         [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
+        
+        public Dictionary<string, object> m_Parameters;
+        public List<Dictionary<string, object>> m_Operations;
 
         void Awake()
         {
@@ -127,7 +130,7 @@ namespace TiltBrush.MeshEditing
             return m_EditableModels[guid].ColorMethod;
         }
         
-        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes type, 
+        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes generatorType, 
                                      Dictionary<string, object> parameters=null, 
                                      List<Dictionary<string, object>> operations=null)
         {
@@ -138,7 +141,7 @@ namespace TiltBrush.MeshEditing
             // Create the EditableModel gameobject 
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
-            RegisterEditableMesh(polyGo, poly, colMethod, type, parameters);
+            RegisterEditableMesh(polyGo, poly, colMethod, generatorType, parameters);
             
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
