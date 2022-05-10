@@ -366,10 +366,10 @@ namespace TiltBrush
                             Slider2.SliderType = SliderTypes.Float;
                             Slider1.Min = 3;
                             Slider1.Max = 16;
-                            Slider1.Min = 0f;
-                            Slider1.Max = 1;
+                            Slider2.Min = 0f;
+                            Slider2.Max = 1f;
                             Slider1.SetDescriptionText("Sides");
-                            Slider1.SetDescriptionText("Amount");
+                            Slider2.SetDescriptionText("Amount");
                             break;
                         case OtherSolidsCategories.Box:
                             Slider1.gameObject.SetActive(true);
