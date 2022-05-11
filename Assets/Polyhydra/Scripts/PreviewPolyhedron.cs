@@ -171,11 +171,23 @@ public class PreviewPolyhedron : MonoBehaviour
         
         public static Filter MakeFilterFromDict(Dictionary<string, object> opDict)
         {
+            object filterType;
+            object filterParamFloat;
+            object filterParamInt;
+            object filterNot;
+            
+            // Default to "All" if no filter is defined
+            if (!opDict.TryGetValue("filterType" , out filterType)) return Filter.All;
+            
+            opDict.TryGetValue("filterParamFloat", out filterParamFloat);
+            opDict.TryGetValue("filterParamInt", out filterParamInt);
+            opDict.TryGetValue("filterNot", out filterNot);
+            
             return GetFilterDefinition(
-                (AvailableFilters)Convert.ToInt32(opDict["filter"]),
-                Convert.ToSingle(opDict["filterParamFloat"]),
-                Convert.ToInt32(opDict["filterParamInt"]),
-                Convert.ToBoolean(opDict["filterNot"])
+                (AvailableFilters)Convert.ToInt32(filterType),
+                Convert.ToSingle(filterParamFloat),
+                Convert.ToInt32(filterParamInt),
+                Convert.ToBoolean(filterNot)
             );
         }
 
