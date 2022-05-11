@@ -54,6 +54,8 @@ namespace TiltBrush
 
         public static Dictionary<string, object> m_GeneratorParameters;
         public static List<Dictionary<string, object>> m_Operations;
+
+        public float previewRotationX, previewRotationY, previewRotationZ = .5f;
         
         private MeshFilter meshFilter;
         
@@ -136,7 +138,7 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
-            CurrentPolyhedra.transform.parent.Rotate(1, 1, 1);
+            CurrentPolyhedra.transform.parent.Rotate(previewRotationX, previewRotationY, previewRotationZ);
         }
 
         public void SetMainButtonVisibility()
@@ -366,8 +368,8 @@ namespace TiltBrush
                             Slider2.SliderType = SliderTypes.Float;
                             Slider1.Min = 3;
                             Slider1.Max = 16;
-                            Slider2.Min = 0f;
-                            Slider2.Max = 1f;
+                            Slider2.Min = 0.01f;
+                            Slider2.Max = 4f;
                             Slider1.SetDescriptionText("Sides");
                             Slider2.SetDescriptionText("Amount");
                             break;
@@ -380,8 +382,6 @@ namespace TiltBrush
                             Slider3.SliderType = SliderTypes.Int;
                             Slider1.Min = 1;
                             Slider1.Max = 16;
-                            Slider2.Min = 1;
-                            Slider2.Max = 16;
                             Slider2.Min = 1;
                             Slider2.Max = 16;
                             Slider3.Min = 1;
@@ -485,7 +485,7 @@ namespace TiltBrush
             btn.SetDescriptionText($"Operator {OperatorCount}");
             btn.gameObject.SetActive(true);
             HandleSelectOpButton(OperatorCount - 1);
-            CurrentPolyhedra.Operators.Add(new PreviewPolyhedron.ConwayOperator());
+            CurrentPolyhedra.Operators.Add(new PreviewPolyhedron.OpDefinition());
         }
 
         public void AddGuideForCurrentPolyhedron()

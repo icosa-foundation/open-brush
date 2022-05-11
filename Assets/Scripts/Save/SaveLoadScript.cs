@@ -850,9 +850,7 @@ namespace TiltBrush
                                     var op = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
                                     float param1 = Convert.ToSingle(opDict["param1"]);
                                     float param2 = Convert.ToSingle(opDict["param2"]);
-                                    // TODO
-                                    //// var filter = MakeFilterFromEnum((PreviewPolyhedron.AvailableFilters)Convert.ToInt32(opDict["filter"]));
-                                    var filter = Filter.All;
+                                    var filter = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
                                     var parameters = new OpParams(param1, param2, filter);
                                     poly = poly.AppyOperation(op, parameters);
                                 }

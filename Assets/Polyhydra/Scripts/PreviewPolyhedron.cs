@@ -41,6 +41,8 @@ public class PreviewPolyhedron : MonoBehaviour
     public float Param2Float;
     public float Param3Float = 1f;
 
+    public bool SafeLimits;
+    
     public Gradient colors;
     public float ColorRange;
     public float ColorOffset;
@@ -63,36 +65,31 @@ public class PreviewPolyhedron : MonoBehaviour
         // Sides
         NSided,
         EvenSided,
-        OddSided,
 
         // Direction
-        FacingDirection,
+        FacingUp,
+        FacingForward,
+        FacingRight,
+        FacingHorizontal,
+        FacingVertical,
 
         // Role
         Role,
         
         // Index
         Only,
-        Except,
-        Odd,
-        Even,
+        EveryNth,
         LastN,
-        OnlyLast,
-        ExceptLast,
         Random,
 
         // Edges
         Inner,
-        Outer,
 
         // Distance or position
-        TopHalf,
-
-        // Area
-        Smaller,
-        Larger,
-
-        None,
+        PositionX,
+        PositionY,
+        PositionZ,
+        DistanceFromCenter,
     }
 
     private void Awake()
@@ -151,24 +148,38 @@ public class PreviewPolyhedron : MonoBehaviour
         RebuildPoly();
     }
 
+
     [Serializable]
-    public struct ConwayOperator
+    public struct OpDefinition
     {
         public PolyMesh.Operation opType;
-        public AvailableFilters filterType;
         public float amount;
         public float amount2;
         public bool disabled;
+        public AvailableFilters filterType;
+        public float filterParamFloat;
+        public int filterParamInt;
+        public bool filterNot;
 
-        public ConwayOperator ClampAmount(OpConfig config, bool safe = false)
+        public OpDefinition ClampAmount(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amountSafeMin : config.amountMin;
             float max = safe ? config.amountSafeMax : config.amountMax;
             amount = Mathf.Clamp(amount, min, max);
             return this;
         }
+        
+        public static Filter MakeFilterFromDict(Dictionary<string, object> opDict)
+        {
+            return GetFilterDefinition(
+                (AvailableFilters)Convert.ToInt32(opDict["filter"]),
+                Convert.ToSingle(opDict["filterParamFloat"]),
+                Convert.ToInt32(opDict["filterParamInt"]),
+                Convert.ToBoolean(opDict["filterNot"])
+            );
+        }
 
-        public ConwayOperator ClampAmount2(OpConfig config, bool safe = false)
+        public OpDefinition ClampAmount2(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amount2SafeMin : config.amount2Min;
             float max = safe ? config.amount2SafeMax : config.amount2Max;
@@ -176,17 +187,17 @@ public class PreviewPolyhedron : MonoBehaviour
             return this;
         }
 
-        public ConwayOperator ChangeAmount(float val)
+        public OpDefinition ChangeAmount(float val)
         {
             amount += val;
             return this;
         }
-        public ConwayOperator ChangeAmount2(float val)
+        public OpDefinition ChangeAmount2(float val)
         {
             amount2 += val;
             return this;
         }
-        public ConwayOperator ChangeOpType(int val)
+        public OpDefinition ChangeOpType(int val)
         {
             opType += val;
             opType = (PolyMesh.Operation)Mathf.Clamp(
@@ -194,7 +205,7 @@ public class PreviewPolyhedron : MonoBehaviour
             );
             return this;
         }
-        public ConwayOperator ChangeFaceSelection(int val)
+        public OpDefinition ChangeFilter(int val)
         {
             filterType += val;
             filterType = (AvailableFilters)Mathf.Clamp(
@@ -203,14 +214,15 @@ public class PreviewPolyhedron : MonoBehaviour
             return this;
         }
 
-        public ConwayOperator SetDefaultValues(OpConfig config)
+        public OpDefinition SetDefaultValues(OpConfig config)
         {
             amount = config.amountDefault;
             amount2 = config.amount2Default;
             return this;
         }
     }
-    [FormerlySerializedAs("ConwayOperators")] public List<ConwayOperator> Operators;
+    
+    [FormerlySerializedAs("ConwayOperators")] public List<OpDefinition> Operators;
 
     public void RebuildPoly()
     {
@@ -281,8 +293,6 @@ public class PreviewPolyhedron : MonoBehaviour
             Operators[i] = op;
         }
     }
-
-    public bool SafeLimits;
 
     public Color GetFaceColor(int faceIndex)
     {
@@ -458,7 +468,10 @@ public class PreviewPolyhedron : MonoBehaviour
                 {"param1", op.amount},
                 {"param2", op.amount2},
                 {"disabled", op.disabled},
-                {"filter", op.filterType},
+                {"filterType", op.filterType},
+                {"filterParamFloat", op.filterParamFloat},
+                {"filterParamInt", op.filterParamInt},
+                {"filterNot", op.filterNot},
             });
             if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
@@ -500,10 +513,54 @@ public class PreviewPolyhedron : MonoBehaviour
         }
     }
 
-    public static PolyMesh ApplyOp(PolyMesh conway, ConwayOperator op)
+    public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
-        //// TODO filter based on op
-        conway = conway.AppyOperation(op.opType, new OpParams(op.amount, op.amount2));
+        var filter = GetFilterDefinition(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
+        conway = conway.AppyOperation(op.opType, new OpParams(op.amount, op.amount2, filter));
         return conway;
+    }
+    private static Filter GetFilterDefinition(AvailableFilters filterType, float filterParamFloat, int filterParamInt, bool filterNot)
+    {
+        switch (filterType)
+        {
+            case AvailableFilters.Only:
+                return Filter.OnlyNth(filterParamInt, filterNot);
+            case AvailableFilters.All:
+                return filterNot ? Filter.None : Filter.All;
+            case AvailableFilters.Inner:
+                return filterNot ? Filter.Outer : Filter.Inner;;
+            case AvailableFilters.Random:
+                return Filter.Random(filterNot ? 1f - filterParamFloat : filterParamFloat);
+            case AvailableFilters.Role:
+                return Filter.Role((Roles)filterParamInt, filterNot);
+            case AvailableFilters.FacingHorizontal:
+                return Filter.FacingDirection(Vector3.forward, filterParamFloat, includeOpposite: true, filterNot);
+            case AvailableFilters.FacingVertical:
+                return Filter.FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true, filterNot);
+            case AvailableFilters.FacingUp:
+                return Filter.FacingDirection(Vector3.up, filterParamFloat, filterNot);
+            case AvailableFilters.FacingForward:
+                return Filter.FacingDirection(Vector3.forward, filterParamFloat, filterNot);
+            case AvailableFilters.FacingRight:
+                return Filter.FacingDirection(Vector3.right, filterParamFloat, filterNot);
+            case AvailableFilters.NSided:
+                return Filter.NumberOfSides(filterParamInt, filterNot);
+            case AvailableFilters.EvenSided:
+                return filterNot ? Filter.EvenSided : Filter.OddSided;
+            case AvailableFilters.EveryNth:
+                return Filter.EveryNth(filterParamInt, filterNot);
+            case AvailableFilters.LastN:
+                return Filter.LastN(filterParamInt, filterNot);
+            case AvailableFilters.PositionX:
+                return Filter.Position(Filter.PositionType.Center, Axis.X, not: filterNot);
+            case AvailableFilters.PositionY:
+                return Filter.Position(Filter.PositionType.Center, Axis.Y, not: filterNot);
+            case AvailableFilters.PositionZ:
+                return Filter.Position(Filter.PositionType.Center, Axis.Z, not: filterNot);
+            case AvailableFilters.DistanceFromCenter:
+                return Filter.RadialDistance(not: filterNot);
+            default:
+                return Filter.All;
+        }
     }
 }
