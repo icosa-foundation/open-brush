@@ -569,6 +569,7 @@ namespace TiltBrush
             {
                 SliderOpParam2.gameObject.SetActive(false);
             }
+            ConfigureOpFilterPanel(op);
 
         }
 
@@ -667,6 +668,95 @@ namespace TiltBrush
                     break;
             }
             return uniformList.Select(x => x.Name).ToList();
+        }
+        
+        public void ConfigureOpFilterPanel(PreviewPolyhedron.OpDefinition op)
+        {
+            var opFilterName = op.filterType.ToString();
+            ButtonOpFilterType.SetDescriptionText(opFilterName);
+            OpFilterControlParent.SetActive(true);
+
+            ButtonOpFilterNot.gameObject.SetActive(true);
+            LabelOpFilterName.text = opFilterName;
+            
+            switch (op.filterType)
+            {
+                case PreviewPolyhedron.AvailableFilters.All:
+                case PreviewPolyhedron.AvailableFilters.Inner:
+                case PreviewPolyhedron.AvailableFilters.EvenSided:
+                    SliderOpFilterParam.gameObject.SetActive(false);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.Role:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Int;
+                    SliderOpFilterParam.Min = 0;
+                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.Only:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Int;
+                    SliderOpFilterParam.Min = 0;
+                    SliderOpFilterParam.Max = 100;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.EveryNth:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Int;
+                    SliderOpFilterParam.Min = 1;
+                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.LastN:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Int;
+                    SliderOpFilterParam.Min = 1;
+                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.NSided:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Int;
+                    SliderOpFilterParam.Min = 3;
+                    SliderOpFilterParam.Max = 16;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
+                    break;
+                
+                case PreviewPolyhedron.AvailableFilters.FacingUp:
+                case PreviewPolyhedron.AvailableFilters.FacingForward:
+                case PreviewPolyhedron.AvailableFilters.FacingRight:
+                case PreviewPolyhedron.AvailableFilters.FacingHorizontal:
+                case PreviewPolyhedron.AvailableFilters.FacingVertical:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Float;
+                    SliderOpFilterParam.Min = -1f;
+                    SliderOpFilterParam.Max = 1f;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.Random:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Float;
+                    SliderOpFilterParam.Min = 0f;
+                    SliderOpFilterParam.Max = 1f;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.PositionX:
+                case PreviewPolyhedron.AvailableFilters.PositionY:
+                case PreviewPolyhedron.AvailableFilters.PositionZ:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Float;
+                    SliderOpFilterParam.Min = -2f;
+                    SliderOpFilterParam.Max = 2f;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
+                    break;
+                case PreviewPolyhedron.AvailableFilters.DistanceFromCenter:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Float;
+                    SliderOpFilterParam.Min = 0f;
+                    SliderOpFilterParam.Max = 2f;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
+                    break;
+            }
         }
     }
 
