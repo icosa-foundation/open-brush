@@ -18,6 +18,7 @@ using System.Linq;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
@@ -35,16 +36,21 @@ namespace TiltBrush
         public PolyhydraOptionButton ButtonGridType;
         public PolyhydraOptionButton ButtonOtherSolidsType;
         public PolyhydraOptionButton ButtonGridShape;
-        public GameObject OpPanel;
-        public PolyhydraOptionButton ButtonOpType;
-        
-        public PolyhydraSlider SliderOpParam1;
-        public PolyhydraSlider SliderOpParam2;
-        public PolyhydraOptionButton ButtonOpFilter;
 
         public PolyhydraSlider Slider1;
         public PolyhydraSlider Slider2;
         public PolyhydraSlider Slider3;
+
+        public GameObject OpPanel;
+        public PolyhydraOptionButton ButtonOpType;
+        public PolyhydraSlider SliderOpParam1;
+        public PolyhydraSlider SliderOpParam2;
+        public GameObject OpFilterControlParent;
+        public PolyhydraOptionButton ButtonOpFilterType;
+        public PolyhydraSlider SliderOpFilterParam;
+        public TextMeshPro LabelOpFilterName;
+        public ActionButton ButtonOpFilterNot;
+
         public List<GameObject> MonoscopicOnlyButtons;
 
         public int CurrentActiveOpIndex = -1;
@@ -90,6 +96,8 @@ namespace TiltBrush
         override public void InitPanel()
         {
             base.InitPanel();
+            OpFilterControlParent.SetActive(false);
+            OpPanel.SetActive(false);
             CurrentPolyhedra = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetMainButtonVisibility();
@@ -134,6 +142,32 @@ namespace TiltBrush
             CurrentPolyhedra.RebuildPoly();
         }
 
+        public void HandleOpDisableButton()
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            op.disabled = !op.disabled;
+            CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.RebuildPoly();
+        }
+        
+        public void HandleSliderFilterParam(Vector3 value)
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            op.filterParamInt = Mathf.FloorToInt(value.z);
+            op.filterParamFloat = value.z;
+            CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.RebuildPoly();
+        }
+
+        public void HandleButtonOpNot()
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            op.filterNot = !op.filterNot;
+            CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.RebuildPoly();
+        }
+        
+        
 
         void Update()
         {
@@ -143,6 +177,8 @@ namespace TiltBrush
 
         public void SetMainButtonVisibility()
         {
+            
+            
 
             foreach (var go in MonoscopicOnlyButtons)
             {
@@ -461,14 +497,79 @@ namespace TiltBrush
                 poly
             );
         }
-        
+
+        public void ChangeCurrentOpType(string operationName)
+        {
+            var buttonSelectOpSlot = OperatorSelectButtonParent.GetChild(CurrentActiveOpIndex).GetComponent<PolyhydraActionButton>();
+            buttonSelectOpSlot.SetDescriptionText(operationName);
+            buttonSelectOpSlot.SetButtonTexture(GetButtonTextureByOpName(operationName));
+            
+            var ops = CurrentPolyhedra.Operators;
+            var op = ops[CurrentActiveOpIndex];
+            op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
+
+            OpConfig opConfig = OpConfigs.Configs[op.opType];
+            op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
+            
+            op.amount = opConfig.amountDefault;
+            op.amount2 = opConfig.amount2Default;
+            ops[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.Operators = ops;
+
+            ConfigureOpPanel(op);
+        }
+
         public void HandleSelectOpButton(int index)
         {
             CurrentActiveOpIndex = index;
-            OpPanel.SetActive(true);
             var op = CurrentPolyhedra.Operators[index];
-            string operationType = op.opType.ToString();
-            ChangeCurrentOpType(operationType);
+            ConfigureOpPanel(op);
+        }
+        
+        public void ConfigureOpPanel(PreviewPolyhedron.OpDefinition op)
+        {
+            OpPanel.SetActive(true);
+            string operationName = op.opType.ToString();
+            ButtonOpType.SetDescriptionText(operationName);
+            ButtonOpType.SetButtonTexture(GetButtonTextureByOpName(operationName));
+
+            OpConfig opConfig = OpConfigs.Configs[op.opType];
+
+            if (opConfig.usesFilter)
+            {
+                OpFilterControlParent.SetActive(true);
+                // ButtonOpFilterType.gameObject.SetActive(true);
+            }
+            else
+            {
+                OpFilterControlParent.SetActive(false);
+                // ButtonOpFilterType.gameObject.SetActive(false);
+            }
+
+            if (opConfig.usesAmount)
+            {
+                SliderOpParam1.gameObject.SetActive(true);
+                SliderOpParam1.Min = opConfig.amountSafeMin;
+                SliderOpParam1.Max = opConfig.amountSafeMax;
+                SliderOpParam1.UpdateValueAbsolute(op.amount);
+            }
+            else
+            {
+                SliderOpParam1.gameObject.SetActive(false);
+            }
+
+            if (opConfig.usesAmount2)
+            {
+                SliderOpParam2.gameObject.SetActive(true);
+                SliderOpParam2.Min = opConfig.amount2SafeMin;
+                SliderOpParam2.Max = opConfig.amount2SafeMax;
+                SliderOpParam2.UpdateValueAbsolute(op.amount2);
+            }
+            else
+            {
+                SliderOpParam2.gameObject.SetActive(false);
+            }
+
         }
 
         public void HandleAddOpButton()
@@ -506,59 +607,6 @@ namespace TiltBrush
             return Resources.Load<Texture2D>(path);
         }
 
-        public void ChangeCurrentOpType(string operationName)
-        {
-            var btn = OperatorSelectButtonParent.GetChild(CurrentActiveOpIndex).GetComponent<PolyhydraActionButton>();
-            btn.SetDescriptionText($"{operationName}");
-            btn.SetButtonTexture(GetButtonTextureByOpName(operationName));
-            
-            var ops = CurrentPolyhedra.Operators;
-
-            var op = ops[CurrentActiveOpIndex];
-            op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
-            OpConfig opConfig = OpConfigs.Configs[op.opType];
-            op.amount = opConfig.amountDefault;
-            op.amount2 = opConfig.amount2Default;
-
-            ops[CurrentActiveOpIndex] = op;
-            CurrentPolyhedra.Operators = ops;
-            ButtonOpType.SetButtonTexture(GetButtonTextureByOpName(operationName));
-            ButtonOpType.SetDescriptionText(operationName);
-
-            if (opConfig.usesFilter)
-            {
-                ButtonOpFilter.gameObject.SetActive(true);
-            }
-            else
-            {
-                ButtonOpFilter.gameObject.SetActive(false);
-            }
-
-            if (opConfig.usesAmount)
-            {
-                SliderOpParam1.gameObject.SetActive(true);
-                SliderOpParam1.Min = opConfig.amountSafeMin;
-                SliderOpParam1.Max = opConfig.amountSafeMax;
-                SliderOpParam1.UpdateValueAbsolute(opConfig.amountDefault);
-            }
-            else
-            {
-                SliderOpParam1.gameObject.SetActive(false);
-            }
-
-            if (opConfig.usesAmount2)
-            {
-                SliderOpParam2.gameObject.SetActive(true);
-                SliderOpParam2.Min = opConfig.amount2SafeMin;
-                SliderOpParam2.Max = opConfig.amount2SafeMax;
-                SliderOpParam2.UpdateValueAbsolute(opConfig.amount2Default);
-            }
-            else
-            {
-                SliderOpParam2.gameObject.SetActive(false);
-            }
-        }
-        
         public void HandleOtherSolidsButtonPress(string action, Texture2D texture)
         {
             var OtherType = (OtherSolidsCategories)Enum.Parse(typeof(OtherSolidsCategories), action);

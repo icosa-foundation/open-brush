@@ -38,7 +38,6 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            var texture = GetButtonTexture(action);
             ParentPanel.ChangeCurrentOpType(action);
         }
 

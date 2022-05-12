@@ -183,7 +183,7 @@ public class PreviewPolyhedron : MonoBehaviour
             opDict.TryGetValue("filterParamInt", out filterParamInt);
             opDict.TryGetValue("filterNot", out filterNot);
             
-            return GetFilterDefinition(
+            return GetFilter(
                 (AvailableFilters)Convert.ToInt32(filterType),
                 Convert.ToSingle(filterParamFloat),
                 Convert.ToInt32(filterParamInt),
@@ -234,7 +234,7 @@ public class PreviewPolyhedron : MonoBehaviour
         }
     }
     
-    [FormerlySerializedAs("ConwayOperators")] public List<OpDefinition> Operators;
+    public List<OpDefinition> Operators;
 
     public void RebuildPoly()
     {
@@ -527,11 +527,12 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
-        var filter = GetFilterDefinition(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
+        var filter = GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
         conway = conway.AppyOperation(op.opType, new OpParams(op.amount, op.amount2, filter));
         return conway;
     }
-    private static Filter GetFilterDefinition(AvailableFilters filterType, float filterParamFloat, int filterParamInt, bool filterNot)
+    
+    private static Filter GetFilter(AvailableFilters filterType, float filterParamFloat, int filterParamInt, bool filterNot)
     {
         switch (filterType)
         {
