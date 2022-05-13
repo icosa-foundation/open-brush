@@ -159,6 +159,7 @@ public class PreviewPolyhedron : MonoBehaviour
         public AvailableFilters filterType;
         public float filterParamFloat;
         public int filterParamInt;
+        public Color paramColor;
         public bool filterNot;
 
         public OpDefinition ClampAmount(OpConfig config, bool safe = false)
@@ -241,7 +242,7 @@ public class PreviewPolyhedron : MonoBehaviour
         Validate();
         PreviewColorMethod = (GeneratorType == GeneratorTypes.Waterman)
             ? ColorMethods.ByFaceDirection
-            : ColorMethods.ByRole;
+            : ColorMethods.ByTags;
         MakePolyhedron();
 
         Mesh polyMesh;
@@ -479,6 +480,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 {"operation", op.opType},
                 {"param1", op.amount},
                 {"param2", op.amount2},
+                {"paramColor", op.paramColor},
                 {"disabled", op.disabled},
                 {"filterType", op.filterType},
                 {"filterParamFloat", op.filterParamFloat},
@@ -528,7 +530,15 @@ public class PreviewPolyhedron : MonoBehaviour
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
         var filter = GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
-        conway = conway.AppyOperation(op.opType, new OpParams(op.amount, op.amount2, filter));
+        conway = conway.AppyOperation(
+            op.opType,
+            new OpParams(
+                op.amount,
+                op.amount2,
+                $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
+                filter
+            )
+        );
         return conway;
     }
     

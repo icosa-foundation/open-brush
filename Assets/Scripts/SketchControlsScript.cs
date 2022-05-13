@@ -149,6 +149,7 @@ namespace TiltBrush
             PolyhydraOtherTypesPopup = 5006,
             PolyhydraOperatorTypesPopup = 5007,
             PolyhydraOperatorFaceSelPopup = 5008,
+            PolyhydraColorPickerPopup = 5009,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,

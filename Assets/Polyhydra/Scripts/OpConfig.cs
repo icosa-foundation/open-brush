@@ -30,6 +30,8 @@ public class OpConfig
     public float amount2SafeMin = -10;
     public float amount2SafeMax = 0.999f;
     public bool usesFilter = false;
+    public bool usesColor = false;
+    public string colorDefault;
     public int[,] matrix;
 }
 
@@ -733,11 +735,28 @@ public static class OpConfigs
 		// 		amount2Min = -3, amount2Max = 3, amount2SafeMin = -1, amount2SafeMax = 1
 		// 	}
 		// },
-		// {PolyMesh.Operation.TagFaces, new OpConfig
-		// 	{
-		// 		usesFilter = true,
-		// 	}
-		// },
+		{PolyMesh.Operation.AddTag, new OpConfig
+			{
+				usesFilter = true,
+                usesAmount = false,
+                usesColor = true,
+                colorDefault = "#FFFFFF",
+			}
+		},
+        {PolyMesh.Operation.RemoveTag, new OpConfig
+            {
+                usesFilter = true,
+                usesAmount = false,
+                usesColor = true,
+                colorDefault = "#FFFFFF",
+            }
+        },
+        {PolyMesh.Operation.ClearTags, new OpConfig
+            {
+                usesFilter = true,
+                usesAmount = false,
+            }
+        },
 		// {
 		// 	PolyMesh.Operation.Stack,
 		// 	new OpConfig

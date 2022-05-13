@@ -20,7 +20,6 @@ using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace TiltBrush
@@ -45,6 +44,7 @@ namespace TiltBrush
         public PolyhydraOptionButton ButtonOpType;
         public PolyhydraSlider SliderOpParam1;
         public PolyhydraSlider SliderOpParam2;
+        public PolyhydraColorButton ButtonOpColorPicker;
         public GameObject OpFilterControlParent;
         public PolyhydraOptionButton ButtonOpFilterType;
         public PolyhydraSlider SliderOpFilterParam;
@@ -480,7 +480,7 @@ namespace TiltBrush
                 scale_CS
             );
             var shapeType = EditableModelManager.m_Instance.m_PreviewPolyhedron.GeneratorType;
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr, ColorMethods.ByRole,
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr, ColorMethods.ByTags,
                 shapeType, m_GeneratorParameters, m_Operations);
         }
 
@@ -569,9 +569,100 @@ namespace TiltBrush
             {
                 SliderOpParam2.gameObject.SetActive(false);
             }
+
+            if (opConfig.usesColor)
+            {
+                ButtonOpColorPicker.gameObject.SetActive(true);
+                ////SetOpColor();
+            }
+            else
+            {
+                ButtonOpColorPicker.gameObject.SetActive(false);
+            }
+
+
             ConfigureOpFilterPanel(op);
 
         }
+
+        public void OpColorButtonPressed()
+        {
+            // Create the popup with callback.
+            SketchControlsScript.GlobalCommands command = SketchControlsScript.GlobalCommands.PolyhydraColorPickerPopup;
+            CreatePopUp(command, -1, -1, "Color", MakeOnOpColorPopUpClose());
+
+            var popup = (m_ActivePopUp as ColorPickerPopUpWindow);
+            popup.transform.localPosition += new Vector3(0, 0, 0);
+            popup.ColorPicker.ColorPicked += OnColorPicked();
+            popup.ColorPicker.ColorPicked += delegate (Color c)
+            {
+                ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(c));
+                SetOpColor(c);
+            };
+            
+            // Init must be called after all popup.ColorPicked actions have been assigned.
+            popup.ColorPicker.Controller.CurrentColor = GetOpColor();
+            popup.ColorPicker.ColorFinalized += MakeOpColorFinalized();
+            popup.CustomColorPalette.ColorPicked += MakeOpColorPickedAsFinal();
+
+            m_EatInput = true;
+        }
+        private Color GetOpColor()
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            return op.paramColor;
+        }
+
+        private void SetOpColor(Color color)
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            op.paramColor = color;
+            CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.RebuildPoly();
+        }
+
+        Action MakeOnOpColorPopUpClose()
+        {
+            return delegate
+            {
+                ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(GetOpColor()));
+            };
+        }
+        
+        Action<Color> OnColorPicked()
+        {
+            return delegate (Color c)
+            {
+                SetOpColor(c);
+           };
+        }
+        
+
+        
+        Action<Color> MakeOpColorPickedAsFinal()
+        {
+            return delegate(Color c)
+            {
+                ////
+            };
+        }
+        
+        Action MakeOpColorFinalized()
+        {
+            return delegate
+            {
+                ////
+            };
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         public void HandleAddOpButton()
         {
