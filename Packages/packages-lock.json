@@ -7,7 +7,7 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "1.0.13",
+      "version": "1.0.14",
       "depth": 0,
       "source": "registry",
       "dependencies": {
