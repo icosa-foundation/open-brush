@@ -113,7 +113,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     void Update()
     {
-        CheckAndRuildIfNeeded();
+        CheckAndRebuildIfNeeded();
     }
 
     private void ColorSetup()
@@ -249,7 +249,7 @@ public class PreviewPolyhedron : MonoBehaviour
         NeedsRebuild = true;
     }
     
-    public void CheckAndRuildIfNeeded()
+    public void CheckAndRebuildIfNeeded()
     {
         if (!NeedsRebuild) return;
         
@@ -275,6 +275,8 @@ public class PreviewPolyhedron : MonoBehaviour
             meshFilter.sharedMesh = polyMesh;
         }
         PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.CurrentSymmetryMode);
+
+        NeedsRebuild = false;
     }
 
     public void Validate()
@@ -506,6 +508,7 @@ public class PreviewPolyhedron : MonoBehaviour
         }
 
         var mesh = m_PolyMesh.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
+        
         if (mesh != null)
         {
             AssignFinishedMesh(mesh);
