@@ -20,13 +20,12 @@ using Polyhydra.Wythoff;
 using TiltBrush;
 using TiltBrush.MeshEditing;
 using UnityEngine;
-using UnityEngine.Serialization;
-
 
 public class PreviewPolyhedron : MonoBehaviour
 {
     public bool GenerateSubmeshes = false;
 
+    public int RebuildSkipFrames = 3;
     public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
     public RadialSolids.RadialPolyType RadialPolyType;
@@ -56,7 +55,9 @@ public class PreviewPolyhedron : MonoBehaviour
     public ColorMethods PreviewColorMethod;
 
     public Material SymmetryWidgetMaterial;
-    
+
+    private bool NeedsRebuild;
+    private bool IsBuilding;
 
     public enum AvailableFilters
     {
@@ -95,6 +96,7 @@ public class PreviewPolyhedron : MonoBehaviour
     private void Awake()
     {
         EditableModelManager.m_Instance.m_PreviewPolyhedron = this;
+        Operators = new List<OpDefinition>();
     }
     
     void Start()
@@ -107,6 +109,11 @@ public class PreviewPolyhedron : MonoBehaviour
         ColorSetup();
         meshFilter = gameObject.GetComponent<MeshFilter>();
         MakePolyhedron();
+    }
+
+    void Update()
+    {
+        CheckAndRuildIfNeeded();
     }
 
     private void ColorSetup()
@@ -239,10 +246,17 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void RebuildPoly()
     {
+        NeedsRebuild = true;
+    }
+    
+    public void CheckAndRuildIfNeeded()
+    {
+        if (!NeedsRebuild) return;
+        
+        // Don't build every frame
+        if (Time.frameCount % RebuildSkipFrames == 0) return;
+        
         Validate();
-        PreviewColorMethod = (GeneratorType == GeneratorTypes.Waterman)
-            ? ColorMethods.ByFaceDirection
-            : ColorMethods.ByTags;
         MakePolyhedron();
 
         Mesh polyMesh;

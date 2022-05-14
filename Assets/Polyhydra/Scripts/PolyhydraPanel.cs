@@ -53,11 +53,12 @@ namespace TiltBrush
 
         public List<GameObject> MonoscopicOnlyButtons;
 
-        public int CurrentActiveOpIndex = -1;
-        private int OperatorCount = 0;
+        public int CurrentActiveOpIndex = 0;
         public Transform OperatorSelectButtonParent;
         public Transform OperatorSelectButtonPrefab;
-
+        public Transform OperatorSelectPopupTools;
+        public PolyhydraOpPopupToolsButton ToolBtnPrev;
+        public PolyhydraOpPopupToolsButton ToolBtnNext;
         public static Dictionary<string, object> m_GeneratorParameters;
         public static List<Dictionary<string, object>> m_Operations;
 
@@ -177,16 +178,11 @@ namespace TiltBrush
 
         public void SetMainButtonVisibility()
         {
-            
-            
-
             foreach (var go in MonoscopicOnlyButtons)
             {
                 go.SetActive(App.Config.m_SdkMode==SdkMode.Monoscopic);
             }
-            
-            var mainButtons = gameObject.GetComponentsInChildren<PolyhydraOptionButton>(true);
-
+          
             switch (currentMainCategory)
             {
                 // All the shapeCategories that use the Uniform popup
@@ -500,10 +496,6 @@ namespace TiltBrush
 
         public void ChangeCurrentOpType(string operationName)
         {
-            var buttonSelectOpSlot = OperatorSelectButtonParent.GetChild(CurrentActiveOpIndex).GetComponent<PolyhydraActionButton>();
-            buttonSelectOpSlot.SetDescriptionText(operationName);
-            buttonSelectOpSlot.SetButtonTexture(GetButtonTextureByOpName(operationName));
-            
             var ops = CurrentPolyhedra.Operators;
             var op = ops[CurrentActiveOpIndex];
             op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
@@ -516,35 +508,30 @@ namespace TiltBrush
             ops[CurrentActiveOpIndex] = op;
             CurrentPolyhedra.Operators = ops;
 
+            RefreshOpSelectButtons();
             ConfigureOpPanel(op);
         }
 
         public void HandleSelectOpButton(int index)
         {
             CurrentActiveOpIndex = index;
-            var op = CurrentPolyhedra.Operators[index];
-            ConfigureOpPanel(op);
+            RefreshOpSelectButtons();
+            if (CurrentPolyhedra.Operators.Count > 0)
+            {
+                var op = CurrentPolyhedra.Operators[index];
+                ConfigureOpPanel(op);
+            }
+            else
+            {
+                OpPanel.SetActive(false);
+            }
         }
         
         public void ConfigureOpPanel(PreviewPolyhedron.OpDefinition op)
         {
             OpPanel.SetActive(true);
-            string operationName = op.opType.ToString();
-            ButtonOpType.SetDescriptionText(operationName);
-            ButtonOpType.SetButtonTexture(GetButtonTextureByOpName(operationName));
-
             OpConfig opConfig = OpConfigs.Configs[op.opType];
-
-            if (opConfig.usesFilter)
-            {
-                OpFilterControlParent.SetActive(true);
-                // ButtonOpFilterType.gameObject.SetActive(true);
-            }
-            else
-            {
-                OpFilterControlParent.SetActive(false);
-                // ButtonOpFilterType.gameObject.SetActive(false);
-            }
+            OpFilterControlParent.SetActive(opConfig.usesFilter);
 
             if (opConfig.usesAmount)
             {
@@ -655,30 +642,13 @@ namespace TiltBrush
             };
         }
         
-        
-        
-        
-        
-        
-        
-        
-        
-
         public void HandleAddOpButton()
         {
             Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
-            var btn = btnTr.GetComponent<PolyhydraActionButton>();
-            var pos = btn.transform.localPosition;
-            pos.Set(OperatorCount * 1.1f, 0, 0);
-            btn.transform.localPosition = pos;
-            btn.name = $"Select Op: {OperatorCount}";
-            btn.ParentPanel = this;
-            btn.OpIndex = OperatorCount;
-            OperatorCount++;
-            btn.SetDescriptionText($"Operator {OperatorCount}");
-            btn.gameObject.SetActive(true);
-            HandleSelectOpButton(OperatorCount - 1);
+            btnTr.gameObject.SetActive(true);
             CurrentPolyhedra.Operators.Add(new PreviewPolyhedron.OpDefinition());
+            RefreshOpSelectButtons();
+            HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
         }
 
         public void AddGuideForCurrentPolyhedron()
@@ -848,6 +818,65 @@ namespace TiltBrush
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
             }
+        }
+        
+        public void HandleOpDelete()
+        {
+            CurrentPolyhedra.Operators.RemoveAt(CurrentActiveOpIndex);
+            CurrentActiveOpIndex = Mathf.Min(CurrentPolyhedra.Operators.Count - 1, CurrentActiveOpIndex);
+            HandleSelectOpButton(CurrentActiveOpIndex);
+            CurrentPolyhedra.RebuildPoly();
+            RefreshOpSelectButtons();
+        }
+        
+        private void RefreshOpSelectButtons()
+        {
+            OpPanel.gameObject.SetActive(CurrentPolyhedra.Operators.Count > 0);
+            OperatorSelectPopupTools.gameObject.SetActive(CurrentPolyhedra.Operators.Count > 0);
+
+            var btns = OperatorSelectButtonParent.GetComponentsInChildren<PolyhydraSelectOpButton>();
+
+            for (var i = 0; i < btns.Length; i++)
+            {
+                var btn = btns[i];
+                if (i > CurrentPolyhedra.Operators.Count - 1)
+                {
+                    Destroy(btn.gameObject);
+                    continue;
+                }
+                var op = CurrentPolyhedra.Operators[i];
+                btn.OpIndex = i;
+                string operationName = op.opType.ToString();
+                btn.SetDescriptionText(operationName);
+                btn.SetButtonTexture(GetButtonTextureByOpName(operationName));
+
+                btn.name = $"Select Op: {CurrentPolyhedra.Operators.Count - 1}";
+                btn.ParentPanel = this;
+
+                var btnPos = btn.transform.localPosition;
+                btnPos.Set(i * 1.1f, 0, 0);
+                btn.transform.localPosition = btnPos;
+
+                if (i == CurrentActiveOpIndex)
+                {
+                    var popupPos = btn.transform.localPosition;
+                    popupPos.Set(i * 1.1f, .2f, -.1f);
+                    OperatorSelectPopupTools.localPosition = popupPos;
+                    ToolBtnPrev.gameObject.SetActive(i > 0);
+                    ToolBtnNext.gameObject.SetActive(i < CurrentPolyhedra.Operators.Count - 1);
+                }
+            }
+        }
+
+        public void HandleOpMove(int delta)
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            CurrentPolyhedra.Operators.RemoveAt(CurrentActiveOpIndex);
+            CurrentActiveOpIndex += delta;
+            CurrentPolyhedra.Operators.Insert(CurrentActiveOpIndex, op);
+            HandleSelectOpButton(CurrentActiveOpIndex);
+            CurrentPolyhedra.RebuildPoly();
+            RefreshOpSelectButtons();
         }
     }
 

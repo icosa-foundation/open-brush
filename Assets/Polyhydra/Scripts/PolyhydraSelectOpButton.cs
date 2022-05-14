@@ -15,16 +15,33 @@
 using UnityEngine;
 namespace TiltBrush
 {
-    public class PolyhydraActionButton : BaseButton
+    public class PolyhydraSelectOpButton : BaseButton
     {
-
+        
         public int OpIndex;
         public PolyhydraPanel ParentPanel;
+        public GameObject PopupControls;
+        public bool Focused = false;
+            
         protected override void OnButtonPressed()
         {
             ParentPanel.HandleSelectOpButton(OpIndex);
         }
         
+        public override void GainFocus()
+        {
+            base.GainFocus();
+            Focused = true;
+            if (PopupControls!=null) PopupControls.SetActive(true);
+        }
+        
+        public override void LostFocus()
+        {
+            base.LostFocus();
+            Focused = false;
+        }
+        
     }
+    
     
 }
