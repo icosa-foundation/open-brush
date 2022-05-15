@@ -355,7 +355,6 @@ public class PreviewPolyhedron : MonoBehaviour
             Debug.LogWarning("Waiting for existing geometry thread");
             yield break;
         }
-        m_BuildMeshThread.Interrupt();
         m_BuildMeshThreadIsFinished = false;
         m_BuildMeshThread = null;
 
