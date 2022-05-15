@@ -773,7 +773,7 @@ namespace TiltBrush
                         // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
                         if (vrPoly)
                         {
-                            var color = vrPoly.GetFaceColor(i);
+                            var color = vrPoly.GetFaceColorForStrokes(i);
                             pointer.m_Script.SetColor(color);
                         }
                     }

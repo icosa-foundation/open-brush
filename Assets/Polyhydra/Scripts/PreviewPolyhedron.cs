@@ -51,7 +51,7 @@ public class PreviewPolyhedron : MonoBehaviour
     public PolyMesh m_PolyMesh;
     public bool Rescale;
     private MeshFilter meshFilter;
-    private Color[] previewColors;
+    public Color[] previewColors;
     public Color MainColor;
     public float ColorBlend = 0.5f;
     public ColorMethods PreviewColorMethod;
@@ -338,7 +338,7 @@ public class PreviewPolyhedron : MonoBehaviour
         }
     }
 
-    public Color GetFaceColor(int faceIndex)
+    public Color GetFaceColorForStrokes(int faceIndex)
     {
         return m_PolyMesh.CalcFaceColor(
             previewColors,
@@ -535,9 +535,14 @@ public class PreviewPolyhedron : MonoBehaviour
         if (m_PolyMesh==null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
 
         PolyhydraPanel.m_Operations = new List<Dictionary<string, object>>();
+
+        PreviewColorMethod = ColorMethods.ByRole;
         
         foreach (var op in Operators.ToList())
         {
+            // If we've set any tags then assume we want to color by tags
+            if (op.opType == PolyMesh.Operation.AddTag) PreviewColorMethod = ColorMethods.ByTags;
+            
             PolyhydraPanel.m_Operations.Add(new Dictionary<string, object>
             {
                 {"operation", op.opType},
@@ -621,7 +626,7 @@ public class PreviewPolyhedron : MonoBehaviour
             case AvailableFilters.All:
                 return filterNot ? Filter.None : Filter.All;
             case AvailableFilters.Inner:
-                return filterNot ? Filter.Outer : Filter.Inner;;
+                return filterNot ? Filter.Outer : Filter.Inner;
             case AvailableFilters.Random:
                 return Filter.Random(filterNot ? 1f - filterParamFloat : filterParamFloat);
             case AvailableFilters.Role:
@@ -631,11 +636,11 @@ public class PreviewPolyhedron : MonoBehaviour
             case AvailableFilters.FacingVertical:
                 return Filter.FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true, filterNot);
             case AvailableFilters.FacingUp:
-                return Filter.FacingDirection(Vector3.up, filterParamFloat, filterNot);
+                return Filter.FacingDirection(Vector3.up, filterParamFloat, false, filterNot);
             case AvailableFilters.FacingForward:
-                return Filter.FacingDirection(Vector3.forward, filterParamFloat, filterNot);
+                return Filter.FacingDirection(Vector3.forward, filterParamFloat, false, filterNot);
             case AvailableFilters.FacingRight:
-                return Filter.FacingDirection(Vector3.right, filterParamFloat, filterNot);
+                return Filter.FacingDirection(Vector3.right, filterParamFloat, false, filterNot);
             case AvailableFilters.NSided:
                 return Filter.NumberOfSides(filterParamInt, filterNot);
             case AvailableFilters.EvenSided:
@@ -645,11 +650,11 @@ public class PreviewPolyhedron : MonoBehaviour
             case AvailableFilters.LastN:
                 return Filter.LastN(filterParamInt, filterNot);
             case AvailableFilters.PositionX:
-                return Filter.Position(Filter.PositionType.Center, Axis.X, not: filterNot);
+                return Filter.Position(Filter.PositionType.Center, Axis.X, filterParamFloat, 10f, not: filterNot);
             case AvailableFilters.PositionY:
-                return Filter.Position(Filter.PositionType.Center, Axis.Y, not: filterNot);
+                return Filter.Position(Filter.PositionType.Center, Axis.Y, filterParamFloat, 10f, not: filterNot);
             case AvailableFilters.PositionZ:
-                return Filter.Position(Filter.PositionType.Center, Axis.Z, not: filterNot);
+                return Filter.Position(Filter.PositionType.Center, Axis.Z, filterParamFloat, 10f, not: filterNot);
             case AvailableFilters.DistanceFromCenter:
                 return Filter.RadialDistance(not: filterNot);
             default:

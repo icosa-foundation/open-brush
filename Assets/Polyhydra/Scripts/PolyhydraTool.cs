@@ -218,7 +218,7 @@ namespace TiltBrush
                                 m_BrushGuid = brush.m_Guid,
                                 m_BrushScale = 1f,
                                 m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                                m_Color = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetFaceColor(faceIndex),
+                                m_Color = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetFaceColorForStrokes(faceIndex),
                                 m_Seed = 0,
                                 m_ControlPoints = controlPoints.ToArray(),
                             };

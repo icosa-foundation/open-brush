@@ -50,9 +50,6 @@ namespace TiltBrush.MeshEditing
         [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
         
-        public Dictionary<string, object> m_Parameters;
-        public List<Dictionary<string, object>> m_Operations;
-
         void Awake()
         {
             m_Instance = this;
@@ -131,13 +128,17 @@ namespace TiltBrush.MeshEditing
             return m_EditableModels[guid].ColorMethod;
         }
         
-        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, ColorMethods colMethod, GeneratorTypes generatorType, 
+        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr, 
+                                     ColorMethods colMethod, 
+                                     GeneratorTypes generatorType, 
+                                     Color[] colors = null,
                                      Dictionary<string, object> parameters=null, 
                                      List<Dictionary<string, object>> operations=null)
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-            var meshData = poly.BuildMeshData(colorMethod: colMethod);
+            
+            var meshData = poly.BuildMeshData(colors: colors, colorMethod: colMethod);
             var mesh = poly.BuildUnityMesh(meshData);
 
             // Create the EditableModel gameobject 

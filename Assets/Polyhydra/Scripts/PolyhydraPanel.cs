@@ -476,8 +476,14 @@ namespace TiltBrush
                 scale_CS
             );
             var shapeType = EditableModelManager.m_Instance.m_PreviewPolyhedron.GeneratorType;
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, creationTr, ColorMethods.ByTags,
-                shapeType, m_GeneratorParameters, m_Operations);
+            EditableModelManager.m_Instance.GeneratePolyMesh(
+                poly,
+                creationTr,
+                EditableModelManager.m_Instance.m_PreviewPolyhedron.PreviewColorMethod,
+                shapeType, 
+                EditableModelManager.m_Instance.m_PreviewPolyhedron.previewColors,
+                m_GeneratorParameters, m_Operations
+            );
         }
 
         public void MonoscopicAddPolyhedron()
@@ -735,7 +741,6 @@ namespace TiltBrush
         {
             var opFilterName = op.filterType.ToString();
             ButtonOpFilterType.SetDescriptionText(opFilterName);
-            OpFilterControlParent.SetActive(true);
 
             ButtonOpFilterNot.gameObject.SetActive(true);
             LabelOpFilterName.text = opFilterName;
@@ -786,12 +791,18 @@ namespace TiltBrush
                 case PreviewPolyhedron.AvailableFilters.FacingUp:
                 case PreviewPolyhedron.AvailableFilters.FacingForward:
                 case PreviewPolyhedron.AvailableFilters.FacingRight:
+                    SliderOpFilterParam.gameObject.SetActive(true);
+                    SliderOpFilterParam.SliderType = SliderTypes.Float;
+                    SliderOpFilterParam.Min = 0f;
+                    SliderOpFilterParam.Max = 180f;
+                    SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
+                    break;
                 case PreviewPolyhedron.AvailableFilters.FacingHorizontal:
                 case PreviewPolyhedron.AvailableFilters.FacingVertical:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = -1f;
-                    SliderOpFilterParam.Max = 1f;
+                    SliderOpFilterParam.Min = 0f;
+                    SliderOpFilterParam.Max = 90f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case PreviewPolyhedron.AvailableFilters.Random:
@@ -864,6 +875,7 @@ namespace TiltBrush
                     OperatorSelectPopupTools.localPosition = popupPos;
                     ToolBtnPrev.gameObject.SetActive(i > 0);
                     ToolBtnNext.gameObject.SetActive(i < CurrentPolyhedra.Operators.Count - 1);
+                    ButtonOpType.SetButtonTexture(GetButtonTextureByOpName(operationName));
                 }
             }
         }
