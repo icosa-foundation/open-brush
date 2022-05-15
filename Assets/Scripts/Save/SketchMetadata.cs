@@ -737,8 +737,8 @@ namespace TiltBrush
         [JsonConstructor]
         public EditableModelDefinition(Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
                                        List<Roles> vertexRoles, List<HashSet<string>> faceTags,
-                                       ColorMethods colorMethod, GeneratorTypes generatorType,
-                                       Dictionary<string, object> generatorParameters,
+                                       Color[] colors, ColorMethods colorMethod,
+                                       GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
         {
             Vertices = vertices;
@@ -746,16 +746,18 @@ namespace TiltBrush
             FaceRoles = faceRoles;
             VertexRoles = vertexRoles;
             FaceTags = faceTags;
+            Colors = colors;
             ColorMethod = colorMethod;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
             Operations = operations;
         }
         
-        public EditableModelDefinition(ColorMethods colorMethod, GeneratorTypes generatorType,
+        public EditableModelDefinition(Color[] colors, ColorMethods colorMethod, GeneratorTypes generatorType,
                                        Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
         {
+            Colors = colors;
             ColorMethod = colorMethod;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
@@ -767,6 +769,7 @@ namespace TiltBrush
             Operations = operations;
         }
         
+        public Color[] Colors { get; }
         public ColorMethods ColorMethod { get; }
         public GeneratorTypes GeneratorType { get; }
         public Dictionary<string, object> GeneratorParameters { get; }

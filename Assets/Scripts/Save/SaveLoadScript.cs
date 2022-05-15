@@ -867,7 +867,7 @@ namespace TiltBrush
                             {
                                 foreach (var tr in model.RawTransforms)
                                 {
-                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, null, emd.GeneratorParameters, emd.Operations);
+                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, emd.Colors, emd.GeneratorParameters, emd.Operations);
                                 }
                             }
                         }

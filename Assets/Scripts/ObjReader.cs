@@ -64,7 +64,7 @@ namespace TiltBrush
                 {
                     poly.MergeCoplanarFaces(0.01f);
                     EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
-                    EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, ColorMethods.ByTags, GeneratorTypes.FileSystem);
+                    EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, null, ColorMethods.ByTags, GeneratorTypes.FileSystem);
                 }
                 else
                 {

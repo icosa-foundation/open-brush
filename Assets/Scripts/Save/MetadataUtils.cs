@@ -171,6 +171,7 @@ namespace TiltBrush
                         polyMesh.FaceRoles,
                         polyMesh.VertexRoles,
                         polyMesh.FaceTags,
+                        em.Value.Colors,
                         em.Value.ColorMethod,
                         em.Value.GeneratorType,
                         em.Value.GeneratorParameters,
@@ -180,6 +181,7 @@ namespace TiltBrush
                 {
                     dict[em.Key] = new EditableModelDefinition
                     (
+                        em.Value.Colors,
                         em.Value.ColorMethod,
                         em.Value.GeneratorType,
                         em.Value.GeneratorParameters,
