@@ -70,7 +70,8 @@ namespace TiltBrush.MeshEditing
             var polyGo = id.gameObject;
             emesh = m_EditableModels[id.guid];
             var mat = polyGo.GetComponent<MeshRenderer>().material;
-            var mesh = poly.BuildUnityMesh(colorMethod: emesh.ColorMethod);
+            var meshData = poly.BuildMeshData(colorMethod: emesh.ColorMethod);
+            var mesh = poly.BuildUnityMesh(meshData);
             UpdateMesh(polyGo, mesh, mat);
             emesh.SetPolyMesh(poly);
             m_EditableModels[id.guid] = emesh;
@@ -136,7 +137,8 @@ namespace TiltBrush.MeshEditing
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-            var mesh = poly.BuildUnityMesh(colorMethod: colMethod);
+            var meshData = poly.BuildMeshData(colorMethod: colMethod);
+            var mesh = poly.BuildUnityMesh(meshData);
 
             // Create the EditableModel gameobject 
             var polyGo = new GameObject();
@@ -173,7 +175,8 @@ namespace TiltBrush.MeshEditing
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var stencilWidget = createCommand.Widget as StencilWidget;
             poly = poly.ConvexHull();
-            Mesh mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByRole);
+            var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByRole);
+            Mesh mesh = poly.BuildUnityMesh(meshData);
             var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
             collider.sharedMesh = mesh;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;

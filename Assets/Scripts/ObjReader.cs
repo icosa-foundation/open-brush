@@ -58,7 +58,8 @@ namespace TiltBrush
                     .SelectMany(g => g.Faces)
                     .Select(f => f._vertices.Select(v=>v.VertexIndex-1));
                 var poly = new PolyMesh(verts, faceIndices);
-                var mesh = poly.BuildUnityMesh(colorMethod: ColorMethods.ByTags);
+                var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByTags);
+                var mesh = poly.BuildUnityMesh(meshData);
                 if (editable)
                 {
                     poly.MergeCoplanarFaces(0.01f);

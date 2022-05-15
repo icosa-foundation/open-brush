@@ -59,7 +59,6 @@ public class PreviewPolyhedron : MonoBehaviour
     public Material SymmetryWidgetMaterial;
 
     private bool NeedsRebuild;
-    private bool IsBuilding;
 
     public enum AvailableFilters
     {
@@ -247,9 +246,10 @@ public class PreviewPolyhedron : MonoBehaviour
     }
     
     public List<OpDefinition> Operators;
-    private Thread m_BuildPolyThread;
-    private bool m_BuildPolyThreadIsFinished;
-    private Coroutine m_BuildPolyCoroutine;
+    
+    private Thread m_BuildMeshThread;
+    private bool m_BuildMeshThreadIsFinished;
+    private Coroutine m_BuildMeshCoroutine;
     
     public void RebuildPoly()
     {
@@ -350,34 +350,35 @@ public class PreviewPolyhedron : MonoBehaviour
     // This is a helper coroutine
     IEnumerator RunOffMainThread(Action toRun, Action callback)
     {
-        if (m_BuildPolyThread!=null && m_BuildPolyThread.IsAlive)
+        if (m_BuildMeshThread!=null && m_BuildMeshThread.IsAlive)
         {
             Debug.LogWarning("Waiting for existing geometry thread");
             yield break;
         }
-        m_BuildPolyThreadIsFinished = false;
-        m_BuildPolyThread = null;
+        m_BuildMeshThread.Interrupt();
+        m_BuildMeshThreadIsFinished = false;
+        m_BuildMeshThread = null;
 
-        m_BuildPolyThread = new Thread(() =>
+        m_BuildMeshThread = new Thread(() =>
         {
             toRun();
-            m_BuildPolyThreadIsFinished = true;
+            m_BuildMeshThreadIsFinished = true;
         });
-        m_BuildPolyThread.Start();
-        while (!m_BuildPolyThreadIsFinished)
+        m_BuildMeshThread.Start();
+        while (!m_BuildMeshThreadIsFinished)
             yield return null;
         callback();
     }
 
     public void BackgroundMakePolyhedron()
     {
-        if (m_BuildPolyCoroutine != null)
+        if (m_BuildMeshCoroutine != null)
         {
             Debug.LogWarning("Coroutine already exists. Aborting.");
             return;
         }
-        m_BuildPolyCoroutine = StartCoroutine(RunOffMainThread(MakePolyhedron, BuildAndAssignMesh));
-        m_BuildPolyCoroutine = null;
+        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(MakePolyhedron, AssignMesh));
+        m_BuildMeshCoroutine = null;
     }
     
     private void MakePolyhedron()
@@ -553,13 +554,15 @@ public class PreviewPolyhedron : MonoBehaviour
             if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
+        
+        m_MeshData = m_PolyMesh.BuildMeshData(GenerateSubmeshes, previewColors, PreviewColorMethod);
 
     }
 
-    private void BuildAndAssignMesh()
+    private void AssignMesh()
     {
         
-        var mesh = m_PolyMesh.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
+        var mesh = m_PolyMesh.BuildUnityMesh(m_MeshData);
         
         if (mesh == null)
         {
@@ -593,6 +596,7 @@ public class PreviewPolyhedron : MonoBehaviour
         UpdateSymmetryMesh();
 
     }
+    private PolyMesh.MeshData m_MeshData;
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
