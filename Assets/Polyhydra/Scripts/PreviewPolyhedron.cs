@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush;
@@ -108,7 +110,7 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         ColorSetup();
         meshFilter = gameObject.GetComponent<MeshFilter>();
-        MakePolyhedron();
+        BackgroundMakePolyhedron();
     }
 
     void Update()
@@ -118,6 +120,8 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void ColorSetup()
     {
+        // Generates a color palette based on either user custom colors or colors set in the inspector
+        
         int numColors = 12; // What is the maximum colour index we want to support? 
         var colorButtons = FindObjectsOfType<CustomColorButton>();
         // Use custom colors if they are present
@@ -243,7 +247,10 @@ public class PreviewPolyhedron : MonoBehaviour
     }
     
     public List<OpDefinition> Operators;
-
+    private Thread m_BuildPolyThread;
+    private bool m_BuildPolyThreadIsFinished;
+    private Coroutine m_BuildPolyCoroutine;
+    
     public void RebuildPoly()
     {
         NeedsRebuild = true;
@@ -252,13 +259,22 @@ public class PreviewPolyhedron : MonoBehaviour
     public void CheckAndRebuildIfNeeded()
     {
         if (!NeedsRebuild) return;
-        
         // Don't build every frame
         if (Time.frameCount % RebuildSkipFrames == 0) return;
-        
         Validate();
-        MakePolyhedron();
-
+        BackgroundMakePolyhedron();
+        NeedsRebuild = false;
+    }
+    
+    private void UpdateSymmetryMesh()
+    {
+        if (
+            !PointerManager.m_Instance.SymmetryModeEnabled ||
+            PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
+        {
+            return;
+        }
+        
         Mesh polyMesh;
         if (meshFilter == null)
         {
@@ -275,12 +291,11 @@ public class PreviewPolyhedron : MonoBehaviour
             meshFilter.sharedMesh = polyMesh;
         }
         PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.CurrentSymmetryMode);
-
-        NeedsRebuild = false;
     }
 
     public void Validate()
     {
+        // Colours might have been changed in the inspector
         ColorSetup();
 
         if (GeneratorType == GeneratorTypes.Uniform)
@@ -332,9 +347,41 @@ public class PreviewPolyhedron : MonoBehaviour
         );
     }
 
-    public void MakePolyhedron()
+    // This is a helper coroutine
+    IEnumerator RunOffMainThread(Action toRun, Action callback)
     {
+        if (m_BuildPolyThread!=null && m_BuildPolyThread.IsAlive)
+        {
+            Debug.LogWarning("Waiting for existing geometry thread");
+            yield break;
+        }
+        m_BuildPolyThreadIsFinished = false;
+        m_BuildPolyThread = null;
 
+        m_BuildPolyThread = new Thread(() =>
+        {
+            toRun();
+            m_BuildPolyThreadIsFinished = true;
+        });
+        m_BuildPolyThread.Start();
+        while (!m_BuildPolyThreadIsFinished)
+            yield return null;
+        callback();
+    }
+
+    public void BackgroundMakePolyhedron()
+    {
+        if (m_BuildPolyCoroutine != null)
+        {
+            Debug.LogWarning("Coroutine already exists. Aborting.");
+            return;
+        }
+        m_BuildPolyCoroutine = StartCoroutine(RunOffMainThread(MakePolyhedron, BuildAndAssignMesh));
+        m_BuildPolyCoroutine = null;
+    }
+    
+    private void MakePolyhedron()
+    {
         // TODO Unify this with similar code in SaveLoadScript.cs
         
         switch (GeneratorType)
@@ -507,20 +554,18 @@ public class PreviewPolyhedron : MonoBehaviour
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
 
-        var mesh = m_PolyMesh.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
-        
-        if (mesh != null)
-        {
-            AssignFinishedMesh(mesh);
-        }
-        else
-        {
-            Debug.LogError($"Failed to generate preview mesh");
-        }
     }
 
-    public void AssignFinishedMesh(Mesh mesh)
+    private void BuildAndAssignMesh()
     {
+        
+        var mesh = m_PolyMesh.BuildUnityMesh(GenerateSubmeshes, previewColors, PreviewColorMethod);
+        
+        if (mesh == null)
+        {
+            Debug.LogError($"Failed to generate preview mesh");
+            return;
+        }
 
         if (Rescale)
         {
@@ -542,6 +587,11 @@ public class PreviewPolyhedron : MonoBehaviour
             if (Application.isPlaying) { meshFilter.mesh = mesh; }
             else { meshFilter.sharedMesh = mesh; }
         }
+        
+        // TODO
+        // Also update other linked meshes (stencils, model widgets)
+        UpdateSymmetryMesh();
+
     }
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
