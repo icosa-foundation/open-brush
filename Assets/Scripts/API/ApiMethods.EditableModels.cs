@@ -467,7 +467,7 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
         public static void CreateWatermanSolid(int root, int c)
         {
-            var poly = WatermanPoly.Build(1f, root, c);
+            var poly = WatermanPoly.Build(1f, root, c, true);
             var parameters = new Dictionary<string, object>
             {
                 {"root", root},

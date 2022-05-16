@@ -743,7 +743,7 @@ namespace TiltBrush
                         var filesystemModels = new List<TiltEditableModels>();
                         foreach (var model in jsonData.EditableModelIndex)
                         {
-                            if (jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            if (jsonData.EditableModelDefinitions!=null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
                             {
                                 generatedModels.Add(model);
                             }
@@ -805,10 +805,18 @@ namespace TiltBrush
                                     poly = poly.SitLevel();
                                     break;
                                 case GeneratorTypes.Waterman:
-                                    poly = WatermanPoly.Build(
-                                       Convert.ToSingle(p["root"]),
-                                        Convert.ToInt32(p["c"])
-                                    );
+                                    try
+                                    {
+                                        poly = WatermanPoly.Build(
+                                            root: Convert.ToInt32(p["root"]),
+                                            c: Convert.ToInt32(p["c"]),
+                                            mergeFaces: true
+                                        );
+                                    }
+                                    catch (ArgumentException e)
+                                    {
+                                        Debug.LogError("Invalid Waterman Polyhedra");
+                                    }
                                     break;
                                 case GeneratorTypes.Grid:
                                     poly = Grids.Build(

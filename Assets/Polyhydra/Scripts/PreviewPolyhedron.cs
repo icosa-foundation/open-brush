@@ -397,7 +397,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 };
                 break;
             case GeneratorTypes.Waterman:
-                m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int);
+                m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int, mergeFaces: true);
                 PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
                 {
                     {"root", Param1Int},
