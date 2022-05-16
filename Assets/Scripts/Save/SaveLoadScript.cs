@@ -859,12 +859,16 @@ namespace TiltBrush
                                     var op = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
                                     float param1 = Convert.ToSingle(opDict["param1"]);
                                     float param2 = Convert.ToSingle(opDict["param2"]);
-                                    var colorData = (opDict["paramColor"] as JArray);
-                                    var paramColor = new Color(
-                                        colorData[0].Value<float>(),
-                                        colorData[1].Value<float>(),
-                                        colorData[2].Value<float>()
-                                    );
+                                    Color paramColor = Color.white;
+                                    if (opDict.ContainsKey("paramColor"))
+                                    {
+                                        var colorData = (opDict["paramColor"] as JArray);
+                                        paramColor = new Color(
+                                            colorData[0].Value<float>(),
+                                            colorData[1].Value<float>(),
+                                            colorData[2].Value<float>()
+                                        );
+                                    }
                                     var filter = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
                                     var parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
                                     poly = poly.AppyOperation(op, parameters);
