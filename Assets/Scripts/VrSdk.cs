@@ -713,7 +713,17 @@ namespace TiltBrush
             // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                leftRightSwapped = false;
+                UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
+                UnityXRControllerInfo brushInfo = InputManager.Brush as UnityXRControllerInfo;
+                wandInfo.SwapLeftRight();
+                brushInfo.SwapLeftRight();
+
+                var wandPose = InputManager.Wand.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+                var brushPose = InputManager.Brush.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+                var tempSource = wandPose.poseSource;
+                var tempType = wandPose.deviceType;
+                wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
+                brushPose.SetPoseSource(tempType, tempSource);
             }
             else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {

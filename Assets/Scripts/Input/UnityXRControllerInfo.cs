@@ -21,7 +21,7 @@ namespace TiltBrush
     public class UnityXRControllerInfo : ControllerInfo
     {
         private UnityEngine.XR.InputDevice device;
-        private readonly UnityXRInputAction actionSet;
+        private readonly UnityXRInputAction actionSet = new();
 
         private Vector2 padAxisPrevious = new Vector2();
         private const float kInputScrollScalar = 0.5f;
@@ -37,15 +37,27 @@ namespace TiltBrush
             : base(behavior)
         {
             isBrush = !isLeftHand;
-            device = InputDevices.GetDeviceAtXRNode(isLeftHand ? XRNode.LeftHand : XRNode.RightHand);
-            actionSet = new UnityXRInputAction();
-            if (!isLeftHand)
+            Init();
+        }
+
+        public void SwapLeftRight()
+        {
+            isBrush = !isBrush;
+            Init();
+        }
+
+        private void Init()
+        {
+            device = InputDevices.GetDeviceAtXRNode(isBrush ? XRNode.RightHand : XRNode.LeftHand);
+            if (isBrush)
             {
                 actionSet.Brush.Enable();
+                actionSet.Wand.Disable();
             }
             else
             {
                 actionSet.Wand.Enable();
+                actionSet.Brush.Disable();
             }
         }
 
@@ -106,7 +118,6 @@ namespace TiltBrush
                 delta.y = Mathf.Clamp(delta.y, range.x, range.y);
                 return delta * kInputScrollScalar;
             }
-            return Vector2.zero;
         }
 
         public override float GetScrollXDelta()
