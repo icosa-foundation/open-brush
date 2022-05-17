@@ -59,7 +59,6 @@ public class PreviewPolyhedron : MonoBehaviour
     public Material SymmetryWidgetMaterial;
 
     private PolyMesh.MeshData m_MeshData;
-    private float ScalingFactor = 1.0f;
     private bool NeedsRebuild;
 
     public enum AvailableFilters
@@ -415,7 +414,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"x", Param1Int},
                     {"y", Param2Int},
                 };
-                ScalingFactor = 1f / Mathf.Sqrt(2f);
+                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
                 break;
             case GeneratorTypes.Radial:
                 Param1Int = Mathf.Max(Param1Int, 3);
@@ -447,7 +446,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"capheight", capHeight},
                 };
                 
-                ScalingFactor = 1f/(2 * Mathf.Tan(Mathf.PI/Param1Int));
+                m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
                 break;
             case GeneratorTypes.Shapes:
                 switch (ShapeType)
@@ -460,7 +459,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"type", ShapeTypes.Polygon},
                             {"sides", Param1Int},
                         };
-                        ScalingFactor = 1f/(2 * Mathf.Tan(Mathf.PI/Param1Int));
+                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
                         break;
                     case ShapeTypes.Star:
                         Param1Int = Mathf.Max(Param1Int, 3);
@@ -471,7 +470,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"sides", Param1Int},
                             {"sharpness", Param2Float},
                         };
-                        ScalingFactor = 1f/(2 * Mathf.Tan(Mathf.PI/Param1Int));
+                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
                         break;
                     case ShapeTypes.L_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
@@ -482,7 +481,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"b", Param2Float},
                             {"c", Param3Float},
                         };
-                        ScalingFactor = 1f / Mathf.Sqrt(2f);
+                        m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
                         break;
                     case ShapeTypes.C_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
@@ -503,7 +502,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"b", Param2Float},
                             {"c", Param3Float},
                         };
-                        ScalingFactor = 1f / Mathf.Sqrt(2f);
+                        m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
                         break;
                 }
                 break;
@@ -519,7 +518,6 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"y", Param2Int},
                             {"z", Param3Int},
                         };
-                        ScalingFactor = 1f;
                         break;
                     case VariousSolidTypes.UvSphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
@@ -569,7 +567,7 @@ public class PreviewPolyhedron : MonoBehaviour
             if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
-        
+
         m_MeshData = m_PolyMesh.BuildMeshData(GenerateSubmeshes, previewColors, PreviewColorMethod);
 
     }
@@ -583,21 +581,6 @@ public class PreviewPolyhedron : MonoBehaviour
         {
             Debug.LogError($"Failed to generate preview mesh");
             return;
-        }
-
-        if (Rescale)
-        {
-            var size = mesh.bounds.size;
-            var maxDimension = Mathf.Max(size.x, size.y, size.z);
-            var scale = (ScalingFactor / maxDimension) * 2f;
-            if (scale > 0 && scale != Mathf.Infinity)
-            {
-                transform.localScale = new Vector3(scale, scale, scale);
-            }
-            else
-            {
-                Debug.LogError("Failed to rescale");
-            }
         }
 
         if (meshFilter != null)
