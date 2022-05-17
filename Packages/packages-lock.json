@@ -7,13 +7,13 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "1.0.17",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "url": "https://package.openupm.com"
+      "hash": "84fbe51adffd92de49842dc94b718a93210a071a"
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
