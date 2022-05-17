@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
@@ -194,6 +195,28 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(false);
                     ButtonGridShape.gameObject.SetActive(false);
                     ButtonOtherSolidsType.gameObject.SetActive(false);
+                    
+                    // Assign the correct button texture for each category
+                    Uniform initialUniformType;
+                    if (currentMainCategory == MainCategories.Platonic)
+                    {
+                        initialUniformType = Uniform.Platonic[0];
+                    }
+                    else if (currentMainCategory == MainCategories.Archimedean)
+                    {
+                        initialUniformType = Uniform.Archimedean[0];
+                    }
+                    else
+                    {
+                        initialUniformType = Uniform.KeplerPoinsot[0];
+                    }
+                    
+                    // Yuk
+                    TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                    var uniformName = textInfo.ToTitleCase(initialUniformType.Name).Replace(" ", "_");
+                    var texturePath = $"ShapeButtons/poly_uniform_{uniformName}";
+                    ButtonUniformType.SetButtonTexture(Resources.Load<Texture2D>(texturePath));
+                    
                     break;
 
                 case MainCategories.Grids:
