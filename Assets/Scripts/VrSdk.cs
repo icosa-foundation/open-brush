@@ -276,6 +276,10 @@ namespace TiltBrush
 
         void Start()
         {
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                Application.onBeforeRender += OnNewPoses;
+            }
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mike - SteamVR init. Needs new XR init
@@ -309,8 +313,20 @@ namespace TiltBrush
             }
         }
 
+        void Update()
+        {
+            if(App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                OnNewPoses();
+            }
+        }
+
         void OnDestroy()
         {
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                Application.onBeforeRender -= OnNewPoses;
+            }
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mike - SteamVR cleanup process, investiage
@@ -339,10 +355,7 @@ namespace TiltBrush
 
         private void OnNewPoses()
         {
-            if (NewControllerPosesApplied != null)
-            {
-                NewControllerPosesApplied();
-            }
+            NewControllerPosesApplied?.Invoke();
         }
 
         private void OnInputFocusSteam(bool arg)
