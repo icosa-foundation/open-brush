@@ -485,7 +485,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         };
                         break;
                     case ShapeTypes.C_Shape:
-                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
+                        m_PolyMesh = Shapes.Build(ShapeTypes.C_Shape, Param1Float, Param2Float, Param3Float);
                         PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.C_Shape},
@@ -495,7 +495,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         };
                         break;
                     case ShapeTypes.H_Shape:
-                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
+                        m_PolyMesh = Shapes.Build(ShapeTypes.H_Shape, Param1Float, Param2Float, Param3Float);
                         PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.H_Shape},
@@ -528,6 +528,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"x", Param1Int},
                             {"y", Param2Int},
                         };
+                        m_PolyMesh.ScalingFactor = 0.5f;
                         break;
                     case VariousSolidTypes.UvHemisphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param1Int, Param2Int);
@@ -537,6 +538,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"x", Param1Int},
                             {"y", Param2Int},
                         };
+                        m_PolyMesh.ScalingFactor = 0.5f;
                         break;
                 }
                 break;
