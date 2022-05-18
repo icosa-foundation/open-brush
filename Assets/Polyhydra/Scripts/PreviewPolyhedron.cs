@@ -396,6 +396,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 {
                     {"type", UniformPolyType},
                 };
+                m_PolyMesh.ScalingFactor = 0.864f;
                 break;
             case GeneratorTypes.Waterman:
                 m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int, mergeFaces: true);
@@ -414,7 +415,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"x", Param1Int},
                     {"y", Param2Int},
                 };
-                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
+                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f)/2f;
                 break;
             case GeneratorTypes.Radial:
                 Param1Int = Mathf.Max(Param1Int, 3);
@@ -445,8 +446,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"height", height},
                     {"capheight", capHeight},
                 };
-                
-                m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
+                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f)/2f;
                 break;
             case GeneratorTypes.Shapes:
                 switch (ShapeType)
@@ -459,6 +459,8 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"type", ShapeTypes.Polygon},
                             {"sides", Param1Int},
                         };
+                        // Intentionally different to radial scaling.
+                        // Set so side lengths will match for any polygon
                         m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
                         break;
                     case ShapeTypes.Star:
@@ -481,7 +483,6 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"b", Param2Float},
                             {"c", Param3Float},
                         };
-                        m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
                         break;
                     case ShapeTypes.C_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
@@ -502,7 +503,6 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"b", Param2Float},
                             {"c", Param3Float},
                         };
-                        m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f);
                         break;
                 }
                 break;
@@ -518,6 +518,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"y", Param2Int},
                             {"z", Param3Int},
                         };
+                        m_PolyMesh.ScalingFactor = 1f/Mathf.Sqrt(2f);
                         break;
                     case VariousSolidTypes.UvSphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
@@ -588,6 +589,9 @@ public class PreviewPolyhedron : MonoBehaviour
             if (Application.isPlaying) { meshFilter.mesh = mesh; }
             else { meshFilter.sharedMesh = mesh; }
         }
+
+        // Scale the gameobject so the preview isn't huge or tiny
+        transform.localScale = Vector3.one * .75f * (1f/mesh.bounds.max.magnitude);
         
         // TODO
         // Also update other linked meshes (stencils, model widgets)
