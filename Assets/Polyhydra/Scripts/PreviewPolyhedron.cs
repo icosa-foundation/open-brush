@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Polyhydra.Core;
@@ -346,6 +347,31 @@ public class PreviewPolyhedron : MonoBehaviour
             PreviewColorMethod,
             faceIndex
         );
+    }
+    
+    [ContextMenu("Render To Image File")]
+    void TestRenderToImageFile()
+    {
+        RenderToImageFile(Guid.NewGuid().ToString().Substring(0, 8));
+    }
+
+    void RenderToImageFile(string filename)
+    {
+        var cam = gameObject.GetComponentInChildren<Camera>(true);
+        cam.gameObject.SetActive(true);
+        RenderTexture activeRenderTexture = RenderTexture.active;
+        var tex = new RenderTexture(256, 256, 32);
+        cam.targetTexture = tex;
+        RenderTexture.active = cam.targetTexture;
+        cam.Render();
+        Texture2D image = new Texture2D(tex.width, tex.height);
+        image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
+        image.Apply();
+        RenderTexture.active = activeRenderTexture;
+        byte[] bytes = image.EncodeToPNG();
+        Destroy(image);
+        File.WriteAllBytes(Path.Combine(App.UserPath(), "Media Library/Shape Recipes/") + $"{filename}.png", bytes);
+        cam.gameObject.SetActive(false);
     }
 
     // This is a helper coroutine
