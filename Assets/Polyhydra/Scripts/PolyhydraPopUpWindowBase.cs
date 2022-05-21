@@ -127,6 +127,7 @@ namespace TiltBrush
         }
 
         protected abstract string GetButtonTexturePath(string action);
+        
         override public void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
         {
             if (m_IsLongPressPopUp)

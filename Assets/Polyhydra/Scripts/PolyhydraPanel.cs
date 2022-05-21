@@ -65,6 +65,7 @@ namespace TiltBrush
         public PolyhydraOpPopupToolsButton ToolBtnNext;
         public static Dictionary<string, object> m_GeneratorParameters;
         public static List<Dictionary<string, object>> m_Operations;
+        [NonSerialized] public string m_PresetsPath;
 
         public float previewRotationX, previewRotationY, previewRotationZ = .5f;
         
@@ -106,6 +107,12 @@ namespace TiltBrush
             CurrentPolyhedra = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetMainButtonVisibility();
+            m_PresetsPath = Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
+            if (!Directory.Exists(m_PresetsPath))
+            {
+                Directory.CreateDirectory(m_PresetsPath);
+            }
+
         }
 
         public void HandleSlider1(Vector3 value)
@@ -564,66 +571,84 @@ namespace TiltBrush
                 m_GeneratorParameters, m_Operations
             );
         }
-        
-            [ContextMenu("Save Preset")]
-    void SavePreset()
-    {
-        var filename = Guid.NewGuid().ToString().Substring(0, 8);
-        var path = Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
-        SavePresetToFile(path, filename);
-        RenderToImageFile(path, filename);
-    }
 
-    void SavePresetToFile(string path, string filename)
-    {
-        // TODO deduplicate this logic
-        ColorMethods colorMethod = ColorMethods.ByRole;
-        if (CurrentPolyhedra.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
+        public void SavePreset()
         {
-            colorMethod = ColorMethods.ByTags;
+            var filename = Guid.NewGuid().ToString().Substring(0, 8);
+            SavePresetToFile(m_PresetsPath, filename);
+            RenderToImageFile(m_PresetsPath, filename);
         }
-        
-        // TODO Refactor:
-        // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
-        // There's too many different classes at play with overlapping responsibilities
-        var em = new EditableModelManager.EditableModel(
-            CurrentPolyhedra.m_PolyMesh,
-            CurrentPolyhedra.previewColors,
-            colorMethod,
-            CurrentPolyhedra.GeneratorType,
-            m_GeneratorParameters,
-            m_Operations
-        );
-        
-        EditableModelDefinition emDef = MetadataUtils.GetEditableModelDefinition(em);
-        var jsonSerializer = new JsonSerializer();
-        jsonSerializer.ContractResolver = new CustomJsonContractResolver();
 
-        using (var textWriter = new StreamWriter(path + $"{filename}.json"))
-        using (var jsonWriter = new CustomJsonWriter(textWriter))
+        void SavePresetToFile(string path, string filename)
         {
-            jsonSerializer.Serialize(jsonWriter, emDef);
-        }
-    }
+            // TODO deduplicate this logic
+            ColorMethods colorMethod = ColorMethods.ByRole;
+            if (CurrentPolyhedra.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
+            {
+                colorMethod = ColorMethods.ByTags;
+            }
+            
+            // TODO Refactor:
+            // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
+            // There's too many different classes at play with overlapping responsibilities
+            var em = new EditableModelManager.EditableModel(
+                CurrentPolyhedra.m_PolyMesh,
+                CurrentPolyhedra.previewColors,
+                colorMethod,
+                CurrentPolyhedra.GeneratorType,
+                m_GeneratorParameters,
+                m_Operations
+            );
+            
+            EditableModelDefinition emDef = MetadataUtils.GetEditableModelDefinition(em);
+            var jsonSerializer = new JsonSerializer();
+            jsonSerializer.ContractResolver = new CustomJsonContractResolver();
 
-    void RenderToImageFile(string path, string filename)
-    {
-        var cam = gameObject.GetComponentInChildren<Camera>(true);
-        cam.gameObject.SetActive(true);
-        RenderTexture activeRenderTexture = RenderTexture.active;
-        var tex = new RenderTexture(256, 256, 32);
-        cam.targetTexture = tex;
-        RenderTexture.active = cam.targetTexture;
-        cam.Render();
-        Texture2D image = new Texture2D(tex.width, tex.height);
-        image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
-        image.Apply();
-        RenderTexture.active = activeRenderTexture;
-        byte[] bytes = image.EncodeToPNG();
-        Destroy(image);
-        File.WriteAllBytes(path + $"{filename}.png", bytes);
-        cam.gameObject.SetActive(false);
-    }
+            using (var textWriter = new StreamWriter(path + $"{filename}.json"))
+            using (var jsonWriter = new CustomJsonWriter(textWriter))
+            {
+                jsonSerializer.Serialize(jsonWriter, emDef);
+            }
+        }
+
+        public void LoadPresetFromFile(string path)
+        {
+            var jsonDeserializer = new JsonSerializer();
+            jsonDeserializer.ContractResolver = new CustomJsonContractResolver();
+            EditableModelDefinition emd;
+            using (var textReader = new StreamReader(path))
+            using (var jsonReader = new JsonTextReader(textReader))
+            {
+                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+            }
+
+            CurrentPolyhedra.previewColors = emd.Colors;
+            CurrentPolyhedra.GeneratorType = emd.GeneratorType;
+            m_GeneratorParameters = emd.GeneratorParameters;
+            m_Operations = emd.Operations;
+            SetMainButtonVisibility();
+            SetSliderConfiguration();
+            ConfigureGeometry();
+        }
+
+        void RenderToImageFile(string path, string filename)
+        {
+            var cam = gameObject.GetComponentInChildren<Camera>(true);
+            cam.gameObject.SetActive(true);
+            RenderTexture activeRenderTexture = RenderTexture.active;
+            var tex = new RenderTexture(256, 256, 32);
+            cam.targetTexture = tex;
+            RenderTexture.active = cam.targetTexture;
+            cam.Render();
+            Texture2D image = new Texture2D(tex.width, tex.height);
+            image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
+            image.Apply();
+            RenderTexture.active = activeRenderTexture;
+            byte[] bytes = image.EncodeToPNG();
+            Destroy(image);
+            File.WriteAllBytes(path + $"{filename}.png", bytes);
+            cam.gameObject.SetActive(false);
+        }
 
 
 
