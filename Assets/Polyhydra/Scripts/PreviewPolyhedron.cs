@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Newtonsoft.Json;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush;
@@ -349,13 +350,49 @@ public class PreviewPolyhedron : MonoBehaviour
         );
     }
     
-    [ContextMenu("Render To Image File")]
-    void TestRenderToImageFile()
+    [ContextMenu("Save Preset")]
+    void SavePreset()
     {
-        RenderToImageFile(Guid.NewGuid().ToString().Substring(0, 8));
+        var filename = Guid.NewGuid().ToString().Substring(0, 8);
+        var path = Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
+        SavePresetToFile(path, filename);
+        RenderToImageFile(path, filename);
     }
 
-    void RenderToImageFile(string filename)
+    void SavePresetToFile(string path, string filename)
+    {
+
+        // TODO deduplicate this logic
+        ColorMethods colorMethod = ColorMethods.ByRole;
+        if (Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
+        {
+            colorMethod = ColorMethods.ByTags;
+        }
+        
+        // TODO Refactor:
+        // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
+        // There's too many different classes at play with overlapping responsibilities
+        var em = new EditableModelManager.EditableModel(
+            m_PolyMesh,
+            previewColors,
+            colorMethod,
+            GeneratorType,
+            PolyhydraPanel.m_GeneratorParameters,
+            PolyhydraPanel.m_Operations
+        );
+        
+        EditableModelDefinition emDef = MetadataUtils.GetEditableModelDefinition(em);
+        var jsonSerializer = new JsonSerializer();
+        jsonSerializer.ContractResolver = new CustomJsonContractResolver();
+
+        using (var textWriter = new StreamWriter(path + $"{filename}.json"))
+        using (var jsonWriter = new CustomJsonWriter(textWriter))
+        {
+            jsonSerializer.Serialize(jsonWriter, emDef);
+        }
+    }
+
+    void RenderToImageFile(string path, string filename)
     {
         var cam = gameObject.GetComponentInChildren<Camera>(true);
         cam.gameObject.SetActive(true);
@@ -370,7 +407,7 @@ public class PreviewPolyhedron : MonoBehaviour
         RenderTexture.active = activeRenderTexture;
         byte[] bytes = image.EncodeToPNG();
         Destroy(image);
-        File.WriteAllBytes(Path.Combine(App.UserPath(), "Media Library/Shape Recipes/") + $"{filename}.png", bytes);
+        File.WriteAllBytes(path + $"{filename}.png", bytes);
         cam.gameObject.SetActive(false);
     }
 

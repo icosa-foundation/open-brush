@@ -43,6 +43,18 @@ namespace TiltBrush.MeshEditing
                 Operations = new List<Dictionary<string, object>>();
             }
             
+            public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod,
+                                 GeneratorTypes type, Dictionary<string, object> generatorParameters,
+                                 List<Dictionary<string, object>> operations)
+            {
+                GeneratorType = type;
+                PolyMesh = polyMesh;
+                Colors = colors;
+                ColorMethod = colorMethod;
+                GeneratorParameters = generatorParameters;
+                Operations = operations;
+            }
+            
             public void SetPolyMesh(PolyMesh poly)
             {
                 PolyMesh = poly;
