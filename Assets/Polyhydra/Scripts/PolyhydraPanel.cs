@@ -16,7 +16,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
@@ -562,6 +564,68 @@ namespace TiltBrush
                 m_GeneratorParameters, m_Operations
             );
         }
+        
+            [ContextMenu("Save Preset")]
+    void SavePreset()
+    {
+        var filename = Guid.NewGuid().ToString().Substring(0, 8);
+        var path = Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
+        SavePresetToFile(path, filename);
+        RenderToImageFile(path, filename);
+    }
+
+    void SavePresetToFile(string path, string filename)
+    {
+        // TODO deduplicate this logic
+        ColorMethods colorMethod = ColorMethods.ByRole;
+        if (CurrentPolyhedra.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
+        {
+            colorMethod = ColorMethods.ByTags;
+        }
+        
+        // TODO Refactor:
+        // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
+        // There's too many different classes at play with overlapping responsibilities
+        var em = new EditableModelManager.EditableModel(
+            CurrentPolyhedra.m_PolyMesh,
+            CurrentPolyhedra.previewColors,
+            colorMethod,
+            CurrentPolyhedra.GeneratorType,
+            m_GeneratorParameters,
+            m_Operations
+        );
+        
+        EditableModelDefinition emDef = MetadataUtils.GetEditableModelDefinition(em);
+        var jsonSerializer = new JsonSerializer();
+        jsonSerializer.ContractResolver = new CustomJsonContractResolver();
+
+        using (var textWriter = new StreamWriter(path + $"{filename}.json"))
+        using (var jsonWriter = new CustomJsonWriter(textWriter))
+        {
+            jsonSerializer.Serialize(jsonWriter, emDef);
+        }
+    }
+
+    void RenderToImageFile(string path, string filename)
+    {
+        var cam = gameObject.GetComponentInChildren<Camera>(true);
+        cam.gameObject.SetActive(true);
+        RenderTexture activeRenderTexture = RenderTexture.active;
+        var tex = new RenderTexture(256, 256, 32);
+        cam.targetTexture = tex;
+        RenderTexture.active = cam.targetTexture;
+        cam.Render();
+        Texture2D image = new Texture2D(tex.width, tex.height);
+        image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
+        image.Apply();
+        RenderTexture.active = activeRenderTexture;
+        byte[] bytes = image.EncodeToPNG();
+        Destroy(image);
+        File.WriteAllBytes(path + $"{filename}.png", bytes);
+        cam.gameObject.SetActive(false);
+    }
+
+
 
         public void MonoscopicAddPolyhedron()
         {
