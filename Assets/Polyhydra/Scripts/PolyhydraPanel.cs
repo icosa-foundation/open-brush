@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -169,7 +170,60 @@ namespace TiltBrush
             CurrentPolyhedra.RebuildPoly();
         }
         
-        
+        void AnimateOpParentIntoPlace()
+        {
+            // float targetX = CurrentPolyhedra.Operators.Count > 4 ? (-CurrentActiveOpIndex - 0.5f) * .2f : -0.6f;
+            float targetX = (-CurrentActiveOpIndex - 0.75f) * .2f;
+            StartCoroutine(DoOpParentAnim(targetX));
+        }
+
+        IEnumerator DoOpParentAnim(float targetX)
+        {
+            void RescaleButtons()
+            {
+                var btns = OperatorSelectButtonParent.GetComponentsInChildren<PolyhydraSelectOpButton>();
+                bool overflow = false;
+                for (var i = 0; i < btns.Length; i++)
+                {
+                    var btn = btns[i];
+                    var x = targetX + btn.transform.localPosition.x;
+                    float scale;
+                    if (x < -0.8f || x > 0.9f)
+                    {
+                        scale = 0;
+                        overflow = true;
+                    }
+                    else
+                    {
+                        scale = 0.2f;
+                    }
+                    btn.transform.localScale = Vector3.one * scale;
+                }
+                if (overflow)
+                {
+                    // TODO some visual indicator that there's overflow
+                }
+            }
+            
+            RescaleButtons();
+            
+            if (OperatorSelectButtonParent.localPosition.x < targetX)
+            {
+                while (OperatorSelectButtonParent.localPosition.x < targetX)
+                {
+                    OperatorSelectButtonParent.Translate(Vector3.right * 0.05f);
+                    yield return null;
+                }
+            }
+            else
+            {
+                while (OperatorSelectButtonParent.localPosition.x > targetX)
+                {
+                    OperatorSelectButtonParent.Translate(Vector3.left * 0.05f);
+                    yield return null;
+                }
+            }
+        }
 
         void Update()
         {
@@ -676,7 +730,6 @@ namespace TiltBrush
             Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
             btnTr.gameObject.SetActive(true);
             CurrentPolyhedra.Operators.Add(new PreviewPolyhedron.OpDefinition());
-            RefreshOpSelectButtons();
             HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
         }
 
@@ -884,23 +937,26 @@ namespace TiltBrush
                 btn.SetDescriptionText(operationName);
                 btn.SetButtonTexture(GetButtonTextureByOpName(operationName));
 
-                btn.name = $"Select Op: {CurrentPolyhedra.Operators.Count - 1}";
+                btn.name = $"Select Op: {i}";
                 btn.ParentPanel = this;
 
                 var btnPos = btn.transform.localPosition;
-                btnPos.Set(i * 1.1f, 0, 0);
+                btnPos.Set(i * 0.25f, 0, 0);
                 btn.transform.localPosition = btnPos;
 
                 if (i == CurrentActiveOpIndex)
                 {
                     var popupPos = btn.transform.localPosition;
-                    popupPos.Set(i * 1.1f, .2f, -.1f);
+                    popupPos.Set(i * 0.25f + 0.04f, 0.05f, 0);
                     OperatorSelectPopupTools.localPosition = popupPos;
+                    OperatorSelectPopupTools.localScale = Vector3.one * 0.2f;
                     ToolBtnPrev.gameObject.SetActive(i > 0);
                     ToolBtnNext.gameObject.SetActive(i < CurrentPolyhedra.Operators.Count - 1);
                     ButtonOpType.SetButtonTexture(GetButtonTextureByOpName(operationName));
                 }
+                
             }
+            AnimateOpParentIntoPlace();
         }
 
         public void HandleOpMove(int delta)
