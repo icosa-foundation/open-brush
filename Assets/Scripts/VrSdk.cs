@@ -315,7 +315,7 @@ namespace TiltBrush
 
         void Update()
         {
-            if(App.Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 OnNewPoses();
             }
