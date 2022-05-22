@@ -531,7 +531,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         m_PolyMesh.ScalingFactor = 0.5f;
                         break;
                     case VariousSolidTypes.UvHemisphere:
-                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param1Int, Param2Int);
+                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param2Int);
                         PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.UvHemisphere},

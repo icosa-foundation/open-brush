@@ -483,7 +483,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 9e121bb9a7675e5488841035627e9c35, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -709,7 +709,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 9e10d6dfde4a66949b4ca315b45416c3, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -1499,7 +1499,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: e4370c8a814b26e4381aa6dc57305971, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -1671,7 +1671,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: a8b4dc202417ffa418c16b78379c26bc, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -1904,14 +1904,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5079751915336714562}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -5.96}
+  m_LocalRotation: {x: 0.24664924, y: -0, z: -0, w: 0.9691049}
+  m_LocalPosition: {x: 0, y: 3.2299995, z: -5.96}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 342723169492286248}
   m_Father: {fileID: 5018227069179702580}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 28.559002, y: 0, z: 0}
 --- !u!20 &1165147683445718971
 Camera:
   m_ObjectHideFlags: 0
@@ -2055,7 +2055,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 349d6a21ee8abcf42afa176455271830, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -2364,7 +2364,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: dcc20df7aab7119409e0fa26d1bc90ca, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -3595,13 +3595,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8926346732728584422}
-  m_LocalRotation: {x: 0.10057739, y: 0.109207444, z: -0.0072162296, w: 0.9888913}
-  m_LocalPosition: {x: -0.589, y: 0.58399975, z: -0.0030002594}
+  m_LocalRotation: {x: 0.105325334, y: 0.20617, z: -0.07400387, w: 0.97001237}
+  m_LocalPosition: {x: -2.9800003, y: 0.58399945, z: -0.0030003488}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 6117352560549390781}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 11.566001, y: 12.649, z: 0.45000002}
+  m_LocalEulerAnglesHint: {x: 13.583, y: 23.294, z: -5.913}
 --- !u!108 &6374684890247453554
 Light:
   m_ObjectHideFlags: 0

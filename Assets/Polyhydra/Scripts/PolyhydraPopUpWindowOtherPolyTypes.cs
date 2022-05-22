@@ -14,6 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TiltBrush.MeshEditing;
 
 
 namespace TiltBrush
@@ -29,7 +30,7 @@ namespace TiltBrush
 
         protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_other_{action}";
+            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Various, action);
         }
 
         public override void HandleButtonPress(string action)

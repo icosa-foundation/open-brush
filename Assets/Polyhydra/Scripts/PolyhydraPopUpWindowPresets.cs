@@ -41,7 +41,6 @@ namespace TiltBrush
         {
             presetName = presetName.Replace(".json", ".png");
             var path = Path.Combine(ParentPanel.m_PresetsPath, presetName);
-            Debug.Log($"{path}");
             var fileData = File.ReadAllBytes(path);
             var tex = new Texture2D(2, 2);
             tex.LoadImage(fileData);

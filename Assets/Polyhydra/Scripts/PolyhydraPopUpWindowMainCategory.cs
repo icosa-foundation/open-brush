@@ -14,9 +14,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-
+using TiltBrush.MeshEditing;
 
 namespace TiltBrush
 {
@@ -37,8 +35,12 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            ParentPanel.HandleMainCategoryButtonPress(action);
             ParentPanel.ButtonMainCategory.SetButtonTexture(GetButtonTexture(action));
+            var cat = (PolyhydraPanel.PolyhydraMainCategories)Enum.Parse(
+                typeof(PolyhydraPanel.PolyhydraMainCategories),
+                action
+            );
+            ParentPanel.HandleMainCategoryButtonPress(cat);
         }
 
     }

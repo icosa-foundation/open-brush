@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 
@@ -31,7 +32,7 @@ namespace TiltBrush
 
         protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_gridshape_{action}";
+            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Grid, action);
         }
 
         public override void HandleButtonPress(string action)

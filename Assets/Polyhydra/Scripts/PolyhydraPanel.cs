@@ -19,6 +19,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using ObjLoader.Loader.Common;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
@@ -71,10 +73,10 @@ namespace TiltBrush
         
         private MeshFilter meshFilter;
         
-        private MainCategories currentMainCategory;
-        private OtherSolidsCategories otherSolidsCategory;
+        private PolyhydraMainCategories m_CurrentMainCategory;
+        private OtherSolidsCategories m_OtherSolidsCategory;
 
-        private enum MainCategories
+        public enum PolyhydraMainCategories
         {
             Platonic,
             Archimedean,
@@ -247,12 +249,12 @@ namespace TiltBrush
                 go.SetActive(App.Config.m_SdkMode==SdkMode.Monoscopic);
             }
           
-            switch (currentMainCategory)
+            switch (m_CurrentMainCategory)
             {
                 // All the shapeCategories that use the Uniform popup
-                case MainCategories.Archimedean:
-                case MainCategories.Platonic:
-                case MainCategories.KeplerPoinsot:
+                case PolyhydraMainCategories.Archimedean:
+                case PolyhydraMainCategories.Platonic:
+                case PolyhydraMainCategories.KeplerPoinsot:
                     ButtonUniformType.gameObject.SetActive(true);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(false);
@@ -261,11 +263,11 @@ namespace TiltBrush
                     
                     // Assign the correct button texture for each category
                     Uniform initialUniformType;
-                    if (currentMainCategory == MainCategories.Platonic)
+                    if (m_CurrentMainCategory == PolyhydraMainCategories.Platonic)
                     {
                         initialUniformType = Uniform.Platonic[0];
                     }
-                    else if (currentMainCategory == MainCategories.Archimedean)
+                    else if (m_CurrentMainCategory == PolyhydraMainCategories.Archimedean)
                     {
                         initialUniformType = Uniform.Archimedean[0];
                     }
@@ -282,7 +284,7 @@ namespace TiltBrush
                     
                     break;
 
-                case MainCategories.Grids:
+                case PolyhydraMainCategories.Grids:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(true);
@@ -290,7 +292,7 @@ namespace TiltBrush
                     ButtonOtherSolidsType.gameObject.SetActive(false);
                     break;
 
-                case MainCategories.Various:
+                case PolyhydraMainCategories.Various:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(false);
@@ -298,7 +300,7 @@ namespace TiltBrush
                     ButtonOtherSolidsType.gameObject.SetActive(true);
                     break;
 
-                case MainCategories.Radial:
+                case PolyhydraMainCategories.Radial:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(true);
                     ButtonGridType.gameObject.SetActive(false);
@@ -306,7 +308,7 @@ namespace TiltBrush
                     ButtonOtherSolidsType.gameObject.SetActive(false);
                     break;
 
-                case MainCategories.Waterman:
+                case PolyhydraMainCategories.Waterman:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(false);
@@ -316,34 +318,34 @@ namespace TiltBrush
             }
         }
 
-        public void ConfigureGeometry()
+        public void ConfigureGeneratorType()
         {
-            switch (currentMainCategory)
+            switch (m_CurrentMainCategory)
             {
-                case MainCategories.Platonic:
+                case PolyhydraMainCategories.Platonic:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.Platonic[0].Index - 1;
                     break;
-                case MainCategories.Archimedean:
+                case PolyhydraMainCategories.Archimedean:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.Archimedean[0].Index - 1;
                     break;
-                case MainCategories.KeplerPoinsot:
+                case PolyhydraMainCategories.KeplerPoinsot:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.KeplerPoinsot[0].Index - 1;
                     break;
-                case MainCategories.Radial:
+                case PolyhydraMainCategories.Radial:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Radial;
                     break;
-                case MainCategories.Waterman:
+                case PolyhydraMainCategories.Waterman:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Waterman;
                     break;
-                case MainCategories.Grids:
+                case PolyhydraMainCategories.Grids:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Grid;
                     break;
-                case MainCategories.Various:
+                case PolyhydraMainCategories.Various:
                     // Various can map to either GeneratorTypes.Various or GeneratorTypes.Shapes
-                    switch (otherSolidsCategory)
+                    switch (m_OtherSolidsCategory)
                     {
                             case OtherSolidsCategories.Polygon:
                             case OtherSolidsCategories.Star:
@@ -365,30 +367,30 @@ namespace TiltBrush
 
         public void SetSliderConfiguration()
         {
-            switch (currentMainCategory)
+            switch (m_CurrentMainCategory)
             {
-                case MainCategories.Platonic:
+                case PolyhydraMainCategories.Platonic:
 
                     Slider1.gameObject.SetActive(false);
                     Slider2.gameObject.SetActive(false);
                     Slider3.gameObject.SetActive(false);
                     break;
                 
-                case MainCategories.Archimedean:
+                case PolyhydraMainCategories.Archimedean:
 
                     Slider1.gameObject.SetActive(false);
                     Slider2.gameObject.SetActive(false);
                     Slider3.gameObject.SetActive(false);
                     break;
 
-                case MainCategories.KeplerPoinsot:
+                case PolyhydraMainCategories.KeplerPoinsot:
 
                     Slider1.gameObject.SetActive(false);
                     Slider2.gameObject.SetActive(false);
                     Slider3.gameObject.SetActive(false);
                     break;
 
-                case MainCategories.Radial:
+                case PolyhydraMainCategories.Radial:
 
                     Slider1.gameObject.SetActive(true);
                     Slider1.Min = 3;
@@ -435,7 +437,7 @@ namespace TiltBrush
                     }
                     break;
 
-                case MainCategories.Waterman:
+                case PolyhydraMainCategories.Waterman:
 
                     Slider1.gameObject.SetActive(true);
                     Slider2.gameObject.SetActive(true);
@@ -450,7 +452,7 @@ namespace TiltBrush
                     Slider2.SliderType = SliderTypes.Int;
                     break;
 
-                case MainCategories.Grids:
+                case PolyhydraMainCategories.Grids:
 
                     Slider1.gameObject.SetActive(true);
                     Slider2.gameObject.SetActive(true);
@@ -465,9 +467,9 @@ namespace TiltBrush
                     Slider2.SliderType = SliderTypes.Int;
                     break;
 
-                case MainCategories.Various:
+                case PolyhydraMainCategories.Various:
 
-                    switch (otherSolidsCategory)
+                    switch (m_OtherSolidsCategory)
                     {
                         case OtherSolidsCategories.Polygon:
                             Slider1.gameObject.SetActive(true);
@@ -621,14 +623,203 @@ namespace TiltBrush
             {
                 emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
             }
+            LoadFromDefinition(emd);
+        }
+
+        public string GetButtonTexturePath(GeneratorTypes mainType, string action)
+        {
+            action = action.Replace(" ", "_");
+            switch (mainType)
+            {
+                case GeneratorTypes.Grid:
+                    return $"ShapeButtons/poly_gridshape_{action}";
+                case GeneratorTypes.Radial:
+                    return $"ShapeButtons/poly_johnson_{action}";
+                case GeneratorTypes.Uniform:
+                    return $"ShapeButtons/poly_uniform_{action}";
+                case GeneratorTypes.Shapes:
+                case GeneratorTypes.Various:
+                    return $"ShapeButtons/poly_other_{action}";
+            }
+            Debug.LogError($"Unsupported generator type: {mainType}");
+            return null;
+        }
+        
+        public void LoadFromDefinition(EditableModelDefinition emd)
+        {
+
+            Texture2D getTexture(GeneratorTypes cat, object action)
+            {
+                var path = GetButtonTexturePath(cat, action.ToString());
+                return Resources.Load<Texture2D>(path);
+            }
+            
+            void setSlidersFromGeneratorParams(List<string> names)
+            {
+                var sliderParamValues = names.Select(n => Convert.ToSingle(emd.GeneratorParameters[n])).ToList();
+                
+                Slider1.UpdateValueAbsolute(sliderParamValues[0]);
+                if (sliderParamValues.Count == 1) return;
+                
+                Slider2.UpdateValueAbsolute(sliderParamValues[1]);
+                if (sliderParamValues.Count == 2) return;
+                
+                Slider3.UpdateValueAbsolute(sliderParamValues[2]);
+            }
 
             CurrentPolyhedra.previewColors = emd.Colors;
             CurrentPolyhedra.GeneratorType = emd.GeneratorType;
+            ButtonMainCategory.SetButtonTexture(
+                Resources.Load<Texture2D>( $"ShapeTypeButtons/{emd.GeneratorType.ToString()}")
+            );
             m_GeneratorParameters = emd.GeneratorParameters;
             m_Operations = emd.Operations;
-            SetMainButtonVisibility();
+
+            int subtypeID = Convert.ToInt32(emd.GeneratorParameters["type"]);
+
+            var sliderParamNames = new List<string>();
+
+            switch (emd.GeneratorType)
+            {
+                case GeneratorTypes.FileSystem:
+                case GeneratorTypes.GeometryData:
+                case GeneratorTypes.ConwayString:
+                case GeneratorTypes.Johnson:
+                    Debug.LogError($"Preset has unsupported generator type: {emd.GeneratorType}");
+                    break;
+                case GeneratorTypes.Grid:
+                    m_CurrentMainCategory = PolyhydraMainCategories.Grids;
+                    CurrentPolyhedra.GridShape = (GridEnums.GridShapes)subtypeID;
+                    SetMainButtonVisibility();
+                    ButtonGridShape.SetButtonTexture(getTexture(GeneratorTypes.Grid, CurrentPolyhedra.GridShape));
+                    sliderParamNames = new List<string>{"x", "y"};
+                    break;
+                case GeneratorTypes.Shapes:
+                    m_CurrentMainCategory = PolyhydraMainCategories.Various;
+                    CurrentPolyhedra.ShapeType = (ShapeTypes)subtypeID;
+                    SetMainButtonVisibility();
+                    ButtonOtherSolidsType.SetButtonTexture(getTexture(GeneratorTypes.Various, CurrentPolyhedra.ShapeType));
+                    switch (CurrentPolyhedra.ShapeType)
+                    {
+                        case ShapeTypes.Polygon:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Polygon;
+                            sliderParamNames = new List<string>{"sides"};
+                            break;
+                        case ShapeTypes.Star:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Star;
+                            sliderParamNames = new List<string>{"sides", "sharpness"};
+                            break;
+                        case ShapeTypes.L_Shape:
+                            m_OtherSolidsCategory = OtherSolidsCategories.L_Shape;
+                            sliderParamNames = new List<string>{"a", "b", "c"};
+                            break;
+                        case ShapeTypes.C_Shape:
+                            m_OtherSolidsCategory = OtherSolidsCategories.C_Shape;
+                            sliderParamNames = new List<string>{"a", "b", "c"};
+                            break;
+                        case ShapeTypes.H_Shape:
+                            m_OtherSolidsCategory = OtherSolidsCategories.H_Shape;
+                            sliderParamNames = new List<string>{"a", "b", "c"};
+                            break;
+                    }
+                    break;
+                case GeneratorTypes.Various:
+                    m_CurrentMainCategory = PolyhydraMainCategories.Various;
+                    CurrentPolyhedra.VariousSolidsType = (VariousSolidTypes)subtypeID;
+                    SetMainButtonVisibility();
+                    ButtonOtherSolidsType.SetButtonTexture(getTexture(GeneratorTypes.Various, CurrentPolyhedra.VariousSolidsType));
+                    switch (CurrentPolyhedra.VariousSolidsType)
+                    {
+                        case VariousSolidTypes.Box:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Box;
+                            sliderParamNames = new List<string>{"x", "y", "z"};
+                            break;
+                        case VariousSolidTypes.UvHemisphere:
+                            m_OtherSolidsCategory = OtherSolidsCategories.UvHemisphere;
+                            sliderParamNames = new List<string>{"x", "y"};
+                            break;
+                        case VariousSolidTypes.UvSphere:
+                            m_OtherSolidsCategory = OtherSolidsCategories.UvSphere;
+                            sliderParamNames = new List<string>{"x", "y"};
+                            break;
+                    }
+                    break;
+                case GeneratorTypes.Radial:
+                    m_CurrentMainCategory = PolyhydraMainCategories.Radial;
+                    CurrentPolyhedra.RadialPolyType = (RadialSolids.RadialPolyType)subtypeID;
+                    SetMainButtonVisibility();
+                    ButtonRadialType.SetButtonTexture(getTexture(GeneratorTypes.Radial, CurrentPolyhedra.RadialPolyType));
+                    sliderParamNames = new List<string>{"sides", "height", "capheight"};
+                    break;
+                case GeneratorTypes.Waterman:
+                    m_CurrentMainCategory = PolyhydraMainCategories.Waterman;
+                    sliderParamNames = new List<string>{"root", "c"};
+                    break;
+                case GeneratorTypes.Uniform:
+                    var uniformType = Uniform.Uniforms[subtypeID];
+                    if (Uniform.Platonic.Contains(uniformType))
+                    {
+                        m_CurrentMainCategory = PolyhydraMainCategories.Platonic;
+                    }
+                    else if (Uniform.Archimedean.Contains(uniformType))
+                    {
+                        m_CurrentMainCategory = PolyhydraMainCategories.Archimedean;
+                    }
+                    else if (Uniform.KeplerPoinsot.Contains(uniformType))
+                    {
+                        m_CurrentMainCategory = PolyhydraMainCategories.KeplerPoinsot;
+                    }
+                    CurrentPolyhedra.UniformPolyType = (UniformTypes)subtypeID;
+                    SetMainButtonVisibility();
+                    ButtonUniformType.SetButtonTexture(getTexture(GeneratorTypes.Uniform, CurrentPolyhedra.UniformPolyType));
+                    break;
+            }
             SetSliderConfiguration();
-            ConfigureGeometry();
+            ConfigureGeneratorType();
+            setSlidersFromGeneratorParams(sliderParamNames);
+            
+            CurrentPolyhedra.Operators.Clear();
+            
+            // TODO This has some similarities to code in SaveLoadScript and PreviewPolyhedron
+            foreach (var opDict in emd.Operations)
+            {
+                HandleAddOpButton();
+                var newOp = CurrentPolyhedra.Operators.Last();
+                
+                newOp.disabled = Convert.ToBoolean(opDict["disabled"]);
+                
+                newOp.opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
+                newOp.amount = Convert.ToSingle(opDict["param1"]);
+                newOp.amount2 = Convert.ToSingle(opDict["param2"]);
+                if (opDict.ContainsKey("paramColor"))
+                {
+                    var colorData = (opDict["paramColor"] as JArray);
+                    newOp.paramColor = new Color(
+                        colorData[0].Value<float>(),
+                        colorData[1].Value<float>(),
+                        colorData[2].Value<float>()
+                    );
+                }
+                
+                object filterType;
+                object filterParamFloat;
+                object filterParamInt;
+                object filterNot;
+
+                if (opDict.TryGetValue("filterType", out filterType))
+                {
+                    opDict.TryGetValue("filterParamFloat", out filterParamFloat);
+                    opDict.TryGetValue("filterParamInt", out filterParamInt);
+                    opDict.TryGetValue("filterNot", out filterNot);
+                    newOp.filterType = (PreviewPolyhedron.AvailableFilters)Convert.ToInt32(filterType);
+                    newOp.filterParamFloat = Convert.ToSingle(filterParamFloat);
+                    newOp.filterParamInt = Convert.ToInt32(filterParamInt);
+                    newOp.filterNot = Convert.ToBoolean(filterNot);
+                }
+                CurrentPolyhedra.Operators[CurrentPolyhedra.Operators.Count - 1] = newOp;
+            }
+            HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
+            CurrentPolyhedra.RebuildPoly();
         }
 
         void RenderToImageFile(string path, string filename)
@@ -842,9 +1033,8 @@ namespace TiltBrush
 
         public void HandleOtherSolidsButtonPress(string action, Texture2D texture)
         {
-            var OtherType = (OtherSolidsCategories)Enum.Parse(typeof(OtherSolidsCategories), action);
-            otherSolidsCategory = OtherType;
-            switch (OtherType)
+            m_OtherSolidsCategory = (OtherSolidsCategories)Enum.Parse(typeof(OtherSolidsCategories), action);
+            switch (m_OtherSolidsCategory)
             {
                 case OtherSolidsCategories.Polygon:
                 case OtherSolidsCategories.Star:
@@ -865,13 +1055,12 @@ namespace TiltBrush
             ButtonOtherSolidsType.SetButtonTexture(texture);
         }
 
-        public void HandleMainCategoryButtonPress(string action)
+        public void HandleMainCategoryButtonPress(PolyhydraMainCategories mainCategory)
         {
-            var mainCategory = (MainCategories)Enum.Parse(typeof(MainCategories), action);
-            currentMainCategory = mainCategory;
+            m_CurrentMainCategory = mainCategory;
             SetMainButtonVisibility();
             SetSliderConfiguration();
-            ConfigureGeometry();
+            ConfigureGeneratorType();
         }
 
         public List<string> GetOtherSolidCategoryNames()
@@ -881,21 +1070,21 @@ namespace TiltBrush
         
         public List<string> GetMainCategoryNames()
         {
-            return Enum.GetNames(typeof(MainCategories)).ToList();
+            return Enum.GetNames(typeof(PolyhydraMainCategories)).ToList();
         }
         
         public List<string> GetUniformPolyNames()
         {
             Uniform[] uniformList = null;
-            switch (currentMainCategory)
+            switch (m_CurrentMainCategory)
             {
-                case MainCategories.Platonic:
+                case PolyhydraMainCategories.Platonic:
                     uniformList = Uniform.Platonic;
                     break;
-                case MainCategories.Archimedean:
+                case PolyhydraMainCategories.Archimedean:
                     uniformList = Uniform.Archimedean;
                     break;
-                case MainCategories.KeplerPoinsot:
+                case PolyhydraMainCategories.KeplerPoinsot:
                     uniformList = Uniform.KeplerPoinsot;
                     break;
             }

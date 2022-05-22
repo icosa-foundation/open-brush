@@ -760,7 +760,7 @@ namespace TiltBrush
                         foreach (var model in generatedModels)
                         {
                             
-                            // TODO Unify this with similar code in PreviewPolyedron.cs
+                            // TODO Unify this with similar code in PreviewPolyhedron.cs
                             
                             var emd = jsonData.EditableModelDefinitions[model.AssetId];
                             PolyMesh poly = null;

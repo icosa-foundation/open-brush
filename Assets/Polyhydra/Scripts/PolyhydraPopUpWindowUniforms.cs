@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Polyhydra.Wythoff;
+using TiltBrush.MeshEditing;
 
 
 namespace TiltBrush
@@ -32,7 +33,7 @@ namespace TiltBrush
 
         protected override string GetButtonTexturePath(string action)
         {
-            return $"ShapeButtons/poly_uniform_{action}".Replace(" ", "_");
+            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Uniform, action);
         }
 
         public override void HandleButtonPress(string action)
