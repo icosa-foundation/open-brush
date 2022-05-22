@@ -30,14 +30,15 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
-
-        protected override string GetButtonTexturePath(string action)
+        
+        public override Texture2D GetButtonTexture(string action)
         {
-            return $"IconButtons/{action}";
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.OperatorType, action);
         }
 
         public override void HandleButtonPress(string action)
         {
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, action);
             ParentPanel.ChangeCurrentOpType(action);
         }
 
@@ -47,7 +48,6 @@ namespace TiltBrush
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();
-
             }
         }
         public void PrevPage()

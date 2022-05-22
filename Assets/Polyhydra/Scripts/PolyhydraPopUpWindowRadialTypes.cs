@@ -14,7 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TiltBrush.MeshEditing;
+using UnityEngine;
 
 
 namespace TiltBrush
@@ -27,18 +27,17 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList();
         }
-
-        protected override string GetButtonTexturePath(string action)
+        
+        public override Texture2D GetButtonTexture(string action)
         {
-            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Radial, action);
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.RadialType, action);
         }
 
         public override void HandleButtonPress(string action)
         {
             ParentPanel.CurrentPolyhedra.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
-            ParentPanel.ButtonRadialType.SetButtonTexture(GetButtonTexture(action));
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, action);
             ParentPanel.SetSliderConfiguration();
         }
-
     }
 } // namespace TiltBrush

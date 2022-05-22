@@ -18,6 +18,7 @@ using System.Globalization;
 using System.Linq;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
+using UnityEngine;
 
 
 namespace TiltBrush
@@ -30,10 +31,10 @@ namespace TiltBrush
         {
             return ParentPanel.GetUniformPolyNames();
         }
-
-        protected override string GetButtonTexturePath(string action)
+        
+        public override Texture2D GetButtonTexture(string action)
         {
-            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Uniform, action);
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.UniformType, action);
         }
 
         public override void HandleButtonPress(string action)
@@ -41,9 +42,8 @@ namespace TiltBrush
             string enumName = action.Replace(" ", "_");
             UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName, true);
             ParentPanel.CurrentPolyhedra.UniformPolyType = polyType;
-            ParentPanel.ButtonUniformType.SetButtonTexture(GetButtonTexture(action));
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, action);
             ParentPanel.SetSliderConfiguration();
         }
-
     }
 } // namespace TiltBrush

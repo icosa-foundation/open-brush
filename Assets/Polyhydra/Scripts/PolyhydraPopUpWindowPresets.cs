@@ -26,36 +26,26 @@ namespace TiltBrush
 
     public class PolyhydraPopUpWindowPresets : PolyhydraPopUpWindowBase
     {
-
-        public float xSpacing = 2.5f;
-        public float ySpacing = .25f;
-
         protected override List<string> GetButtonList()
         {
             var dirInfo = new DirectoryInfo(ParentPanel.m_PresetsPath);
             FileInfo[] AllFileInfo = dirInfo.GetFiles("*.json");
-            return AllFileInfo.Select(f => f.Name).ToList();
+            return AllFileInfo.Select(f => f.Name.Replace(".json", "")).ToList();
         }
 
+        public override void HandleButtonPress(string presetName)
+        {
+            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.m_PresetsPath, $"{presetName}.json"));
+        }
+        
         public override Texture2D GetButtonTexture(string presetName)
         {
-            presetName = presetName.Replace(".json", ".png");
+            presetName = $"{presetName}.png";
             var path = Path.Combine(ParentPanel.m_PresetsPath, presetName);
             var fileData = File.ReadAllBytes(path);
             var tex = new Texture2D(2, 2);
             tex.LoadImage(fileData);
             return tex;
-        }
-
-        protected override string GetButtonTexturePath(string action)
-        {
-            // Not used in this subclass
-            throw new NotImplementedException();
-        }
-        
-        public override void HandleButtonPress(string presetName)
-        {
-            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.m_PresetsPath, presetName));
         }
 
         public void NextPage()
@@ -66,6 +56,7 @@ namespace TiltBrush
                 CreateButtons();
             }
         }
+        
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

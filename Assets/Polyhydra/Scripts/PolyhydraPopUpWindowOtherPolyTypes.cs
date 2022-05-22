@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TiltBrush.MeshEditing;
+using UnityEngine;
 
 
 namespace TiltBrush
@@ -27,15 +28,16 @@ namespace TiltBrush
         {
             return ParentPanel.GetOtherSolidCategoryNames();
         }
-
-        protected override string GetButtonTexturePath(string action)
+        
+        public override Texture2D GetButtonTexture(string action)
         {
-            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Various, action);
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.OtherSolidsType, action);
         }
 
         public override void HandleButtonPress(string action)
         {
-            ParentPanel.HandleOtherSolidsButtonPress(action, GetButtonTexture(action));
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, action);
+            ParentPanel.HandleOtherSolidsButtonPress(action);
         }
     }
 } // namespace TiltBrush

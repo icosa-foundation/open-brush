@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
-using TiltBrush.MeshEditing;
 using UnityEngine;
 
 
@@ -29,17 +28,16 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(GridEnums.GridShapes)).ToList();
         }
-
-        protected override string GetButtonTexturePath(string action)
+        
+        public override Texture2D GetButtonTexture(string action)
         {
-            return ParentPanel.GetButtonTexturePath(GeneratorTypes.Grid, action);
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.GridShape, action);
         }
 
         public override void HandleButtonPress(string action)
         {
             ParentPanel.CurrentPolyhedra.GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), action);
-            ParentPanel.ButtonGridShape.SetButtonTexture(GetButtonTexture(action));
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, action);
         }
-
     }
 } // namespace TiltBrush

@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 namespace TiltBrush
@@ -92,9 +93,9 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            List<string> buttonLabels = GetButtonList();
+            List<string> buttonActionNames = GetButtonList();
             int columns = 4;
-            for (int buttonIndex = 0; buttonIndex < buttonLabels.Count; buttonIndex++)
+            for (int buttonIndex = 0; buttonIndex < buttonActionNames.Count; buttonIndex++)
             {
 
                 GameObject rButton = Instantiate(ButtonPrefab);
@@ -112,23 +113,17 @@ namespace TiltBrush
 
                 PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
-                rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
-                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonLabels[buttonIndex]);
-                rButtonScript.ButtonAction = buttonLabels[buttonIndex];
+                rButtonScript.SetDescriptionText(buttonActionNames[buttonIndex].Replace("_", ""));
+                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonActionNames[buttonIndex]);
+                rButtonScript.ButtonAction = buttonActionNames[buttonIndex];
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }
         }
 
-        public virtual Texture2D GetButtonTexture(string action)
-        {
-            var path = GetButtonTexturePath(action);
-            return Resources.Load<Texture2D>(path);
-        }
+        public abstract Texture2D GetButtonTexture(string action);
 
-        protected abstract string GetButtonTexturePath(string action);
-        
-        override public void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
+        public override void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
         {
             if (m_IsLongPressPopUp)
             {
@@ -155,5 +150,11 @@ namespace TiltBrush
             ParentPanel.CurrentPolyhedra.RebuildPoly();
         }
 
+        public string LabelTextFormatter(string text)
+        {
+            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+            text = textInfo.ToTitleCase(text).Replace(" ", "_");
+            return text;
+        }
     }
 }

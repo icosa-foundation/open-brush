@@ -34,11 +34,6 @@ namespace TiltBrush
             return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
 
-        protected override string GetButtonTexturePath(string action)
-        {
-            return $"IconButtons/Spherize";
-        }
-
         protected override void CreateButtons()
         {
             foreach (var btn in _buttons)
@@ -72,6 +67,11 @@ namespace TiltBrush
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }
+        }
+        
+        public override Texture2D GetButtonTexture(string action)
+        {
+            return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.FilterType, action);
         }
 
         public override void HandleButtonPress(string action)
@@ -115,6 +115,7 @@ namespace TiltBrush
                     break;
             }
             
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.FilterType, action);
             ParentPanel.ConfigureOpFilterPanel(op);
 
         }
