@@ -55,6 +55,8 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
 
+            PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+            
             if (bEnable)
             {
                 m_LockToController = m_SketchSurface.IsInFreePaintMode();
@@ -62,8 +64,12 @@ namespace TiltBrush
                 {
                     m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
                 }
-
+                polyhydraPanel.CurrentPolyhedra.transform.parent = this.transform;
                 EatInput();
+            }
+            else
+            {
+                polyhydraPanel.CurrentPolyhedra.transform.parent = polyhydraPanel.PreviewPolyParent.transform;
             }
 
             // Make sure our UI reticle isn't active.

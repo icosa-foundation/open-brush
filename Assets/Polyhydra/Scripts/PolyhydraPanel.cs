@@ -58,6 +58,9 @@ namespace TiltBrush
         public PolyhydraSlider Slider2;
         public PolyhydraSlider Slider3;
 
+        public GameObject PreviewPolyParent;
+        public GameObject AllGeneratorControls;
+        public GameObject AllOpControls;
         public GameObject OpPanel;
         public PolyhydraOptionButton ButtonOpType;
         public PolyhydraSlider SliderOpParam1;
@@ -174,6 +177,18 @@ namespace TiltBrush
             op.disabled = !op.disabled;
             CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
             CurrentPolyhedra.RebuildPoly();
+        }
+
+        public void ShowAllGeneratorControls()
+        {
+            AllGeneratorControls.SetActive(true);
+            AllOpControls.SetActive(false);
+        }
+        
+        public void ShowAllOpControls()
+        {
+            AllGeneratorControls.SetActive(false);
+            AllOpControls.SetActive(true);
         }
         
         public void HandleSliderFilterParam(Vector3 value)
@@ -980,7 +995,6 @@ namespace TiltBrush
             if (opConfig.usesColor)
             {
                 ButtonOpColorPicker.gameObject.SetActive(true);
-                ////SetOpColor();
             }
             else
             {
@@ -1009,7 +1023,6 @@ namespace TiltBrush
             
             // Init must be called after all popup.ColorPicked actions have been assigned.
             popup.ColorPicker.Controller.CurrentColor = GetOpColor();
-            popup.ColorPicker.ColorFinalized += MakeOpColorFinalized();
 
             m_EatInput = true;
         }
@@ -1043,15 +1056,6 @@ namespace TiltBrush
            };
         }
 
-        
-        Action MakeOpColorFinalized()
-        {
-            return delegate
-            {
-                ////
-            };
-        }
-        
         public void HandleAddOpButton()
         {
             Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
