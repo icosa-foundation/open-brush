@@ -14,6 +14,12 @@
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.Selection);
         }
         
+        [ApiEndpoint("tool.polyhydra", "Activates the Polyhydra Tool")]
+        public static void ActivatePolyhydra()
+        {
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.PolyhydraTool);
+        }
+        
         [ApiEndpoint("tool.colorpicker", "Activates the Color Picker")]
         public static void ActivateColorPicker()
         {

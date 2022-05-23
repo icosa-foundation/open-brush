@@ -54,7 +54,7 @@ namespace TiltBrush
         public override void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
-
+            
             PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
             
             if (bEnable)
@@ -64,12 +64,13 @@ namespace TiltBrush
                 {
                     m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
                 }
-                polyhydraPanel.CurrentPolyhedra.transform.parent = this.transform;
+                polyhydraPanel.CurrentPolyhedra.transform.SetParent(this.transform, false);
+                
                 EatInput();
             }
             else
             {
-                polyhydraPanel.CurrentPolyhedra.transform.parent = polyhydraPanel.PreviewPolyParent.transform;
+                polyhydraPanel.CurrentPolyhedra.transform.SetParent(polyhydraPanel.PreviewPolyParent.transform, false);
             }
 
             // Make sure our UI reticle isn't active.
