@@ -19,6 +19,14 @@ using System.Threading.Tasks;
 
 namespace TiltBrush
 {
+    public enum OverlayMode
+    {
+        None,
+        UnityXR,
+        Oculus,
+        Mobile
+    }
+        
     public enum OverlayType
     {
         LoadSketch,
@@ -39,6 +47,25 @@ namespace TiltBrush
     public class OverlayManager : MonoBehaviour
     {
         public static OverlayManager m_Instance;
+
+        private OverlayMode m_OverlayMode;
+
+        // Oculus Overlay
+#if OCULUS_SUPPORTED
+        private OVROverlay m_OVROverlay;
+#endif // OCULUS_SUPPORTED
+
+        public bool OverlayIsOVR => m_OverlayMode == OverlayMode.Oculus;
+
+        // Mobile Overlay
+        private bool m_MobileOverlayOn;
+        private GvrOverlay m_MobileOverlay;
+
+        // TODO:Mike - commmented this overlay as class is from SteamVR, what does it do?
+        //[SerializeField] private SteamVR_Overlay m_SteamVROverlay;
+        [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
+        [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
+        [SerializeField] private float m_OverlayMaxSize = 8;
 
         [SerializeField] private float m_OverlayOffsetDistance;
         [SerializeField] private float m_OverlayHeight;
@@ -70,7 +97,7 @@ namespace TiltBrush
 
         public bool CanDisplayQuickloadOverlay
         {
-            get { return !App.VrSdk.OverlayEnabled || m_CurrentOverlayType == OverlayType.LoadSketch; }
+            get { return OverlayEnabled || m_CurrentOverlayType == OverlayType.LoadSketch; }
         }
 
         public OverlayState CurrentOverlayState => m_CurrentOverlayState;
@@ -85,6 +112,26 @@ namespace TiltBrush
             m_GUILogo = new RenderTexture(m_Size, m_Size, 0);
             SetText("");
             RenderLogo(0.45f);
+
+            // Set Up overlay
+            if (App.Config.IsMobileHardware && m_GvrOverlayPrefab != null)
+            {
+                m_OverlayMode = OverlayMode.Mobile;
+                m_MobileOverlay = Instantiate(m_GvrOverlayPrefab);
+                m_MobileOverlay.gameObject.SetActive(false);
+            }
+#if OCULUS_SUPPORTED
+            m_OverlayMode = OverlayMode.Oculus;
+            var gobj = new GameObject("Oculus Overlay");
+            gobj.transform.SetParent(App.VrSdk.VrSystem.transform, worldPositionStays: false);
+            m_OVROverlay = gobj.AddComponent<OVROverlay>();
+            m_OVROverlay.isDynamic = true;
+            m_OVROverlay.compositionDepth = 0;
+            m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
+            m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
+            m_OVROverlay.noDepthBufferTesting = true;
+            m_OVROverlay.enabled = false;
+#endif // OCULUS_SUPPORTED
         }
 
         void Update()
@@ -93,13 +140,13 @@ namespace TiltBrush
             {
                 case OverlayState.Exiting:
                     m_OverlayStateTransitionValue -= Time.deltaTime;
-                    App.VrSdk.SetOverlayAlpha(
+                    SetOverlayAlpha(
                         Mathf.Max(m_OverlayStateTransitionValue, 0.0f) / m_OverlayStateTransitionDuration);
                     if (m_OverlayStateTransitionValue <= 0.0f)
                     {
                         m_OverlayStateTransitionValue = 0.0f;
                         m_CurrentOverlayState = OverlayState.Hidden;
-                        App.VrSdk.OverlayEnabled = false;
+                        OverlayEnabled = false;
                     }
                     break;
                 case OverlayState.Hidden:
@@ -110,7 +157,7 @@ namespace TiltBrush
 
         void OnGUI()
         {
-            if (App.VrSdk.OverlayEnabled)
+            if (OverlayEnabled)
             {
                 GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), m_BlackTexture);
                 GUI.DrawTexture(new Rect(Screen.width / 2 - Screen.height / 4, Screen.height / 4,
@@ -126,32 +173,32 @@ namespace TiltBrush
                 case OverlayType.LoadSketch:
                     SetText("Loading Sketch...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadModel:
                     SetText("Loading Models...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadGeneric:
                     SetText("Loading...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadImages:
                     SetText("Loading Images...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.Export:
                     SetText("Exporting...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadMedia:
                     SetText("Loading Media...");
                     RenderLogo(0);
-                    App.VrSdk.SetOverlayTexture(m_GUILogo);
+                    SetOverlayTexture(m_GUILogo);
                     break;
             }
         }
@@ -210,13 +257,13 @@ namespace TiltBrush
             SetOverlayFromType(overlayType);
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
-            App.VrSdk.SetOverlayAlpha(0);
+            SetOverlayAlpha(0);
             yield return null;
 
             bool routineInterrupted = true;
             try
             {
-                App.VrSdk.FadeToCompositor(fadeDuration);
+                FadeToCompositor(fadeDuration);
                 // You can't rely on the SteamVR compositor fade being totally over in the time
                 // you specified. You also can't rely on being able to get a sensible value for the fade
                 // alpha, so you can't reliably wait for it to be done.
@@ -230,7 +277,7 @@ namespace TiltBrush
 
                 // Wait one additional frame for any transitions to complete (e.g. fade to black).
                 SetOverlayTransitionRatio(1.0f);
-                App.VrSdk.PauseRendering(true);
+                PauseRendering(true);
                 yield return null;
 
                 try
@@ -268,8 +315,8 @@ namespace TiltBrush
                     }
                 }
 
-                App.VrSdk.PauseRendering(false);
-                App.VrSdk.FadeFromCompositor(fadeDuration);
+                PauseRendering(false);
+                FadeFromCompositor(fadeDuration);
                 for (float t = 1; t > 0; t -= Time.deltaTime / fadeDuration)
                 {
                     SetOverlayTransitionRatio(Mathf.Clamp01(t));
@@ -283,8 +330,8 @@ namespace TiltBrush
                 if (routineInterrupted)
                 {
                     // If the coroutine was interrupted, clean up our compositor fade.
-                    App.VrSdk.PauseRendering(false);
-                    App.VrSdk.FadeFromCompositor(0.0f);
+                    PauseRendering(false);
+                    FadeFromCompositor(0.0f);
                     SetOverlayTransitionRatio(0.0f);
                 }
             }
@@ -294,8 +341,8 @@ namespace TiltBrush
         // to account for SteamVR latency.
         private async Task FadeCompositorAndOverlayAsync(float start, float end, float duration)
         {
-            if (end > start) { App.VrSdk.FadeToCompositor(duration); }
-            else { App.VrSdk.FadeFromCompositor(duration); }
+            if (end > start) { FadeToCompositor(duration); }
+            else { FadeFromCompositor(duration); }
 
             for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
             {
@@ -321,7 +368,7 @@ namespace TiltBrush
             bool bFullProgress = false;
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
-            App.VrSdk.SetOverlayAlpha(0);
+            SetOverlayAlpha(0);
             await Awaiters.NextFrame;
 
             try
@@ -333,7 +380,7 @@ namespace TiltBrush
                 // need to, by passing slightly-too-wide bounds.
                 await FadeCompositorAndOverlayAsync(0, 1.1f, fadeDuration);
                 // Wait one additional frame for any transitions to complete (e.g. fade to black).
-                App.VrSdk.PauseRendering(true);
+                PauseRendering(true);
                 await Awaiters.NextFrame;
 
                 Task<T> inner = taskCreator(m_progress);
@@ -352,14 +399,14 @@ namespace TiltBrush
                     await Awaiters.Seconds(1f);
                 }
 
-                App.VrSdk.PauseRendering(false);
+                PauseRendering(false);
                 await FadeCompositorAndOverlayAsync(1, 0, fadeDuration);
                 return inner.Result;
             }
             catch (Exception)
             {
-                App.VrSdk.PauseRendering(false);
-                App.VrSdk.FadeFromCompositor(0);
+                PauseRendering(false);
+                FadeFromCompositor(0);
                 SetOverlayTransitionRatio(0);
                 throw;
             }
@@ -377,7 +424,7 @@ namespace TiltBrush
             bool bFullProgress = false;
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
-            App.VrSdk.SetOverlayAlpha(0);
+            SetOverlayAlpha(0);
             await Awaiters.NextFrame;
 
             try
@@ -389,7 +436,7 @@ namespace TiltBrush
                 // need to, by passing slightly-too-wide bounds.
                 await FadeCompositorAndOverlayAsync(0, 1.1f, fadeDuration);
                 // Wait one additional frame for any transitions to complete (e.g. fade to black).
-                App.VrSdk.PauseRendering(true);
+                PauseRendering(true);
                 Progress.Report(0.25);
                 await Awaiters.NextFrame;
 
@@ -410,14 +457,14 @@ namespace TiltBrush
                     await Awaiters.Seconds(1f);
                 }
 
-                App.VrSdk.PauseRendering(false);
+                PauseRendering(false);
                 await FadeCompositorAndOverlayAsync(1, 0, fadeDuration);
                 return result;
             }
             catch (Exception)
             {
-                App.VrSdk.PauseRendering(false);
-                App.VrSdk.FadeFromCompositor(0);
+                PauseRendering(false);
+                FadeFromCompositor(0);
                 SetOverlayTransitionRatio(0);
                 throw;
             }
@@ -426,11 +473,11 @@ namespace TiltBrush
         public void SetOverlayTransitionRatio(float fRatio)
         {
             m_OverlayStateTransitionValue = m_OverlayStateTransitionDuration * fRatio;
-            bool overlayWasActive = App.VrSdk.OverlayEnabled;
-            App.VrSdk.SetOverlayAlpha(fRatio);
-            if (!overlayWasActive && App.VrSdk.OverlayEnabled)
+            bool overlayWasActive = OverlayEnabled;
+            SetOverlayAlpha(fRatio);
+            if (!overlayWasActive && OverlayEnabled)
             {
-                App.VrSdk.PositionOverlay(m_OverlayOffsetDistance, m_OverlayHeight);
+                PositionOverlay(m_OverlayOffsetDistance, m_OverlayHeight);
             }
             m_CurrentOverlayState = OverlayState.Visible;
         }
@@ -525,6 +572,211 @@ namespace TiltBrush
                     m_TextUvs[index] = new Vector3(vertex.uv0.x, vertex.uv0.y, 0);
                     ++index;
                 }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------- //
+        // Overlay Methods
+        // (These should only be accessed via OverlayManager.)
+        // -------------------------------------------------------------------------------------------- //
+        public void SetOverlayAlpha(float ratio)
+        {
+            switch (m_OverlayMode)
+            {
+                // TODO:Mike overlay disable
+                // case OverlayMode.Steam:
+                //     m_SteamVROverlay.alpha = ratio * m_OverlayMaxAlpha;
+                //     OverlayEnabled = ratio > 0.0f;
+                //     break;
+                case OverlayMode.Oculus:
+                    OverlayEnabled = ratio == 1;
+                    break;
+                case OverlayMode.Mobile:
+                    if (!OverlayEnabled && ratio > 0.0f)
+                    {
+                        // Position screen overlay in front of the camera.
+                        m_MobileOverlay.transform.parent = App.VrSdk.GetVrCamera().transform;
+                        m_MobileOverlay.transform.localPosition = Vector3.zero;
+                        m_MobileOverlay.transform.localRotation = Quaternion.identity;
+                        float scale = 0.5f * App.VrSdk.GetVrCamera().farClipPlane / App.VrSdk.GetVrCamera().transform.lossyScale.z;
+                        m_MobileOverlay.transform.localScale = Vector3.one * scale;
+
+                        // Reparent the overlay so that it doesn't move with the headset.
+                        m_MobileOverlay.transform.parent = null;
+
+                        // Reset the rotation so that it's level and centered on the horizon.
+                        Vector3 eulerAngles = m_MobileOverlay.transform.localRotation.eulerAngles;
+                        m_MobileOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
+
+                        m_MobileOverlay.gameObject.SetActive(true);
+                        OverlayEnabled = true;
+                    }
+                    else if (OverlayEnabled && ratio == 0.0f)
+                    {
+                        m_MobileOverlay.gameObject.SetActive(false);
+                        OverlayEnabled = false;
+                    }
+                    break;
+            }
+        }
+
+        public bool OverlayEnabled
+        {
+            get
+            {
+                switch (m_OverlayMode)
+                {
+                    // TODO:Mike overlay disable
+                    // case OverlayMode.Steam:
+                    //     return m_SteamVROverlay.gameObject.activeSelf;
+                    case OverlayMode.Oculus:
+#if OCULUS_SUPPORTED
+                        return m_OVROverlay.enabled;
+#else
+                        return false;
+#endif // OCULUS_SUPPORTED
+                    case OverlayMode.Mobile:
+                        return m_MobileOverlayOn;
+                    default:
+                        return false;
+                }
+            }
+            set
+            {
+                switch (m_OverlayMode)
+                {
+                    // TODO:Mike - disable overlay
+                    // case OverlayMode.Steam:
+                    //     m_SteamVROverlay.gameObject.SetActive(value);
+                    //     break;
+                    case OverlayMode.Oculus:
+#if OCULUS_SUPPORTED
+                        m_OVROverlay.enabled = value;
+#endif // OCULUS_SUPPORTED
+                        break;
+                    case OverlayMode.Mobile:
+                        m_MobileOverlayOn = value;
+                        break;
+                }
+            }
+        }
+
+        public void SetOverlayTexture(Texture tex)
+        {
+            switch (m_OverlayMode)
+            {
+                // TODO:Mike - disable overlay
+                // case OverlayMode.Steam:
+                //     m_SteamVROverlay.texture = tex;
+                //     m_SteamVROverlay.UpdateOverlay();
+                //     break;
+                case OverlayMode.Oculus:
+#if OCULUS_SUPPORTED
+                    m_OVROverlay.textures = new[] { tex };
+#endif // OCULUS_SUPPORTED
+                    break;
+            }
+        }
+
+        public void PositionOverlay(float distance, float height)
+        {
+            //place overlay in front of the player a distance out
+            Vector3 vOverlayPosition = ViewpointScript.Head.position;
+            Vector3 vOverlayDirection = ViewpointScript.Head.forward;
+            vOverlayDirection.y = 0.0f;
+            vOverlayDirection.Normalize();
+
+            switch (m_OverlayMode)
+            {
+                // TODO:Mike - disable overlay
+                // case OverlayMode.Steam:
+                //     vOverlayPosition += (vOverlayDirection * distance);
+                //     vOverlayPosition.y = height;
+                //     m_SteamVROverlay.transform.position = vOverlayPosition;
+                //     m_SteamVROverlay.transform.forward = vOverlayDirection;
+                //     break;
+                case OverlayMode.Oculus:
+#if OCULUS_SUPPORTED
+                    vOverlayPosition += (vOverlayDirection * distance / 10);
+                    m_OVROverlay.transform.position = vOverlayPosition;
+                    m_OVROverlay.transform.forward = vOverlayDirection;
+#endif // OCULUS_SUPPORTED
+                    break;
+            }
+        }
+
+        // Fades to the compositor world (if available) or black.
+        public void FadeToCompositor(float fadeTime)
+        {
+            FadeToCompositor(fadeTime, fadeToCompositor: true);
+        }
+
+        // Fades from the compositor world (if available) or black.
+        public void FadeFromCompositor(float fadeTime)
+        {
+            FadeToCompositor(fadeTime, fadeToCompositor: false);
+        }
+
+        private void FadeToCompositor(float fadeTime, bool fadeToCompositor)
+        {
+            switch (m_OverlayMode)
+            {
+                // TODO:Mike - Overlay disable
+                // case OverlayMode.Steam:
+                //     SteamVR rVR = SteamVR.instance;
+                //     if (rVR != null && rVR.compositor != null)
+                //     {
+                //         rVR.compositor.FadeGrid(fadeTime, fadeToCompositor);
+                //     }
+                //     break;
+                case OverlayMode.Oculus:
+                    FadeBlack(fadeTime, fadeToCompositor);
+                    break;
+            }
+        }
+
+        public void PauseRendering(bool bPause)
+        {
+            switch (m_OverlayMode)
+            {
+                // TODO:Mike - Disable overlay
+                // case OverlayMode.Steam:
+                //     SteamVR_Render.pauseRendering = bPause;
+                //     break;
+                case OverlayMode.Oculus:
+                    // :(
+                    break;
+            }
+        }
+
+        // Fades to solid black.
+        public void FadeToBlack(float fadeTime)
+        {
+            FadeBlack(fadeTime, fadeToBlack: true);
+        }
+
+        // Fade from solid black.
+        public void FadeFromBlack(float fadeTime)
+        {
+            FadeBlack(fadeTime, fadeToBlack: false);
+        }
+
+        private void FadeBlack(float fadeTime, bool fadeToBlack)
+        {
+
+            // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
+            // to other Open Brush components.
+
+            // Currently ViewpointScript.FadeToColor takes 1/time as a parameter, which we should fix to
+            // make consistent, but for now just convert the incoming parameter.
+            float speed = 1 / Mathf.Max(fadeTime, 0.00001f);
+            if (fadeToBlack)
+            {
+                ViewpointScript.m_Instance.FadeToColor(Color.black, speed);
+            }
+            else
+            {
+                ViewpointScript.m_Instance.FadeToScene(speed);
             }
         }
     }

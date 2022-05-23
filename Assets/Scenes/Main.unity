@@ -5900,6 +5900,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d72a241675f6af449aea09693b0b4f7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_GvrOverlayPrefab: {fileID: 114044421867326160, guid: 50a6faaa5f4e1cf4487e55d232fa8d39,
+    type: 3}
+  m_OverlayMaxAlpha: 0.5
+  m_OverlayMaxSize: 8
   m_OverlayOffsetDistance: 15
   m_OverlayHeight: 15
   m_BlackTexture: {fileID: 2800000, guid: 57ec9586d21ff9142abf94cca6f69ef3, type: 3}
@@ -7186,6 +7190,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 587566168}
   - {fileID: 562640338}
@@ -18067,11 +18072,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_AnalogGripBinaryThreshold_Rift: 0.9
-  m_GvrOverlayPrefab: {fileID: 114044421867326160, guid: 50a6faaa5f4e1cf4487e55d232fa8d39,
-    type: 3}
-  m_OverlayMaxAlpha: 0.5
-  m_OverlayMaxSize: 8
   m_VrSystem: {fileID: 17776372}
+  m_VrCamera: {fileID: 17776371}
   m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}
   m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
@@ -18088,7 +18090,6 @@ MonoBehaviour:
     type: 3}
   m_NonVrControlsPrefab: {fileID: 1000011856084730, guid: 9d7a5b25efc95cd429ec738e0ccd19df,
     type: 3}
-  m_VrCamera: {fileID: 17776371}
 --- !u!4 &1412532063
 Transform:
   m_ObjectHideFlags: 0
