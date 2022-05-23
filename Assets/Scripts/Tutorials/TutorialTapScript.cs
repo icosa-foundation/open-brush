@@ -64,17 +64,8 @@ namespace TiltBrush
             switch (style)
             {
                 case ControllerStyle.OculusTouch:
-                    if (App.Config.VrHardware == VrHardware.Rift)
-                    {
-                        m_ControllerGeometryLeft = m_GeometryRiftLeft;
-                        m_ControllerGeometryRight = m_GeometryRiftRight;
-                    }
-                    else if (App.Config.VrHardware == VrHardware.Quest)
-                    {
-                        // TODO(b/135950527): rift-s also uses quest controllers.
-                        m_ControllerGeometryLeft = m_GeometryQuestLeft;
-                        m_ControllerGeometryRight = m_GeometryQuestRight;
-                    }
+                    m_ControllerGeometryLeft = m_GeometryQuestLeft;
+                    m_ControllerGeometryRight = m_GeometryQuestRight;
                     break;
                 case ControllerStyle.Wmr:
                     m_ControllerGeometryLeft = m_GeometryWmrLeft;

@@ -58,24 +58,6 @@ namespace TiltBrush
         Ods,    // Video rendering
     }
 
-    // These names are used in our analytics, so they must be protected from obfuscation.
-    // Do not change the names of any of them, unless they've never been released.
-    // This enum should be "VrHeadsetHardware".  Controller type is not necessarily
-    // implied by headset type.
-    [Serializable]
-    public enum VrHardware
-    {
-        Unset,          // Not set yet.
-        Unsupported,    // We did not recognise the hardware.        
-        None,
-        Rift,
-        Vive,
-        Daydream,
-        Wmr,            // Windows Mixed Reality
-        Quest,
-        OpenXR,
-    }
-
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
     /// on a UI component.
     public enum DescriptionType
@@ -147,63 +129,6 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
-
-        // This indicates which hardware (Rift or Vive) is being used. This is distinct from which SDK
-        // is being used.
-        public VrHardware VrHardware
-        {
-            // This is set lazily the first time VrHardware is accessed.
-            get
-            {
-                if (m_VrHardware == VrHardware.Unset)
-                {
-                    // TODO:Mike - may want to pinch the IsMobileHardware for other things hardware selection related.
-                    // if (m_SdkMode == SdkMode.Oulus)
-                    // {
-                    //     if (App.Config.IsMobileHardware)
-                    //     {
-                    //         m_VrHardware = VrHardware.Quest;
-                    //     }
-                    //     else
-                    //     {
-                    //         m_VrHardware = VrHardware.Rift;
-                    //     }
-                    // }
-                    if (m_SdkMode == SdkMode.UnityXR)
-                    {
-                        m_VrHardware = VrHardware.OpenXR;
-                    }
-                    // // TODO:Mike - Replace with OpenXR callout
-                    // else if (m_SdkMode == SdkMode.SteamVR)
-                    // {
-                    //     // If SteamVR fails for some reason we will discover it here.
-                    //     try
-                    //     {      
-                    //         // TODO:Mike - commented out as namespace no longer available.                      
-                    //         // if (Valve.VR.OpenVR.System == null)
-                    //         // {
-                    //         //     m_VrHardware = VrHardware.None;
-                    //         //     return m_VrHardware;
-                    //         // }
-                    //     }
-                    //     catch (Exception)
-                    //     {
-                    //         m_VrHardware = VrHardware.None;
-                    //         return m_VrHardware;
-                    //     }
-                    //
-                    //     // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
-                    //     m_VrHardware = GetHwTrackedInSteamVr();
-                    // }
-                    else
-                    {
-                        m_VrHardware = VrHardware.None;
-                    }
-                }
-
-                return m_VrHardware;
-            }
-        }
 
         public String HeadsetModelName
         {
@@ -383,9 +308,6 @@ namespace TiltBrush
         // ------------------------------------------------------------
         // Private data
         // ------------------------------------------------------------
-        private VrHardware m_VrHardware = VrHardware.Unset; // This should not be used outside of
-        // VrHardware as it is lazily set inside
-        // VrHardware.
         private Dictionary<Guid, Guid> m_BrushReplacement = null;
         private List<UserConfigChange> m_UserConfigChanges = new List<UserConfigChange>();
         private string m_HeadsetModelName;

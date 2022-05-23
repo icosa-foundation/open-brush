@@ -45,15 +45,7 @@ namespace TiltBrush
             switch (style)
             {
                 case ControllerStyle.OculusTouch:
-                    if (App.Config.VrHardware == VrHardware.Rift)
-                    {
-                        ActivateControllers(m_RiftControllers, true);
-                    }
-                    else if (App.Config.VrHardware == VrHardware.Quest)
-                    {
-                        // TODO(b/135950527): rift-s also uses quest controllers.
-                        ActivateControllers(m_QuestControllers, true);
-                    }
+                    ActivateControllers(m_QuestControllers, true);
                     break;
                 case ControllerStyle.Wmr:
                     ActivateControllers(m_WmrControllers, true);

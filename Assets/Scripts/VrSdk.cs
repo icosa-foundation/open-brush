@@ -32,7 +32,6 @@ namespace TiltBrush
         Knuckles,
         OculusTouch,
         Wmr,
-        Gvr,
         LogitechPen,
         Cosmos,
     }
@@ -68,11 +67,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRWmrControlsPrefab;
         [SerializeField] private GameObject m_UnityXRKnucklesControlsPrefab;
         [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
-        // Prefab for the old-style Touch controllers, used only for Rift
-        [SerializeField] private GameObject m_OculusRiftControlsPrefab;
-        // Prefab for the new-style Touch controllers, used for Rift-S and Quest
-        [SerializeField] private GameObject m_OculusQuestControlsPrefab;
-        [SerializeField] private GameObject m_GvrPointerControlsPrefab;
         [SerializeField] private GameObject m_NonVrControlsPrefab;
 
         // This is the object "Camera (eye)"
@@ -371,9 +365,6 @@ namespace TiltBrush
         // Profiling / VR Utility Methods
         // -------------------------------------------------------------------------------------------- //
 
-        // Returns a string representing the user's hardware and SDK configuration.
-        public string DisplayIdentifier => $"{App.Config.m_SdkMode}; {App.Config.VrHardware}";
-
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
         {
@@ -607,8 +598,7 @@ namespace TiltBrush
                         // This will probably not work once new headsets are released.
                         // Maybe something like this instead?
                         //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
-                        bool isQuestController = (XRDevice.refreshRate < 81f) ||
-                            (App.Config.VrHardware == VrHardware.Quest);
+                        bool isQuestController = XRDevice.refreshRate < 81f;
                         controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
                         // else /* Assume SteamVR */
                         // {
@@ -618,9 +608,6 @@ namespace TiltBrush
                     }
                 case ControllerStyle.Wmr:
                     controlsPrefab = m_UnityXRWmrControlsPrefab;
-                    break;
-                case ControllerStyle.Gvr:
-                    controlsPrefab = m_GvrPointerControlsPrefab;
                     break;
                 case ControllerStyle.Unset:
                 default:
