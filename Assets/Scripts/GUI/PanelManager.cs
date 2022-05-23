@@ -30,11 +30,11 @@ namespace TiltBrush
         public bool m_Basic;
         public bool m_Advanced;
 
-        public bool IsValidForSdkMode(SdkMode mode)
+        public bool IsValidForSdkMode(OfflineMode mode)
         {
             switch (mode)
             {
-                case SdkMode.UnityXR:
+                case OfflineMode.Unset:
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                     if (Config.IsExperimental)
                     {
@@ -46,7 +46,7 @@ namespace TiltBrush
                         return m_ModeQuest;
                     }
                     return m_ModeVr;
-                case SdkMode.Monoscopic:
+                case OfflineMode.Monoscopic:
                     return m_ModeMono;
                 default:
                     if (App.VrSdk.GetControllerDof() != VrSdk.DoF.None)
@@ -426,7 +426,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                if (!App.Instance.StartupError && m_PanelMap[i].IsValidForSdkMode(App.Config.m_SdkMode))
+                if (!App.Instance.StartupError && m_PanelMap[i].IsValidForSdkMode(App.Config.m_OfflineMode))
                 {
                     // Only create one of our unique panels
                     if (IsPanelUnique(type))
@@ -470,7 +470,7 @@ namespace TiltBrush
                 m_WandPaneVisuals.transform.GetChild(0).GetComponent<Renderer>();
             m_WandPaneVisualsState = PaneVisualsState.Hidden;
 
-            Debug.AssertFormat((App.Config.m_SdkMode == SdkMode.Ods) || (m_AdminPanel != null),
+            Debug.AssertFormat((App.Config.m_OfflineMode == OfflineMode.Ods) || (m_AdminPanel != null),
                 "Admin Panel required.");
 
             m_PanelsCustomized = false;

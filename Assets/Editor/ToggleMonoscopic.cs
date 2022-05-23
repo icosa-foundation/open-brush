@@ -29,7 +29,7 @@ public class ToggleMonoscopic : MonoBehaviour
     [MenuItem("Open Brush/Enable Monoscopic Mode in Editor")]
     public static void EnableMono()
     {
-        SetConfigSDKMode(SdkMode.Monoscopic);
+        SetConfigSDKMode(OfflineMode.Monoscopic);
         // TODO:Mike - Mono toggling mode expects SteamVR for some reason
         // SteamVrSettings.autoEnableVR = false;
         // EditorUtility.SetDirty(SteamVrSettings);
@@ -40,7 +40,7 @@ public class ToggleMonoscopic : MonoBehaviour
     [MenuItem("Open Brush/Disable Monoscopic Mode in Editor")]
     public static void DisableMono()
     {
-        SetConfigSDKMode(SdkMode.UnityXR);
+        SetConfigSDKMode(OfflineMode.Unset);
         // TODO:Mike - Mono toggling mode expects SteamVR for some reason
         // SteamVrSettings.autoEnableVR = true;
         // EditorUtility.SetDirty(SteamVrSettings);
@@ -74,7 +74,7 @@ public class ToggleMonoscopic : MonoBehaviour
     //     }
     // }
 
-    private static void SetConfigSDKMode(SdkMode mode)
+    private static void SetConfigSDKMode(OfflineMode mode)
     {
         var roots = MainScene.GetRootGameObjects();
         Config config = null;
@@ -84,7 +84,7 @@ public class ToggleMonoscopic : MonoBehaviour
             {
                 config = root.GetComponentInChildren<Config>();
                 Undo.RecordObject(config, "Change Monoscopic SDK");
-                config.m_SdkMode = mode;
+                config.m_OfflineMode = mode;
                 EditorUtility.SetDirty(config);
                 EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
                 // TODO this failed to mark the scene as saved for some reason.

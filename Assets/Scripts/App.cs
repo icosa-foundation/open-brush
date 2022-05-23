@@ -400,7 +400,7 @@ namespace TiltBrush
 
         public void SetOdsCameraTransforms(TrTransform headXf, TrTransform sceneXf)
         {
-            if (Config.m_SdkMode != SdkMode.Ods) { return; }
+            if (Config.m_OfflineMode != OfflineMode.Ods) { return; }
             OdsScenePrimary = sceneXf;
             OdsHeadPrimary = headXf;
 
@@ -488,7 +488,7 @@ namespace TiltBrush
         {
             m_Instance = this;
             Log(GetStartupString());
-            Log($"SdkMode: {App.Config.m_SdkMode}.");
+            Log($"SdkMode: {App.Config.m_OfflineMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
             Physics.autoSimulation = false;
@@ -607,7 +607,7 @@ namespace TiltBrush
                 //TODO: Mike - Updated this reference to attempt to find headset name in new XR system
                 Debug.LogFormat("Sdk mode: {0} XRDevice.model: {1}",
                     //App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
-                    App.Config.m_SdkMode, UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name);
+                    App.Config.m_OfflineMode, UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name);
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
@@ -636,7 +636,7 @@ namespace TiltBrush
                     sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
                 }
                 m_RequestedTiltFileQueue.Enqueue(sketch);
-                if (Config.m_SdkMode == SdkMode.Ods || Config.OfflineRender)
+                if (Config.m_OfflineMode == OfflineMode.Ods || Config.OfflineRender)
                 {
                     // We only load one sketch for ODS rendering & offline rendering.
                     break;
@@ -659,7 +659,7 @@ namespace TiltBrush
                 AutosaveRestoreFileExists = false;
             }
 
-            if (Config.m_SdkMode == SdkMode.Ods)
+            if (Config.m_OfflineMode == OfflineMode.Ods)
             {
                 m_OdsPivot = (GameObject)Instantiate(m_OdsPrefab);
 
@@ -938,7 +938,7 @@ namespace TiltBrush
                             }
                             else
                             {
-                                if (Config.m_SdkMode == SdkMode.Ods)
+                                if (Config.m_OfflineMode == OfflineMode.Ods)
                                 {
                                     // Skip the fade from black when we're rendering ODS.
                                     m_DesiredAppState = AppState.Standard;
@@ -962,7 +962,7 @@ namespace TiltBrush
                     {
                         // On the Oculus platform, the Health and Safety warning may be visible, blocking the
                         // user's view.  If this is the case, hold black until the warning is dismissed.
-                        if (!VrSdk.IsAppFocusBlocked() || Config.m_SdkMode == SdkMode.Ods)
+                        if (!VrSdk.IsAppFocusBlocked() || Config.m_OfflineMode == OfflineMode.Ods)
                         {
                             m_AppStateCountdown -= Time.deltaTime;
                         }
@@ -1045,7 +1045,7 @@ namespace TiltBrush
                         // Call ContinueDrawingFromMemory() unless we are rendering ODS, in which case we don't want
                         // to animate the strokes until the renderer has actually started.
                         bool bContinueDrawing = true;
-                        if (Config.m_SdkMode != SdkMode.Ods || m_OdsPivot.GetComponent<OdsDriver>().IsRendering)
+                        if (Config.m_OfflineMode != OfflineMode.Ods || m_OdsPivot.GetComponent<OdsDriver>().IsRendering)
                         {
                             bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
                         }
@@ -1093,7 +1093,7 @@ namespace TiltBrush
                     }
 
                     // If the app doesn't have focus, don't update.
-                    if (VrSdk.IsAppFocusBlocked() && Config.m_SdkMode != SdkMode.Ods)
+                    if (VrSdk.IsAppFocusBlocked() && Config.m_OfflineMode != OfflineMode.Ods)
                     {
                         break;
                     }
@@ -1552,7 +1552,7 @@ namespace TiltBrush
                         !SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
                         !SketchControlsScript.m_Instance.IsUserGrabbingWorld() &&
                         (VideoRecorderUtils.ActiveVideoRecording == null) &&
-                        (!VrSdk.IsAppFocusBlocked() || Config.m_SdkMode == SdkMode.Ods))
+                        (!VrSdk.IsAppFocusBlocked() || Config.m_OfflineMode == OfflineMode.Ods))
                     {
                         OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
                         //if we just pressed the button, kick a fade in

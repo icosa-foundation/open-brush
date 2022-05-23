@@ -112,7 +112,7 @@ namespace TiltBrush.LachlanSleight
                 Vector3 position;
                 Vector3 vMovement;
 
-                if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+                if (App.Config.m_OfflineMode == OfflineMode.Monoscopic)
                 {
                     position = App.Scene.Pose.translation;
                     vMovement = Camera.main.transform.forward;

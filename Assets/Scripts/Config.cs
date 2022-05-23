@@ -45,15 +45,12 @@ namespace TiltBrush
         Pico,
     }
 
-    // The sdk mode indicates which SDK that we're using to drive the display.
-    //  - These names are used in our analytics, so they must be protected from obfuscation.
-    //    Do not change the names of any of them, unless they've never been released.
+    // The offline mode indicates which if we're using offline rendering,
+    // for example rendering camera paths from batch file.
     [Serializable]
-    public enum SdkMode
+    public enum OfflineMode
     {
-        Unset = -1,
-        UnityXR,
-
+        Unset,
         Monoscopic,
         Ods,    // Video rendering
     }
@@ -113,7 +110,7 @@ namespace TiltBrush
         public bool m_IsExperimental;
 
         // The sdk mode indicates which SDK that we're using to drive the display.
-        public SdkMode m_SdkMode;
+        public OfflineMode m_OfflineMode;
 
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
@@ -284,7 +281,7 @@ namespace TiltBrush
 
         public bool OfflineRender
         {
-            get => !string.IsNullOrEmpty(m_VideoPathToRender) && m_SdkMode != SdkMode.Ods;
+            get => !string.IsNullOrEmpty(m_VideoPathToRender) && m_OfflineMode != OfflineMode.Ods;
         }
 
         public PlatformConfig PlatformConfig
@@ -349,7 +346,7 @@ namespace TiltBrush
                 }
                 else if (args[i] == "--captureOds")
                 {
-                    m_SdkMode = SdkMode.Ods;
+                    m_OfflineMode = OfflineMode.Ods;
                     UnityEngine.XR.XRSettings.enabled = false;
                     Debug.Log("CaptureODS: Enable ");
 
@@ -478,7 +475,7 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid renderCameraPath argument, tbpath expected.");
                     }
                     m_VideoPathToRender = args[++i];
-                    m_SdkMode = SdkMode.Monoscopic;
+                    m_OfflineMode = OfflineMode.Monoscopic;
                     UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (args[i].Contains("."))
@@ -497,11 +494,11 @@ namespace TiltBrush
 
             if (isInBatchMode)
             {
-                if (OfflineRender || m_SdkMode == SdkMode.Ods)
+                if (OfflineRender || m_OfflineMode == OfflineMode.Ods)
                 {
                     throw new ApplicationException("Video rendering not supported in batch mode.");
                 }
-                m_SdkMode = SdkMode.Monoscopic;
+                m_OfflineMode = OfflineMode.Monoscopic;
             }
 
             m_SketchFiles = files.ToArray();

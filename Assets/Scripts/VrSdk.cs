@@ -147,10 +147,28 @@ namespace TiltBrush
 
         void Awake()
         {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            InputDevices.deviceConnected += OnUnityXRDeviceConnected;
+            InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
+
+            // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+            // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
+            InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+            if (!tryGetUnityXRController.isValid)
             {
-                InputDevices.deviceConnected += OnUnityXRDeviceConnected;
-                InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
+                // Try the right hand instead
+                tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+            }
+
+            // @bill - I don't believe this will ever be valid under UnityXR as I believe the devices are
+            //         registered after Awake()
+            if (!tryGetUnityXRController.isValid)
+            {
+                // Leave for when UnityXR is ready.
+                SetControllerStyle(ControllerStyle.InitializingUnityXR);
+            }
+            else
+            {
+                SetUnityXRControllerStyle(tryGetUnityXRController);
             }
 
             if (App.Config.IsMobileHardware && m_GvrOverlayPrefab != null)
@@ -192,30 +210,8 @@ namespace TiltBrush
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
 #endif // OCULUS_SUPPORTED
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
-                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
-                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Try the right hand instead
-                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-                }
 
-                // @bill - I don't believe this will ever be valid under UnityXR as I believe the devices are
-                //         registered after Awake()
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Leave for when UnityXR is ready.
-                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
-                }
-                else
-                {
-                    SetUnityXRControllerStyle(tryGetUnityXRController);
-                }
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            if (App.Config.m_OfflineMode == OfflineMode.Monoscopic)
             {
                 // ---------------------------------------------------------------------------------------- //
                 // Monoscopic
@@ -225,25 +221,15 @@ namespace TiltBrush
                 // Offset for head position, since camera height is set by the VR system.
                 m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
             }
-            else
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // Non-VR
-                // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(ControllerStyle.None);
-                // Offset for head position, since camera height is set by the VR system.
-                m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
-            }
+
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
         }
 
         void Start()
         {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                Application.onBeforeRender += OnNewPoses;
-            }
+            Application.onBeforeRender += OnNewPoses;
+
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mike - SteamVR init. Needs new XR init
@@ -279,18 +265,15 @@ namespace TiltBrush
 
         void Update()
         {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                OnNewPoses();
-            }
+            OnNewPoses();
         }
 
         void OnDestroy()
         {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                Application.onBeforeRender -= OnNewPoses;
-            }
+            Application.onBeforeRender -= OnNewPoses;
+            InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
+            InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
+
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mike - SteamVR cleanup process, investiage
@@ -298,11 +281,6 @@ namespace TiltBrush
             //     // SteamVR_Events.NewPosesApplied.Remove(OnNewPoses);
             // }
             // else
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
-                InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
-            }
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -650,21 +628,10 @@ namespace TiltBrush
         // - Info, which encapsulates VR APIs (OVR, SteamVR, GVR, ...)
         public ControllerInfo CreateControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
         {
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // TODO:Mike - set to return the default instead.
-            //     return new NonVrControllerInfo(behavior);
-            //     //return new SteamControllerInfo(behavior);
-            // }
-            // else 
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_OfflineMode == OfflineMode.Unset)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
             }
-            /*else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                return new GvrControllerInfo(behavior, isLeftHand);
-            }*/
             else
             {
                 return new NonVrControllerInfo(behavior);
@@ -680,21 +647,17 @@ namespace TiltBrush
         {
             bool leftRightSwapped = true;
 
-            // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
-                UnityXRControllerInfo brushInfo = InputManager.Brush as UnityXRControllerInfo;
-                wandInfo.SwapLeftRight();
-                brushInfo.SwapLeftRight();
+            UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
+            UnityXRControllerInfo brushInfo = InputManager.Brush as UnityXRControllerInfo;
+            wandInfo.SwapLeftRight();
+            brushInfo.SwapLeftRight();
 
-                var wandPose = InputManager.Wand.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
-                var brushPose = InputManager.Brush.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
-                var tempSource = wandPose.poseSource;
-                var tempType = wandPose.deviceType;
-                wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
-                brushPose.SetPoseSource(tempType, tempSource);
-            }
+            var wandPose = InputManager.Wand.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            var brushPose = InputManager.Brush.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            var tempSource = wandPose.poseSource;
+            var tempType = wandPose.deviceType;
+            wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
+            brushPose.SetPoseSource(tempType, tempSource);
 
             return leftRightSwapped;
         }
@@ -702,12 +665,12 @@ namespace TiltBrush
         // Returns the Degrees of Freedom for the VR system controllers.
         public DoF GetControllerDof()
         {
-            switch (App.Config.m_SdkMode)
+            switch (App.Config.m_OfflineMode)
             {
-                case SdkMode.UnityXR:
+                case OfflineMode.Unset:
                     // @bill - Won't this depend of the device?
                     return DoF.Six;
-                case SdkMode.Monoscopic:
+                case OfflineMode.Monoscopic:
                     return DoF.Two;
                 default:
                     return DoF.None;
@@ -1009,40 +972,18 @@ namespace TiltBrush
         public bool IsHmdInitialized()
         {
             // TODO:Mike - Is there a real way to determine if initialised at start like the other SDKs?
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                return true;
-            }
-            // TODO:Mike - More SteamVR specific setup
-            // else if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
-            // {
-            //     return false;
-            // }
-
-            /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
-              return false;
-            } */
             return true;
         }
 
         // Returns the native frame rate of the HMD (or screen) in frames per second.
         public int GetHmdTargetFrameRate()
         {
-            switch (App.Config.m_SdkMode)
+            switch (App.Config.m_OfflineMode)
             {
-                case SdkMode.UnityXR:
+                case OfflineMode.Unset:
+                    // TODO:Mike - Interesting that steamvr has the ability to override fps. surely XR can do that too
                     return 60; // 90?
-                // TODO:Mike - Interesting that steamvr has the ability to override fps. surely XR can do that too
-                // case SdkMode.SteamVR:
-                //     return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
-                case SdkMode.Monoscopic:
-                    return 60;
-                case SdkMode.Ods:
-                    // TODO: 30 would be correct, buf feels too slow.
-                    return 60;
                 default:
-                    // TODO:Mike - is default just UnityXR now? do we need to throw?
-                    //throw new NotImplementedException("Unknown VR SDK Mode");
                     return 60;
             }
         }
@@ -1050,9 +991,9 @@ namespace TiltBrush
         // Returns the Degrees of Freedom for the VR system headset.
         public DoF GetHmdDof()
         {
-            switch (App.Config.m_SdkMode)
+            switch (App.Config.m_OfflineMode)
             {
-                case SdkMode.UnityXR:
+                case OfflineMode.Unset:
                     return DoF.Six;
                 default:
                     return DoF.None;

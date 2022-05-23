@@ -220,7 +220,7 @@ namespace TiltBrush
         // Specific method for Advanced Panels so we can track calls over the session.
         public void RequestAdvancedPanelsPromo()
         {
-            if (App.Config.m_SdkMode != SdkMode.Ods &&
+            if (App.Config.m_OfflineMode != OfflineMode.Ods &&
                 !App.Instance.IsFirstRunExperience &&
                 !m_RequestedAdvancedPanelsThisSession)
             {
