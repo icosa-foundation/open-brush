@@ -24,7 +24,6 @@ namespace TiltBrush
         None,
         UnityXR,
         Oculus,
-        Mobile
     }
         
     public enum OverlayType
@@ -50,19 +49,16 @@ namespace TiltBrush
 
         private OverlayMode m_OverlayMode;
 
+        // Generic Overlay if nothing provided by a specific platform
+        private bool m_UnityXROverlayOn;
+        private GvrOverlay m_UnityXROverlay;
+
         // Oculus Overlay
 #if OCULUS_SUPPORTED
         private OVROverlay m_OVROverlay;
 #endif // OCULUS_SUPPORTED
-
         public bool OverlayIsOVR => m_OverlayMode == OverlayMode.Oculus;
 
-        // Mobile Overlay
-        private bool m_MobileOverlayOn;
-        private GvrOverlay m_MobileOverlay;
-
-        // TODO:Mike - commmented this overlay as class is from SteamVR, what does it do?
-        //[SerializeField] private SteamVR_Overlay m_SteamVROverlay;
         [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
         [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
         [SerializeField] private float m_OverlayMaxSize = 8;
@@ -113,13 +109,14 @@ namespace TiltBrush
             SetText("");
             RenderLogo(0.45f);
 
-            // Set Up overlay
-            if (App.Config.IsMobileHardware && m_GvrOverlayPrefab != null)
+            // Base overlay
+            if (m_GvrOverlayPrefab != null)
             {
-                m_OverlayMode = OverlayMode.Mobile;
-                m_MobileOverlay = Instantiate(m_GvrOverlayPrefab);
-                m_MobileOverlay.gameObject.SetActive(false);
+                m_OverlayMode = OverlayMode.UnityXR;
+                m_UnityXROverlay = Instantiate(m_GvrOverlayPrefab);
+                m_UnityXROverlay.gameObject.SetActive(false);
             }
+            
 #if OCULUS_SUPPORTED
             m_OverlayMode = OverlayMode.Oculus;
             var gobj = new GameObject("Oculus Overlay");
@@ -591,29 +588,29 @@ namespace TiltBrush
                 case OverlayMode.Oculus:
                     OverlayEnabled = ratio == 1;
                     break;
-                case OverlayMode.Mobile:
+                case OverlayMode.UnityXR:
                     if (!OverlayEnabled && ratio > 0.0f)
                     {
                         // Position screen overlay in front of the camera.
-                        m_MobileOverlay.transform.parent = App.VrSdk.GetVrCamera().transform;
-                        m_MobileOverlay.transform.localPosition = Vector3.zero;
-                        m_MobileOverlay.transform.localRotation = Quaternion.identity;
+                        m_UnityXROverlay.transform.parent = App.VrSdk.GetVrCamera().transform;
+                        m_UnityXROverlay.transform.localPosition = Vector3.zero;
+                        m_UnityXROverlay.transform.localRotation = Quaternion.identity;
                         float scale = 0.5f * App.VrSdk.GetVrCamera().farClipPlane / App.VrSdk.GetVrCamera().transform.lossyScale.z;
-                        m_MobileOverlay.transform.localScale = Vector3.one * scale;
+                        m_UnityXROverlay.transform.localScale = Vector3.one * scale;
 
                         // Reparent the overlay so that it doesn't move with the headset.
-                        m_MobileOverlay.transform.parent = null;
+                        m_UnityXROverlay.transform.parent = null;
 
                         // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_MobileOverlay.transform.localRotation.eulerAngles;
-                        m_MobileOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
+                        Vector3 eulerAngles = m_UnityXROverlay.transform.localRotation.eulerAngles;
+                        m_UnityXROverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
 
-                        m_MobileOverlay.gameObject.SetActive(true);
+                        m_UnityXROverlay.gameObject.SetActive(true);
                         OverlayEnabled = true;
                     }
                     else if (OverlayEnabled && ratio == 0.0f)
                     {
-                        m_MobileOverlay.gameObject.SetActive(false);
+                        m_UnityXROverlay.gameObject.SetActive(false);
                         OverlayEnabled = false;
                     }
                     break;
@@ -635,8 +632,8 @@ namespace TiltBrush
 #else
                         return false;
 #endif // OCULUS_SUPPORTED
-                    case OverlayMode.Mobile:
-                        return m_MobileOverlayOn;
+                    case OverlayMode.UnityXR:
+                        return m_UnityXROverlayOn;
                     default:
                         return false;
                 }
@@ -654,8 +651,8 @@ namespace TiltBrush
                         m_OVROverlay.enabled = value;
 #endif // OCULUS_SUPPORTED
                         break;
-                    case OverlayMode.Mobile:
-                        m_MobileOverlayOn = value;
+                    case OverlayMode.UnityXR:
+                        m_UnityXROverlayOn = value;
                         break;
                 }
             }
