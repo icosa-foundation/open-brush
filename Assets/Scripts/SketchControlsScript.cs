@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
 
 namespace TiltBrush
@@ -1497,7 +1498,7 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayPinCushionSound(true);
             }
             // Pan.
-            else if (!hasController && Input.GetMouseButton(2))
+            else if (!hasController && Mouse.current.rightButton.isPressed)
             {
                 SwitchState(InputState.Pan);
             }

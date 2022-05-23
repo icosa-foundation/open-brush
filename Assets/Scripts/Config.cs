@@ -53,10 +53,9 @@ namespace TiltBrush
     {
         Unset = -1,
         UnityXR,
-        Cardboard_Deprecated,
+
         Monoscopic,
         Ods,    // Video rendering
-        Gvr,    // Google VR
     }
 
     // These names are used in our analytics, so they must be protected from obfuscation.
@@ -196,10 +195,6 @@ namespace TiltBrush
                     //     // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
                     //     m_VrHardware = GetHwTrackedInSteamVr();
                     // }
-                    else if (m_SdkMode == SdkMode.Gvr)
-                    {
-                        m_VrHardware = VrHardware.Daydream;
-                    }
                     else
                     {
                         m_VrHardware = VrHardware.None;

@@ -221,35 +221,6 @@ namespace TiltBrush
                     SetUnityXRControllerStyle(tryGetUnityXRController);
                 }
             }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // GoogleVR
-                // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(ControllerStyle.Gvr);
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = null;
-
-                // TODO: Why is this offset needed? This should also be in a prefab, not here.
-                var pos = m_VrSystem.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrSystem.gameObject.transform.localPosition = pos;
-
-                pos = m_VrControls.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrControls.gameObject.transform.localPosition = pos;
-
-#if UNITY_EDITOR && false
-                // Instant preview
-                m_VrCamera.gameObject.AddComponent<InstantPreviewHelper>();
-                var ip = m_VrCamera.gameObject.AddComponent<Gvr.Internal.InstantPreview>();
-                ip.OutputResolution = Gvr.Internal.InstantPreview.Resolutions.Big;
-                ip.MultisampleCount = Gvr.Internal.InstantPreview.MultisampleCounts.One;
-                ip.BitRate = Gvr.Internal.InstantPreview.BitRates._16000;
-#endif
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = m_VrCamera.transform.parent;
-            }
             else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
                 // ---------------------------------------------------------------------------------------- //
@@ -737,12 +708,6 @@ namespace TiltBrush
                 wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
                 brushPose.SetPoseSource(tempType, tempSource);
             }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                var tmp = InputManager.Controllers[0];
-                InputManager.Controllers[0] = InputManager.Controllers[1];
-                InputManager.Controllers[1] = tmp;
-            }
 
             return leftRightSwapped;
         }
@@ -755,13 +720,8 @@ namespace TiltBrush
                 case SdkMode.UnityXR:
                     // @bill - Won't this depend of the device?
                     return DoF.Six;
-
-                case SdkMode.Gvr:
-                    return DoF.Six;
-
                 case SdkMode.Monoscopic:
                     return DoF.Two;
-
                 default:
                     return DoF.None;
             }
@@ -1067,16 +1027,10 @@ namespace TiltBrush
                 return true;
             }
             // TODO:Mike - More SteamVR specific setup
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
+            // else if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
             // {
             //     return false;
             // }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // We used to be able to check the GvrViewer state, but this has been moved internal to Unity.
-                // Now just return true and hope for the best.
-                return true;
-            }
 
             /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
               return false;
@@ -1094,8 +1048,6 @@ namespace TiltBrush
                 // TODO:Mike - Interesting that steamvr has the ability to override fps. surely XR can do that too
                 // case SdkMode.SteamVR:
                 //     return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
-                case SdkMode.Gvr:
-                    return 75;
                 case SdkMode.Monoscopic:
                     return 60;
                 case SdkMode.Ods:
@@ -1113,7 +1065,6 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.Gvr:
                 case SdkMode.UnityXR:
                     return DoF.Six;
                 default:

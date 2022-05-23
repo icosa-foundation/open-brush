@@ -27,7 +27,6 @@ namespace TiltBrush
         public bool m_ModeVrExperimental;
         public bool m_ModeMono;
         public bool m_ModeQuest;
-        public bool m_ModeGvr;
         public bool m_Basic;
         public bool m_Advanced;
 
@@ -47,8 +46,6 @@ namespace TiltBrush
                         return m_ModeQuest;
                     }
                     return m_ModeVr;
-                case SdkMode.Gvr:
-                    return m_ModeGvr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
                 default:
