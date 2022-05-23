@@ -689,7 +689,7 @@ static class BuildTiltBrush
     // Command-line arguments must come directly after "-executeMethod BuildTiltBrush.CommandLine"
     //
     //   -btb-stamp STR      Pushed into App.m_BuildStamp.
-    //   -btb-display DISP   See SdkMode for values. Default: SteamVR.
+    //   -btb-display DISP   See SdkMode for values. Default: UnityXR.
     //   -btb-target TARGET  See UnityEditor.BuildTarget for values. Default: StandaloneWindows.
     //   -btb-bopt   OPT     See UnityEditor.BuildOptions for values. Can pass multiple times.
     //   -btb-out    DIR     Set output location: the name of the desired executable. Required.

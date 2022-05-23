@@ -30,9 +30,6 @@ namespace TiltBrush
     {
         const string PLAYER_PREF_WAND_ON_RIGHT = "WandOnRight";
 
-        /// touchpad vector must be at least this magnitude to register as directional press
-        const float kSteamTrackpadButtonSqrMagnitudeThreshold = 0.1f * 0.1f;
-
         // Controller-swap gesture tunables
         const float kSwapDistMeters = 0.04f;
         const float kSwapResetDistMeters = 0.16f;

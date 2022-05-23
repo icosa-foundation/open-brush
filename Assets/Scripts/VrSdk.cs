@@ -28,7 +28,6 @@ namespace TiltBrush
         Unset,
         None,
         InitializingUnityXR,   // can change to "initialising" or "discovering"
-        //InitializingSteamVR,
         Vive,
         Knuckles,
         OculusTouch,

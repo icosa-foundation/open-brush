@@ -45,7 +45,7 @@ namespace TiltBrush
         Pico,
     }
 
-    // The sdk mode indicates which SDK (UnityXr, OVR, SteamVR, etc.) that we're using to drive the display.
+    // The sdk mode indicates which SDK that we're using to drive the display.
     //  - These names are used in our analytics, so they must be protected from obfuscation.
     //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
@@ -53,7 +53,6 @@ namespace TiltBrush
     {
         Unset = -1,
         UnityXR,
-        //SteamVR,
         Cardboard_Deprecated,
         Monoscopic,
         Ods,    // Video rendering
@@ -132,7 +131,7 @@ namespace TiltBrush
         // Public to allow App.cs and BuildTiltBrush.cs to access it; do not use it otherwise.
         public bool m_IsExperimental;
 
-        // The sdk mode indicates which SDK (UnityXr, OVR, SteamVR, etc.) that we're using to drive the display.
+        // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
 
         // Whether or not to just do an automatic profile and then exit.
@@ -151,7 +150,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
 
         // This indicates which hardware (Rift or Vive) is being used. This is distinct from which SDK
-        // is being used (Oculus VR, Steam's Open VR, Monoscopic, etc.).
+        // is being used.
         public VrHardware VrHardware
         {
             // This is set lazily the first time VrHardware is accessed.
