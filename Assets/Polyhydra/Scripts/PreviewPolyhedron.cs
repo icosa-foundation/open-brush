@@ -655,7 +655,7 @@ public class PreviewPolyhedron : MonoBehaviour
             case AvailableFilters.PositionZ:
                 return Filter.Position(Filter.PositionType.Center, Axis.Z, filterParamFloat, 10f, not: filterNot);
             case AvailableFilters.DistanceFromCenter:
-                return Filter.RadialDistance(not: filterNot);
+                return Filter.RadialDistance(0, filterParamFloat, not: filterNot);
             default:
                 return Filter.All;
         }
