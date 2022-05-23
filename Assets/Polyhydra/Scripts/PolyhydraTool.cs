@@ -64,13 +64,17 @@ namespace TiltBrush
                 {
                     m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
                 }
-                polyhydraPanel.CurrentPolyhedra.transform.SetParent(this.transform, false);
+                polyhydraPanel.CurrentPolyhedra.transform.SetParent(
+                    InputManager.m_Instance.GetController(InputManager.ControllerName.Brush), false
+                );
+                polyhydraPanel.CurrentPolyhedra.transform.Translate(Vector3.up);
                 
                 EatInput();
             }
             else
             {
                 polyhydraPanel.CurrentPolyhedra.transform.SetParent(polyhydraPanel.PreviewPolyParent.transform, false);
+                polyhydraPanel.CurrentPolyhedra.transform.Translate(Vector3.down);
             }
 
             // Make sure our UI reticle isn't active.
