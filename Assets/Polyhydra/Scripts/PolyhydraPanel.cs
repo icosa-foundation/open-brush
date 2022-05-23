@@ -716,6 +716,24 @@ namespace TiltBrush
             m_GeneratorParameters = emd.GeneratorParameters;
             m_Operations = emd.Operations;
 
+            if (false) // Disable WIP color loading code.
+            {
+                CustomColorPaletteStorage.m_Instance.ClearAllColors();
+                var palette = new Palette();
+                byte floatToByte(float v)
+                {
+                    return (byte)Mathf.FloorToInt(v * 255);
+                }
+                palette.Colors = emd.Colors.Select(c=>new Color32(
+                    floatToByte(c.r),
+                    floatToByte(c.g),
+                    floatToByte(c.b),
+                    0)
+                ).ToArray();
+                CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(palette);
+                CustomColorPaletteStorage.m_Instance.RefreshStoredColors();
+            }
+    
             var sliderParamNames = new List<string>();
             
             switch (emd.GeneratorType)
@@ -1187,14 +1205,14 @@ namespace TiltBrush
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 1;
-                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.Max = 32;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case PreviewPolyhedron.AvailableFilters.LastN:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 1;
-                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.Max = 100;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case PreviewPolyhedron.AvailableFilters.NSided:
@@ -1234,15 +1252,15 @@ namespace TiltBrush
                 case PreviewPolyhedron.AvailableFilters.PositionZ:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = -2f;
-                    SliderOpFilterParam.Max = 2f;
+                    SliderOpFilterParam.Min = -5f;
+                    SliderOpFilterParam.Max = 5f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case PreviewPolyhedron.AvailableFilters.DistanceFromCenter:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = 0f;
-                    SliderOpFilterParam.Max = 2f;
+                    SliderOpFilterParam.Max = 10f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
             }
