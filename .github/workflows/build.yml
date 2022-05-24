@@ -463,11 +463,9 @@ jobs:
     name: Publish Steam Release (xr_v2)
     needs: [configuration, build]
     if: |
-      ((github.event_name == 'push') ||
-      (github.event_name == 'pull_request')) &&
+      github.event_name == 'push'  &&
       github.repository == 'icosa-gallery/open-brush' &&
-      ((github.ref == 'refs/heads/feature/xr_v2') ||
-      (contains(github.ref, 'refs/pull/237')))
+      (github.ref == 'refs/heads/feature/xr_v2')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
