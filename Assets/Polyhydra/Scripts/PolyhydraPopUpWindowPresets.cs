@@ -42,6 +42,8 @@ namespace TiltBrush
         {
             presetName = $"{presetName}.png";
             var path = Path.Combine(ParentPanel.m_PresetsPath, presetName);
+            if (!File.Exists(path)) return Resources.Load<Texture2D>("Icons/bigquestion");
+            
             var fileData = File.ReadAllBytes(path);
             var tex = new Texture2D(2, 2);
             tex.LoadImage(fileData);
