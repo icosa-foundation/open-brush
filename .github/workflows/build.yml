@@ -238,13 +238,11 @@ jobs:
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: Library
           # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library-${{ matrix.targetPlatform }}-${{ env.UNITY_VERSION }}
-          restore-keys: |
-            Library-${{ matrix.targetPlatform }}-
+          key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
 
       - name: Update Oculus OVR Plugin
         uses: game-ci/unity-builder@v2
