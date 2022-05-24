@@ -418,7 +418,7 @@ namespace TiltBrush
 
         void Start()
         {
-            App.VrSdk.NewControllerPosesApplied += OnControllerPosesApplied;
+            App.VrSdk.OnNewControllerPosesApplied += OnControllerPosesApplied;
             // If we're initializing UnityXR, defer this call until our controller type is determined.  XRXR
             if (!App.VrSdk.IsInitializingUnityXR)
             {
@@ -436,7 +436,7 @@ namespace TiltBrush
 
         void OnDestroy()
         {
-            App.VrSdk.NewControllerPosesApplied -= OnControllerPosesApplied;
+            App.VrSdk.OnNewControllerPosesApplied -= OnControllerPosesApplied;
         }
 
         void Update()

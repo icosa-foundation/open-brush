@@ -101,7 +101,7 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
 
         // Called when new poses are ready.
-        public event Action NewControllerPosesApplied;
+        public Action OnNewControllerPosesApplied;
 
         // -------------------------------------------------------------------------------------------- //
         // Public Controller Properties
@@ -221,7 +221,7 @@ namespace TiltBrush
 
         private void OnNewPoses()
         {
-            NewControllerPosesApplied?.Invoke();
+            OnNewControllerPosesApplied?.Invoke();
         }
 
         private void OnInputFocusSteam(bool arg)
@@ -640,7 +640,7 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogError("Unrecognised device connected: {device.manufacturer}, {device.name}");
+                Debug.LogWarning("Unrecognised device connected: {device.manufacturer}, {device.name}");
             }
         }
 
@@ -660,8 +660,7 @@ namespace TiltBrush
             }
             else
             {
-                // SetControllerStyle(ControllerStyle.None);
-                Debug.LogError("Unrecognised controller device name: " + device.name);
+                Debug.LogWarning("Unrecognised controller device name: " + device.name);
             }
 
             InputManager.m_Instance.CreateControllerInfos();
@@ -746,15 +745,15 @@ namespace TiltBrush
         public void DisablePoseTracking()
         {
             m_TrackingBackupXf = TrTransform.FromTransform(GetVrCamera().transform);
-            if (NewControllerPosesApplied == null)
+            if (OnNewControllerPosesApplied == null)
             {
                 m_OldOnPoseApplied = Array.Empty<Action>();
             }
             else
             {
-                m_OldOnPoseApplied = NewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
+                m_OldOnPoseApplied = OnNewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
             }
-            NewControllerPosesApplied = null;
+            OnNewControllerPosesApplied = null;
         }
 
         /// Restores the pose recieved callbacks that were saved off with DisablePoseTracking. Will merge
@@ -763,14 +762,14 @@ namespace TiltBrush
         {
             if (m_OldOnPoseApplied != null)
             {
-                if (NewControllerPosesApplied != null)
+                if (OnNewControllerPosesApplied != null)
                 {
-                    var list = m_OldOnPoseApplied.Concat(NewControllerPosesApplied.GetInvocationList())
+                    var list = m_OldOnPoseApplied.Concat(OnNewControllerPosesApplied.GetInvocationList())
                         .Distinct().Cast<Action>();
-                    NewControllerPosesApplied = null;
+                    OnNewControllerPosesApplied = null;
                     foreach (var handler in list)
                     {
-                        NewControllerPosesApplied += handler;
+                        OnNewControllerPosesApplied += handler;
                     }
                 }
             }

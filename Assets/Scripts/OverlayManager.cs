@@ -686,15 +686,15 @@ namespace TiltBrush
             switch (m_OverlayMode)
             {
                 // TODO:Mike - disable overlay
-                // case OverlayMode.Steam:
-                //     vOverlayPosition += (vOverlayDirection * distance);
-                //     vOverlayPosition.y = height;
-                //     m_SteamVROverlay.transform.position = vOverlayPosition;
-                //     m_SteamVROverlay.transform.forward = vOverlayDirection;
-                //     break;
+                case OverlayMode.UnityXR:
+                    vOverlayPosition += vOverlayDirection * distance;
+                    vOverlayPosition.y = height;
+                    m_UnityXROverlay.transform.position = vOverlayPosition;
+                    m_UnityXROverlay.transform.forward = vOverlayDirection;
+                    break;
                 case OverlayMode.Oculus:
 #if OCULUS_SUPPORTED
-                    vOverlayPosition += (vOverlayDirection * distance / 10);
+                    vOverlayPosition += vOverlayDirection * distance / 10;
                     m_OVROverlay.transform.position = vOverlayPosition;
                     m_OVROverlay.transform.forward = vOverlayDirection;
 #endif // OCULUS_SUPPORTED
@@ -760,7 +760,6 @@ namespace TiltBrush
 
         private void FadeBlack(float fadeTime, bool fadeToBlack)
         {
-
             // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
             // to other Open Brush components.
 

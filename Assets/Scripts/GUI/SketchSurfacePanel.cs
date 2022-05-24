@@ -97,7 +97,7 @@ namespace TiltBrush
         void OnDisable()
         {
             m_AddedNewPoseListener = false;
-            App.VrSdk.NewControllerPosesApplied -= OnNewPoses;
+            App.VrSdk.OnNewControllerPosesApplied -= OnNewPoses;
         }
 
         bool m_AddedNewPoseListener = false;
@@ -110,7 +110,7 @@ namespace TiltBrush
             if (!m_AddedNewPoseListener)
             {
                 m_AddedNewPoseListener = true;
-                App.VrSdk.NewControllerPosesApplied += OnNewPoses;
+                App.VrSdk.OnNewControllerPosesApplied += OnNewPoses;
             }
 
             BaseUpdate();

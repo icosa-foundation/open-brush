@@ -48,7 +48,7 @@ static class BuildTiltBrush
     // The vendor name - used for naming android builds - shouldn't have spaces.
     public const string kVendorName = "icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
-    public const string kDisplayVendorName = "Icosa";
+    public const string kDisplayVendorName = "Icosa Gallery";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
