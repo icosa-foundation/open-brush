@@ -54,6 +54,7 @@ namespace TiltBrush
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        public bool ForcePaintingOn = false;
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -178,14 +179,12 @@ namespace TiltBrush
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
             if (commandPair.Length == 1 && commandPair[0] != "")
             {
-                Debug.Log($"Queuing {commandPair[0]}");
                 m_RequestedCommandQueue.Enqueue(
                     new KeyValuePair<string, string>(commandPair[0], "")
                 );
             }
             else if (commandPair.Length == 2)
             {
-                Debug.Log($"Queuing {commandPair[0]}={commandPair[1]}");
                 m_RequestedCommandQueue.Enqueue(
                     new KeyValuePair<string, string>(
                         commandPair[0],
@@ -611,7 +610,6 @@ namespace TiltBrush
             {
                 return false;
             }
-            Debug.Log($"Invoking {command.Key}={command.Value}");
             return Instance.InvokeEndpoint(command);
         }
 

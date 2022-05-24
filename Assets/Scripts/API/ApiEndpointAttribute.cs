@@ -105,6 +105,12 @@ namespace TiltBrush
                         float.Parse(tokens[tokenIndex++])
                     );
                 }
+                else if (paramType.ParameterType == typeof(bool))
+                {
+                    paramValue = tokens[tokenIndex++];
+                    string str = paramValue.ToString().ToLower();
+                    paramValue = (str == "true" || str == "on" || str == "1");
+                }
                 else
                 {
                     paramValue = TypeDescriptor.GetConverter(paramType).ConvertFromString(tokens[tokenIndex++]);

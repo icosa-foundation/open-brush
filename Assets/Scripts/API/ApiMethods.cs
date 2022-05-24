@@ -440,6 +440,12 @@ namespace TiltBrush
             _PositionWidget(_GetActiveModel(index), position);
         }
         
+        [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
+        public static void ForcePainting(bool active)
+        {
+            ApiManager.Instance.ForcePaintingOn = active;
+        }
+        
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
         public static void PositionImage(int index, Vector3 position)
         {
