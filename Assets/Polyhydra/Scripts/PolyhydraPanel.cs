@@ -751,6 +751,11 @@ namespace TiltBrush
     
             var sliderParamNames = new List<string>();
             
+            // Set up generator UI to match preset
+
+            // Widgets must be visible when setting textures
+            ShowAllGeneratorControls();
+            
             switch (emd.GeneratorType)
             {
                 case GeneratorTypes.FileSystem:
@@ -846,23 +851,30 @@ namespace TiltBrush
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)subtypeID;
                     break;
             }
+            
             SetMainButtonVisibility();
             SetSliderConfiguration();
             setSlidersFromGeneratorParams(sliderParamNames);
+            
+            // Set Op UI to match preset
+            
+            // Widgets must be visible when setting textures
+            ShowAllOpControls();
+
             
             CurrentPolyhedra.Operators.Clear();
             
             // TODO This has some similarities to code in SaveLoadScript and PreviewPolyhedron
             foreach (var opDict in emd.Operations)
             {
-                HandleAddOpButton();
-                var newOp = CurrentPolyhedra.Operators.Last();
-                
-                newOp.disabled = Convert.ToBoolean(opDict["disabled"]);
-                
-                newOp.opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                newOp.amount = Convert.ToSingle(opDict["param1"]);
-                newOp.amount2 = Convert.ToSingle(opDict["param2"]);
+                var newOp = new PreviewPolyhedron.OpDefinition
+                    {
+                        opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]),
+                        disabled = Convert.ToBoolean(opDict["disabled"]),
+                        amount = Convert.ToSingle(opDict["param1"]),
+                        amount2 = Convert.ToSingle(opDict["param2"])
+                    };
+
                 if (opDict.ContainsKey("paramColor"))
                 {
                     var colorData = (opDict["paramColor"] as JArray);
@@ -888,9 +900,15 @@ namespace TiltBrush
                     newOp.filterParamInt = Convert.ToInt32(filterParamInt);
                     newOp.filterNot = Convert.ToBoolean(filterNot);
                 }
-                CurrentPolyhedra.Operators[CurrentPolyhedra.Operators.Count - 1] = newOp;
+                CurrentPolyhedra.Operators.Add(newOp);
+                AddOpButton();
             }
+            
+            RefreshOpSelectButtons();
             HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
+            
+            ShowAllGeneratorControls();
+
             CurrentPolyhedra.RebuildPoly();
         }
 
@@ -1058,11 +1076,18 @@ namespace TiltBrush
 
         public void HandleAddOpButton()
         {
-            Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
-            btnTr.gameObject.SetActive(true);
-            CurrentPolyhedra.Operators.Add(new PreviewPolyhedron.OpDefinition());
+            var newOp = new PreviewPolyhedron.OpDefinition();
+            AddOpButton();
+            CurrentPolyhedra.Operators.Add(newOp);
             HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
         }
+        
+        public void AddOpButton()
+        {
+            Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
+            btnTr.gameObject.SetActive(true);
+        }
+
 
         public void AddGuideForCurrentPolyhedron()
         {
@@ -1298,7 +1323,9 @@ namespace TiltBrush
                 btn.OpIndex = i;
                 string opName = op.opType.ToString();
                 btn.SetDescriptionText(LabelFormatter(opName));
-                btn.SetButtonTexture(GetButtonTexture(PolyhydraButtonTypes.OperatorType, opName));
+                var tex = GetButtonTexture(PolyhydraButtonTypes.OperatorType, opName);
+                btn.gameObject.SetActive(true);
+                btn.SetButtonTexture(tex);
 
                 btn.name = $"Select Op: {i}";
                 btn.ParentPanel = this;

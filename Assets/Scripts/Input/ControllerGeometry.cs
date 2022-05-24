@@ -1151,5 +1151,23 @@ namespace TiltBrush
                     break;
             }
         }
+        
+        public void ShowStrokeOption()
+        {
+            switch (Style)
+            {
+                case ControllerStyle.Vive:
+                case ControllerStyle.Wmr:
+                case ControllerStyle.LogitechPen:
+                    Materials.Assign(PadMesh, Materials.SelectionOptions);
+                    PadMesh.material.SetFloat("_Ratio", GetPadRatio(VrInput.Button04));
+                    break;
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                    Materials.Assign(Button01Mesh, Materials.SelectionOptions);
+                    Button01Mesh.material.SetFloat("_Ratio", GetPadRatio(VrInput.Button01));
+                    break;
+            }
+        }
     }
 } // namespace TiltBrush

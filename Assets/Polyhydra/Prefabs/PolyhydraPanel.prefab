@@ -918,7 +918,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8776391404174213349
 Transform:
   m_ObjectHideFlags: 0
@@ -1569,7 +1569,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &61235771753237257
 Transform:
   m_ObjectHideFlags: 0
@@ -4290,6 +4290,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 8776391404174213349}
     m_Modifications:
+    - target: {fileID: 230950493050001955, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.57600003
+      objectReference: {fileID: 0}
+    - target: {fileID: 230950493050001955, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.552
+      objectReference: {fileID: 0}
     - target: {fileID: 1018901167822759837, guid: 26fdb57e9f9e7df48be88591544ac963,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4460,6 +4470,26 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 5160650182222963834, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.39
+      objectReference: {fileID: 0}
+    - target: {fileID: 5160650182222963834, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.011
+      objectReference: {fileID: 0}
+    - target: {fileID: 5184217821460874205, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_AtlasTexture
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5184217821460874205, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_ToggleButton
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5184217821460874205, guid: 26fdb57e9f9e7df48be88591544ac963,
         type: 3}
       propertyPath: m_PopupOffset.y
@@ -4470,6 +4500,11 @@ PrefabInstance:
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 114000011608528800}
+    - target: {fileID: 6265357698794380385, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_margin.x
+      value: -0.2662186
+      objectReference: {fileID: 0}
     - target: {fileID: 6569944618809913988, guid: 26fdb57e9f9e7df48be88591544ac963,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -4504,6 +4539,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Mesh
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7971464937268612569, guid: 26fdb57e9f9e7df48be88591544ac963,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.974
       objectReference: {fileID: 0}
     - target: {fileID: 8105986616571016449, guid: 26fdb57e9f9e7df48be88591544ac963,
         type: 3}

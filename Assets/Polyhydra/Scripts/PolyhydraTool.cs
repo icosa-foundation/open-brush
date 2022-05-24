@@ -124,19 +124,13 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
             
-            
-            
             // TODO WIP... 
             if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 Debug.Log($"{LastIntersectedEditableModelWidget.name}");
                 AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
             }
-            
-            
-            
-            
-                
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
@@ -286,6 +280,19 @@ namespace TiltBrush
             LastIntersectedEditableModelWidget = editableModelWidget;
             m_ValidWidgetFoundThisFrame = widget != null;
             return m_ValidWidgetFoundThisFrame;
+        }
+        
+                
+        override public void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller == InputManager.ControllerName.Brush)
+            {
+                InputManager.Brush.Geometry.ShowStrokeOption();
+                if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
+                {
+                    // InputManager.Brush.Geometry.ShowStrokeOption();
+                }
+            }
         }
     }
 }
