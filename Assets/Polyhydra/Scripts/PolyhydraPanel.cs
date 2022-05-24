@@ -914,7 +914,7 @@ namespace TiltBrush
 
         void RenderToImageFile(string path, string filename)
         {
-            var cam = gameObject.GetComponentInChildren<Camera>(true);
+            var cam = CurrentPolyhedra.GetComponentInChildren<Camera>(true);
             cam.gameObject.SetActive(true);
             RenderTexture activeRenderTexture = RenderTexture.active;
             var tex = new RenderTexture(256, 256, 32);
