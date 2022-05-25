@@ -208,6 +208,9 @@ namespace TiltBrush
             {
                 case "commands":
 
+                    var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+                    host = host.Replace("127.0.0.1", "localhost");
+
                     if (request.Url.Query.Contains("raw"))
                     {
                         html = String.Join("\n", endpoints.Keys);
@@ -220,10 +223,10 @@ namespace TiltBrush
                     {
                         var commandList = ListApiCommandsAsStrings();
                         builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
-                        builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
+                        builder.AppendLine($"<p>To run commands a request to this url with http://{host}/api/v1?</p>");
                         builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
                         builder.AppendLine("<p>Separate multiple commands with &</p>");
-                        builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
+                        builder.AppendLine($"<p>Example: <a href='http://{host}/api/v1?brush.turn.y=45&brush.draw=1'>http://{host}/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
                         builder.AppendLine("<dl>");
                         foreach (var key in commandList.Keys)
                         {
@@ -233,7 +236,7 @@ namespace TiltBrush
                                 paramList = $"({paramList})";
                             }
                             builder.AppendLine($@"<dt><strong>{key}</strong> {paramList}
- <a href=""http://localhost:40074/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
+ <a href=""/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
 <dd>{commandList[key].Item2}<br><br></dd>");
                         }
                         builder.AppendLine("</dl>");

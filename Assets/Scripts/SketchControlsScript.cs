@@ -4913,15 +4913,15 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/help/commands");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/scripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/examplescripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.Null: break; // Intentionally blank.
                 default:
