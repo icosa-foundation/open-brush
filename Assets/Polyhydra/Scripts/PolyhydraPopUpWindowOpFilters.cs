@@ -88,7 +88,8 @@ namespace TiltBrush
                 case PreviewPolyhedron.AvailableFilters.EvenSided:
                     break;
                 case PreviewPolyhedron.AvailableFilters.Role:
-                case PreviewPolyhedron.AvailableFilters.Only:
+                case PreviewPolyhedron.AvailableFilters.OnlyNth:
+                case PreviewPolyhedron.AvailableFilters.FirstN:
                 case PreviewPolyhedron.AvailableFilters.LastN:
                     op.filterParamInt = 1;
                     break;
@@ -102,13 +103,10 @@ namespace TiltBrush
                 case PreviewPolyhedron.AvailableFilters.FacingUp:
                 case PreviewPolyhedron.AvailableFilters.FacingForward:
                 case PreviewPolyhedron.AvailableFilters.FacingRight:
-                case PreviewPolyhedron.AvailableFilters.FacingHorizontal:
                 case PreviewPolyhedron.AvailableFilters.FacingVertical:
                 case PreviewPolyhedron.AvailableFilters.PositionX:
                 case PreviewPolyhedron.AvailableFilters.PositionY:
                 case PreviewPolyhedron.AvailableFilters.PositionZ:
-                    op.filterParamFloat = 0;
-                    break;
                 case PreviewPolyhedron.AvailableFilters.Random:
                 case PreviewPolyhedron.AvailableFilters.DistanceFromCenter:
                     op.filterParamFloat = 0.5f;

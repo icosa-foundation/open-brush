@@ -73,15 +73,15 @@ public class PreviewPolyhedron : MonoBehaviour
         FacingUp,
         FacingForward,
         FacingRight,
-        FacingHorizontal,
         FacingVertical,
 
         // Role
         Role,
         
         // Index
-        Only,
+        OnlyNth,
         EveryNth,
+        FirstN,
         LastN,
         Random,
 
@@ -620,7 +620,7 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         switch (filterType)
         {
-            case AvailableFilters.Only:
+            case AvailableFilters.OnlyNth:
                 return Filter.OnlyNth(filterParamInt, filterNot);
             case AvailableFilters.All:
                 return filterNot ? Filter.None : Filter.All;
@@ -630,8 +630,6 @@ public class PreviewPolyhedron : MonoBehaviour
                 return Filter.Random(filterNot ? 1f - filterParamFloat : filterParamFloat);
             case AvailableFilters.Role:
                 return Filter.Role((Roles)filterParamInt, filterNot);
-            case AvailableFilters.FacingHorizontal:
-                return Filter.FacingDirection(Vector3.forward, filterParamFloat, includeOpposite: true, filterNot);
             case AvailableFilters.FacingVertical:
                 return Filter.FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true, filterNot);
             case AvailableFilters.FacingUp:
@@ -646,8 +644,10 @@ public class PreviewPolyhedron : MonoBehaviour
                 return filterNot ? Filter.EvenSided : Filter.OddSided;
             case AvailableFilters.EveryNth:
                 return Filter.EveryNth(filterParamInt, filterNot);
+            case AvailableFilters.FirstN:
+                return Filter.Range(filterParamInt, filterNot);
             case AvailableFilters.LastN:
-                return Filter.LastN(filterParamInt, filterNot);
+                return Filter.Range(-filterParamInt, filterNot);
             case AvailableFilters.PositionX:
                 return Filter.Position(Filter.PositionType.Center, Axis.X, filterParamFloat, 10f, not: filterNot);
             case AvailableFilters.PositionY:

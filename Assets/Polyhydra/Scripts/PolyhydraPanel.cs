@@ -1223,7 +1223,7 @@ namespace TiltBrush
                     SliderOpFilterParam.Max = 10;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
-                case PreviewPolyhedron.AvailableFilters.Only:
+                case PreviewPolyhedron.AvailableFilters.OnlyNth:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 0;
@@ -1237,6 +1237,7 @@ namespace TiltBrush
                     SliderOpFilterParam.Max = 32;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
+                case PreviewPolyhedron.AvailableFilters.FirstN:
                 case PreviewPolyhedron.AvailableFilters.LastN:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
@@ -1261,7 +1262,6 @@ namespace TiltBrush
                     SliderOpFilterParam.Max = 180f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
-                case PreviewPolyhedron.AvailableFilters.FacingHorizontal:
                 case PreviewPolyhedron.AvailableFilters.FacingVertical:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
