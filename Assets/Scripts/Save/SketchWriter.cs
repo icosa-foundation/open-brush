@@ -83,6 +83,10 @@ public static class SketchWriter {
   public struct AdjustedMemoryBrushStroke {
     public StrokeData strokeData;
     public StrokeFlags adjustedStrokeFlags;
+
+    // If the stroke was sculpted, its vertices are stored here.
+    // Null by default.
+    public List<Vector3> vertices; 
   }
 
   private const int REQUIRED_SKETCH_VERSION_MIN = 5;
@@ -128,11 +132,20 @@ public static class SketchWriter {
       AdjustedMemoryBrushStroke snapshot = new AdjustedMemoryBrushStroke();
       snapshot.strokeData = stroke.GetCopyForSaveThread();
       snapshot.adjustedStrokeFlags = stroke.m_Flags;
+      
       if (resetGroupContinue) {
         snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
         resetGroupContinue = false;
       }
       if (stroke.IsGeometryEnabled) {
+        // Save any sculpting modifications.
+        if (stroke.m_bWasSculpted)
+        {
+          int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
+          int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
+          //CTODO: I might have to save index values, but I think I can get away without it.
+          snapshot.vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(startIndex, endIndex);
+        }
         yield return snapshot;
       } else {
         // Effectively, if the lead stroke of group is inactive (erased), we promote
@@ -219,6 +232,19 @@ public static class SketchWriter {
           writer.UInt32(rControlPoint.m_TimestampMs);
         }
       }
+
+      // Sculpted geometry
+      if (copy.vertices != null && copy.vertices.Count > 0) {
+        // Write length of file and then save the entire geometry.
+        writer.Int32(copy.vertices.Count);
+
+        foreach (Vector3 vertex in copy.vertices) {
+          writer.Vec3(vertex);
+        }
+      } else {
+        // Just leave a zero to tell the reader to ignore.
+        writer.Int32(0);
+      }
     }
   }
 
@@ -245,10 +271,12 @@ public static class SketchWriter {
       }
     }
 #endif
-
-    var strokes = GetStrokes(bufferedStream, brushList, allowFastPath);
+    List<List<Vector3>> geometryData = new List<List<Vector3>>();
+    var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, geometryData);
     if (strokes == null) { return false; }
-
+    if (geometryData.Count > 0) { // if any sculpting modifications have been made
+      SketchMemoryScript.m_Instance.m_SculptedGeometryData = geometryData;
+    }
     // Check that the strokes are in timestamp order.
     uint headMs = uint.MinValue;
     foreach (var stroke in strokes) {
@@ -276,7 +304,7 @@ public static class SketchWriter {
   /// Parses a binary file into List of MemoryBrushStroke.
   /// Returns null on parse error.
   public static List<Stroke> GetStrokes(
-      Stream stream, Guid[] brushList, bool allowFastPath) {
+      Stream stream, Guid[] brushList, bool allowFastPath, List<List<Vector3>> geometryData) {
     var reader = new TiltBrush.SketchBinaryReader(stream);
 
     uint sentinel = reader.UInt32();
@@ -416,6 +444,24 @@ public static class SketchWriter {
           }
           stroke.m_ControlPoints[j] = rControlPoint;
         }
+      }
+      
+      // If any sculpting modifications were made, read geometry.
+      // CTODO: Might cause issues with save files that did not have any sculpting
+      if (geometryData != null) {
+        int modifiedVertLength = reader.Int32();
+
+        if (modifiedVertLength > 0) {
+          List<Vector3> verts = new List<Vector3>();
+          for (int _ = 0; _ < modifiedVertLength; _++) {
+            verts.Add(reader.Vec3());
+          }
+          geometryData.Add(verts);
+          stroke.m_bWasSculpted = true;
+        } else {
+          geometryData.Add(null);
+        }
+        //CTODO: this is kinda naive
       }
 
       // Deserialized strokes are expected in timestamp order, yielding aggregate complexity

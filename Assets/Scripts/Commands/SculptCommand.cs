@@ -41,7 +41,7 @@ namespace TiltBrush {
       
       m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices = vertices;
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
-      m_TargetBatchSubset.m_Stroke.InvalidateCopy(); //CTODO: not sure if this line is necessary.
+      // m_TargetBatchSubset.m_Stroke.InvalidateCopy(); //CTODO: not sure if this line is necessary.
       // m_TargetBatchSubset.m_Stroke.Uncreate();
       //m_TargetBatchSubset.m_Stroke.Recreate();
     }
@@ -51,9 +51,6 @@ namespace TiltBrush {
     }
 
     protected override void OnUndo() {
-      if (m_Initial) {
-        Debug.Log("Initial parent undone");
-      }
       ApplySculptModification(m_OldVerts);
     }
 
@@ -71,5 +68,6 @@ namespace TiltBrush {
       m_Children.Add(other);
       return true;
     }
+    //CTODO: need to implement OnDispose()?
 }
 } // namespace TiltBrush

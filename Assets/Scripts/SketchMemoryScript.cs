@@ -38,6 +38,7 @@ public class SketchMemoryScript : MonoBehaviour {
   public GameObject m_UndoBatchMesh;
   public bool m_SanityCheckStrokes = false;
 
+  public List<List<Vector3>> m_SculptedGeometryData; //CTODO: Maybe a different datastrcuture would work better?
   private int m_LastCheckedVertCount;
   private int m_MemoryWarningVertCount;
 
@@ -164,6 +165,7 @@ public class SketchMemoryScript : MonoBehaviour {
 
   public void SetLastOperationStackCount() {
     m_LastOperationStackCount = m_OperationStack.Count;
+    Debug.Log("Last operation stack count: " + m_LastOperationStackCount);
   }
 
   public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts) {
@@ -400,8 +402,6 @@ public class SketchMemoryScript : MonoBehaviour {
       StencilWidget stencil, float lineLength, int seed) {
     // NOTE: PointerScript calls ClearRedo() in batch case
 
-    Debug.Log("SketchMemoryScript::MemorizeBatchedBrtushStroke() called");
-
     Stroke rNewStroke = new Stroke();
     rNewStroke.m_Type = Stroke.Type.BatchedBrushStroke;
     rNewStroke.m_BatchSubset = subset;
@@ -434,8 +434,6 @@ public class SketchMemoryScript : MonoBehaviour {
       StrokeFlags strokeFlags,
       StencilWidget stencil, float lineLength) {
     ClearRedo();
-
-    Debug.Log("SketchMemoryScript::MemorizeBrtushStroke() called");
 
     Stroke rNewStroke = new Stroke();
     rNewStroke.m_Type = Stroke.Type.BrushStroke;
@@ -815,6 +813,27 @@ public class SketchMemoryScript : MonoBehaviour {
       m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
       App.Instance.CurrentSketchTime = savedSketchTime;
       m_ScenePlayback.Update();
+    }
+  }
+
+  /// If any strokes inside the file were sculpted, reinstate their sculpted
+  /// geometry, overriding any re-generated geometry.
+  // CTODO: This is abominable code.
+  public void ReinsertSculptedGeometry() {
+    if (m_SculptedGeometryData != null) {
+      int index = 0;
+      foreach (var stroke in m_MemoryList) { 
+        if (m_SculptedGeometryData[index] != null) {
+          int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
+          int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
+          
+          for (int i = startIndex; i < endIndex; i++) {
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SculptedGeometryData[index][i];
+          }
+          stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
+        }
+      }
+      m_SculptedGeometryData = null;
     }
   }
 

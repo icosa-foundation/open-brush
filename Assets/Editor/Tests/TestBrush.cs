@@ -109,7 +109,7 @@ namespace TiltBrush {
       using (var stream = file.GetReadStream(TiltFile.FN_SKETCH)) {
         var bufferedStream = new BufferedStream(stream, 4096);
         return SketchWriter.GetStrokes(
-            bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian);
+            bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian, null);
       }
     }
 

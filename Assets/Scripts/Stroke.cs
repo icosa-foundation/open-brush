@@ -51,6 +51,10 @@ public class Stroke : StrokeData {
   /// Used for the saving thread to serialize the sketch.
   private StrokeData m_CopyForSaveThread;
 
+  /// True if any sculpting modification was applied to this stroke.
+  /// Used for determining whether a stroke's geometry should be saved.
+  public bool m_bWasSculpted = false;
+
   /// The group this stroke is a part of. Cannot be null (as it is a struct).
   public SketchGroupTag Group {
     get => m_Group;

@@ -949,6 +949,8 @@ public class App : MonoBehaviour {
           bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
         }
         if (!bContinueDrawing) {
+          SketchMemoryScript.m_Instance.ReinsertSculptedGeometry();
+          
           FinishLoading();
           InputManager.m_Instance.TriggerHapticsPulse(
             InputManager.ControllerName.Brush, 4, 0.15f, 0.1f);

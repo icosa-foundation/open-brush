@@ -57,14 +57,14 @@ namespace TiltBrush
       // Metadata of target stroke
       var stroke = rGroup.m_Stroke;
       Batch parentBatch = rGroup.m_ParentBatch;
-      int firstIdx = rGroup.m_StartVertIndex;
-      int lastIdx = firstIdx + rGroup.m_VertLength;
+      int startIndex = rGroup.m_StartVertIndex;
+      int endIndex = startIndex + rGroup.m_VertLength;
 
       var newVertices = new List<Vector3>(parentBatch.m_Geometry.m_Vertices);
       // Tool position adjusted by canvas transformations
       var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
-      for (int i = firstIdx; i < lastIdx; i++)
+      for (int i = startIndex; i < endIndex; i++)
       {
 
           // Distance from vertex to pointer
@@ -76,6 +76,8 @@ namespace TiltBrush
               Vector3 direction = (newVertices[i] - toolPos).normalized;
               Vector3 newVert = newVertices[i] + direction * 0.2f;
               newVertices[i] = newVert;
+              
+              stroke.m_bWasSculpted = true;
               PlayModifyStrokeSound();
               InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
           }
