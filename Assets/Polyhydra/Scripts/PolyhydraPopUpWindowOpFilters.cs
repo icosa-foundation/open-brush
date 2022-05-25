@@ -31,7 +31,7 @@ namespace TiltBrush
 
         protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(PreviewPolyhedron.AvailableFilters)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+            return Enum.GetNames(typeof(FilterTypes)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
 
         protected override void CreateButtons()
@@ -78,37 +78,37 @@ namespace TiltBrush
         {
             var ops = ParentPanel.CurrentPolyhedra.Operators;
             var op = ops[ParentPanel.CurrentActiveOpIndex];
-            op.filterType = (PreviewPolyhedron.AvailableFilters)Enum.Parse(typeof(PreviewPolyhedron.AvailableFilters), action);
+            op.filterType = (FilterTypes)Enum.Parse(typeof(FilterTypes), action);
             ops[ParentPanel.CurrentActiveOpIndex] = op;
 
             switch (op.filterType)
             {
-                case PreviewPolyhedron.AvailableFilters.All:
-                case PreviewPolyhedron.AvailableFilters.Inner:
-                case PreviewPolyhedron.AvailableFilters.EvenSided:
+                case FilterTypes.All:
+                case FilterTypes.Inner:
+                case FilterTypes.EvenSided:
                     break;
-                case PreviewPolyhedron.AvailableFilters.Role:
-                case PreviewPolyhedron.AvailableFilters.OnlyNth:
-                case PreviewPolyhedron.AvailableFilters.FirstN:
-                case PreviewPolyhedron.AvailableFilters.LastN:
+                case FilterTypes.Role:
+                case FilterTypes.OnlyNth:
+                case FilterTypes.FirstN:
+                case FilterTypes.LastN:
                     op.filterParamInt = 1;
                     break;
-                case PreviewPolyhedron.AvailableFilters.EveryNth:
+                case FilterTypes.EveryNth:
                     op.filterParamInt = 2;
                     break;
-                case PreviewPolyhedron.AvailableFilters.NSided:
+                case FilterTypes.NSided:
                     op.filterParamInt = 3;
                     break;
 
-                case PreviewPolyhedron.AvailableFilters.FacingUp:
-                case PreviewPolyhedron.AvailableFilters.FacingForward:
-                case PreviewPolyhedron.AvailableFilters.FacingRight:
-                case PreviewPolyhedron.AvailableFilters.FacingVertical:
-                case PreviewPolyhedron.AvailableFilters.PositionX:
-                case PreviewPolyhedron.AvailableFilters.PositionY:
-                case PreviewPolyhedron.AvailableFilters.PositionZ:
-                case PreviewPolyhedron.AvailableFilters.Random:
-                case PreviewPolyhedron.AvailableFilters.DistanceFromCenter:
+                case FilterTypes.FacingUp:
+                case FilterTypes.FacingForward:
+                case FilterTypes.FacingRight:
+                case FilterTypes.FacingVertical:
+                case FilterTypes.PositionX:
+                case FilterTypes.PositionY:
+                case FilterTypes.PositionZ:
+                case FilterTypes.Random:
+                case FilterTypes.DistanceFromCenter:
                     op.filterParamFloat = 0.5f;
                     break;
             }

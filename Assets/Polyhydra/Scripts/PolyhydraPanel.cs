@@ -895,7 +895,7 @@ namespace TiltBrush
                     opDict.TryGetValue("filterParamFloat", out filterParamFloat);
                     opDict.TryGetValue("filterParamInt", out filterParamInt);
                     opDict.TryGetValue("filterNot", out filterNot);
-                    newOp.filterType = (PreviewPolyhedron.AvailableFilters)Convert.ToInt32(filterType);
+                    newOp.filterType = (FilterTypes)Convert.ToInt32(filterType);
                     newOp.filterParamFloat = Convert.ToSingle(filterParamFloat);
                     newOp.filterParamInt = Convert.ToInt32(filterParamInt);
                     newOp.filterNot = Convert.ToBoolean(filterNot);
@@ -1211,41 +1211,41 @@ namespace TiltBrush
             
             switch (op.filterType)
             {
-                case PreviewPolyhedron.AvailableFilters.All:
-                case PreviewPolyhedron.AvailableFilters.Inner:
-                case PreviewPolyhedron.AvailableFilters.EvenSided:
+                case FilterTypes.All:
+                case FilterTypes.Inner:
+                case FilterTypes.EvenSided:
                     SliderOpFilterParam.gameObject.SetActive(false);
                     break;
-                case PreviewPolyhedron.AvailableFilters.Role:
+                case FilterTypes.Role:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 0;
                     SliderOpFilterParam.Max = 10;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
-                case PreviewPolyhedron.AvailableFilters.OnlyNth:
+                case FilterTypes.OnlyNth:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 0;
                     SliderOpFilterParam.Max = 100;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
-                case PreviewPolyhedron.AvailableFilters.EveryNth:
+                case FilterTypes.EveryNth:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 1;
                     SliderOpFilterParam.Max = 32;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
-                case PreviewPolyhedron.AvailableFilters.FirstN:
-                case PreviewPolyhedron.AvailableFilters.LastN:
+                case FilterTypes.FirstN:
+                case FilterTypes.LastN:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 1;
                     SliderOpFilterParam.Max = 100;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
-                case PreviewPolyhedron.AvailableFilters.NSided:
+                case FilterTypes.NSided:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
                     SliderOpFilterParam.Min = 3;
@@ -1253,39 +1253,39 @@ namespace TiltBrush
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 
-                case PreviewPolyhedron.AvailableFilters.FacingUp:
-                case PreviewPolyhedron.AvailableFilters.FacingForward:
-                case PreviewPolyhedron.AvailableFilters.FacingRight:
+                case FilterTypes.FacingUp:
+                case FilterTypes.FacingForward:
+                case FilterTypes.FacingRight:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = 0f;
                     SliderOpFilterParam.Max = 180f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
-                case PreviewPolyhedron.AvailableFilters.FacingVertical:
+                case FilterTypes.FacingVertical:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = 0f;
                     SliderOpFilterParam.Max = 90f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
-                case PreviewPolyhedron.AvailableFilters.Random:
+                case FilterTypes.Random:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = 0f;
                     SliderOpFilterParam.Max = 1f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
-                case PreviewPolyhedron.AvailableFilters.PositionX:
-                case PreviewPolyhedron.AvailableFilters.PositionY:
-                case PreviewPolyhedron.AvailableFilters.PositionZ:
+                case FilterTypes.PositionX:
+                case FilterTypes.PositionY:
+                case FilterTypes.PositionZ:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = -5f;
                     SliderOpFilterParam.Max = 5f;
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
-                case PreviewPolyhedron.AvailableFilters.DistanceFromCenter:
+                case FilterTypes.DistanceFromCenter:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
                     SliderOpFilterParam.Min = 0f;

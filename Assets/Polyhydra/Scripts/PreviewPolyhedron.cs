@@ -61,40 +61,6 @@ public class PreviewPolyhedron : MonoBehaviour
     private PolyMesh.MeshData m_MeshData;
     private bool NeedsRebuild;
 
-    public enum AvailableFilters
-    {
-        All,
-
-        // Sides
-        NSided,
-        EvenSided,
-
-        // Direction
-        FacingUp,
-        FacingForward,
-        FacingRight,
-        FacingVertical,
-
-        // Role
-        Role,
-        
-        // Index
-        OnlyNth,
-        EveryNth,
-        FirstN,
-        LastN,
-        Random,
-
-        // Edges
-        Inner,
-
-        // Distance or position
-        PositionX,
-        PositionY,
-        PositionZ,
-        DistanceFromCenter,
-    }
-
     private void Awake()
     {
         EditableModelManager.m_Instance.m_PreviewPolyhedron = this;
@@ -167,7 +133,7 @@ public class PreviewPolyhedron : MonoBehaviour
         public float amount;
         public float amount2;
         public bool disabled;
-        public AvailableFilters filterType;
+        public FilterTypes filterType;
         public float filterParamFloat;
         public int filterParamInt;
         public Color paramColor;
@@ -195,8 +161,8 @@ public class PreviewPolyhedron : MonoBehaviour
             opDict.TryGetValue("filterParamInt", out filterParamInt);
             opDict.TryGetValue("filterNot", out filterNot);
             
-            return GetFilter(
-                (AvailableFilters)Convert.ToInt32(filterType),
+            return Filter.GetFilter(
+                (FilterTypes)Convert.ToInt32(filterType),
                 Convert.ToSingle(filterParamFloat),
                 Convert.ToInt32(filterParamInt),
                 Convert.ToBoolean(filterNot)
@@ -232,8 +198,8 @@ public class PreviewPolyhedron : MonoBehaviour
         public OpDefinition ChangeFilter(int val)
         {
             filterType += val;
-            filterType = (AvailableFilters)Mathf.Clamp(
-                (int)filterType, 0, Enum.GetNames(typeof(AvailableFilters)).Length - 1
+            filterType = (FilterTypes)Mathf.Clamp(
+                (int)filterType, 0, Enum.GetNames(typeof(FilterTypes)).Length - 1
             );
             return this;
         }
@@ -461,7 +427,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         };
                         // Intentionally different to radial scaling.
                         // Set so side lengths will match for any polygon
-                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
+                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));
                         break;
                     case ShapeTypes.Star:
                         Param1Int = Mathf.Max(Param1Int, 3);
@@ -603,7 +569,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
-        var filter = GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
+        var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
         conway = conway.AppyOperation(
             op.opType,
             new OpParams(
@@ -615,49 +581,5 @@ public class PreviewPolyhedron : MonoBehaviour
         );
         return conway;
     }
-    
-    private static Filter GetFilter(AvailableFilters filterType, float filterParamFloat, int filterParamInt, bool filterNot)
-    {
-        switch (filterType)
-        {
-            case AvailableFilters.OnlyNth:
-                return Filter.OnlyNth(filterParamInt, filterNot);
-            case AvailableFilters.All:
-                return filterNot ? Filter.None : Filter.All;
-            case AvailableFilters.Inner:
-                return filterNot ? Filter.Outer : Filter.Inner;
-            case AvailableFilters.Random:
-                return Filter.Random(filterNot ? 1f - filterParamFloat : filterParamFloat);
-            case AvailableFilters.Role:
-                return Filter.Role((Roles)filterParamInt, filterNot);
-            case AvailableFilters.FacingVertical:
-                return Filter.FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true, filterNot);
-            case AvailableFilters.FacingUp:
-                return Filter.FacingDirection(Vector3.up, filterParamFloat, false, filterNot);
-            case AvailableFilters.FacingForward:
-                return Filter.FacingDirection(Vector3.forward, filterParamFloat, false, filterNot);
-            case AvailableFilters.FacingRight:
-                return Filter.FacingDirection(Vector3.right, filterParamFloat, false, filterNot);
-            case AvailableFilters.NSided:
-                return Filter.NumberOfSides(filterParamInt, filterNot);
-            case AvailableFilters.EvenSided:
-                return filterNot ? Filter.EvenSided : Filter.OddSided;
-            case AvailableFilters.EveryNth:
-                return Filter.EveryNth(filterParamInt, filterNot);
-            case AvailableFilters.FirstN:
-                return Filter.Range(filterParamInt, filterNot);
-            case AvailableFilters.LastN:
-                return Filter.Range(-filterParamInt, filterNot);
-            case AvailableFilters.PositionX:
-                return Filter.Position(Filter.PositionType.Center, Axis.X, filterParamFloat, 10f, not: filterNot);
-            case AvailableFilters.PositionY:
-                return Filter.Position(Filter.PositionType.Center, Axis.Y, filterParamFloat, 10f, not: filterNot);
-            case AvailableFilters.PositionZ:
-                return Filter.Position(Filter.PositionType.Center, Axis.Z, filterParamFloat, 10f, not: filterNot);
-            case AvailableFilters.DistanceFromCenter:
-                return Filter.RadialDistance(0, filterParamFloat, not: filterNot);
-            default:
-                return Filter.All;
-        }
-    }
+
 }
