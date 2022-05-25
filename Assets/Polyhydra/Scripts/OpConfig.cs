@@ -82,7 +82,7 @@ public static class OpConfigs
 			new OpConfig
 			{
 				amountDefault = 0.5f,
-				amountMin = -2f, amountMax = 2f, amountSafeMin = 0.0001f, amountSafeMax = .999f,
+				amountMin = -2f, amountMax = 2f, amountSafeMin = 0.001f, amountSafeMax = .999f,
 				matrix = new [,]{{0,2,0},{0,3,0},{1,0,1}}
 			}
 		},
