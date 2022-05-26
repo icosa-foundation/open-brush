@@ -92,6 +92,13 @@ public class Batch : MonoBehaviour {
     UpdateMesh();
   }
 
+  //CTODO: doesn't work. remove.
+  public void ForceRecalculateNormals()
+  {
+    Debug.Log("Recalculating normals");
+    m_MeshFilter.mesh.RecalculateNormals();
+  }
+
   void Init(BatchPool parentPool, Bounds bounds, ushort batchId) {
     BatchId = batchId;
     m_ParentPool = parentPool;

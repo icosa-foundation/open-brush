@@ -142,9 +142,10 @@ public static class SketchWriter {
         if (stroke.m_bWasSculpted)
         {
           int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
-          int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
+          int count = stroke.m_BatchSubset.m_VertLength;
           //CTODO: I might have to save index values, but I think I can get away without it.
-          snapshot.vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(startIndex, endIndex);
+          // Debug.Log("Actual length: " + stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices + " Range: " + startIndex + ":" + "end)
+          snapshot.vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(startIndex, count);
         }
         yield return snapshot;
       } else {
@@ -235,7 +236,7 @@ public static class SketchWriter {
 
       // Sculpted geometry
       if (copy.vertices != null && copy.vertices.Count > 0) {
-        // Write length of file and then save the entire geometry.
+        // Write the length of the batch subset then save all the vertices.
         writer.Int32(copy.vertices.Count);
 
         foreach (Vector3 vertex in copy.vertices) {
@@ -275,6 +276,7 @@ public static class SketchWriter {
     var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, geometryData);
     if (strokes == null) { return false; }
     if (geometryData.Count > 0) { // if any sculpting modifications have been made
+      Debug.Log("Read " + geometryData.Count + " sculpted strokes");
       SketchMemoryScript.m_Instance.m_SculptedGeometryData = geometryData;
     }
     // Check that the strokes are in timestamp order.
@@ -447,7 +449,7 @@ public static class SketchWriter {
       }
       
       // If any sculpting modifications were made, read geometry.
-      // CTODO: Might cause issues with save files that did not have any sculpting
+      // CTODO: Causes issues with save files that did not have any sculpting
       if (geometryData != null) {
         int modifiedVertLength = reader.Int32();
 

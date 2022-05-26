@@ -291,7 +291,6 @@ public class SketchMemoryScript : MonoBehaviour {
   }
 
   public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false) {
-    Debug.Log("SketchMemoryScript::PerformAndRecordCommand() executed");
     bool discardCommand = discardIfNotMerged;
     BaseCommand delta = command;
     ClearRedo();
@@ -497,6 +496,7 @@ public class SketchMemoryScript : MonoBehaviour {
       Color newColor = recolor ? PointerManager.m_Instance.PointerColor : stroke.m_Color;
       Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
       new RepaintStrokeCommand(stroke, newColor, newGuid, m_RepaintStrokeParent);
+      //CTODO: use m_SculptedGeometryData to quickly save the geometry and reinsert it after repainting.
       return true;
     }
     return false;
@@ -826,12 +826,19 @@ public class SketchMemoryScript : MonoBehaviour {
         if (m_SculptedGeometryData[index] != null) {
           int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
+
+          if(m_SculptedGeometryData[index].Count != stroke.m_BatchSubset.m_VertLength)
+          {
+            Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
+            continue;
+          }
           
           for (int i = startIndex; i < endIndex; i++) {
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SculptedGeometryData[index][i];
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SculptedGeometryData[index][i - startIndex];
           }
           stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
         }
+        index++;
       }
       m_SculptedGeometryData = null;
     }
