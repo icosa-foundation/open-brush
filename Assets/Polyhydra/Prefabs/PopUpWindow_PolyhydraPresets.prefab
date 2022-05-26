@@ -419,8 +419,6 @@ MonoBehaviour:
   m_ColorTransitionDuration: 0
   ButtonPrefab: {fileID: 7630606763700834929, guid: 56c1524891cb7c44fb711233648ba9ff,
     type: 3}
-  xSpacing: 2.7
-  ySpacing: 0.7
 --- !u!114 &114242525141314656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -505,6 +503,11 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
+    - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: Next Page
+      objectReference: {fileID: 0}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
@@ -615,6 +618,11 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: f74f6eac3e3e3c640b1a343ec46ba2dd, type: 3}
+    - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: Previous Page
+      objectReference: {fileID: 0}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size

@@ -56,9 +56,6 @@ namespace TiltBrush
 
                 rButton.transform.localScale = Vector3.one;
 
-                Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
-                // rButtonRenderer.material.mainTexture = GetButtonTexture(buttonIndex);
-
                 PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
                 rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonLabels[buttonIndex];
@@ -68,7 +65,7 @@ namespace TiltBrush
                 _buttons.Add(rButton);
             }
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.FilterType, action);
@@ -126,6 +123,7 @@ namespace TiltBrush
                 CreateButtons();
             }
         }
+        
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

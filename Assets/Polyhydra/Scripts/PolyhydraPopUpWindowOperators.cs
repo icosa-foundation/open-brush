@@ -24,13 +24,11 @@ namespace TiltBrush
 
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
-
-
         protected override List<string> GetButtonList()
         {
             return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.OperatorType, action);
@@ -50,6 +48,7 @@ namespace TiltBrush
                 CreateButtons();
             }
         }
+        
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

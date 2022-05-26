@@ -16,8 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Polyhydra.Core;
-using TMPro;
 using UnityEngine;
 
 
@@ -26,18 +24,20 @@ namespace TiltBrush
 
     public class PolyhydraPopUpWindowPresets : PolyhydraPopUpWindowBase
     {
-        protected override List<string> GetButtonList()
+
+        private FileInfo[] GetDirectoryListing()
         {
             var dirInfo = new DirectoryInfo(ParentPanel.m_PresetsPath);
-            FileInfo[] AllFileInfo = dirInfo.GetFiles("*.json");
-            return AllFileInfo.Select(f => f.Name.Replace(".json", "")).ToList();
-        }
-
-        public override void HandleButtonPress(string presetName)
-        {
-            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.m_PresetsPath, $"{presetName}.json"));
+            return dirInfo.GetFiles("*.json");
         }
         
+        protected override List<string> GetButtonList()
+        {
+            FileInfo[] AllFileInfo = GetDirectoryListing();
+            return AllFileInfo.Select(f => f.Name.Replace(".json", ""))
+                .Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+        }
+
         public override Texture2D GetButtonTexture(string presetName)
         {
             presetName = $"{presetName}.png";
@@ -50,9 +50,14 @@ namespace TiltBrush
             return tex;
         }
 
+        public override void HandleButtonPress(string presetName)
+        {
+            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.m_PresetsPath, $"{presetName}.json"));
+        }
+
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(PolyMesh.Operation)).Length)
+            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length);
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();
