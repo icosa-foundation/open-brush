@@ -768,7 +768,14 @@ namespace TiltBrush
         {
             Operations = operations;
         }
-        
+
+        public EditableModelDefinition(GeneratorTypes generatorType, Dictionary<string, object> generatorParameters, List<Dictionary<string, object>> operations)
+        {
+            GeneratorType = generatorType;
+            GeneratorParameters = generatorParameters;
+            Operations = operations;
+        }
+
         public Color[] Colors { get; }
         public ColorMethods ColorMethod { get; }
         public GeneratorTypes GeneratorType { get; }
