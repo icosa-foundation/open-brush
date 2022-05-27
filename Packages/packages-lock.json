@@ -7,13 +7,12 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
+      "version": "file:../../polyhydra-core/Packages/Polyhydra",
       "depth": 0,
-      "source": "git",
+      "source": "local",
       "dependencies": {
         "com.nition.unity-octree": "0.0.1-preview"
-      },
-      "hash": "3bc3d9896e0d896b3c404074036efc5f34d01f32"
+      }
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
@@ -172,13 +171,6 @@
     },
     "com.unity.xr.oculus.standalone": {
       "version": "2.38.4",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.xr.openvr.standalone": {
-      "version": "2.0.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {},

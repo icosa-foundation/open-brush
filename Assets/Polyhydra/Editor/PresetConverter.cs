@@ -412,34 +412,44 @@ namespace TiltBrush
                                 break;
                             case "FacingUp":
                                 newOp["filterType"] = FilterTypes.FacingUp;
+                                newOp["filterParamFloat"] = 90;
                                 break;
                             case "FacingStraightUp":
                                 newOp["filterType"] = FilterTypes.FacingUp;
+                                newOp["filterParamFloat"] = 1;
                                 break;
                             case "FacingDown":
                                 newOp["filterType"] = FilterTypes.FacingUp;
+                                newOp["filterParamFloat"] = 90;
                                 newOp["filterNot"] =  true;
                                 break;
                             case "FacingStraightDown":
                                 newOp["filterType"] = FilterTypes.FacingUp;
+                                newOp["filterParamFloat"] = 179;
                                 newOp["filterNot"] =  true;
                                 break;
                             case "FacingForward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
+                                newOp["filterParamFloat"] = 90;
                                 break;
                             case "FacingBackward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
+                                newOp["filterParamFloat"] = 90;
                                 newOp["filterNot"] =  true;
                                 break;
                             case "FacingStraightForward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
+                                newOp["filterParamFloat"] = 90;
                                 break;
                             case "FacingStraightBackward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
+                                newOp["filterParamFloat"] = 90;
                                 newOp["filterNot"] =  true;
                                 break;
                             case "FacingLevel":
                                 newOp["filterType"] = FilterTypes.FacingVertical;
+                                newOp["filterParamFloat"] = 45;
+                                newOp["filterNot"] =  true;
                                 break;
                             case "FacingCenter":
                                 break;
@@ -463,10 +473,10 @@ namespace TiltBrush
                                 newOp["filterType"] = FilterTypes.Role;
                                 newOp["filterParamInt"] = Roles.NewAlt;
                                 break;
-                            // case "AllNew":
-                            //     newOp["filterType"] = FilterTypes.Role;
-                            //     sdfsdfs;
-                            //     break;
+                            case "AllNew":
+                                newOp["filterType"] = FilterTypes.Role;
+                                newOp["filterParamInt"] = Roles.New;
+                                break;
                             case "Odd":
                                 newOp["filterType"] = FilterTypes.OnlyNth;
                                 newOp["filterParamInt"] = 2;
