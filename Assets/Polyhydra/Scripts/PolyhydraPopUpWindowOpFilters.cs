@@ -117,7 +117,7 @@ namespace TiltBrush
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(PolyMesh.Operation)).Length)
+            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(FilterTypes)).Length)
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();

@@ -24,9 +24,28 @@ namespace TiltBrush
 
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
+        private HashSet<string> _disabledOps;
+
+        private void Awake()
+        {
+            _disabledOps = new HashSet<string>
+            {
+                "Identity", "Weld", "RemoveTag", "VertexStellate"
+            };
+        }
+        
         protected override List<string> GetButtonList()
         {
-            return Enum.GetNames(typeof(PolyMesh.Operation)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+            return GetValidOps()
+                .Skip(FirstButtonIndex)
+                .Take(ButtonsPerPage)
+                .ToList();
+        }
+        
+        private IEnumerable<string> GetValidOps()
+        {
+            return Enum.GetNames(typeof(PolyMesh.Operation))
+                .Where(x => !_disabledOps.Contains(x));
         }
 
         public override Texture2D GetButtonTexture(string action)
@@ -36,13 +55,14 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, action);
+            PolyhydraPanel.FriendlyOpLabels.TryGetValue(action, out string friendlyLabel);
+            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, action, friendlyLabel);
             ParentPanel.ChangeCurrentOpType(action);
         }
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < Enum.GetNames(typeof(PolyMesh.Operation)).Length)
+            if (FirstButtonIndex + ButtonsPerPage < GetValidOps().Count())
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();

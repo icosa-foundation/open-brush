@@ -42,7 +42,7 @@ namespace TiltBrush
         FilterType,
         Preset
     }
-
+    
     public class PolyhydraPanel : BasePanel
     {
         [NonSerialized] public PreviewPolyhedron CurrentPolyhedra;
@@ -101,6 +101,13 @@ namespace TiltBrush
             Grids,
             Various
         }
+        
+        public static Dictionary<string, string> FriendlyOpLabels = new Dictionary<string, string>
+        {
+            {"AddTag", "Set Face Color"},
+            {"RemoveTag", "Remove Face Color"},
+            {"ClearTags", "Clear All Face Colors"},
+        };
 
         private enum OtherSolidsCategories
         {
@@ -671,41 +678,43 @@ namespace TiltBrush
             return null;
         }
         
-        public void SetButtonTextAndIcon(PolyhydraButtonTypes buttonType, string label)
+        public void SetButtonTextAndIcon(PolyhydraButtonTypes buttonType, string label, string friendlyLabel="")
         {
+            if (friendlyLabel=="" || friendlyLabel==null) friendlyLabel = label;
+            
             switch (buttonType)
             {
                 case PolyhydraButtonTypes.MainCategory:
                     ButtonMainCategory.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonMainCategory.SetDescriptionText($"Category: {LabelFormatter(label)}");
+                    ButtonMainCategory.SetDescriptionText($"Category: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.UniformType:
                     ButtonUniformType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonUniformType.SetDescriptionText($"Type: {LabelFormatter(label)}");
+                    ButtonUniformType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.RadialType:
                     ButtonRadialType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonRadialType.SetDescriptionText($"Type: {LabelFormatter(label)}");
+                    ButtonRadialType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.GridType:
                     ButtonGridType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonGridType.SetDescriptionText($"Grid Type: {LabelFormatter(label).Replace("_", "")}");
+                    ButtonGridType.SetDescriptionText($"Grid Type: {LabelFormatter(friendlyLabel).Replace("_", "")}");
                     break;
                 case PolyhydraButtonTypes.OtherSolidsType:
                     ButtonOtherSolidsType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOtherSolidsType.SetDescriptionText($"Type: {LabelFormatter(label)}");
+                    ButtonOtherSolidsType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.GridShape:
                     ButtonGridShape.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonGridShape.SetDescriptionText($"Grid Shape: {LabelFormatter(label)}");
+                    ButtonGridShape.SetDescriptionText($"Grid Shape: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.OperatorType:
                     ButtonOpType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOpType.SetDescriptionText($"Operation: {LabelFormatter(label)}");
+                    ButtonOpType.SetDescriptionText($"Operation: {LabelFormatter(friendlyLabel)}");
                     break;
                 case PolyhydraButtonTypes.FilterType:
                     ButtonOpFilterType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOpFilterType.SetDescriptionText($"Filter: {LabelFormatter(label)}");
+                    ButtonOpFilterType.SetDescriptionText($"Filter: {LabelFormatter(friendlyLabel)}");
                     break;
             }
         }
@@ -1342,7 +1351,8 @@ namespace TiltBrush
                     OperatorSelectPopupTools.localScale = Vector3.one * 0.2f;
                     ToolBtnPrev.gameObject.SetActive(i > 0);
                     ToolBtnNext.gameObject.SetActive(i < CurrentPolyhedra.Operators.Count - 1);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, opName);
+                    FriendlyOpLabels.TryGetValue(opName, out string friendlyLabel);
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, opName, friendlyLabel);
                 }
                 
             }
