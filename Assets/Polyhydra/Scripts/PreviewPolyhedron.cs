@@ -187,14 +187,7 @@ public class PreviewPolyhedron : MonoBehaviour
             amount2 += val;
             return this;
         }
-        public OpDefinition ChangeOpType(int val)
-        {
-            opType += val;
-            opType = (PolyMesh.Operation)Mathf.Clamp(
-                (int)opType, 1, Enum.GetNames(typeof(PolyMesh.Operation)).Length - 1
-            );
-            return this;
-        }
+       
         public OpDefinition ChangeFilter(int val)
         {
             filterType += val;
