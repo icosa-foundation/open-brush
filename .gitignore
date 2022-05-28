@@ -11,6 +11,7 @@
 /Support/TiltBrush.com/
 /TiltBrushProfile*
 /DevOptions.json
+/UserSettings
 
 *.pyc
 .DS_Store
@@ -76,8 +77,12 @@
 /Requests
 
 # TextMesh Pro from Unity
-/Assets/TextMesh\ Pro
+/Assets/TextMesh\ Pro/
 /Assets/TextMesh\ Pro.meta
+/Assets/Samples/
+/Assets/Samples.meta
+/Assets/StreamingAssets/
+/Assets/StreamingAssets.meta
 
 # Google process
 .gitbugtraq

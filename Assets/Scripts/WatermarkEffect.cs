@@ -18,7 +18,7 @@ namespace TiltBrush
 {
 
     [ExecuteInEditMode]
-    [AddComponentMenu("Tilt/Watermark")]
+    [AddComponentMenu("Open Brush/Watermark")]
     public class WatermarkEffect : MonoBehaviour
     {
         /// If you use the default shader, this should have pre-multiplied alpha

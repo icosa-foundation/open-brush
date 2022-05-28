@@ -158,8 +158,7 @@ namespace TiltBrush
                 }
 
                 // Resize all particles.
-                ParticleSystem.Particle[] aParticles =
-                    new ParticleSystem.Particle[m_Notification.main.maxParticles];
+                ParticleSystem.Particle[] aParticles = new ParticleSystem.Particle[m_Notification.main.maxParticles];
                 int iNumParticles = m_Notification.GetParticles(aParticles);
                 for (int i = 0; i < iNumParticles; ++i)
                 {

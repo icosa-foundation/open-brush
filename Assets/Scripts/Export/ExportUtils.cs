@@ -296,11 +296,11 @@ namespace TiltBrush
                 }
             }
         }
-        /// The current exportable SceneState of Tilt Brush.
+        /// The current exportable SceneState of Open Brush.
         public class SceneStatePayload
         {
             // Metadata.
-            public string generator = "Tilt Brush {0}.{1}";
+            public string generator = "Open Brush {0}.{1}";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
 
             // Space Bases.

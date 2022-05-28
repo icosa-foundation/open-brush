@@ -183,14 +183,11 @@ namespace TiltBrush
 
         public bool PadEnabled { get; set; }
 
-        public BaseControllerBehavior Behavior { get { return m_Behavior; } }
+        public BaseControllerBehavior Behavior { get => m_Behavior; }
 
-        public InputManager.ControllerName ControllerName { get { return m_ControllerName; } }
+        public InputManager.ControllerName ControllerName { get => m_ControllerName; }
 
-        public ControllerStyle Style
-        {
-            get { return m_ControllerStyle; }
-        }
+        public ControllerStyle Style { get => m_ControllerStyle; }
 
         // Style is meant to be read-only and immutable, but there is currently one situation
         // that requires it to be writable. TODO: remove when possible?
@@ -205,8 +202,7 @@ namespace TiltBrush
                 // and "initializing steam vr". In all other cases, m_ControllerStyle is expected
                 // to be set properly in the prefab. Perhaps we can remove this last mutable case
                 // and detect the initializing case differently.
-                else if (m_ControllerStyle == ControllerStyle.None &&
-                    value == ControllerStyle.InitializingSteamVR)
+                else if (m_ControllerStyle == ControllerStyle.None && value == ControllerStyle.InitializingUnityXR)
                 {
                     /* no warning */
                 }
@@ -221,15 +217,12 @@ namespace TiltBrush
         }
 
         /// Returns null if the ControllerName is invalid, or the requested controller does not exist.
-        public ControllerInfo ControllerInfo { get { return m_Behavior.ControllerInfo; } }
+        public ControllerInfo ControllerInfo { get => m_Behavior.ControllerInfo; }
 
         private bool EmptyGeometry
         {
-            get
-            {
-                return (m_ControllerStyle == ControllerStyle.None ||
-                    m_ControllerStyle == ControllerStyle.InitializingSteamVR);
-            }
+            get => m_ControllerStyle == ControllerStyle.None
+                || m_ControllerStyle == ControllerStyle.InitializingUnityXR;
         }
 
         // -------------------------------------------------------------------------------------------- //

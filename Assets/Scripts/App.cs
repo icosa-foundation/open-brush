@@ -30,7 +30,11 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+#endif
+
+#if !UNITY_2020_3_OR_NEWER
+xxx "This is the minimal Unity supported by Open Brush" xxx
 #endif
 
 [assembly: InternalsVisibleTo("Assembly-CSharp-Editor")]
@@ -47,10 +51,6 @@ namespace TiltBrush
 
         // This is the name of the app, as displayed to the users running it.
         public const string kAppDisplayName = "Open Brush";
-        // The vendor name - used for naming android builds - shouldn't have spaces.
-        public const string kVendorName = "Icosa";
-        // The vendor name - used for the company name in builds and fbx output. Can have spaces.
-        public const string kDisplayVendorName = "Icosa";
         // This is the App name used when speaking to Google services
         public const string kGoogleServicesAppName = kAppDisplayName;
         // The name of the configuration file. You may want to change this if you think your users may
@@ -61,18 +61,6 @@ namespace TiltBrush
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
-        // Executable Base
-        public const string kGuiBuildExecutableName = "OpenBrush";
-        // Windows Executable
-        public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
-        // Linux Executable
-        public const string kGuiBuildLinuxExecutableName = kGuiBuildExecutableName;
-        // OSX Executable
-        public const string kGuiBuildOSXExecutableName = kGuiBuildExecutableName + ".app";
-        // Android Application Identifier
-        public const string kGuiBuildAndroidApplicationIdentifier = "com." + kVendorName + "." + kGuiBuildExecutableName;
-        // Android Executable
-        public const string kGuiBuildAndroidExecutableName = kGuiBuildAndroidApplicationIdentifier + ".apk";
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
         public const string kReferenceImagesSeeded = "Reference Images seeded";
@@ -112,55 +100,25 @@ namespace TiltBrush
         private static App m_Instance;
 
         // Accessible at all times after config is initialized.
-        public static Config Config
-        {
-            get { return Config.m_SingletonState; }
-        }
+        public static Config Config => Config.m_SingletonState;
 
-        public static UserConfig UserConfig
-        {
-            get { return m_Instance.m_UserConfig; }
-        }
+        public static UserConfig UserConfig => m_Instance.m_UserConfig;
 
-        public static PlatformConfig PlatformConfig
-        {
-            get { return Config.PlatformConfig; }
-        }
+        public static PlatformConfig PlatformConfig => Config.PlatformConfig;
 
-        public static VrSdk VrSdk
-        {
-            get { return m_Instance.m_VrSdk; }
-        }
+        public static VrSdk VrSdk => m_Instance.m_VrSdk;
 
-        public static SceneScript Scene
-        {
-            get { return m_Instance.m_SceneScript; }
-        }
+        public static SceneScript Scene => m_Instance.m_SceneScript;
 
-        public static CanvasScript ActiveCanvas
-        {
-            get { return Scene.ActiveCanvas; }
-        }
+        public static CanvasScript ActiveCanvas => Scene.ActiveCanvas;
 
-        public static PolyAssetCatalog PolyAssetCatalog
-        {
-            get { return m_Instance.m_PolyAssetCatalog; }
-        }
+        public static PolyAssetCatalog PolyAssetCatalog => m_Instance.m_PolyAssetCatalog;
 
-        public static Switchboard Switchboard
-        {
-            get { return m_Instance.m_Switchboard; }
-        }
+        public static Switchboard Switchboard => m_Instance.m_Switchboard;
 
-        public static BrushColorController BrushColor
-        {
-            get { return m_Instance.m_BrushColorController; }
-        }
+        public static BrushColorController BrushColor => m_Instance.m_BrushColorController;
 
-        public static GroupManager GroupManager
-        {
-            get { return m_Instance.m_GroupManager; }
-        }
+        public static GroupManager GroupManager => m_Instance.m_GroupManager;
 
         public static HttpServer HttpServer => m_Instance.m_HttpServer;
 
@@ -182,17 +140,11 @@ namespace TiltBrush
             get { return m_Instance; }
 #if UNITY_EDITOR
             // Bleh. Needed by BuildTiltBrush.cs
-            set { m_Instance = value; }
+            internal set { m_Instance = value; }
 #endif
         }
 
-        public static AppState CurrentState
-        {
-            get
-            {
-                return m_Instance == null ? AppState.Loading : m_Instance.m_CurrentAppState;
-            }
-        }
+        public static AppState CurrentState => m_Instance == null ? AppState.Loading : m_Instance.m_CurrentAppState;
 
         public static OAuth2Identity GetIdentity(Cloud cloud)
         {
@@ -202,6 +154,16 @@ namespace TiltBrush
                 case Cloud.Sketchfab: return SketchfabIdentity;
                 default: throw new InvalidOperationException($"No identity for {cloud}");
             }
+        }
+
+        // Log to editor console when developing and console log when running. This avoids all the stack spam in the log.
+        public static void Log(string msg)
+        {
+#if UNITY_EDITOR
+            Debug.Log("[OB] " + msg);
+#else
+            Console.WriteLine("[OB] " + msg);
+#endif
         }
 
         // ------------------------------------------------------------
@@ -233,7 +195,7 @@ namespace TiltBrush
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
         /// The root object for the "Room" coordinate system
-        public Transform m_RoomTransform { get { return transform; } }
+        public Transform m_RoomTransform => transform;
         /// The root object for the "Scene" coordinate system ("/SceneParent")
         public Transform m_SceneTransform;
         /// The root object for the "Canvas" coordinate system ("/SceneParent/Canvas")
@@ -288,16 +250,15 @@ namespace TiltBrush
         private bool m_QuickLoadInputWasValid;
         private bool m_QuickLoadEatInput;
         private AppState m_CurrentAppState;
-        // Temporary: to narrow down b/37256058
-        private AppState m_DesiredAppState_;
+        private AppState m_DesiredAppState_; // Temporary: to narrow down b/37256058
         private AppState m_DesiredAppState
         {
-            get { return m_DesiredAppState_; }
+            get => m_DesiredAppState_;
             set
             {
                 if (m_DesiredAppState_ != value)
                 {
-                    Console.WriteLine("State <- {0}", value);
+                    Console.WriteLine("App State <- {0}", value);
                 }
                 m_DesiredAppState_ = value;
             }
@@ -354,27 +315,17 @@ namespace TiltBrush
             }
         }
 
-        public float RoomRadius
-        {
-            get { return m_RoomRadius; }
-        }
+        public float RoomRadius => m_RoomRadius;
 
-        public SelectionEffect SelectionEffect
-        {
-            get { return m_SelectionEffect; }
-        }
-        public bool IsFirstRunExperience { get { return m_FirstRunExperience; } }
-        public bool HasPlayedBefore
-        {
-            get;
-            private set;
-        }
+        public SelectionEffect SelectionEffect => m_SelectionEffect;
+        public bool IsFirstRunExperience => m_FirstRunExperience;
+        public bool HasPlayedBefore { get; private set; }
 
         public bool StartupError { get; set; }
 
         public bool ShowControllers
         {
-            get { return m_ShowControllers.GetValueOrDefault(true); }
+            get => m_ShowControllers.GetValueOrDefault(true);
             set
             {
                 InputManager.m_Instance.ShowControllers(value);
@@ -384,7 +335,7 @@ namespace TiltBrush
 
         public bool AutosaveRestoreFileExists
         {
-            get { return m_AutosaveRestoreFileExists; }
+            get => m_AutosaveRestoreFileExists;
             set
             {
                 if (value != m_AutosaveRestoreFileExists)
@@ -413,10 +364,7 @@ namespace TiltBrush
             }
         }
 
-        public GpuIntersector GpuIntersector
-        {
-            get { return m_GpuIntersector; }
-        }
+        public GpuIntersector GpuIntersector => m_GpuIntersector;
 
         public TrTransform OdsHeadPrimary { get; set; }
         public TrTransform OdsScenePrimary { get; set; }
@@ -424,19 +372,13 @@ namespace TiltBrush
         public TrTransform OdsHeadSecondary { get; set; }
         public TrTransform OdsSceneSecondary { get; set; }
 
-        public FrameCountDisplay FrameCountDisplay
-        {
-            get { return m_FrameCountDisplay; }
-        }
+        public FrameCountDisplay FrameCountDisplay => m_FrameCountDisplay;
 
         // ------------------------------------------------------------
         // Implementation
         // ------------------------------------------------------------
 
-        public bool RequestingAudioReactiveMode
-        {
-            get { return m_RequestingAudioReactiveMode; }
-        }
+        public bool RequestingAudioReactiveMode => m_RequestingAudioReactiveMode;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -528,20 +470,25 @@ namespace TiltBrush
 
         static string GetStartupString()
         {
-            string stamp = Config.m_BuildStamp;
+            string str = $"{App.kAppDisplayName} {Config.m_VersionNumber}";
+
+            if (!string.IsNullOrEmpty(Config.m_BuildStamp))
+                str += $" build {Config.m_BuildStamp}";
+
 #if UNITY_ANDROID
-    stamp += string.Format(" code {0}", AndroidUtils.GetVersionCode());
+            str += $" code {AndroidUtils.GetVersionCode()}";
 #endif
 #if DEBUG
-            stamp += string.Format(" platcfg {0}", PlatformConfig.name);
+            str += $" {PlatformConfig.name}";
 #endif
-            return $"{App.kAppDisplayName} {Config.m_VersionNumber}\nBuild {stamp}";
+            return str;
         }
 
         void Awake()
         {
             m_Instance = this;
-            Debug.Log(GetStartupString());
+            Log(GetStartupString());
+            Log($"SdkMode: {App.Config.m_SdkMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
             Physics.autoSimulation = false;
@@ -602,6 +549,7 @@ namespace TiltBrush
             {
                 HttpServer.AddHttpHandler("/load", HttpLoadSketchCallback);
             }
+
             m_AutosaveRestoreFileExists = File.Exists(AutosaveRestoreFilePath());
 
             m_GoogleUserSettings = new GoogleUserSettings(m_GoogleIdentity);
@@ -652,16 +600,18 @@ namespace TiltBrush
             {
                 Debug.Log("VR HMD was not initialized on startup.");
                 StartupError = true;
-                CreateErrorDialog();
+                CreateFailedToDetectVrDialog();
             }
             else
             {
+                //TODO: Mike - Updated this reference to attempt to find headset name in new XR system
                 Debug.LogFormat("Sdk mode: {0} XRDevice.model: {1}",
-                    App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
+                    //App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
+                    App.Config.m_SdkMode, UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name);
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
-            if (VrSdk.GetHmdDof() == TiltBrush.VrSdk.DoF.None)
+            if (VrSdk.GetHmdDof() == VrSdk.DoF.None)
             {
                 Application.targetFrameRate = m_TargetFrameRate;
             }
@@ -820,7 +770,6 @@ namespace TiltBrush
             {
                 StateChanged += AutoProfileOnStartAndQuit;
             }
-
         }
 
         private void AutoProfileOnStartAndQuit(AppState oldState, AppState newState)
@@ -862,7 +811,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                //kinda heavy-handed, but whatevs
+                // kinda heavy-handed, but whatevs
                 InitCursor();
             }
 
@@ -1822,7 +1771,7 @@ namespace TiltBrush
             }
         }
 
-        public void CreateErrorDialog(string msg = null)
+        public void CreateFailedToDetectVrDialog(string msg = null)
         {
             GameObject dialog = Instantiate(m_ErrorDialog);
             var textXf = dialog.transform.Find("Text");
@@ -1935,7 +1884,7 @@ namespace TiltBrush
             if (!Path.IsPathRooted(m_UserPath))
             {
                 StartupError = true;
-                CreateErrorDialog("Failed to find Documents folder.\nIn Windows, try modifying your Controlled Folder Access settings.");
+                CreateFailedToDetectVrDialog("Failed to find Documents folder.\nIn Windows, try modifying your Controlled Folder Access settings.");
             }
         }
 
@@ -2182,19 +2131,19 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
         {
             var manifest = m_Manifest;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                // At build time, we don't want the user config to affect the build output.
-                if (consultUserConfig
-                    && m_UserConfig.Flags.ShowDangerousBrushes
-                    && m_ManifestExperimental != null)
-                {
-                    manifest = Instantiate(m_Manifest);
-                    manifest.AppendFrom(m_ManifestExperimental);
-                }
-            }
-#endif
+            // #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            //             if (Config.IsExperimental)
+            //             {
+            //                 // At build time, we don't want the user config to affect the build output.
+            //                 if (consultUserConfig
+            //                     && m_UserConfig.Flags.ShowDangerousBrushes
+            //                     && m_ManifestExperimental != null)
+            //                 {
+            //                     manifest = Instantiate(m_Manifest);
+            //                     manifest.AppendFrom(m_ManifestExperimental);
+            //                 }
+            //             }
+            // #endif
             return manifest;
         }
 
@@ -2224,7 +2173,7 @@ namespace TiltBrush
             var linkTimeUtc = epoch.AddSeconds(secondsSince1970);
             return linkTimeUtc.ToLocalTime();
 #else
-    return DateTime.Now;
+            return DateTime.Now;
 #endif
         }
 

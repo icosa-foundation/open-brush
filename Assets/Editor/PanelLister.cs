@@ -7,13 +7,12 @@ using System.Text;
 using TiltBrush;
 using UnityEditor;
 using UnityEngine;
-using Valve.Newtonsoft.Json.Utilities;
 using Object = UnityEngine.Object;
 
 public class PanelLister : MonoBehaviour
 {
 
-    [MenuItem("Tilt/Info/Panel Lister")]
+    [MenuItem("Open Brush/Info/Panel Lister")]
     static void ListPanels()
     {
         StringBuilder panelList = new StringBuilder();
@@ -31,7 +30,7 @@ public class PanelLister : MonoBehaviour
         Debug.Log($"{panelList}");
     }
 
-    [MenuItem("Tilt/Info/Popup Lister")]
+    [MenuItem("Open Brush/Info/Popup Lister")]
     static void ListPopups()
     {
         StringBuilder popupList = new StringBuilder();
