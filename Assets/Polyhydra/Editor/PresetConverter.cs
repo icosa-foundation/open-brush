@@ -209,12 +209,10 @@ namespace TiltBrush
                     case GeneratorTypes.Radial:
                         RadialSolids.RadialPolyType radialPolyType;
 
-                        if (oldPreset.JohnsonPolyType.IndexOf("Rotunda") < 0)
-                        {
-                            Debug.LogWarning("Skipping unsupported radial poly: {oldPreset.JohnsonPolyType}");
-                            return;
-                        }
-                        
+                        // Rotundae aren't currently supported so swap out for Cupolae
+                        oldPreset.JohnsonPolyType = oldPreset.JohnsonPolyType.Replace("Rotunda", "Cupola");
+                        oldPreset.JohnsonPolyType = oldPreset.JohnsonPolyType.Replace("rotunda", "cupola");
+
                         if (Enum.TryParse(oldPreset.JohnsonPolyType, true, out radialPolyType))
                         {
                             float height, capHeight;
@@ -324,8 +322,11 @@ namespace TiltBrush
 
                 foreach (var oldOp in oldPreset.Ops)
                 {
+                    var newOp = new Dictionary<string, object>();
+                    PolyMesh.Operation opType;
+
                     if (oldOp.OpType == "FaceRotate") oldOp.OpType = "FaceRotateZ";
-                    
+
                     if (oldOp.OpType == "Slice" || 
                         oldOp.OpType == "Stretch" || 
                         oldOp.OpType == "TagFaces" || 
@@ -338,12 +339,18 @@ namespace TiltBrush
                         oldOp.OpType == "Stack"
                         )
                     {
-                        Debug.LogWarning($"Skipping Slice on {fileInfo.Name}");
+                        Debug.LogWarning($"Skipping {oldOp.OpType} on {fileInfo.Name}");
                         continue;
                     }
                     
-                    var newOp = new Dictionary<string, object>();
-                    PolyMesh.Operation opType;
+                    if (oldOp.OpType == "VertexFlex") oldOp.OpType = "VertexOffset";
+                    
+                    if (oldPreset.JohnsonPolyType == "FaceKeep")
+                    {
+                        oldPreset.JohnsonPolyType = "FaceRemove";
+                        newOp["filterNot"] = true;
+                    }
+                    
                     if (Enum.TryParse(oldOp.OpType, true, out opType))
                     {
                         newOp["operation"] = opType;
