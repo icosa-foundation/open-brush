@@ -67,6 +67,15 @@
         "org.nuget.newtonsoft",
         "org.nuget.sharpziplib"
       ]
+    },
+	{
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ixxy.polyhydra.core",
+        "com.nition.unity-octree",
+        "com.openupm"
+      ]
     }
   ]
 }
