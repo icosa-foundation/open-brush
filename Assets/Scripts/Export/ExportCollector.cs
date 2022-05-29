@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Valve.Newtonsoft.Json.Utilities;
 using SceneStatePayload = TiltBrush.ExportUtils.SceneStatePayload;
 using VertexLayout = TiltBrush.GeometryPool.VertexLayout;
 using static TiltBrush.ExportUtils;
