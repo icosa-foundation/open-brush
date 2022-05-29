@@ -267,8 +267,6 @@ namespace TiltBrush
                 // ---------------------------------------------------------------------------------------- //
                 m_VrCamera.gameObject.AddComponent<MonoCameraControlScript>();
                 SetControllerStyle(ControllerStyle.None);
-                // Offset for head position, since camera height is set by the VR system.
-                m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
             }
             else
             {
@@ -276,8 +274,6 @@ namespace TiltBrush
                 // Non-VR
                 // ---------------------------------------------------------------------------------------- //
                 SetControllerStyle(ControllerStyle.None);
-                // Offset for head position, since camera height is set by the VR system.
-                m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
             }
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
