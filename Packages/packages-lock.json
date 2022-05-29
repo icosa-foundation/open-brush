@@ -6,6 +6,22 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.ixxy.polyhydra.core": {
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.nition.unity-octree": "0.0.1-preview"
+      },
+      "hash": "c93b2173302f619c0c58d5ac96d750b50a5b4418"
+    },
+    "com.nition.unity-octree": {
+      "version": "0.0.1-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
