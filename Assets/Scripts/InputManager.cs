@@ -521,7 +521,7 @@ namespace TiltBrush
             }
             for (int i = 0; i < codes.Length; ++i)
             {
-                if (Keyboard.current[codes[i]].wasPressedThisFrame)
+                if (Keyboard.current[codes[i]].isPressed)
                 {
                     return true;
                 }
@@ -744,7 +744,7 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
-            Vector2 mv = Mouse.current.delta.ReadValue();
+            Vector2 mv = Mouse.current.delta.ReadValue() * 0.125f;
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
         }
@@ -766,9 +766,9 @@ namespace TiltBrush
             switch (button)
             {
                 case 0:
-                    return Mouse.current.leftButton.wasPressedThisFrame;
+                    return Mouse.current.leftButton.isPressed;
                 case 1:
-                    return Mouse.current.rightButton.wasPressedThisFrame;
+                    return Mouse.current.rightButton.isPressed;
                 default:
                     return false;
             }
@@ -778,8 +778,20 @@ namespace TiltBrush
         /// presses when you fiddle with the joystick.
         public bool GetMouseButtonDown(int button)
         {
-            return GetMouseButton(button);
-        }
+            if (App.Config.IsMobileHardware)
+            {
+                return false;
+            }
+
+            switch (button)
+            {
+                case 0:
+                    return Mouse.current.leftButton.wasPressedThisFrame;
+                case 1:
+                    return Mouse.current.rightButton.wasPressedThisFrame;
+                default:
+                    return false;
+            }        }
 
         public bool IsBrushScrollActive()
         {

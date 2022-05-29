@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
 
 namespace TiltBrush
@@ -1496,6 +1497,7 @@ namespace TiltBrush
 #endif
 
             bool hasController = m_ControlsType == ControlsType.SixDofControllers;
+            var mouse = Mouse.current;
 
             // Toggle default tool.
             if (!m_PanelManager.AdvancedModeActive() &&
@@ -1509,7 +1511,7 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayPinCushionSound(true);
             }
             // Pan.
-            else if (!hasController && Input.GetMouseButton(2))
+            else if (!hasController && mouse.rightButton.isPressed)
             {
                 SwitchState(InputState.Pan);
             }
@@ -3319,7 +3321,7 @@ namespace TiltBrush
 
         void UpdatePanInput()
         {
-            if (Input.GetMouseButton(2))
+            if (Mouse.current.rightButton.isPressed)
             {
                 Vector3 vPanDiff = Vector3.zero;
                 vPanDiff += (Vector3.right * m_MouseDeltaXScaled);
