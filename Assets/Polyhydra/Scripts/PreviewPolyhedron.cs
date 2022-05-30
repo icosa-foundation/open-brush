@@ -27,7 +27,7 @@ public class PreviewPolyhedron : MonoBehaviour
 {
     public bool GenerateSubmeshes = false;
 
-    public int RebuildSkipFrames = 3;
+    public int RebuildSkipFrames = 4;
     public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
     public RadialSolids.RadialPolyType RadialPolyType;
