@@ -27,13 +27,12 @@ namespace TiltBrush {
     private int m_VertLength;
     private bool m_Initial;
 
-    // CTODO: maybe just pass the transformation data instead? (to call GeometryPool.ApplyVertexTransformation or whatever it was called.)
     public SculptCommand(
         BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent) {
       m_TargetBatchSubset = batchSubset;
-      m_OldVerts = new List<Vector3>(m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices);
       m_NewVerts = newVerts;
       m_VertLength = newVerts.Count;
+      m_OldVerts = m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
       m_StartIndex = startIndex;
       m_Initial = isInitial;
     }
@@ -47,9 +46,13 @@ namespace TiltBrush {
       //   Debug.LogWarning("Batch Geometry Lost");
       //   return;
       // }
-
-      for (int i = m_StartIndex; i < m_VertLength; i++) {
-        m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+      try {
+        for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
+          m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+        }
+      } catch {
+        Debug.LogError("I hate the vscode debuger");
+        throw;
       }
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
     }
