@@ -26,11 +26,12 @@ namespace TiltBrush
             parentPanel.OpColorButtonPressed();
         }
 
-        override public void SetColor(Color rColor)
+        public override void SetColor(Color rColor)
         {
             var color = Color.white;
             Color mainColor = new Color(color.r * rColor.r, color.g * rColor.g, color.b * rColor.b, color.a * rColor.a);
             base.SetColor(mainColor);
+            SetMaterialColor(mainColor);
         }
     }
 } // namespace TiltBrush

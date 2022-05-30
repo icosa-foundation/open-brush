@@ -61,6 +61,7 @@ namespace TiltBrush
         public GameObject PreviewPolyParent;
         public GameObject AllGeneratorControls;
         public GameObject AllOpControls;
+        public GameObject AllAppearanceControls;
         public GameObject OpPanel;
         public PolyhydraOptionButton ButtonOpType;
         public PolyhydraSlider SliderOpParam1;
@@ -82,7 +83,7 @@ namespace TiltBrush
         public PolyhydraOpPopupToolsButton ToolBtnNext;
         public static Dictionary<string, object> m_GeneratorParameters;
         public static List<Dictionary<string, object>> m_Operations;
-        [NonSerialized] public string m_PresetsPath;
+        [SerializeField] private string m_CurrentPresetPath;
 
         public float previewRotationX, previewRotationY, previewRotationZ = .5f;
         
@@ -123,18 +124,31 @@ namespace TiltBrush
             H_Shape,
         }
         
+        public string CurrentPresetPath
+        {
+            get => m_CurrentPresetPath;
+            set => m_CurrentPresetPath = value;
+        }
+        public int CurrentPresetPage { get; set; }
+        public int CurrentOperatorPage { get; set; }
+
+        public string DefaultPresetsDirectory()
+        {
+            return Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
+        }
+
         override public void InitPanel()
         {
             base.InitPanel();
+            ShowAllGeneratorControls();
             OpFilterControlParent.SetActive(false);
             OpPanel.SetActive(false);
             CurrentPolyhedra = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetMainButtonVisibility();
-            m_PresetsPath = Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
-            if (!Directory.Exists(m_PresetsPath))
+            if (!Directory.Exists(DefaultPresetsDirectory()))
             {
-                Directory.CreateDirectory(m_PresetsPath);
+                Directory.CreateDirectory(DefaultPresetsDirectory());
             }
 
         }
@@ -190,12 +204,21 @@ namespace TiltBrush
         {
             AllGeneratorControls.SetActive(true);
             AllOpControls.SetActive(false);
+            AllAppearanceControls.SetActive(false);
         }
         
         public void ShowAllOpControls()
         {
             AllGeneratorControls.SetActive(false);
             AllOpControls.SetActive(true);
+            AllAppearanceControls.SetActive(false);
+        }
+        
+        public void ShowAllAppearanceControls()
+        {
+            AllGeneratorControls.SetActive(false);
+            AllOpControls.SetActive(false);
+            AllAppearanceControls.SetActive(true);
         }
         
         public void HandleSliderFilterParam(Vector3 value)
@@ -275,26 +298,7 @@ namespace TiltBrush
             BaseUpdate();
             CurrentPolyhedra.transform.parent.Rotate(previewRotationX, previewRotationY, previewRotationZ);
         }
-
-        public void SetInitialUniform()
-        {
-            // Assign the correct button texture for each category
-            Uniform initialUniformType;
-            if (m_CurrentMainCategory == PolyhydraMainCategories.Platonic)
-            {
-                initialUniformType = Uniform.Platonic[0];
-            }
-            else if (m_CurrentMainCategory == PolyhydraMainCategories.Archimedean)
-            {
-                initialUniformType = Uniform.Archimedean[0];
-            }
-            else
-            {
-                initialUniformType = Uniform.KeplerPoinsot[0];
-            }
-            SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, initialUniformType.Name);
-        }
-
+        
         public void SetMainButtonVisibility()
         {
             SetButtonTextAndIcon(PolyhydraButtonTypes.MainCategory, m_CurrentMainCategory.ToString());
@@ -568,12 +572,29 @@ namespace TiltBrush
 
         public void SavePreset()
         {
-            var filename = Guid.NewGuid().ToString().Substring(0, 8);
-            SavePresetToFile(m_PresetsPath, filename);
-            RenderToImageFile(m_PresetsPath, filename);
+            string presetPath;
+            if (string.IsNullOrEmpty(CurrentPresetPath))
+            {
+                presetPath = Path.Combine(
+                    DefaultPresetsDirectory(),
+                    Guid.NewGuid().ToString().Substring(0, 8)
+                );    
+            }
+            else
+            {
+                presetPath = CurrentPresetPath;
+            }
+            
+            SavePresetToFile(presetPath);
+            RenderToImageFile($"{presetPath}.png");
+        }
+        
+        public void DuplicatePreset()
+        {
+            CurrentPresetPath += " (Copy)";
         }
 
-        void SavePresetToFile(string path, string filename)
+        void SavePresetToFile(string presetPath)
         {
             // TODO deduplicate this logic
             ColorMethods colorMethod = ColorMethods.ByRole;
@@ -595,14 +616,14 @@ namespace TiltBrush
             );
             
             EditableModelDefinition emDef = MetadataUtils.GetEditableModelDefinition(em);
-            var jsonSerializer = new JsonSerializer();
-            jsonSerializer.ContractResolver = new CustomJsonContractResolver();
-
-            using (var textWriter = new StreamWriter(path + $"{filename}.json"))
-            using (var jsonWriter = new CustomJsonWriter(textWriter))
+            var jsonSerializer = new JsonSerializer
             {
-                jsonSerializer.Serialize(jsonWriter, emDef);
-            }
+                ContractResolver = new CustomJsonContractResolver()
+            };
+
+            using var textWriter = new StreamWriter($"{presetPath}.json");
+            using var jsonWriter = new CustomJsonWriter(textWriter);
+            jsonSerializer.Serialize(jsonWriter, emDef);
         }
 
         public void LoadPresetFromFile(string path)
@@ -616,6 +637,7 @@ namespace TiltBrush
                 emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
             }
             LoadFromDefinition(emd);
+            CurrentPresetPath = path;
         }
 
         public string GetButtonTexturePath(GeneratorTypes mainType, string action)
@@ -680,8 +702,8 @@ namespace TiltBrush
         
         public void SetButtonTextAndIcon(PolyhydraButtonTypes buttonType, string label, string friendlyLabel="")
         {
-            if (friendlyLabel=="" || friendlyLabel==null) friendlyLabel = label;
-            
+            if (string.IsNullOrEmpty(friendlyLabel)) friendlyLabel = label;
+
             switch (buttonType)
             {
                 case PolyhydraButtonTypes.MainCategory:
@@ -921,9 +943,10 @@ namespace TiltBrush
             CurrentPolyhedra.RebuildPoly();
         }
 
-        void RenderToImageFile(string path, string filename)
+        void RenderToImageFile(string presetThumbnailPath)
         {
             var cam = CurrentPolyhedra.GetComponentInChildren<Camera>(true);
+            cam.enabled = true;
             cam.gameObject.SetActive(true);
             RenderTexture activeRenderTexture = RenderTexture.active;
             var tex = new RenderTexture(256, 256, 32);
@@ -936,8 +959,9 @@ namespace TiltBrush
             RenderTexture.active = activeRenderTexture;
             byte[] bytes = image.EncodeToPNG();
             Destroy(image);
-            File.WriteAllBytes(path + $"{filename}.png", bytes);
+            File.WriteAllBytes(presetThumbnailPath, bytes);
             cam.gameObject.SetActive(false);
+            cam.enabled = false;
         }
 
 
@@ -1036,6 +1060,7 @@ namespace TiltBrush
         public void OpColorButtonPressed()
         {
             // Create the popup with callback.
+            //CreatePopUp(SketchControlsScript.GlobalCommands.LightingLdr, -1, -1, popupText, OnPopUpClose);
             SketchControlsScript.GlobalCommands command = SketchControlsScript.GlobalCommands.PolyhydraColorPickerPopup;
             CreatePopUp(command, -1, -1, "Color", MakeOnOpColorPopUpClose());
 
@@ -1050,9 +1075,10 @@ namespace TiltBrush
             
             // Init must be called after all popup.ColorPicked actions have been assigned.
             popup.ColorPicker.Controller.CurrentColor = GetOpColor();
-
+            
             m_EatInput = true;
         }
+        
         private Color GetOpColor()
         {
             var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
@@ -1143,23 +1169,32 @@ namespace TiltBrush
                 case PolyhydraMainCategories.Platonic:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.Platonic[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, CurrentPolyhedra.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Archimedean:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.Archimedean[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, CurrentPolyhedra.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.KeplerPoinsot:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Uniform;
                     CurrentPolyhedra.UniformPolyType = (UniformTypes)Uniform.KeplerPoinsot[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, CurrentPolyhedra.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Radial:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Radial;
+                    CurrentPolyhedra.RadialPolyType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, CurrentPolyhedra.RadialPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Waterman:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Waterman;
                     break;
                 case PolyhydraMainCategories.Grids:
                     CurrentPolyhedra.GeneratorType = GeneratorTypes.Grid;
+                    CurrentPolyhedra.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, CurrentPolyhedra.GridType.ToString());
+                    CurrentPolyhedra.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, CurrentPolyhedra.GridShape.ToString());
                     break;
                 case PolyhydraMainCategories.Various:
                     // Various can map to either GeneratorTypes.Various or GeneratorTypes.Shapes
@@ -1171,11 +1206,15 @@ namespace TiltBrush
                             case OtherSolidsCategories.L_Shape:
                             case OtherSolidsCategories.H_Shape:
                                 CurrentPolyhedra.GeneratorType = GeneratorTypes.Shapes;
+                                CurrentPolyhedra.ShapeType = 0;
+                                SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, CurrentPolyhedra.ShapeType.ToString());
                                 break;
                             case OtherSolidsCategories.UvSphere:
                             case OtherSolidsCategories.UvHemisphere:
                             case OtherSolidsCategories.Box:
                                 CurrentPolyhedra.GeneratorType = GeneratorTypes.Various;
+                                CurrentPolyhedra.VariousSolidsType = 0;
+                                SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, CurrentPolyhedra.VariousSolidsType.ToString());
                                 break;
                     }
                     break;

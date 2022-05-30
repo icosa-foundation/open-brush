@@ -25,9 +25,16 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowPresets : PolyhydraPopUpWindowBase
     {
 
+        public override void Init(GameObject rParent, string sText)
+        {
+            ParentPanel = rParent.GetComponent<PolyhydraPanel>();
+            FirstButtonIndex = ParentPanel.CurrentPresetPage * ButtonsPerPage;
+            base.Init(rParent, sText);
+        }
+
         private FileInfo[] GetDirectoryListing()
         {
-            var dirInfo = new DirectoryInfo(ParentPanel.m_PresetsPath);
+            var dirInfo = new DirectoryInfo(ParentPanel.DefaultPresetsDirectory());
             return dirInfo.GetFiles("*.json");
         }
         
@@ -41,11 +48,11 @@ namespace TiltBrush
         public override Texture2D GetButtonTexture(string presetName)
         {
             presetName = $"{presetName}.png";
-            var path = Path.Combine(ParentPanel.m_PresetsPath, presetName);
+            var path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
             if (!File.Exists(path))
             {
                 presetName = presetName.Replace(".png", ".jpg");
-                path = Path.Combine(ParentPanel.m_PresetsPath, presetName);
+                path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
                 if (!File.Exists(path))
                 {
                     return Resources.Load<Texture2D>("Icons/bigquestion");
@@ -65,7 +72,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string presetName)
         {
-            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.m_PresetsPath, $"{presetName}.json"));
+            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
         }
 
         public void NextPage()
@@ -75,6 +82,7 @@ namespace TiltBrush
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();
             }
+            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
         }
         
         public void PrevPage()
@@ -82,7 +90,7 @@ namespace TiltBrush
             FirstButtonIndex -= ButtonsPerPage;
             FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
             CreateButtons();
+            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
         }
-
     }
 } // namespace TiltBrush
