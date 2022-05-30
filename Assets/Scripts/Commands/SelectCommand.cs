@@ -193,7 +193,6 @@ namespace TiltBrush {
     }
 
     public override bool Merge(BaseCommand other) {
-      Debug.Log("SelectCommand::Merge() executed");
       var newSelectCommand = other as SelectCommand;
       if (m_Final) { return false; }
       if (m_IsGrabbingGroup) {

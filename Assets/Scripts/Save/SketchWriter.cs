@@ -86,7 +86,7 @@ public static class SketchWriter {
 
     // If the stroke was sculpted, its vertices and triangles are stored here.
     // Null by default.
-    public SketchMemoryScript.SculptedGeometryData sculptedGeometryData;
+    public SculptedGeometryData sculptedGeometryData;
   }
 
   private const int REQUIRED_SKETCH_VERSION_MIN = 5;
@@ -143,16 +143,14 @@ public static class SketchWriter {
         {
           int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int vertCount = stroke.m_BatchSubset.m_VertLength;
-          // int triStartIndex = stroke.m_BatchSubset.m_iTriIndex;
-          // int triCount = stroke.m_BatchSubset.m_nTriIndex;
 
           // CTODO: this is so ugly it makes me weep.
-          // Debug.Log("Actual length: " + stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices + " Range: " + startIndex + ":" + "end)
+          
           List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
           List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
 
 
-          snapshot.sculptedGeometryData = new SketchMemoryScript.SculptedGeometryData(vertices, normals);
+          snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
         }
         yield return snapshot;
       } else {
@@ -242,7 +240,7 @@ public static class SketchWriter {
       }
 
       // Sculpted geometry
-      if (copy.sculptedGeometryData.vertices != null && copy.sculptedGeometryData.normals != null) {
+      if (copy.sculptedGeometryData != null) {
         // Write the length of the batch subset then save all the vertices.
         writer.Int32(copy.sculptedGeometryData.vertices.Count);
         foreach (Vector3 vertex in copy.sculptedGeometryData.vertices) {
@@ -283,7 +281,7 @@ public static class SketchWriter {
       }
     }
 #endif
-    List<SketchMemoryScript.SculptedGeometryData> geometryData = new List<SketchMemoryScript.SculptedGeometryData>();
+    List<SculptedGeometryData> geometryData = new List<SculptedGeometryData>();
     var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, geometryData);
     if (strokes == null) { return false; }
     if (geometryData.Count > 0) { // if any sculpting modifications have been made
@@ -317,7 +315,7 @@ public static class SketchWriter {
   /// Parses a binary file into List of MemoryBrushStroke.
   /// Returns null on parse error.
   public static List<Stroke> GetStrokes(
-      Stream stream, Guid[] brushList, bool allowFastPath, List<SketchMemoryScript.SculptedGeometryData> geometryData) {
+      Stream stream, Guid[] brushList, bool allowFastPath, List<SculptedGeometryData> geometryData) {
     var reader = new TiltBrush.SketchBinaryReader(stream);
 
     uint sentinel = reader.UInt32();
@@ -481,7 +479,7 @@ public static class SketchWriter {
             norms.Add(reader.Vec3());
           }
 
-          geometryData.Add(new SketchMemoryScript.SculptedGeometryData(verts, norms));
+          geometryData.Add(new SculptedGeometryData(verts, norms));
         } else {
           geometryData.Add(null);
         }

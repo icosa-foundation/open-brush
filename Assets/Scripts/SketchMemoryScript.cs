@@ -43,17 +43,7 @@ public class SketchMemoryScript : MonoBehaviour {
   private int m_LastCheckedVertCount;
   private int m_MemoryWarningVertCount;
 
-  // This is just POD and should be a struct, but my crappy implementation needs it to be nullable for now.
-  // CTODO: make this less abominable
-  public class SculptedGeometryData { 
-    public List<Vector3> vertices;
-    public List<Vector3> normals;
 
-    public SculptedGeometryData(List<Vector3> vertices, List<Vector3> normals) {
-      this.vertices = vertices;
-      this.normals = normals;
-    }
-  }
 
   [Flags]
   public enum StrokeFlags {
@@ -524,12 +514,12 @@ public class SketchMemoryScript : MonoBehaviour {
     return false;
   }
 
-  public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices, bool isInitial) {
+  public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices, int startIndex, bool isInitial) {
     if (m_SculptParent == null || isInitial) { 
-      m_SculptParent = new SculptCommand(rGroup, newVertices, isInitial, null);
+      m_SculptParent = new SculptCommand(rGroup, newVertices, startIndex, isInitial, null);
       PerformAndRecordCommand(m_SculptParent);
     } else {
-      PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, isInitial, m_SculptParent));
+      PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, startIndex, isInitial, m_SculptParent));
     }
     return true;
   }
@@ -831,29 +821,23 @@ public class SketchMemoryScript : MonoBehaviour {
 
   /// If any strokes inside the file were sculpted, reinstate their sculpted
   /// geometry, overriding any re-generated geometry.
-  // CTODO: This is abominable code.
   public void ReinsertSculptedGeometry() {
     if (m_SavedSculptedGeometry != null) {
       int index = 0;
       foreach (var stroke in m_MemoryList) { 
-        if (m_SavedSculptedGeometry[index].vertices != null) {
-          int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
-          int vertEndIndex = vertStartIndex + stroke.m_BatchSubset.m_VertLength;
+        if (m_SavedSculptedGeometry[index] != null) {
+          int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
+          int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
 
-          // int triStartIndex = stroke.m_BatchSubset.m_iTriIndex;
-          // int triEndIndex = triStartIndex + stroke.m_BatchSubset.m_nTriIndex;
-
-          if(m_SavedSculptedGeometry[index].vertices.Count != stroke.m_BatchSubset.m_VertLength)
-          {
+          if (m_SavedSculptedGeometry[index].vertices.Count != stroke.m_BatchSubset.m_VertLength) {
             Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
             continue;
           }
           
-          for (int i = vertStartIndex; i < vertEndIndex; i++) {
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SavedSculptedGeometry[index].vertices[i - vertStartIndex];
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = m_SavedSculptedGeometry[index].normals[i - vertStartIndex];
+          for (int i = startIndex; i < endIndex; i++) {
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SavedSculptedGeometry[index].vertices[i - startIndex];
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = m_SavedSculptedGeometry[index].normals[i - startIndex];
           }
-
 
           stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
         }

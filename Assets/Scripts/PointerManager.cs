@@ -967,7 +967,6 @@ public class PointerManager : MonoBehaviour {
 
   // Detach and record lines for all active pointers.
   void FinalizeLine(bool isContinue = false, bool discard = false) {
-    Debug.Log("PointerManager::FinalizeLine() called");
     PointerScript groupStart = null;
     uint groupStartTime = 0;
     //discard or solidify every pointer's active line

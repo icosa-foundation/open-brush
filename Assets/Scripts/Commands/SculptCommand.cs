@@ -23,15 +23,18 @@ namespace TiltBrush {
     private BatchSubset m_TargetBatchSubset;
     private List<Vector3> m_OldVerts;
     private List<Vector3> m_NewVerts;
-
+    private int m_StartIndex;
+    private int m_VertLength;
     private bool m_Initial;
 
     // CTODO: maybe just pass the transformation data instead? (to call GeometryPool.ApplyVertexTransformation or whatever it was called.)
     public SculptCommand(
-        BatchSubset batchSubset, List<Vector3> newVerts, bool isInitial, BaseCommand parent = null) : base(parent) {
+        BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent) {
       m_TargetBatchSubset = batchSubset;
       m_OldVerts = new List<Vector3>(m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices);
       m_NewVerts = newVerts;
+      m_VertLength = newVerts.Count;
+      m_StartIndex = startIndex;
       m_Initial = isInitial;
     }
 
@@ -39,11 +42,16 @@ namespace TiltBrush {
 
     private void ApplySculptModification(List<Vector3> vertices) {
       
-      m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices = vertices;
+      // CTODO: probably not needed anymore
+      // if (m_TargetBatchSubset.m_ParentBatch.m_Geometry == null) { 
+      //   Debug.LogWarning("Batch Geometry Lost");
+      //   return;
+      // }
+
+      for (int i = m_StartIndex; i < m_VertLength; i++) {
+        m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+      }
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
-      // m_TargetBatchSubset.m_Stroke.InvalidateCopy(); //CTODO: not sure if this line is necessary.
-      // m_TargetBatchSubset.m_Stroke.Uncreate();
-      //m_TargetBatchSubset.m_Stroke.Recreate();
     }
 
     protected override void OnRedo() {

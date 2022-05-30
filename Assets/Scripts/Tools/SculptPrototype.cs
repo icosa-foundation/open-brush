@@ -26,7 +26,6 @@ namespace TiltBrush
     override public void Init()
     {
       base.Init();
-      Debug.Log("Sculpt prototype initialized!");
     }
 
     override public void EnableTool(bool bEnable)
@@ -58,23 +57,22 @@ namespace TiltBrush
       var stroke = rGroup.m_Stroke;
       Batch parentBatch = rGroup.m_ParentBatch;
       int startIndex = rGroup.m_StartVertIndex;
-      int endIndex = startIndex + rGroup.m_VertLength;
+      int vertLength = rGroup.m_VertLength;
 
-      var newVertices = new List<Vector3>(parentBatch.m_Geometry.m_Vertices);
+      var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
       // Tool position adjusted by canvas transformations
       var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
-      for (int i = startIndex; i < endIndex; i++)
+      for (int i = 0; i < vertLength; i++)
       {
-
-          // Distance from vertex to pointer
+          // Distance from vertex to pointer's center.
           float distance = Vector3.Distance(newVertices[i], toolPos);
           if (distance <= GetSize() / m_CurrentCanvas.Pose.scale)
           {
-              // CTODO: Make this depend on distance
+              // CTODO: Tweak this
               float strength = 0.2f;
               Vector3 direction = (newVertices[i] - toolPos).normalized;
-              Vector3 newVert = newVertices[i] + direction * 0.2f;
+              Vector3 newVert = newVertices[i] + direction * strength;
               newVertices[i] = newVert;
               
               stroke.m_bWasSculpted = true;
@@ -84,10 +82,10 @@ namespace TiltBrush
       }
       Debug.Log("Sculpting modification made");
 
-      SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, !m_AtLeastOneModificationMade);
+      SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
+      
       m_AtLeastOneModificationMade = true;
-      // parentBatch.m_Geometry.m_Vertices = newVertices;
-      // parentBatch.DelayedUpdateMesh();
+
       return true;
     }
   }
