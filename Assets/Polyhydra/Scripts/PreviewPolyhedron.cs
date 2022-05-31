@@ -552,7 +552,11 @@ public class PreviewPolyhedron : MonoBehaviour
         }
 
         // Scale the gameobject so the preview isn't huge or tiny
-        transform.localScale = Vector3.one * .75f * (1f/mesh.bounds.max.magnitude);
+        float meshMagnitude = mesh.bounds.max.magnitude;
+        if (meshMagnitude != 0)
+        {
+            transform.localScale = Vector3.one * .75f * (1f/meshMagnitude);
+        }
         
         // TODO
         // Also update other linked meshes (stencils, model widgets)

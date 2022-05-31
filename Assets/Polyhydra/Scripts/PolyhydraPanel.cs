@@ -47,6 +47,9 @@ namespace TiltBrush
     {
         [NonSerialized] public PreviewPolyhedron CurrentPolyhedra;
 
+        public GameObject PresetInitialSaveButton;
+        public GameObject PresetSaveOptionsPopupButton;
+
         public PolyhydraOptionButton ButtonMainCategory;
         public PolyhydraOptionButton ButtonUniformType;
         public PolyhydraOptionButton ButtonRadialType;
@@ -126,8 +129,10 @@ namespace TiltBrush
         
         public string CurrentPresetPath
         {
+            // Full directory and filename but with "json" extension removed
+            
             get => m_CurrentPresetPath;
-            set => m_CurrentPresetPath = value;
+            set => m_CurrentPresetPath = value.Replace(".json", "");
         }
         public int CurrentPresetPage { get; set; }
         public int CurrentOperatorPage { get; set; }
@@ -146,11 +151,17 @@ namespace TiltBrush
             CurrentPolyhedra = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetMainButtonVisibility();
+            SetPresetSaveButtonState(popupButtonEnabled: false);
             if (!Directory.Exists(DefaultPresetsDirectory()))
             {
                 Directory.CreateDirectory(DefaultPresetsDirectory());
             }
+        }
 
+        private void SetPresetSaveButtonState(bool popupButtonEnabled)
+        {
+            PresetInitialSaveButton.SetActive(!popupButtonEnabled);
+            PresetSaveOptionsPopupButton.SetActive(popupButtonEnabled);
         }
 
         public void HandleSlider1(Vector3 value)
@@ -570,8 +581,9 @@ namespace TiltBrush
             );
         }
 
-        public void SavePreset()
+        public void HandleSavePreset(bool overwrite)
         {
+            Debug.Log($"HandleSavePreset called with overwrite={overwrite}");
             string presetPath;
             if (string.IsNullOrEmpty(CurrentPresetPath))
             {
@@ -583,18 +595,22 @@ namespace TiltBrush
             else
             {
                 presetPath = CurrentPresetPath;
+                if (!overwrite)
+                {
+                    CurrentPresetPath += " (Copy)";
+                }
             }
-            
-            SavePresetToFile(presetPath);
+            SavePresetJson(presetPath);
             RenderToImageFile($"{presetPath}.png");
+            SetPresetSaveButtonState(popupButtonEnabled: true);
         }
         
-        public void DuplicatePreset()
+        public void HandleDuplicatePreset()
         {
-            CurrentPresetPath += " (Copy)";
+            SetPresetSaveButtonState(popupButtonEnabled: false);
         }
 
-        void SavePresetToFile(string presetPath)
+        void SavePresetJson(string presetPath)
         {
             // TODO deduplicate this logic
             ColorMethods colorMethod = ColorMethods.ByRole;
@@ -626,7 +642,7 @@ namespace TiltBrush
             jsonSerializer.Serialize(jsonWriter, emDef);
         }
 
-        public void LoadPresetFromFile(string path)
+        public void HandleLoadPreset(string path)
         {
             var jsonDeserializer = new JsonSerializer();
             jsonDeserializer.ContractResolver = new CustomJsonContractResolver();
@@ -638,6 +654,7 @@ namespace TiltBrush
             }
             LoadFromDefinition(emd);
             CurrentPresetPath = path;
+            SetPresetSaveButtonState(popupButtonEnabled: true);
         }
 
         public string GetButtonTexturePath(GeneratorTypes mainType, string action)

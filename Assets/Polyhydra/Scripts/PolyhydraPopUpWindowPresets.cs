@@ -72,7 +72,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string presetName)
         {
-            ParentPanel.LoadPresetFromFile(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
+            ParentPanel.HandleLoadPreset(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
         }
 
         public void NextPage()

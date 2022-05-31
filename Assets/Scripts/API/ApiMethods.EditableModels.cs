@@ -267,9 +267,11 @@ namespace TiltBrush
                     faceTags.Add(tag);
                 }
             }
-            poly = poly.FaceRemove(new OpParams(new Filter(p => {
-                return clippedFaces.Contains(p.index);
-            })));
+            var filter = new Filter(
+                p => clippedFaces.Contains(p.index),
+                p => false // Never called
+            );
+            poly = poly.FaceRemove(new OpParams(filter));
             poly.FaceTags = faceTags;
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
