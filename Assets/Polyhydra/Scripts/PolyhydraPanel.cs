@@ -74,7 +74,8 @@ namespace TiltBrush
         public PolyhydraOptionButton ButtonOpFilterType;
         public PolyhydraSlider SliderOpFilterParam;
         public TextMeshPro LabelOpFilterName;
-        public ActionButton ButtonOpFilterNot;
+        public ActionToggleButton ButtonOpFilterNot;
+        public ActionToggleButton ButtonOpDisable;
 
         public List<GameObject> MonoscopicOnlyButtons;
 
@@ -950,6 +951,7 @@ namespace TiltBrush
                     newOp.filterParamInt = Convert.ToInt32(filterParamInt);
                     newOp.filterNot = Convert.ToBoolean(filterNot);
                 }
+                
                 CurrentPolyhedra.Operators.Add(newOp);
                 AddOpButton();
             }
@@ -1037,6 +1039,7 @@ namespace TiltBrush
             OpPanel.SetActive(true);
             OpConfig opConfig = OpConfigs.Configs[op.opType];
             OpFilterControlParent.SetActive(opConfig.usesFilter);
+            ButtonOpDisable.SetToggleState(op.disabled);
 
             if (opConfig.usesAmount)
             {
@@ -1070,8 +1073,7 @@ namespace TiltBrush
             {
                 ButtonOpColorPicker.gameObject.SetActive(false);
             }
-
-
+            
             ConfigureOpFilterPanel(op);
 
         }
@@ -1130,7 +1132,11 @@ namespace TiltBrush
 
         public void HandleAddOpButton()
         {
-            var newOp = new PreviewPolyhedron.OpDefinition();
+            var newOp = new PreviewPolyhedron.OpDefinition
+            {
+                disabled = false,
+                filterNot = false
+            };
             AddOpButton();
             CurrentPolyhedra.Operators.Add(newOp);
             HandleSelectOpButton(CurrentPolyhedra.Operators.Count - 1);
@@ -1274,8 +1280,9 @@ namespace TiltBrush
             ButtonOpFilterType.SetDescriptionText(opFilterName);
 
             ButtonOpFilterNot.gameObject.SetActive(true);
+            ButtonOpFilterNot.SetToggleState(op.filterNot);
             LabelOpFilterName.text = opFilterName;
-            
+
             switch (op.filterType)
             {
                 case FilterTypes.All:
@@ -1395,7 +1402,9 @@ namespace TiltBrush
                 btn.gameObject.SetActive(true);
                 btn.SetButtonTexture(tex);
 
-                btn.name = $"Select Op: {i}";
+                btn.SetButtonOverlay(op.disabled);
+
+                btn.name = $"Op {i}: {op.opType}";
                 btn.ParentPanel = this;
 
                 var btnPos = btn.transform.localPosition;

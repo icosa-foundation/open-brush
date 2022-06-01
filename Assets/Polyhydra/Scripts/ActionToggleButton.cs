@@ -19,12 +19,26 @@ namespace TiltBrush
 {
     public class ActionToggleButton : ActionButton
     {
-        [FormerlySerializedAs("TextureOn")] public Texture2D m_TextureOn;
-        [FormerlySerializedAs("TextureOff")] public Texture2D m_TextureOff;
-        
+        public bool m_InitialToggleState = false;
+        public Texture2D m_TextureOn;
+        public Texture2D m_TextureOff;
+
+        override protected void Awake()
+        {
+            base.Awake();
+            m_ToggleActive = m_InitialToggleState;
+            SetToggleState(m_ToggleActive);
+        }
+
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
+            SetToggleState(!m_ToggleActive);
+        }
+
+        public void SetToggleState(bool state)
+        {
+            m_ToggleActive = state;
             SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
         }
     }

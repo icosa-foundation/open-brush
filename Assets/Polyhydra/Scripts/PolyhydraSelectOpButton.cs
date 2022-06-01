@@ -21,7 +21,8 @@ namespace TiltBrush
         public int OpIndex;
         public PolyhydraPanel ParentPanel;
         public GameObject PopupControls;
-            
+        public GameObject m_Overlay;
+        
         protected override void OnButtonPressed()
         {
             ParentPanel.HandleSelectOpButton(OpIndex);
@@ -32,7 +33,11 @@ namespace TiltBrush
             base.GainFocus();
             if (PopupControls!=null) PopupControls.SetActive(true);
         }
-        
+
+        public void SetButtonOverlay(bool state)
+        {
+            m_Overlay.SetActive(state);
+        }
     }
     
     
