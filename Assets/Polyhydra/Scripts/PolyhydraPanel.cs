@@ -270,7 +270,9 @@ namespace TiltBrush
                 for (var i = 0; i < btns.Length; i++)
                 {
                     var btn = btns[i];
-                    var x = btn.transform.parent.localPosition.x + (btn.transform.localPosition.x + btn.transform.parent.localScale.x);
+                    var btnParent = btn.transform.parent;
+                    var x = btnParent.transform.parent.localPosition.x + 
+                        (btnParent.transform.localPosition.x + btnParent.transform.parent.localScale.x);
                     float scale;
                     if (x is < 0.8f or > 2.6f)
                     {
@@ -281,7 +283,7 @@ namespace TiltBrush
                     {
                         scale = .2f;
                     }
-                    btn.transform.localScale = Vector3.one * scale;
+                    btnParent.transform.localScale = Vector3.one * scale;
                 }
                 if (overflow)
                 {
@@ -1389,9 +1391,10 @@ namespace TiltBrush
             for (var i = 0; i < btns.Length; i++)
             {
                 var btn = btns[i];
+                var btnParent = btn.transform.parent;
                 if (i > CurrentPolyhedra.Operators.Count - 1)
                 {
-                    Destroy(btn.gameObject);
+                    Destroy(btnParent.gameObject);
                     continue;
                 }
                 var op = CurrentPolyhedra.Operators[i];
@@ -1409,11 +1412,11 @@ namespace TiltBrush
 
                 var btnPos = btn.transform.localPosition;
                 btnPos.Set(i * 0.25f, 0, 0);
-                btn.transform.localPosition = btnPos;
+                btnParent.transform.localPosition = btnPos;
 
                 if (i == CurrentActiveOpIndex)
                 {
-                    var popupPos = btn.transform.localPosition;
+                    var popupPos = btnParent.transform.localPosition;
                     popupPos.Set(i * 0.25f + 0.04f, 0.05f, 0);
                     OperatorSelectPopupTools.localPosition = popupPos;
                     OperatorSelectPopupTools.localScale = Vector3.one * 0.2f;
