@@ -1,5 +1,4 @@
-﻿// CTODO: adjust copyright
-// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 Chingiz Dadashov-Khandan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +20,7 @@ namespace TiltBrush
 {
   public class SculptPrototype : ToggleStrokeModificationTool
   {
+    /// Keeps track of the first sculpting change made while the trigger is held.
     private bool m_AtLeastOneModificationMade = false;
 
     override public void Init()
@@ -73,6 +73,7 @@ namespace TiltBrush
               float strength = 0.2f;
               Vector3 direction = (newVertices[i] - toolPos).normalized;
               Vector3 newVert = newVertices[i] + direction * strength;
+              
               newVertices[i] = newVert;
               
               stroke.m_bWasSculpted = true;
@@ -80,7 +81,6 @@ namespace TiltBrush
               InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
           }
       }
-      Debug.Log("Sculpting modification made");
 
       SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
       

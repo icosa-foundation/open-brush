@@ -1,5 +1,4 @@
-//CTODO: copyright info
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2022 Chingiz Dadashov-Khandan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,19 +39,17 @@ namespace TiltBrush {
     public override bool NeedsSave { get { return true; } } // should always save
 
     private void ApplySculptModification(List<Vector3> vertices) {
-      
-      // CTODO: probably not needed anymore
-      // if (m_TargetBatchSubset.m_ParentBatch.m_Geometry == null) { 
-      //   Debug.LogWarning("Batch Geometry Lost");
-      //   return;
-      // }
-      try {
-        for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
-          m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
-        }
-      } catch {
-        Debug.LogError("I hate the vscode debuger");
-        throw;
+
+      if (m_TargetBatchSubset.m_ParentBatch == null) {
+        // CTODO: This occurs when a user moves a stroke with the selection tool and then tries to undo/redo.
+        // Currently, the step is skipped, ergo causing some sculpting changes inbetween to be "permanent".
+        // The solution here isn't the best, it should be improved.
+        Debug.LogWarning("Missing parent batch, skipping sculpt command");
+        return;
+      }
+
+      for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
+        m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
       }
       m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
     }
@@ -66,7 +63,6 @@ namespace TiltBrush {
     }
 
     public override bool Merge(BaseCommand other) {
-      Debug.Log("SculptCommand::Merge() executed");
       
       if (base.Merge(other)) { return true; }
 

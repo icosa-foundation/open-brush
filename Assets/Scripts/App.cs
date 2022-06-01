@@ -966,6 +966,7 @@ public class App : MonoBehaviour {
         if (m_QuickloadStallFrames-- < 0) {
           bool bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
           if (!bContinueDrawing) {
+            SketchMemoryScript.m_Instance.ReinsertSculptedGeometry();
             FinishLoading();
           }
         }
