@@ -251,8 +251,7 @@ namespace TiltBrush
         
         void AnimateOpParentIntoPlace()
         {
-            // float targetX = CurrentPolyhedra.Operators.Count > 4 ? (-CurrentActiveOpIndex - 0.5f) * .2f : -0.6f;
-            float targetX = (-CurrentActiveOpIndex - 0.75f) * .2f;
+            float targetX = 0.7f - (CurrentActiveOpIndex * 0.25f);
             StartCoroutine(DoOpParentAnim(targetX));
         }
 
@@ -260,21 +259,26 @@ namespace TiltBrush
         {
             void RescaleButtons()
             {
+                // Snap parent to final position
+                var pos = OperatorSelectButtonParent.localPosition;
+                pos.x = targetX;
+                OperatorSelectButtonParent.localPosition = pos;
+
                 var btns = OperatorSelectButtonParent.GetComponentsInChildren<PolyhydraSelectOpButton>();
                 bool overflow = false;
                 for (var i = 0; i < btns.Length; i++)
                 {
                     var btn = btns[i];
-                    var x = targetX + btn.transform.localPosition.x;
+                    var x = btn.transform.parent.localPosition.x + (btn.transform.localPosition.x + btn.transform.parent.localScale.x);
                     float scale;
-                    if (x < -0.8f || x > 0.9f)
+                    if (x is < 0.8f or > 2.6f)
                     {
-                        scale = 0;
+                        scale = .05f;
                         overflow = true;
                     }
                     else
                     {
-                        scale = 0.2f;
+                        scale = .2f;
                     }
                     btn.transform.localScale = Vector3.one * scale;
                 }
@@ -283,8 +287,6 @@ namespace TiltBrush
                     // TODO some visual indicator that there's overflow
                 }
             }
-            
-            RescaleButtons();
             
             if (OperatorSelectButtonParent.localPosition.x < targetX)
             {
@@ -302,6 +304,8 @@ namespace TiltBrush
                     yield return null;
                 }
             }
+            
+            RescaleButtons();
         }
 
         void Update()
@@ -584,24 +588,22 @@ namespace TiltBrush
         public void HandleSavePreset(bool overwrite)
         {
             Debug.Log($"HandleSavePreset called with overwrite={overwrite}");
-            string presetPath;
             if (string.IsNullOrEmpty(CurrentPresetPath))
             {
-                presetPath = Path.Combine(
+                CurrentPresetPath = Path.Combine(
                     DefaultPresetsDirectory(),
                     Guid.NewGuid().ToString().Substring(0, 8)
                 );    
             }
             else
             {
-                presetPath = CurrentPresetPath;
                 if (!overwrite)
                 {
                     CurrentPresetPath += " (Copy)";
                 }
             }
-            SavePresetJson(presetPath);
-            RenderToImageFile($"{presetPath}.png");
+            SavePresetJson(CurrentPresetPath);
+            RenderToImageFile($"{CurrentPresetPath}.png");
             SetPresetSaveButtonState(popupButtonEnabled: true);
         }
         
@@ -1369,6 +1371,7 @@ namespace TiltBrush
             RefreshOpSelectButtons();
         }
         
+        [ContextMenu("Test RefreshOpSelectButtons")]
         private void RefreshOpSelectButtons()
         {
             OpPanel.gameObject.SetActive(CurrentPolyhedra.Operators.Count > 0);

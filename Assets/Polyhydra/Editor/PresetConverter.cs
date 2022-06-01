@@ -55,15 +55,15 @@ namespace TiltBrush
 
     public class PresetConverter
     {
-        [MenuItem("Tilt/Convert Old Polyhydra Presets")]
+        [MenuItem("Open Brush/Convert Old Polyhydra Presets")]
         public static void Convert()
         {
             var userPath = Path.Combine(
                 System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal),
                 App.kAppFolderName
             );
-            var oldPath = Path.Combine(userPath, "Media Library/Old Presets/");
-            var newPath = Path.Combine(userPath, "Media Library/Shape Recipes/");
+            var oldPath = Path.Combine(userPath, "Media Library", "Old Presets");
+            var newPath = Path.Combine(userPath, "Media Library", "Shape Recipes");
 
             var dirInfo = new DirectoryInfo(oldPath);
             FileInfo[] AllFileInfo = dirInfo.GetFiles("*.json");
@@ -109,25 +109,45 @@ namespace TiltBrush
 
                 var generatorParameters = new Dictionary<string, object>();
 
-                // generatorParameters["PolyType"] = oldPreset.PolyType;
-                // generatorParameters["JohnsonPolyType"] = oldPreset.JohnsonPolyType;
-                // generatorParameters["OtherPolyType"] = oldPreset.OtherPolyType;
-                // generatorParameters["GridType"] = oldPreset.GridType;
-                // generatorParameters["GridShape"] = oldPreset.GridShape;
-                // generatorParameters["BypassOps"] = oldPreset.BypassOps;
-                // generatorParameters["PrismP"] = oldPreset.PrismP;
-                // generatorParameters["PrismQ"] = oldPreset.PrismQ;
-
                 switch (generatorType)
                 {
                     case GeneratorTypes.Uniform:
                         UniformTypes polyType;
                         if (Enum.TryParse(oldPreset.PolyType, true, out polyType))
                         {
-                            generatorParameters = new Dictionary<string, object>
+
+                            if ((int)polyType < 6)
                             {
-                                { "type", polyType },
-                            };
+                                generatorType = GeneratorTypes.Radial;
+                                RadialSolids.RadialPolyType radialType = RadialSolids.RadialPolyType.Prism;
+                                switch (polyType)
+                                {
+                                    case UniformTypes.Polygonal_Prism:
+                                        radialType = RadialSolids.RadialPolyType.Prism;
+                                        break;
+                                    case UniformTypes.Polygonal_Antiprism:
+                                        radialType = RadialSolids.RadialPolyType.Antiprism;
+                                        break;
+                                    default:
+                                        Debug.LogWarning($"Unsupported prism type for {oldPreset.Name}. Defaulting to prism");
+                                        break;
+                                }
+                                generatorParameters = new Dictionary<string, object>
+                                {
+                                    { "type", radialType},
+                                    { "sides", oldPreset.PrismP},
+                                    { "height", 1f },
+                                    { "capheight", 0.707f },
+                                };
+                            }
+                            else
+                            {
+                                generatorParameters = new Dictionary<string, object>
+                                {
+                                    { "type", polyType },
+                                };
+                            }
+                            
                         }
                         else
                         {
@@ -226,12 +246,12 @@ namespace TiltBrush
                                 case "GyroBicupola":
                                 case "Cupola":
                                 case "Rotunda":
-                                    height = oldPreset.PrismQ;
-                                    capHeight = oldPreset.PrismQ;
+                                    height = 1f;
+                                    capHeight = .707f;
                                     break;
                                 default:
-                                    height = oldPreset.PrismQ;
-                                    capHeight = 1;
+                                    height = 1f;
+                                    capHeight = .707f;
                                     break;
                             }
                             generatorParameters = new Dictionary<string, object>
@@ -289,6 +309,7 @@ namespace TiltBrush
                                 };
                                 break;
                             case "GriddedCube":
+                                oldPreset.Ops.Insert(0, new OldOp{OpType = "Recenter"});
                                 generatorParameters = new Dictionary<string, object>
                                 {
                                     { "type", VariousSolidTypes.Box },
@@ -319,7 +340,8 @@ namespace TiltBrush
 
 
                 var operations = new List<Dictionary<string, object>>();
-
+                
+                bool skipped = false;
                 foreach (var oldOp in oldPreset.Ops)
                 {
                     var newOp = new Dictionary<string, object>();
@@ -340,14 +362,20 @@ namespace TiltBrush
                         )
                     {
                         Debug.LogWarning($"Skipping {oldOp.OpType} on {fileInfo.Name}");
+                        skipped = true;
                         continue;
                     }
                     
                     if (oldOp.OpType == "VertexFlex") oldOp.OpType = "VertexOffset";
-                    
-                    if (oldPreset.JohnsonPolyType == "FaceKeep")
+
+                    if (oldOp.OpType == "FaceScale")
                     {
-                        oldPreset.JohnsonPolyType = "FaceRemove";
+                        oldOp.Amount += 1f;
+                    }
+                    
+                    if (oldOp.OpType == "FaceKeep")
+                    {
+                        oldOp.OpType = "FaceRemove";
                         newOp["filterNot"] = true;
                     }
                     
@@ -485,11 +513,11 @@ namespace TiltBrush
                                 newOp["filterParamInt"] = Roles.New;
                                 break;
                             case "Odd":
-                                newOp["filterType"] = FilterTypes.OnlyNth;
+                                newOp["filterType"] = FilterTypes.EveryNth;
                                 newOp["filterParamInt"] = 2;
                                 break;
                             case "Even":
-                                newOp["filterType"] = FilterTypes.OnlyNth;
+                                newOp["filterType"] = FilterTypes.EveryNth;
                                 newOp["filterParamInt"] = 2;
                                 newOp["filterNot"] =  true;
                                 break;
@@ -538,9 +566,10 @@ namespace TiltBrush
                     else
                     {
                         Debug.LogError($"Failed to parse: {oldOp.OpType} for {fileInfo.Name}");
+                        skipped = true;
                     }
                 }
-
+                if (skipped) return;
                 var emd = new EditableModelDefinition(generatorType, generatorParameters, operations);
 
                 var jsonSerializer = new JsonSerializer
@@ -553,13 +582,16 @@ namespace TiltBrush
                 {
                     jsonSerializer.Serialize(jsonWriter, emd);
                 }
+
+                string thumbnailSource = Path.Combine(fileInfo.Directory.ToString(), $"preset_{presetName}.jpg");
+                string thumbNailDestination = Path.Combine(newPath, $"{presetName}.jpg");
                 try
                 {
-                    File.Copy($"{fileInfo.Directory}\\preset_{presetName}.jpg", $"{newPath}\\{presetName}.jpg");
+                    File.Copy(thumbnailSource, thumbNailDestination);
                 }
                 catch (Exception e)
                 {
-                    
+                    Debug.LogWarning($"Failed to copy thumbnail from {thumbnailSource} to {thumbNailDestination}");
                 }
             }
         }
