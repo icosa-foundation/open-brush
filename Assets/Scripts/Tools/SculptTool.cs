@@ -22,7 +22,9 @@ namespace TiltBrush
   {
     /// Keeps track of the first sculpting change made while the trigger is held.
     private bool m_AtLeastOneModificationMade = false;
-
+    /// Determines whether the tool is in push mode or pull mode.
+    /// Corresponds to the On/Off state
+    private bool m_bIsPushing = true;
     override public void Init()
     {
       base.Init();
@@ -36,6 +38,10 @@ namespace TiltBrush
       HideTool(!bEnable);
     }
 
+    override protected bool IsOn() {
+      return m_bIsPushing;
+    }
+
     public void FinalizeSculptingBatch()
     {
       m_AtLeastOneModificationMade = false;
@@ -47,12 +53,21 @@ namespace TiltBrush
         ResetToolRotation();
         ClearGpuFutureLists();
       }
+
+      if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleSculpt)) {
+        m_bIsPushing = !m_bIsPushing;
+        Debug.Log("is pushing? " + m_bIsPushing);
+        StartToggleAnimation();
+      }
     }
 
+    override protected void OnAnimationSwitch() {
+      // AudioManager.m_Instance.PlayToggleSelect(m_ToolTransform.position, true);
+      InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
+    }
 
     //CTODO: This is an absolute mess.
-    override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
-    {
+    override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
       // Metadata of target stroke
       var stroke = rGroup.m_Stroke;
       Batch parentBatch = rGroup.m_ParentBatch;
@@ -72,6 +87,7 @@ namespace TiltBrush
               // CTODO: Tweak this
               float strength = 0.2f;
               Vector3 direction = (newVertices[i] - toolPos).normalized;
+              direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
               Vector3 newVert = newVertices[i] + direction * strength;
               
               newVertices[i] = newVert;
@@ -87,6 +103,10 @@ namespace TiltBrush
       m_AtLeastOneModificationMade = true;
 
       return true;
+    }
+
+    override public void AssignControllerMaterials(InputManager.ControllerName controller) {
+      InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
     }
   }
 

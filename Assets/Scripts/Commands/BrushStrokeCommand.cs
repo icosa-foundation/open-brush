@@ -72,7 +72,6 @@ public class BrushStrokeCommand : BaseCommand {
   }
 
   protected override void OnUndo() {
-    Debug.Log("BrushStrokeCommand::OnUndo() executed");
     AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
     switch (m_Stroke.m_Type) {
     case Stroke.Type.BrushStroke: {
@@ -104,7 +103,6 @@ public class BrushStrokeCommand : BaseCommand {
 
   public override bool Merge(BaseCommand other) {
     if (base.Merge(other)) { return true; }
-    Debug.Log("BrushStrokeCommand::Merge() executed");
     BrushStrokeCommand stroke = other as BrushStrokeCommand;
     if (stroke != null && m_Widget == stroke.m_Widget &&
         stroke.m_Stroke.m_Flags.HasFlag(SketchMemoryScript.StrokeFlags.IsGroupContinue)) {
