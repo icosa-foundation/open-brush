@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4073457010706892}
-  - component: {fileID: 114495678799595950}
   - component: {fileID: 114279940278832510}
+  - component: {fileID: 8481579047172891806}
   m_Layer: 16
-  m_Name: SelectionTray
+  m_Name: SculptToolMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33,29 +33,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114495678799595950
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1503094713155990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 02d5fbbfc52caca46976aa3f64f00bf7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_DescriptionType: -1
-  m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
-  m_DescriptionActivateSpeed: 12
-  m_DescriptionZScale: 1
-  m_Mesh: {fileID: 1596481825594902}
-  m_Border: {fileID: 505703257451421084}
-  m_AnimateSpeed: 8
-  m_AnimateRange: {x: 0, y: 1}
-  m_GroupButton: {fileID: 2130795022144400380}
 --- !u!114 &114279940278832510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68,6 +45,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &8481579047172891806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1503094713155990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c828ac7da721f2d4f8c66552fe7d27a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DescriptionType: -1
+  m_DescriptionYOffset: 0
+  m_DescriptionText: 
+  m_DescriptionTextExtra: 
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  m_Mesh: {fileID: 1596481825594902}
+  m_Border: {fileID: 505703257451421084}
+  m_AnimateSpeed: 8
+  m_AnimateRange: {x: 0, y: 1}
 --- !u!1 &1596481825594902
 GameObject:
   m_ObjectHideFlags: 0
@@ -412,7 +411,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 6fac6fbfc7872e445ad562d8585098ff, type: 3}
+  m_ButtonTexture: {fileID: 0}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -422,7 +421,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 68
+  m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -447,7 +446,7 @@ GameObject:
   - component: {fileID: 2081226708995551406}
   - component: {fileID: 2130795022144400380}
   m_Layer: 16
-  m_Name: Group
+  m_Name: Flatten
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -539,13 +538,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Group Selection
+  m_DescriptionText: Flatten
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 1368da58c0ba54a1da8cdf7d009f6007, type: 3}
   m_AtlasTexture: 1
-  m_ToggleButton: 1
+  m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.04
@@ -553,7 +552,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 55
+  m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -674,7 +673,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 82c4045b61e406342beabf4cd6b325a3, type: 3}
+  m_ButtonTexture: {fileID: 0}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -684,7 +683,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 66
+  m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -805,7 +804,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: ca71eaeea4cfdfa4ba16e0f859494f3f, type: 3}
+  m_ButtonTexture: {fileID: 0}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -815,7 +814,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 67
+  m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0

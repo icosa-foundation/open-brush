@@ -143,8 +143,6 @@ public static class SketchWriter {
         {
           int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int vertCount = stroke.m_BatchSubset.m_VertLength;
-
-          // CTODO: this is so ugly it makes me weep.
           
           List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
           List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
@@ -285,7 +283,6 @@ public static class SketchWriter {
     var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, geometryData);
     if (strokes == null) { return false; }
     if (geometryData.Count > 0) { // if any sculpting modifications have been made
-      Debug.Log("Read " + geometryData.Count + " sculpted strokes");
       SketchMemoryScript.m_Instance.m_SavedSculptedGeometry = geometryData;
     }
     // Check that the strokes are in timestamp order.

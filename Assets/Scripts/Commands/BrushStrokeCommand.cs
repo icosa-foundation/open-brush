@@ -39,7 +39,6 @@ public class BrushStrokeCommand : BaseCommand {
   }
 
   protected override void OnRedo() {
-    Debug.Log("BrushStrokeCommand::OnRedo() executed");
     AudioManager.m_Instance.PlayRedoSound(CommandAudioPosition);
     switch (m_Stroke.m_Type) {
     case Stroke.Type.BrushStroke: {
