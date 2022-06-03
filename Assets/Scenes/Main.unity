@@ -8363,7 +8363,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 509619405}
-  m_Mesh: {fileID: 4300000, guid: 6d46d4696180d094389928219008da34, type: 3}
+  m_Mesh: {fileID: 4300000, guid: c53f3155a1aa44846ac4a8c7dce9da5d, type: 3}
 --- !u!114 &511823185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11403,7 +11403,7 @@ GameObject:
   - component: {fileID: 787825184}
   - component: {fileID: 787825183}
   m_Layer: 14
-  m_Name: OffCube
+  m_Name: OffSphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11467,7 +11467,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 787825181}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: a7392af3d9b82634bb35e76e63353668, type: 3}
 --- !u!1 &802990453
 GameObject:
   m_ObjectHideFlags: 0
