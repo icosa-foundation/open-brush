@@ -5580,7 +5580,7 @@ GameObject:
   - component: {fileID: 281107976}
   - component: {fileID: 281107977}
   m_Layer: 14
-  m_Name: SculptPrototype
+  m_Name: SculptTool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5647,9 +5647,9 @@ MonoBehaviour:
   m_HapticsIntersection: 0.03
   m_AllowDoubleTap: 0
   m_DoubleTapDuration: 0.4
-  m_MaxSpinSpeed: 0
-  m_SpinSpeedAcceleration: 0
-  m_SpinSpeedDecay: 0
+  m_MaxSpinSpeed: 700
+  m_SpinSpeedAcceleration: 40000
+  m_SpinSpeedDecay: 2500
 --- !u!1 &281700269
 GameObject:
   m_ObjectHideFlags: 0

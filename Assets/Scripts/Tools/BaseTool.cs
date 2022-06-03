@@ -43,7 +43,7 @@ public class BaseTool : MonoBehaviour {
     PinTool,
     EmptyTool,
     CameraPathTool,
-    SculptPrototype,
+    SculptTool,
   }
   public ToolType m_Type;
 

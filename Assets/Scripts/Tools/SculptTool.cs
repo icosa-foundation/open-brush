@@ -18,7 +18,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-  public class SculptPrototype : ToggleStrokeModificationTool
+  public class SculptTool : ToggleStrokeModificationTool
   {
     /// Keeps track of the first sculpting change made while the trigger is held.
     private bool m_AtLeastOneModificationMade = false;

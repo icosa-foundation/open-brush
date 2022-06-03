@@ -108,7 +108,7 @@ public class SculptToolMenu : UIComponent {
 
   void OnToolChanged() {
     bool isSculptTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
-                           BaseTool.ToolType.SculptPrototype;
+                           BaseTool.ToolType.SculptTool;
     if (isSculptTool != m_AnimateIn) {
       if (m_AnimationCoroutine != null) {
         StopCoroutine(m_AnimationCoroutine);
