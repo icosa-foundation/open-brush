@@ -22,6 +22,7 @@ using Polyhydra.Wythoff;
 using TiltBrush;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using Random = System.Random;
 
 public class PreviewPolyhedron : MonoBehaviour
 {
@@ -131,14 +132,16 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         public PolyMesh.Operation opType;
         public float amount;
+        public bool amountRandomize;
         public float amount2;
+        public bool amount2Randomize;
         public bool disabled;
         public FilterTypes filterType;
         public float filterParamFloat;
         public int filterParamInt;
         public Color paramColor;
         public bool filterNot;
-
+        
         public OpDefinition ClampAmount(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amountSafeMin : config.amountMin;
@@ -518,7 +521,9 @@ public class PreviewPolyhedron : MonoBehaviour
             {
                 {"operation", op.opType},
                 {"param1", op.amount},
-                {"param2", op.amount2},
+                {"param1Randomize", op.amountRandomize},
+                {"param2", op.amount},
+                {"param2Randomize", op.amount2Randomize},
                 {"paramColor", op.paramColor},
                 {"disabled", op.disabled},
                 {"filterType", op.filterType},
@@ -566,12 +571,22 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
+        var _random = new Random();
         var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
+
+        var opFunc1 = op.amountRandomize ? 
+            new OpFunc(_ => Mathf.Lerp(0, op.amount, (float)_random.NextDouble())) : 
+            new OpFunc(op.amount);
+        var opFunc2 = op.amount2Randomize ? 
+            new OpFunc(_ => Mathf.Lerp(0, op.amount2, (float)_random.NextDouble())) : 
+            new OpFunc(op.amount2);
+
+        
         conway = conway.AppyOperation(
             op.opType,
             new OpParams(
-                op.amount,
-                op.amount2,
+                opFunc1,
+                opFunc2,
                 $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
                 filter
             )

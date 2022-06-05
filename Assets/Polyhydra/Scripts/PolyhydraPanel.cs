@@ -214,6 +214,22 @@ namespace TiltBrush
             CurrentPolyhedra.RebuildPoly();
         }
 
+        public void HandleOpRandomizeButton(int paramIndex)
+        {
+            var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
+            switch (paramIndex)
+            {
+                case 0:
+                    op.amountRandomize = !op.amountRandomize;
+                    break;
+                case 1:
+                    op.amount2Randomize = !op.amount2Randomize;
+                    break;
+            }
+            CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            CurrentPolyhedra.RebuildPoly();
+        }
+
         public void ShowAllGeneratorControls()
         {
             AllGeneratorControls.SetActive(true);
@@ -926,7 +942,9 @@ namespace TiltBrush
                         opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]),
                         disabled = Convert.ToBoolean(opDict["disabled"]),
                         amount = Convert.ToSingle(opDict["param1"]),
-                        amount2 = Convert.ToSingle(opDict["param2"])
+                        amountRandomize = Convert.ToBoolean(opDict.GetValueOrDefault("param1Randomize")),
+                        amount2 = Convert.ToSingle(opDict["param2"]),
+                        amount2Randomize = Convert.ToBoolean(opDict.GetValueOrDefault("param2Randomize")),
                     };
 
                 if (opDict.ContainsKey("paramColor"))
@@ -1070,6 +1088,7 @@ namespace TiltBrush
                 SliderOpParam1.Min = opConfig.amountSafeMin;
                 SliderOpParam1.Max = opConfig.amountSafeMax;
                 SliderOpParam1.UpdateValueAbsolute(op.amount);
+                SliderOpParam1.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amountRandomize);
             }
             else
             {
@@ -1082,6 +1101,7 @@ namespace TiltBrush
                 SliderOpParam2.Min = opConfig.amount2SafeMin;
                 SliderOpParam2.Max = opConfig.amount2SafeMax;
                 SliderOpParam2.UpdateValueAbsolute(op.amount2);
+                SliderOpParam2.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amount2Randomize);
             }
             else
             {

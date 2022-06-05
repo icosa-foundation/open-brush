@@ -383,6 +383,7 @@ namespace TiltBrush
                     {
                         newOp["operation"] = opType;
                         newOp["param1"] = oldOp.Amount;
+                        newOp["param1Randomize"] = oldOp.Randomize;
                         newOp["param2"] = oldOp.Amount2;
                         newOp["disabled"] = oldOp.Disabled;
                         
