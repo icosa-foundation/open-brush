@@ -71,7 +71,7 @@ Shader "Custom/StandardSurfWithVertexColor"
                 float4 uv2 : TEXCOORD2;
                 float3 normal : TEXCOORD3;
                 float3 worldPos : TEXCOORD4;
-                float4 color : TEXCOORD5;
+                float4 vertexColor : TEXCOORD5;
                 SHADOW_COORDS(6)
             };
 
@@ -81,7 +81,7 @@ Shader "Custom/StandardSurfWithVertexColor"
                 o.uv = v.uv * _MainTex_ST.xy + _MainTex_ST.zw;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex);
-                o.color = v.color;
+                o.vertexColor = v.color;
                 o.uv1 = v.uv1;
                 o.uv2 = v.uv2;
                 TRANSFER_SHADOW(o);
@@ -157,7 +157,7 @@ Shader "Custom/StandardSurfWithVertexColor"
                 // Reduce this component to minimize double counting of main directional light.
                 lighting += float3(ShadeSH9(half4(normal, 1.0))) * 0.5;
 
-                return float4(lighting * lerp(i.color.rgb, float4(0,0,0,1), calcEdges(i.uv1, i.uv2)), i.color.a);
+                return float4(lighting * lerp(i.vertexColor.rgb, float4(0,0,0,1), calcEdges(i.uv1, i.uv2)), i.vertexColor.a);
             }
             ENDCG
         }
