@@ -25,25 +25,25 @@ Shader "Vertex color unlit"
 				float4 color : COLOR;
 			};
 
-			struct VertOut
+			struct v2f
 			{
 				UNITY_FOG_COORDS(1)
 				float4 vertex : SV_POSITION;
-				float4 color : COLOR;
+				float4 vertexColor : COLOR;
 			};
 			
-			VertOut vert (appdata v)
+			v2f vert (appdata v)
 			{
-				VertOut o;
+				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-				o.color = v.color;
+				o.vertexColor = v.color;
 				UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
 			}
 			
-			fixed4 frag (VertOut i) : SV_Target
+			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = i.color;
+				fixed4 col = i.vertexColor;
 
 				// apply fog
 				UNITY_APPLY_FOG(i.fogCoord, col);
