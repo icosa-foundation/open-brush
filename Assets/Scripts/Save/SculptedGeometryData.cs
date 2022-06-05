@@ -17,12 +17,9 @@ using System.Collections.Generic;
 
 namespace TiltBrush {
 
-/// Class for storing geometry data (verts and normals) of sculpted strokes for
+/// POD, storing geometry data (verts and normals) of sculpted strokes for
 /// serialization purposes.
-public class SculptedGeometryData { 
-    // This is just POD and the whole class should be a struct, but my crappy
-    // implementation needs it to be nullable for now.
-    // CTODO: make this less abominable
+public struct SculptedGeometryData { 
     public List<Vector3> vertices;
     public List<Vector3> normals;
 

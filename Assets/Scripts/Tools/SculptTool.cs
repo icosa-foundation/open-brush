@@ -56,7 +56,6 @@ namespace TiltBrush
 
       if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleSculpt)) {
         m_bIsPushing = !m_bIsPushing;
-        Debug.Log("is pushing? " + m_bIsPushing);
         StartToggleAnimation();
       }
     }
@@ -85,7 +84,7 @@ namespace TiltBrush
           if (distance <= GetSize() / m_CurrentCanvas.Pose.scale)
           {
               // CTODO: Tweak this
-              float strength = 0.2f;
+              float strength = 0.1f; // / distance * GetSize();
               Vector3 direction = (newVertices[i] - toolPos).normalized;
               direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
               Vector3 newVert = newVertices[i] + direction * strength;
