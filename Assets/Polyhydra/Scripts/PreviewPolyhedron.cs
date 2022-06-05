@@ -573,24 +573,39 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         var _random = new Random();
         var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
-
-        var opFunc1 = op.amountRandomize ? 
-            new OpFunc(_ => Mathf.Lerp(0, op.amount, (float)_random.NextDouble())) : 
-            new OpFunc(op.amount);
-        var opFunc2 = op.amount2Randomize ? 
-            new OpFunc(_ => Mathf.Lerp(0, op.amount2, (float)_random.NextDouble())) : 
-            new OpFunc(op.amount2);
-
         
-        conway = conway.AppyOperation(
-            op.opType,
-            new OpParams(
+        var opFunc1 = new OpFunc(_ => Mathf.Lerp(0, op.amount, (float)_random.NextDouble()));
+        var opFunc2 = new OpFunc(_ => Mathf.Lerp(0, op.amount2, (float)_random.NextDouble()));
+        
+        OpParams opParams = (op.amountRandomize, op.amount2Randomize) switch
+        {
+            (false, false) => new OpParams(
+                op.amount,
+                op.amount2,
+                $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
+                filter
+            ),
+            (true, false) => new OpParams(
+                opFunc1,
+                op.amount2,
+                $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
+                filter
+            ),
+            (false, true) => new OpParams(
+                op.amount,
+                opFunc2,
+                $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
+                filter
+            ),
+            (true, true) => new OpParams(
                 opFunc1,
                 opFunc2,
                 $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
                 filter
-            )
-        );
+            ),
+        };
+
+        conway = conway.AppyOperation(op.opType, opParams);
         return conway;
     }
 
