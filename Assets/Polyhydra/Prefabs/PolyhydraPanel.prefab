@@ -202,6 +202,7 @@ MonoBehaviour:
   m_PromoBorders:
   - {fileID: 23000011669290354}
   - {fileID: 5352209825629472804}
+  m_ThumbnailCamera: {fileID: 1165147683445718971}
   PresetInitialSaveButton: {fileID: 7743738621273532884}
   PresetSaveOptionsPopupButton: {fileID: 4125988355699568901}
   ButtonMainCategory: {fileID: 114000011377880380}

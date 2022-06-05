@@ -25,6 +25,7 @@ using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace TiltBrush
@@ -47,6 +48,7 @@ namespace TiltBrush
     {
         [NonSerialized] public PreviewPolyhedron CurrentPolyhedra;
 
+        public Camera m_ThumbnailCamera;
         public GameObject PresetInitialSaveButton;
         public GameObject PresetSaveOptionsPopupButton;
 
@@ -590,7 +592,6 @@ namespace TiltBrush
 
         public void HandleSavePreset(bool overwrite)
         {
-            Debug.Log($"HandleSavePreset called with overwrite={overwrite}");
             if (string.IsNullOrEmpty(CurrentPresetPath))
             {
                 CurrentPresetPath = Path.Combine(
@@ -965,17 +966,37 @@ namespace TiltBrush
 
             CurrentPolyhedra.RebuildPoly();
         }
+        
+        Bounds CalculateBounds(GameObject go) {
+            Bounds b = new Bounds(go.transform.position, Vector3.zero);
+            Object[] rList = go.GetComponentsInChildren(typeof(Renderer));
+            foreach (Renderer r in rList) {
+                b.Encapsulate(r.bounds);
+            }
+            return b;
+        }
+        
+        void FocusCameraOnGameObject(Camera c, GameObject go, float zoomFactor) {
+            Bounds b = CalculateBounds(go);
+            Vector3 max = b.size;
+            float radius = Mathf.Max(max.x, Mathf.Max(max.y, max.z));
+            float dist = radius /  (Mathf.Sin(c.fieldOfView * Mathf.Deg2Rad / 2f));
+            dist *= zoomFactor;
+            Vector3 pos = Random.onUnitSphere * dist + b.center;
+            c.transform.position = pos;
+            c.transform.LookAt(b.center);
+        }
 
         void RenderToImageFile(string presetThumbnailPath)
         {
-            var cam = CurrentPolyhedra.GetComponentInChildren<Camera>(true);
-            cam.enabled = true;
-            cam.gameObject.SetActive(true);
+            m_ThumbnailCamera.enabled = true;
+            m_ThumbnailCamera.gameObject.SetActive(true);
+            FocusCameraOnGameObject(m_ThumbnailCamera, PreviewPolyParent, 0.5f);
             RenderTexture activeRenderTexture = RenderTexture.active;
             var tex = new RenderTexture(256, 256, 32);
-            cam.targetTexture = tex;
-            RenderTexture.active = cam.targetTexture;
-            cam.Render();
+            m_ThumbnailCamera.targetTexture = tex;
+            RenderTexture.active = m_ThumbnailCamera.targetTexture;
+            m_ThumbnailCamera.Render();
             Texture2D image = new Texture2D(tex.width, tex.height);
             image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
             image.Apply();
@@ -983,8 +1004,8 @@ namespace TiltBrush
             byte[] bytes = image.EncodeToPNG();
             Destroy(image);
             File.WriteAllBytes(presetThumbnailPath, bytes);
-            cam.gameObject.SetActive(false);
-            cam.enabled = false;
+            m_ThumbnailCamera.gameObject.SetActive(false);
+            m_ThumbnailCamera.enabled = false;
         }
 
 
