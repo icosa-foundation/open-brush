@@ -39,18 +39,10 @@ namespace TiltBrush {
     public override bool NeedsSave { get { return true; } } // should always save
 
     private void ApplySculptModification(List<Vector3> vertices) {
-
-      if (m_TargetBatch == null) {
-        // CTODO: This occurs when a user moves a stroke with the selection tool and then tries to undo/redo.
-        // Currently, the step is skipped, ergo causing some sculpting changes inbetween to be "permanent".
-        // The solution here isn't the best, it should be improved.
-        Debug.LogWarning("Missing parent batch, skipping sculpt command");
-        return;
-      }
-
       for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
         m_TargetBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
       }
+
       m_TargetBatch.DelayedUpdateMesh();
     }
 

@@ -144,11 +144,16 @@ public static class SketchWriter {
           int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int vertCount = stroke.m_BatchSubset.m_VertLength;
           
-          List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
-          List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
+          //CTODO: suboptimal solution
+          try {
+            List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
+            List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
+            snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
+          } catch {
+            Debug.LogWarning("Orphan batchsubset, skipping");
+          }
 
 
-          snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
         }
         yield return snapshot;
       } else {

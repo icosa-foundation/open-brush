@@ -156,6 +156,7 @@ public class Stroke : StrokeData {
     // And we can't use field initializers for the linked list creation.
     m_NodeByTime = new LinkedListNode<Stroke>(this);
     m_PlaybackNode = new LinkedListNode<Stroke>(this);
+    m_bWasSculpted = existing.m_bWasSculpted;
   }
 
   /// Makes a copy of stroke, if one has not already been made.
@@ -242,9 +243,7 @@ public class Stroke : StrokeData {
       // "5" is the most-likely to be unused. It's terrible that this
       // needs to go through a pointer.
       var pointer = PointerManager.m_Instance.GetTransientPointer(5);
-      Debug.Log("GotHere2");
       pointer.RecreateLineFromMemory(this);
-      Debug.Log("GotHere3");
     } else if (canvas != null) {
       SetParent(canvas);
     } else {
