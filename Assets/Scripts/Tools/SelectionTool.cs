@@ -174,7 +174,6 @@ public class SelectionTool : ToggleStrokeModificationTool {
   }
 
   override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup) {
-    Debug.Log("SelectionTool:HandleIntersectionWithBatchedStroke() called!");
     var stroke = rGroup.m_Stroke;
     var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
     bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
