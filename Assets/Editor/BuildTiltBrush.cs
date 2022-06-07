@@ -992,13 +992,14 @@ static class BuildTiltBrush
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
+            m_FeaturesNotEnabled = new();
+
             if (tiltOptions.XrSdk != XrSdkMode.OpenXR)
             {
                 return;
             }
 
             List<string> requiredFeatures = new();
-            m_FeaturesNotEnabled = new();
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
 
