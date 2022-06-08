@@ -25,6 +25,10 @@ namespace TiltBrush
     /// Determines whether the tool is in push mode or pull mode.
     /// Corresponds to the On/Off state
     private bool m_bIsPushing = true;
+
+    [SerializeField]
+    public GameObject m_ToolInteractor;
+
     override public void Init()
     {
       base.Init();
@@ -81,11 +85,17 @@ namespace TiltBrush
       {
           // Distance from vertex to pointer's center.
           float distance = Vector3.Distance(newVertices[i], toolPos);
-          if (distance <= GetSize() / m_CurrentCanvas.Pose.scale)
+          //Debug.Log("Bounds center: " + m_ToolInteractor.GetComponent<Renderer>().bounds.center + " vertex pos: " + newVertices[i]);
+          if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ToolInteractor.GetComponent<Renderer>().bounds.Contains(m_CurrentCanvas.Pose * newVertices[i]))
           {
               // CTODO: Tweak this
               float strength = 0.1f; // / distance * GetSize();
-              Vector3 direction = (newVertices[i] - toolPos).normalized;
+              // Temporarily housing the crease tool formula here because I'm lazy
+              // CTODO: move it elsewhere and restore the original
+
+              // Vector3 direction = (newVertices[i] - toolPos).normalized;
+              // direction.y = newVertices[i].y;
+              Vector3 direction = -(newVertices[i] - rGroup.m_Bounds.center).normalized;
               direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
               Vector3 newVert = newVertices[i] + direction * strength;
               
@@ -94,6 +104,8 @@ namespace TiltBrush
               stroke.m_bWasSculpted = true;
               PlayModifyStrokeSound();
               InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
+
+
           }
       }
 
