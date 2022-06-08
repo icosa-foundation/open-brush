@@ -81,32 +81,8 @@ namespace TiltBrush
       // Tool position adjusted by canvas transformations
       var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
-      for (int i = 0; i < vertLength; i++)
-      {
-          // Distance from vertex to pointer's center.
-          float distance = Vector3.Distance(newVertices[i], toolPos);
-          //Debug.Log("Bounds center: " + m_ToolInteractor.GetComponent<Renderer>().bounds.center + " vertex pos: " + newVertices[i]);
-          if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ToolInteractor.GetComponent<Renderer>().bounds.Contains(m_CurrentCanvas.Pose * newVertices[i]))
-          {
-              // CTODO: Tweak this
-              float strength = 0.1f; // / distance * GetSize();
-              // Temporarily housing the crease tool formula here because I'm lazy
-              // CTODO: move it elsewhere and restore the original
-
-              // Vector3 direction = (newVertices[i] - toolPos).normalized;
-              // direction.y = newVertices[i].y;
-              Vector3 direction = -(newVertices[i] - rGroup.m_Bounds.center).normalized;
-              direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
-              Vector3 newVert = newVertices[i] + direction * strength;
-              
-              newVertices[i] = newVert;
-              
-              stroke.m_bWasSculpted = true;
-              PlayModifyStrokeSound();
-              InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
-
-
-          }
+      for (int i = 0; i < vertLength; i++) {
+        newVertices[i] = CreaseTransform(newVertices[i], toolPos, rGroup);
       }
 
       SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
@@ -119,6 +95,54 @@ namespace TiltBrush
     override public void AssignControllerMaterials(InputManager.ControllerName controller) {
       InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
     }
+
+    //CTODO: some duplication between the functions
+    Vector3 PushTransform(Vector3 vertex, Vector3 toolPos, BatchSubset rGroup) {
+      // Distance from vertex to pointer's center.
+      float distance = Vector3.Distance(vertex, toolPos);
+
+      if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ToolInteractor.GetComponent<Renderer>().bounds.Contains(m_CurrentCanvas.Pose * vertex)) {
+        float strength = 0.1f;
+
+        Vector3 direction = (vertex - toolPos).normalized;
+
+        direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
+        Vector3 newVert = vertex + direction * strength;
+        
+      
+        rGroup.m_Stroke.m_bWasSculpted = true;
+        PlayModifyStrokeSound();
+        InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
+
+        return newVert;
+      } else {
+        return vertex;
+      }
+    }
+
+    Vector3 CreaseTransform(Vector3 vertex, Vector3 toolPos, BatchSubset rGroup) {
+      // Distance from vertex to pointer's center.
+      float distance = Vector3.Distance(vertex, toolPos);
+
+      if (distance <= GetSize() / m_CurrentCanvas.Pose.scale 
+          && m_ToolInteractor.GetComponent<Renderer>().bounds.Contains(m_CurrentCanvas.Pose * vertex)) {
+        float strength = 0.1f;
+        Vector3 direction = -(vertex - rGroup.m_Bounds.center).normalized;
+
+        direction *= m_bIsPushing ? 1 : -1; // push or pull based on current mode
+        Vector3 newVert = vertex + direction * strength;
+        
+        rGroup.m_Stroke.m_bWasSculpted = true;
+        PlayModifyStrokeSound();
+        InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
+
+        return newVert;
+      } else {
+        return vertex;
+      }
+    }
   }
+
+
 
 } // namespace TiltBrush
