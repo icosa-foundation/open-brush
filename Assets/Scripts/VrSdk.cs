@@ -296,6 +296,14 @@ namespace TiltBrush
                     m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(
                         typeof(Compositor_FrameTiming))
                 };
+#if PIMAX_SUPPORTED
+                // Pimax currently requires initialising their Platform SDK.
+                if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
+                {
+                    Pimax.Platform.PvrPlatform.init();
+                    Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
+                }
+#endif // PIMAX_SUPPORTED
             }
             else if (App.Config.m_SdkMode == SdkMode.Oculus)
             {
