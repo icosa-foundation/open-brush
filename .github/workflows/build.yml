@@ -124,6 +124,9 @@ jobs:
           - name: Windows SteamVR
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
+          - name: Windows Pimax
+            targetPlatform: StandaloneWindows64
+            vrsdk: SteamVR
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
@@ -215,6 +218,27 @@ jobs:
           cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
           rm -rf tmp package.tmp
           ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
+
+      - name: Install Pimax unity package
+        if: matrix.name == 'Windows Pimax'
+        run: |
+          # version 0.6.3
+          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
+          wget -q https://dl.appstore.pimax.com/sdk/Pimax_Platform_Unity_SDK_v0.6.3.zip -O package.zip
+          unzip package.zip
+          tar -C tmp -xzf PimaxPlatform_v0.6.3.unitypackage
+          find tmp -type f | xargs chmod a-x
+          for pn in tmp/*/pathname; do
+            id=${pn%/*}
+            id=${id#*/}
+            p=$(head -1 $pn)
+            d=${p%/*}
+            mkdir -p "tmp/$d"
+            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
+            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
+          done
+          cp -R tmp/Assets/Pimax Assets/
+          rm -rf tmp package.tmp
 
       - name: Install TextMesh Pro package
         run: |
@@ -311,6 +335,11 @@ jobs:
       - name: Enable keystore
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
+
+      - name: Set PIMAX_SUPPORTED in csc.rsp
+        if: matrix.name == 'Windows Pimax'
+        run: |
+          echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
         uses: game-ci/unity-builder@v2
