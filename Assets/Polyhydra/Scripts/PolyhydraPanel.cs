@@ -211,6 +211,7 @@ namespace TiltBrush
             var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
             op.disabled = !op.disabled;
             CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
+            RefreshOpSelectButtons();
             CurrentPolyhedra.RebuildPoly();
         }
 
