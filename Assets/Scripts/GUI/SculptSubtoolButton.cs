@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Chingiz Dadashov-Khandan
+// Copyright 2022 Chingiz Dadashov-Khandan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
 // limitations under the License.
 
 using UnityEngine;
-namespace TiltBrush {
-public class CreaseSubtool : BaseSculptSubtool {
-    override public bool IsInReach(Vector3 vertex, TrTransform CanvasPose) {
-        return GetComponent<Renderer>().bounds.Contains(CanvasPose * vertex);
-    }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool isPushing, BatchSubset rGroup) {
-        return (isPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
+namespace TiltBrush {
+public class SculptSubtoolButton : BaseButton {
+
+    [SerializeField]
+    public SculptSubtoolManager.SubTool m_SubTool;
+
+    override protected void OnButtonPressed() { 
+        SculptSubtoolManager.m_Instance.SetSubtool(m_SubTool);
     }
 }
-
 } // namespace TiltBrush

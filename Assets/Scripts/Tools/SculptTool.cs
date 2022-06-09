@@ -52,10 +52,20 @@ public class SculptTool : ToggleStrokeModificationTool
     return m_bIsPushing;
   }
 
+  public void SetSubtool(BaseSculptSubtool subTool)
+  {
+    // Disable old subtool
+    m_ActiveSubtool.gameObject.SetActive(false);
+
+    m_ActiveSubtool = subTool;
+    m_ActiveSubtool.gameObject.SetActive(true);
+  }
+  
   public void FinalizeSculptingBatch()
   {
     m_AtLeastOneModificationMade = false;
   }
+
 
   override public void OnUpdateDetection() {
     if (!m_CurrentlyHot && m_ToolWasHot) {
