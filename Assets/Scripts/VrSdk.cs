@@ -464,7 +464,7 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 // N points, clockwise winding (but axis is undocumented), undocumented convexity
                 // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.PlayArea)
+                points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
                     .Select(v => UnityFromOculus(v)).ToArray();
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
@@ -635,10 +635,11 @@ namespace TiltBrush
                         bool isQuestController = (XRDevice.refreshRate < 81f) ||
                             (App.Config.VrHardware == VrHardware.Quest);
                         controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
-                        // else /* Assume SteamVR */
-                        // {
-                        //     controlsPrefab = isQuestController ? m_SteamQuestControlsPrefab : m_SteamRiftControlsPrefab;
-                        // }
+#if OCULUS_SUPPORTED
+                        // If we're using Oculus' own plugin rather than OpenXR, the controller pose is different.
+                        // Therefore, we need to set a different prefab.
+                        controlsPrefab = isQuestController ? m_OculusQuestControlsPrefab : m_OculusRiftControlsPrefab;
+#endif // OCULUS_SUPPORTED
                         break;
                     }
                 case ControllerStyle.Wmr:
@@ -1192,7 +1193,7 @@ namespace TiltBrush
             Debug.Assert(level >= 0 && level <= 3);
             if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
             {
-                OVRManager.fixedFoveatedRenderingLevel = (OVRManager.FixedFoveatedRenderingLevel)level;
+                OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
             }
 #endif // OCULUS_SUPPORTED
         }
@@ -1214,7 +1215,7 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
             if (App.Config.IsMobileHardware)
             {
-                OVRManager.suggestedGpuPerfLevel = (OVRManager.ProcessorPerformanceLevel)level;
+                OVRManager.gpuLevel = level;
             }
 #endif // OCULUS_SUPPORTED
         }

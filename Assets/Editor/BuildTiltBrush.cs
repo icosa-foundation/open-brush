@@ -992,20 +992,26 @@ static class BuildTiltBrush
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
-            List<string> requiredFeatures = new();
             m_FeaturesNotEnabled = new();
+
+            if (tiltOptions.XrSdk != XrSdkMode.OpenXR)
+            {
+                return;
+            }
+
+            List<string> requiredFeatures = new();
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
 
             switch (tiltOptions.XrSdk)
             {
-                case XrSdkMode.Oculus:
-                    requiredFeatures.Add("com.oculus.openxr.feature.oculusxr");
-                    if (m_targetGroup == BuildTargetGroup.Android)
-                    {
-                        requiredFeatures.Add("com.unity.openxr.feature.oculusquest");
-                    }
-                    break;
+                // case XrSdkMode.Oculus:
+                //     requiredFeatures.Add("com.oculus.openxr.feature.oculusxr");
+                //     if (m_targetGroup == BuildTargetGroup.Android)
+                //     {
+                //         requiredFeatures.Add("com.unity.openxr.feature.oculusquest");
+                //     }
+                //     break;
             }
 
             // Locate and enable features, fail if not found.
@@ -1050,6 +1056,8 @@ static class BuildTiltBrush
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.Oculus:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
+                    break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;

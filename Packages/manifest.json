@@ -16,6 +16,7 @@
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.management": "4.2.1",
+    "com.unity.xr.oculus": "3.0.1",
     "com.unity.xr.openxr": "1.4.2",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
