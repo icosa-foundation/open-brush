@@ -223,9 +223,10 @@ jobs:
         if: matrix.name == 'Windows Pimax'
         run: |
           # version 0.6.3
-          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
+          # Same as above, but adapted to work for Pimax instead.
           wget -q https://dl.appstore.pimax.com/sdk/Pimax_Platform_Unity_SDK_v0.6.3.zip -O package.zip
           unzip package.zip
+          mkdir tmp
           tar -C tmp -xzf PimaxPlatform_v0.6.3.unitypackage
           find tmp -type f | xargs chmod a-x
           for pn in tmp/*/pathname; do
@@ -238,7 +239,7 @@ jobs:
             cp "tmp/$id/asset.meta" "tmp/${p}.meta"
           done
           cp -R tmp/Assets/Pimax Assets/
-          rm -rf tmp package.tmp
+          rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
 
       - name: Install TextMesh Pro package
         run: |
