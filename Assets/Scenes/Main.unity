@@ -10265,6 +10265,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 658267388}
+  - component: {fileID: 658267389}
   m_Layer: 14
   m_Name: Subtools
   m_TagString: Untagged
@@ -10288,6 +10289,19 @@ Transform:
   m_Father: {fileID: 1427435344}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &658267389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 658267387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37dae074a71da054696430519af707f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SculptTool: {fileID: 281107977}
 --- !u!1 &669339390
 GameObject:
   m_ObjectHideFlags: 0
