@@ -25,7 +25,7 @@ public abstract class BaseSculptSubtool : MonoBehaviour {
         return true;
     }
 
-    virtual public float CalculateStrength(float distance, bool bPushing) {
+    virtual public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
         return m_DefaultStrength;
     }
 

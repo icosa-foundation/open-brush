@@ -17,8 +17,8 @@ using UnityEngine;
 namespace TiltBrush {
 public class PushSubtool : BaseSculptSubtool {
 
-    override public float CalculateStrength(float distance, bool bPushing) {
-        if (!bPushing ) { // special calculation to reduce spikyness
+    override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
+        if (!bPushing) { // special calculation to reduce spikyness
             return m_DefaultStrength * Mathf.Pow(distance, 2);
         } else {
             return m_DefaultStrength;

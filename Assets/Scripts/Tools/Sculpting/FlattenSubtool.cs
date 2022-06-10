@@ -15,11 +15,16 @@
 using UnityEngine;
 namespace TiltBrush {
 public class FlattenSubtool : BaseSculptSubtool {
-    // Return direction from the vertex to the flattening tool mesh. 
-    // If the vertex is already there, return a zero vertex. (could be done in IsInReach)
+    //CTODO: broken
+    override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
+        if (GetComponent<Collider>().bounds.Contains(vertex)) {
+            return 0;
+        }
+        return m_DefaultStrength;
+    }
+
     override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup) {
-        return Vector3.zero; //CTODO: implement
-        
+       return (bPushing ? 1 : -1) * (vertex - GetComponent<Collider>().ClosestPoint(vertex)).normalized;
     }
 }
 

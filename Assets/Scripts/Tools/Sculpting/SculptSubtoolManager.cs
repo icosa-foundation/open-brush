@@ -17,6 +17,7 @@ public class SculptSubtoolManager : MonoBehaviour {
     public enum SubTool {
         Push,
         Crease,
+        Flatten,
     }
 
     void Awake() {

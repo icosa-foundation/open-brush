@@ -784,7 +784,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_SubTool: 0
+  m_SubTool: 2
 --- !u!1 &4746940080256643886
 GameObject:
   m_ObjectHideFlags: 0
