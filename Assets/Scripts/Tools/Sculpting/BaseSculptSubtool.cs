@@ -16,6 +16,8 @@ using UnityEngine;
 
 namespace TiltBrush {
 public abstract class BaseSculptSubtool : MonoBehaviour {
+
+    protected float m_DefaultStrength = 0.1f;
     
     /// For sculpting tools with an interactor that limits the sculpting tool's
     /// sphere of influence. If the interactor doesn't exist or shouldn't limit things, this is ignored.
@@ -23,6 +25,10 @@ public abstract class BaseSculptSubtool : MonoBehaviour {
         return true;
     }
 
-    abstract public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool isPushing, BatchSubset rGroup);
+    virtual public float CalculateStrength(float distance, bool bPushing) {
+        return m_DefaultStrength;
+    }
+
+    abstract public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup);
 }
 } //namespace TiltBrush

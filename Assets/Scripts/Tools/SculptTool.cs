@@ -56,7 +56,6 @@ public class SculptTool : ToggleStrokeModificationTool
   {
     // Disable old subtool
     m_ActiveSubtool.gameObject.SetActive(false);
-
     m_ActiveSubtool = subTool;
   }
   
@@ -95,15 +94,17 @@ public class SculptTool : ToggleStrokeModificationTool
     if (parentBatch == null)
     {
       Debug.LogWarning("Orphaned batch subset, skipping");
-    }
+    } 
+
+    // CTODO: this is very expensive, as tons of new arrays are being copied with every trigger press.
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
     var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
 
     for (int i = 0; i < vertLength; i++) {
 
-      float strength = 0.1f; // CTODO: maybe make the subtools calculate this
       float distance = Vector3.Distance(newVertices[i], toolPos);
+      float strength = m_ActiveSubtool.CalculateStrength(distance, m_bIsPushing); // CTODO: maybe make the subtools calculate this
 
       if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ActiveSubtool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
         Vector3 direction = m_ActiveSubtool.CalculateDirection(newVertices[i], toolPos, m_bIsPushing, rGroup);

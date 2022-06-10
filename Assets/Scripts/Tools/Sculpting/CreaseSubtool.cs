@@ -19,8 +19,8 @@ public class CreaseSubtool : BaseSculptSubtool {
         return GetComponent<Renderer>().bounds.Contains(CanvasPose * vertex);
     }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool isPushing, BatchSubset rGroup) {
-        return (isPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
+    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup) {
+        return (bPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
     }
 }
 
