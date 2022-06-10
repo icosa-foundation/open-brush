@@ -58,7 +58,6 @@ public class SculptTool : ToggleStrokeModificationTool
     m_ActiveSubtool.gameObject.SetActive(false);
 
     m_ActiveSubtool = subTool;
-    m_ActiveSubtool.gameObject.SetActive(true);
   }
   
   public void FinalizeSculptingBatch()
@@ -93,6 +92,10 @@ public class SculptTool : ToggleStrokeModificationTool
     int vertLength = rGroup.m_VertLength;
 
     // Copy the relevant portion of geometry to modify
+    if (parentBatch == null)
+    {
+      Debug.LogWarning("Orphaned batch subset, skipping");
+    }
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
     var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
