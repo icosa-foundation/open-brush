@@ -90,12 +90,15 @@ public class SculptTool : ToggleStrokeModificationTool
     int startIndex = rGroup.m_StartVertIndex;
     int vertLength = rGroup.m_VertLength;
 
-    // Copy the relevant portion of geometry to modify
-    if (parentBatch == null)
-    {
+    if (parentBatch == null || parentBatch.m_Geometry == null) { 
+      // Shouldn't happen anymore
+      // CTODO: change to error?
       Debug.LogWarning("Orphaned batch subset, skipping");
-    } 
-
+      return false;
+    }
+    parentBatch.m_Geometry.EnsureGeometryResident();
+    
+    // Copy the relevant portion of geometry to modify
     // CTODO: this is very expensive, as tons of new arrays are being copied with every trigger press.
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations

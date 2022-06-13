@@ -144,8 +144,8 @@ public static class SketchWriter {
           int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int vertCount = stroke.m_BatchSubset.m_VertLength;
           
-          //CTODO: suboptimal solution
           try {
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
             List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
             List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
             snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
