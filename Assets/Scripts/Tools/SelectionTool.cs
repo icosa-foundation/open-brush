@@ -228,7 +228,6 @@ public class SelectionTool : ToggleStrokeModificationTool {
 
     // Only allow deselection if we have strokes.
     if (!SelectionManager.m_Instance.HasSelection) {
-      Debug.Log("Deselection Disallowed");
       SelectionManager.m_Instance.RemoveFromSelection(false);
     }
   }
