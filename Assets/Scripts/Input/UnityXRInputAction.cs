@@ -367,6 +367,72 @@ namespace TiltBrush
                     ""action"": ""PadAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Vive Pad Right"",
+                    ""id"": ""2ebfb718-c777-42c4-975a-2c1b95c7b9ff"",
+                    ""path"": ""VivePadButton(min=0.1,max=1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""padButton"",
+                    ""id"": ""7d7a589a-5c5a-4639-87e2-d35af20eaa27"",
+                    ""path"": ""<ViveController>{RightHand}/trackpadClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""axisToModify"",
+                    ""id"": ""e1e38b8d-d589-4bed-bba6-8077a416f1ad"",
+                    ""path"": ""<ViveController>{RightHand}/trackpad/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Vive Pad Left"",
+                    ""id"": ""7a934ba3-3ece-417f-8993-713e4e646425"",
+                    ""path"": ""VivePadButton(min=-1,max=-0.1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""padButton"",
+                    ""id"": ""789a8d32-17b1-4518-ad85-123ee4871bc7"",
+                    ""path"": ""<ViveController>{RightHand}/trackpadClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""axisToModify"",
+                    ""id"": ""2b21db98-9d6c-49bd-9cc1-9e117ad78504"",
+                    ""path"": ""<ViveController>{RightHand}/trackpad/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         },
@@ -712,6 +778,72 @@ namespace TiltBrush
                     ""action"": ""ThumbAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Vive Pad Right"",
+                    ""id"": ""4870119a-fffc-449f-bb51-3ae912068789"",
+                    ""path"": ""VivePadButton(min=0.1,max=1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""padButton"",
+                    ""id"": ""ca4a4aa2-0bbe-4a45-9d2f-57f833b5707c"",
+                    ""path"": ""<ViveController>{LeftHand}/trackpadClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""axisToModify"",
+                    ""id"": ""8ad41a33-9308-403b-95fc-d54bb3687dce"",
+                    ""path"": ""<ViveController>{LeftHand}/trackpad/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Vive Pad Left"",
+                    ""id"": ""0c7ffe69-898f-4d53-b66f-41f4ea0da3a4"",
+                    ""path"": ""VivePadButton(min=-1,max=-0.1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""padButton"",
+                    ""id"": ""c59eeed9-cd72-4533-a70e-2cf8ea386489"",
+                    ""path"": ""<ViveController>{LeftHand}/trackpadClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""axisToModify"",
+                    ""id"": ""52a7e2df-742c-4fcf-a41f-66a37c66e9cd"",
+                    ""path"": ""<ViveController>{LeftHand}/trackpad/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
