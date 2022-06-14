@@ -18088,9 +18088,9 @@ MonoBehaviour:
     type: 3}
   m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
-  m_OculusRiftControlsPrefab: {fileID: 1000010438099326, guid: 131d871a617b1fe4eabf58454bc37ff2,
+  m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
-  m_OculusQuestControlsPrefab: {fileID: 1000010438099326, guid: b4dcfd92747c6ef448f06a0c8d30a3bc,
+  m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
   m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294,
     type: 3}
