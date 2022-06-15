@@ -15,11 +15,11 @@
 using UnityEngine;
 namespace TiltBrush {
 public class CreaseSubtool : BaseSculptSubtool {
-    override public bool IsInReach(Vector3 vertex, TrTransform CanvasPose) {
-        return GetComponent<Collider>().bounds.Contains(CanvasPose * vertex);
+    override public bool IsInReach(Vector3 vertex, TrTransform canvasPose) {
+        return GetComponent<Collider>().bounds.Contains(canvasPose * vertex);
     }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup) {
+    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
         return (bPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
     }
 }

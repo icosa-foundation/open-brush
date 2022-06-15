@@ -103,15 +103,14 @@ public class SculptTool : ToggleStrokeModificationTool
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
     var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
-
+    //CTODO: sigh, this is a mess again.
     for (int i = 0; i < vertLength; i++) {
 
       float distance = Vector3.Distance(newVertices[i], toolPos);
       float strength = m_ActiveSubtool.CalculateStrength(newVertices[i], distance, m_bIsPushing); // CTODO: maybe make the subtools calculate this
 
       if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ActiveSubtool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
-        Vector3 direction = m_ActiveSubtool.CalculateDirection(newVertices[i], toolPos, m_bIsPushing, rGroup);
-
+        Vector3 direction = m_ActiveSubtool.CalculateDirection(newVertices[i], toolPos, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
         newVertices[i] += direction * strength;
 
         rGroup.m_Stroke.m_bWasSculpted = true;

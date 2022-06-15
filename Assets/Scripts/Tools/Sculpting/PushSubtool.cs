@@ -25,7 +25,7 @@ public class PushSubtool : BaseSculptSubtool {
         }
     }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup) {
+    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
         return (bPushing ? 1 : -1) * (vertex - toolPos).normalized;
     }
 }

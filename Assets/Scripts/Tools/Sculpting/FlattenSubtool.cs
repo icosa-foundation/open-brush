@@ -15,17 +15,20 @@
 using UnityEngine;
 namespace TiltBrush {
 public class FlattenSubtool : BaseSculptSubtool {
-    //CTODO: broken
-    override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
-        if (GetComponent<Collider>().bounds.Contains(vertex)) {
-            return 0;
-        }
-        return m_DefaultStrength;
-    }
+  //CTODO: broken
+  override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
+      if (distance < 0.25f) {
+        return 0;
+      }
+    return m_DefaultStrength;
+  }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, bool bPushing, BatchSubset rGroup) {
-       return (bPushing ? 1 : -1) * (vertex - GetComponent<Collider>().ClosestPoint(vertex)).normalized;
-    }
+  override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
+    // var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);    
+    // sphere.transform.position = GetComponent<Collider>().ClosestPoint(vertex);
+    // Debug.LogError("Collider closest point = " + GetComponent<Collider>().ClosestPoint(canvasPose.inverse * vertex) + " vertex pos = " + vertex);
+    return -(vertex - canvasPose.inverse * GetComponent<Collider>().ClosestPoint(canvasPose * vertex)).normalized;
+  }
 }
 
 } // namespace TiltBrush
