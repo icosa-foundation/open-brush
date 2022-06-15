@@ -649,11 +649,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: TBD
+  m_DescriptionText: Rotate
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: 08eb6ec4e0dd15d4e96281aba0e32f1b, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -663,7 +663,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_SubTool: 0
+  m_SubTool: 3
 --- !u!1 &2022053037772403666
 GameObject:
   m_ObjectHideFlags: 0

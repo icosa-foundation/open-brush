@@ -18,6 +18,7 @@ public class SculptSubToolManager : MonoBehaviour {
         Push,
         Crease,
         Flatten,
+        Rotate,
     }
 
     void Awake() {

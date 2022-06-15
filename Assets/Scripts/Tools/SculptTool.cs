@@ -48,15 +48,13 @@ public class SculptTool : ToggleStrokeModificationTool
     return m_bIsPushing;
   }
 
-  public void SetSubTool(BaseSculptSubTool subTool)
-  {
+  public void SetSubTool(BaseSculptSubTool subTool) {
     // Disable old subtool
     m_ActiveSubTool.gameObject.SetActive(false);
     m_ActiveSubTool = subTool;
   }
   
-  public void FinalizeSculptingBatch()
-  {
+  public void FinalizeSculptingBatch() {
     m_AtLeastOneModificationMade = false;
   }
 
