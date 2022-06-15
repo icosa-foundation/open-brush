@@ -4,11 +4,11 @@ using UnityEngine;
 
 
 namespace TiltBrush {
-public class SculptSubtoolManager : MonoBehaviour {
+public class SculptSubToolManager : MonoBehaviour {
 
-    public static SculptSubtoolManager m_Instance;
+    public static SculptSubToolManager m_Instance;
 
-    private List<BaseSculptSubtool> m_Subtools;
+    private List<BaseSculptSubTool> m_SubTools;
     
     [SerializeField]
     private SculptTool m_SculptTool;
@@ -22,14 +22,14 @@ public class SculptSubtoolManager : MonoBehaviour {
 
     void Awake() {
         m_Instance = this;
-        m_Subtools = new List<BaseSculptSubtool>();
+        m_SubTools = new List<BaseSculptSubTool>();
         foreach (Transform child in transform) {
-            m_Subtools.Add(child.gameObject.GetComponent<BaseSculptSubtool>());
+            m_SubTools.Add(child.gameObject.GetComponent<BaseSculptSubTool>());
         }
     }
     
-    public void SetSubtool(SubTool subTool) {
-        m_SculptTool.SetSubtool(m_Subtools[(int) subTool]);
+    public void SetSubTool(SubTool subTool) {
+        m_SculptTool.SetSubTool(m_SubTools[(int) subTool]);
     }
 }
 } // namespace TiltBrush

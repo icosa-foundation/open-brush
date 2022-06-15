@@ -14,19 +14,20 @@
 
 using UnityEngine;
 namespace TiltBrush {
-public class FlattenSubtool : BaseSculptSubtool {
-  //CTODO: broken
+public class FlattenSubTool : BaseSculptSubTool {
+ 
+  void Awake() {
+    m_SubToolIdentifier = SculptSubToolManager.SubTool.Flatten;
+  }
+
   override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
-      if (distance < 0.25f) {
+      if (distance < 0.25f) { // CTODO: this might be a tiny bit naive
         return 0;
       }
     return m_DefaultStrength;
   }
 
   override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-    // var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);    
-    // sphere.transform.position = GetComponent<Collider>().ClosestPoint(vertex);
-    // Debug.LogError("Collider closest point = " + GetComponent<Collider>().ClosestPoint(canvasPose.inverse * vertex) + " vertex pos = " + vertex);
     return -(vertex - canvasPose.inverse * GetComponent<Collider>().ClosestPoint(canvasPose * vertex)).normalized;
   }
 }

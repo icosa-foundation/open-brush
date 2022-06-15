@@ -15,19 +15,23 @@
 using UnityEngine;
 
 namespace TiltBrush {
-public class PushSubtool : BaseSculptSubtool {
+public class PushSubTool : BaseSculptSubTool {
 
-    override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
-        if (!bPushing) { // special calculation to reduce spikyness
-            return m_DefaultStrength * Mathf.Pow(distance, 2);
-        } else {
-            return m_DefaultStrength;
-        }
-    }
+  void Awake() {
+    m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
+  }
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-        return (bPushing ? 1 : -1) * (vertex - toolPos).normalized;
+  override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
+    if (!bPushing) { // special calculation to reduce spikyness
+      return m_DefaultStrength * Mathf.Pow(distance, 2);
+    } else {
+      return m_DefaultStrength;
     }
+  }
+
+  override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
+    return (bPushing ? 1 : -1) * (vertex - toolPos).normalized;
+  }
 }
 
 }// namespace TiltBrush

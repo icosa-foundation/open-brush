@@ -462,6 +462,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94dfa37be02ac6a40b0f7563e73c9b36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SubToolIdentifier: 0
 --- !u!65 &7156756
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5754,7 +5755,7 @@ MonoBehaviour:
   m_MaxSpinSpeed: 700
   m_SpinSpeedAcceleration: 40000
   m_SpinSpeedDecay: 2500
-  m_ActiveSubtool: {fileID: 456641894}
+  m_ActiveSubTool: {fileID: 0}
 --- !u!1 &281700269
 GameObject:
   m_ObjectHideFlags: 0
@@ -8123,6 +8124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dc77f328ec8cd149925dd385e77968d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SubToolIdentifier: 0
 --- !u!1 &464138292
 GameObject:
   m_ObjectHideFlags: 0
@@ -10371,7 +10373,7 @@ GameObject:
   - component: {fileID: 658267388}
   - component: {fileID: 658267389}
   m_Layer: 14
-  m_Name: Subtools
+  m_Name: SubTools
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16812,6 +16814,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f7611ed945e78346bc5473287c0cbc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SubToolIdentifier: 0
 --- !u!65 &1306897044
 BoxCollider:
   m_ObjectHideFlags: 0

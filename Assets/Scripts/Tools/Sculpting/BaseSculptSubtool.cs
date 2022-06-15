@@ -15,9 +15,13 @@
 using UnityEngine;
 
 namespace TiltBrush {
-public abstract class BaseSculptSubtool : MonoBehaviour {
+public abstract class BaseSculptSubTool : MonoBehaviour {
 
     protected float m_DefaultStrength = 0.1f;
+
+    public SculptSubToolManager.SubTool m_SubToolIdentifier;
+
+
     
     /// For sculpting tools with an interactor that limits the sculpting tool's
     /// sphere of influence. If the interactor doesn't exist or shouldn't limit things, this is ignored.

@@ -14,7 +14,12 @@
 
 using UnityEngine;
 namespace TiltBrush {
-public class CreaseSubtool : BaseSculptSubtool {
+public class CreaseSubTool : BaseSculptSubTool {
+
+    void Awake() {
+        m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
+    }
+
     override public bool IsInReach(Vector3 vertex, TrTransform canvasPose) {
         return GetComponent<Collider>().bounds.Contains(canvasPose * vertex);
     }

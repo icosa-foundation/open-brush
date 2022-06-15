@@ -15,13 +15,13 @@
 using UnityEngine;
 
 namespace TiltBrush {
-public class SculptSubtoolButton : BaseButton {
+public class SculptSubToolButton : BaseButton {
 
     [SerializeField]
-    public SculptSubtoolManager.SubTool m_SubTool;
+    public SculptSubToolManager.SubTool m_SubTool;
 
     override protected void OnButtonPressed() { 
-        SculptSubtoolManager.m_Instance.SetSubtool(m_SubTool);
+        SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
     }
 }
 } // namespace TiltBrush

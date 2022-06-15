@@ -30,11 +30,7 @@ public class SculptTool : ToggleStrokeModificationTool
   /// vertex interactions, and also just for visual representations for the
   /// user.
   [SerializeField]
-  public BaseSculptSubtool m_ActiveSubtool;
-
-  override public void Init() {
-    base.Init();
-  }
+  public BaseSculptSubTool m_ActiveSubTool;
 
   override public void EnableTool(bool bEnable) {
     // Call this after setting up our tool's state.
@@ -44,7 +40,7 @@ public class SculptTool : ToggleStrokeModificationTool
   }
 
   override public void HideTool(bool bHide) {
-    m_ActiveSubtool.gameObject.SetActive(!bHide);
+    m_ActiveSubTool.gameObject.SetActive(!bHide);
     base.HideTool(bHide);
   }
 
@@ -52,11 +48,11 @@ public class SculptTool : ToggleStrokeModificationTool
     return m_bIsPushing;
   }
 
-  public void SetSubtool(BaseSculptSubtool subTool)
+  public void SetSubTool(BaseSculptSubTool subTool)
   {
     // Disable old subtool
-    m_ActiveSubtool.gameObject.SetActive(false);
-    m_ActiveSubtool = subTool;
+    m_ActiveSubTool.gameObject.SetActive(false);
+    m_ActiveSubTool = subTool;
   }
   
   public void FinalizeSculptingBatch()
@@ -73,8 +69,11 @@ public class SculptTool : ToggleStrokeModificationTool
     }
 
     if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleSculpt)) {
-      m_bIsPushing = !m_bIsPushing;
-      StartToggleAnimation();
+      if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten) {
+        m_bIsPushing = !m_bIsPushing;
+        StartToggleAnimation();
+      } 
+      // CTODO: custom feature for Flattening?
     }
   }
 
@@ -107,10 +106,10 @@ public class SculptTool : ToggleStrokeModificationTool
     for (int i = 0; i < vertLength; i++) {
 
       float distance = Vector3.Distance(newVertices[i], toolPos);
-      float strength = m_ActiveSubtool.CalculateStrength(newVertices[i], distance, m_bIsPushing); // CTODO: maybe make the subtools calculate this
+      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_bIsPushing); // CTODO: maybe make the subtools calculate this
 
-      if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && m_ActiveSubtool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
-        Vector3 direction = m_ActiveSubtool.CalculateDirection(newVertices[i], toolPos, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
+      if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
+        Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], toolPos, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
         newVertices[i] += direction * strength;
 
         rGroup.m_Stroke.m_bWasSculpted = true;
@@ -126,7 +125,10 @@ public class SculptTool : ToggleStrokeModificationTool
   }
 
   override public void AssignControllerMaterials(InputManager.ControllerName controller) {
-    InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
+    // CTODO: should probably come up with a better detection to optimize.
+    if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten) {
+      InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
+    }
   }
 
 }
