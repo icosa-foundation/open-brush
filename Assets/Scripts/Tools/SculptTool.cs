@@ -104,7 +104,7 @@ public class SculptTool : ToggleStrokeModificationTool
     for (int i = 0; i < vertLength; i++) {
 
       float distance = Vector3.Distance(newVertices[i], toolPos);
-      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_bIsPushing); // CTODO: maybe make the subtools calculate this
+      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_CurrentCanvas.Pose, m_bIsPushing); // CTODO: maybe make the subtools calculate this
 
       if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
         Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], toolPos, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);

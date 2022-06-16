@@ -21,7 +21,7 @@ public class PushSubTool : BaseSculptSubTool {
     m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
   }
 
-  override public float CalculateStrength(Vector3 vertex, float distance, bool bPushing) {
+  override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing) {
     if (!bPushing) { // special calculation to reduce spikyness
       return m_DefaultStrength * Mathf.Pow(distance, 2);
     } else {

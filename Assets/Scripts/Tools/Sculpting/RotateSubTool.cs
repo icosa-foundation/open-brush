@@ -24,8 +24,11 @@ public class RotateSubTool : BaseSculptSubTool {
 
 
   // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
+  // CTODO: very broken
   override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-    return (bPushing ? 1 : -1) * (vertex - toolPos).normalized;
+    Vector3 direction = vertex - toolPos;
+    direction = Quaternion.Euler(0, (bPushing ? 1 : -1) * 45, 0) * direction;
+    return  direction;
   }
 }
 
