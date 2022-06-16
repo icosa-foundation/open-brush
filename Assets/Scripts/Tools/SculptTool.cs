@@ -99,15 +99,14 @@ public class SculptTool : ToggleStrokeModificationTool
     // CTODO: this is very expensive, as tons of new arrays are being copied with every trigger press.
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
-    var toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
     //CTODO: sigh, this is a mess again.
     for (int i = 0; i < vertLength; i++) {
 
-      float distance = Vector3.Distance(newVertices[i], toolPos);
+      float distance = Vector3.Distance(newVertices[i], m_CurrentCanvas.Pose.inverse * m_ToolTransform.position);
       float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_CurrentCanvas.Pose, m_bIsPushing); // CTODO: maybe make the subtools calculate this
 
       if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
-        Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], toolPos, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
+        Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], m_ToolTransform, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
         newVertices[i] += direction * strength;
 
         rGroup.m_Stroke.m_bWasSculpted = true;

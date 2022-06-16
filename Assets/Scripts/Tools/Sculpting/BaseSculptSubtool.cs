@@ -33,6 +33,6 @@ public abstract class BaseSculptSubTool : MonoBehaviour {
         return m_DefaultStrength;
     }
 
-    abstract public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup);
+    abstract public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup);
 }
 } //namespace TiltBrush

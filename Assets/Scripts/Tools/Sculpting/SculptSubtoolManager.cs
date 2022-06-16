@@ -6,32 +6,32 @@ using UnityEngine;
 namespace TiltBrush {
 public class SculptSubToolManager : MonoBehaviour {
 
-    public static SculptSubToolManager m_Instance;
+  public static SculptSubToolManager m_Instance;
 
-    private List<BaseSculptSubTool> m_SubTools;
-    
-    [SerializeField]
-    private SculptTool m_SculptTool;
+  private List<BaseSculptSubTool> m_SubTools;
+  
+  [SerializeField]
+  private SculptTool m_SculptTool;
 
-    /// Do not
-    public enum SubTool {
-        Push,
-        Crease,
-        Flatten,
-        Rotate,
-    }
+  /// Do not change the order of these items
+  public enum SubTool {
+    Push,
+    Crease,
+    Flatten,
+    Rotate,
+  }
 
-    void Awake() {
-        m_Instance = this;
-        m_SubTools = new List<BaseSculptSubTool>();
-        foreach (Transform child in transform) {
-            m_SubTools.Add(child.gameObject.GetComponent<BaseSculptSubTool>());
-        }
+  void Awake() {
+    m_Instance = this;
+    m_SubTools = new List<BaseSculptSubTool>();
+    foreach (Transform child in transform) {
+        m_SubTools.Add(child.gameObject.GetComponent<BaseSculptSubTool>());
     }
-    
-    public void SetSubTool(SubTool subTool) {
-        m_SculptTool.SetSubTool(m_SubTools[(int) subTool]);
-    }
+  }
+  
+  public void SetSubTool(SubTool subTool) {
+    m_SculptTool.SetSubTool(m_SubTools[(int) subTool]);
+  }
 }
 } // namespace TiltBrush
 

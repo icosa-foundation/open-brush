@@ -30,7 +30,7 @@ public class FlattenSubTool : BaseSculptSubTool {
     // return m_DefaultStrength;
   }
 
-  override public Vector3 CalculateDirection(Vector3 vertex, Vector3 toolPos, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
+  override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
     return -(vertex - canvasPose.inverse * GetComponent<Collider>().ClosestPoint(canvasPose * vertex)).normalized;
   }
 }
