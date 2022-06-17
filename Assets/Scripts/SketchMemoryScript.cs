@@ -499,7 +499,6 @@ public class SketchMemoryScript : MonoBehaviour {
       Color newColor = recolor ? PointerManager.m_Instance.PointerColor : stroke.m_Color;
       Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
       new RepaintStrokeCommand(stroke, newColor, newGuid, m_RepaintStrokeParent);
-      //CTODO: use m_SavedSculptedGeometry to quickly save the geometry and reinsert it after repainting.
       return true;
     }
     return false;
