@@ -34,7 +34,12 @@ public class RotateSubTool : BaseSculptSubTool {
     // the normal of the point to the toolthing would be the closest point.
     // Debug.Log("tool rotation: " + " " + toolTransform.eulerAngles.x  + " " + toolTransform.eulerAngles.y  + " " + toolTransform.eulerAngles.z);
     // direction = Quaternion.Euler(canvasPose.rotation.x + toolTransform.eulerAngles.x, canvasPose.rotation.y + toolTransform.eulerAngles.y, canvasPose.rotation.z + toolTransform.eulerAngles.z + (bPushing ? 1 : -1) * 90) * direction.normalized;
-    direction = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, toolTransform.forward)  * direction.normalized;
+    Quaternion oldRotation = toolTransform.rotation;
+    toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
+    //ugly way to ignore z component
+    // toolTransform.rotation = Quaternion.Euler(toolTransform.rotation.eulerAngles.x, toolTransform.rotation.eulerAngles.y, oldRotation.eulerAngles.z);
+    direction = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * direction.normalized;
+    toolTransform.rotation = oldRotation;
     return  direction;
   }
 }

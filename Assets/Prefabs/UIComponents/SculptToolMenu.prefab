@@ -557,7 +557,7 @@ GameObject:
   - component: {fileID: 2081258536443674980}
   - component: {fileID: 5059287002651336516}
   m_Layer: 16
-  m_Name: TBD
+  m_Name: Rotate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -16921,7 +16921,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f7611ed945e78346bc5473287c0cbc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 1
+  m_SubToolIdentifier: 0
 --- !u!65 &1306897044
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -30912,14 +30912,6 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 3339500, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 2334362, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
     - target: {fileID: 22431242, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -30991,6 +30983,14 @@ PrefabInstance:
     - target: {fileID: 22431242, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
       propertyPath: m_Pivot.y
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2334362, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
+    - target: {fileID: 3339500, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
+      propertyPath: m_Mesh
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 11420356, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
       propertyPath: m_textAlignment
