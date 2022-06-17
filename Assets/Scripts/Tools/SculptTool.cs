@@ -97,13 +97,14 @@ public class SculptTool : ToggleStrokeModificationTool
     
     // Copy the relevant portion of geometry to modify
     // CTODO: this is very expensive, as tons of new arrays are being copied with every trigger press.
+    // However, it doesn't seem to affect speed.
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
     //CTODO: sigh, this is a mess again.
-    for (int i = 0; i < vertLength; i++) {
+    for (int i = 0; i < vertLength; i++) { // This loop is expensive
 
       float distance = Vector3.Distance(newVertices[i], m_CurrentCanvas.Pose.inverse * m_ToolTransform.position);
-      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_CurrentCanvas.Pose, m_bIsPushing); // CTODO: maybe make the subtools calculate this
+      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_CurrentCanvas.Pose, m_bIsPushing);
 
       if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
         Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], m_ToolTransform, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
@@ -122,7 +123,6 @@ public class SculptTool : ToggleStrokeModificationTool
   }
 
   override public void AssignControllerMaterials(InputManager.ControllerName controller) {
-    // CTODO: should probably come up with a better detection to optimize.
     if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten) {
       InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
     }

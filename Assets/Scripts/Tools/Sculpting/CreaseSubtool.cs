@@ -18,10 +18,11 @@ public class CreaseSubTool : BaseSculptSubTool {
 
     void Awake() {
         m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
+        m_Collider = GetComponent<Collider>();
     }
 
     override public bool IsInReach(Vector3 vertex, TrTransform canvasPose) {
-        return GetComponent<Collider>().bounds.Contains(canvasPose * vertex);
+        return m_Collider.bounds.Contains(canvasPose * vertex);
     }
 
     override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {

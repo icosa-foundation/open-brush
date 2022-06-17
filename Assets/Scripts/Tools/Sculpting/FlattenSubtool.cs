@@ -18,20 +18,19 @@ public class FlattenSubTool : BaseSculptSubTool {
  
   void Awake() {
     m_SubToolIdentifier = SculptSubToolManager.SubTool.Flatten;
+    m_Collider = GetComponent<Collider>();
   }
 
   override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing) {
-      float distanceToSubTool = (vertex - canvasPose.inverse * GetComponent<Collider>().ClosestPoint(canvasPose * vertex)).magnitude;
-      if (distanceToSubTool < 0.1f) { // CTODO: this might be a tiny bit naive
+      float distanceToSubTool = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).magnitude;
+      if (distanceToSubTool < 0.1f) {
         return 0;
-      } else {
-        return distanceToSubTool - 0.1f;
       }
-    // return m_DefaultStrength;
+      return distanceToSubTool - 0.1f;
   }
 
   override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-    return -(vertex - canvasPose.inverse * GetComponent<Collider>().ClosestPoint(canvasPose * vertex)).normalized;
+    return -(vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).normalized;
   }
 }
 

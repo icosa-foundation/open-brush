@@ -21,6 +21,8 @@ public abstract class BaseSculptSubTool : MonoBehaviour {
 
     public SculptSubToolManager.SubTool m_SubToolIdentifier;
 
+    protected Collider m_Collider;
+
 
     
     /// For sculpting tools with an interactor that limits the sculpting tool's
