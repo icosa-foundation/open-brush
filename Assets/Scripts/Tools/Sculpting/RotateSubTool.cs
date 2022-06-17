@@ -23,17 +23,18 @@ public class RotateSubTool : BaseSculptSubTool {
   }
   
   override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose,  bool bPushing) {
-    return 0.05f;
+    return distance * 0.05f;
   }
 
   // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
   // CTODO: very broken
   override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
     Vector3 toolPos = canvasPose.inverse * toolTransform.position;
-    Vector3 direction = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).normalized;
+    Vector3 direction = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex));
     // the normal of the point to the toolthing would be the closest point.
     // Debug.Log("tool rotation: " + " " + toolTransform.eulerAngles.x  + " " + toolTransform.eulerAngles.y  + " " + toolTransform.eulerAngles.z);
-    direction = Quaternion.Euler(0, 0, (bPushing ? 1 : -1) * 90) * direction;
+    // direction = Quaternion.Euler(canvasPose.rotation.x + toolTransform.eulerAngles.x, canvasPose.rotation.y + toolTransform.eulerAngles.y, canvasPose.rotation.z + toolTransform.eulerAngles.z + (bPushing ? 1 : -1) * 90) * direction.normalized;
+    direction = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, toolTransform.forward)  * direction.normalized;
     return  direction;
   }
 }
