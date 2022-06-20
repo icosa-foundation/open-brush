@@ -136,6 +136,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
+        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
 
         // This indicates which hardware (Rift or Vive) is being used. This is distinct from which SDK
         // is being used (Oculus VR, Steam's Open VR, Monoscopic, etc.).

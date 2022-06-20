@@ -124,6 +124,9 @@ jobs:
           - name: Windows SteamVR
             targetPlatform: StandaloneWindows64
             vrsdk: SteamVR
+          - name: Windows Pimax
+            targetPlatform: StandaloneWindows64
+            vrsdk: SteamVR
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
@@ -215,6 +218,28 @@ jobs:
           cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
           rm -rf tmp package.tmp
           ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
+
+      - name: Install Pimax unity package
+        if: matrix.name == 'Windows Pimax'
+        run: |
+          # version 0.6.3
+          # Same as above, but adapted to work for Pimax instead.
+          wget -q https://dl.appstore.pimax.com/sdk/Pimax_Platform_Unity_SDK_v0.6.3.zip -O package.zip
+          unzip package.zip
+          mkdir tmp
+          tar -C tmp -xzf PimaxPlatform_v0.6.3.unitypackage
+          find tmp -type f | xargs chmod a-x
+          for pn in tmp/*/pathname; do
+            id=${pn%/*}
+            id=${id#*/}
+            p=$(head -1 $pn)
+            d=${p%/*}
+            mkdir -p "tmp/$d"
+            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
+            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
+          done
+          cp -R tmp/Assets/Pimax Assets/
+          rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
 
       - name: Install TextMesh Pro package
         run: |
@@ -311,6 +336,11 @@ jobs:
       - name: Enable keystore
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
+
+      - name: Set PIMAX_SUPPORTED in csc.rsp
+        if: matrix.name == 'Windows Pimax'
+        run: |
+          echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
         uses: game-ci/unity-builder@v2
@@ -523,6 +553,35 @@ jobs:
           name: steamcmd logs
           path: build_output/
 
+  publish_pimax:
+    name: Publish Pimax Release
+    needs: [configuration, build]
+    runs-on: windows-latest
+    env:
+      PIMAX_APP_ID: ${{ secrets.PIMAX_APP_ID }}
+      PIMAX_USERNAME: ${{ secrets.PIMAX_USERNAME }}
+      PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Windows Pimax)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Pimax
+          path: build_windows_pimax
+
+      - name: Publish Pimax Builds
+        run: |
+          New-Item "releases" -Type Directory
+          Move-Item -Path build_windows_pimax/StandaloneWindows64-SteamVR/ releases/
+          Set-Location -Path "releases"
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_$env:VERSION.zip
+          Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
+          pimax-dev-util.exe login -u $env:PIMAX_USERNAME  -p $env:PIMAX_PASSWORD
+          pimax-dev-util.exe upload-pc-build -a $env:PIMAX_APP_ID -d OpenBrush_Pimax_$env:VERSION.zip
 
   publish_itch:
     name: Publish Itch.io Release
