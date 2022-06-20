@@ -560,7 +560,7 @@ jobs:
     env:
       PIMAX_APP_ID: ${{ secrets.PIMAX_APP_ID }}
       PIMAX_USERNAME: ${{ secrets.PIMAX_USERNAME }}
-      PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }} 
+      PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
