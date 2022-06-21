@@ -94,5 +94,9 @@
 # In CI, this symlink is created to allow the updater to run. It should never go into source control
 /Assets/Editor/OVRPluginUpdater.cs
 
+# Pimax Integration
+/Assets/Pimax
+/Assets/Pimax.meta
+
 # Cache files
 *.cache

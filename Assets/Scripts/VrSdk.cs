@@ -198,6 +198,16 @@ namespace TiltBrush
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
 #endif // OCULUS_SUPPORTED
+
+#if PIMAX_SUPPORTED
+                // Pimax currently requires initialising their Platform SDK.
+                if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
+                {
+                    Pimax.Platform.PvrPlatform.init();
+                    Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
+                }
+#endif // PIMAX_SUPPORTED
+
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
@@ -298,7 +308,6 @@ namespace TiltBrush
             OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
             OVRManager.VrFocusLost += () => { OnInputFocus(false); };
 #endif // OCULUS_SUPPORTED
-
             //            else if (App.Config.m_SdkMode == SdkMode.Gvr)
             //            {
             //                var brushGeom = InputManager.Brush.Geometry;
