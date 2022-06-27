@@ -594,6 +594,48 @@ jobs:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
           PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
+  publish_itch_xr_v2:
+    name: Publish Itch Release (xr_v2)
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push'  &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/feature/xr_v2')
+    runs-on: ubuntu-latest
+    env:
+      BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+      ITCH_GAME: openbrush
+      ITCH_USER: openbrush
+      VERSION: ${{ needs.configuration.outputs.version }}
+    steps:
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+
+      - name: Download Build Artifacts (Oculus Quest Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest Experimental
+          path: build_oculus_quest_experimental
+
+      - name: Package Artifacts for release
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+      - name: Publish Quest
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-openxr
+          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Quest Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-openxr-experimental
+          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
+
   publish_oculus:
     name: Publish Oculus Release
     needs: [configuration, build]
