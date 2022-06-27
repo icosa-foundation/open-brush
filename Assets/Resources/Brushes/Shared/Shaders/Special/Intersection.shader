@@ -166,10 +166,12 @@ Shader "Brush/Special/Intersection" {
 
 #if 1
         // This method also handles the case of large triangles.
-        bool hit = any(input[0].worldPos != input[1].worldPos)
-          && any(input[0].worldPos != input[2].worldPos)
-          && any(input[2].worldPos != input[1].worldPos)
-          && SphereInTriangle(input[0].worldPos, input[1].worldPos, input[2].worldPos, vSphereCenter, fSphereRad);
+        // TODO: the 'any' and 'all' functions appear to not work on Android. Have disabled check for now.
+        bool hit = SphereInTriangle(input[0].worldPos, input[1].worldPos, input[2].worldPos, vSphereCenter, fSphereRad);
+          //&& any(input[0].worldPos != input[1].worldPos)
+          //&& any(input[0].worldPos != input[2].worldPos)
+          //&& any(input[2].worldPos != input[1].worldPos);
+          
 
 #else
         // TODO: Remove in M14.
