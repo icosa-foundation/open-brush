@@ -189,6 +189,7 @@ namespace TiltBrush
             OVRManager manager = gameObject.AddComponent<OVRManager>();
             manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
             manager.useRecommendedMSAALevel = false;
+            manager.isInsightPassthroughEnabled = true;
 
             // adding components to the VR Camera needed for fading view and getting controller poses.
             m_VrCamera.gameObject.AddComponent<OculusCameraFade>();

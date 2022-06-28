@@ -22,11 +22,11 @@ MonoBehaviour:
     m_FogDensity: 0
     m_FogStartDistance: 0
     m_FogEndDistance: 0
-    m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-    m_AmbientColor: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
+    m_ClearColor: {r: 1, g: 1, b: 1, a: 1}
+    m_AmbientColor: {r: 1, g: 1, b: 1, a: 1}
     m_SkyboxExposure: 0
     m_SkyboxTint: {r: 0, g: 0, b: 0, a: 0}
-    m_EnvironmentPrefab: 
+    m_EnvironmentPrefab: EnvironmentPrefabs/Passthrough
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_Room
     m_SkyboxCubemap: {fileID: 0}
     m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d,
