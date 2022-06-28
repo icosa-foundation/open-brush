@@ -744,6 +744,11 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
+            if (App.Config.IsMobileHardware)
+            {
+                return Vector2.zero;
+            }
+
             Vector2 mv = Mouse.current.delta.ReadValue();
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
@@ -751,6 +756,11 @@ namespace TiltBrush
 
         public float GetMouseWheel()
         {
+            if (App.Config.IsMobileHardware)
+            {
+                return 0.0f;
+            }
+
             return Mouse.current.scroll.x.ReadValue();
         }
 
