@@ -1241,7 +1241,7 @@ namespace TiltBrush
 
             return outXf_GS;
         }
-        
+
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {
             float fNearestDot = 0.0f;
