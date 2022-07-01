@@ -977,6 +977,30 @@ namespace TiltBrush
             }
         }
 
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            if (SnappingAngle == 0) return Quaternion.identity;
+            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle;}
+            Vector3 euler = rotation.eulerAngles;
+            float y = euler.y;
+            euler = new Vector3(round(euler.x), 0, round(euler.z));
+            rotation = Quaternion.Euler(euler);
+            rotation *= Quaternion.Euler(0, round(y), 0);
+            return rotation;
+        }
+        
+        public Vector3 SnapToGrid(Vector3 position)
+        {
+            if (SnappingGridSize == 0) return position;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / SnappingGridSize) * SnappingGridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
 
     }
 
