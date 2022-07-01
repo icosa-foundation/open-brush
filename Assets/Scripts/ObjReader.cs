@@ -45,18 +45,18 @@ namespace TiltBrush
         public (GameObject, List<string> warnings, ImportMaterialCollector) Import(bool editable)
         {
             GameObject go = new GameObject($"Obj model: {m_path}");
-            
+
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
-            
+
             using (StreamReader reader = new StreamReader(m_path))
             {
                 var result = objLoader.Load(reader.BaseStream);
-                var verts = result.Vertices.Select(v=>new Vector3(v.X, v.Y, v.Z));
+                var verts = result.Vertices.Select(v => new Vector3(v.X, v.Y, v.Z));
                 var faceIndices = result
                     .Groups
                     .SelectMany(g => g.Faces)
-                    .Select(f => f._vertices.Select(v=>v.VertexIndex-1));
+                    .Select(f => f._vertices.Select(v => v.VertexIndex - 1));
                 var poly = new PolyMesh(verts, faceIndices);
                 var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByTags);
                 var mesh = poly.BuildUnityMesh(meshData);

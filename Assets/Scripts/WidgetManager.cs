@@ -350,7 +350,7 @@ namespace TiltBrush
                 return GetAllActiveGrabWidgets();
             }
         }
-        
+
         private IEnumerable<GrabWidgetData> GetAllActiveGrabWidgets()
         {
             for (int i = 0; i < m_GrabWidgets.Count; ++i)
@@ -967,7 +967,7 @@ namespace TiltBrush
                     .Where(w => w != null);
             }
         }
-        
+
         public IEnumerable<EditableModelWidget> EditableModelWidgets
         {
             get
@@ -1426,7 +1426,7 @@ namespace TiltBrush
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
             }
-            
+
             if (m_loadingEditableTiltModels != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);
@@ -1467,9 +1467,9 @@ namespace TiltBrush
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingEditableTiltModels = null;
             }
-            
+
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
-            
+
             if (m_loadingTiltImages75 != null)
             {
                 foreach (TiltImages75 import in m_loadingTiltImages75)
@@ -1563,16 +1563,16 @@ namespace TiltBrush
             }
         }
 
-        public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets => 
+        public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets =>
             m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets => 
+        public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<EditableModelWidget>> ActiveEditableModelWidgets => 
+        public List<TypedWidgetData<EditableModelWidget>> ActiveEditableModelWidgets =>
             m_EditableModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets => 
+        public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets => 
+        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        
+
     }
 }

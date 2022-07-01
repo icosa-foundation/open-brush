@@ -37,7 +37,7 @@ namespace TiltBrush
             var dirInfo = new DirectoryInfo(ParentPanel.DefaultPresetsDirectory());
             return dirInfo.GetFiles("*.json");
         }
-        
+
         protected override List<string> GetButtonList()
         {
             FileInfo[] AllFileInfo = GetDirectoryListing();
@@ -63,7 +63,7 @@ namespace TiltBrush
 
         private Texture2D _GetButtonTexture(string path)
         {
-            
+
             var fileData = File.ReadAllBytes(path);
             var tex = new Texture2D(2, 2);
             tex.LoadImage(fileData);
@@ -77,14 +77,14 @@ namespace TiltBrush
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length);
+            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length) ;
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();
             }
             ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
         }
-        
+
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

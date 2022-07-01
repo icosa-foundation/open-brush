@@ -11,7 +11,7 @@ namespace TiltBrush.MeshEditing
         GeometryData = 1,
         Grid = 2,
         Shapes = 3,
-        
+
         Radial = 4,
         Waterman = 5,
         Johnson = 6,
@@ -19,7 +19,7 @@ namespace TiltBrush.MeshEditing
         Uniform = 8,
         Various = 9,
     }
-    
+
     public class EditableModelManager : MonoBehaviour
     {
         public static EditableModelManager m_Instance;
@@ -27,9 +27,9 @@ namespace TiltBrush.MeshEditing
         public struct EditableModel
         {
             public Color[] Colors;
-            public GeneratorTypes GeneratorType { get;}
-            public PolyMesh PolyMesh { get; private set;}
-            public ColorMethods ColorMethod { get;}
+            public GeneratorTypes GeneratorType { get; }
+            public PolyMesh PolyMesh { get; private set; }
+            public ColorMethods ColorMethod { get; }
             public Dictionary<string, object> GeneratorParameters { get; set; }
             public List<Dictionary<string, object>> Operations { get; }
 
@@ -42,7 +42,7 @@ namespace TiltBrush.MeshEditing
                 GeneratorParameters = generatorParameters;
                 Operations = new List<Dictionary<string, object>>();
             }
-            
+
             public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod,
                                  GeneratorTypes type, Dictionary<string, object> generatorParameters,
                                  List<Dictionary<string, object>> operations)
@@ -54,31 +54,31 @@ namespace TiltBrush.MeshEditing
                 GeneratorParameters = generatorParameters;
                 Operations = operations;
             }
-            
+
             public void SetPolyMesh(PolyMesh poly)
             {
                 PolyMesh = poly;
             }
         }
-        
+
         private Dictionary<string, EditableModel> m_EditableModels;
         [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
-        
+
         void Awake()
         {
             m_Instance = this;
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }
-        
+
         public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
         {
             var id = widget.GetId();
             var emesh = m_EditableModels[id.guid];
-            
+
             emesh.SetPolyMesh(poly);
             m_EditableModels[id.guid] = emesh;
-            
+
             var polyGo = id.gameObject;
             emesh = m_EditableModels[id.guid];
             var mat = polyGo.GetComponent<MeshRenderer>().material;
@@ -88,14 +88,14 @@ namespace TiltBrush.MeshEditing
             emesh.SetPolyMesh(poly);
             m_EditableModels[id.guid] = emesh;
         }
-        
+
         public void RecordOperation(EditableModelWidget widget, Dictionary<string, object> parameters)
         {
             var id = widget.GetId();
             var emesh = m_EditableModels[id.guid];
             emesh.Operations.Add(parameters);
         }
-        
+
         public void RemoveLastOperation(EditableModelWidget widget)
         {
             var id = widget.GetId();
@@ -108,11 +108,11 @@ namespace TiltBrush.MeshEditing
             var mf = polyGo.GetComponent<MeshFilter>();
             var mr = polyGo.GetComponent<MeshRenderer>();
             var col = polyGo.GetComponent<BoxCollider>();
-            
+
             if (mf == null) mf = polyGo.AddComponent<MeshFilter>();
             if (mr == null) mr = polyGo.AddComponent<MeshRenderer>();
             if (col == null) col = polyGo.AddComponent<BoxCollider>();
-            
+
             mr.material = mat;
             mf.mesh = mesh;
             col.size = mesh.bounds.size;
@@ -125,12 +125,12 @@ namespace TiltBrush.MeshEditing
             var emesh = new EditableModel(poly, colors, colorMethod, type, parameters);
             m_EditableModels[id.guid] = emesh;
         }
-        
+
         public PolyMesh GetPolyMesh(EditableModelWidget widget)
         {
             return GetPolyMesh(widget.GetComponentInChildren<EditableModelId>());
         }
-        
+
         public PolyMesh GetPolyMesh(EditableModelId id)
         {
             var guid = id.guid;
@@ -142,17 +142,17 @@ namespace TiltBrush.MeshEditing
             var guid = id.guid;
             return m_EditableModels[guid].ColorMethod;
         }
-        
+
         public void GeneratePolyMesh(PolyMesh poly, TrTransform tr,
-                                     ColorMethods colMethod, 
-                                     GeneratorTypes generatorType, 
+                                     ColorMethods colMethod,
+                                     GeneratorTypes generatorType,
                                      Color[] colors = null,
-                                     Dictionary<string, object> parameters=null, 
-                                     List<Dictionary<string, object>> operations=null)
+                                     Dictionary<string, object> parameters = null,
+                                     List<Dictionary<string, object>> operations = null)
         {
             // Create Mesh from PolyMesh
             var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-            
+
             var meshData = poly.BuildMeshData(colors: colors, colorMethod: colMethod);
             var mesh = poly.BuildUnityMesh(meshData);
 
@@ -160,7 +160,7 @@ namespace TiltBrush.MeshEditing
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
             RegisterEditableMesh(polyGo, poly, colors, colMethod, generatorType, parameters);
-            
+
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, spawnAtEnd: true);
@@ -183,7 +183,7 @@ namespace TiltBrush.MeshEditing
                 Debug.LogWarning("Failed to create EditableModelWidget");
             }
         }
-        
+
         public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr)
         {
             CreateWidgetCommand createCommand = new CreateWidgetCommand(

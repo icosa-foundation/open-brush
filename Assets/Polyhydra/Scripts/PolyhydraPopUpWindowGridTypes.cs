@@ -28,7 +28,7 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(GridEnums.GridTypes)).ToList();
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.GridType, action);
@@ -40,6 +40,6 @@ namespace TiltBrush
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, action);
             ParentPanel.SetSliderConfiguration();
         }
-        
+
     }
 } // namespace TiltBrush

@@ -739,11 +739,11 @@ namespace TiltBrush
 
                     if (jsonData.EditableModelIndex != null)
                     {
-                        var generatedModels = new List<TiltEditableModels>(); 
+                        var generatedModels = new List<TiltEditableModels>();
                         var filesystemModels = new List<TiltEditableModels>();
                         foreach (var model in jsonData.EditableModelIndex)
                         {
-                            if (jsonData.EditableModelDefinitions!=null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            if (jsonData.EditableModelDefinitions != null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
                             {
                                 generatedModels.Add(model);
                             }
@@ -752,20 +752,20 @@ namespace TiltBrush
                                 filesystemModels.Add(model);
                             }
                         }
-                        
+
                         // Queue filesystem models for loading
                         WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
-                        
+
                         // Rebuild generated models
                         foreach (var model in generatedModels)
                         {
-                            
+
                             // TODO Unify this with similar code in PreviewPolyhedron.cs
-                            
+
                             var emd = jsonData.EditableModelDefinitions[model.AssetId];
                             PolyMesh poly = null;
                             var p = emd.GeneratorParameters;
-                            
+
                             switch (emd.GeneratorType)
                             {
                                 case GeneratorTypes.GeometryData:
@@ -850,7 +850,7 @@ namespace TiltBrush
                                     break;
                             }
 
-                            if (poly != null && emd.Operations!=null)
+                            if (poly != null && emd.Operations != null)
                             {
                                 foreach (var opDict in emd.Operations)
                                 {

@@ -28,21 +28,21 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
             stroke.Uncreate();
         }
-        
+
         [ApiEndpoint("stroke.select", "Select a stroke by index.")]
         public static void SelectStroke(int index)
         {
             var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
-        
+
         [ApiEndpoint("strokes.select", "Select multiple strokes by index.")]
         public static void SelectStrokes(int start, int end)
         {
             var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
-        
+
         [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
         public static void RecolorSelection()
         {
@@ -51,7 +51,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false, false);
             }
         }
-        
+
         [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
         public static void RebrushSelection()
         {
@@ -60,7 +60,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true, false);
             }
         }
-        
+
         [ApiEndpoint("selection.resize", "Changes the brush size the currently selected strokes")]
         public static void ResizeSelection()
         {
@@ -69,7 +69,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, false, true);
             }
         }
-        
+
         [ApiEndpoint("selection.trim", "Removes a number of points from the currently selected strokes")]
         public static void TrimSelection(int count)
         {
@@ -89,7 +89,7 @@ namespace TiltBrush
                 }
             }
         }
-        
+
         [ApiEndpoint("selection.points.addnoise", "Moves the position of all control points in the selection using a noise function")]
         public static void PerlinNoiseSelection(string axis, Vector3 scale)
         {
@@ -97,14 +97,14 @@ namespace TiltBrush
             Func<Vector3, Vector3> quantize = pos => _PerlinNoiseToPosition(pos, scale, _axis);
             _ModifyStrokeControlPoints(quantize);
         }
-        
+
         [ApiEndpoint("stroke.points.quantize", "Snaps all the points in selected strokes to a grid (buggy)")]
         public static void QuantizeSelection(Vector3 grid)
         {
             Func<Vector3, Vector3> quantize = pos => _QuantizePosition(pos, grid);
             _ModifyStrokeControlPoints(quantize);
         }
-        
+
         [ApiEndpoint("stroke.join", "Joins a stroke with the previous one")]
         public static void JoinStroke()
         {
@@ -116,7 +116,7 @@ namespace TiltBrush
             stroke2.Recreate(null, stroke2.Canvas);
             DeleteStroke(0);
         }
-        
+
         [ApiEndpoint("strokes.join", "Joins all strokes between the two indices (inclusive)")]
         public static void JoinStrokes(int start, int end)
         {
@@ -133,7 +133,7 @@ namespace TiltBrush
             firstStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, firstStroke.m_ControlPoints.Length).ToArray();
             firstStroke.Recreate(null, firstStroke.Canvas);
         }
-        
+
         [ApiEndpoint("stroke.add", "Adds a point at the current brush position to the specified stroke")]
         public static void AddPointToStroke(int index)
         {
@@ -154,6 +154,6 @@ namespace TiltBrush
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
         }
-        
+
     }
 }

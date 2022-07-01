@@ -24,7 +24,7 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         private enum Axis { X, Y, Z }
-        
+
         private static Quaternion _LookAt(Vector3 sourcePoint, Vector3 destPoint)
         {
             Vector3 forwardVector = Vector3.Normalize(destPoint - sourcePoint);
@@ -43,7 +43,7 @@ namespace TiltBrush
             rotAxis = Vector3.Normalize(rotAxis);
             return _CreateFromAxisAngle(rotAxis, rotAngle);
         }
-        
+
         private static Quaternion _CreateFromAxisAngle(Vector3 axis, float angle)
         {
             float halfAngle = angle * .5f;
@@ -55,7 +55,7 @@ namespace TiltBrush
             q.w = Mathf.Cos(halfAngle);
             return q;
         }
-        
+
         private static void _ChangeBrushBearing(float angle, Vector3 axis)
         {
             Debug.Log($"angle: {axis} angle: {axis}");
@@ -63,13 +63,13 @@ namespace TiltBrush
             ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
             Debug.Log($"ApiManager.Instance.BrushRotation: {ApiManager.Instance.BrushRotation}");
         }
-        
+
         private static void _ChangeSpectatorBearing(float angle, Vector3 axis)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             cam.transform.rotation *= Quaternion.AngleAxis(angle, axis);
         }
-        
+
         private static Vector3 _RotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
         {
             Vector3 dir = point - pivot;
@@ -92,7 +92,7 @@ namespace TiltBrush
             float round(float val, float res) { return Mathf.Round(val / res) * res; }
             return new Vector3(round(pos.x, grid.x), round(pos.y, grid.y), round(pos.z, grid.z));
         }
-        
+
         private static void _ModifyStrokeControlPoints(Func<Vector3, Vector3> func)
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
@@ -113,7 +113,7 @@ namespace TiltBrush
                 stroke.Recreate(null, stroke.Canvas);
             }
         }
-        
+
         private static Vector3 _PerlinNoiseToPosition(Vector3 pos, Vector3 scale, Axis axis)
         {
             pos = new Vector3(pos.x / scale.x, pos.y / scale.y, pos.z / scale.z);
@@ -131,7 +131,7 @@ namespace TiltBrush
             }
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
-        
+
         private static void _PositionWidget(GrabWidget widget, Vector3 position)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -143,7 +143,7 @@ namespace TiltBrush
                 )
             );
         }
-        
+
         private static void _ScaleWidget(GrabWidget widget, float scale)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -155,7 +155,7 @@ namespace TiltBrush
                 )
             );
         }
-        
+
         private static int _NegativeIndexing<T>(int index, IEnumerable<T> enumerable)
         {
             // Python style: negative numbers count from the end
@@ -163,31 +163,31 @@ namespace TiltBrush
             if (index < 0) index = count - Mathf.Abs(index);
             return index;
         }
-        
+
         private static ImageWidget _GetActiveImage(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
             return WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
         }
-        
+
         private static VideoWidget _GetActiveVideo(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveVideoWidgets);
             return WidgetManager.m_Instance.ActiveVideoWidgets[index].WidgetScript;
         }
-        
+
         private static ModelWidget _GetActiveModel(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveModelWidgets);
             return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
         }
-        
+
         private static CameraPathWidget _GetActiveCameraPath(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveCameraPathWidgets);
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
-        
+
         private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
         {
             var request = System.Net.WebRequest.Create(url);
@@ -213,7 +213,7 @@ namespace TiltBrush
             wc.DownloadFile(uri, path);
             return filename;
         }
-        
+
         private static void _SpectatorShowHide(string thing, bool state)
         {
             // Friendly names to layer names

@@ -133,13 +133,13 @@ namespace TiltBrush
                 m_MaterialToIem.Add(um.material, iem);
             }
         }
-        
+
         // Used for generated models
         // TODO handle vertex colours
-         public void Add(Material im)
+        public void Add(Material im)
         {
             var iem = new DynamicExportableMaterial(
-                parent:  TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor,
+                parent: TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor,
                 durableName: "GeneratedVertexMaterial",
                 uniqueName: MakeDeterministicUniqueName(m_numAdded++, "GeneratedVertexMaterial"),
                 uriBase: m_AssetLocation)

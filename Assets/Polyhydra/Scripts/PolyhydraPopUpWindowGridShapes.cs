@@ -28,7 +28,7 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(GridEnums.GridShapes)).ToList();
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.GridShape, action);

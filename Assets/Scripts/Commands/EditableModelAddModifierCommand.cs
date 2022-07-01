@@ -59,13 +59,13 @@ namespace TiltBrush
             poly = poly.AppyOperation((PolyMesh.Operation)m_parameters["type"], p);
             EditableModelManager.m_Instance.RecordOperation(m_widget, m_parameters);
             EditableModelManager.m_Instance.RegenerateMesh(m_widget, poly);
-            
+
         }
 
         protected override void OnUndo()
         {
             EditableModelManager.m_Instance.RemoveLastOperation(m_widget);
-            EditableModelManager.m_Instance.RegenerateMesh(m_widget, m_previousPoly);            
+            EditableModelManager.m_Instance.RegenerateMesh(m_widget, m_previousPoly);
         }
     }
 } // namespace TiltBrush

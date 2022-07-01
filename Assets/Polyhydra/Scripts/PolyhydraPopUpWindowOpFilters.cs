@@ -109,7 +109,7 @@ namespace TiltBrush
                     op.filterParamFloat = 0.5f;
                     break;
             }
-            
+
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.FilterType, action);
             ParentPanel.ConfigureOpFilterPanel(op);
 
@@ -123,7 +123,7 @@ namespace TiltBrush
                 CreateButtons();
             }
         }
-        
+
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

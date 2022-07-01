@@ -36,10 +36,10 @@ namespace TiltBrush
 
         private Mesh previewMesh;
         private Material previewMaterial;
-        
+
         //whether this tool should follow the controller or not
         private bool m_LockToController;
-        
+
         private bool m_ValidWidgetFoundThisFrame;
         private EditableModelWidget LastIntersectedEditableModelWidget;
 
@@ -54,9 +54,9 @@ namespace TiltBrush
         public override void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
-            
+
             PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-            
+
             if (bEnable)
             {
                 m_LockToController = m_SketchSurface.IsInFreePaintMode();
@@ -68,7 +68,7 @@ namespace TiltBrush
                     InputManager.m_Instance.GetController(InputManager.ControllerName.Brush), false
                 );
                 polyhydraPanel.CurrentPolyhedra.transform.Translate(Vector3.up);
-                
+
                 EatInput();
             }
             else
@@ -87,7 +87,7 @@ namespace TiltBrush
             base.HideTool(bHide);
             m_toolDirectionIndicator.SetActive(!bHide);
         }
-        
+
         //What to do when all the tools run their update functions. Note that this is separate from Unity's Update script
         //All input handling should be done here
         override public void UpdateTool()
@@ -117,13 +117,13 @@ namespace TiltBrush
             {
                 ResetDetection();
             }
-            
+
             TrTransform rAttachPoint_CS = App.Scene.ActiveCanvas.AsCanvas[InputManager.Brush.Geometry.ToolAttachPoint];
 
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
-            
+
             // TODO WIP... 
             if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -146,7 +146,7 @@ namespace TiltBrush
             {
                 return SelectionManager.m_Instance.SnapToGrid(v);
             }
-            
+
             var position_CS = SnapToGrid(m_FirstPositionClicked_CS.translation);
             var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
             var rotation_CS = SelectionManager.m_Instance.QuantizeAngle(
@@ -271,7 +271,7 @@ namespace TiltBrush
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
             }
         }
-        
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             ResetDetection();
@@ -281,8 +281,8 @@ namespace TiltBrush
             m_ValidWidgetFoundThisFrame = widget != null;
             return m_ValidWidgetFoundThisFrame;
         }
-        
-                
+
+
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (controller == InputManager.ControllerName.Brush)

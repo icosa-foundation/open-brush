@@ -675,7 +675,7 @@ namespace TiltBrush
                 SelectionTransform = TrTransform.identity;
             }
         }
-        
+
         public void SelectWidgets(IEnumerable<GrabWidget> widgets)
         {
             foreach (var widget in widgets)
@@ -980,11 +980,11 @@ namespace TiltBrush
                 m_SnapGridVisualization.enabled = false;
             }
         }
-        
+
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
             if (SnappingAngle == 0) return rotation;
-            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle;}
+            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle; }
             Vector3 euler = rotation.eulerAngles;
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
             return Quaternion.Euler(euler);

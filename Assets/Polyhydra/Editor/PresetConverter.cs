@@ -147,7 +147,7 @@ namespace TiltBrush
                                     { "type", polyType },
                                 };
                             }
-                            
+
                         }
                         else
                         {
@@ -164,7 +164,7 @@ namespace TiltBrush
                     case GeneratorTypes.Grid:
                         GridEnums.GridTypes gridType;
                         GridEnums.GridShapes gridShape;
-                        
+
                         switch (oldPreset.GridType)
                         {
                             case "Square":
@@ -201,7 +201,7 @@ namespace TiltBrush
                             case "U_4_6_12":
                                 oldPreset.GridType = "K_4_6_12";
                                 break;
-                            
+
                         }
 
                         if (oldPreset.GridShape == "Torus")
@@ -209,7 +209,7 @@ namespace TiltBrush
                             oldPreset.GridShape = "Sphere";
                             Debug.LogWarning($"Unsupported grid shape: Torus. Concerted to Sphere.");
                         }
-                        
+
                         if (Enum.TryParse(oldPreset.GridType, true, out gridType) &&
                             Enum.TryParse(oldPreset.GridShape, true, out gridShape))
                         {
@@ -266,7 +266,7 @@ namespace TiltBrush
                         {
                             Debug.LogError($"Failed to parse: {oldPreset.JohnsonPolyType} for {fileInfo.Name}");
                         }
-                        
+
                         break;
                     case GeneratorTypes.Various:
                         switch (oldPreset.OtherPolyType)
@@ -309,7 +309,7 @@ namespace TiltBrush
                                 };
                                 break;
                             case "GriddedCube":
-                                oldPreset.Ops.Insert(0, new OldOp{OpType = "Recenter"});
+                                oldPreset.Ops.Insert(0, new OldOp { OpType = "Recenter" });
                                 generatorParameters = new Dictionary<string, object>
                                 {
                                     { "type", VariousSolidTypes.Box },
@@ -340,7 +340,7 @@ namespace TiltBrush
 
 
                 var operations = new List<Dictionary<string, object>>();
-                
+
                 bool skipped = false;
                 foreach (var oldOp in oldPreset.Ops)
                 {
@@ -349,14 +349,14 @@ namespace TiltBrush
 
                     if (oldOp.OpType == "FaceRotate") oldOp.OpType = "FaceRotateZ";
 
-                    if (oldOp.OpType == "Slice" || 
-                        oldOp.OpType == "Stretch" || 
-                        oldOp.OpType == "TagFaces" || 
-                        oldOp.OpType == "Stash" || 
-                        oldOp.OpType == "Unstash" || 
-                        oldOp.OpType == "Hinge" || 
-                        oldOp.OpType == "AddDual" || 
-                        oldOp.OpType == "FaceMerge" || 
+                    if (oldOp.OpType == "Slice" ||
+                        oldOp.OpType == "Stretch" ||
+                        oldOp.OpType == "TagFaces" ||
+                        oldOp.OpType == "Stash" ||
+                        oldOp.OpType == "Unstash" ||
+                        oldOp.OpType == "Hinge" ||
+                        oldOp.OpType == "AddDual" ||
+                        oldOp.OpType == "FaceMerge" ||
                         oldOp.OpType == "AddMirrorX" ||
                         oldOp.OpType == "Stack"
                         )
@@ -365,20 +365,20 @@ namespace TiltBrush
                         skipped = true;
                         continue;
                     }
-                    
+
                     if (oldOp.OpType == "VertexFlex") oldOp.OpType = "VertexOffset";
 
                     if (oldOp.OpType == "FaceScale")
                     {
                         oldOp.Amount += 1f;
                     }
-                    
+
                     if (oldOp.OpType == "FaceKeep")
                     {
                         oldOp.OpType = "FaceRemove";
                         newOp["filterNot"] = true;
                     }
-                    
+
                     if (Enum.TryParse(oldOp.OpType, true, out opType))
                     {
                         newOp["operation"] = opType;
@@ -386,7 +386,7 @@ namespace TiltBrush
                         newOp["param1Randomize"] = oldOp.Randomize;
                         newOp["param2"] = oldOp.Amount2;
                         newOp["disabled"] = oldOp.Disabled;
-                        
+
                         switch (oldOp.FaceSelections)
                         {
                             case "All":
@@ -444,7 +444,7 @@ namespace TiltBrush
                                 break;
                             case "OddSided":
                                 newOp["filterType"] = FilterTypes.EvenSided;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingUp":
                                 newOp["filterType"] = FilterTypes.FacingUp;
@@ -457,12 +457,12 @@ namespace TiltBrush
                             case "FacingDown":
                                 newOp["filterType"] = FilterTypes.FacingUp;
                                 newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingStraightDown":
                                 newOp["filterType"] = FilterTypes.FacingUp;
                                 newOp["filterParamFloat"] = 179;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingForward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
@@ -471,7 +471,7 @@ namespace TiltBrush
                             case "FacingBackward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
                                 newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingStraightForward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
@@ -480,12 +480,12 @@ namespace TiltBrush
                             case "FacingStraightBackward":
                                 newOp["filterType"] = FilterTypes.FacingForward;
                                 newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingLevel":
                                 newOp["filterType"] = FilterTypes.FacingVertical;
                                 newOp["filterParamFloat"] = 45;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "FacingCenter":
                                 break;
@@ -520,7 +520,7 @@ namespace TiltBrush
                             case "Even":
                                 newOp["filterType"] = FilterTypes.EveryNth;
                                 newOp["filterParamInt"] = 2;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "OnlyFirst":
                                 newOp["filterType"] = FilterTypes.FirstN;
@@ -529,7 +529,7 @@ namespace TiltBrush
                             case "ExceptFirst":
                                 newOp["filterType"] = FilterTypes.FirstN;
                                 newOp["filterParamInt"] = 1;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "OnlyLast":
                                 newOp["filterType"] = FilterTypes.LastN;
@@ -538,7 +538,7 @@ namespace TiltBrush
                             case "ExceptLast":
                                 newOp["filterType"] = FilterTypes.LastN;
                                 newOp["filterParamInt"] = 1;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "Random":
                                 newOp["filterType"] = FilterTypes.Random;
@@ -549,7 +549,7 @@ namespace TiltBrush
                                 break;
                             case "Outer":
                                 newOp["filterType"] = FilterTypes.Inner;
-                                newOp["filterNot"] =  true;
+                                newOp["filterNot"] = true;
                                 break;
                             case "TopHalf":
                                 newOp["filterType"] = FilterTypes.PositionY;

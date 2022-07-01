@@ -31,7 +31,7 @@ namespace TiltBrush
         private Stroke m_SelectionStroke;
 
         private Vector3 m_OffsetTransformBaseScale;
-        
+
         override public void HideTool(bool bHide)
         {
             base.HideTool(bHide);
@@ -45,7 +45,7 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
             ResetDetection();
-            
+
             if (bEnable)
             {
                 EatInput();
@@ -62,7 +62,7 @@ namespace TiltBrush
 
             // always default to resetting detection
             m_ResetDetection = true;
-            
+
             if (App.Config.m_UseBatchedBrushes)
             {
                 UpdateBatchedBrushDetection(m_DropperTransform.position);
@@ -116,7 +116,7 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
             }
         }
-        
+
         override public float GetSize()
         {
             return m_DropperBrushSelectRadius;

@@ -430,10 +430,10 @@ namespace TiltBrush
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string FilePath { get; set; }
-        
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string AssetId { get; private set; }
-        
+
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -449,7 +449,7 @@ namespace TiltBrush
             get { return m_rawTransforms; }
             set { m_rawTransforms = MetadataUtils.Sanitize(value); }
         }
-        
+
         // Only for use by MetadataUtils.cs
         [JsonIgnore]
         public TrTransform[] m_rawTransforms;
@@ -752,7 +752,7 @@ namespace TiltBrush
             GeneratorParameters = generatorParameters;
             Operations = operations;
         }
-        
+
         public EditableModelDefinition(Color[] colors, ColorMethods colorMethod, GeneratorTypes generatorType,
                                        Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
@@ -786,9 +786,9 @@ namespace TiltBrush
         public List<Roles> VertexRoles { get; }
         public List<HashSet<string>> FaceTags { get; }
         public List<Dictionary<string, object>> Operations { get; }
-        
+
     }
-    
+
     [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
@@ -837,7 +837,7 @@ namespace TiltBrush
                 ThumbnailCameraTransformInRoomSpace = xf;
             }
         }
-        
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, EditableModelDefinition> EditableModelDefinitions;
 
@@ -873,10 +873,10 @@ namespace TiltBrush
                 ImageIndex = value.Select(i75b => i75b.Upgrade()).ToArray();
             }
         }
-        
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltEditableModels[] EditableModelIndex { get; set; }
-        
+
         // Added in 7.5
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltImages75[] ImageIndex { get; set; }

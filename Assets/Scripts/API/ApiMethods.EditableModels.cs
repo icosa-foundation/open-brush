@@ -34,7 +34,7 @@ namespace TiltBrush
             poly.InitTags(color);
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
+
         private static void _ApplyOp(int index, Dictionary<string, object> parameters)
         {
             var widget = _GetModelIdByIndex(index);
@@ -42,19 +42,19 @@ namespace TiltBrush
                 new EditableModelAddModifierCommand(widget, parameters)
             );
         }
-        
+
         private static EditableModelWidget _GetModelIdByIndex(int index)
         {
             EditableModelWidget widget = GetActiveEditableModel(index);
             return widget;
         }
-        
+
         [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
         public static void ImportEditableModel(string location)
         {
             _ImportModel(location, true);
         }
-        
+
         private static void _ImportModel(string location, bool editable)
         {
             const string modelsFolder = "Models";
@@ -133,8 +133,8 @@ namespace TiltBrush
                 SelectionManager.m_Instance.RemoveFromSelection(false);
             }
         }
-        
-        
+
+
         private static EditableModelWidget GetActiveEditableModel(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveEditableModelWidgets);
@@ -143,7 +143,7 @@ namespace TiltBrush
             // Debug.Log($"{WidgetManager.m_Instance.ActiveEditableModelWidgets[0]}");
             return WidgetManager.m_Instance.ActiveEditableModelWidgets[index].WidgetScript;
         }
-        
+
         [ApiEndpoint("editablemodel.stroke.edges", "Create brush strokes for all the edges on an editable model")]
         public static void StrokeEdges(int index)
         {
@@ -167,7 +167,7 @@ namespace TiltBrush
             }
             DrawStrokes.MultiPositionPathsToStrokes(positions, rotations, null, tr.translation);
         }
-        
+
         [ApiEndpoint("editablemodel.stroke.faces", "Create brush strokes for all the Faces on an editable model")]
         public static void StrokeFaces(int index)
         {
@@ -191,7 +191,7 @@ namespace TiltBrush
             }
             DrawStrokes.MultiPositionPathsToStrokes(positions, rotations, null, tr.translation);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.strokepath", "Creates a new editable model from a brush stroke's path")]
         public static void ModelFromStrokePoints(int index)
         {
@@ -199,7 +199,7 @@ namespace TiltBrush
             var path = stroke.m_ControlPoints.Select(cp => cp.m_Pos).ToList();
             _PolyFromPath(path, _CurrentTransform(), stroke.m_Color);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.strokemesh", "Creates a new editable model from a brush stroke's mesh")]
         public static void ModelFromStrokeMesh(int index, float smoothing = 0.01f)
         {
@@ -227,7 +227,7 @@ namespace TiltBrush
             poly.InitTags(stroke.m_Color);
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.imagewidget", "Creates a new editable model from an image widget")]
         public static void ModelFromImageWidget(int index, float clip)
         {
@@ -235,18 +235,18 @@ namespace TiltBrush
             var image = imageWidget.ReferenceImage.FullSize;
             _ModelFromImage(image, clip);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.imagefile", "Creates a new editable model from a local image or a url")]
         public static void ModelFromImageFile(string location, float clip)
         {
             var referenceImage = _LoadReferenceImage(location);
             _ModelFromImage(referenceImage.FullSize, clip);
         }
-        
+
         // Should not be used on anything other than small images.
         // TODO What kind of limits should we enforce here?
         // How big is too big?
-        private static void _ModelFromImage(Texture2D image, float clip=0.5f)
+        private static void _ModelFromImage(Texture2D image, float clip = 0.5f)
         {
             var type = GridEnums.GridTypes.K_4_4_4_4;
             var shape = GridEnums.GridShapes.Plane;
@@ -263,7 +263,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var tag = new HashSet<string>{$"#{ColorUtility.ToHtmlStringRGB(pixelColor)}"};
+                    var tag = new HashSet<string> { $"#{ColorUtility.ToHtmlStringRGB(pixelColor)}" };
                     faceTags.Add(tag);
                 }
             }
@@ -275,7 +275,7 @@ namespace TiltBrush
             poly.FaceTags = faceTags;
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.camerapath", "Generates a filled path from a camera path")]
         public static void CreateFromCameraPath(int index, int segments)
         {
@@ -283,15 +283,15 @@ namespace TiltBrush
             var cameraPath = widget.Path;
             var path = new List<Vector3>();
             var numKnots = cameraPath.PositionKnots.Count;
-            for (float i=0; i < 1f; i+=1f/segments)
+            for (float i = 0; i < 1f; i += 1f / segments)
             {
-                path.Add(cameraPath.GetPosition(new PathT(i*numKnots)));
+                path.Add(cameraPath.GetPosition(new PathT(i * numKnots)));
             }
 
             // var path = cameraPath.PositionKnots.Select(k => k.KnotXf.position).ToList();
             _PolyFromPath(path, _CurrentTransform(), App.BrushColor.CurrentColor);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.camerapaths", "Generates a surface from two camera paths")]
         public static void CreateFromCameraPaths(int indexA, int indexB, int segments)
         {
@@ -304,17 +304,17 @@ namespace TiltBrush
             var numKnotsA = cameraPathA.PositionKnots.Count;
             var numKnotsB = cameraPathB.PositionKnots.Count;
 
-            for (float i=0; i < 1f; i+=1f/segments)
+            for (float i = 0; i < 1f; i += 1f / segments)
             {
-                verts.Add(cameraPathA.GetPosition(new PathT(i*numKnotsA)));
-                verts.Add(cameraPathB.GetPosition(new PathT(i*numKnotsB)));
+                verts.Add(cameraPathA.GetPosition(new PathT(i * numKnotsA)));
+                verts.Add(cameraPathB.GetPosition(new PathT(i * numKnotsB)));
             }
             var faces = PolyMesh.GenerateQuadStripIndices(verts.Count());
             var poly = new PolyMesh(verts, faces);
             poly.InitTags(App.BrushColor.CurrentColor);
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
+
         [ApiEndpoint("editablemodel.create.path", "Generates a filled path")]
         public static void CreatePath(string jsonString)
         {
@@ -324,8 +324,8 @@ namespace TiltBrush
                 .ToList();
             _PolyFromPath(path, _CurrentTransform(), App.BrushColor.CurrentColor);
         }
-      
-        
+
+
         [ApiEndpoint("editablemodel.create.polygon", "Generates a regular polygon")]
         public static void CreatePolygon(int sides)
         {
@@ -339,11 +339,11 @@ namespace TiltBrush
             var poly = new PolyMesh(new StringReader(offData));
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.GeometryData);
         }
-        
+
         [ApiEndpoint("editablemodel.create.obj", "Generates a obj from POST data")]
         public static void CreateObj(string objData)
         {
-        
+
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
 
@@ -363,11 +363,11 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("editablemodel.create.grid", "Generates a grid")]
-        public static void CreateGrid(int width, int depth, string type=null, string shape=null)
+        public static void CreateGrid(int width, int depth, string type = null, string shape = null)
         {
             GridEnums.GridTypes gridType;
             GridEnums.GridShapes gridShape;
-            
+
             if (string.IsNullOrEmpty(type))
             {
                 gridType = GridEnums.GridTypes.K_4_4_4_4;
@@ -377,7 +377,7 @@ namespace TiltBrush
                 type = type.Replace(",", "_").ToUpper();
                 gridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type);
             }
-            
+
             if (string.IsNullOrEmpty(shape))
             {
                 gridShape = GridEnums.GridShapes.Plane;
@@ -387,7 +387,7 @@ namespace TiltBrush
                 type = type.Replace(",", "_").ToUpper();
                 gridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape);
             }
-            
+
             var poly = Grids.Build(gridType, gridShape, width, depth);
             var parameters = new Dictionary<string, object>
             {
@@ -396,10 +396,10 @@ namespace TiltBrush
                 {"x", width},
                 {"y", depth},
             };
-            
+
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Grid, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.box", "Generates a box")]
         public static void CreateBox(int width, int height, int depth)
         {
@@ -414,7 +414,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
         public static void CreateSphere(int width, int height)
         {
@@ -428,7 +428,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
         public static void CreateHemiphere(int width, int height)
         {
@@ -442,7 +442,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
         public static void CreatePolyhedron(string type)
         {
@@ -454,7 +454,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Uniform, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.johnsonsolid", "Generates a Johnson Solid")]
         public static void CreateJohnsonSolid(string type)
         {
@@ -465,7 +465,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
         public static void CreateWatermanSolid(int root, int c)
         {
@@ -477,7 +477,7 @@ namespace TiltBrush
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
         public static void CreateRotationalSolid(string type, int sides)
         {
@@ -491,7 +491,7 @@ namespace TiltBrush
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Radial, null, parameters);
         }
 
-        
+
         [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
         public static void CustomGuideFromEditableModel(int index)
         {
@@ -501,7 +501,7 @@ namespace TiltBrush
             var stencilWidget = EditableModelManager.AddCustomGuide(poly, tr);
             stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
         }
-        
+
         [ApiEndpoint("editablemodel.modify.color", "Changes the color of an editable model")]
         public static void ModifyModelColor(int index, Vector3 rgb)
         {
@@ -524,7 +524,7 @@ namespace TiltBrush
             };
             _ApplyOp(index, parameters);
         }
-        
+
         [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]
         // TODO transfer color and/or textures
         public static void ConvertModelToEditable(int index, float smoothing = 0.01f)

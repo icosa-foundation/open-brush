@@ -31,7 +31,7 @@ namespace TiltBrush
         {
             return ParentPanel.GetUniformPolyNames();
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.UniformType, action);

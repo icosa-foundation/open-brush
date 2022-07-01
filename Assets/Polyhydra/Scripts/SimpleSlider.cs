@@ -20,7 +20,7 @@ using UnityEngine.Events;
 namespace TiltBrush
 {
     [Serializable]
-    public class simpleSliderEvent : UnityEvent<float>{}
+    public class simpleSliderEvent : UnityEvent<float> { }
 
     public class SimpleSlider : BaseSlider
     {

@@ -44,7 +44,7 @@ public class PreviewPolyhedron : MonoBehaviour
     public float Param3Float = 1f;
 
     public bool SafeLimits;
-    
+
     public Gradient colors;
     public float ColorRange;
     public float ColorOffset;
@@ -67,7 +67,7 @@ public class PreviewPolyhedron : MonoBehaviour
         EditableModelManager.m_Instance.m_PreviewPolyhedron = this;
         Operators = new List<OpDefinition>();
     }
-    
+
     void Start()
     {
         Init();
@@ -88,7 +88,7 @@ public class PreviewPolyhedron : MonoBehaviour
     private void ColorSetup()
     {
         // Generates a color palette based on either user custom colors or colors set in the inspector
-        
+
         int numColors = 12; // What is the maximum colour index we want to support? 
         var colorButtons = FindObjectsOfType<CustomColorButton>();
         // Use custom colors if they are present
@@ -141,7 +141,7 @@ public class PreviewPolyhedron : MonoBehaviour
         public int filterParamInt;
         public Color paramColor;
         public bool filterNot;
-        
+
         public OpDefinition ClampAmount(OpConfig config, bool safe = false)
         {
             float min = safe ? config.amountSafeMin : config.amountMin;
@@ -149,21 +149,21 @@ public class PreviewPolyhedron : MonoBehaviour
             amount = Mathf.Clamp(amount, min, max);
             return this;
         }
-        
+
         public static Filter MakeFilterFromDict(Dictionary<string, object> opDict)
         {
             object filterType;
             object filterParamFloat;
             object filterParamInt;
             object filterNot;
-            
+
             // Default to "All" if no filter is defined
-            if (!opDict.TryGetValue("filterType" , out filterType)) return Filter.All;
-            
+            if (!opDict.TryGetValue("filterType", out filterType)) return Filter.All;
+
             opDict.TryGetValue("filterParamFloat", out filterParamFloat);
             opDict.TryGetValue("filterParamInt", out filterParamInt);
             opDict.TryGetValue("filterNot", out filterNot);
-            
+
             return Filter.GetFilter(
                 (FilterTypes)Convert.ToInt32(filterType),
                 Convert.ToSingle(filterParamFloat),
@@ -190,7 +190,7 @@ public class PreviewPolyhedron : MonoBehaviour
             amount2 += val;
             return this;
         }
-       
+
         public OpDefinition ChangeFilter(int val)
         {
             filterType += val;
@@ -207,18 +207,18 @@ public class PreviewPolyhedron : MonoBehaviour
             return this;
         }
     }
-    
+
     public List<OpDefinition> Operators;
-    
+
     private Thread m_BuildMeshThread;
     private bool m_BuildMeshThreadIsFinished;
     private Coroutine m_BuildMeshCoroutine;
-    
+
     public void RebuildPoly()
     {
         NeedsRebuild = true;
     }
-    
+
     public void CheckAndRebuildIfNeeded()
     {
         if (!NeedsRebuild) return;
@@ -228,7 +228,7 @@ public class PreviewPolyhedron : MonoBehaviour
         BackgroundMakePolyhedron();
         NeedsRebuild = false;
     }
-    
+
     private void UpdateSymmetryMesh()
     {
         if (
@@ -237,7 +237,7 @@ public class PreviewPolyhedron : MonoBehaviour
         {
             return;
         }
-        
+
         Mesh polyMesh;
         if (meshFilter == null)
         {
@@ -309,11 +309,11 @@ public class PreviewPolyhedron : MonoBehaviour
             faceIndex
         );
     }
-    
+
     // This is a helper coroutine
     IEnumerator RunOffMainThread(Action toRun, Action callback)
     {
-        if (m_BuildMeshThread!=null && m_BuildMeshThread.IsAlive)
+        if (m_BuildMeshThread != null && m_BuildMeshThread.IsAlive)
         {
             Debug.LogWarning("Waiting for existing geometry thread");
             yield break;
@@ -342,15 +342,15 @@ public class PreviewPolyhedron : MonoBehaviour
         m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(MakePolyhedron, AssignMesh));
         m_BuildMeshCoroutine = null;
     }
-    
+
     private void MakePolyhedron()
     {
         // TODO Unify this with similar code in SaveLoadScript.cs
-        
+
         switch (GeneratorType)
         {
             case GeneratorTypes.Uniform:
-                
+
                 var wythoff = new WythoffPoly(UniformPolyType);
                 m_PolyMesh = wythoff.Build();
                 m_PolyMesh = m_PolyMesh.SitLevel();
@@ -377,7 +377,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"x", Param1Int},
                     {"y", Param2Int},
                 };
-                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f)/2f;
+                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                 break;
             case GeneratorTypes.Radial:
                 Param1Int = Mathf.Max(Param1Int, 3);
@@ -399,7 +399,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         capHeight = Param3Float;
                         break;
                 }
-                
+
                 m_PolyMesh = RadialSolids.Build(RadialPolyType, Param1Int, height, capHeight);
                 PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
                 {
@@ -408,7 +408,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     {"height", height},
                     {"capheight", capHeight},
                 };
-                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f)/2f;
+                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                 break;
             case GeneratorTypes.Shapes:
                 switch (ShapeType)
@@ -423,7 +423,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         };
                         // Intentionally different to radial scaling.
                         // Set so side lengths will match for any polygon
-                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));
+                        m_PolyMesh.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / Param1Int));
                         break;
                     case ShapeTypes.Star:
                         Param1Int = Mathf.Max(Param1Int, 3);
@@ -434,7 +434,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"sides", Param1Int},
                             {"sharpness", Param2Float},
                         };
-                        m_PolyMesh.ScalingFactor = 1f/(2f * Mathf.Sin(Mathf.PI/Param1Int));;
+                        m_PolyMesh.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / Param1Int)); ;
                         break;
                     case ShapeTypes.L_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float);
@@ -480,7 +480,7 @@ public class PreviewPolyhedron : MonoBehaviour
                             {"y", Param2Int},
                             {"z", Param3Int},
                         };
-                        m_PolyMesh.ScalingFactor = 1f/Mathf.Sqrt(2f);
+                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
                         break;
                     case VariousSolidTypes.UvSphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
@@ -506,17 +506,17 @@ public class PreviewPolyhedron : MonoBehaviour
                 break;
         }
 
-        if (m_PolyMesh==null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
+        if (m_PolyMesh == null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
 
         PolyhydraPanel.m_Operations = new List<Dictionary<string, object>>();
 
         PreviewColorMethod = ColorMethods.ByRole;
-        
+
         foreach (var op in Operators.ToList())
         {
             // If we've set any tags then assume we want to color by tags
             if (op.opType == PolyMesh.Operation.AddTag) PreviewColorMethod = ColorMethods.ByTags;
-            
+
             PolyhydraPanel.m_Operations.Add(new Dictionary<string, object>
             {
                 {"operation", op.opType},
@@ -541,9 +541,9 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void AssignMesh()
     {
-        
+
         var mesh = m_PolyMesh.BuildUnityMesh(m_MeshData);
-        
+
         if (mesh == null)
         {
             Debug.LogError($"Failed to generate preview mesh");
@@ -560,9 +560,9 @@ public class PreviewPolyhedron : MonoBehaviour
         float meshMagnitude = mesh.bounds.max.magnitude;
         if (meshMagnitude != 0)
         {
-            transform.localScale = Vector3.one * .75f * (1f/meshMagnitude);
+            transform.localScale = Vector3.one * .75f * (1f / meshMagnitude);
         }
-        
+
         // TODO
         // Also update other linked meshes (stencils, model widgets)
         UpdateSymmetryMesh();
@@ -573,10 +573,10 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         var _random = new Random();
         var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
-        
+
         var opFunc1 = new OpFunc(_ => Mathf.Lerp(0, op.amount, (float)_random.NextDouble()));
         var opFunc2 = new OpFunc(_ => Mathf.Lerp(0, op.amount2, (float)_random.NextDouble()));
-        
+
         OpParams opParams = (op.amountRandomize, op.amount2Randomize) switch
         {
             (false, false) => new OpParams(

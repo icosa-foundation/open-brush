@@ -27,7 +27,7 @@ namespace TiltBrush
             var names = ParentPanel.GetMainCategoryNames();
             return names;
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.MainCategory, action);

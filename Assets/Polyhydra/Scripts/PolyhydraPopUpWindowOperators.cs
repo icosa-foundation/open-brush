@@ -25,7 +25,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
         private HashSet<string> _disabledOps;
-        
+
         public override void Init(GameObject rParent, string sText)
         {
             _disabledOps = new HashSet<string>
@@ -36,7 +36,7 @@ namespace TiltBrush
             FirstButtonIndex = ParentPanel.CurrentOperatorPage * ButtonsPerPage;
             base.Init(rParent, sText);
         }
-        
+
         protected override List<string> GetButtonList()
         {
             return GetValidOps()
@@ -44,7 +44,7 @@ namespace TiltBrush
                 .Take(ButtonsPerPage)
                 .ToList();
         }
-        
+
         private IEnumerable<string> GetValidOps()
         {
             return Enum.GetNames(typeof(PolyMesh.Operation))
@@ -72,7 +72,7 @@ namespace TiltBrush
             }
             ParentPanel.CurrentOperatorPage = FirstButtonIndex / ButtonsPerPage;
         }
-        
+
         public void PrevPage()
         {
             FirstButtonIndex -= ButtonsPerPage;

@@ -27,7 +27,7 @@ namespace TiltBrush
         {
             return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList();
         }
-        
+
         public override Texture2D GetButtonTexture(string action)
         {
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.RadialType, action);

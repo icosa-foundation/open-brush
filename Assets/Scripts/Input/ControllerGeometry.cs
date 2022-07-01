@@ -1144,7 +1144,7 @@ namespace TiltBrush
                     break;
             }
         }
-        
+
         public void ShowStrokeOption()
         {
             switch (Style)

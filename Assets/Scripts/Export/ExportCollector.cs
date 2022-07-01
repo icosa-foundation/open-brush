@@ -74,11 +74,11 @@ namespace TiltBrush
                     .Partition(IsModelExportable);
                 var (exportableEditable, notExportableEditable) = WidgetManager.m_Instance.EditableModelWidgets
                     .Where(w => w.Model != null && w.isActiveAndEnabled)
-                    .Select(m=>m as ModelWidget)
+                    .Select(m => m as ModelWidget)
                     .Partition(IsModelExportable);
                 exportable.AddRange(exportableEditable);
                 notExportable.AddRange(notExportableEditable);
-                
+
                 BuildModelsAsModelMeshes(payload, exportable);
                 BuildEmptyXforms(payload, notExportable);
                 UnityEngine.Profiling.Profiler.EndSample();

@@ -70,7 +70,7 @@ namespace TiltBrush
                     id = id.guid
                 };
             }
-            
+
             public static Location Generated(string guid)
             {
                 if (!EditableModelManager.m_Instance.EditableModels.ContainsKey(guid))
@@ -240,7 +240,7 @@ namespace TiltBrush
         {
             get
             {
-                if (GetLocation().GetLocationType() == Location.Type.Generated) { return "[Generated]";}
+                if (GetLocation().GetLocationType() == Location.Type.Generated) { return "[Generated]"; }
                 return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
             }
         }
@@ -712,11 +712,11 @@ namespace TiltBrush
             CreatePrefab(null, false);
         }
 
-        public void LoadEditableModel(GameObject go=null)
+        public void LoadEditableModel(GameObject go = null)
         {
             CreatePrefab(go, true);
         }
-        
+
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
         /// or take a previously (probably asynchronously-loaded) GameObject hierarchy and do the same.
         ///
@@ -735,12 +735,12 @@ namespace TiltBrush
             }
 
             List<string> warnings = new List<string>();
-            
-            #if !FBX_SUPPORTED
+
+#if !FBX_SUPPORTED
             bool nofbx = true;
-            #else
+#else
             bool nofbx = false;
-            #endif
+#endif
 
             if (m_Location.GetLocationType() == Location.Type.Generated)
             {
@@ -749,7 +749,7 @@ namespace TiltBrush
                 var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
                 m_ImportMaterialCollector.Add(mat);
             }
-            
+
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
             {
@@ -775,7 +775,7 @@ namespace TiltBrush
                 {
                     go = LoadObj(warnings, editable);
                 }
-                else if (ext == ".fbx" || ext == ".obj") 
+                else if (ext == ".fbx" || ext == ".obj")
                 {
                     go = LoadFbx(warnings);
                 }
@@ -844,7 +844,7 @@ namespace TiltBrush
                 m_Valid = true;
                 DisplayWarnings(warnings);
             }
-            
+
         }
 
         public void UnloadModel()

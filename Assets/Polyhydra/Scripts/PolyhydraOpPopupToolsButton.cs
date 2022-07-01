@@ -26,7 +26,7 @@ namespace TiltBrush
             Delete
         }
         public ToolTypes ToolType;
-        
+
         protected override void OnButtonPressed()
         {
             switch (ToolType)
@@ -41,8 +41,8 @@ namespace TiltBrush
                     GetComponentInParent<PolyhydraPanel>().HandleOpMove(-1);
                     break;
             }
-        }        
+        }
     }
-    
-    
+
+
 }

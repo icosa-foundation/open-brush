@@ -71,7 +71,7 @@ namespace TiltBrush
             Debug.LogWarning("Attempted to save model without asset id or filepath");
             return "";
         }
-        
+
         private static string ByEditableModelLocation(TiltEditableModels models)
         {
             if (models.AssetId != null)
@@ -160,7 +160,7 @@ namespace TiltBrush
             }
             return dict;
         }
-        
+
         public static EditableModelDefinition GetEditableModelDefinition(EditableModelManager.EditableModel em)
         {
             if (em.GeneratorType == GeneratorTypes.FileSystem)
@@ -247,7 +247,7 @@ namespace TiltBrush
             return models
                 .Concat(ModelCatalog.m_Instance.MissingEditableModels)
                 .OrderBy(ByEditableModelLocation).ToArray();
-            
+
         }
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)

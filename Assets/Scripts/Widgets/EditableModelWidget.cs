@@ -25,7 +25,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             EditableModelWidget clone = Instantiate(WidgetManager.m_Instance.EditableModelWidgetPrefab);
-            
+
             // TODO everything after here and before var "editableModelId"
             // is duplicated with ModelWidget.Clone
             clone.transform.position = transform.position;
@@ -94,7 +94,7 @@ namespace TiltBrush
 #endif
             base.UnregisterHighlight();
         }
-        
+
         // TODO reduce code duplication with CreateModelFromSaveData
         public static void CreateEditableModelFromSaveData(TiltEditableModels modelDatas)
         {
@@ -128,7 +128,7 @@ namespace TiltBrush
                     modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
             }
         }
-        
+
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         private static void CreateEditableModelsFromAssetId(
             string assetId, TrTransform[] rawXfs,
