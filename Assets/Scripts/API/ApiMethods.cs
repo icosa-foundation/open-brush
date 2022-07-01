@@ -157,8 +157,7 @@ namespace TiltBrush
         public static void SpectatorLookAt(Vector3 position)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-            Quaternion qNewRotation = _LookAt(cam.transform.position, position);
-            cam.transform.rotation = qNewRotation;
+            cam.transform.LookAt(position);
         }
 
         // [ApiEndpoint("user.look.at", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]

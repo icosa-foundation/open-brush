@@ -24,38 +24,7 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         private enum Axis { X, Y, Z }
-        
-        private static Quaternion _LookAt(Vector3 sourcePoint, Vector3 destPoint)
-        {
-            Vector3 forwardVector = Vector3.Normalize(destPoint - sourcePoint);
-            float dot = Vector3.Dot(Vector3.forward, forwardVector);
-            if (Math.Abs(dot - (-1.0f)) < 0.000001f)
-            {
-                return new Quaternion(Vector3.up.x, Vector3.up.y, Vector3.up.z, 3.1415926535897932f);
-            }
-            if (Math.Abs(dot - (1.0f)) < 0.000001f)
-            {
-                return Quaternion.identity;
-            }
 
-            float rotAngle = (float)Math.Acos(dot);
-            Vector3 rotAxis = Vector3.Cross(Vector3.forward, forwardVector);
-            rotAxis = Vector3.Normalize(rotAxis);
-            return _CreateFromAxisAngle(rotAxis, rotAngle);
-        }
-        
-        private static Quaternion _CreateFromAxisAngle(Vector3 axis, float angle)
-        {
-            float halfAngle = angle * .5f;
-            float s = Mathf.Sin(halfAngle);
-            Quaternion q;
-            q.x = axis.x * s;
-            q.y = axis.y * s;
-            q.z = axis.z * s;
-            q.w = Mathf.Cos(halfAngle);
-            return q;
-        }
-        
         private static void _ChangeBrushBearing(float angle, Vector3 axis)
         {
             Debug.Log($"angle: {axis} angle: {axis}");
@@ -68,14 +37,6 @@ namespace TiltBrush
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             cam.transform.rotation *= Quaternion.AngleAxis(angle, axis);
-        }
-        
-        private static Vector3 _RotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
-        {
-            Vector3 dir = point - pivot;
-            dir = rot * dir;
-            point = dir + pivot;
-            return point;
         }
 
         private static TrTransform _CurrentTransform()
