@@ -31,7 +31,7 @@ namespace TiltBrush
             var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
             DrawStrokes.MultiPathsToStrokes(paths, origin);
         }
-        
+
         [ApiEndpoint("draw.path", "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position")]
         public static void DrawPath(string jsonString)
         {
@@ -40,7 +40,7 @@ namespace TiltBrush
             var path = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
             DrawStrokes.SinglePathToStroke(path, origin);
         }
-        
+
         [ApiEndpoint("draw.stroke", "Draws an exact brush stroke as recorded in another app")]
         public static void DrawStroke(string jsonString)
         {
@@ -48,7 +48,7 @@ namespace TiltBrush
             var strokeData = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
             DrawStrokes.SinglePathToStroke(strokeData, Vector3.zero, rawStroke: true);
         }
-        
+
         [ApiEndpoint("draw.polygon", "Draws a polygon at the current brush position. Does not move the brush position")]
         public static void DrawPolygon(int sides, float radius, float angle)
         {
@@ -67,7 +67,7 @@ namespace TiltBrush
             }
             DrawStrokes.PositionPathsToStroke(path, ApiManager.Instance.BrushPosition);
         }
-        
+
         [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
         public static void Text(string text)
         {
@@ -77,7 +77,7 @@ namespace TiltBrush
             var polyline2d = textToStroke.Build(text);
             DrawStrokes.MultiPositionPathsToStrokes(polyline2d, null, null, origin);
         }
-        
+
         [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
         public static void SvgPath(string svgPathString)
         {
@@ -88,7 +88,7 @@ namespace TiltBrush
             svgPolyline.Fill(svgData);
             DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
-        
+
         [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the /help screen")]
         public static void Brush(string brushType)
         {
@@ -130,7 +130,7 @@ namespace TiltBrush
                 Debug.LogError($"No brush found with the name or guid: {brushType}");
             }
         }
-        
+
         [ApiEndpoint("color.add.hsv", "Adds the supplied values to the current color. Values are hue, saturation and value")]
         public static void AddColorHSV(Vector3 hsv)
         {
@@ -142,25 +142,25 @@ namespace TiltBrush
                 (v + hsv.z) % 1f
             );
         }
-        
+
         [ApiEndpoint("color.add.rgb", "Adds the supplied values to the current color. Values are red green and blue")]
         public static void AddColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
         }
-        
+
         [ApiEndpoint("color.set.rgb", "Sets the current color. Values are hue, saturation and value")]
         public static void SetColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
         }
-        
+
         [ApiEndpoint("color.set.hsv", "Sets the current color. Values are red, green and blue")]
         public static void SetColorHSV(Vector3 hsv)
         {
             App.BrushColor.CurrentColor = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
         }
-        
+
         [ApiEndpoint("color.set.html", "Sets the current color. colorString can either be a hex value or a css color name.")]
         public static void SetColorHTML(string color)
         {
@@ -177,19 +177,19 @@ namespace TiltBrush
                 Debug.LogError($"Invalid color: {color}");
             }
         }
-        
+
         [ApiEndpoint("brush.size.set", "Sets the current brush size")]
         public static void BrushSizeSet(float size)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 = size;
         }
-        
+
         [ApiEndpoint("brush.size.add", "Changes the current brush size by 'amount'")]
         public static void BrushSizeAdd(float amount)
         {
             PointerManager.m_Instance.MainPointer.BrushSize01 += amount;
         }
-        
+
         [ApiEndpoint("draw.camerapath", "Draws along a camera path with the current brush settings")]
         public static void DrawCameraPath(int index)
         {
@@ -211,5 +211,5 @@ namespace TiltBrush
         }
 
     }
-    
+
 }

@@ -24,7 +24,7 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
-        
+
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
@@ -38,7 +38,7 @@ namespace TiltBrush
         {
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
-        
+
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
         public static void OpenUserScriptsFolder()
         {
@@ -122,13 +122,13 @@ namespace TiltBrush
         // {
         //     ChangeUserBearing(angle, Vector3.up);
         // }
-        
+
         // [ApiEndpoint("user.turn.x", "Rotates the user camera up or down. (monoscopic mode only)")]
         // public static void UserPitch(float angle)
         // {
         //     ChangeUserBearing(angle, Vector3.left);
         // }
-        
+
         // [ApiEndpoint("user.turn.z", "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)")]
         // public static void UserRoll(float angle)
         // {
@@ -341,10 +341,10 @@ namespace TiltBrush
             do
             {
                 result = image.RequestLoad();
-            } while (result==false && timeout++ < 100000);
+            } while (result == false && timeout++ < 100000);
             return image;
         }
-        
+
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
         public static void ImportImage(string location)
         {
@@ -374,21 +374,21 @@ namespace TiltBrush
             Environment env = EnvironmentCatalog.m_Instance.AllEnvironments.First(x => x.name == name);
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
-        
+
         [ApiEndpoint("layer.add", "Adds a new layer")]
         public static void AddLayer()
         {
             AddLayerCommand cmd = new AddLayerCommand(makeActive: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.delete", "Deletes a layer")]
         public static void DeleteLayer(int layer)
         {
             DeleteLayerCommand cmd = new DeleteLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.squash", "Move all brush strokes from one layer to another and removes the empty layer")]
         public static void SquashLayer(int squashedLayer, int destinationLayer)
         {
@@ -396,26 +396,26 @@ namespace TiltBrush
             SquashLayerCommand cmd = new SquashLayerCommand(squashedLayer, destinationLayer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.activate", "Make a layer active")]
         public static void ActivateLayer(int layer)
         {
             ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
-        
+
         [ApiEndpoint("layer.show", "Make a layer visible")]
         public static void ShowLayer(int layer)
         {
             App.Scene.ShowLayer(layer);
         }
-        
+
         [ApiEndpoint("layer.hide", "Hide a layer")]
         public static void HideLayer(int layer)
         {
             App.Scene.HideLayer(layer);
         }
-        
+
         [ApiEndpoint("layer.toggle", "Toggles a layer between visible and hidden")]
         public static void ToggleLayer(int layer)
         {
@@ -427,24 +427,24 @@ namespace TiltBrush
         {
             SelectWidget(_GetActiveModel(index));
         }
-        
+
         private static void SelectWidget(GrabWidget widget)
         {
             SelectionManager.m_Instance.SelectWidget(widget);
         }
-        
+
         [ApiEndpoint("model.position", "Move a model to the given coordinates")]
         public static void PositionModel(int index, Vector3 position)
         {
             _PositionWidget(_GetActiveModel(index), position);
         }
-        
+
         [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
         public static void ForcePainting(bool active)
         {
             ApiManager.Instance.ForcePaintingOn = active;
         }
-        
+
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
         public static void PositionImage(int index, Vector3 position)
         {

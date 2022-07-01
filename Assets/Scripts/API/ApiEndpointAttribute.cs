@@ -67,10 +67,10 @@ namespace TiltBrush
         {
             var parameters = new object[parameterInfo.Length];
 
-            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).Where(x=>x.Length>0).ToArray();
+            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
 
             int tokenIndex = 0;
-            
+
             for (var i = 0; i < parameterInfo.Length; i++)
             {
                 ParameterInfo paramType = parameterInfo[i];

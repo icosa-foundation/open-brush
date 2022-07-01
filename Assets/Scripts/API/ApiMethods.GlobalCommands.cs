@@ -148,7 +148,7 @@ namespace TiltBrush
             var rEnum = SketchControlsScript.GlobalCommands.SymmetryFour;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
-        
+
         [ApiEndpoint("twohandeded.toggle", "Toggles painting with both hands at once")]
         public static void SymmetryTwoHanded()
         {

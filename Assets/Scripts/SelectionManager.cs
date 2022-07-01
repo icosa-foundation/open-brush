@@ -675,7 +675,7 @@ namespace TiltBrush
                 SelectionTransform = TrTransform.identity;
             }
         }
-        
+
         public void SelectWidgets(IEnumerable<GrabWidget> widgets)
         {
             foreach (var widget in widgets)
