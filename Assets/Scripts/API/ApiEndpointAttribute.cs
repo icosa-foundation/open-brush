@@ -58,9 +58,9 @@ namespace TiltBrush
             return paramInfo;
         }
 
-        public void Invoke(System.Object[] parameters)
+        public object Invoke(System.Object[] parameters)
         {
-            methodInfo.Invoke(instance, parameters);
+            return methodInfo.Invoke(instance, parameters);
         }
 
         public object[] DecodeParams(string commandValue)

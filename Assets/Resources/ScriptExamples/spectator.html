@@ -54,7 +54,7 @@
         </label><br><br>
 
         <label>Position: <input id="campos.x" value="0">,<input id="campos.y" value="11">,<input id="campos.z" value="0"></label><br>
-        <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="12">,<input id="camtarget.z" value="8"></label><br>
+        <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="11">,<input id="camtarget.z" value="8"></label><br>
         <button onclick='setCam();'>Set</button>&nbsp;&nbsp;
         <button onclick='saveCamera(0)'>Save Slot 1</button>
         <button onclick='saveCamera(1)'>Save Slot 2</button>
@@ -115,6 +115,7 @@
         var url = '/api/v1?' + command;
         xmlHttp.open('GET', url, false);
         xmlHttp.send(null);
+        return xmlHttp.responseText;
     }
 
     function getBrushInputs()
@@ -216,6 +217,22 @@
         sendCommand("spectator.off");
     };
 
+    // Removes brackets and spaces from the Vector3 values returned from API queries
+    var trimVector3String = function(txt) {
+        txt = txt.replace("(", "").replace(")", "").replace(" ", "");
+        return txt;
+    }
+
+    // Read back the new spectator camera transforms and update the form fields to match
+    var updateCamFormFields = function() {
+        var camPosResponse = sendCommand('query.spectator.position');
+        var targetPosResponse = sendCommand('query.spectator.target');
+        var camPos = trimVector3String(camPosResponse);
+        var targetPos = trimVector3String(targetPosResponse);
+        setPosInputs(camPos);
+        setTargetInputs(targetPos);
+    }
+
     var turnCamera = function(e) {
         if (e.target.id === "lookUp") {
             sendCommand("spectator.turn.x=15");
@@ -226,6 +243,8 @@
         } else if (e.target.id === "lookRight") {
             sendCommand("spectator.turn.y=15");
         }
+        // A delay to allow the previous commands to finish
+        setTimeout(updateCamFormFields, 200);
     }
 
     var moveCamera = function(e) {
@@ -242,6 +261,8 @@
         } else if (e.target.id === "moveBack") {
             sendCommand("spectator.move.by=0,0,-1");
         }
+        // A delay to allow the previous commands to finish
+        setTimeout(updateCamFormFields, 200);
     }
 
     document.getElementById("lookUp").addEventListener('click', turnCamera);
