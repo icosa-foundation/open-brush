@@ -204,7 +204,7 @@ namespace TiltBrush
             m_RequestedCommandQueue.Enqueue(cmd);
             return cmd;
         }
-        
+
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             var fileinfo = new FileInfo(e.FullPath);
@@ -405,7 +405,7 @@ namespace TiltBrush
             Debug.LogError($"Invalid API command: {command.Command}");
             return null;
         }
-        
+
         [ContextMenu("Log Api Commands")]
         public void LogCommandsList()
         {
@@ -534,7 +534,7 @@ namespace TiltBrush
         {
             // GET commands
             string[] commandStrings = request.Url.Query.TrimStart('?').Split('&');
-            
+
             // POST commands
             if (request.HasEntityBody)
             {
@@ -550,7 +550,7 @@ namespace TiltBrush
             }
 
             List<string> responses = new List<string>();
-            
+
             foreach (string commandString in commandStrings)
             {
                 if (commandString.StartsWith("query."))
@@ -565,12 +565,12 @@ namespace TiltBrush
 
             return String.Join("\n", responses);
         }
-        
+
         private string HandleApiQuery(string commandString)
         {
-            
+
             // API queries are distinct from commands in that they return immediate results and never change the scene
-            
+
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])

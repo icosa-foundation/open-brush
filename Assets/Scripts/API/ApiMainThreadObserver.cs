@@ -38,21 +38,21 @@ public class ApiMainThreadObserver : MonoBehaviour
     {
         m_Instance = this;
     }
-    
+
     public static ApiMainThreadObserver Instance => m_Instance;
 
     void Update()
     {
         // if (m_Status == StatusTypes.Requested)
         // {
-            var spectator = SketchControlsScript.m_Instance.GetDropCampWidget();
-            var spectatorTr = spectator.transform;
-            SpectatorCamPosition = spectatorTr.position;
-            SpectatorCamRotation = spectatorTr.rotation;
-            SpectatorCamTargetPosition = SpectatorCamTarget.position;
+        var spectator = SketchControlsScript.m_Instance.GetDropCampWidget();
+        var spectatorTr = spectator.transform;
+        SpectatorCamPosition = spectatorTr.position;
+        SpectatorCamRotation = spectatorTr.rotation;
+        SpectatorCamTargetPosition = SpectatorCamTarget.position;
         //     m_Status = StatusTypes.Ready;
         // }
-        
+
     }
-    
+
 }
