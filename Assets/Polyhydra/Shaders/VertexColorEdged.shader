@@ -15,7 +15,7 @@
 // Shader calculates normals per triangle using a geometry shader.
 // Uses Blinn-Phong lighting model for the main directional light and SH
 // for all additional lighting.
-Shader "Custom/StandardSurfWithVertexColor"
+Shader "Custom/StandardSurfWithVertexColorEdged"
 {
     Properties
     {
