@@ -71,13 +71,13 @@ public class PreviewPolyhedron : MonoBehaviour
     void Start()
     {
         Init();
+        BackgroundMakePolyhedron();
     }
 
-    void Init()
+    public void Init()
     {
         ColorSetup();
         meshFilter = gameObject.GetComponent<MeshFilter>();
-        BackgroundMakePolyhedron();
     }
 
     void Update()
@@ -231,6 +231,9 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void UpdateSymmetryMesh()
     {
+        // Fail early for cases where we aren't running in a normal gameloop
+        if (!Application.isPlaying) return;
+        
         if (
             !PointerManager.m_Instance.SymmetryModeEnabled ||
             PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
@@ -339,11 +342,17 @@ public class PreviewPolyhedron : MonoBehaviour
             Debug.LogWarning("Coroutine already exists. Aborting.");
             return;
         }
-        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(MakePolyhedron, AssignMesh));
+        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyhedron, AssignMesh));
         m_BuildMeshCoroutine = null;
     }
 
-    private void MakePolyhedron()
+    public void ImmediateMakePolyhedron()
+    {
+        DoMakePolyhedron();
+        AssignMesh();
+    }
+
+    private void DoMakePolyhedron()
     {
         // TODO Unify this with similar code in SaveLoadScript.cs
 
@@ -502,6 +511,16 @@ public class PreviewPolyhedron : MonoBehaviour
                         };
                         m_PolyMesh.ScalingFactor = 0.5f;
                         break;
+                    case VariousSolidTypes.Torus:
+                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Torus, Param1Int, Param2Int);
+                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        {
+                            {"type", VariousSolidTypes.Torus},
+                            {"x", Param1Int},
+                            {"y", Param2Int},
+                        };
+                        m_PolyMesh.ScalingFactor = 0.5f;
+                        break;
                 }
                 break;
         }
@@ -552,21 +571,30 @@ public class PreviewPolyhedron : MonoBehaviour
 
         if (meshFilter != null)
         {
-            if (Application.isPlaying) { meshFilter.mesh = mesh; }
-            else { meshFilter.sharedMesh = mesh; }
-        }
-
-        // Scale the gameobject so the preview isn't huge or tiny
-        float meshMagnitude = mesh.bounds.max.magnitude;
-        if (meshMagnitude != 0)
-        {
-            transform.localScale = Vector3.one * .75f * (1f / meshMagnitude);
+            if (Application.isPlaying)
+            {
+                meshFilter.mesh = mesh;
+                ScalePreviewMesh();
+            }
+            else
+            {
+                meshFilter.sharedMesh = mesh;
+            }
         }
 
         // TODO
         // Also update other linked meshes (stencils, model widgets)
         UpdateSymmetryMesh();
+    }
 
+    private void ScalePreviewMesh()
+    {
+        // Scale the gameobject so the preview isn't huge or tiny
+        float meshMagnitude = meshFilter.mesh.bounds.max.magnitude;
+        if (meshMagnitude != 0)
+        {
+            transform.localScale = Vector3.one * .75f * (1f / meshMagnitude);
+        }
     }
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
