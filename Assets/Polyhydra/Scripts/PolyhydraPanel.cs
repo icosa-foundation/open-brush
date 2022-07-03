@@ -986,7 +986,7 @@ namespace TiltBrush
             CurrentPolyhedra.RebuildPoly();
         }
 
-        Bounds CalculateBounds(GameObject go)
+        public static Bounds CalculateBounds(GameObject go)
         {
             Bounds b = new Bounds(go.transform.position, Vector3.zero);
             Object[] rList = go.GetComponentsInChildren(typeof(Renderer));
@@ -997,14 +997,25 @@ namespace TiltBrush
             return b;
         }
 
-        void FocusCameraOnGameObject(Camera c, GameObject go, float zoomFactor)
+        public static void FocusCameraOnGameObject(Camera c, GameObject go, float zoomFactor, bool randomPos)
         {
             Bounds b = CalculateBounds(go);
             Vector3 max = b.size;
             float radius = Mathf.Max(max.x, Mathf.Max(max.y, max.z));
             float dist = radius / (Mathf.Sin(c.fieldOfView * Mathf.Deg2Rad / 2f));
             dist *= zoomFactor;
-            Vector3 pos = Random.onUnitSphere * dist + b.center;
+            Vector3 pos;
+            if (randomPos)
+            {
+                pos = Random.onUnitSphere * dist + b.center;
+            }
+            else
+            {
+                var vector = b.center - c.transform.position;
+                vector.Normalize();
+                vector *= Mathf.Abs(dist);
+                pos = -vector;
+            }
             c.transform.position = pos;
             c.transform.LookAt(b.center);
         }
@@ -1013,7 +1024,7 @@ namespace TiltBrush
         {
             m_ThumbnailCamera.enabled = true;
             m_ThumbnailCamera.gameObject.SetActive(true);
-            FocusCameraOnGameObject(m_ThumbnailCamera, PreviewPolyParent, 0.5f);
+            FocusCameraOnGameObject(m_ThumbnailCamera, PreviewPolyParent, 0.5f, true);
             RenderTexture activeRenderTexture = RenderTexture.active;
             var tex = new RenderTexture(256, 256, 32);
             m_ThumbnailCamera.targetTexture = tex;
