@@ -24,14 +24,94 @@ namespace TiltBrush
 
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
-        private HashSet<string> _disabledOps;
+        [NonSerialized] public List<PolyMesh.Operation> m_ValidOps = new()
+        {
+            // PolyMesh.Operation.Identity,
+            PolyMesh.Operation.Kis,
+            PolyMesh.Operation.Ambo,
+            PolyMesh.Operation.Zip,
+            PolyMesh.Operation.Expand,
+            PolyMesh.Operation.Bevel,
+            PolyMesh.Operation.Join,
+            // PolyMesh.Operation.Needle,
+            PolyMesh.Operation.Ortho,
+            PolyMesh.Operation.Ortho3,
+            PolyMesh.Operation.Subdiv,
+            PolyMesh.Operation.Meta,
+            PolyMesh.Operation.Truncate,
+            PolyMesh.Operation.Dual,
+            PolyMesh.Operation.Gyro,
+            PolyMesh.Operation.Snub,
+            PolyMesh.Operation.Subdivide,
+            PolyMesh.Operation.Loft,
+            PolyMesh.Operation.Chamfer,
+            PolyMesh.Operation.Quinto,
+            PolyMesh.Operation.Lace,
+            PolyMesh.Operation.JoinedLace,
+            PolyMesh.Operation.OppositeLace,
+            PolyMesh.Operation.JoinKisKis,
+            PolyMesh.Operation.Stake,
+            PolyMesh.Operation.JoinStake,
+            PolyMesh.Operation.Medial,
+            PolyMesh.Operation.EdgeMedial,
+            PolyMesh.Operation.Propeller,
+            PolyMesh.Operation.Whirl,
+            // PolyMesh.Operation.Volute,
+            // PolyMesh.Operation.Exalt,
+            // PolyMesh.Operation.Yank,
+            // PolyMesh.Operation.Squall,
+            // PolyMesh.Operation.JoinSquall,
+            PolyMesh.Operation.Cross,
+            
+            // PolyMesh.Operation.SplitFaces,
+            PolyMesh.Operation.Gable,
+            
+            PolyMesh.Operation.Extrude,
+            PolyMesh.Operation.Shell,
+            PolyMesh.Operation.Segment,
+            PolyMesh.Operation.Skeleton,
+            
+            PolyMesh.Operation.Recenter,
+            PolyMesh.Operation.SitLevel,
+            
+            PolyMesh.Operation.FaceOffset,
+            PolyMesh.Operation.FaceScale,
+            PolyMesh.Operation.FaceRotateX,
+            PolyMesh.Operation.FaceRotateY,
+            PolyMesh.Operation.FaceRotateZ,
+            // PolyMesh.Operation.FaceSlide,
+            
+            // PolyMesh.Operation.VertexScale,
+            // PolyMesh.Operation.VertexRotate,
+            // PolyMesh.Operation.VertexOffset,
+            // PolyMesh.Operation.VertexStellate,
+            
+            PolyMesh.Operation.FaceRemove,
+            // PolyMesh.Operation.VertexRemove,
+            
+            // PolyMesh.Operation.FillHoles,
+            
+            // PolyMesh.Operation.Weld,
+            PolyMesh.Operation.ConvexHull,
+            
+            PolyMesh.Operation.Spherize,
+            PolyMesh.Operation.Cylinderize,
+            PolyMesh.Operation.Bulge,
+            PolyMesh.Operation.Wave,
+            PolyMesh.Operation.Canonicalize,
+            PolyMesh.Operation.PerlinNoiseX,
+            PolyMesh.Operation.PerlinNoiseY,
+            PolyMesh.Operation.PerlinNoiseZ,
+            
+            // PolyMesh.Operation.AddTag,
+            // PolyMesh.Operation.RemoveTag,
+            // PolyMesh.Operation.ClearTags,
+            
+            // PolyMesh.Operation.Sweep,
+        };
 
         public override void Init(GameObject rParent, string sText)
         {
-            _disabledOps = new HashSet<string>
-            {
-                "Identity", "Weld", "RemoveTag", "VertexStellate"
-            };
             ParentPanel = rParent.GetComponent<PolyhydraPanel>();
             FirstButtonIndex = ParentPanel.CurrentOperatorPage * ButtonsPerPage;
             base.Init(rParent, sText);
@@ -47,8 +127,7 @@ namespace TiltBrush
 
         private IEnumerable<string> GetValidOps()
         {
-            return Enum.GetNames(typeof(PolyMesh.Operation))
-                .Where(x => !_disabledOps.Contains(x));
+            return m_ValidOps.Select(o => o.ToString());
         }
 
         public override Texture2D GetButtonTexture(string action)
