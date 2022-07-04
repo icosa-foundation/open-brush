@@ -184,11 +184,11 @@ namespace TiltBrush
                 case VrInput.Grip:
                     return FindAction("GripButton").IsPressed();
                 case VrInput.Button01:
+                case VrInput.Button04:
                 case VrInput.Button06:
                     return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:
                 case VrInput.Button03:
-                case VrInput.Button04:
                 case VrInput.Button05:
                     return FindAction("SecondaryButton").IsPressed();
             }
@@ -219,12 +219,12 @@ namespace TiltBrush
                     selectedAction = "GripButton";
                     break;
                 case VrInput.Button01:
+                case VrInput.Button04:
                 case VrInput.Button06:
                     selectedAction = "PrimaryButton";
                     break;
                 case VrInput.Button02:
                 case VrInput.Button03:
-                case VrInput.Button04:
                 case VrInput.Button05:
                     selectedAction = "SecondaryButton";
                     break;
