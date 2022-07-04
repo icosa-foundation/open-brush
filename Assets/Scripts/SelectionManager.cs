@@ -981,20 +981,20 @@ namespace TiltBrush
         {
             // Currently a snapping angle of "0" means "no-snapping". It might in future mean "snap to whole rotations only"
             if (SnappingAngle == 0) return Quaternion.identity;
-            
+
             float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle; }
-            
+
             Vector3 euler = rotation.eulerAngles;
             float y = euler.y;
-            
+
             // First snap to x and z to get a rotation around the origin
             euler = new Vector3(round(euler.x), 0, round(euler.z));
             rotation = Quaternion.Euler(euler);
-            
+
             // Snap to the local y last to handle snapping around the x/z axis
             // (Snapping x/y/z all at once results in counter-intuitive results)
             rotation *= Quaternion.Euler(0, round(y), 0);
-            
+
             return rotation;
         }
 
