@@ -33,21 +33,21 @@ MonoBehaviour:
       type: 3}
     m_ReflectionIntensity: 0.3
   m_Lights:
-  - m_Color: {r: 0, g: 0, b: 0, a: 1}
-    m_Intensity: 0
+  - m_Color: {r: 0.7309363, g: 0.7467866, b: 0.8207547, a: 1}
+    m_Intensity: 1.6
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0, w: 0}
-    m_Type: 0
-    m_Range: 0
-    m_SpotAngle: 0
-    m_ShadowsEnabled: 0
-  - m_Color: {r: 0, g: 0, b: 0, a: 1}
-    m_Intensity: 0
+    m_Rotation: {x: 0.48718503, y: -0.11247552, z: 0.19481331, w: 0.8438292}
+    m_Type: 1
+    m_Range: 5
+    m_SpotAngle: 30
+    m_ShadowsEnabled: 1
+  - m_Color: {r: 0.7137255, g: 0.7019608, b: 0.5764706, a: 1}
+    m_Intensity: 0.6
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0, w: 0}
-    m_Type: 0
-    m_Range: 0
-    m_SpotAngle: 0
+    m_Rotation: {x: 0.8830222, y: -0.3213938, z: 0.11697773, w: 0.3213938}
+    m_Type: 1
+    m_Range: 5
+    m_SpotAngle: 30
     m_ShadowsEnabled: 0
   m_TeleportBoundsHalfWidth: 80
   m_ControllerXRayHeight: 0
