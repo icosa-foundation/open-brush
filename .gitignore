@@ -88,8 +88,9 @@
 .gitbugtraq
 
 # Oculus Integration
-/Assets/Oculus
+/Assets/Oculus/**
 /Assets/Oculus.meta
+!/Assets/Oculus/OculusProjectConfig.asset*
 
 # In CI, this symlink is created to allow the updater to run. It should never go into source control
 /Assets/Editor/OVRPluginUpdater.cs
