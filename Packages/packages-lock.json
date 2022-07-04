@@ -13,7 +13,7 @@
       "dependencies": {
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "51e9e1f9236c2072c4b4279dfa65021509389573"
+      "hash": "e540c5c4d6283ccbb02ff4cf13a1948e77fe991c"
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
@@ -49,13 +49,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.formats.usd": {
-      "version": "3.0.0-exp.2",
+      "version": "1.0.3-preview.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.timeline": "1.0.0",
-        "com.unity.modules.screencapture": "1.0.0",
-        "com.unity.modules.physics": "1.0.0"
+        "com.unity.timeline": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
