@@ -187,7 +187,6 @@ namespace TiltBrush
 
 
             OVRManager manager = gameObject.AddComponent<OVRManager>();
-            manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
             manager.useRecommendedMSAALevel = false;
             manager.isInsightPassthroughEnabled = true;
 
