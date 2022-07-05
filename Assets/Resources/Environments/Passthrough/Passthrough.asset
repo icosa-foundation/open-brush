@@ -23,7 +23,7 @@ MonoBehaviour:
     m_FogStartDistance: 0
     m_FogEndDistance: 0
     m_ClearColor: {r: 1, g: 1, b: 1, a: 1}
-    m_AmbientColor: {r: 1, g: 1, b: 1, a: 1}
+    m_AmbientColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     m_SkyboxExposure: 0
     m_SkyboxTint: {r: 0, g: 0, b: 0, a: 0}
     m_EnvironmentPrefab: EnvironmentPrefabs/Passthrough
