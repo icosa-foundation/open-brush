@@ -24,22 +24,15 @@ public class CreaseSubTool : BaseSculptSubTool {
     override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
         Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
         float strength = bPushing ? m_DefaultStrength : -m_DefaultStrength;
+        Vector3 closestPoint = m_Collider.ClosestPoint(canvasPose * vertex);
+        bool bInSubTool = Vector3.Distance(closestPoint, m_Collider.bounds.center) >= (canvasPose * vertex - (m_Collider.bounds.center)).magnitude;
 
-        if (vertToTool.magnitude <= toolSize / canvasPose.scale && IsInReach(canvasPose * vertex)) {
+        if (vertToTool.magnitude <= toolSize / canvasPose.scale && bInSubTool) {
 
             return vertex + strength * -(vertex - rGroup.m_Bounds.center).normalized;
         }
         return vertex;
     }
-
-
-    override protected bool IsInReach(Vector3 vertex) {
-        return m_Collider.bounds.Contains(vertex);
-    }
-
-    // override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-    //     return (bPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
-    // }
 }
 
 } // namespace TiltBrush
