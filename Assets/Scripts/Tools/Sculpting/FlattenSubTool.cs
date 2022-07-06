@@ -21,17 +21,25 @@ public class FlattenSubTool : BaseSculptSubTool {
     m_Collider = GetComponent<Collider>();
   }
 
-  override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing) {
-      float distanceToSubTool = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).magnitude;
-      if (distanceToSubTool < 0.1f) {
-        return 0;
-      }
-      return distanceToSubTool - 0.1f;
+  override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
+    Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
+    if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
+      return canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex);
+    }
+    return vertex;
   }
 
-  override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-    return -(vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).normalized;
-  }
+  // override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing) {
+  //     float distanceToSubTool = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).magnitude;
+  //     if (distanceToSubTool < 0.1f) {
+  //       return 0;
+  //     }
+  //     return distanceToSubTool - 0.1f;
+  // }
+
+  // override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
+  //   return -(vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).normalized;
+  // }
 }
 
 } // namespace TiltBrush

@@ -95,24 +95,19 @@ public class SculptTool : ToggleStrokeModificationTool
     }
     parentBatch.m_Geometry.EnsureGeometryResident();
     
-    // Copy the relevant portion of geometry to modify
-    // CTODO: this is very expensive, as tons of new arrays are being copied with every trigger press.
-    // However, it doesn't seem to affect speed.
     var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
     // Tool position adjusted by canvas transformations
-    //CTODO: sigh, this is a mess again.
     for (int i = 0; i < vertLength; i++) { // This loop is expensive
 
-      float distance = Vector3.Distance(newVertices[i], m_CurrentCanvas.Pose.inverse * m_ToolTransform.position);
-      float strength = m_ActiveSubTool.CalculateStrength(newVertices[i], distance, m_CurrentCanvas.Pose, m_bIsPushing);
+      Vector3 newVert = m_ActiveSubTool.ManipulateVertex(newVertices[i], m_bIsPushing, m_CurrentCanvas.Pose, m_ToolTransform, GetSize(), rGroup);
 
-      if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newVertices[i], m_CurrentCanvas.Pose)) {
-        Vector3 direction = m_ActiveSubTool.CalculateDirection(newVertices[i], m_ToolTransform, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
-        newVertices[i] += direction * strength;
-
+      // if the vertex pos changed
+      if (Vector3.Distance(newVert, newVertices[i]) > Mathf.Epsilon) { 
         rGroup.m_Stroke.m_bWasSculpted = true;
         PlayModifyStrokeSound();
         InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
+        
+        newVertices[i] = newVert;
       }
     }
     SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
