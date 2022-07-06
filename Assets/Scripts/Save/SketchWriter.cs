@@ -150,6 +150,7 @@ public static class SketchWriter {
             List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
             snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
           } catch {
+            // CTODO: shouldn't happen anymore
             Debug.LogWarning("Orphan batchsubset, skipping");
           }
 

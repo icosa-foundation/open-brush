@@ -28,7 +28,6 @@ public class CreaseSubTool : BaseSculptSubTool {
         bool bInSubTool = Vector3.Distance(closestPoint, m_Collider.bounds.center) >= (canvasPose * vertex - (m_Collider.bounds.center)).magnitude;
 
         if (vertToTool.magnitude <= toolSize / canvasPose.scale && bInSubTool) {
-
             return vertex + strength * -(vertex - rGroup.m_Bounds.center).normalized;
         }
         return vertex;
