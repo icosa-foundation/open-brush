@@ -13,20 +13,15 @@
 // limitations under the License.
 
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace TiltBrush {
+public class SculptSubToolButton : BaseButton {
 
-/// POD, storing geometry data (verts and normals) of sculpted strokes for
-/// serialization purposes.
-public struct SculptedGeometryData { 
-    public List<Vector3> vertices;
-    public List<Vector3> normals;
+    [SerializeField]
+    public SculptSubToolManager.SubTool m_SubTool;
 
-    public SculptedGeometryData(List<Vector3> vertices, List<Vector3> normals) {
-        this.vertices = vertices;
-        this.normals = normals;
+    override protected void OnButtonPressed() { 
+        SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
     }
 }
 } // namespace TiltBrush
-

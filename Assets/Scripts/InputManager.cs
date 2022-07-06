@@ -84,7 +84,8 @@ public class InputManager : MonoBehaviour {
     Confirm,
     Cancel,
     Trash,
-    Share
+    Share,
+    ToggleSculpt,
   }
 
   /// WARNING: do not arbitrarily rename these enum values.
@@ -680,6 +681,7 @@ public class InputManager : MonoBehaviour {
     case SketchCommands.ToggleDefaultTool:
     case SketchCommands.MenuContextClick:
     case SketchCommands.ToggleSelection:
+    case SketchCommands.ToggleSculpt:
       return Brush.GetCommandDown(rCommand);
 
     // Misc

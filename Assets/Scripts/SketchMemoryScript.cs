@@ -39,7 +39,7 @@ public class SketchMemoryScript : MonoBehaviour {
   public bool m_SanityCheckStrokes = false;
 
 
-  public List<SculptedGeometryData> m_SavedSculptedGeometry; //CTODO: Maybe a different datastrcuture would work better?
+  public Queue<SculptedGeometryData> m_SavedSculptedGeometry;
   private int m_LastCheckedVertCount;
   private int m_MemoryWarningVertCount;
 
@@ -499,7 +499,6 @@ public class SketchMemoryScript : MonoBehaviour {
       Color newColor = recolor ? PointerManager.m_Instance.PointerColor : stroke.m_Color;
       Guid newGuid = rebrush ? brushGuid : stroke.m_BrushGuid;
       new RepaintStrokeCommand(stroke, newColor, newGuid, m_RepaintStrokeParent);
-      //CTODO: use m_SavedSculptedGeometry to quickly save the geometry and reinsert it after repainting.
       return true;
     }
     return false;
@@ -825,24 +824,27 @@ public class SketchMemoryScript : MonoBehaviour {
     if (m_SavedSculptedGeometry != null) {
       int index = 0;
       foreach (var stroke in m_MemoryList) { 
-        if (m_SavedSculptedGeometry[index] != null) {
+        if (stroke.m_bWasSculpted) {
+
+          var sculptedGeometry = m_SavedSculptedGeometry.Dequeue();
           int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
 
-          if (m_SavedSculptedGeometry[index].vertices.Count != stroke.m_BatchSubset.m_VertLength) {
+          if (sculptedGeometry.vertices.Count != stroke.m_BatchSubset.m_VertLength) {
             Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
             continue;
           }
           
           for (int i = startIndex; i < endIndex; i++) {
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = m_SavedSculptedGeometry[index].vertices[i - startIndex];
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = m_SavedSculptedGeometry[index].normals[i - startIndex];
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
           }
 
           stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
         }
         index++;
       }
+      // Clear everything just in case.
       m_SavedSculptedGeometry = null;
     }
   }

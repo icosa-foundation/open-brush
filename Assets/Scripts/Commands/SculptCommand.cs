@@ -19,7 +19,7 @@ using System.Collections.Generic;
 namespace TiltBrush {
   public class SculptCommand : BaseCommand {
 
-    private BatchSubset m_TargetBatchSubset;
+    private Batch m_TargetBatch;
     private List<Vector3> m_OldVerts;
     private List<Vector3> m_NewVerts;
     private int m_StartIndex;
@@ -28,10 +28,10 @@ namespace TiltBrush {
 
     public SculptCommand(
         BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent) {
-      m_TargetBatchSubset = batchSubset;
+      m_TargetBatch = batchSubset.m_ParentBatch;
       m_NewVerts = newVerts;
       m_VertLength = newVerts.Count;
-      m_OldVerts = m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
+      m_OldVerts = m_TargetBatch.m_Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
       m_StartIndex = startIndex;
       m_Initial = isInitial;
     }
@@ -39,19 +39,12 @@ namespace TiltBrush {
     public override bool NeedsSave { get { return true; } } // should always save
 
     private void ApplySculptModification(List<Vector3> vertices) {
-
-      if (m_TargetBatchSubset.m_ParentBatch == null) {
-        // CTODO: This occurs when a user moves a stroke with the selection tool and then tries to undo/redo.
-        // Currently, the step is skipped, ergo causing some sculpting changes inbetween to be "permanent".
-        // The solution here isn't the best, it should be improved.
-        Debug.LogWarning("Missing parent batch, skipping sculpt command");
-        return;
-      }
-
+      m_TargetBatch.m_Geometry.EnsureGeometryResident();
       for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
-        m_TargetBatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+        m_TargetBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
       }
-      m_TargetBatchSubset.m_ParentBatch.DelayedUpdateMesh();
+
+      m_TargetBatch.DelayedUpdateMesh();
     }
 
     protected override void OnRedo() {
@@ -75,6 +68,5 @@ namespace TiltBrush {
       m_Children.Add(other);
       return true;
     }
-    //CTODO: need to implement OnDispose()?
 }
 } // namespace TiltBrush

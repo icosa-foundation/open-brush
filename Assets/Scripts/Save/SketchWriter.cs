@@ -143,14 +143,17 @@ public static class SketchWriter {
         {
           int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
           int vertCount = stroke.m_BatchSubset.m_VertLength;
-
-          // CTODO: this is so ugly it makes me weep.
           
-          List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
-          List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
+          try {
+            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+            List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
+            List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
+            snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
+          } catch {
+            Debug.LogWarning("Orphan batchsubset, skipping");
+          }
 
 
-          snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
         }
         yield return snapshot;
       } else {
@@ -240,7 +243,7 @@ public static class SketchWriter {
       }
 
       // Sculpted geometry
-      if (copy.sculptedGeometryData != null) {
+      if (copy.sculptedGeometryData.vertices != null) {
         // Write the length of the batch subset then save all the vertices.
         writer.Int32(copy.sculptedGeometryData.vertices.Count);
         foreach (Vector3 vertex in copy.sculptedGeometryData.vertices) {
@@ -281,11 +284,10 @@ public static class SketchWriter {
       }
     }
 #endif
-    List<SculptedGeometryData> geometryData = new List<SculptedGeometryData>();
+    Queue<SculptedGeometryData> geometryData = new Queue<SculptedGeometryData>();
     var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, geometryData);
     if (strokes == null) { return false; }
     if (geometryData.Count > 0) { // if any sculpting modifications have been made
-      Debug.Log("Read " + geometryData.Count + " sculpted strokes");
       SketchMemoryScript.m_Instance.m_SavedSculptedGeometry = geometryData;
     }
     // Check that the strokes are in timestamp order.
@@ -315,7 +317,7 @@ public static class SketchWriter {
   /// Parses a binary file into List of MemoryBrushStroke.
   /// Returns null on parse error.
   public static List<Stroke> GetStrokes(
-      Stream stream, Guid[] brushList, bool allowFastPath, List<SculptedGeometryData> geometryData) {
+      Stream stream, Guid[] brushList, bool allowFastPath, Queue<SculptedGeometryData> geometryData) {
     var reader = new TiltBrush.SketchBinaryReader(stream);
 
     uint sentinel = reader.UInt32();
@@ -479,11 +481,8 @@ public static class SketchWriter {
             norms.Add(reader.Vec3());
           }
 
-          geometryData.Add(new SculptedGeometryData(verts, norms));
-        } else {
-          geometryData.Add(null);
+          geometryData.Enqueue(new SculptedGeometryData(verts, norms));
         }
-        //CTODO: this is kinda naive
       }
 
       // Deserialized strokes are expected in timestamp order, yielding aggregate complexity
