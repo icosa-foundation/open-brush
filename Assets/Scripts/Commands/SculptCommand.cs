@@ -39,6 +39,7 @@ namespace TiltBrush {
     public override bool NeedsSave { get { return true; } } // should always save
 
     private void ApplySculptModification(List<Vector3> vertices) {
+      m_TargetBatch.m_Geometry.EnsureGeometryResident();
       for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++) {
         m_TargetBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
       }
@@ -67,6 +68,5 @@ namespace TiltBrush {
       m_Children.Add(other);
       return true;
     }
-    //CTODO: need to implement OnDispose()?
 }
 } // namespace TiltBrush
