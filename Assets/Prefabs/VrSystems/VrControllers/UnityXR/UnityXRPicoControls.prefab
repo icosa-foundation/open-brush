@@ -107,8 +107,8 @@ MonoBehaviour:
   m_ControllerName: 1
   m_ControllerGeometryPrefab: {fileID: 114000012796927648, guid: 698438851fab863449a0a8f3e209a21a,
     type: 3}
-  m_GeometryOffset: {x: -0.03, y: -0.182, z: 0.379}
-  m_GeometryRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
+  m_GeometryOffset: {x: 0, y: 0, z: 0}
+  m_GeometryRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!114 &114000013512061632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -194,8 +194,8 @@ MonoBehaviour:
   m_ControllerName: 0
   m_ControllerGeometryPrefab: {fileID: 114346084812737864, guid: 47142ccbb734c0a4f9c3ca74fdd28286,
     type: 3}
-  m_GeometryOffset: {x: 0.03, y: -0.182, z: 0.379}
-  m_GeometryRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
+  m_GeometryOffset: {x: 0, y: 0, z: 0}
+  m_GeometryRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!114 &114000011013631904
 MonoBehaviour:
   m_ObjectHideFlags: 0
