@@ -62,14 +62,15 @@ namespace TiltBrush
             clone.TrySetCanvasKeywordsFromObject(transform);
 
             var polyGo = clone.GetId().gameObject;
-            var thisId = GetId();
-            var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
             var col = polyGo.AddComponent<BoxCollider>();
             col.size = m_BoxCollider.size;
 
-            // Commenting out the following line fixed a bug whereby duplicated editable models
-            // where slightly bigger than they should have been
-            // Still don't fully understand why or whether commenting this out will have side effect...
+            // TODO
+            // Commenting out the following fixed a bug whereby
+            // duplicated editable models were slightly bigger than they should have been
+            // Still don't fully understand why or whether commenting this out will have side effects...
+            // var thisId = GetId();
+            // var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
             // EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
 
             return clone;
