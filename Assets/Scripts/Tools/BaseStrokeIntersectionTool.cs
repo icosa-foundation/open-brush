@@ -249,7 +249,7 @@ namespace TiltBrush
                     else
                     {
                         BatchSubset subset = m_GpuOldResultList[i].subset;
-                        if (subset.m_ParentBatch == null)
+                        if (subset == null || subset.m_ParentBatch == null)
                         {
                             // The stroke was deleted between creating the result and processing the result. This
                             // could happen due to the inherent latency in GPU intersection, although in practice,
