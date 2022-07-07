@@ -26,18 +26,18 @@ namespace TiltBrush.MeshEditing
 
         public struct EditableModel
         {
-            public Color[] Colors;
+            public Color[] Colors { get; }
             public GeneratorTypes GeneratorType { get; }
             public PolyMesh PolyMesh { get; private set; }
             public ColorMethods ColorMethod { get; }
-            public Dictionary<string, object> GeneratorParameters { get; set; }
+            public Dictionary<string, object> GeneratorParameters { get; }
             public List<Dictionary<string, object>> Operations { get; }
 
             public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> generatorParameters)
             {
                 GeneratorType = type;
                 PolyMesh = polyMesh;
-                Colors = colors;
+                Colors = (Color[])colors.Clone();
                 ColorMethod = colorMethod;
                 GeneratorParameters = generatorParameters;
                 Operations = new List<Dictionary<string, object>>();
@@ -49,7 +49,7 @@ namespace TiltBrush.MeshEditing
             {
                 GeneratorType = type;
                 PolyMesh = polyMesh;
-                Colors = colors;
+                Colors = (Color[])colors.Clone();
                 ColorMethod = colorMethod;
                 GeneratorParameters = generatorParameters;
                 Operations = operations;
@@ -156,7 +156,7 @@ namespace TiltBrush.MeshEditing
             var meshData = poly.BuildMeshData(colors: colors, colorMethod: colMethod);
             var mesh = poly.BuildUnityMesh(meshData);
 
-            // Create the EditableModel gameobject 
+            // Create the EditableModel gameobject
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
             RegisterEditableMesh(polyGo, poly, colors, colMethod, generatorType, parameters);

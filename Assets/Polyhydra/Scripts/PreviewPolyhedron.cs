@@ -45,17 +45,10 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public bool SafeLimits;
 
-    public Gradient colors;
-    public float ColorRange;
-    public float ColorOffset;
-
     public PolyMesh m_PolyMesh;
-    public bool Rescale;
     private MeshFilter meshFilter;
-    public Color[] previewColors;
-    public Color MainColor;
-    public float ColorBlend = 0.5f;
-    public ColorMethods PreviewColorMethod;
+    public Color[] ColorPalette;
+    public ColorMethods ColorMethod;
 
     public Material SymmetryWidgetMaterial;
 
@@ -76,7 +69,6 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void Init()
     {
-        ColorSetup();
         meshFilter = gameObject.GetComponent<MeshFilter>();
     }
 
@@ -84,48 +76,6 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         CheckAndRebuildIfNeeded();
     }
-
-    private void ColorSetup()
-    {
-        // Generates a color palette based on either user custom colors or colors set in the inspector
-
-        int numColors = 12; // What is the maximum colour index we want to support? 
-        var colorButtons = FindObjectsOfType<CustomColorButton>();
-        // Use custom colors if they are present
-        if (colorButtons.Length > 1)
-        {
-            var colorSet = new List<Color>();
-            while (colorSet.Count < numColors)
-            {
-                for (var i = 0; i < colorButtons.Length; i++)
-                {
-                    var color = colorButtons[i].CustomColor;
-                    colorSet.Add(color);
-                }
-            }
-            previewColors = colorSet.ToArray();
-            // Custom color buttons are right to left so reverse them
-            previewColors.Reverse();
-            // Intuitively the first face role isn't often seen so move it to the end
-            var firstColor = previewColors[0];
-            previewColors = previewColors.Skip(1).ToArray();
-            previewColors.Append(firstColor);
-        }
-        // Otherwise use the default palette
-        else
-        {
-            previewColors = Enumerable.Range(0, numColors).Select(x => colors.Evaluate(((x / 8f) * ColorRange + ColorOffset) % 1)).ToArray();
-        }
-        previewColors = previewColors.Select(col => Color.Lerp(MainColor, col, ColorBlend)).ToArray();
-    }
-
-    public void UpdateColorBlend(float blend)
-    {
-        MainColor = PointerManager.m_Instance.PointerColor;
-        ColorBlend = blend;
-        RebuildPoly();
-    }
-
 
     [Serializable]
     public struct OpDefinition
@@ -233,7 +183,7 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         // Fail early for cases where we aren't running in a normal gameloop
         if (!Application.isPlaying) return;
-        
+
         if (
             !PointerManager.m_Instance.SymmetryModeEnabled ||
             PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
@@ -261,9 +211,6 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void Validate()
     {
-        // Colours might have been changed in the inspector
-        ColorSetup();
-
         if (GeneratorType == GeneratorTypes.Uniform)
         {
             if (Param1Int < 3) { Param1Int = 3; }
@@ -307,8 +254,8 @@ public class PreviewPolyhedron : MonoBehaviour
     public Color GetFaceColorForStrokes(int faceIndex)
     {
         return m_PolyMesh.CalcFaceColor(
-            previewColors,
-            PreviewColorMethod,
+            ColorPalette,
+            ColorMethod,
             faceIndex
         );
     }
@@ -529,19 +476,19 @@ public class PreviewPolyhedron : MonoBehaviour
 
         PolyhydraPanel.m_Operations = new List<Dictionary<string, object>>();
 
-        PreviewColorMethod = ColorMethods.ByRole;
+        ColorMethod = ColorMethods.ByRole;
 
         foreach (var op in Operators.ToList())
         {
             // If we've set any tags then assume we want to color by tags
-            if (op.opType == PolyMesh.Operation.AddTag) PreviewColorMethod = ColorMethods.ByTags;
+            if (op.opType == PolyMesh.Operation.AddTag) ColorMethod = ColorMethods.ByTags;
 
             PolyhydraPanel.m_Operations.Add(new Dictionary<string, object>
             {
                 {"operation", op.opType},
                 {"param1", op.amount},
                 {"param1Randomize", op.amountRandomize},
-                {"param2", op.amount},
+                {"param2", op.amount2},
                 {"param2Randomize", op.amount2Randomize},
                 {"paramColor", op.paramColor},
                 {"disabled", op.disabled},
@@ -554,7 +501,7 @@ public class PreviewPolyhedron : MonoBehaviour
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
 
-        m_MeshData = m_PolyMesh.BuildMeshData(GenerateSubmeshes, previewColors, PreviewColorMethod);
+        m_MeshData = m_PolyMesh.BuildMeshData(GenerateSubmeshes, ColorPalette, ColorMethod);
 
     }
 
@@ -637,4 +584,8 @@ public class PreviewPolyhedron : MonoBehaviour
         return conway;
     }
 
+    public void AssignColors(Color[] colors)
+    {
+        ColorPalette = colors;
+    }
 }

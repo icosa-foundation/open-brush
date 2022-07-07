@@ -25,6 +25,7 @@ using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -72,6 +73,7 @@ namespace TiltBrush
         public PolyhydraSlider SliderOpParam1;
         public PolyhydraSlider SliderOpParam2;
         public PolyhydraColorButton ButtonOpColorPicker;
+        public PolyhydraColorButton[] ColorPalletteButtons;
         public GameObject OpFilterControlParent;
         public PolyhydraOptionButton ButtonOpFilterType;
         public PolyhydraSlider SliderOpFilterParam;
@@ -145,7 +147,7 @@ namespace TiltBrush
             return Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
         }
 
-        override public void InitPanel()
+        public override void InitPanel()
         {
             base.InitPanel();
             ShowAllGeneratorControls();
@@ -158,6 +160,11 @@ namespace TiltBrush
             if (!Directory.Exists(DefaultPresetsDirectory()))
             {
                 Directory.CreateDirectory(DefaultPresetsDirectory());
+            }
+
+            for (var i = 0; i < ColorPalletteButtons.Length; i++)
+            {
+                ColorPalletteButtons[i].SetColorSwatch(CurrentPolyhedra.ColorPalette[i]);
             }
         }
 
@@ -600,9 +607,9 @@ namespace TiltBrush
             EditableModelManager.m_Instance.GeneratePolyMesh(
                 poly,
                 creationTr,
-                EditableModelManager.m_Instance.m_PreviewPolyhedron.PreviewColorMethod,
+                EditableModelManager.m_Instance.m_PreviewPolyhedron.ColorMethod,
                 shapeType,
-                EditableModelManager.m_Instance.m_PreviewPolyhedron.previewColors,
+                EditableModelManager.m_Instance.m_PreviewPolyhedron.ColorPalette,
                 m_GeneratorParameters, m_Operations
             );
         }
@@ -647,7 +654,7 @@ namespace TiltBrush
             // There's too many different classes at play with overlapping responsibilities
             var em = new EditableModelManager.EditableModel(
                 CurrentPolyhedra.m_PolyMesh,
-                CurrentPolyhedra.previewColors,
+                CurrentPolyhedra.ColorPalette,
                 colorMethod,
                 CurrentPolyhedra.GeneratorType,
                 m_GeneratorParameters,
@@ -797,7 +804,7 @@ namespace TiltBrush
                 Slider3.UpdateValueAbsolute(sliderParamValues[2]);
             }
 
-            CurrentPolyhedra.previewColors = emd.Colors;
+            CurrentPolyhedra.AssignColors(emd.Colors);
             CurrentPolyhedra.GeneratorType = emd.GeneratorType;
             m_GeneratorParameters = emd.GeneratorParameters;
             m_Operations = emd.Operations;
@@ -1136,16 +1143,37 @@ namespace TiltBrush
 
         }
 
-        public void OpColorButtonPressed()
+        public void FinalColorButtonPressed(int index)
+        {
+            SketchControlsScript.GlobalCommands command = SketchControlsScript.GlobalCommands.PolyhydraColorPickerPopup;
+            CreatePopUp(command, -1, -1, "Color",
+                () => ColorPalletteButtons[index].SetColorSwatch(CurrentPolyhedra.ColorPalette[index])
+            );
+
+            var popup = (m_ActivePopUp as ColorPickerPopUpWindow);
+            popup.transform.localPosition += new Vector3(0, 0, 0);
+            popup.ColorPicker.ColorPicked += c => SetFinalColor(c, index);
+
+            // Init must be called after all popup.ColorPicked actions have been assigned.
+            popup.ColorPicker.Controller.CurrentColor = CurrentPolyhedra.ColorPalette[index];
+
+            m_EatInput = true;
+        }
+
+        public void OpColorButtonPressed(int index)
         {
             // Create the popup with callback.
             //CreatePopUp(SketchControlsScript.GlobalCommands.LightingLdr, -1, -1, popupText, OnPopUpClose);
             SketchControlsScript.GlobalCommands command = SketchControlsScript.GlobalCommands.PolyhydraColorPickerPopup;
-            CreatePopUp(command, -1, -1, "Color", MakeOnOpColorPopUpClose());
+            CreatePopUp(command, -1, -1, "Color",
+                () => ButtonOpColorPicker.SetDescriptionText(
+                    "Color",
+                    ColorTable.m_Instance.NearestColorTo(GetOpColor())
+                )
+            );
 
             var popup = (m_ActivePopUp as ColorPickerPopUpWindow);
             popup.transform.localPosition += new Vector3(0, 0, 0);
-            popup.ColorPicker.ColorPicked += OnColorPicked();
             popup.ColorPicker.ColorPicked += delegate (Color c)
             {
                 ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(c));
@@ -1166,26 +1194,18 @@ namespace TiltBrush
 
         private void SetOpColor(Color color)
         {
+            ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
             var op = CurrentPolyhedra.Operators[CurrentActiveOpIndex];
             op.paramColor = color;
             CurrentPolyhedra.Operators[CurrentActiveOpIndex] = op;
             CurrentPolyhedra.RebuildPoly();
         }
 
-        Action MakeOnOpColorPopUpClose()
+        private void SetFinalColor(Color color, int index)
         {
-            return delegate
-            {
-                ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(GetOpColor()));
-            };
-        }
-
-        Action<Color> OnColorPicked()
-        {
-            return delegate (Color c)
-            {
-                SetOpColor(c);
-            };
+            ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
+            CurrentPolyhedra.ColorPalette[index] = color;
+            CurrentPolyhedra.RebuildPoly();
         }
 
         public void HandleAddOpButton()

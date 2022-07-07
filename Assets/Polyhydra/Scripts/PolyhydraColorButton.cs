@@ -13,25 +13,31 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace TiltBrush
 {
     public class PolyhydraColorButton : BaseButton
     {
 
-        public PolyhydraPanel parentPanel;
-
+        public int Index;
+        public UnityEvent<int> OnPressed;
+        public MeshRenderer ColorSwatch;
         override protected void OnButtonPressed()
         {
-            parentPanel.OpColorButtonPressed();
+            OnPressed.Invoke(Index);
         }
 
-        public override void SetColor(Color rColor)
+        public void SetColorSwatch(Color color)
         {
-            var color = Color.white;
-            Color mainColor = new Color(color.r * rColor.r, color.g * rColor.g, color.b * rColor.b, color.a * rColor.a);
-            base.SetColor(mainColor);
-            SetMaterialColor(mainColor);
+            // Set's the color separately from normal UI code
+            // So we can have color palette buttons that match the chosen color
+            ColorSwatch.material.color = color;
+            SetDescriptionText(
+                "Color",
+                ColorTable.m_Instance.NearestColorTo(color)
+            );
         }
+
     }
 } // namespace TiltBrush

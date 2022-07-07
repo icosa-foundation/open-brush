@@ -29,6 +29,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.000099122524, y: -0.00008535385, z: -0.00007581711}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -52,10 +53,12 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -80,6 +83,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &8240667959069599073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93,65 +97,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GenerateSubmeshes: 0
+  RebuildSkipFrames: 4
   GeneratorType: 8
   UniformPolyType: 10
-  UniformPolyTypeCategory: 0
-  JohnsonPolyType: 0
-  OtherPolyType: 0
+  RadialPolyType: 0
+  VariousSolidsType: 0
+  ShapeType: 0
   GridType: 0
   GridShape: 0
-  PrismP: 5
-  PrismQ: 2
-  colors:
-    serializedVersion: 2
-    key0: {r: 1, g: 0, b: 0, a: 1}
-    key1: {r: 1, g: 0.7464502, b: 0, a: 1}
-    key2: {r: 1, g: 0.98480475, b: 0, a: 0}
-    key3: {r: 0.29063714, g: 1, b: 0, a: 0}
-    key4: {r: 0, g: 0.73947954, b: 1, a: 0}
-    key5: {r: 0.5659275, g: 0, b: 1, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 13107
-    ctime2: 26214
-    ctime3: 39321
-    ctime4: 52428
-    ctime5: 65535
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_NumColorKeys: 6
-    m_NumAlphaKeys: 2
-  ColorRange: 0
-  ColorOffset: 0
-  Rescale: 1
-  MainColor: {r: 0, g: 0, b: 0, a: 0}
-  ColorBlend: 0.5
-  PreviewColorMethod: 1
+  Param1Int: 0
+  Param2Int: 0
+  Param3Int: 3
+  Param1Float: 0
+  Param2Float: 0
+  Param3Float: 1
+  SafeLimits: 0
+  ColorPalette:
+  - {r: 1, g: 0.8406709, b: 0.044025064, a: 0}
+  - {r: 1, g: 0.3620915, b: 0.043137252, a: 0}
+  - {r: 1, g: 0.043137252, b: 0.52156866, a: 0}
+  - {r: 1, g: 0.043137252, b: 1, a: 0}
+  - {r: 0.52156866, g: 0.043137252, b: 1, a: 0}
+  ColorMethod: 1
   SymmetryWidgetMaterial: {fileID: 2100000, guid: d8c8bb0576ffd75428fca1625a6cc9e3,
     type: 2}
-  vertexGizmos: 0
-  faceGizmos: 0
-  edgeGizmos: 0
-  faceCenterGizmos: 0
-  ConwayOperators:
-  - opType: 0
-    faceSelections: 0
-    amount: 0
-    amount2: 0
-    disabled: 0
-  - opType: 0
-    faceSelections: 0
-    amount: 0
-    amount2: 0
-    disabled: 0
-  SafeLimits: 0
+  Operators: []
