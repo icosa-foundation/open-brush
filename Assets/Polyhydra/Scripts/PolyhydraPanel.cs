@@ -804,7 +804,18 @@ namespace TiltBrush
                 Slider3.UpdateValueAbsolute(sliderParamValues[2]);
             }
 
-            CurrentPolyhedra.AssignColors(emd.Colors);
+            // If no colors are supplied then use the current palette
+            Color[] colors;
+            if (emd.Colors == null || emd.Colors.Length == 0)
+            {
+                colors = (Color[])CurrentPolyhedra.ColorPalette.Clone();
+            }
+            else
+            {
+                colors = emd.Colors;
+            }
+
+            CurrentPolyhedra.AssignColors(colors);
             CurrentPolyhedra.GeneratorType = emd.GeneratorType;
             m_GeneratorParameters = emd.GeneratorParameters;
             m_Operations = emd.Operations;
