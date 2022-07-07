@@ -66,7 +66,12 @@ namespace TiltBrush
             var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
             var col = polyGo.AddComponent<BoxCollider>();
             col.size = m_BoxCollider.size;
-            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
+
+            // Commenting out the following line fixed a bug whereby duplicated editable models
+            // where slightly bigger than they should have been
+            // Still don't fully understand why or whether commenting this out will have side effect...
+            // EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
+
             return clone;
         }
 
