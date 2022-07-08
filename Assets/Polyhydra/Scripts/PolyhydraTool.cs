@@ -133,19 +133,11 @@ namespace TiltBrush
                     var id = ewidget.GetId();
                     if (id != null)
                     {
-                        var currentPoly = EditableModelManager.CurrentModel;
                         PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
                         if (polyhydraPanel != null)
                         {
                             var newPoly = polyhydraPanel.PreviewPoly.m_PolyMesh;
-                            var emodel = new EditableModelManager.EditableModel(
-                                newPoly,
-                                (Color[])currentPoly.Colors.Clone(),
-                                currentPoly.ColorMethod,
-                                currentPoly.GeneratorType,
-                                currentPoly.GeneratorParameters
-                            );
-                            EditableModelManager.m_Instance.UpdateEmodel(ewidget, emodel);
+                            EditableModelManager.m_Instance.UpdateEmodel(ewidget, EditableModelManager.CurrentModel);
                             EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
                             AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
                         }
