@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush;
@@ -37,21 +36,21 @@ public class IconGenerator : MonoBehaviour
         filename = ScreenShotName(resWidth, resHeight);
         TakeShotNow();
     }
-    
+
     [ContextMenu("Build Now")]
     public void BuildNow()
     {
         Init();
         previewPoly.ImmediateMakePolyhedron();
     }
-    
+
     [ContextMenu("Take All Various Poly Screenshots")]
     void TakeAllVariousScreenshots()
     {
         Init();
         var names = Enum.GetNames(typeof(VariousSolidTypes));
-        previewPoly.GeneratorType = GeneratorTypes.Various;
-        
+        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
+
         for (var index = 0; index < names.Length; index++)
         {
             filename = PolyScreenShotName($"other_{names[index]}");
@@ -90,7 +89,7 @@ public class IconGenerator : MonoBehaviour
     {
         var oldPos = cameraPosition;
         Init();
-        previewPoly.GeneratorType = GeneratorTypes.Grid;
+        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Grid;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridTypes));
         previewPoly.GridShape = GridEnums.GridShapes.Plane;
         previewPoly.Param1Int = 2;
@@ -104,13 +103,13 @@ public class IconGenerator : MonoBehaviour
         }
         cameraPosition = oldPos;
     }
-    
+
     [ContextMenu("Take All Radial Screenshots")]
     void TakeAllRadialScreenshots()
     {
         Init();
         var radialNames = Enum.GetNames(typeof(RadialSolids.RadialPolyType));
-        previewPoly.GeneratorType = GeneratorTypes.Radial;
+        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Radial;
         previewPoly.Param1Int = 5;
         previewPoly.Param2Int = 2;
         previewPoly.Param1Float = .75f;
@@ -123,13 +122,13 @@ public class IconGenerator : MonoBehaviour
             CreateThumbnail();
         }
     }
-    
+
     [ContextMenu("Take All Wythoff Screenshots")]
     void TakeAllWythoffScreenshots()
     {
         Init();
         var uniformNames = Enum.GetNames(typeof(UniformTypes));
-        previewPoly.GeneratorType = GeneratorTypes.Uniform;
+        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Uniform;
         for (var index = 6; index < uniformNames.Length; index++)
         {
             filename = PolyScreenShotName($"uniform_{uniformNames[index]}");
@@ -146,7 +145,7 @@ public class IconGenerator : MonoBehaviour
         PolyhydraPanel.FocusCameraOnGameObject(camera, previewPoly.gameObject, ZoomFactor, false);
         TakeShotNow();
     }
-    
+
     public static string PolyScreenShotName(string polyName)
     {
         return string.Format("{0}/poly_{1}.jpg",
@@ -163,7 +162,8 @@ public class IconGenerator : MonoBehaviour
         );
     }
 
-    public static string ScreenShotName(int width, int height) {
+    public static string ScreenShotName(int width, int height)
+    {
         return string.Format("{0}/screenshot_{1}x{2}_{3}.jpg",
             Application.persistentDataPath,
             width, height,

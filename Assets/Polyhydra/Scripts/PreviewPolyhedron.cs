@@ -29,7 +29,6 @@ public class PreviewPolyhedron : MonoBehaviour
     public bool GenerateSubmeshes = false;
 
     public int RebuildSkipFrames = 4;
-    public GeneratorTypes GeneratorType;
     public UniformTypes UniformPolyType;
     public RadialSolids.RadialPolyType RadialPolyType;
     public VariousSolidTypes VariousSolidsType;
@@ -47,8 +46,6 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public PolyMesh m_PolyMesh;
     private MeshFilter meshFilter;
-    public Color[] ColorPalette;
-    public ColorMethods ColorMethod;
 
     public Material SymmetryWidgetMaterial;
 
@@ -211,7 +208,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void Validate()
     {
-        if (GeneratorType == GeneratorTypes.Uniform)
+        if (EditableModelManager.CurrentModel.GeneratorType == GeneratorTypes.Uniform)
         {
             if (Param1Int < 3) { Param1Int = 3; }
             if (Param1Int > 16) Param1Int = 16;
@@ -254,8 +251,8 @@ public class PreviewPolyhedron : MonoBehaviour
     public Color GetFaceColorForStrokes(int faceIndex)
     {
         return m_PolyMesh.CalcFaceColor(
-            ColorPalette,
-            ColorMethod,
+            EditableModelManager.CurrentModel.Colors,
+            EditableModelManager.CurrentModel.ColorMethod,
             faceIndex
         );
     }
@@ -303,14 +300,14 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         // TODO Unify this with similar code in SaveLoadScript.cs
 
-        switch (GeneratorType)
+        switch (EditableModelManager.CurrentModel.GeneratorType)
         {
             case GeneratorTypes.Uniform:
 
                 var wythoff = new WythoffPoly(UniformPolyType);
                 m_PolyMesh = wythoff.Build();
                 m_PolyMesh = m_PolyMesh.SitLevel();
-                PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                 {
                     {"type", UniformPolyType},
                 };
@@ -318,7 +315,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 break;
             case GeneratorTypes.Waterman:
                 m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int, mergeFaces: true);
-                PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                 {
                     {"root", Param1Int},
                     {"c", Param2Int},
@@ -326,7 +323,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 break;
             case GeneratorTypes.Grid:
                 m_PolyMesh = Grids.Build(GridType, GridShape, Param1Int, Param2Int);
-                PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                 {
                     {"type", GridType},
                     {"shape", GridShape},
@@ -357,7 +354,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 }
 
                 m_PolyMesh = RadialSolids.Build(RadialPolyType, Param1Int, height, capHeight);
-                PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                 {
                     {"type", RadialPolyType},
                     {"sides", Param1Int},
@@ -372,7 +369,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     case ShapeTypes.Polygon:
                         Param1Int = Mathf.Max(Param1Int, 3);
                         m_PolyMesh = Shapes.Build(ShapeTypes.Polygon, Param1Int);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.Polygon},
                             {"sides", Param1Int},
@@ -384,7 +381,7 @@ public class PreviewPolyhedron : MonoBehaviour
                     case ShapeTypes.Star:
                         Param1Int = Mathf.Max(Param1Int, 3);
                         m_PolyMesh = Shapes.Build(ShapeTypes.Star, Param1Int, Param2Float);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.Star},
                             {"sides", Param1Int},
@@ -394,7 +391,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case ShapeTypes.L_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.L_Shape},
                             {"a", Param1Float},
@@ -404,7 +401,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case ShapeTypes.C_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.C_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.C_Shape},
                             {"a", Param1Float},
@@ -414,7 +411,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case ShapeTypes.H_Shape:
                         m_PolyMesh = Shapes.Build(ShapeTypes.H_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", ShapeTypes.H_Shape},
                             {"a", Param1Float},
@@ -429,7 +426,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 {
                     case VariousSolidTypes.Box:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Box, Param1Int, Param2Int, Param3Int);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.Box},
                             {"x", Param1Int},
@@ -440,7 +437,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case VariousSolidTypes.UvSphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.UvSphere},
                             {"x", Param1Int},
@@ -450,7 +447,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case VariousSolidTypes.UvHemisphere:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param2Int);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.UvHemisphere},
                             {"x", Param1Int},
@@ -460,7 +457,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         break;
                     case VariousSolidTypes.Torus:
                         m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Torus, Param1Int, Param2Int);
-                        PolyhydraPanel.m_GeneratorParameters = new Dictionary<string, object>
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.Torus},
                             {"x", Param1Int},
@@ -472,18 +469,18 @@ public class PreviewPolyhedron : MonoBehaviour
                 break;
         }
 
-        if (m_PolyMesh == null) Debug.LogError($"No initial poly generated for: GeneratorType: {GeneratorType}");
+        if (m_PolyMesh == null) Debug.LogError($"No initial poly generated for: GeneratorType: {EditableModelManager.CurrentModel.GeneratorType}");
 
-        PolyhydraPanel.m_Operations = new List<Dictionary<string, object>>();
+        EditableModelManager.CurrentModel.Operations = new List<Dictionary<string, object>>();
 
-        ColorMethod = ColorMethods.ByRole;
+        EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByRole;
 
         foreach (var op in Operators.ToList())
         {
             // If we've set any tags then assume we want to color by tags
-            if (op.opType == PolyMesh.Operation.AddTag) ColorMethod = ColorMethods.ByTags;
+            if (op.opType == PolyMesh.Operation.AddTag) EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByTags;
 
-            PolyhydraPanel.m_Operations.Add(new Dictionary<string, object>
+            EditableModelManager.CurrentModel.Operations.Add(new Dictionary<string, object>
             {
                 {"operation", op.opType},
                 {"param1", op.amount},
@@ -501,7 +498,11 @@ public class PreviewPolyhedron : MonoBehaviour
             m_PolyMesh = ApplyOp(m_PolyMesh, op);
         }
 
-        m_MeshData = m_PolyMesh.BuildMeshData(GenerateSubmeshes, ColorPalette, ColorMethod);
+        m_MeshData = m_PolyMesh.BuildMeshData(
+            GenerateSubmeshes,
+            EditableModelManager.CurrentModel.Colors,
+            EditableModelManager.CurrentModel.ColorMethod
+        );
 
     }
 
@@ -586,6 +587,6 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void AssignColors(Color[] colors)
     {
-        ColorPalette = colors;
+        EditableModelManager.CurrentModel.Colors = colors;
     }
 }

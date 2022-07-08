@@ -146,7 +146,7 @@ namespace TiltBrush
         public void PolyhydraThingButtonPressed(string action)
         {
             HandleButtonPress(action);
-            ParentPanel.CurrentPolyhedra.RebuildPoly();
+            ParentPanel.PreviewPoly.RebuildPoly();
         }
 
         public string LabelTextFormatter(string text)

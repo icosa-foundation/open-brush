@@ -24,14 +24,16 @@ namespace TiltBrush.MeshEditing
     {
         public static EditableModelManager m_Instance;
 
-        public struct EditableModel
+        private EditableModel m_CurrentModel;
+
+        public class EditableModel
         {
-            public Color[] Colors { get; }
-            public GeneratorTypes GeneratorType { get; }
+            public Color[] Colors { get; set; }
+            public GeneratorTypes GeneratorType { get; set; }
             public PolyMesh PolyMesh { get; private set; }
-            public ColorMethods ColorMethod { get; }
-            public Dictionary<string, object> GeneratorParameters { get; }
-            public List<Dictionary<string, object>> Operations { get; }
+            public ColorMethods ColorMethod { get; set; }
+            public Dictionary<string, object> GeneratorParameters { get; set; }
+            public List<Dictionary<string, object>> Operations { get; set; }
 
             public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> generatorParameters)
             {
@@ -41,6 +43,11 @@ namespace TiltBrush.MeshEditing
                 ColorMethod = colorMethod;
                 GeneratorParameters = generatorParameters;
                 Operations = new List<Dictionary<string, object>>();
+            }
+
+            public EditableModel(GeneratorTypes generatorType)
+            {
+                GeneratorType = generatorType;
             }
 
             public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod,
@@ -61,9 +68,22 @@ namespace TiltBrush.MeshEditing
             }
         }
 
+
         private Dictionary<string, EditableModel> m_EditableModels;
         [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
+        public static EditableModel CurrentModel
+        {
+            get
+            {
+                if (m_Instance.m_CurrentModel == null)
+                {
+                    m_Instance.m_CurrentModel = new EditableModel(GeneratorTypes.Uniform);
+                }
+                return m_Instance.m_CurrentModel;
+            }
+            set => m_Instance.m_CurrentModel = value;
+        }
 
         void Awake()
         {
@@ -71,22 +91,22 @@ namespace TiltBrush.MeshEditing
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }
 
+        public void UpdateEmodel(EditableModelWidget widget, EditableModel emodel)
+        {
+            var id = widget.GetId();
+            m_EditableModels[id.guid] = emodel;
+        }
+
         public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
         {
             var id = widget.GetId();
-            var emesh = m_EditableModels[id.guid];
-
-            emesh.SetPolyMesh(poly);
-            m_EditableModels[id.guid] = emesh;
-
-            var polyGo = id.gameObject;
-            emesh = m_EditableModels[id.guid];
-            var mat = polyGo.GetComponent<MeshRenderer>().material;
-            var meshData = poly.BuildMeshData(colors: emesh.Colors, colorMethod: emesh.ColorMethod);
+            var emodel = m_EditableModels[id.guid];
+            var mat = id.gameObject.GetComponent<MeshRenderer>().material;
+            var meshData = poly.BuildMeshData(colors: emodel.Colors, colorMethod: emodel.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
-            UpdateMesh(polyGo, mesh, mat);
-            emesh.SetPolyMesh(poly);
-            m_EditableModels[id.guid] = emesh;
+            UpdateMesh(id.gameObject, mesh, mat);
+            emodel.SetPolyMesh(poly);
+            m_EditableModels[id.guid] = emodel;
         }
 
         public void RecordOperation(EditableModelWidget widget, Dictionary<string, object> parameters)

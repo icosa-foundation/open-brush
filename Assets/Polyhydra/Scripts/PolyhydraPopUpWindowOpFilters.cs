@@ -73,7 +73,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action)
         {
-            var ops = ParentPanel.CurrentPolyhedra.Operators;
+            var ops = ParentPanel.PreviewPoly.Operators;
             var op = ops[ParentPanel.CurrentActiveOpIndex];
             op.filterType = (FilterTypes)Enum.Parse(typeof(FilterTypes), action);
             ops[ParentPanel.CurrentActiveOpIndex] = op;

@@ -64,17 +64,17 @@ namespace TiltBrush
                 {
                     m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
                 }
-                polyhydraPanel.CurrentPolyhedra.transform.SetParent(
+                polyhydraPanel.PreviewPoly.transform.SetParent(
                     InputManager.m_Instance.GetController(InputManager.ControllerName.Brush), false
                 );
-                polyhydraPanel.CurrentPolyhedra.transform.Translate(Vector3.up);
+                polyhydraPanel.PreviewPoly.transform.Translate(Vector3.up);
 
                 EatInput();
             }
             else
             {
-                polyhydraPanel.CurrentPolyhedra.transform.SetParent(polyhydraPanel.PreviewPolyParent.transform, false);
-                polyhydraPanel.CurrentPolyhedra.transform.Translate(Vector3.down);
+                polyhydraPanel.PreviewPoly.transform.SetParent(polyhydraPanel.PreviewPolyParent.transform, false);
+                polyhydraPanel.PreviewPoly.transform.Translate(Vector3.down);
             }
 
             // Make sure our UI reticle isn't active.
@@ -124,19 +124,39 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            // TODO WIP... 
-            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            // TODO WIP...
+            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
             {
-                Debug.Log($"{LastIntersectedEditableModelWidget.name}");
-                AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
+                var ewidget = LastIntersectedEditableModelWidget;
+                if (ewidget != null)
+                {
+                    var id = ewidget.GetId();
+                    if (id != null)
+                    {
+                        var currentPoly = EditableModelManager.CurrentModel;
+                        PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                        if (polyhydraPanel != null)
+                        {
+                            var newPoly = polyhydraPanel.PreviewPoly.m_PolyMesh;
+                            var emodel = new EditableModelManager.EditableModel(
+                                newPoly,
+                                (Color[])currentPoly.Colors.Clone(),
+                                currentPoly.ColorMethod,
+                                currentPoly.GeneratorType,
+                                currentPoly.GeneratorParameters
+                            );
+                            EditableModelManager.m_Instance.UpdateEmodel(ewidget, emodel);
+                            EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
+                            AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
+                        }
+                    }
+                }
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
-                PreviewPolyhedron uiPoly = FindObjectOfType<PreviewPolyhedron>();
-                if (uiPoly == null) return;
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 previewMesh = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshFilter>().mesh;
                 previewMaterial = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshRenderer>().material;

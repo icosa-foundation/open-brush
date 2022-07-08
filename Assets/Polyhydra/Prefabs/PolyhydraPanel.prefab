@@ -202,6 +202,12 @@ MonoBehaviour:
   m_PromoBorders:
   - {fileID: 23000011669290354}
   - {fileID: 5352209825629472804}
+  DefaultColorPalette:
+  - {r: 1, g: 0.875, b: 0.25, a: 0}
+  - {r: 1, g: 0.25, b: 0.625, a: 0}
+  - {r: 0.75, g: 0.37647063, b: 0.75, a: 0}
+  - {r: 0.5627451, g: 0.3764706, b: 0.7490196, a: 0}
+  - {r: 0.3764706, g: 0.3764706, b: 0.7490196, a: 0}
   m_ThumbnailCamera: {fileID: 1165147683445718971}
   PresetInitialSaveButton: {fileID: 7743738621273532884}
   PresetSaveOptionsPopupButton: {fileID: 4125988355699568901}
