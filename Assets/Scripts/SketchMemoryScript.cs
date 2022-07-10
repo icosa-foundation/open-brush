@@ -843,7 +843,7 @@ public class SketchMemoryScript : MonoBehaviour {
       Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
       return;
     }
-
+    stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
     for (int i = startIndex; i < endIndex; i++) {
       stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
       stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];

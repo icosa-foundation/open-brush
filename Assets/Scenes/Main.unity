@@ -5728,7 +5728,7 @@ MonoBehaviour:
   m_PointerForwardOffset: 0
   m_ToolTransform: {fileID: 1427435344}
   m_ToolDescriptionText: {fileID: 93838084}
-  m_SizeRange: {x: 0.1, y: 1.5}
+  m_SizeRange: {x: 0.4, y: 1.5}
   m_ToolColdMaterial: {fileID: 2100000, guid: a0fee68e9219a024f9ed7800b4ccb3f4, type: 2}
   m_ToolHotMaterial: {fileID: 2100000, guid: 8edcc1cc602f51b4b8195cfcd465578e, type: 2}
   m_HapticInterval: 0.1

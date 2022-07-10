@@ -21,7 +21,6 @@ public class RotateSubTool : BaseSculptSubTool {
     m_SubToolIdentifier = SculptSubToolManager.SubTool.Rotate;
     m_Collider = GetComponent<Collider>();
   }
-  
   override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
     Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
     if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
@@ -31,8 +30,7 @@ public class RotateSubTool : BaseSculptSubTool {
       Quaternion oldRotation = toolTransform.rotation;
       
       toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
-      //ugly way to ignore z component
-      // toolTransform.rotation = Quaternion.Euler(toolTransform.rotation.eulerAngles.x, toolTransform.rotation.eulerAngles.y, oldRotatio
+      // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
       Vector3 rotation = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * vertToPivot.normalized;
       toolTransform.rotation = oldRotation;
       
@@ -41,29 +39,6 @@ public class RotateSubTool : BaseSculptSubTool {
     }
     return vertex;
   }
-
-  
-  // override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose,  bool bPushing) {
-  //   // this is wrong. should be distance to closest point, not center. That's why it's so scuffed.
-  //   return distance * 0.05f;
-  // }
-
-  // // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
-  // // CTODO: very broken
-  // override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-  //   Vector3 toolPos = canvasPose.inverse * toolTransform.position;
-  //   Vector3 direction = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex));
-  //   // the normal of the point to the toolthing would be the closest point.
-  //   // Debug.Log("tool rotation: " + " " + toolTransform.eulerAngles.x  + " " + toolTransform.eulerAngles.y  + " " + toolTransform.eulerAngles.z);
-  //   // direction = Quaternion.Euler(canvasPose.rotation.x + toolTransform.eulerAngles.x, canvasPose.rotation.y + toolTransform.eulerAngles.y, canvasPose.rotation.z + toolTransform.eulerAngles.z + (bPushing ? 1 : -1) * 90) * direction.normalized;
-  //   Quaternion oldRotation = toolTransform.rotation;
-  //   toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
-  //   //ugly way to ignore z component
-  //   // toolTransform.rotation = Quaternion.Euler(toolTransform.rotation.eulerAngles.x, toolTransform.rotation.eulerAngles.y, oldRotation.eulerAngles.z);
-  //   direction = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * direction.normalized;
-  //   toolTransform.rotation = oldRotation;
-  //   return  direction;
-  // }
 }
 
 }// namespace TiltBrush

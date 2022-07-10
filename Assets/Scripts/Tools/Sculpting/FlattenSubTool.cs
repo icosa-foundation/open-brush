@@ -28,18 +28,6 @@ public class FlattenSubTool : BaseSculptSubTool {
     }
     return vertex;
   }
-
-  // override public float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing) {
-  //     float distanceToSubTool = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).magnitude;
-  //     if (distanceToSubTool < 0.1f) {
-  //       return 0;
-  //     }
-  //     return distanceToSubTool - 0.1f;
-  // }
-
-  // override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-  //   return -(vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).normalized;
-  // }
 }
 
 } // namespace TiltBrush
