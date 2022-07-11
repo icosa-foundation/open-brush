@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2022 Chingiz Dadashov-Khandan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@ using UnityEngine;
 
 namespace TiltBrush {
 
+/// UI panel for the sculpting toolkit, for selecting subtools.
+// There is a lot of duplicate code from SelectionTray, which this is based on.
+// This whole thing should in general be redesigned to be even more scalable, 
+// like the brush selection menu.
 public class SculptToolMenu : UIComponent {
   [SerializeField] private GameObject m_Mesh;
   [SerializeField] private Renderer m_Border;
@@ -32,7 +36,6 @@ public class SculptToolMenu : UIComponent {
     base.Awake();
     m_UIComponentManager = GetComponent<UIComponentManager>();
     App.Switchboard.ToolChanged += OnToolChanged;
-    // App.Switchboard.SelectionChanged += OnSelectionChanged;
   }
 
   override protected void Start() {
@@ -124,10 +127,6 @@ public class SculptToolMenu : UIComponent {
       }
     }
   }
-
-//   void OnSelectionChanged() {
-//     m_GroupButton.UpdateVisuals();
-//   }
 
   IEnumerator Animate() {
     Vector3 localScale = transform.localScale;

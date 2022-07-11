@@ -16,18 +16,26 @@ using UnityEngine;
 namespace TiltBrush {
 public class CreaseSubTool : BaseSculptSubTool {
 
-    void Awake() {
-        m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
-        m_Collider = GetComponent<Collider>();
-    }
+  void Awake() {
+    m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
+    m_Collider = GetComponent<Collider>();
+  }
 
-    override public bool IsInReach(Vector3 vertex, TrTransform canvasPose) {
-        return m_Collider.bounds.Contains(canvasPose * vertex);
-    }
+  /// Move vertex towards center of geometry if it's within the subtool
+  override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
+    Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
+    float strength = bPushing ? m_DefaultStrength : -m_DefaultStrength;
 
-    override public Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup) {
-        return (bPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
+
+    if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
+      Vector3 closestPoint = m_Collider.ClosestPoint(canvasPose * vertex);
+      bool bInSubTool = Vector3.Distance(closestPoint, m_Collider.bounds.center) >= (canvasPose * vertex - (m_Collider.bounds.center)).magnitude;
+      if (bInSubTool) {
+        return vertex + strength * -(vertex - rGroup.m_Bounds.center).normalized;
+      }
     }
+    return vertex;
+  }
 }
 
 } // namespace TiltBrush

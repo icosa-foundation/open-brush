@@ -40,25 +40,26 @@ public class RepaintStrokeCommand : BaseCommand {
         color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
     m_TargetStroke.m_BrushGuid = brushGuid;
     m_TargetStroke.InvalidateCopy();
-    List<Vector3> verts = new List<Vector3>();
-    List<Vector3> normals = new List<Vector3>();
-
+    SculptedGeometryData sculptedGeometryData = new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
     if (m_TargetStroke.m_bWasSculpted) {
-      m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
-      verts = m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(
-                m_TargetStroke.m_BatchSubset.m_StartVertIndex, m_TargetStroke.m_BatchSubset.m_VertLength);
-      normals = m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(
-                m_TargetStroke.m_BatchSubset.m_StartVertIndex, m_TargetStroke.m_BatchSubset.m_VertLength);
+      var batchSubset = m_TargetStroke.m_BatchSubset;
+      batchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+
+      int startIndex = batchSubset.m_StartVertIndex;
+      int vertLength = batchSubset.m_VertLength;
+
+      sculptedGeometryData.vertices = batchSubset.m_ParentBatch.m_Geometry
+                                        .m_Vertices.GetRange(startIndex, vertLength);
+      sculptedGeometryData.normals = batchSubset.m_ParentBatch.m_Geometry
+                                        .m_Normals.GetRange(startIndex, vertLength);
     }
+
     m_TargetStroke.Uncreate();
     m_TargetStroke.Recreate();
-    if (verts.Count > 0) {
+    if (sculptedGeometryData.vertices.Count > 0) {
       m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
       m_TargetStroke.m_bWasSculpted = true;
-      for (int i = 0; i < verts.Count; i++) {
-        m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i + m_TargetStroke.m_BatchSubset.m_StartVertIndex] = verts[i];
-        m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i + m_TargetStroke.m_BatchSubset.m_StartVertIndex] = normals[i];
-      }
+      SketchMemoryScript.m_Instance.InsertSculptedGeometry(sculptedGeometryData, m_TargetStroke);
     } 
   }
 

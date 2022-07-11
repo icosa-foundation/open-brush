@@ -38,7 +38,7 @@ public class SketchMemoryScript : MonoBehaviour {
   public GameObject m_UndoBatchMesh;
   public bool m_SanityCheckStrokes = false;
 
-
+  /// A temporary place to store all the sculpted geometry data retrieved from a savefile.
   public Queue<SculptedGeometryData> m_SavedSculptedGeometry;
   private int m_LastCheckedVertCount;
   private int m_MemoryWarningVertCount;
@@ -820,27 +820,12 @@ public class SketchMemoryScript : MonoBehaviour {
 
   /// If any strokes inside the file were sculpted, reinstate their sculpted
   /// geometry, overriding any re-generated geometry.
-  public void ReinsertSculptedGeometry() {
+  public void RestoreAllSculptedGeometry() {
     if (m_SavedSculptedGeometry != null) {
       int index = 0;
       foreach (var stroke in m_MemoryList) { 
         if (stroke.m_bWasSculpted) {
-
-          var sculptedGeometry = m_SavedSculptedGeometry.Dequeue();
-          int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
-          int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
-
-          if (sculptedGeometry.vertices.Count != stroke.m_BatchSubset.m_VertLength) {
-            Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
-            continue;
-          }
-          
-          for (int i = startIndex; i < endIndex; i++) {
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
-          }
-
-          stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
+          InsertSculptedGeometry(m_SavedSculptedGeometry.Dequeue(), stroke);
         }
         index++;
       }
@@ -849,6 +834,23 @@ public class SketchMemoryScript : MonoBehaviour {
     }
   }
 
+  /// Insert new geometry data into a stroke.
+  public void InsertSculptedGeometry(SculptedGeometryData sculptedGeometry, Stroke stroke) { 
+    int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
+    int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
+
+    if (sculptedGeometry.vertices.Count != stroke.m_BatchSubset.m_VertLength) {
+      Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
+      return;
+    }
+    stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+    for (int i = startIndex; i < endIndex; i++) {
+      stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
+      stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
+    }
+
+    stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
+  } 
   //
   // Sanity-checking geometry generation
   //

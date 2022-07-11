@@ -949,7 +949,7 @@ public class App : MonoBehaviour {
           bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
         }
         if (!bContinueDrawing) {
-          SketchMemoryScript.m_Instance.ReinsertSculptedGeometry();
+          SketchMemoryScript.m_Instance.RestoreAllSculptedGeometry();
           
           FinishLoading();
           InputManager.m_Instance.TriggerHapticsPulse(
@@ -966,7 +966,7 @@ public class App : MonoBehaviour {
         if (m_QuickloadStallFrames-- < 0) {
           bool bContinueDrawing = SketchMemoryScript.m_Instance.ContinueDrawingFromMemory();
           if (!bContinueDrawing) {
-            SketchMemoryScript.m_Instance.ReinsertSculptedGeometry();
+            SketchMemoryScript.m_Instance.RestoreAllSculptedGeometry();
             FinishLoading();
           }
         }

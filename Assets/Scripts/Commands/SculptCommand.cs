@@ -36,7 +36,7 @@ namespace TiltBrush {
       m_Initial = isInitial;
     }
 
-    public override bool NeedsSave { get { return true; } } // should always save
+    public override bool NeedsSave { get { return true; } } // Should always save.
 
     private void ApplySculptModification(List<Vector3> vertices) {
       m_TargetBatch.m_Geometry.EnsureGeometryResident();

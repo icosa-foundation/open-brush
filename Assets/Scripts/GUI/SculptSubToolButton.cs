@@ -17,11 +17,23 @@ using UnityEngine;
 namespace TiltBrush {
 public class SculptSubToolButton : BaseButton {
 
-    [SerializeField]
-    public SculptSubToolManager.SubTool m_SubTool;
+  [SerializeField]
+  public SculptSubToolManager.SubTool m_SubTool;
 
-    override protected void OnButtonPressed() { 
-        SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
+  override public void UpdateVisuals() {
+    base.UpdateVisuals();
+    // Toggle buttons poll for status.
+    if (m_ToggleButton && SculptSubToolManager.m_Instance != null) {
+      bool bWasToggleActive = m_ToggleActive;
+      m_ToggleActive = SculptSubToolManager.m_Instance.GetActiveSubtool() == m_SubTool;
+      if (bWasToggleActive != m_ToggleActive) {
+        SetButtonActivated(m_ToggleActive);
+      }
     }
+  }
+
+  override protected void OnButtonPressed() { 
+    SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
+  }
 }
 } // namespace TiltBrush

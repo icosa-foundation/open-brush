@@ -85,7 +85,7 @@ public static class SketchWriter {
     public StrokeFlags adjustedStrokeFlags;
 
     // If the stroke was sculpted, its vertices and triangles are stored here.
-    // Null by default.
+    // Empty by default.
     public SculptedGeometryData sculptedGeometryData;
   }
 
@@ -150,6 +150,7 @@ public static class SketchWriter {
             List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
             snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
           } catch {
+            // Shouldn't happen anymore
             Debug.LogWarning("Orphan batchsubset, skipping");
           }
 
@@ -460,7 +461,8 @@ public static class SketchWriter {
       }
       
       // If any sculpting modifications were made, read geometry.
-      // CTODO: Causes issues with save files that did not have any sculpting
+      // Causes issues with save files that did not have any sculpting
+      // The version guard should be adjusted in the future to prevent crashing.
       if (geometryData != null) {
         int modifiedVertLength = reader.Int32();
 
