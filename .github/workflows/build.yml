@@ -150,6 +150,10 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+          - name: Pico
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
 
 
     steps:
@@ -225,6 +229,14 @@ jobs:
           done
           cp -R tmp/Assets/Pimax Assets/
           rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
+
+      - name: Install Pico unity package
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          # version 2.0.5
+          mkdir Packages/com.unity.xr.picoxr
+          wget -q https://sdk.picovr.com/developer-platform/sdk/Pico%20Unity%20Integration%20SDK-2.0.5.zip -O package.zip
+          unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
         run: |
@@ -312,6 +324,11 @@ jobs:
         if: matrix.vrsdk == 'Oculus'
         run: |
           echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
+
+      - name: Set PICO_SUPPORTED in csc.rsp
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Set PIMAX_SUPPORTED in csc.rsp
         if: matrix.name == 'Windows Pimax'
