@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -35,7 +33,6 @@ public class SculptTool : ToggleStrokeModificationTool
   override public void EnableTool(bool bEnable) {
     // Call this after setting up our tool's state.
     base.EnableTool(bEnable);
-    // CTODO: change the material of all strokes to some wireframe shader.
     HideTool(!bEnable);
   }
 
@@ -71,7 +68,6 @@ public class SculptTool : ToggleStrokeModificationTool
         m_bIsPushing = !m_bIsPushing;
         StartToggleAnimation();
       } 
-      // CTODO: custom feature for Flattening?
     }
   }
 
@@ -89,7 +85,6 @@ public class SculptTool : ToggleStrokeModificationTool
 
     if (parentBatch == null || parentBatch.m_Geometry == null) { 
       // Shouldn't happen anymore
-      // CTODO: change to error?
       Debug.LogWarning("Orphaned batch subset, skipping");
       return false;
     }

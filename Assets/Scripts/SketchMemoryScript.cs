@@ -38,7 +38,7 @@ public class SketchMemoryScript : MonoBehaviour {
   public GameObject m_UndoBatchMesh;
   public bool m_SanityCheckStrokes = false;
 
-
+  /// A temporary place to store all the sculpted geometry data retrieved from a savefile.
   public Queue<SculptedGeometryData> m_SavedSculptedGeometry;
   private int m_LastCheckedVertCount;
   private int m_MemoryWarningVertCount;

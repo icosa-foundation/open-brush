@@ -21,6 +21,8 @@ public class RotateSubTool : BaseSculptSubTool {
     m_SubToolIdentifier = SculptSubToolManager.SubTool.Rotate;
     m_Collider = GetComponent<Collider>();
   }
+  
+  /// Rotate vertex (counter-)clockwise around subtool.
   override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
     Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
     if (vertToTool.magnitude <= toolSize / canvasPose.scale) {

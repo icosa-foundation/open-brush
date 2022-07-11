@@ -21,6 +21,7 @@ public class FlattenSubTool : BaseSculptSubTool {
     m_Collider = GetComponent<Collider>();
   }
 
+  /// Move vertex towards closest point on subtool.
   override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup) {
     Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
     if (vertToTool.magnitude <= toolSize / canvasPose.scale) {
