@@ -168,7 +168,6 @@ public class SketchMemoryScript : MonoBehaviour {
 
   public void SetLastOperationStackCount() {
     m_LastOperationStackCount = m_OperationStack.Count;
-    Debug.Log("Last operation stack count: " + m_LastOperationStackCount);
   }
 
   public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts) {

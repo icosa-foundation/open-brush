@@ -461,7 +461,7 @@ public static class SketchWriter {
       }
       
       // If any sculpting modifications were made, read geometry.
-      // Causes issues with save files that did not have any sculpting
+      // Causes issues with save files that did not have any sculpting.
       // The version guard should be adjusted in the future to prevent crashing.
       if (geometryData != null) {
         int modifiedVertLength = reader.Int32();

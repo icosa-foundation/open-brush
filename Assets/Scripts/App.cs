@@ -64,7 +64,7 @@ public class App : MonoBehaviour {
   // The data folder used on Google Drive.
   public const string kDriveFolderName = kAppDisplayName;
   // Executable Base
-  public const string kGuiBuildExecutableName = "OpenSourceTiltBrush";
+  public const string kGuiBuildExecutableName = "Tilt Brush BSc Project 39";
   // Windows Executable
   public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
   // OSX Executable

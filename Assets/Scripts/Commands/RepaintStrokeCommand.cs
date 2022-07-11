@@ -40,6 +40,9 @@ public class RepaintStrokeCommand : BaseCommand {
         color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
     m_TargetStroke.m_BrushGuid = brushGuid;
     m_TargetStroke.InvalidateCopy();
+
+
+    // Preserve sculpting modifications when creating new stroke.
     SculptedGeometryData sculptedGeometryData = new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
     if (m_TargetStroke.m_bWasSculpted) {
       var batchSubset = m_TargetStroke.m_BatchSubset;
@@ -56,6 +59,7 @@ public class RepaintStrokeCommand : BaseCommand {
 
     m_TargetStroke.Uncreate();
     m_TargetStroke.Recreate();
+    
     if (sculptedGeometryData.vertices.Count > 0) {
       m_TargetStroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
       m_TargetStroke.m_bWasSculpted = true;
