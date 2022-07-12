@@ -1,4 +1,28 @@
-# Tilt Brush README
+# Fine Control of 3D Meshes in Tilt Brush through Sculpting
+
+This is the code for the Bachelor Thesis project of the same name, made by Chingiz Dadashov-Khandan.
+
+Made for the Department of Scientific Visualisation and Computer Graphics at the University of Groningen.
+
+This project is an expansion of Tilt Brush, which introduces a simple sculpting toolkit with four variations. With the Sculpting toolkit, a user can can edit any brush stroke retroactively by deforming its mesh.
+
+The four variations at the moment are as follows:
+- Push 
+- Crease
+- Flatten
+- Rotate
+
+Naturally, this selection can be further expanded. See `BaseSculptSubTool`, `SculptSubToolManager` and their references/subclasses for reference.
+
+To use the Sculpting Toolkit, simply turn on Advanced mode in Tilt Brush and navigate to the main tool menu. You will see a new Sculpt button on the bottom right.
+
+This repository already includes Oculus Rift integration.
+
+**WARNING: THIS APPLICATION'S SAVEFILES ARE INCOMPATIBLE WITH ORIGINAL TILT BRUSH'S SKETCHES AND VICE-VERSA. DO NOT TRY TO LOAD SKETCHES FROM OTHER VARIATIONS OF TILT BRUSH WHILE USING THIS VERSION, OR THE OTHER WAY AROUND.**
+
+The rest of this README is directly taken from the original repository, made by Google LLC. It includes legal information and technical instructions for installation and usage:
+
+# Original Tilt Brush README
 
 Tilt Brush is licensed under Apache 2.0. It is not an officially supported
 Google product. See the [LICENSE](LICENSE) file for more details.
