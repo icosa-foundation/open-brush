@@ -405,6 +405,12 @@ jobs:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
 
+      - name: Download Build Artifacts (Pico)
+        uses: actions/download-artifact@v2
+        with:
+          name: Pico
+          path: build_pico
+
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -412,6 +418,7 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
