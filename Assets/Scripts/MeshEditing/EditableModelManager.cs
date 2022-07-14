@@ -70,7 +70,6 @@ namespace TiltBrush.MeshEditing
 
 
         private Dictionary<string, EditableModel> m_EditableModels;
-        [NonSerialized] public PreviewPolyhedron m_PreviewPolyhedron;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
         public static EditableModel CurrentModel
         {
@@ -91,7 +90,7 @@ namespace TiltBrush.MeshEditing
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }
 
-        public void UpdateEmodel(EditableModelWidget widget, EditableModel emodel)
+        public void UpdateEditableModel(EditableModelWidget widget, EditableModel emodel)
         {
             var id = widget.GetId();
             m_EditableModels[id.guid] = emodel;
@@ -217,6 +216,26 @@ namespace TiltBrush.MeshEditing
             collider.sharedMesh = mesh;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
             return stencilWidget;
+        }
+
+        public void DebugModels()
+        {
+            foreach (var m in m_EditableModels)
+            {
+                Debug.Log($"{m.Key} {m.Value.GeneratorType}");
+                foreach (var k in m.Value.GeneratorParameters.Keys)
+                {
+                    Debug.Log($"{k}: {m.Value.GeneratorParameters[k]}");
+                }
+            }
+        }
+
+        public void CloneEditableModel(EditableModelWidget clone)
+        {
+            var id = clone.GetComponent<EditableModelId>();
+            var prevId = id.guid;
+            id.guid = Guid.NewGuid().ToString();
+            m_EditableModels[id.guid] = m_EditableModels[prevId];
         }
     }
 }

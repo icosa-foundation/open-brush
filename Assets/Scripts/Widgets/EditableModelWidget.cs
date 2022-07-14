@@ -36,7 +36,9 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(this.m_Size);
+            clone.SetSignedWidgetSize(m_Size);
+            EditableModelManager.m_Instance.CloneEditableModel(clone);
+
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -69,9 +71,9 @@ namespace TiltBrush
             // Commenting out the following fixed a bug whereby
             // duplicated editable models were slightly bigger than they should have been
             // Still don't fully understand why or whether commenting this out will have side effects...
-            // var thisId = GetId();
-            // var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
-            // EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
+            var thisId = GetId();
+            var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
+            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
 
             return clone;
         }

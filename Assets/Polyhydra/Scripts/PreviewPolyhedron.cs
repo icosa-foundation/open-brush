@@ -26,6 +26,8 @@ using Random = System.Random;
 
 public class PreviewPolyhedron : MonoBehaviour
 {
+    public static PreviewPolyhedron m_Instance;
+
     public bool GenerateSubmeshes = false;
 
     public int RebuildSkipFrames = 4;
@@ -54,12 +56,12 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void Awake()
     {
-        EditableModelManager.m_Instance.m_PreviewPolyhedron = this;
-        Operators = new List<OpDefinition>();
+        m_Instance = this;
     }
 
     void Start()
     {
+        Operators = new List<OpDefinition>();
         Init();
         BackgroundMakePolyhedron();
     }

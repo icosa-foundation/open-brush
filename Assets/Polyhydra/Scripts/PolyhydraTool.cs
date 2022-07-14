@@ -55,7 +55,6 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
 
-            PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
 
             if (bEnable)
             {
@@ -64,17 +63,8 @@ namespace TiltBrush
                 {
                     m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
                 }
-                polyhydraPanel.PreviewPoly.transform.SetParent(
-                    InputManager.m_Instance.GetController(InputManager.ControllerName.Brush), false
-                );
-                polyhydraPanel.PreviewPoly.transform.Translate(Vector3.up);
 
                 EatInput();
-            }
-            else
-            {
-                polyhydraPanel.PreviewPoly.transform.SetParent(polyhydraPanel.PreviewPolyParent.transform, false);
-                polyhydraPanel.PreviewPoly.transform.Translate(Vector3.down);
             }
 
             // Make sure our UI reticle isn't active.
@@ -124,7 +114,6 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            // TODO WIP...
             if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
             {
                 var ewidget = LastIntersectedEditableModelWidget;
@@ -133,14 +122,26 @@ namespace TiltBrush
                     var id = ewidget.GetId();
                     if (id != null)
                     {
+
                         PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
                         if (polyhydraPanel != null)
                         {
-                            var newPoly = polyhydraPanel.PreviewPoly.m_PolyMesh;
-                            EditableModelManager.m_Instance.UpdateEmodel(ewidget, EditableModelManager.CurrentModel);
-                            EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
-                            AudioManager.m_Instance.PlayDuplicateSound(Vector3.zero);
+
+                            // // Option 1 - update the poly from the current panel settings
+                            // var newPoly = m_PreviewPoly.m_PolyMesh;
+                            // EditableModelManager.m_Instance.UpdateEditableModel(ewidget, EditableModelManager.CurrentModel);
+                            // EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
+                            // EditableModelManager.m_Instance.DebugModels();
+                            // AudioManager.m_Instance.PlayDuplicateSound(
+                            //     InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                            // );
+
+                            // Option 2 - update the panel settings from the poly
+                            var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
+                            polyhydraPanel.LoadFromEditableModel(emodel);
                         }
+
+
                     }
                 }
             }
@@ -150,8 +151,9 @@ namespace TiltBrush
                 m_WasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
-                previewMesh = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshFilter>().mesh;
-                previewMaterial = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetComponent<MeshRenderer>().material;
+                PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                previewMesh = PreviewPolyhedron.m_Instance.GetComponent<MeshFilter>().mesh;
+                previewMaterial = PreviewPolyhedron.m_Instance.GetComponent<MeshRenderer>().material;
             }
 
             Vector3 SnapToGrid(Vector3 v)
@@ -186,7 +188,7 @@ namespace TiltBrush
                     // Create editable model (false) or brush strokes (true)
                     bool strokeShapeMode = InputManager.Brush.GetCommand(InputManager.SketchCommands.Undo);
 
-                    var poly = EditableModelManager.m_Instance.m_PreviewPolyhedron.m_PolyMesh;
+                    var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
 
                     if (!strokeShapeMode)
                     {
@@ -235,7 +237,7 @@ namespace TiltBrush
                                 m_BrushGuid = brush.m_Guid,
                                 m_BrushScale = 1f,
                                 m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                                m_Color = EditableModelManager.m_Instance.m_PreviewPolyhedron.GetFaceColorForStrokes(faceIndex),
+                                m_Color = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex),
                                 m_Seed = 0,
                                 m_ControlPoints = controlPoints.ToArray(),
                             };
@@ -272,15 +274,16 @@ namespace TiltBrush
         private void UpdateTransformsFromControllers()
         {
             // Lock tool to camera controller.
+            var tr = transform;
             if (m_LockToController)
             {
-                transform.position = m_BrushController.position;
-                transform.rotation = m_BrushController.rotation;
+                tr.position = m_BrushController.position;
+                tr.rotation = m_BrushController.rotation;
             }
             else
             {
-                transform.position = SketchSurfacePanel.m_Instance.transform.position;
-                transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                tr.position = SketchSurfacePanel.m_Instance.transform.position;
+                tr.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
             }
         }
 

@@ -25,6 +25,7 @@ using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -46,11 +47,8 @@ namespace TiltBrush
 
     public class PolyhydraPanel : BasePanel
     {
-        [NonSerialized] public PreviewPolyhedron PreviewPoly;
         public Color[] DefaultColorPalette;
 
-
-        public Camera m_ThumbnailCamera;
         public GameObject PresetInitialSaveButton;
         public GameObject PresetSaveOptionsPopupButton;
 
@@ -65,7 +63,7 @@ namespace TiltBrush
         public PolyhydraSlider Slider2;
         public PolyhydraSlider Slider3;
 
-        public GameObject PreviewPolyParent;
+        public Transform m_PreviewAttachPoint;
         public GameObject AllGeneratorControls;
         public GameObject AllOpControls;
         public GameObject AllAppearanceControls;
@@ -92,9 +90,9 @@ namespace TiltBrush
         public PolyhydraOpPopupToolsButton ToolBtnNext;
         [SerializeField] private string m_CurrentPresetPath;
 
-        public float previewRotationX, previewRotationY, previewRotationZ = .5f;
-
         private MeshFilter meshFilter;
+
+        public Transform m_PreviewPrefab;
 
         private PolyhydraMainCategories m_CurrentMainCategory;
         private OtherSolidsCategories m_OtherSolidsCategory;
@@ -146,13 +144,61 @@ namespace TiltBrush
             return Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
         }
 
+        protected override void OnEnablePanel()
+        {
+            base.OnEnablePanel();
+            InitPreviewPoly(true);
+        }
+
+        protected override void OnDisablePanel()
+        {
+            base.OnDisablePanel();
+            InitPreviewPoly(false);
+        }
+
+        private void InitPreviewPoly(bool attachPreviewHere)
+        {
+            // Instantiate the preview poly if needed
+            if (PreviewPolyhedron.m_Instance == null)
+            {
+                Instantiate(m_PreviewPrefab);
+            }
+
+            // Attach the preview poly to the Polyhydra panel if opening, or else the polyhydra tray
+            Transform attachPoint = null;
+            if (attachPreviewHere)
+            {
+                attachPoint = m_PreviewAttachPoint;
+            }
+            else
+            {
+                BasePanel advancedPanel;
+                if (App.Config.IsMobileHardware)
+                {
+                    advancedPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.AdminPanelMobile);
+                }
+                else
+                {
+                    advancedPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.ToolsAdvanced);
+                }
+                if (advancedPanel != null)
+                {
+                    attachPoint = advancedPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
+                }
+            }
+            if (attachPoint != null)
+            {
+                PreviewPolyhedron.m_Instance.transform.SetParent(attachPoint, false);
+            }
+        }
+
         public override void InitPanel()
         {
             base.InitPanel();
+            InitPreviewPoly(false);
             ShowAllGeneratorControls();
             OpFilterControlParent.SetActive(false);
             OpPanel.SetActive(false);
-            PreviewPoly = gameObject.GetComponentInChildren<PreviewPolyhedron>(true);
             SetSliderConfiguration();
             SetMainButtonVisibility();
             SetPresetSaveButtonState(popupButtonEnabled: false);
@@ -180,30 +226,30 @@ namespace TiltBrush
 
         public void HandleSlider1(Vector3 value)
         {
-            PreviewPoly.Param1Int = Mathf.FloorToInt(value.z);
-            PreviewPoly.Param1Float = value.z;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Param1Int = Mathf.FloorToInt(value.z);
+            PreviewPolyhedron.m_Instance.Param1Float = value.z;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleSlider2(Vector3 value)
         {
-            PreviewPoly.Param2Int = Mathf.FloorToInt(value.z);
-            PreviewPoly.Param2Float = value.z;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Param2Int = Mathf.FloorToInt(value.z);
+            PreviewPolyhedron.m_Instance.Param2Float = value.z;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleSlider3(Vector3 value)
         {
-            PreviewPoly.Param3Int = Mathf.FloorToInt(value.z);
-            PreviewPoly.Param3Float = value.z;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Param3Int = Mathf.FloorToInt(value.z);
+            PreviewPolyhedron.m_Instance.Param3Float = value.z;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleOpAmountSlider(Vector3 value)
         {
             int paramIndex = (int)value.y;
             float amount = value.z;
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             switch (paramIndex)
             {
                 case 0:
@@ -213,22 +259,22 @@ namespace TiltBrush
                     op.amount2 = amount;
                     break;
             }
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleOpDisableButton()
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.disabled = !op.disabled;
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
             RefreshOpSelectButtons();
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleOpRandomizeButton(int paramIndex)
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             switch (paramIndex)
             {
                 case 0:
@@ -238,8 +284,8 @@ namespace TiltBrush
                     op.amount2Randomize = !op.amount2Randomize;
                     break;
             }
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void ShowAllGeneratorControls()
@@ -265,19 +311,19 @@ namespace TiltBrush
 
         public void HandleSliderFilterParam(Vector3 value)
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.filterParamInt = Mathf.FloorToInt(value.z);
             op.filterParamFloat = value.z;
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleButtonOpNot()
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.filterNot = !op.filterNot;
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         void AnimateOpParentIntoPlace()
@@ -344,7 +390,7 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
-            PreviewPoly.transform.parent.Rotate(previewRotationX, previewRotationY, previewRotationZ);
+            m_PreviewAttachPoint.Rotate(0, 0.25f, 0);
         }
 
         public void SetMainButtonVisibility()
@@ -367,7 +413,7 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(false);
                     ButtonGridShape.gameObject.SetActive(false);
                     ButtonOtherSolidsType.gameObject.SetActive(false);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPoly.UniformPolyType.ToString());
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPolyhedron.m_Instance.UniformPolyType.ToString());
                     break;
 
                 case PolyhydraMainCategories.Grids:
@@ -376,8 +422,8 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(true);
                     ButtonGridShape.gameObject.SetActive(true);
                     ButtonOtherSolidsType.gameObject.SetActive(false);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, PreviewPoly.GridType.ToString());
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, PreviewPoly.GridShape.ToString());
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, PreviewPolyhedron.m_Instance.GridType.ToString());
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, PreviewPolyhedron.m_Instance.GridShape.ToString());
                     break;
 
                 case PolyhydraMainCategories.Various:
@@ -386,7 +432,7 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(false);
                     ButtonGridShape.gameObject.SetActive(false);
                     ButtonOtherSolidsType.gameObject.SetActive(true);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPoly.VariousSolidsType.ToString());
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPolyhedron.m_Instance.VariousSolidsType.ToString());
                     break;
 
                 case PolyhydraMainCategories.Radial:
@@ -395,7 +441,7 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(false);
                     ButtonGridShape.gameObject.SetActive(false);
                     ButtonOtherSolidsType.gameObject.SetActive(false);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, PreviewPoly.RadialPolyType.ToString());
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, PreviewPolyhedron.m_Instance.RadialPolyType.ToString());
                     break;
 
                 case PolyhydraMainCategories.Waterman:
@@ -442,7 +488,7 @@ namespace TiltBrush
                     Slider1.SetDescriptionText("Sides");
                     Slider1.SliderType = SliderTypes.Int;
 
-                    switch (PreviewPoly.RadialPolyType)
+                    switch (PreviewPolyhedron.m_Instance.RadialPolyType)
                     {
                         case RadialSolids.RadialPolyType.Prism:
                         case RadialSolids.RadialPolyType.Antiprism:
@@ -649,7 +695,7 @@ namespace TiltBrush
         {
             // TODO deduplicate this logic
             ColorMethods colorMethod = ColorMethods.ByRole;
-            if (PreviewPoly.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
+            if (PreviewPolyhedron.m_Instance.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
             {
                 colorMethod = ColorMethods.ByTags;
             }
@@ -658,7 +704,7 @@ namespace TiltBrush
             // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
             // There's too many different classes at play with overlapping responsibilities
             var em = new EditableModelManager.EditableModel(
-                PreviewPoly.m_PolyMesh,
+                PreviewPolyhedron.m_Instance.m_PolyMesh,
                 EditableModelManager.CurrentModel.Colors,
                 colorMethod,
                 EditableModelManager.CurrentModel.GeneratorType,
@@ -795,10 +841,24 @@ namespace TiltBrush
 
         public void LoadFromDefinition(EditableModelDefinition emd)
         {
+            var polyMesh = new PolyMesh();
+            var emodel = new EditableModelManager.EditableModel(
+                polyMesh,
+                (Color[])emd.Colors.Clone(),
+                emd.ColorMethod,
+                emd.GeneratorType,
+                emd.GeneratorParameters,
+                emd.Operations
+            );
+            LoadFromEditableModel(emodel);
+        }
+
+        public void LoadFromEditableModel(EditableModelManager.EditableModel emodel)
+        {
             void setSlidersFromGeneratorParams(List<string> names)
             {
                 if (names.Count == 0) return;
-                var sliderParamValues = names.Select(n => Convert.ToSingle(emd.GeneratorParameters[n])).ToList();
+                var sliderParamValues = names.Select(n => Convert.ToSingle(emodel.GeneratorParameters[n])).ToList();
 
                 Slider1.UpdateValueAbsolute(sliderParamValues[0]);
                 if (sliderParamValues.Count == 1) return;
@@ -811,19 +871,19 @@ namespace TiltBrush
 
             // If no colors are supplied then use the current palette
             Color[] colors;
-            if (emd.Colors == null || emd.Colors.Length == 0)
+            if (emodel.Colors == null || emodel.Colors.Length == 0)
             {
                 colors = (Color[])EditableModelManager.CurrentModel.Colors.Clone();
             }
             else
             {
-                colors = emd.Colors;
+                colors = emodel.Colors;
             }
 
-            PreviewPoly.AssignColors(colors);
-            EditableModelManager.CurrentModel.GeneratorType = emd.GeneratorType;
-            EditableModelManager.CurrentModel.GeneratorParameters = emd.GeneratorParameters;
-            EditableModelManager.CurrentModel.Operations = emd.Operations;
+            PreviewPolyhedron.m_Instance.AssignColors(colors);
+            EditableModelManager.CurrentModel.GeneratorType = emodel.GeneratorType;
+            EditableModelManager.CurrentModel.GeneratorParameters = emodel.GeneratorParameters;
+            EditableModelManager.CurrentModel.Operations = emodel.Operations;
 
             var sliderParamNames = new List<string>();
 
@@ -832,77 +892,77 @@ namespace TiltBrush
             // Widgets must be visible when setting textures
             ShowAllGeneratorControls();
 
-            switch (emd.GeneratorType)
+            switch (emodel.GeneratorType)
             {
                 case GeneratorTypes.FileSystem:
                 case GeneratorTypes.GeometryData:
                 case GeneratorTypes.ConwayString:
                 case GeneratorTypes.Johnson:
-                    Debug.LogError($"Preset has unsupported generator type: {emd.GeneratorType}");
+                    Debug.LogError($"Preset has unsupported generator type: {emodel.GeneratorType}");
                     break;
                 case GeneratorTypes.Grid:
                     m_CurrentMainCategory = PolyhydraMainCategories.Grids;
-                    PreviewPoly.GridType = (GridEnums.GridTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
-                    PreviewPoly.GridShape = (GridEnums.GridShapes)Convert.ToInt32(emd.GeneratorParameters["shape"]);
+                    PreviewPolyhedron.m_Instance.GridType = (GridEnums.GridTypes)Convert.ToInt32(emodel.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.GridShape = (GridEnums.GridShapes)Convert.ToInt32(emodel.GeneratorParameters["shape"]);
                     sliderParamNames = new List<string> { "x", "y" };
                     break;
                 case GeneratorTypes.Shapes:
                     m_CurrentMainCategory = PolyhydraMainCategories.Various;
-                    PreviewPoly.ShapeType = (ShapeTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
-                    switch (PreviewPoly.ShapeType)
+                    PreviewPolyhedron.m_Instance.ShapeType = (ShapeTypes)Convert.ToInt32(emodel.GeneratorParameters["type"]);
+                    switch (PreviewPolyhedron.m_Instance.ShapeType)
                     {
                         case ShapeTypes.Polygon:
                             m_OtherSolidsCategory = OtherSolidsCategories.Polygon;
-                            PreviewPoly.ShapeType = ShapeTypes.Polygon;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.Polygon;
                             sliderParamNames = new List<string> { "sides" };
                             break;
                         case ShapeTypes.Star:
                             m_OtherSolidsCategory = OtherSolidsCategories.Star;
-                            PreviewPoly.ShapeType = ShapeTypes.Star;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.Star;
                             sliderParamNames = new List<string> { "sides", "sharpness" };
                             break;
                         case ShapeTypes.L_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.L_Shape;
-                            PreviewPoly.ShapeType = ShapeTypes.L_Shape;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.L_Shape;
                             sliderParamNames = new List<string> { "a", "b", "c" };
                             break;
                         case ShapeTypes.C_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.C_Shape;
-                            PreviewPoly.ShapeType = ShapeTypes.C_Shape;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.C_Shape;
                             sliderParamNames = new List<string> { "a", "b", "c" };
                             break;
                         case ShapeTypes.H_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.H_Shape;
-                            PreviewPoly.ShapeType = ShapeTypes.H_Shape;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.H_Shape;
                             sliderParamNames = new List<string> { "a", "b", "c" };
                             break;
                     }
                     break;
                 case GeneratorTypes.Various:
                     m_CurrentMainCategory = PolyhydraMainCategories.Various;
-                    PreviewPoly.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
-                    switch (PreviewPoly.VariousSolidsType)
+                    PreviewPolyhedron.m_Instance.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(emodel.GeneratorParameters["type"]);
+                    switch (PreviewPolyhedron.m_Instance.VariousSolidsType)
                     {
                         case VariousSolidTypes.Box:
                             m_OtherSolidsCategory = OtherSolidsCategories.Box;
-                            PreviewPoly.VariousSolidsType = VariousSolidTypes.Box;
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.Box;
                             sliderParamNames = new List<string> { "x", "y", "z" };
                             break;
                         case VariousSolidTypes.UvHemisphere:
                             m_OtherSolidsCategory = OtherSolidsCategories.UvHemisphere;
-                            PreviewPoly.VariousSolidsType = VariousSolidTypes.UvHemisphere;
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.UvHemisphere;
                             sliderParamNames = new List<string> { "x", "y" };
                             break;
                         case VariousSolidTypes.UvSphere:
                             m_OtherSolidsCategory = OtherSolidsCategories.UvSphere;
-                            PreviewPoly.VariousSolidsType = VariousSolidTypes.UvSphere;
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.UvSphere;
                             sliderParamNames = new List<string> { "x", "y" };
                             break;
                     }
                     break;
                 case GeneratorTypes.Radial:
                     m_CurrentMainCategory = PolyhydraMainCategories.Radial;
-                    PreviewPoly.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(emd.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(emodel.GeneratorParameters["type"]);
                     sliderParamNames = new List<string> { "sides", "height", "capheight" };
                     break;
                 case GeneratorTypes.Waterman:
@@ -910,7 +970,7 @@ namespace TiltBrush
                     sliderParamNames = new List<string> { "root", "c" };
                     break;
                 case GeneratorTypes.Uniform:
-                    int subtypeID = Convert.ToInt32(emd.GeneratorParameters["type"]);
+                    int subtypeID = Convert.ToInt32(emodel.GeneratorParameters["type"]);
                     var uniformType = Uniform.Uniforms[subtypeID];
                     if (Uniform.Platonic.Contains(uniformType))
                     {
@@ -924,7 +984,7 @@ namespace TiltBrush
                     {
                         m_CurrentMainCategory = PolyhydraMainCategories.KeplerPoinsot;
                     }
-                    PreviewPoly.UniformPolyType = (UniformTypes)subtypeID;
+                    PreviewPolyhedron.m_Instance.UniformPolyType = (UniformTypes)subtypeID;
                     break;
             }
 
@@ -938,10 +998,10 @@ namespace TiltBrush
             ShowAllOpControls();
 
 
-            PreviewPoly.Operators.Clear();
+            PreviewPolyhedron.m_Instance.Operators.Clear();
 
             // TODO This has some similarities to code in SaveLoadScript and PreviewPolyhedron
-            foreach (var opDict in emd.Operations)
+            foreach (var opDict in emodel.Operations)
             {
                 var newOp = new PreviewPolyhedron.OpDefinition
                 {
@@ -979,16 +1039,16 @@ namespace TiltBrush
                     newOp.filterNot = Convert.ToBoolean(filterNot);
                 }
 
-                PreviewPoly.Operators.Add(newOp);
+                PreviewPolyhedron.m_Instance.Operators.Add(newOp);
                 AddOpButton();
             }
 
             RefreshOpSelectButtons();
-            HandleSelectOpButton(PreviewPoly.Operators.Count - 1);
+            HandleSelectOpButton(PreviewPolyhedron.m_Instance.Operators.Count - 1);
 
             ShowAllGeneratorControls();
 
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public static Bounds CalculateBounds(GameObject go)
@@ -1027,14 +1087,15 @@ namespace TiltBrush
 
         void RenderToImageFile(string presetThumbnailPath)
         {
-            m_ThumbnailCamera.enabled = true;
-            m_ThumbnailCamera.gameObject.SetActive(true);
-            FocusCameraOnGameObject(m_ThumbnailCamera, PreviewPolyParent, 0.5f, true);
+            Camera thumbnailCamera = PreviewPolyhedron.m_Instance.GetComponentInChildren<Camera>();
+            thumbnailCamera.enabled = true;
+            thumbnailCamera.gameObject.SetActive(true);
+            FocusCameraOnGameObject(thumbnailCamera, PreviewPolyhedron.m_Instance.gameObject, 0.5f, true);
             RenderTexture activeRenderTexture = RenderTexture.active;
             var tex = new RenderTexture(256, 256, 32);
-            m_ThumbnailCamera.targetTexture = tex;
-            RenderTexture.active = m_ThumbnailCamera.targetTexture;
-            m_ThumbnailCamera.Render();
+            thumbnailCamera.targetTexture = tex;
+            RenderTexture.active = thumbnailCamera.targetTexture;
+            thumbnailCamera.Render();
             Texture2D image = new Texture2D(tex.width, tex.height);
             image.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
             image.Apply();
@@ -1042,8 +1103,8 @@ namespace TiltBrush
             byte[] bytes = image.EncodeToPNG();
             Destroy(image);
             File.WriteAllBytes(presetThumbnailPath, bytes);
-            m_ThumbnailCamera.gameObject.SetActive(false);
-            m_ThumbnailCamera.enabled = false;
+            thumbnailCamera.gameObject.SetActive(false);
+            thumbnailCamera.enabled = false;
         }
 
 
@@ -1052,7 +1113,7 @@ namespace TiltBrush
         {
             // Used in mono mode and during testing
 
-            var poly = EditableModelManager.m_Instance.m_PreviewPolyhedron.m_PolyMesh;
+            var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
 
             CreateWidgetForPolyhedron(
                 new Vector3(Random.value * 3 - 1.5f, Random.value * 7 + 7, Random.value * 8 + 2),
@@ -1064,7 +1125,7 @@ namespace TiltBrush
 
         public void ChangeCurrentOpType(string operationName)
         {
-            var ops = PreviewPoly.Operators;
+            var ops = PreviewPolyhedron.m_Instance.Operators;
             var op = ops[CurrentActiveOpIndex];
             op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
 
@@ -1074,7 +1135,7 @@ namespace TiltBrush
             op.amount = opConfig.amountDefault;
             op.amount2 = opConfig.amount2Default;
             ops[CurrentActiveOpIndex] = op;
-            PreviewPoly.Operators = ops;
+            PreviewPolyhedron.m_Instance.Operators = ops;
 
             RefreshOpSelectButtons();
             ConfigureOpPanel(op);
@@ -1084,9 +1145,9 @@ namespace TiltBrush
         {
             CurrentActiveOpIndex = index;
             RefreshOpSelectButtons();
-            if (PreviewPoly.Operators.Count > 0)
+            if (PreviewPolyhedron.m_Instance.Operators.Count > 0)
             {
-                var op = PreviewPoly.Operators[index];
+                var op = PreviewPolyhedron.m_Instance.Operators[index];
                 ConfigureOpPanel(op);
             }
             else
@@ -1186,24 +1247,24 @@ namespace TiltBrush
 
         private Color GetOpColor()
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             return op.paramColor;
         }
 
         private void SetOpColor(Color color)
         {
             ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.paramColor = color;
-            PreviewPoly.Operators[CurrentActiveOpIndex] = op;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         private void SetFinalColor(Color color, int index)
         {
             ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
             EditableModelManager.CurrentModel.Colors[index] = color;
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleAddOpButton()
@@ -1214,8 +1275,8 @@ namespace TiltBrush
                 filterNot = false
             };
             AddOpButton();
-            PreviewPoly.Operators.Add(newOp);
-            HandleSelectOpButton(PreviewPoly.Operators.Count - 1);
+            PreviewPolyhedron.m_Instance.Operators.Add(newOp);
+            HandleSelectOpButton(PreviewPolyhedron.m_Instance.Operators.Count - 1);
         }
 
         public void AddOpButton()
@@ -1233,7 +1294,7 @@ namespace TiltBrush
                 Random.value * 7 + 7,
                 Random.value * 8 + 2)
             );
-            var poly = EditableModelManager.m_Instance.m_PreviewPolyhedron.m_PolyMesh;
+            var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
             EditableModelManager.AddCustomGuide(poly, tr);
         }
 
@@ -1248,13 +1309,13 @@ namespace TiltBrush
                 case OtherSolidsCategories.L_Shape:
                 case OtherSolidsCategories.H_Shape:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Shapes;
-                    PreviewPoly.ShapeType = (ShapeTypes)Enum.Parse(typeof(ShapeTypes), action);
+                    PreviewPolyhedron.m_Instance.ShapeType = (ShapeTypes)Enum.Parse(typeof(ShapeTypes), action);
                     break;
                 case OtherSolidsCategories.UvSphere:
                 case OtherSolidsCategories.UvHemisphere:
                 case OtherSolidsCategories.Box:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
-                    PreviewPoly.VariousSolidsType = (VariousSolidTypes)Enum.Parse(typeof(VariousSolidTypes), action);
+                    PreviewPolyhedron.m_Instance.VariousSolidsType = (VariousSolidTypes)Enum.Parse(typeof(VariousSolidTypes), action);
                     break;
             }
             SetSliderConfiguration();
@@ -1269,33 +1330,33 @@ namespace TiltBrush
             {
                 case PolyhydraMainCategories.Platonic:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Uniform;
-                    PreviewPoly.UniformPolyType = (UniformTypes)Uniform.Platonic[0].Index - 1;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPoly.UniformPolyType.ToString());
+                    PreviewPolyhedron.m_Instance.UniformPolyType = (UniformTypes)Uniform.Platonic[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPolyhedron.m_Instance.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Archimedean:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Uniform;
-                    PreviewPoly.UniformPolyType = (UniformTypes)Uniform.Archimedean[0].Index - 1;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPoly.UniformPolyType.ToString());
+                    PreviewPolyhedron.m_Instance.UniformPolyType = (UniformTypes)Uniform.Archimedean[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPolyhedron.m_Instance.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.KeplerPoinsot:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Uniform;
-                    PreviewPoly.UniformPolyType = (UniformTypes)Uniform.KeplerPoinsot[0].Index - 1;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPoly.UniformPolyType.ToString());
+                    PreviewPolyhedron.m_Instance.UniformPolyType = (UniformTypes)Uniform.KeplerPoinsot[0].Index - 1;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, PreviewPolyhedron.m_Instance.UniformPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Radial:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Radial;
-                    PreviewPoly.RadialPolyType = 0;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, PreviewPoly.RadialPolyType.ToString());
+                    PreviewPolyhedron.m_Instance.RadialPolyType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, PreviewPolyhedron.m_Instance.RadialPolyType.ToString());
                     break;
                 case PolyhydraMainCategories.Waterman:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Waterman;
                     break;
                 case PolyhydraMainCategories.Grids:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Grid;
-                    PreviewPoly.GridType = 0;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, PreviewPoly.GridType.ToString());
-                    PreviewPoly.GridShape = 0;
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, PreviewPoly.GridShape.ToString());
+                    PreviewPolyhedron.m_Instance.GridType = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridType, PreviewPolyhedron.m_Instance.GridType.ToString());
+                    PreviewPolyhedron.m_Instance.GridShape = 0;
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, PreviewPolyhedron.m_Instance.GridShape.ToString());
                     break;
                 case PolyhydraMainCategories.Various:
                     // Various can map to either GeneratorTypes.Various or GeneratorTypes.Shapes
@@ -1307,15 +1368,15 @@ namespace TiltBrush
                         case OtherSolidsCategories.L_Shape:
                         case OtherSolidsCategories.H_Shape:
                             EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Shapes;
-                            PreviewPoly.ShapeType = 0;
-                            SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPoly.ShapeType.ToString());
+                            PreviewPolyhedron.m_Instance.ShapeType = 0;
+                            SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPolyhedron.m_Instance.ShapeType.ToString());
                             break;
                         case OtherSolidsCategories.UvSphere:
                         case OtherSolidsCategories.UvHemisphere:
                         case OtherSolidsCategories.Box:
                             EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
-                            PreviewPoly.VariousSolidsType = 0;
-                            SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPoly.VariousSolidsType.ToString());
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = 0;
+                            SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPolyhedron.m_Instance.VariousSolidsType.ToString());
                             break;
                     }
                     break;
@@ -1447,18 +1508,18 @@ namespace TiltBrush
 
         public void HandleOpDelete()
         {
-            PreviewPoly.Operators.RemoveAt(CurrentActiveOpIndex);
-            CurrentActiveOpIndex = Mathf.Min(PreviewPoly.Operators.Count - 1, CurrentActiveOpIndex);
+            PreviewPolyhedron.m_Instance.Operators.RemoveAt(CurrentActiveOpIndex);
+            CurrentActiveOpIndex = Mathf.Min(PreviewPolyhedron.m_Instance.Operators.Count - 1, CurrentActiveOpIndex);
             HandleSelectOpButton(CurrentActiveOpIndex);
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
             RefreshOpSelectButtons();
         }
 
         [ContextMenu("Test RefreshOpSelectButtons")]
         private void RefreshOpSelectButtons()
         {
-            OpPanel.gameObject.SetActive(PreviewPoly.Operators.Count > 0);
-            OperatorSelectPopupTools.gameObject.SetActive(PreviewPoly.Operators.Count > 0);
+            OpPanel.gameObject.SetActive(PreviewPolyhedron.m_Instance.Operators.Count > 0);
+            OperatorSelectPopupTools.gameObject.SetActive(PreviewPolyhedron.m_Instance.Operators.Count > 0);
 
             var btns = OperatorSelectButtonParent.GetComponentsInChildren<PolyhydraSelectOpButton>();
 
@@ -1466,12 +1527,12 @@ namespace TiltBrush
             {
                 var btn = btns[i];
                 var btnParent = btn.transform.parent;
-                if (i > PreviewPoly.Operators.Count - 1)
+                if (i > PreviewPolyhedron.m_Instance.Operators.Count - 1)
                 {
                     Destroy(btnParent.gameObject);
                     continue;
                 }
-                var op = PreviewPoly.Operators[i];
+                var op = PreviewPolyhedron.m_Instance.Operators[i];
                 btn.OpIndex = i;
                 string opName = op.opType.ToString();
                 btn.SetDescriptionText(LabelFormatter(opName));
@@ -1495,7 +1556,7 @@ namespace TiltBrush
                     OperatorSelectPopupTools.localPosition = popupPos;
                     OperatorSelectPopupTools.localScale = Vector3.one * 0.2f;
                     ToolBtnPrev.gameObject.SetActive(i > 0);
-                    ToolBtnNext.gameObject.SetActive(i < PreviewPoly.Operators.Count - 1);
+                    ToolBtnNext.gameObject.SetActive(i < PreviewPolyhedron.m_Instance.Operators.Count - 1);
                     FriendlyOpLabels.TryGetValue(opName, out string friendlyLabel);
                     SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, opName, friendlyLabel);
                 }
@@ -1506,12 +1567,12 @@ namespace TiltBrush
 
         public void HandleOpMove(int delta)
         {
-            var op = PreviewPoly.Operators[CurrentActiveOpIndex];
-            PreviewPoly.Operators.RemoveAt(CurrentActiveOpIndex);
+            var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
+            PreviewPolyhedron.m_Instance.Operators.RemoveAt(CurrentActiveOpIndex);
             CurrentActiveOpIndex += delta;
-            PreviewPoly.Operators.Insert(CurrentActiveOpIndex, op);
+            PreviewPolyhedron.m_Instance.Operators.Insert(CurrentActiveOpIndex, op);
             HandleSelectOpButton(CurrentActiveOpIndex);
-            PreviewPoly.RebuildPoly();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
             RefreshOpSelectButtons();
         }
     }

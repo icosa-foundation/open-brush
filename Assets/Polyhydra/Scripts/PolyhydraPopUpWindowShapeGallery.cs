@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Globalization;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public abstract class PolyhydraPopUpWindowBase : PopUpWindow
+
+    public class PolyhydraPopUpWindowShapeGallery : PopUpWindow
     {
+
         public int ButtonsPerPage = 16;
 
         [SerializeField] protected float m_ColorTransitionDuration;
@@ -76,14 +80,14 @@ namespace TiltBrush
 
         public override void Init(GameObject rParent, string sText)
         {
+            ParentPanel = rParent.GetComponent<PolyhydraPanel>();
+            FirstButtonIndex = ParentPanel.CurrentPresetPage * ButtonsPerPage;
             m_ColorBackground = m_Background.GetComponent<MeshRenderer>().sharedMaterial;
             base.Init(rParent, sText);
             ParentPanel = rParent.GetComponent<PolyhydraPanel>();
             _buttons = new List<GameObject>();
             CreateButtons();
         }
-
-        protected abstract List<string> GetButtonList();
 
         protected virtual void CreateButtons()
         {
@@ -110,7 +114,7 @@ namespace TiltBrush
 
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
 
-                PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
+                PolyhydraShapeGalleryButton rButtonScript = rButton.GetComponent<PolyhydraShapeGalleryButton>();
                 rButtonScript.parentPopup = this;
                 rButtonScript.SetDescriptionText(buttonActionNames[buttonIndex].Replace("_", ""));
                 rButtonRenderer.material.mainTexture = GetButtonTexture(buttonActionNames[buttonIndex]);
@@ -119,8 +123,6 @@ namespace TiltBrush
                 _buttons.Add(rButton);
             }
         }
-
-        public abstract Texture2D GetButtonTexture(string action);
 
         public override void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
         {
@@ -141,8 +143,6 @@ namespace TiltBrush
             base.UpdateUIComponents(rCastRay, inputValid, parentCollider);
         }
 
-        public abstract void HandleButtonPress(string action);
-
         public void PolyhydraThingButtonPressed(string action)
         {
             HandleButtonPress(action);
@@ -155,5 +155,66 @@ namespace TiltBrush
             text = textInfo.ToTitleCase(text).Replace(" ", "_");
             return text;
         }
+
+        private FileInfo[] GetDirectoryListing()
+        {
+            var dirInfo = new DirectoryInfo(ParentPanel.DefaultPresetsDirectory());
+            return dirInfo.GetFiles("*.json");
+        }
+
+        protected List<string> GetButtonList()
+        {
+            FileInfo[] AllFileInfo = GetDirectoryListing();
+            return AllFileInfo.Select(f => f.Name.Replace(".json", ""))
+                .Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+        }
+
+        public Texture2D GetButtonTexture(string presetName)
+        {
+            presetName = $"{presetName}.png";
+            var path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
+            if (!File.Exists(path))
+            {
+                presetName = presetName.Replace(".png", ".jpg");
+                path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
+                if (!File.Exists(path))
+                {
+                    return Resources.Load<Texture2D>("Icons/bigquestion");
+                }
+            }
+            return _GetButtonTexture(path);
+        }
+
+        private Texture2D _GetButtonTexture(string path)
+        {
+
+            var fileData = File.ReadAllBytes(path);
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(fileData);
+            return tex;
+        }
+
+        public void HandleButtonPress(string presetName)
+        {
+            ParentPanel.HandleLoadPreset(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
+        }
+
+        public void NextPage()
+        {
+            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length) ;
+            {
+                FirstButtonIndex += ButtonsPerPage;
+                CreateButtons();
+            }
+            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
+        }
+
+        public void PrevPage()
+        {
+            FirstButtonIndex -= ButtonsPerPage;
+            FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
+            CreateButtons();
+            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
+        }
     }
-}
+} // namespace TiltBrush
