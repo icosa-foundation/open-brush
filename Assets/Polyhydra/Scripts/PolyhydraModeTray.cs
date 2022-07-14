@@ -21,8 +21,9 @@ namespace TiltBrush
     public class PolyhydraModeTray : BaseTray
     {
         public Transform m_PreviewPolyAttachPoint;
-
         private RepaintTool m_repaintTool;
+
+        public int CurrentGalleryPage { get; set; }
 
         enum ButtonType
         {

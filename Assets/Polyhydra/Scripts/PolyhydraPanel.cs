@@ -172,18 +172,11 @@ namespace TiltBrush
             }
             else
             {
-                BasePanel advancedPanel;
-                if (App.Config.IsMobileHardware)
+                BasePanel experimentalPanel;
+                experimentalPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.Experimental);
+                if (experimentalPanel != null)
                 {
-                    advancedPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.AdminPanelMobile);
-                }
-                else
-                {
-                    advancedPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.ToolsAdvanced);
-                }
-                if (advancedPanel != null)
-                {
-                    attachPoint = advancedPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
+                    attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
                 }
             }
             if (attachPoint != null)
@@ -723,10 +716,9 @@ namespace TiltBrush
             jsonSerializer.Serialize(jsonWriter, emDef);
         }
 
-        public void HandleLoadPreset(string path)
+        public void HandleLoadPresetFromPath(string path)
         {
-            var jsonDeserializer = new JsonSerializer();
-            jsonDeserializer.ContractResolver = new CustomJsonContractResolver();
+            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
             EditableModelDefinition emd;
             using (var textReader = new StreamReader(path))
             using (var jsonReader = new JsonTextReader(textReader))
@@ -736,6 +728,20 @@ namespace TiltBrush
             LoadFromDefinition(emd);
             CurrentPresetPath = path;
             SetPresetSaveButtonState(popupButtonEnabled: true);
+        }
+
+        public void HandleLoadPresetFromString(string presetText)
+        {
+            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
+            EditableModelDefinition emd;
+            using (var textReader = new StringReader(presetText))
+            using (var jsonReader = new JsonTextReader(textReader))
+            {
+                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+            }
+            LoadFromDefinition(emd);
+            CurrentPresetPath = "";
+            SetPresetSaveButtonState(popupButtonEnabled: false);
         }
 
         public string GetButtonTexturePath(GeneratorTypes mainType, string action)
@@ -1562,7 +1568,10 @@ namespace TiltBrush
                 }
 
             }
-            AnimateOpParentIntoPlace();
+            if (gameObject.activeSelf)
+            {
+                AnimateOpParentIntoPlace();
+            }
         }
 
         public void HandleOpMove(int delta)

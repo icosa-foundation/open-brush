@@ -15,7 +15,6 @@
 using System.Globalization;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -31,9 +30,12 @@ namespace TiltBrush
         [SerializeField] protected GameObject ButtonPrefab;
         [NonSerialized] public int FirstButtonIndex = 0;
 
+        private Dictionary<string, TextAsset> ShapeGalleryJson;
+        private Dictionary<string, Texture2D> ShapeGalleryIcons;
+
         protected float m_ColorTransitionValue;
         protected Material m_ColorBackground;
-        protected PolyhydraPanel ParentPanel;
+        protected PolyhydraModeTray ParentPanel;
 
         override protected void BaseUpdate()
         {
@@ -80,13 +82,19 @@ namespace TiltBrush
 
         public override void Init(GameObject rParent, string sText)
         {
-            ParentPanel = rParent.GetComponent<PolyhydraPanel>();
-            FirstButtonIndex = ParentPanel.CurrentPresetPage * ButtonsPerPage;
+            InitShapeGalleryItems();
+            ParentPanel = rParent.GetComponentInChildren<PolyhydraModeTray>();
+            FirstButtonIndex = ParentPanel.CurrentGalleryPage * ButtonsPerPage;
             m_ColorBackground = m_Background.GetComponent<MeshRenderer>().sharedMaterial;
             base.Init(rParent, sText);
-            ParentPanel = rParent.GetComponent<PolyhydraPanel>();
             _buttons = new List<GameObject>();
             CreateButtons();
+        }
+
+        private void InitShapeGalleryItems()
+        {
+            ShapeGalleryJson = Resources.LoadAll<TextAsset>("Shape Gallery Presets").ToDictionary(i => i.name);
+            ShapeGalleryIcons = Resources.LoadAll<Texture2D>("Shape Gallery Presets").ToDictionary(i => i.name);
         }
 
         protected virtual void CreateButtons()
@@ -156,57 +164,33 @@ namespace TiltBrush
             return text;
         }
 
-        private FileInfo[] GetDirectoryListing()
-        {
-            var dirInfo = new DirectoryInfo(ParentPanel.DefaultPresetsDirectory());
-            return dirInfo.GetFiles("*.json");
-        }
-
         protected List<string> GetButtonList()
         {
-            FileInfo[] AllFileInfo = GetDirectoryListing();
-            return AllFileInfo.Select(f => f.Name.Replace(".json", ""))
-                .Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+            return ShapeGalleryJson.Keys.ToList();
         }
 
         public Texture2D GetButtonTexture(string presetName)
         {
-            presetName = $"{presetName}.png";
-            var path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
-            if (!File.Exists(path))
-            {
-                presetName = presetName.Replace(".png", ".jpg");
-                path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
-                if (!File.Exists(path))
-                {
-                    return Resources.Load<Texture2D>("Icons/bigquestion");
-                }
-            }
-            return _GetButtonTexture(path);
-        }
-
-        private Texture2D _GetButtonTexture(string path)
-        {
-
-            var fileData = File.ReadAllBytes(path);
-            var tex = new Texture2D(2, 2);
-            tex.LoadImage(fileData);
-            return tex;
+            return ShapeGalleryIcons[presetName];
         }
 
         public void HandleButtonPress(string presetName)
         {
-            ParentPanel.HandleLoadPreset(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
+            PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+            if (polyhydraPanel != null)
+            {
+                polyhydraPanel.HandleLoadPresetFromString(ShapeGalleryJson[presetName].text);
+            }
         }
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length) ;
+            if (FirstButtonIndex + ButtonsPerPage < GetButtonList().Count)
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();
             }
-            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
+            ParentPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
         }
 
         public void PrevPage()
@@ -214,7 +198,7 @@ namespace TiltBrush
             FirstButtonIndex -= ButtonsPerPage;
             FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
             CreateButtons();
-            ParentPanel.CurrentPresetPage = FirstButtonIndex / ButtonsPerPage;
+            ParentPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
         }
     }
 } // namespace TiltBrush

@@ -434,7 +434,7 @@ MonoBehaviour:
   m_NextButton: {fileID: 0}
   ButtonsPerPage: 16
   m_ColorTransitionDuration: 0
-  ButtonPrefab: {fileID: 7630606763700834929, guid: 56c1524891cb7c44fb711233648ba9ff,
+  ButtonPrefab: {fileID: 7630606763700834929, guid: c3b1abe233361794d9699f8aaf461696,
     type: 3}
 --- !u!114 &114242525141314656
 MonoBehaviour:
