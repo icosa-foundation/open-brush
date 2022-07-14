@@ -1096,7 +1096,7 @@ namespace TiltBrush
 
         void RenderToImageFile(string presetThumbnailPath)
         {
-            Camera thumbnailCamera = PreviewPolyhedron.m_Instance.GetComponentInChildren<Camera>();
+            Camera thumbnailCamera = PreviewPolyhedron.m_Instance.GetComponentInChildren<Camera>(true);
             thumbnailCamera.enabled = true;
             thumbnailCamera.gameObject.SetActive(true);
             FocusCameraOnGameObject(thumbnailCamera, PreviewPolyhedron.m_Instance.gameObject, 0.5f, true);

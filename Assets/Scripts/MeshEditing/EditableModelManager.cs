@@ -220,9 +220,7 @@ namespace TiltBrush.MeshEditing
 
         public void CloneEditableModel(EditableModelWidget clone)
         {
-            var id = clone.GetComponent<EditableModelId>();
-
-            //// NRE
+            var id = clone.GetComponentInChildren<EditableModelId>(true);
             var prevId = id.guid;
             id.guid = Guid.NewGuid().ToString();
             m_EditableModels[id.guid] = m_EditableModels[prevId];
