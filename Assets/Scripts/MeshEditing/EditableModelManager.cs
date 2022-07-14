@@ -218,21 +218,11 @@ namespace TiltBrush.MeshEditing
             return stencilWidget;
         }
 
-        public void DebugModels()
-        {
-            foreach (var m in m_EditableModels)
-            {
-                Debug.Log($"{m.Key} {m.Value.GeneratorType}");
-                foreach (var k in m.Value.GeneratorParameters.Keys)
-                {
-                    Debug.Log($"{k}: {m.Value.GeneratorParameters[k]}");
-                }
-            }
-        }
-
         public void CloneEditableModel(EditableModelWidget clone)
         {
             var id = clone.GetComponent<EditableModelId>();
+
+            //// NRE
             var prevId = id.guid;
             id.guid = Guid.NewGuid().ToString();
             m_EditableModels[id.guid] = m_EditableModels[prevId];

@@ -1021,12 +1021,15 @@ namespace TiltBrush
 
                 if (opDict.ContainsKey("paramColor"))
                 {
-                    var colorData = (opDict["paramColor"] as JArray);
-                    newOp.paramColor = new Color(
-                        colorData[0].Value<float>(),
-                        colorData[1].Value<float>(),
-                        colorData[2].Value<float>()
-                    );
+                    var colorData = opDict["paramColor"] as JArray;
+                    if (colorData != null && colorData.Count >= 3)
+                    {
+                        newOp.paramColor = new Color(
+                            colorData[0].Value<float>(),
+                            colorData[1].Value<float>(),
+                            colorData[2].Value<float>()
+                        );
+                    }
                 }
 
                 object filterType;
@@ -1289,19 +1292,6 @@ namespace TiltBrush
         {
             Transform btnTr = Instantiate(OperatorSelectButtonPrefab, OperatorSelectButtonParent, false);
             btnTr.gameObject.SetActive(true);
-        }
-
-
-        public void AddGuideForCurrentPolyhedron()
-        {
-            // TODO Find a better way to pick a location;
-            var tr = TrTransform.T(new Vector3(
-                Random.value * 3 - 1.5f,
-                Random.value * 7 + 7,
-                Random.value * 8 + 2)
-            );
-            var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-            EditableModelManager.AddCustomGuide(poly, tr);
         }
 
         public void HandleOtherSolidsButtonPress(string action)

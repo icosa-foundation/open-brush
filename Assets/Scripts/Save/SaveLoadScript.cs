@@ -718,7 +718,7 @@ namespace TiltBrush
                 }
 
 
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 
@@ -875,11 +875,23 @@ namespace TiltBrush
                                 }
                             }
 
+                            // Handle saves with missing colors (legacy)
+                            Color[] colors;
+                            if (emd.Colors == null || emd.Colors.Length == 0)
+                            {
+                                var polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                                colors = (Color[])polyhydraPanel.DefaultColorPalette.Clone();
+                            }
+                            else
+                            {
+                                colors = emd.Colors;
+                            }
+
                             if (poly != null)
                             {
                                 foreach (var tr in model.RawTransforms)
                                 {
-                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, emd.Colors, emd.GeneratorParameters, emd.Operations);
+                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, colors, emd.GeneratorParameters, emd.Operations);
                                 }
                             }
                         }
