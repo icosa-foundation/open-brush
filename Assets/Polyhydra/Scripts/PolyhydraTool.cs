@@ -26,7 +26,8 @@ namespace TiltBrush
         {
             EditableModel,
             BrushStrokes,
-            Guide
+            Guide,
+            Mirror
         }
 
         public enum ModifyModes
@@ -269,11 +270,14 @@ namespace TiltBrush
                             TrTransform tr = TrTransform.TRS(position_CS, rotation_CS, scale_CS);
                             EditableModelManager.AddCustomGuide(PreviewPolyhedron.m_Instance.m_PolyMesh, tr);
                             break;
+                        case CreateModes.Mirror:
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.CustomSymmetryMode);
+                            PointerManager.m_Instance.BringSymmetryToUser();
+                            break;
                     }
                 }
             }
         }
-
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
         void Update()

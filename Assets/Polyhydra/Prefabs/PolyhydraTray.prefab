@@ -630,8 +630,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
+      propertyPath: m_Options.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
+        type: 3}
       propertyPath: m_DescriptionTextExtra
-      value: The action when you hold the trigger
+      value: The trigger action
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
@@ -650,6 +655,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: f46c2984cefb1c542befe1ab2edd982c, type: 3}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
+      propertyPath: m_Options.Array.data[3].m_Texture
+      value: 
+      objectReference: {fileID: 2800000, guid: ae726261e9135b949960e30cad75ad98, type: 3}
+    - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
+        type: 3}
       propertyPath: m_Options.Array.data[0].m_Description
       value: 3D Model
       objectReference: {fileID: 0}
@@ -662,6 +672,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Options.Array.data[2].m_Description
       value: Guides
+      objectReference: {fileID: 0}
+    - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
+        type: 3}
+      propertyPath: m_Options.Array.data[3].m_Description
+      value: Mirror
       objectReference: {fileID: 0}
     - target: {fileID: 6551201295385468615, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
@@ -756,8 +771,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_DescriptionTextExtra
-      value: The action that happens when you press the A button when hovering over
-        a shape
+      value: The "A" button action
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
