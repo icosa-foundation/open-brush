@@ -166,7 +166,7 @@ namespace TiltBrush
                                 case ModifyModes.ApplyBrushStrokes:
                                     CreateBrushStrokesForPoly(
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
-                                        TrTransform.FromTransform(ewidget.transform)
+                                        Coords.AsCanvas[ewidget.transform]
                                     );
                                     break;
                             }
@@ -279,7 +279,7 @@ namespace TiltBrush
                     m_Type = Stroke.Type.NotCreated,
                     m_IntendedCanvas = App.Scene.ActiveCanvas,
                     m_BrushGuid = brush.m_Guid,
-                    m_BrushScale = 1f,
+                    m_BrushScale = Coords.CanvasPose.inverse.scale,
                     m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
                     m_Color = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex),
                     m_Seed = 0,
