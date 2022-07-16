@@ -57,7 +57,7 @@ namespace TiltBrush
         // want to have a different config file for your edition of the app.
         public const string kConfigFileName = "Open Brush.cfg";
         // The name of the App folder (In the user's Documents folder) - original Tilt Brush used "Tilt Brush"
-        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not. 
+        // If you are forking Open Brush, you may want to leave this as "Open Brush" or not.
         public const string kAppFolderName = "Open Brush";
         // The data folder used on Google Drive.
         public const string kDriveFolderName = kAppDisplayName;
@@ -2131,19 +2131,19 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
         {
             var manifest = m_Manifest;
-            // #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            //             if (Config.IsExperimental)
-            //             {
-            //                 // At build time, we don't want the user config to affect the build output.
-            //                 if (consultUserConfig
-            //                     && m_UserConfig.Flags.ShowDangerousBrushes
-            //                     && m_ManifestExperimental != null)
-            //                 {
-            //                     manifest = Instantiate(m_Manifest);
-            //                     manifest.AppendFrom(m_ManifestExperimental);
-            //                 }
-            //             }
-            // #endif
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+            if (Config.IsExperimental)
+            {
+                // At build time, we don't want the user config to affect the build output.
+                if (consultUserConfig
+                    && m_UserConfig.Flags.ShowDangerousBrushes
+                    && m_ManifestExperimental != null)
+                {
+                    manifest = Instantiate(m_Manifest);
+                    manifest.AppendFrom(m_ManifestExperimental);
+                }
+            }
+#endif
             return manifest;
         }
 
