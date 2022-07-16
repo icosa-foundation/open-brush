@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1769571637712273603}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.641, z: -0.05}
+  m_LocalPosition: {x: 0, y: 0.24, z: -0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -525,6 +525,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
+      propertyPath: m_PopupText
+      value: Shape Gallery
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
+        type: 3}
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: 5ee3d2fc6f002374eba64243efe2a149, type: 3}
@@ -566,7 +571,7 @@ PrefabInstance:
     - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.24
+      value: 0.641
       objectReference: {fileID: 0}
     - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
