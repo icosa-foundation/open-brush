@@ -766,7 +766,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
@@ -792,7 +792,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Options.Array.data[3].m_Texture
       value: 
-      objectReference: {fileID: 2800000, guid: 30958851ea89a7c46bdb214571b82882, type: 3}
+      objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.data[0].m_Description
@@ -811,7 +811,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.data[3].m_Description
-      value: Transparent
+      value: Apply Brush Strokes
       objectReference: {fileID: 0}
     - target: {fileID: 6551201295385468615, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}

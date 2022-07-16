@@ -639,17 +639,12 @@ namespace TiltBrush
             Slider2.UpdateValue(Slider2.GetCurrentValue());
         }
 
-        public static void CreateWidgetForPolyhedron(Vector3 position_CS, Quaternion rotation_CS, float scale_CS, PolyMesh poly)
+        public static void CreateWidgetForPolyhedron(PolyMesh poly, TrTransform tr)
         {
-            var creationTr = TrTransform.TRS(
-                position_CS,
-                rotation_CS,
-                scale_CS
-            );
             var shapeType = EditableModelManager.CurrentModel.GeneratorType;
             EditableModelManager.m_Instance.GeneratePolyMesh(
                 poly,
-                creationTr,
+                tr,
                 EditableModelManager.CurrentModel.ColorMethod,
                 shapeType,
                 EditableModelManager.CurrentModel.Colors,
@@ -1121,15 +1116,13 @@ namespace TiltBrush
         public void MonoscopicAddPolyhedron()
         {
             // Used in mono mode and during testing
-
             var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-
-            CreateWidgetForPolyhedron(
+            var tr = TrTransform.TRS(
                 new Vector3(Random.value * 3 - 1.5f, Random.value * 7 + 7, Random.value * 8 + 2),
                 Quaternion.identity,
-                1f,
-                poly
+                1f
             );
+            CreateWidgetForPolyhedron(poly, tr);
         }
 
         public void ChangeCurrentOpType(string operationName)

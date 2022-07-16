@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 using UnityEngine;
 
@@ -34,7 +36,8 @@ namespace TiltBrush
         {
             GetSettings,
             ApplySettings,
-            ApplyColor
+            ApplyColor,
+            ApplyBrushStrokes
         }
 
         //the parent of all of our tool's visual indicator objects
@@ -99,7 +102,6 @@ namespace TiltBrush
         //All input handling should be done here
         override public void UpdateTool()
         {
-
             base.UpdateTool();
 
             //keep description locked to controller
@@ -148,20 +150,29 @@ namespace TiltBrush
                                     var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
                                     EditableModelManager.m_Instance.UpdateEditableModel(ewidget, EditableModelManager.CurrentModel);
                                     EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
-                                    AudioManager.m_Instance.PlayDuplicateSound(
-                                        InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
-                                    );
                                     break;
                                 case ModifyModes.GetSettings:
                                     var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
                                     polyhydraPanel.LoadFromEditableModel(emodel);
                                     break;
                                 case ModifyModes.ApplyColor:
-                                    var color = PointerManager.m_Instance.PointerColor;
-                                    var previewPoly = PreviewPolyhedron.m_Instance;
-                                    previewPoly.AssignColors(Enumerable.Repeat(color, 5).ToArray());
+                                    Color color = PointerManager.m_Instance.PointerColor;
+                                    EditableModelManager.EditableModel editableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+                                    EditableModelManager.m_Instance.UpdateEditableModel(ewidget, editableModel);
+                                    editableModel.Colors = Enumerable.Repeat(color, editableModel.Colors.Length).ToArray();
+                                    var polyMesh = editableModel.PolyMesh;
+                                    EditableModelManager.m_Instance.RegenerateMesh(ewidget, polyMesh);
+                                    break;
+                                case ModifyModes.ApplyBrushStrokes:
+                                    CreateBrushStrokesForPoly(
+                                        EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
+                                        TrTransform.FromTransform(ewidget.transform)
+                                    );
                                     break;
                             }
+                            AudioManager.m_Instance.PlayDuplicateSound(
+                                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                            );
                         }
                     }
                 }
@@ -207,67 +218,17 @@ namespace TiltBrush
                     m_WasClicked = false;
 
                     var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
+                    TrTransform tr = TrTransform.TRS(m_FirstPositionClicked_CS.translation, rotation_CS, scale_CS);
 
                     switch (m_CurrentCreateMode)
                     {
                         case CreateModes.EditableModel:
-                            PolyhydraPanel.CreateWidgetForPolyhedron(position_CS, rotation_CS, scale_CS, poly);
+                            PolyhydraPanel.CreateWidgetForPolyhedron(poly, tr);
                             break;
                         case CreateModes.BrushStrokes:
-                            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
-                            float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
-                            float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
-
-                            var group = App.GroupManager.NewUnusedGroup();
-
-                            foreach (var (face, faceIndex) in poly.Faces.WithIndex())
-                            {
-                                var controlPoints = new List<PointerManager.ControlPoint>();
-                                var faceVerts = face.GetVertices();
-                                faceVerts.Add(faceVerts[0]);
-                                for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
-                                {
-                                    var vert = faceVerts[vertexIndex];
-                                    var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
-
-                                    for (float step = 0; step < 1f; step += .25f)
-                                    {
-                                        var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
-                                        vertexPos = vertexPos * scale_CS;
-                                        vertexPos = rotation_CS * vertexPos;
-                                        controlPoints.Add(new PointerManager.ControlPoint
-                                        {
-                                            m_Pos = m_FirstPositionClicked_CS.translation + vertexPos,
-                                            m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
-                                            m_Pressure = pressure,
-                                            m_TimestampMs = (uint)(Time.unscaledTime * 1000)
-                                        });
-                                    }
-                                }
-
-                                var stroke = new Stroke
-                                {
-                                    m_Type = Stroke.Type.NotCreated,
-                                    m_IntendedCanvas = App.Scene.ActiveCanvas,
-                                    m_BrushGuid = brush.m_Guid,
-                                    m_BrushScale = 1f,
-                                    m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                                    m_Color = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex),
-                                    m_Seed = 0,
-                                    m_ControlPoints = controlPoints.ToArray(),
-                                };
-                                stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                                stroke.Group = group;
-                                stroke.Recreate(null, App.Scene.ActiveCanvas);
-                                if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
-                                SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
-                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
-                                );
-                            }
+                            CreateBrushStrokesForPoly(poly, tr);
                             break;
                         case CreateModes.Guide:
-                            TrTransform tr = TrTransform.TRS(position_CS, rotation_CS, scale_CS);
                             EditableModelManager.AddCustomGuide(PreviewPolyhedron.m_Instance.m_PolyMesh, tr);
                             break;
                         case CreateModes.Mirror:
@@ -276,6 +237,62 @@ namespace TiltBrush
                             break;
                     }
                 }
+            }
+        }
+
+        // TODO Unify this with similar code elsewhere (API?)
+        private static void CreateBrushStrokesForPoly(PolyMesh poly, TrTransform tr)
+        {
+            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+            float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
+            float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
+
+            var group = App.GroupManager.NewUnusedGroup();
+
+            foreach (var (face, faceIndex) in poly.Faces.WithIndex())
+            {
+                var controlPoints = new List<PointerManager.ControlPoint>();
+                var faceVerts = face.GetVertices();
+                faceVerts.Add(faceVerts[0]);
+                for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
+                {
+                    var vert = faceVerts[vertexIndex];
+                    var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
+
+                    for (float step = 0; step < 1f; step += .25f)
+                    {
+                        var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
+                        vertexPos *= tr.scale;
+                        vertexPos = tr.rotation * vertexPos;
+                        controlPoints.Add(new PointerManager.ControlPoint
+                        {
+                            m_Pos = tr.translation + vertexPos,
+                            m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
+                            m_Pressure = pressure,
+                            m_TimestampMs = (uint)(Time.unscaledTime * 1000)
+                        });
+                    }
+                }
+
+                var stroke = new Stroke
+                {
+                    m_Type = Stroke.Type.NotCreated,
+                    m_IntendedCanvas = App.Scene.ActiveCanvas,
+                    m_BrushGuid = brush.m_Guid,
+                    m_BrushScale = 1f,
+                    m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
+                    m_Color = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex),
+                    m_Seed = 0,
+                    m_ControlPoints = controlPoints.ToArray(),
+                };
+                stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
+                stroke.Group = group;
+                stroke.Recreate(null, App.Scene.ActiveCanvas);
+                if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
+                );
             }
         }
 
