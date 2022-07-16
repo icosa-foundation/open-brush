@@ -1220,7 +1220,11 @@ namespace TiltBrush
 
             var popup = (m_ActivePopUp as ColorPickerPopUpWindow);
             popup.transform.localPosition += new Vector3(0, 0, 0);
-            popup.ColorPicker.ColorPicked += c => SetFinalColor(c, index);
+            popup.ColorPicker.ColorPicked += c =>
+            {
+                SetFinalColor(c, index);
+                PreviewPolyhedron.m_Instance.RebuildPoly();
+            };
 
             // Init must be called after all popup.ColorPicked actions have been assigned.
             popup.ColorPicker.Controller.CurrentColor = EditableModelManager.CurrentModel.Colors[index];
@@ -1231,20 +1235,16 @@ namespace TiltBrush
         public void OpColorButtonPressed(int index)
         {
             // Create the popup with callback.
-            //CreatePopUp(SketchControlsScript.GlobalCommands.LightingLdr, -1, -1, popupText, OnPopUpClose);
             SketchControlsScript.GlobalCommands command = SketchControlsScript.GlobalCommands.PolyhydraColorPickerPopup;
             CreatePopUp(command, -1, -1, "Color",
-                () => ButtonOpColorPicker.SetDescriptionText(
-                    "Color",
-                    ColorTable.m_Instance.NearestColorTo(GetOpColor())
-                )
+                () => ButtonOpColorPicker.SetColorSwatch(GetOpColor())
             );
 
             var popup = (m_ActivePopUp as ColorPickerPopUpWindow);
             popup.transform.localPosition += new Vector3(0, 0, 0);
             popup.ColorPicker.ColorPicked += delegate (Color c)
             {
-                ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(c));
+                ButtonOpColorPicker.SetColorSwatch(c);
                 SetOpColor(c);
             };
 
@@ -1262,18 +1262,52 @@ namespace TiltBrush
 
         private void SetOpColor(Color color)
         {
-            ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
+            ButtonOpColorPicker.SetColorSwatch(color);
             var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.paramColor = color;
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
+        public void HandleSetAllColorsToCurrentButtonPressed()
+        {
+            SetAllFinalColors(PointerManager.m_Instance.PointerColor);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
+        }
+
+        public void HandleResetAllColorsToDefaultButtonPressed()
+        {
+            for (int index = 0; index < ColorPalletteButtons.Length; index++)
+            {
+                SetFinalColor(DefaultColorPalette[index], index);
+            }
+            PreviewPolyhedron.m_Instance.RebuildPoly();
+        }
+
+        public void HandleJitterAllColorsButtonPressed()
+        {
+            for (var index = 0; index < ColorPalletteButtons.Length; index++)
+            {
+                Color currentColor = EditableModelManager.CurrentModel.Colors[index];
+                Color newColor = PointerManager.m_Instance.CalculateJitteredColor(currentColor);
+                SetFinalColor(newColor, index);
+            }
+            PreviewPolyhedron.m_Instance.RebuildPoly();
+        }
+
+        private void SetAllFinalColors(Color color)
+        {
+            for (var index = 0; index < ColorPalletteButtons.Length; index++)
+            {
+                SetFinalColor(color, index);
+            }
+        }
+
         private void SetFinalColor(Color color, int index)
         {
-            ButtonOpColorPicker.SetDescriptionText("Color", ColorTable.m_Instance.NearestColorTo(color));
+            PolyhydraColorButton btn = ColorPalletteButtons[index];
+            btn.SetColorSwatch(color);
             EditableModelManager.CurrentModel.Colors[index] = color;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleAddOpButton()
