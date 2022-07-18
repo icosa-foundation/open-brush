@@ -24,6 +24,7 @@ using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
+using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
@@ -194,7 +195,7 @@ namespace TiltBrush
             OpPanel.SetActive(false);
             SetSliderConfiguration();
             SetMainButtonVisibility();
-            SetPresetSaveButtonState(popupButtonEnabled: false);
+            EnablePresetSaveButtons(popupButtonEnabled: false);
             if (!Directory.Exists(DefaultPresetsDirectory()))
             {
                 Directory.CreateDirectory(DefaultPresetsDirectory());
@@ -211,7 +212,7 @@ namespace TiltBrush
             }
         }
 
-        private void SetPresetSaveButtonState(bool popupButtonEnabled)
+        private void EnablePresetSaveButtons(bool popupButtonEnabled)
         {
             PresetInitialSaveButton.SetActive(!popupButtonEnabled);
             PresetSaveOptionsPopupButton.SetActive(popupButtonEnabled);
@@ -671,12 +672,12 @@ namespace TiltBrush
             }
             SavePresetJson(CurrentPresetPath);
             RenderToImageFile($"{CurrentPresetPath}.png");
-            SetPresetSaveButtonState(popupButtonEnabled: true);
+            EnablePresetSaveButtons(popupButtonEnabled: true);
         }
 
         public void HandleDuplicatePreset()
         {
-            SetPresetSaveButtonState(popupButtonEnabled: false);
+            EnablePresetSaveButtons(popupButtonEnabled: false);
         }
 
         void SavePresetJson(string presetPath)
@@ -722,7 +723,7 @@ namespace TiltBrush
             }
             LoadFromDefinition(emd);
             CurrentPresetPath = path;
-            SetPresetSaveButtonState(popupButtonEnabled: true);
+            EnablePresetSaveButtons(popupButtonEnabled: true);
         }
 
         public void HandleLoadPresetFromString(string presetText)
@@ -736,7 +737,7 @@ namespace TiltBrush
             }
             LoadFromDefinition(emd);
             CurrentPresetPath = "";
-            SetPresetSaveButtonState(popupButtonEnabled: false);
+            EnablePresetSaveButtons(popupButtonEnabled: false);
         }
 
         public string GetButtonTexturePath(GeneratorTypes mainType, string action)
@@ -1111,18 +1112,18 @@ namespace TiltBrush
             thumbnailCamera.enabled = false;
         }
 
-
-
+        // Used mainly in mono mode and during testing
         public void MonoscopicAddPolyhedron()
         {
-            // Used in mono mode and during testing
             var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
+            // Just a random position for now to avoid overlap.
             var tr = TrTransform.TRS(
                 new Vector3(Random.value * 3 - 1.5f, Random.value * 7 + 7, Random.value * 8 + 2),
                 Quaternion.identity,
                 1f
             );
-            CreateWidgetForPolyhedron(poly, tr);
+            PolyhydraTool polyTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.PolyhydraTool) as PolyhydraTool;
+            polyTool.CreatePolyForCurrentMode(poly, tr);
         }
 
         public void ChangeCurrentOpType(string operationName)
