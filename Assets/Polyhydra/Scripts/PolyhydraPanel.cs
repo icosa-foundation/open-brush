@@ -24,9 +24,7 @@ using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using TMPro;
-using UnityEditor.EditorTools;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -673,11 +671,6 @@ namespace TiltBrush
             SavePresetJson(CurrentPresetPath);
             RenderToImageFile($"{CurrentPresetPath}.png");
             EnablePresetSaveButtons(popupButtonEnabled: true);
-        }
-
-        public void HandleDuplicatePreset()
-        {
-            EnablePresetSaveButtons(popupButtonEnabled: false);
         }
 
         void SavePresetJson(string presetPath)
