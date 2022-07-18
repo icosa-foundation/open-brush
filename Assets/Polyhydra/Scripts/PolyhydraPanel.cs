@@ -836,10 +836,11 @@ namespace TiltBrush
 
         public void LoadFromDefinition(EditableModelDefinition emd)
         {
+            Color[] colors = emd.Colors ?? DefaultColorPalette;
             var polyMesh = new PolyMesh();
             var emodel = new EditableModelManager.EditableModel(
                 polyMesh,
-                (Color[])emd.Colors.Clone(),
+                (Color[])colors.Clone(),
                 emd.ColorMethod,
                 emd.GeneratorType,
                 emd.GeneratorParameters,
