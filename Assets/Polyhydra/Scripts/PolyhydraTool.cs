@@ -65,11 +65,14 @@ namespace TiltBrush
         private CreateModes m_CurrentCreateMode;
         private ModifyModes m_CurrentModifyMode;
 
+        private HashSet<EditableModelWidget> m_WidgetsModifiedThisClick;
+
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
         {
             base.Init();
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
+            m_WidgetsModifiedThisClick = new HashSet<EditableModelWidget>();
         }
 
         //What to do when the tool is enabled or disabled
@@ -135,9 +138,12 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
+            if (m_ValidWidgetFoundThisFrame &&
+                !m_WidgetsModifiedThisClick.Contains(LastIntersectedEditableModelWidget) && // Don't modify widgets more than once per interaction
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
             {
                 var ewidget = LastIntersectedEditableModelWidget;
+                m_WidgetsModifiedThisClick.Add(ewidget);
                 if (ewidget != null)
                 {
                     var id = ewidget.GetId();
@@ -184,6 +190,12 @@ namespace TiltBrush
                         }
                     }
                 }
+            }
+
+            // Clear the list of widgets modified this time
+            if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
+            {
+                m_WidgetsModifiedThisClick.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
