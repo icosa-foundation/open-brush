@@ -49,7 +49,8 @@ namespace TiltBrush
         private Transform m_BrushController;
 
         // Set true when the tool is activated so we can detect when it's released
-        private bool m_WasClicked = false;
+        private bool m_TriggerWasClicked = false;
+        private bool m_ModifyWasClicked = false;
 
         // The position of the pointed when m_ClickedLastUpdate was set to true;
         private TrTransform m_FirstPositionClicked_CS;
@@ -135,7 +136,7 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
+            if (m_ValidWidgetFoundThisFrame && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
             {
                 var ewidget = LastIntersectedEditableModelWidget;
                 if (ewidget != null)
@@ -144,7 +145,7 @@ namespace TiltBrush
                     if (id != null)
                     {
                         PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                        if (polyhydraPanel != null)
+                        if (polyhydraPanel != null && m_ModifyWasClicked == false)
                         {
                             switch (m_CurrentModifyMode)
                             {
@@ -152,10 +153,12 @@ namespace TiltBrush
                                     var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
                                     EditableModelManager.m_Instance.UpdateEditableModel(ewidget, EditableModelManager.CurrentModel);
                                     EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
+                                    m_ModifyWasClicked = true;
                                     break;
                                 case ModifyModes.GetSettings:
                                     var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
                                     polyhydraPanel.LoadFromEditableModel(emodel);
+                                    m_ModifyWasClicked = true;
                                     break;
                                 case ModifyModes.ApplyColor:
                                     Color color = PointerManager.m_Instance.PointerColor;
@@ -164,31 +167,52 @@ namespace TiltBrush
                                     editableModel.Colors = Enumerable.Repeat(color, editableModel.Colors.Length).ToArray();
                                     var polyMesh = editableModel.PolyMesh;
                                     EditableModelManager.m_Instance.RegenerateMesh(ewidget, polyMesh);
+                                    m_ModifyWasClicked = true;
                                     break;
                                 case ModifyModes.ApplyBrushStrokesToFaces:
                                     CreateBrushStrokesForPoly(
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
                                         Coords.AsCanvas[ewidget.transform]
                                     );
+                                    m_ModifyWasClicked = true;
                                     break;
                                 case ModifyModes.ApplyBrushStrokesToEdges:
                                     CreateBrushStrokesForPolyEdges(
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
                                         Coords.AsCanvas[ewidget.transform]
                                     );
+                                    m_ModifyWasClicked = true;
                                     break;
                             }
-                            AudioManager.m_Instance.PlayDuplicateSound(
-                                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
-                            );
+
+                            if (m_ModifyWasClicked)
+                            {
+                                AudioManager.m_Instance.PlayDuplicateSound(
+                                    InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                                );
+                            }
                         }
                     }
                 }
             }
+            else
+            {
+                LastIntersectedEditableModelWidget = null;
+                m_ValidWidgetFoundThisFrame = false;
+                ClearGpuFutureLists();
+            }
+
+            if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
+            {
+                m_ModifyWasClicked = false;
+                LastIntersectedEditableModelWidget = null;
+                m_ValidWidgetFoundThisFrame = false;
+                ClearGpuFutureLists();
+            }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
-                m_WasClicked = true;
+                m_TriggerWasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 previewMesh = PreviewPolyhedron.m_Instance.GetComponent<MeshFilter>().mesh;
@@ -220,9 +244,9 @@ namespace TiltBrush
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                if (m_WasClicked)
+                if (m_TriggerWasClicked)
                 {
-                    m_WasClicked = false;
+                    m_TriggerWasClicked = false;
                     var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
                     TrTransform tr = TrTransform.TRS(m_FirstPositionClicked_CS.translation, rotation_CS, scale_CS);
                     CreatePolyForCurrentMode(poly, tr);
