@@ -160,24 +160,29 @@ namespace TiltBrush
                                         new ModifyPolyCommand(ewidget, newPoly, EditableModelManager.CurrentModel)
                                     );
                                     break;
+
                                 case ModifyModes.GetSettings:
                                     var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
                                     polyhydraPanel.LoadFromEditableModel(emodel);
                                     break;
+
                                 case ModifyModes.ApplyColor:
-                                    Color color = PointerManager.m_Instance.PointerColor;
-                                    EditableModel editableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
-                                    EditableModelManager.m_Instance.UpdateEditableModel(ewidget, editableModel);
-                                    editableModel.Colors = Enumerable.Repeat(color, editableModel.Colors.Length).ToArray();
-                                    var polyMesh = editableModel.PolyMesh;
-                                    EditableModelManager.m_Instance.RegenerateMesh(ewidget, polyMesh);
+                                    Color[] colors = Enumerable.Repeat(
+                                        PointerManager.m_Instance.PointerColor,
+                                        EditableModelManager.CurrentModel.Colors.Length
+                                    ).ToArray();
+                                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                                        new RecolorPolyCommand(ewidget, colors)
+                                    );
                                     break;
+
                                 case ModifyModes.ApplyBrushStrokesToFaces:
                                     CreateBrushStrokesForPoly(
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
                                         Coords.AsCanvas[ewidget.transform]
                                     );
                                     break;
+
                                 case ModifyModes.ApplyBrushStrokesToEdges:
                                     CreateBrushStrokesForPolyEdges(
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,

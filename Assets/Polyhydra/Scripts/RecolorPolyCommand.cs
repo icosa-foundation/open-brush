@@ -12,40 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
+using UnityEngine;
 namespace TiltBrush
 {
-    public class ModifyPolyCommand : BaseCommand
+    public class RecolorPolyCommand : BaseCommand
     {
         private readonly EditableModelWidget m_Ewidget;
-        private readonly PolyMesh m_NewPoly;
-        private readonly PolyMesh m_PreviousPoly;
-        private readonly EditableModel m_NewEditableModel;
-        private readonly EditableModel m_PreviousEditableModel;
+        private readonly PolyMesh m_PolyMesh;
+        private readonly EditableModel m_EditableModel;
+        private readonly Color[] m_NewColors;
+        private readonly Color[] m_PreviousColors;
 
         public override bool NeedsSave { get { return true; } }
 
-        public ModifyPolyCommand(EditableModelWidget ewidget, PolyMesh newPoly, EditableModel newEditableModel)
+        public RecolorPolyCommand(EditableModelWidget ewidget, Color[] colors)
         {
             m_Ewidget = ewidget;
-            m_NewPoly = newPoly;
-            m_NewEditableModel = newEditableModel;
             EditableModelId id = ewidget.GetId();
-            m_PreviousPoly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            m_PreviousEditableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+            m_PolyMesh = EditableModelManager.m_Instance.GetPolyMesh(id);
+            m_EditableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+            m_NewColors = colors;
+            m_PreviousColors = (Color[])m_EditableModel.Colors.Clone();
         }
 
         protected override void OnRedo()
         {
-            EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_NewEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly);
+            m_EditableModel.Colors = m_NewColors;
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 
         protected override void OnUndo()
         {
-            EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_PreviousEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly);
+            m_EditableModel.Colors = m_PreviousColors;
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 
     }
