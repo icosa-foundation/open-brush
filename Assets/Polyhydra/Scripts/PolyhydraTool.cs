@@ -156,8 +156,9 @@ namespace TiltBrush
                             {
                                 case ModifyModes.ApplySettings:
                                     var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                                    EditableModelManager.m_Instance.UpdateEditableModel(ewidget, EditableModelManager.CurrentModel);
-                                    EditableModelManager.m_Instance.RegenerateMesh(ewidget, newPoly);
+                                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                                        new ModifyPolyCommand(ewidget, newPoly, EditableModelManager.CurrentModel)
+                                    );
                                     break;
                                 case ModifyModes.GetSettings:
                                     var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
@@ -165,7 +166,7 @@ namespace TiltBrush
                                     break;
                                 case ModifyModes.ApplyColor:
                                     Color color = PointerManager.m_Instance.PointerColor;
-                                    EditableModelManager.EditableModel editableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+                                    EditableModel editableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
                                     EditableModelManager.m_Instance.UpdateEditableModel(ewidget, editableModel);
                                     editableModel.Colors = Enumerable.Repeat(color, editableModel.Colors.Length).ToArray();
                                     var polyMesh = editableModel.PolyMesh;
@@ -315,7 +316,7 @@ namespace TiltBrush
                 if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
+                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, -1) // TODO Do we need to supply the actual length?
                 );
             }
         }

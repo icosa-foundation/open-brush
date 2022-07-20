@@ -685,7 +685,7 @@ namespace TiltBrush
             // TODO Refactor:
             // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
             // There's too many different classes at play with overlapping responsibilities
-            var em = new EditableModelManager.EditableModel(
+            var em = new EditableModel(
                 PreviewPolyhedron.m_Instance.m_PolyMesh,
                 EditableModelManager.CurrentModel.Colors,
                 colorMethod,
@@ -838,7 +838,7 @@ namespace TiltBrush
         {
             Color[] colors = emd.Colors ?? DefaultColorPalette;
             var polyMesh = new PolyMesh();
-            var emodel = new EditableModelManager.EditableModel(
+            var emodel = new EditableModel(
                 polyMesh,
                 (Color[])colors.Clone(),
                 emd.ColorMethod,
@@ -849,7 +849,7 @@ namespace TiltBrush
             LoadFromEditableModel(emodel);
         }
 
-        public void LoadFromEditableModel(EditableModelManager.EditableModel emodel)
+        public void LoadFromEditableModel(EditableModel emodel)
         {
             void setSlidersFromGeneratorParams(List<string> names)
             {

@@ -161,7 +161,7 @@ namespace TiltBrush
             return dict;
         }
 
-        public static EditableModelDefinition GetEditableModelDefinition(EditableModelManager.EditableModel em)
+        public static EditableModelDefinition GetEditableModelDefinition(EditableModel em)
         {
             if (em.GeneratorType == GeneratorTypes.FileSystem)
             {
