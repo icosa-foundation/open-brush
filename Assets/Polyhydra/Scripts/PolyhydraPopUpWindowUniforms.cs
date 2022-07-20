@@ -14,12 +14,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using Polyhydra.Wythoff;
-using TiltBrush.MeshEditing;
 using UnityEngine;
-
 
 namespace TiltBrush
 {

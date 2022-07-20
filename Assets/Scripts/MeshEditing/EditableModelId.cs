@@ -1,5 +1,5 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+
 namespace TiltBrush.MeshEditing
 {
     public class EditableModelId : MonoBehaviour

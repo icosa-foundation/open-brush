@@ -14,6 +14,7 @@
 
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
+
 namespace TiltBrush
 {
     public class ModifyPolyCommand : BaseCommand

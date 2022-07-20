@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEngine;
+
 namespace TiltBrush.MeshEditing
 {
     public class EditableModel

@@ -19,7 +19,6 @@ using Polyhydra.Core;
 using TMPro;
 using UnityEngine;
 
-
 namespace TiltBrush
 {
 

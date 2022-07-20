@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TiltBrush
 {

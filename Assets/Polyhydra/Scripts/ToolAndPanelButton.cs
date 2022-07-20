@@ -16,7 +16,6 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-
     public class ToolAndPanelButton : BaseButton
     {
         [SerializeField] private BaseTool.ToolType m_Tool;

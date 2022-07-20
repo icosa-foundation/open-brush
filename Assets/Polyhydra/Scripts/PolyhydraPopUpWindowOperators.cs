@@ -18,13 +18,13 @@ using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
-
 namespace TiltBrush
 {
 
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
     {
-        [NonSerialized] public List<PolyMesh.Operation> m_ValidOps = new()
+        [NonSerialized]
+        public List<PolyMesh.Operation> m_ValidOps = new()
         {
             // PolyMesh.Operation.Identity,
             PolyMesh.Operation.Kis,
@@ -62,38 +62,38 @@ namespace TiltBrush
             // PolyMesh.Operation.Squall,
             // PolyMesh.Operation.JoinSquall,
             PolyMesh.Operation.Cross,
-            
+
             // PolyMesh.Operation.SplitFaces,
             PolyMesh.Operation.Gable,
-            
+
             PolyMesh.Operation.Extrude,
             PolyMesh.Operation.Shell,
             PolyMesh.Operation.Segment,
             PolyMesh.Operation.Skeleton,
-            
+
             PolyMesh.Operation.Recenter,
             PolyMesh.Operation.SitLevel,
-            
+
             PolyMesh.Operation.FaceOffset,
             PolyMesh.Operation.FaceScale,
             PolyMesh.Operation.FaceRotateX,
             PolyMesh.Operation.FaceRotateY,
             PolyMesh.Operation.FaceRotateZ,
             // PolyMesh.Operation.FaceSlide,
-            
+
             // PolyMesh.Operation.VertexScale,
             // PolyMesh.Operation.VertexRotate,
             // PolyMesh.Operation.VertexOffset,
             // PolyMesh.Operation.VertexStellate,
-            
+
             PolyMesh.Operation.FaceRemove,
             // PolyMesh.Operation.VertexRemove,
-            
+
             // PolyMesh.Operation.FillHoles,
-            
+
             // PolyMesh.Operation.Weld,
             PolyMesh.Operation.ConvexHull,
-            
+
             PolyMesh.Operation.Spherize,
             PolyMesh.Operation.Cylinderize,
             PolyMesh.Operation.Bulge,
@@ -102,11 +102,11 @@ namespace TiltBrush
             PolyMesh.Operation.PerlinNoiseX,
             PolyMesh.Operation.PerlinNoiseY,
             PolyMesh.Operation.PerlinNoiseZ,
-            
+
             // PolyMesh.Operation.AddTag,
             // PolyMesh.Operation.RemoveTag,
             // PolyMesh.Operation.ClearTags,
-            
+
             // PolyMesh.Operation.Sweep,
         };
 

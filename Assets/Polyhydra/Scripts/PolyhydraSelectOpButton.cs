@@ -13,11 +13,11 @@
 // limitations under the License.
 
 using UnityEngine;
+
 namespace TiltBrush
 {
     public class PolyhydraSelectOpButton : BaseButton
     {
-
         public int OpIndex;
         public PolyhydraPanel ParentPanel;
         public GameObject PopupControls;
@@ -39,6 +39,4 @@ namespace TiltBrush
             m_Overlay.SetActive(state);
         }
     }
-
-
 }
