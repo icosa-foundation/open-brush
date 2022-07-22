@@ -20,7 +20,12 @@ namespace TiltBrush.MeshEditing
 {
     public class EditableModel
     {
-        public Color[] Colors { get; set; }
+        private Color[] _colors;
+        public Color[] Colors
+        {
+            get => _colors;
+            set => _colors = (Color[])value.Clone();
+        }
         public GeneratorTypes GeneratorType { get; set; }
         public PolyMesh PolyMesh { get; private set; }
         public ColorMethods ColorMethod { get; set; }

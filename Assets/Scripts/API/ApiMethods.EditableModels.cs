@@ -404,7 +404,7 @@ namespace TiltBrush
         public static void CreateBox(int width, int height, int depth)
         {
             var type = VariousSolidTypes.Box;
-            var poly = VariousSolids.Build(type, width, height, depth);
+            var poly = VariousSolids.Box(width, height, depth);
             var parameters = new Dictionary<string, object>
             {
                 {"type", type},
@@ -419,7 +419,7 @@ namespace TiltBrush
         public static void CreateSphere(int width, int height)
         {
             var type = VariousSolidTypes.UvSphere;
-            var poly = VariousSolids.Build(type, width, height, 0);
+            var poly = VariousSolids.UvSphere(width, height);
             var parameters = new Dictionary<string, object>
             {
                 {"type", type},
@@ -433,7 +433,7 @@ namespace TiltBrush
         public static void CreateHemiphere(int width, int height)
         {
             var type = VariousSolidTypes.UvHemisphere;
-            var poly = VariousSolids.Build(type, width, height, 0);
+            var poly = VariousSolids.UvHemisphere(width, height);
             var parameters = new Dictionary<string, object>
             {
                 {"type", type},

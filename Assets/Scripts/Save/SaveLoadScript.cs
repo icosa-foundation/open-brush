@@ -831,17 +831,34 @@ namespace TiltBrush
                                     switch (type)
                                     {
                                         case VariousSolidTypes.Box:
-                                            poly = VariousSolids.Build(
-                                                type,
+                                            poly = VariousSolids.Box(
                                                 Convert.ToInt32(p["x"]),
                                                 Convert.ToInt32(p["y"]),
                                                 Convert.ToInt32(p["z"])
                                             );
                                             break;
+                                        case VariousSolidTypes.Torus:
+                                            poly = VariousSolids.Torus(
+                                                Convert.ToInt32(p["x"]),
+                                                Convert.ToInt32(p["y"]),
+                                                Convert.ToSingle(p["z"])
+                                            );
+                                            break;
+                                        case VariousSolidTypes.Stairs:
+                                            poly = VariousSolids.Stairs(
+                                                Convert.ToInt32(p["x"]),
+                                                Convert.ToSingle(p["y"]),
+                                                Convert.ToSingle(p["z"])
+                                            );
+                                            break;
                                         case VariousSolidTypes.UvSphere:
+                                            poly = VariousSolids.UvSphere(
+                                                Convert.ToInt32(p["x"]),
+                                                Convert.ToInt32(p["y"])
+                                            );
+                                            break;
                                         case VariousSolidTypes.UvHemisphere:
-                                            poly = VariousSolids.Build(
-                                                type,
+                                            poly = VariousSolids.UvSphere(
                                                 Convert.ToInt32(p["x"]),
                                                 Convert.ToInt32(p["y"])
                                             );

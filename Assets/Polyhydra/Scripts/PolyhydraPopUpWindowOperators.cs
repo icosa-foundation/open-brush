@@ -71,6 +71,9 @@ namespace TiltBrush
             PolyMesh.Operation.Segment,
             PolyMesh.Operation.Skeleton,
 
+            PolyMesh.Operation.ScaleX,
+            PolyMesh.Operation.ScaleY,
+            PolyMesh.Operation.ScaleZ,
             PolyMesh.Operation.Recenter,
             PolyMesh.Operation.SitLevel,
 

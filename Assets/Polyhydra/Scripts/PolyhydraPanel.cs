@@ -121,7 +121,9 @@ namespace TiltBrush
 
             UvSphere,
             UvHemisphere,
+            Torus,
             Box,
+            Stairs,
 
             C_Shape,
             L_Shape,
@@ -606,6 +608,23 @@ namespace TiltBrush
                             Slider1.SetDescriptionText("Sides");
                             Slider2.SetDescriptionText("Slices");
                             break;
+                        case OtherSolidsCategories.Torus:
+                            Slider1.gameObject.SetActive(true);
+                            Slider2.gameObject.SetActive(true);
+                            Slider3.gameObject.SetActive(true);
+                            Slider1.SliderType = SliderTypes.Int;
+                            Slider2.SliderType = SliderTypes.Int;
+                            Slider3.SliderType = SliderTypes.Float;
+                            Slider1.Min = 1;
+                            Slider1.Max = 16;
+                            Slider2.Min = 1;
+                            Slider2.Max = 16;
+                            Slider3.Min = .001f;
+                            Slider3.Max = 50f;
+                            Slider1.SetDescriptionText("Sides");
+                            Slider2.SetDescriptionText("Inner Sides");
+                            Slider3.SetDescriptionText("Inner Radius");
+                            break;
                         case OtherSolidsCategories.L_Shape:
                         case OtherSolidsCategories.C_Shape:
                         case OtherSolidsCategories.H_Shape:
@@ -624,6 +643,23 @@ namespace TiltBrush
                             Slider1.SetDescriptionText("Size 1");
                             Slider2.SetDescriptionText("Size 2");
                             Slider3.SetDescriptionText("Size 3");
+                            break;
+                        case OtherSolidsCategories.Stairs:
+                            Slider1.gameObject.SetActive(true);
+                            Slider2.gameObject.SetActive(true);
+                            Slider3.gameObject.SetActive(true);
+                            Slider1.SliderType = SliderTypes.Int;
+                            Slider2.SliderType = SliderTypes.Float;
+                            Slider3.SliderType = SliderTypes.Float;
+                            Slider1.Min = 1f;
+                            Slider1.Max = 30f;
+                            Slider2.Min = .1f;
+                            Slider2.Max = 30f;
+                            Slider3.Min = .1f;
+                            Slider3.Max = 30f;
+                            Slider1.SetDescriptionText("Steps");
+                            Slider2.SetDescriptionText("Width");
+                            Slider3.SetDescriptionText("Step Height");
                             break;
                         default:
                             Slider1.gameObject.SetActive(false);
@@ -739,14 +775,14 @@ namespace TiltBrush
             switch (mainType)
             {
                 case GeneratorTypes.Grid:
-                    return $"ShapeButtons/poly_gridshape_{action}";
+                    return $"ShapeButtons/gridshape_{action}";
                 case GeneratorTypes.Radial:
-                    return $"ShapeButtons/poly_johnson_{action}";
+                    return $"ShapeButtons/radial_{action}";
                 case GeneratorTypes.Uniform:
-                    return $"ShapeButtons/poly_uniform_{action}";
+                    return $"ShapeButtons/uniform_{action}";
                 case GeneratorTypes.Shapes:
                 case GeneratorTypes.Various:
-                    return $"ShapeButtons/poly_other_{action}";
+                    return $"ShapeButtons/other_{action}";
             }
             Debug.LogError($"Unsupported generator type: {mainType}");
             return null;
@@ -774,7 +810,7 @@ namespace TiltBrush
                     path = GetButtonTexturePath(GeneratorTypes.Radial, label);
                     return Resources.Load<Texture2D>(path);
                 case PolyhydraButtonTypes.GridType:
-                    path = $"ShapeButtons/poly_grid_{label}";
+                    path = $"ShapeButtons/grid_{label}";
                     return Resources.Load<Texture2D>(path);
                 case PolyhydraButtonTypes.OtherSolidsType:
                     path = GetButtonTexturePath(GeneratorTypes.Various, label);
@@ -876,7 +912,7 @@ namespace TiltBrush
                 colors = emodel.Colors;
             }
 
-            PreviewPolyhedron.m_Instance.AssignColors(colors);
+            EditableModelManager.CurrentModel.Colors = (Color[])colors.Clone();
             EditableModelManager.CurrentModel.GeneratorType = emodel.GeneratorType;
             EditableModelManager.CurrentModel.GeneratorParameters = emodel.GeneratorParameters;
             EditableModelManager.CurrentModel.Operations = emodel.Operations;
@@ -954,6 +990,16 @@ namespace TiltBrush
                             PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.UvSphere;
                             sliderParamNames = new List<string> { "x", "y" };
                             break;
+                        case VariousSolidTypes.Torus:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Torus;
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.Torus;
+                            sliderParamNames = new List<string> { "x", "y", "z" };
+                            break;
+                        case VariousSolidTypes.Stairs:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Stairs;
+                            PreviewPolyhedron.m_Instance.VariousSolidsType = VariousSolidTypes.Stairs;
+                            sliderParamNames = new List<string> { "x", "y", "z" };
+                            break;
                     }
                     break;
                 case GeneratorTypes.Radial:
@@ -992,7 +1038,6 @@ namespace TiltBrush
 
             // Widgets must be visible when setting textures
             ShowAllOpControls();
-
 
             PreviewPolyhedron.m_Instance.Operators.Clear();
 
@@ -1332,6 +1377,8 @@ namespace TiltBrush
                 case OtherSolidsCategories.UvSphere:
                 case OtherSolidsCategories.UvHemisphere:
                 case OtherSolidsCategories.Box:
+                case OtherSolidsCategories.Torus:
+                case OtherSolidsCategories.Stairs:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
                     PreviewPolyhedron.m_Instance.VariousSolidsType = (VariousSolidTypes)Enum.Parse(typeof(VariousSolidTypes), action);
                     break;
@@ -1392,6 +1439,8 @@ namespace TiltBrush
                         case OtherSolidsCategories.UvSphere:
                         case OtherSolidsCategories.UvHemisphere:
                         case OtherSolidsCategories.Box:
+                        case OtherSolidsCategories.Torus:
+                        case OtherSolidsCategories.Stairs:
                             EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
                             PreviewPolyhedron.m_Instance.VariousSolidsType = 0;
                             SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPolyhedron.m_Instance.VariousSolidsType.ToString());

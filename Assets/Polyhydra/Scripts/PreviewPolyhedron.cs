@@ -19,7 +19,6 @@ using System.Linq;
 using System.Threading;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
-using TiltBrush;
 using TiltBrush.MeshEditing;
 using UnityEngine;
 using Random = System.Random;
@@ -176,36 +175,6 @@ public class PreviewPolyhedron : MonoBehaviour
         Validate();
         BackgroundMakePolyhedron();
         NeedsRebuild = false;
-    }
-
-    private void UpdateSymmetryMesh()
-    {
-        // Fail early for cases where we aren't running in a normal gameloop
-        if (!Application.isPlaying) return;
-
-        if (
-            !PointerManager.m_Instance.SymmetryModeEnabled ||
-            PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
-        {
-            return;
-        }
-
-        Mesh polyMesh;
-        if (meshFilter == null)
-        {
-            meshFilter = GetComponent<MeshFilter>();
-        }
-        if (Application.isPlaying)
-        {
-            polyMesh = GetComponent<MeshFilter>().mesh;
-            meshFilter.mesh = polyMesh;
-        }
-        else
-        {
-            polyMesh = GetComponent<MeshFilter>().sharedMesh;
-            meshFilter.sharedMesh = polyMesh;
-        }
-        PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.CurrentSymmetryMode);
     }
 
     public void Validate()
@@ -427,7 +396,7 @@ public class PreviewPolyhedron : MonoBehaviour
                 switch (VariousSolidsType)
                 {
                     case VariousSolidTypes.Box:
-                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Box, Param1Int, Param2Int, Param3Int);
+                        m_PolyMesh = VariousSolids.Box(Param1Int, Param2Int, Param3Int);
                         EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.Box},
@@ -438,7 +407,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
                         break;
                     case VariousSolidTypes.UvSphere:
-                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvSphere, Param1Int, Param2Int);
+                        m_PolyMesh = VariousSolids.UvSphere(Param1Int, Param2Int);
                         EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.UvSphere},
@@ -448,7 +417,7 @@ public class PreviewPolyhedron : MonoBehaviour
                         m_PolyMesh.ScalingFactor = 0.5f;
                         break;
                     case VariousSolidTypes.UvHemisphere:
-                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.UvHemisphere, Param1Int, Param2Int);
+                        m_PolyMesh = VariousSolids.UvHemisphere(Param1Int, Param2Int);
                         EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.UvHemisphere},
@@ -458,14 +427,26 @@ public class PreviewPolyhedron : MonoBehaviour
                         m_PolyMesh.ScalingFactor = 0.5f;
                         break;
                     case VariousSolidTypes.Torus:
-                        m_PolyMesh = VariousSolids.Build(VariousSolidTypes.Torus, Param1Int, Param2Int);
+                        m_PolyMesh = VariousSolids.Torus(Param1Int, Param2Int, Param3Float);
                         EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
                         {
                             {"type", VariousSolidTypes.Torus},
                             {"x", Param1Int},
                             {"y", Param2Int},
+                            {"z", Param3Float},
                         };
-                        m_PolyMesh.ScalingFactor = 0.5f;
+                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
+                        break;
+                    case VariousSolidTypes.Stairs:
+                        m_PolyMesh = VariousSolids.Stairs(Param1Int, Param2Float, Param3Float);
+                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
+                        {
+                            {"type", VariousSolidTypes.Stairs},
+                            {"x", Param1Int},
+                            {"y", Param2Float},
+                            {"z", Param3Float},
+                        };
+                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
                         break;
                 }
                 break;
@@ -531,10 +512,6 @@ public class PreviewPolyhedron : MonoBehaviour
                 meshFilter.sharedMesh = mesh;
             }
         }
-
-        // TODO
-        // Also update other linked meshes (stencils, model widgets)
-        UpdateSymmetryMesh();
     }
 
     private void ScalePreviewMesh()
@@ -585,10 +562,5 @@ public class PreviewPolyhedron : MonoBehaviour
 
         conway = conway.AppyOperation(op.opType, opParams);
         return conway;
-    }
-
-    public void AssignColors(Color[] colors)
-    {
-        EditableModelManager.CurrentModel.Colors = colors;
     }
 }

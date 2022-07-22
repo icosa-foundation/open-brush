@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -723,7 +724,7 @@ namespace TiltBrush
                     active = 4;
                     break;
                 case SymmetryMode.CustomSymmetryMode:
-                    vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
+                    vrPoly = PreviewPolyhedron.m_Instance;
                     active = vrPoly.m_PolyMesh.Faces.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
@@ -837,7 +838,7 @@ namespace TiltBrush
                     }
                 case SymmetryMode.CustomSymmetryMode:
                     {
-                        var vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
+                        var vrPoly = PreviewPolyhedron.m_Instance;
 
                         TrTransform aboutY;
                         {
@@ -949,7 +950,7 @@ namespace TiltBrush
                         var xf0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var xf0_OS = xfWidget.inverse * xf0_GS;
 
-                        var vrPoly = (PreviewPolyhedron)FindObjectOfType(typeof(PreviewPolyhedron));
+                        var vrPoly = PreviewPolyhedron.m_Instance;
                         if (vrPoly == null || vrPoly.m_PolyMesh == null) return;
                         var faces = vrPoly.m_PolyMesh.Faces;
 
