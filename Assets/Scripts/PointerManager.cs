@@ -1183,6 +1183,11 @@ namespace TiltBrush
 
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
+            return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);
+        }
+
+        public Color GenerateJitteredColor(Color currentColor, float colorLuminanceMin)
+        {
             return ColorPickerUtils.ClampLuminance(CalculateJitteredColor(m_lastChosenColor), colorLuminanceMin);
         }
 

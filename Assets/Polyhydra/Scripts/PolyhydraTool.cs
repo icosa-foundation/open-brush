@@ -295,6 +295,12 @@ namespace TiltBrush
                         var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
                         vertexPos *= tr.scale;
                         vertexPos = tr.rotation * vertexPos;
+
+                        if (PointerManager.m_Instance.positionJitter > 0)
+                        {
+                            vertexPos = PointerManager.m_Instance.GenerateJitteredPosition(vertexPos, PointerManager.m_Instance.positionJitter);
+                        }
+
                         controlPoints.Add(new PointerManager.ControlPoint
                         {
                             m_Pos = tr.translation + vertexPos,
@@ -305,14 +311,28 @@ namespace TiltBrush
                     }
                 }
 
+                float brushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+                if (PointerManager.m_Instance.sizeJitter > 0)
+                {
+                    BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                    brushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, brushSize);
+                }
+
+                Color strokeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex);
+                float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
+                if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
+                {
+                    strokeColor = PointerManager.m_Instance.GenerateJitteredColor(strokeColor, colorLuminanceMin);
+                }
+
                 var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
                     m_IntendedCanvas = App.Scene.ActiveCanvas,
                     m_BrushGuid = brush.m_Guid,
                     m_BrushScale = Coords.CanvasPose.inverse.scale,
-                    m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                    m_Color = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex),
+                    m_BrushSize = brushSize,
+                    m_Color = strokeColor,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
                 };
