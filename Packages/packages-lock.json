@@ -7,13 +7,13 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=1#upm",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=2#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "51e9e1f9236c2072c4b4279dfa65021509389573"
+      "hash": "66e81648b386e9d3e553fe9d08dfea5b5ecd3fd9"
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
