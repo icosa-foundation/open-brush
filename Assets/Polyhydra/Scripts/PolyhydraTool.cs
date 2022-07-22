@@ -278,6 +278,7 @@ namespace TiltBrush
             float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
 
             var group = App.GroupManager.NewUnusedGroup();
+            tr.scale *= poly.ScalingFactor;
 
             foreach (var (face, faceIndex) in poly.Faces.WithIndex())
             {
