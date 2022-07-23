@@ -140,10 +140,12 @@ namespace TiltBrush
         public int CurrentPresetPage { get; set; }
         public int CurrentOperatorPage { get; set; }
 
-        public string DefaultPresetsDirectory()
+        private string DefaultPresetsDirectory()
         {
-            return Path.Combine(App.UserPath(), "Media Library/Shape Recipes/");
+            return Path.Combine(App.UserPath(), "Media Library", "Shape Recipes");
         }
+
+        [NonSerialized] public string CurrentPresetsDirectory;
 
         protected override void OnEnablePanel()
         {
@@ -189,6 +191,8 @@ namespace TiltBrush
         public override void InitPanel()
         {
             base.InitPanel();
+            CurrentPresetsDirectory = DefaultPresetsDirectory();
+
             InitPreviewPoly(false);
             ShowAllGeneratorControls();
             OpFilterControlParent.SetActive(false);
@@ -1644,6 +1648,16 @@ namespace TiltBrush
             HandleSelectOpButton(CurrentActiveOpIndex);
             PreviewPolyhedron.m_Instance.RebuildPoly();
             RefreshOpSelectButtons();
+        }
+
+        public bool IsPresetsSubdirOrSameDir(string dirPath)
+        {
+            return dirPath.StartsWith(DefaultPresetsDirectory());
+        }
+
+        public bool PresetRootIsCurrent()
+        {
+            return Path.GetFullPath(DefaultPresetsDirectory()) == Path.GetFullPath(CurrentPresetsDirectory);
         }
     }
 

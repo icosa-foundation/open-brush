@@ -28,7 +28,7 @@ namespace TiltBrush
         public float xSpacing = 2.5f;
         public float ySpacing = .25f;
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return Enum.GetNames(typeof(FilterTypes)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
         }
@@ -40,7 +40,7 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            List<string> buttonLabels = GetButtonList();
+            List<string> buttonLabels = GetItemsList();
             int columns = 2;
             for (int buttonIndex = 0; buttonIndex < buttonLabels.Count; buttonIndex++)
             {
@@ -70,7 +70,7 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.FilterType, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             var ops = PreviewPolyhedron.m_Instance.Operators;
             var op = ops[ParentPanel.CurrentActiveOpIndex];
@@ -111,7 +111,7 @@ namespace TiltBrush
 
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.FilterType, action);
             ParentPanel.ConfigureOpFilterPanel(op);
-
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void NextPage()

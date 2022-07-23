@@ -21,7 +21,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowOtherPolyTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return ParentPanel.GetOtherSolidCategoryNames();
         }
@@ -31,10 +31,11 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.OtherSolidsType, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, action);
             ParentPanel.HandleOtherSolidsButtonPress(action);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 } // namespace TiltBrush

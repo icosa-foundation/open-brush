@@ -22,7 +22,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowRadialTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList();
         }
@@ -32,11 +32,12 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.RadialType, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             PreviewPolyhedron.m_Instance.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, action);
             ParentPanel.SetSliderConfiguration();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 } // namespace TiltBrush

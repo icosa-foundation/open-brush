@@ -24,7 +24,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowGridShapes : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return Enum.GetNames(typeof(GridEnums.GridShapes)).ToList();
         }
@@ -34,10 +34,11 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.GridShape, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             PreviewPolyhedron.m_Instance.GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), action);
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, action);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 } // namespace TiltBrush

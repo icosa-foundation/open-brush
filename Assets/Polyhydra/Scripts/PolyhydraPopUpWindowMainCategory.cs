@@ -22,7 +22,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowMainCategory : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             var names = ParentPanel.GetMainCategoryNames();
             return names;
@@ -33,7 +33,7 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.MainCategory, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.MainCategory, action);
             var mainCat = (PolyhydraPanel.PolyhydraMainCategories)Enum.Parse(
@@ -41,6 +41,7 @@ namespace TiltBrush
                 action
             );
             ParentPanel.HandleMainCategoryButtonPress(mainCat);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 } // namespace TiltBrush

@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using UnityEngine;
 
 namespace TiltBrush
@@ -22,6 +21,8 @@ namespace TiltBrush
     public abstract class PolyhydraPopUpWindowBase : PopUpWindow
     {
         public int ButtonsPerPage = 16;
+        public Texture2D m_FolderIcon;
+        public Texture2D m_UpOneFolderIcon;
 
         [SerializeField] protected float m_ColorTransitionDuration;
         [SerializeField] protected GameObject ButtonPrefab;
@@ -30,6 +31,8 @@ namespace TiltBrush
         protected float m_ColorTransitionValue;
         protected Material m_ColorBackground;
         protected PolyhydraPanel ParentPanel;
+        protected List<GameObject> _buttons;
+        public int m_NumColumns = 4;
 
         override protected void BaseUpdate()
         {
@@ -52,8 +55,6 @@ namespace TiltBrush
                 m_ColorBackground.color = new Color(greyVal, greyVal, greyVal);
             }
         }
-
-        protected List<GameObject> _buttons;
 
         protected override void UpdateOpening()
         {
@@ -83,41 +84,62 @@ namespace TiltBrush
             CreateButtons();
         }
 
-        protected abstract List<string> GetButtonList();
+        protected abstract List<string> GetItemsList();
 
         protected virtual void CreateButtons()
         {
-            foreach (var btn in _buttons)
-            {
-                Destroy(btn);
-            }
+            // Destroy any existing buttons
+            foreach (var btn in _buttons) { Destroy(btn); }
+
             _buttons = new List<GameObject>();
-            List<string> buttonActionNames = GetButtonList();
-            int columns = 4;
-            for (int buttonIndex = 0; buttonIndex < buttonActionNames.Count; buttonIndex++)
+            List<string> buttonNames = GetItemsList();
+            List<string> folderNames = GetFoldersList();
+
+            for (int i = 0; i < folderNames.Count; i++)
             {
-
-                GameObject rButton = Instantiate(ButtonPrefab);
-                rButton.transform.parent = transform;
-                rButton.transform.localRotation = Quaternion.identity;
-
-                float xOffset = buttonIndex % columns;
-                float yOffset = Mathf.FloorToInt(buttonIndex / (float)columns);
-                Vector3 position = new Vector3(xOffset, -yOffset, 0);
-                rButton.transform.localPosition = new Vector3(-0.52f, 0.15f, -0.08f) + (position * .35f);
-
-                rButton.transform.localScale = Vector3.one * .3f;
-
-                Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
-
-                PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
-                rButtonScript.parentPopup = this;
-                rButtonScript.SetDescriptionText(buttonActionNames[buttonIndex].Replace("_", ""));
-                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonActionNames[buttonIndex]);
-                rButtonScript.ButtonAction = buttonActionNames[buttonIndex];
-                rButtonScript.RegisterComponent();
-                _buttons.Add(rButton);
+                string folderName = folderNames[i];
+                Texture2D tex;
+                if (folderName == "..")
+                {
+                    tex = m_UpOneFolderIcon;
+                }
+                else
+                {
+                    tex = m_FolderIcon;
+                }
+                MakeButton(folderName, folderName, tex, true);
             }
+
+            for (int i = 0; i < buttonNames.Count; i++)
+            {
+                var tex = GetButtonTexture(buttonNames[i]);
+                MakeButton(buttonNames[i].Replace("_", ""), buttonNames[i], tex, false);
+            }
+        }
+
+        private void MakeButton(string name, string action, Texture2D texture, bool isFolder)
+        {
+            GameObject rButton = Instantiate(ButtonPrefab, transform, true);
+            rButton.transform.localRotation = Quaternion.identity;
+            float xOffset = _buttons.Count % m_NumColumns;
+            float yOffset = Mathf.FloorToInt(_buttons.Count / (float)m_NumColumns);
+            Vector3 position = new Vector3(xOffset, -yOffset, 0);
+            rButton.transform.localPosition = new Vector3(-0.52f, 0.15f, -0.08f) + (position * .35f);
+            rButton.transform.localScale = Vector3.one * .3f;
+            _buttons.Add(rButton);
+            Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
+
+            PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
+            rButtonScript.parentPopup = this;
+            rButtonScript.SetDescriptionText(name);
+            rButtonRenderer.material.mainTexture = texture;
+            rButtonScript.ButtonAction = action;
+            rButtonScript.IsFolder = isFolder;
+            if (isFolder)
+            {
+                rButtonScript.SetAsLongPress();
+            }
+            rButtonScript.RegisterComponent();
         }
 
         public abstract Texture2D GetButtonTexture(string action);
@@ -141,19 +163,11 @@ namespace TiltBrush
             base.UpdateUIComponents(rCastRay, inputValid, parentCollider);
         }
 
-        public abstract void HandleButtonPress(string action);
+        public abstract void HandleButtonPress(string action, bool isFolder = false);
 
-        public void PolyhydraThingButtonPressed(string action)
+        protected virtual List<string> GetFoldersList()
         {
-            HandleButtonPress(action);
-            PreviewPolyhedron.m_Instance.RebuildPoly();
-        }
-
-        public string LabelTextFormatter(string text)
-        {
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            text = textInfo.ToTitleCase(text).Replace(" ", "_");
-            return text;
+            return null;
         }
     }
 }

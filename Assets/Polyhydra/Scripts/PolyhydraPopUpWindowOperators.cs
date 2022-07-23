@@ -120,7 +120,7 @@ namespace TiltBrush
             base.Init(rParent, sText);
         }
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return GetValidOps()
                 .Skip(FirstButtonIndex)
@@ -138,11 +138,12 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.OperatorType, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             PolyhydraPanel.FriendlyOpLabels.TryGetValue(action, out string friendlyLabel);
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, action, friendlyLabel);
             ParentPanel.ChangeCurrentOpType(action);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void NextPage()

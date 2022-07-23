@@ -20,12 +20,26 @@ namespace TiltBrush
     {
         [NonSerialized] public string ButtonAction;
         [NonSerialized] public PolyhydraPopUpWindowBase parentPopup;
+        [NonSerialized] public bool IsFolder;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            parentPopup.PolyhydraThingButtonPressed(ButtonAction);
-            parentPopup.RequestClose();
+            parentPopup.HandleButtonPress(ButtonAction, IsFolder);
+            if (!IsFolder)
+            {
+                parentPopup.RequestClose();
+            }
+        }
+
+        public void SetAsLongPress()
+        {
+            m_LongPressReleaseButton = true;
+        }
+
+        public override bool ShouldShowHoverState()
+        {
+            return !m_LongPressReleaseButton || IsFolder;
         }
     }
 } // namespace TiltBrush

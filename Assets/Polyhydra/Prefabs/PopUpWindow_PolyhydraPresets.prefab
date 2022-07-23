@@ -433,6 +433,8 @@ MonoBehaviour:
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
   ButtonsPerPage: 16
+  m_FolderIcon: {fileID: 2800000, guid: ee2622d6ec17a3640a40234981c65bff, type: 3}
+  m_UpOneFolderIcon: {fileID: 2800000, guid: 76a69925dd484fd46ae3136fbe5833bd, type: 3}
   m_ColorTransitionDuration: 0
   ButtonPrefab: {fileID: 7630606763700834929, guid: 56c1524891cb7c44fb711233648ba9ff,
     type: 3}

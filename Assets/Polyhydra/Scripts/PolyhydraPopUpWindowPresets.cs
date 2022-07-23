@@ -30,27 +30,45 @@ namespace TiltBrush
             base.Init(rParent, sText);
         }
 
-        private FileInfo[] GetDirectoryListing()
+        private DirectoryInfo[] GetSubdirsListing()
         {
-            var dirInfo = new DirectoryInfo(ParentPanel.DefaultPresetsDirectory());
+
+            var dirInfo = new DirectoryInfo(ParentPanel.CurrentPresetsDirectory);
+            return dirInfo.GetDirectories();
+        }
+
+        private FileInfo[] GetPresetFilesList()
+        {
+            var dirInfo = new DirectoryInfo(ParentPanel.CurrentPresetsDirectory);
             return dirInfo.GetFiles("*.json");
         }
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetFoldersList()
         {
-            FileInfo[] AllFileInfo = GetDirectoryListing();
-            return AllFileInfo.Select(f => f.Name.Replace(".json", ""))
-                .Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+            DirectoryInfo[] presetFilesList = GetSubdirsListing();
+            var dirNames = presetFilesList.Select(d => d.Name).ToList();
+            if (!ParentPanel.PresetRootIsCurrent())
+            {
+                dirNames = dirNames.Prepend("..").ToList();
+            }
+            return dirNames;
+        }
+
+        protected override List<string> GetItemsList()
+        {
+            FileInfo[] presetFilesList = GetPresetFilesList();
+            return presetFilesList.Select(f => f.Name.Replace(".json", ""))
+                .Skip(FirstButtonIndex).Take(ButtonsPerPage - GetFoldersList().Count).ToList();
         }
 
         public override Texture2D GetButtonTexture(string presetName)
         {
             presetName = $"{presetName}.png";
-            var path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
+            var path = Path.Combine(ParentPanel.CurrentPresetsDirectory, presetName);
             if (!File.Exists(path))
             {
                 presetName = presetName.Replace(".png", ".jpg");
-                path = Path.Combine(ParentPanel.DefaultPresetsDirectory(), presetName);
+                path = Path.Combine(ParentPanel.CurrentPresetsDirectory, presetName);
                 if (!File.Exists(path))
                 {
                     return Resources.Load<Texture2D>("Icons/bigquestion");
@@ -68,14 +86,38 @@ namespace TiltBrush
             return tex;
         }
 
-        public override void HandleButtonPress(string presetName)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
-            ParentPanel.HandleLoadPresetFromPath(Path.Combine(ParentPanel.DefaultPresetsDirectory(), $"{presetName}.json"));
+            if (isFolder)
+            {
+                if (action == "..")
+                {
+                    var newDir = Directory.GetParent(ParentPanel.CurrentPresetsDirectory);
+                    if (ParentPanel.IsPresetsSubdirOrSameDir(newDir.FullName))
+                    {
+                        ParentPanel.CurrentPresetsDirectory = newDir.FullName;
+                    }
+                }
+                else
+                {
+                    ParentPanel.CurrentPresetsDirectory = Path.Combine(
+                        ParentPanel.CurrentPresetsDirectory,
+                        action
+                    );
+                }
+                FirstButtonIndex = 0;
+                CreateButtons();
+            }
+            else
+            {
+                ParentPanel.HandleLoadPresetFromPath(Path.Combine(ParentPanel.CurrentPresetsDirectory, $"{action}.json"));
+                PreviewPolyhedron.m_Instance.RebuildPoly();
+            }
         }
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < GetDirectoryListing().Length) ;
+            if (FirstButtonIndex + ButtonsPerPage < GetPresetFilesList().Length) ;
             {
                 FirstButtonIndex += ButtonsPerPage;
                 CreateButtons();

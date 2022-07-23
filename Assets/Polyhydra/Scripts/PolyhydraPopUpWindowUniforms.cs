@@ -23,7 +23,7 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetButtonList()
+        protected override List<string> GetItemsList()
         {
             return ParentPanel.GetUniformPolyNames();
         }
@@ -33,13 +33,14 @@ namespace TiltBrush
             return ParentPanel.GetButtonTexture(PolyhydraButtonTypes.UniformType, action);
         }
 
-        public override void HandleButtonPress(string action)
+        public override void HandleButtonPress(string action, bool isFolder)
         {
             string enumName = action.Replace(" ", "_");
             UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName, true);
             PreviewPolyhedron.m_Instance.UniformPolyType = polyType;
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, action);
             ParentPanel.SetSliderConfiguration();
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 } // namespace TiltBrush
