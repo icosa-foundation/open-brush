@@ -530,8 +530,8 @@ namespace TiltBrush
                     Slider2.SetDescriptionText("C");
                     Slider1.Min = 1;
                     Slider1.Max = 80;
-                    Slider2.Min = 1;
-                    Slider2.Max = 7;
+                    Slider2.Min = 0;
+                    Slider2.Max = 6;
                     Slider1.SliderType = SliderTypes.Int;
                     Slider2.SliderType = SliderTypes.Int;
                     break;
