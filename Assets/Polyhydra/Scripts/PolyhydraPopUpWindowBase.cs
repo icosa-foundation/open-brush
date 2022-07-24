@@ -167,7 +167,7 @@ namespace TiltBrush
 
         protected virtual List<string> GetFoldersList()
         {
-            return null;
+            return new List<string>();
         }
     }
 }
