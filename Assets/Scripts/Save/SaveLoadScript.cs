@@ -615,7 +615,7 @@ namespace TiltBrush
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
             {
-                var jsonData = DeserializeMetadata(jsonReader);
+                SketchMetadata jsonData = DeserializeMetadata(jsonReader);
                 if (LastMetadataError != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(
@@ -908,7 +908,11 @@ namespace TiltBrush
                             {
                                 foreach (var tr in model.RawTransforms)
                                 {
-                                    EditableModelManager.m_Instance.GeneratePolyMesh(poly, tr, emd.ColorMethod, emd.GeneratorType, colors, emd.GeneratorParameters, emd.Operations);
+                                    EditableModelManager.m_Instance.GeneratePolyMesh(
+                                        poly, tr,
+                                        emd.ColorMethod, emd.GeneratorType, colors, emd.MaterialIndex,
+                                        emd.GeneratorParameters, emd.Operations
+                                    );
                                 }
                             }
                         }

@@ -180,6 +180,7 @@ namespace TiltBrush
                     polyMesh.FaceTags,
                     em.Colors,
                     em.ColorMethod,
+                    em.MaterialIndex,
                     em.GeneratorType,
                     em.GeneratorParameters,
                     em.Operations);
@@ -190,6 +191,7 @@ namespace TiltBrush
                 (
                     em.Colors,
                     em.ColorMethod,
+                    em.MaterialIndex,
                     em.GeneratorType,
                     em.GeneratorParameters,
                     em.Operations

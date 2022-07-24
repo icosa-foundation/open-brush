@@ -84,7 +84,7 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = location;
-            var tr = _CurrentTransform();
+            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
             if (editable)
             {
@@ -397,7 +397,7 @@ namespace TiltBrush
                 {"y", depth},
             };
 
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Grid, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Grid, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.box", "Generates a box")]
@@ -412,7 +412,7 @@ namespace TiltBrush
                 {"y", height},
                 {"z", depth},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
@@ -426,7 +426,7 @@ namespace TiltBrush
                 {"x", width},
                 {"y", height},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
@@ -440,7 +440,7 @@ namespace TiltBrush
                 {"x", width},
                 {"y", height},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
@@ -452,7 +452,7 @@ namespace TiltBrush
             {
                 {"type", type},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Uniform, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Uniform, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.johnsonsolid", "Generates a Johnson Solid")]
@@ -463,7 +463,7 @@ namespace TiltBrush
             {
                 {"type", type},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
@@ -475,7 +475,7 @@ namespace TiltBrush
                 {"root", root},
                 {"c", c},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
         }
 
         [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
@@ -488,7 +488,7 @@ namespace TiltBrush
                 {"type", type},
                 {"sides", sides},
             };
-            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Radial, null, parameters);
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Radial, null, 0, parameters);
         }
 
 

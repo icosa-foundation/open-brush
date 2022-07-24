@@ -135,7 +135,6 @@ namespace TiltBrush
         }
 
         // Used for generated models
-        // TODO handle vertex colours
         public void Add(Material im)
         {
             var iem = new DynamicExportableMaterial(

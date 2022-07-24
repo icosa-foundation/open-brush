@@ -746,7 +746,7 @@ namespace TiltBrush
             {
                 m_AllowExport = true;
                 m_ImportMaterialCollector = new ImportMaterialCollector("generated", "generated");
-                var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+                var mat = EditableModelManager.m_Instance.m_Materials[0];
                 m_ImportMaterialCollector.Add(mat);
             }
 

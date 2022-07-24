@@ -56,6 +56,7 @@ namespace TiltBrush
 
         private Mesh previewMesh;
         private Material previewMaterial;
+        public int CurrentMaterialIndex;
 
         //whether this tool should follow the controller or not
         private bool m_LockToController;

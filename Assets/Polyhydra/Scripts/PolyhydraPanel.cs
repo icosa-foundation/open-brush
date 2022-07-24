@@ -687,6 +687,7 @@ namespace TiltBrush
                 EditableModelManager.CurrentModel.ColorMethod,
                 shapeType,
                 EditableModelManager.CurrentModel.Colors,
+                EditableModelManager.CurrentModel.MaterialIndex,
                 EditableModelManager.CurrentModel.GeneratorParameters,
                 EditableModelManager.CurrentModel.Operations
             );
@@ -722,13 +723,11 @@ namespace TiltBrush
                 colorMethod = ColorMethods.ByTags;
             }
 
-            // TODO Refactor:
-            // Required info shouldn't be split between PolyhydraPanel and PreviewPoly
-            // There's too many different classes at play with overlapping responsibilities
             var em = new EditableModel(
                 PreviewPolyhedron.m_Instance.m_PolyMesh,
                 EditableModelManager.CurrentModel.Colors,
                 colorMethod,
+                EditableModelManager.CurrentModel.MaterialIndex,
                 EditableModelManager.CurrentModel.GeneratorType,
                 EditableModelManager.CurrentModel.GeneratorParameters,
                 EditableModelManager.CurrentModel.Operations
@@ -882,6 +881,7 @@ namespace TiltBrush
                 polyMesh,
                 (Color[])colors.Clone(),
                 emd.ColorMethod,
+                emd.MaterialIndex,
                 emd.GeneratorType,
                 emd.GeneratorParameters,
                 emd.Operations
@@ -915,8 +915,10 @@ namespace TiltBrush
             {
                 colors = emodel.Colors;
             }
-
             EditableModelManager.CurrentModel.Colors = (Color[])colors.Clone();
+
+            SetMaterial(emodel.MaterialIndex);
+
             EditableModelManager.CurrentModel.GeneratorType = emodel.GeneratorType;
             EditableModelManager.CurrentModel.GeneratorParameters = emodel.GeneratorParameters;
             EditableModelManager.CurrentModel.Operations = emodel.Operations;
@@ -1637,6 +1639,19 @@ namespace TiltBrush
             {
                 AnimateOpParentIntoPlace();
             }
+        }
+
+        public void HandleMaterialButton(int index)
+        {
+            SetMaterial(index);
+        }
+
+        public void SetMaterial(int index)
+        {
+            EditableModelManager.CurrentModel.MaterialIndex = index;
+            var mat = EditableModelManager.CurrentModel.CurrentMaterial;
+            var mr = PreviewPolyhedron.m_Instance.GetComponent<MeshRenderer>();
+            mr.material = mat;
         }
 
         public void HandleOpMove(int delta)

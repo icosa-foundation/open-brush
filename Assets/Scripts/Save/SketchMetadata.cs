@@ -737,7 +737,7 @@ namespace TiltBrush
         [JsonConstructor]
         public EditableModelDefinition(Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
                                        List<Roles> vertexRoles, List<HashSet<string>> faceTags,
-                                       Color[] colors, ColorMethods colorMethod,
+                                       Color[] colors, ColorMethods colorMethod, int materialIndex,
                                        GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
         {
@@ -748,17 +748,19 @@ namespace TiltBrush
             FaceTags = faceTags;
             Colors = colors;
             ColorMethod = colorMethod;
+            MaterialIndex = materialIndex;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
             Operations = operations;
         }
 
-        public EditableModelDefinition(Color[] colors, ColorMethods colorMethod, GeneratorTypes generatorType,
-                                       Dictionary<string, object> generatorParameters,
+        public EditableModelDefinition(Color[] colors, ColorMethods colorMethod, int materialIndex,
+                                       GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations)
         {
             Colors = colors;
             ColorMethod = colorMethod;
+            MaterialIndex = materialIndex;
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
             Operations = operations;
@@ -778,6 +780,7 @@ namespace TiltBrush
 
         public Color[] Colors { get; }
         public ColorMethods ColorMethod { get; }
+        public int MaterialIndex { get; }
         public GeneratorTypes GeneratorType { get; }
         public Dictionary<string, object> GeneratorParameters { get; }
         public Vector3[] Vertices { get; }

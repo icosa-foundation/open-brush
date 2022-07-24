@@ -21,6 +21,8 @@ namespace TiltBrush.MeshEditing
     public class EditableModel
     {
         private Color[] _colors;
+        public int MaterialIndex = 0;
+
         public Color[] Colors
         {
             get => _colors;
@@ -32,12 +34,16 @@ namespace TiltBrush.MeshEditing
         public Dictionary<string, object> GeneratorParameters { get; set; }
         public List<Dictionary<string, object>> Operations { get; set; }
 
-        public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> generatorParameters)
+        public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
+
+        public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod, int materialIndex,
+                        GeneratorTypes type, Dictionary<string, object> generatorParameters)
         {
             GeneratorType = type;
             PolyMesh = polyMesh;
             Colors = (Color[])colors.Clone();
             ColorMethod = colorMethod;
+            MaterialIndex = materialIndex;
             GeneratorParameters = generatorParameters;
             Operations = new List<Dictionary<string, object>>();
         }
@@ -47,7 +53,7 @@ namespace TiltBrush.MeshEditing
             GeneratorType = generatorType;
         }
 
-        public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod,
+        public EditableModel(PolyMesh polyMesh, Color[] colors, ColorMethods colorMethod, int materialIndex,
                              GeneratorTypes type, Dictionary<string, object> generatorParameters,
                              List<Dictionary<string, object>> operations)
         {
@@ -55,6 +61,7 @@ namespace TiltBrush.MeshEditing
             PolyMesh = polyMesh;
             Colors = (Color[])colors.Clone();
             ColorMethod = colorMethod;
+            MaterialIndex = materialIndex;
             GeneratorParameters = generatorParameters;
             Operations = operations;
         }

@@ -37,9 +37,9 @@ namespace TiltBrush.MeshEditing
     public class EditableModelManager : MonoBehaviour
     {
         public static EditableModelManager m_Instance;
+        public Material[] m_Materials;
 
         private EditableModel m_CurrentModel;
-
         private Dictionary<string, EditableModel> m_EditableModels;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
         public static EditableModel CurrentModel
@@ -108,11 +108,14 @@ namespace TiltBrush.MeshEditing
             col.size = mesh.bounds.size;
         }
 
-        public void RegisterEditableMesh(GameObject modelGo, PolyMesh poly, Color[] colors, ColorMethods colorMethod, GeneratorTypes type, Dictionary<string, object> parameters = null)
+        public void RegisterEditableMesh(
+            GameObject modelGo, PolyMesh poly,
+            Color[] colors, ColorMethods colorMethod, int materialIndex,
+            GeneratorTypes type, Dictionary<string, object> parameters = null)
         {
             var id = modelGo.AddComponent<EditableModelId>();
             id.guid = Guid.NewGuid().ToString();
-            var emesh = new EditableModel(poly, colors, colorMethod, type, parameters);
+            var emesh = new EditableModel(poly, colors, colorMethod, materialIndex, type, parameters);
             m_EditableModels[id.guid] = emesh;
         }
 
@@ -137,19 +140,20 @@ namespace TiltBrush.MeshEditing
                                      ColorMethods colMethod,
                                      GeneratorTypes generatorType,
                                      Color[] colors = null,
+                                     int materialIndex = 0,
                                      Dictionary<string, object> parameters = null,
                                      List<Dictionary<string, object>> operations = null)
         {
             // Create Mesh from PolyMesh
-            var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-
+            // var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+            var mat = m_Materials[materialIndex];
             var meshData = poly.BuildMeshData(colors: colors, colorMethod: colMethod);
             var mesh = poly.BuildUnityMesh(meshData);
 
             // Create the EditableModel gameobject
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
-            RegisterEditableMesh(polyGo, poly, colors, colMethod, generatorType, parameters);
+            RegisterEditableMesh(polyGo, poly, colors, colMethod, materialIndex, generatorType, parameters);
 
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(

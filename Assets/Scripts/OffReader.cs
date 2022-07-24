@@ -35,7 +35,7 @@ namespace TiltBrush
 
         public OffReader(string path)
         {
-            m_vertexColorMaterial = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
+            m_vertexColorMaterial = EditableModelManager.m_Instance.m_Materials[0];
             m_path = path;
             var mDir = Path.GetDirectoryName(path);
             m_collector = new ImportMaterialCollector(mDir, m_path);
@@ -51,7 +51,7 @@ namespace TiltBrush
                 var meshData = poly.BuildMeshData(colorMethod: colMethod);
                 var mesh = poly.BuildUnityMesh(meshData);
                 EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
-                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, null, ColorMethods.ByTags, GeneratorTypes.FileSystem);
+                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, null, ColorMethods.ByTags, 0, GeneratorTypes.FileSystem);
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }
