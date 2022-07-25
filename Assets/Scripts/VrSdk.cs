@@ -602,8 +602,8 @@ namespace TiltBrush
             //
             // In practice, the only style transitions we should see are:
             // - None -> correct style                   During VrSdk.Awake()
-            // - None -> InitializingSteamVr             During VrSdk.Awake()
-            //   InitializingSteamVr -> correct style    Many frames after VrSdk.Awake()
+            // - None -> InitializingUnityXr             During VrSdk.Awake()
+            //   InitializingUnityXr -> correct style    Many frames after VrSdk.Awake()
             if (m_VrControls != null)
             {
                 Destroy(m_VrControls.gameObject);
