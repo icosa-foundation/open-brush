@@ -426,14 +426,14 @@ namespace TiltBrush
             // }
 
 #if OCULUS_SUPPORTED
-            OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
-            if (perfStats.FrameStatsCount > 0)
-            {
-                return perfStats.FrameStats[0].AppDroppedFrameCount;
-            }
+            // TODO: Currently not supported on Oculus OpenXR backend.
+            // OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
+            // if (perfStats.FrameStatsCount > 0)
+            // {
+            //     return perfStats.FrameStats[0].AppDroppedFrameCount;
+            // }
             return 0;
 #else // OCULUS_SUPPORTED
-
             return null;
 #endif // OCULUS_SUPPORTED
         }
