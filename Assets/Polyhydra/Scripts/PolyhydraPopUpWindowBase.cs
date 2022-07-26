@@ -117,12 +117,14 @@ namespace TiltBrush
                 MakeButton(itemList.Items[i].Replace("_", ""), itemList.Items[i], tex, false);
             }
 
-            // No previous nav on the first page
-            m_PrevButton.SetActive(FirstButtonIndex != 0);
+            if (m_PrevButton != null && m_NextButton != null)
+            {
+                // No previous nav on the first page
+                m_PrevButton.SetActive(FirstButtonIndex != 0);
 
-            // No next nav on last page
-            m_NextButton.SetActive(itemList.NextPageExists);
-
+                // No next nav on last page
+                m_NextButton.SetActive(itemList.NextPageExists);
+            }
         }
 
         private void MakeButton(string name, string action, Texture2D texture, bool isFolder)
