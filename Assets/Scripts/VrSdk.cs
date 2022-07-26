@@ -1005,7 +1005,7 @@ namespace TiltBrush
                 Debug.Log($"Left Controller: {device.manufacturer}, {device.name}");
                 if (IsInitializingUnityXR)
                 {
-                    SetUnityXRControllerStyle(device);
+                    UnityXRFinishControllerInit(device);
                 }
             }
             else if ((device.characteristics & kRightHandController) == kRightHandController)
@@ -1013,7 +1013,7 @@ namespace TiltBrush
                 Debug.Log($"Right Controller: {device.manufacturer}, {device.name}");
                 if (IsInitializingUnityXR)
                 {
-                    SetUnityXRControllerStyle(device);
+                    UnityXRFinishControllerInit(device);
                 }
             }
             else
@@ -1040,9 +1040,12 @@ namespace TiltBrush
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);
             }
+        }
 
+        private void UnityXRFinishControllerInit(InputDevice device)
+        {
+            SetUnityXRControllerStyle(device);
             InputManager.m_Instance.CreateControllerInfos();
-
             PointerManager.m_Instance.RefreshFreePaintPointerAngle();
             PointerManager.m_Instance.RequestPointerRendering(true);
         }
