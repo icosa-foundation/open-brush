@@ -304,7 +304,7 @@ static class BuildTiltBrush
             Location = GetAppPathForGuiBuild(),
             Stamp = "(menuitem)",
             UnityOptions = GuiDevelopment
-                ? (BuildOptions.AllowDebugging | BuildOptions.Development)
+                ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
             Description = "(unity editor)",
         };

@@ -426,14 +426,14 @@ namespace TiltBrush
             // }
 
 #if OCULUS_SUPPORTED
-            OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
-            if (perfStats.FrameStatsCount > 0)
-            {
-                return perfStats.FrameStats[0].AppDroppedFrameCount;
-            }
+            // TODO: Currently not supported on Oculus OpenXR backend.
+            // OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
+            // if (perfStats.FrameStatsCount > 0)
+            // {
+            //     return perfStats.FrameStats[0].AppDroppedFrameCount;
+            // }
             return 0;
 #else // OCULUS_SUPPORTED
-
             return null;
 #endif // OCULUS_SUPPORTED
         }
@@ -602,8 +602,8 @@ namespace TiltBrush
             //
             // In practice, the only style transitions we should see are:
             // - None -> correct style                   During VrSdk.Awake()
-            // - None -> InitializingSteamVr             During VrSdk.Awake()
-            //   InitializingSteamVr -> correct style    Many frames after VrSdk.Awake()
+            // - None -> InitializingUnityXr             During VrSdk.Awake()
+            //   InitializingUnityXr -> correct style    Many frames after VrSdk.Awake()
             if (m_VrControls != null)
             {
                 Destroy(m_VrControls.gameObject);
@@ -1005,7 +1005,7 @@ namespace TiltBrush
                 Debug.Log($"Left Controller: {device.manufacturer}, {device.name}");
                 if (IsInitializingUnityXR)
                 {
-                    SetUnityXRControllerStyle(device);
+                    UnityXRFinishControllerInit(device);
                 }
             }
             else if ((device.characteristics & kRightHandController) == kRightHandController)
@@ -1013,7 +1013,7 @@ namespace TiltBrush
                 Debug.Log($"Right Controller: {device.manufacturer}, {device.name}");
                 if (IsInitializingUnityXR)
                 {
-                    SetUnityXRControllerStyle(device);
+                    UnityXRFinishControllerInit(device);
                 }
             }
             else
@@ -1040,9 +1040,12 @@ namespace TiltBrush
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);
             }
+        }
 
+        private void UnityXRFinishControllerInit(InputDevice device)
+        {
+            SetUnityXRControllerStyle(device);
             InputManager.m_Instance.CreateControllerInfos();
-
             PointerManager.m_Instance.RefreshFreePaintPointerAngle();
             PointerManager.m_Instance.RequestPointerRendering(true);
         }
