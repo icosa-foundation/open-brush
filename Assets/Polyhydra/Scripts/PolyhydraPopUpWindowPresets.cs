@@ -45,6 +45,9 @@ namespace TiltBrush
 
         protected override List<string> GetFoldersList()
         {
+            // Folders are only visible on page 1
+            if (FirstButtonIndex != 0) return new List<string>();
+
             DirectoryInfo[] presetFilesList = GetSubdirsListing();
             var dirNames = presetFilesList.Select(d => d.Name).ToList();
             if (!ParentPanel.PresetRootIsCurrent())
@@ -57,8 +60,9 @@ namespace TiltBrush
         protected override List<string> GetItemsList()
         {
             FileInfo[] presetFilesList = GetPresetFilesList();
+            var visibleFolderCount = GetFoldersList().Count;
             return presetFilesList.Select(f => f.Name.Replace(".json", ""))
-                .Skip(FirstButtonIndex).Take(ButtonsPerPage - GetFoldersList().Count).ToList();
+                .Skip(FirstButtonIndex).Take(ButtonsPerPage - visibleFolderCount).ToList();
         }
 
         public override Texture2D GetButtonTexture(string presetName)
