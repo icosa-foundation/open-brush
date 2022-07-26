@@ -9935,7 +9935,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
   m_DefaultImages:
-  - DefaultImages/TiltBrushLogo.png
+  - DefaultImages/OpenBrushLogo.png
 --- !u!114 &652605561
 MonoBehaviour:
   m_ObjectHideFlags: 0
