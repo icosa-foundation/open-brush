@@ -165,7 +165,7 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1000012632495268, guid: 6ff64eb6bbbe26c4c8625c39618e3967,
       type: 3}
     m_Command: 47
-  m_PanelDescription: Polyhydra
+  m_PanelDescription: Shape Designer
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.25, y: 0.3, z: 0}
