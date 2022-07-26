@@ -22,10 +22,10 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowMainCategory : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
             var names = ParentPanel.GetMainCategoryNames();
-            return names;
+            return new ItemListResults(names, false);
         }
 
         public override Texture2D GetButtonTexture(string action)

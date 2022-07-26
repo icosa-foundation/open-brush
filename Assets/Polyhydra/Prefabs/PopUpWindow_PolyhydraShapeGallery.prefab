@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 149906}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.735, y: 0.411, z: -0.002}
+  m_LocalPosition: {x: -0.735, y: 0.69, z: -0.002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -430,8 +430,8 @@ MonoBehaviour:
   m_BlockUndoRedo: 0
   m_IsLongPressPopUp: 0
   m_OrderedPageButtons: []
-  m_PrevButton: {fileID: 0}
-  m_NextButton: {fileID: 0}
+  m_PrevButton: {fileID: 3291302542088032770}
+  m_NextButton: {fileID: 7397774573364493747}
   ButtonsPerPage: 16
   m_ColorTransitionDuration: 0
   ButtonPrefab: {fileID: 7630606763700834929, guid: c3b1abe233361794d9699f8aaf461696,
@@ -563,6 +563,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1103224316806983618}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7397774573364493747 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7630606763700834929, guid: 0963942396a615f4fb1b390436e881b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 1103224316806983618}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4920273118304108659
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -675,6 +681,12 @@ PrefabInstance:
 --- !u!4 &3288171852070569938 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7631838532712089505, guid: 0963942396a615f4fb1b390436e881b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 4920273118304108659}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &3291302542088032770 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7630606763700834929, guid: 0963942396a615f4fb1b390436e881b8,
     type: 3}
   m_PrefabInstance: {fileID: 4920273118304108659}
   m_PrefabAsset: {fileID: 0}

@@ -23,9 +23,9 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowUniforms : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
-            return ParentPanel.GetUniformPolyNames();
+            return new ItemListResults(ParentPanel.GetUniformPolyNames(), false);
         }
 
         public override Texture2D GetButtonTexture(string action)

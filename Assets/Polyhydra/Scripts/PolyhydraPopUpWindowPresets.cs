@@ -57,12 +57,19 @@ namespace TiltBrush
             return dirNames;
         }
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
             FileInfo[] presetFilesList = GetPresetFilesList();
             var visibleFolderCount = GetFoldersList().Count;
-            return presetFilesList.Select(f => f.Name.Replace(".json", ""))
-                .Skip(FirstButtonIndex).Take(ButtonsPerPage - visibleFolderCount).ToList();
+            var allItems = presetFilesList
+                .Select(f => f.Name.Replace(".json", ""));
+            int totalItemCount = allItems.Count() + visibleFolderCount;
+            int nextPageButtonIndex = FirstButtonIndex + ButtonsPerPage;
+            bool nextPageExists = nextPageButtonIndex <= totalItemCount;
+            return new ItemListResults(
+                allItems.Skip(FirstButtonIndex).Take(ButtonsPerPage - visibleFolderCount).ToList(),
+                nextPageExists
+            );
         }
 
         public override Texture2D GetButtonTexture(string presetName)

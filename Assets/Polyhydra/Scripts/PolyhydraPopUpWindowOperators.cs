@@ -120,12 +120,16 @@ namespace TiltBrush
             base.Init(rParent, sText);
         }
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
-            return GetValidOps()
-                .Skip(FirstButtonIndex)
+            var allItems = GetValidOps();
+            int nextPageButtonIndex = FirstButtonIndex + ButtonsPerPage;
+            bool nextPageExists = nextPageButtonIndex <= allItems.Count();
+
+            return new ItemListResults(
+                allItems.Skip(FirstButtonIndex)
                 .Take(ButtonsPerPage)
-                .ToList();
+                .ToList(), nextPageExists);
         }
 
         private IEnumerable<string> GetValidOps()

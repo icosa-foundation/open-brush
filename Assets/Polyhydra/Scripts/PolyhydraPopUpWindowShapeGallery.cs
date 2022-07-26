@@ -104,32 +104,36 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            List<string> buttonActionNames = GetButtonList();
+            ItemListResults itemList = GetButtonList();
             int columns = 4;
-            for (int buttonIndex = 0; buttonIndex < buttonActionNames.Count; buttonIndex++)
+            for (int buttonIndex = 0; buttonIndex < itemList.ItemCount; buttonIndex++)
             {
-
-                GameObject rButton = Instantiate(ButtonPrefab);
-                rButton.transform.parent = transform;
+                string buttonName = itemList.Items[buttonIndex];
+                GameObject rButton = Instantiate(ButtonPrefab, transform, true);
                 rButton.transform.localRotation = Quaternion.identity;
 
                 float xOffset = buttonIndex % columns;
                 float yOffset = Mathf.FloorToInt(buttonIndex / (float)columns);
                 Vector3 position = new Vector3(xOffset, -yOffset, 0);
                 rButton.transform.localPosition = new Vector3(-0.52f, 0.15f, -0.08f) + (position * .35f);
-
                 rButton.transform.localScale = Vector3.one * .3f;
 
                 Renderer rButtonRenderer = rButton.GetComponent<Renderer>();
 
                 PolyhydraShapeGalleryButton rButtonScript = rButton.GetComponent<PolyhydraShapeGalleryButton>();
                 rButtonScript.parentPopup = this;
-                rButtonScript.SetDescriptionText(buttonActionNames[buttonIndex].Replace("_", ""));
-                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonActionNames[buttonIndex]);
-                rButtonScript.ButtonAction = buttonActionNames[buttonIndex];
+                rButtonScript.SetDescriptionText(buttonName.Replace("_", ""));
+                rButtonRenderer.material.mainTexture = GetButtonTexture(buttonName);
+                rButtonScript.ButtonAction = buttonName;
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }
+
+            // No previous nav on the first page
+            m_PrevButton.SetActive(FirstButtonIndex != 0);
+
+            // No next nav on last page
+            m_NextButton.SetActive(itemList.NextPageExists);
         }
 
         public override void UpdateUIComponents(Ray rCastRay, bool inputValid, Collider parentCollider)
@@ -157,16 +161,17 @@ namespace TiltBrush
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
-        public string LabelTextFormatter(string text)
+        protected ItemListResults GetButtonList()
         {
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            text = textInfo.ToTitleCase(text).Replace(" ", "_");
-            return text;
-        }
-
-        protected List<string> GetButtonList()
-        {
-            return ShapeGalleryJson.Keys.ToList();
+            var allItems = ShapeGalleryJson.Keys.ToList();
+            int totalItemCount = allItems.Count;
+            int nextPageButtonIndex = FirstButtonIndex + ButtonsPerPage;
+            bool nextPageExists = nextPageButtonIndex <= totalItemCount;
+            Debug.Log($"totalItemCount: {totalItemCount} nextPageButtonIndex: {nextPageButtonIndex} nextPageExists: {nextPageExists}");
+            return new ItemListResults(
+                allItems.Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList(),
+                nextPageExists
+            );
         }
 
         public Texture2D GetButtonTexture(string presetName)
@@ -185,11 +190,8 @@ namespace TiltBrush
 
         public void NextPage()
         {
-            if (FirstButtonIndex + ButtonsPerPage < GetButtonList().Count)
-            {
-                FirstButtonIndex += ButtonsPerPage;
-                CreateButtons();
-            }
+            FirstButtonIndex += ButtonsPerPage;
+            CreateButtons();
             ParentPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
         }
 

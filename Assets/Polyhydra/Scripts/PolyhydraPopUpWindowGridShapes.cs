@@ -24,9 +24,9 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowGridShapes : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
-            return Enum.GetNames(typeof(GridEnums.GridShapes)).ToList();
+            return new ItemListResults(Enum.GetNames(typeof(GridEnums.GridShapes)).ToList(), false);
         }
 
         public override Texture2D GetButtonTexture(string action)

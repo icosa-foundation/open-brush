@@ -28,9 +28,15 @@ namespace TiltBrush
         public float xSpacing = 2.5f;
         public float ySpacing = .25f;
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
-            return Enum.GetNames(typeof(FilterTypes)).Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList();
+            var allItems = Enum.GetNames(typeof(FilterTypes));
+            int nextPageButtonIndex = FirstButtonIndex + ButtonsPerPage;
+            bool nextPageExists = nextPageButtonIndex <= allItems.Count();
+
+            return new ItemListResults(
+                allItems.Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList(), nextPageExists
+            );
         }
 
         protected override void CreateButtons()
@@ -40,9 +46,9 @@ namespace TiltBrush
                 Destroy(btn);
             }
             _buttons = new List<GameObject>();
-            List<string> buttonLabels = GetItemsList();
+            ItemListResults itemList = GetItemsList();
             int columns = 2;
-            for (int buttonIndex = 0; buttonIndex < buttonLabels.Count; buttonIndex++)
+            for (int buttonIndex = 0; buttonIndex < itemList.ItemCount; buttonIndex++)
             {
                 GameObject rButton = Instantiate(ButtonPrefab);
                 rButton.transform.parent = transform;
@@ -54,12 +60,12 @@ namespace TiltBrush
                 rButton.transform.localPosition = new Vector3(-0.52f, 0.15f, -0.08f) + (position * .35f);
 
                 rButton.transform.localScale = Vector3.one;
-
+                string buttonName = itemList.Items[buttonIndex];
                 PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
-                rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonLabels[buttonIndex];
-                rButtonScript.SetDescriptionText(buttonLabels[buttonIndex]);
-                rButtonScript.ButtonAction = buttonLabels[buttonIndex];
+                rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonName;
+                rButtonScript.SetDescriptionText(buttonName);
+                rButtonScript.ButtonAction = buttonName;
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
             }

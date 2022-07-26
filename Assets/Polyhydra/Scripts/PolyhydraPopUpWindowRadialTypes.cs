@@ -22,9 +22,9 @@ namespace TiltBrush
     public class PolyhydraPopUpWindowRadialTypes : PolyhydraPopUpWindowBase
     {
 
-        protected override List<string> GetItemsList()
+        protected override ItemListResults GetItemsList()
         {
-            return Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList();
+            return new ItemListResults(Enum.GetNames(typeof(RadialSolids.RadialPolyType)).ToList(), false);
         }
 
         public override Texture2D GetButtonTexture(string action)

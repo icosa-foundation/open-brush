@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -84,7 +85,7 @@ namespace TiltBrush
             CreateButtons();
         }
 
-        protected abstract List<string> GetItemsList();
+        protected abstract ItemListResults GetItemsList();
 
         protected virtual void CreateButtons()
         {
@@ -92,7 +93,7 @@ namespace TiltBrush
             foreach (var btn in _buttons) { Destroy(btn); }
 
             _buttons = new List<GameObject>();
-            List<string> buttonNames = GetItemsList();
+            ItemListResults itemList = GetItemsList();
             List<string> folderNames = GetFoldersList();
 
             for (int i = 0; i < folderNames.Count; i++)
@@ -110,11 +111,18 @@ namespace TiltBrush
                 MakeButton(folderName, folderName, tex, true);
             }
 
-            for (int i = 0; i < buttonNames.Count; i++)
+            for (int i = 0; i < itemList.ItemCount; i++)
             {
-                var tex = GetButtonTexture(buttonNames[i]);
-                MakeButton(buttonNames[i].Replace("_", ""), buttonNames[i], tex, false);
+                var tex = GetButtonTexture(itemList.Items[i]);
+                MakeButton(itemList.Items[i].Replace("_", ""), itemList.Items[i], tex, false);
             }
+
+            // No previous nav on the first page
+            m_PrevButton.SetActive(FirstButtonIndex != 0);
+
+            // No next nav on last page
+            m_NextButton.SetActive(itemList.NextPageExists);
+
         }
 
         private void MakeButton(string name, string action, Texture2D texture, bool isFolder)
@@ -170,4 +178,5 @@ namespace TiltBrush
             return new List<string>();
         }
     }
+
 }
