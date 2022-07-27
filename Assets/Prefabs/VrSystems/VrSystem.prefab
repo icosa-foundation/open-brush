@@ -412,6 +412,7 @@ GameObject:
   - component: {fileID: 81000010563896060}
   - component: {fileID: 114000010140527564}
   - component: {fileID: 8383487415960193186}
+  - component: {fileID: 789507119595878881}
   m_Layer: 0
   m_Name: Camera (eye)
   m_TagString: MainCamera
@@ -602,6 +603,63 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mat: {fileID: 0}
+--- !u!114 &789507119595878881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000013132276250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_PositionInput:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Position Input
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: aabebac8-a540-47da-b208-bdf95799653d
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_RotationInput:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Rotation Input
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: f4aac536-6f21-47ae-8019-cab31f7d9ca6
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_PositionAction:
+    m_Name: 
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
+  m_RotationAction:
+    m_Name: 
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
+  m_HasMigratedActions: 1
 --- !u!1 &1000013151840476
 GameObject:
   m_ObjectHideFlags: 0
@@ -727,8 +785,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4000013585580318}
+  - component: {fileID: 6299537005687282328}
   - component: {fileID: 2050387273726649813}
-  - component: {fileID: 5431124212578847327}
   m_Layer: 0
   m_Name: VrSystem
   m_TagString: Untagged
@@ -753,6 +811,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6299537005687282328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000014130305538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Camera: {fileID: 20000011692615516}
+  m_OriginBaseGameObject: {fileID: 1000014130305538}
+  m_CameraFloorOffsetObject: {fileID: 528820638706216730}
+  m_RequestedTrackingOriginMode: 2
+  m_CameraYOffset: 1.36144
 --- !u!114 &2050387273726649813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -781,23 +856,6 @@ MonoBehaviour:
   - SteamVR_Fade
   - SteamVR_ExternalCamera
   _fixPostEffectsAlpha: 0
---- !u!114 &5431124212578847327
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000014130305538}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2483b9bd782f9449a5972b61b7d51a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_CameraFloorOffsetObject: {fileID: 528820638706216730}
-  m_RequestedTrackingMode: 2
-  m_TrackingOriginMode: 1
-  m_TrackingSpace: 1
-  m_CameraYOffset: 1.36144
 --- !u!1 &528820638706216730
 GameObject:
   m_ObjectHideFlags: 0
