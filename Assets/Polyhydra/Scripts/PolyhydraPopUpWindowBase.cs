@@ -129,6 +129,7 @@ namespace TiltBrush
 
         private void MakeButton(string name, string action, Texture2D texture, bool isFolder)
         {
+            string friendlyName = PolyhydraPanel.LabelFormatter(name);
             GameObject rButton = Instantiate(ButtonPrefab, transform, true);
             rButton.transform.localRotation = Quaternion.identity;
             float xOffset = _buttons.Count % m_NumColumns;
@@ -141,7 +142,7 @@ namespace TiltBrush
 
             PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
             rButtonScript.parentPopup = this;
-            rButtonScript.SetDescriptionText(name);
+            rButtonScript.SetDescriptionText(friendlyName);
             rButtonRenderer.material.mainTexture = texture;
             rButtonScript.ButtonAction = action;
             rButtonScript.IsFolder = isFolder;

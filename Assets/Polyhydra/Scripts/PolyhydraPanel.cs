@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polyhydra.Core;
@@ -99,17 +100,24 @@ namespace TiltBrush
         private OtherSolidsCategories m_OtherSolidsCategory;
 
         [NonSerialized]
-        public List<List<string>> ColorPalettes = new()
+        public static List<List<string>> ColorPalettes = new()
         {
-            // Just a few examples grabbed from https://coolors.co/
-            new() { "264653", "2a9d8f", "e9c46a", "f4a261", "e76f51" },
-            new() { "e63946", "f1faee", "a8dadc", "457b9d", "1d3557" },
-            new() { "ffbe0b", "fb5607", "ff006e", "8338ec", "3a86ff" },
-            new() { "390099", "9e0059", "ff0054", "ff5400", "ffbd00" },
-            new() { "094074", "3c6997", "5adbff", "ffdd4a", "fe9000" },
-            new() { "ff0000", "ff8700", "ffd300", "deff0a", "a1ff0a" },
-            new() { "a1ff0a", "0aff99", "0aefff", "147df5", "580aff" },
-            new() { "ffc800", "ffe000", "fff700", "b8f500", "95e214" },
+            new() { "#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51" },
+            new() { "#e63946", "#f1faee", "#a8dadc", "#457b9d", "#1d3557" },
+            new() { "#ffbe0b", "#fb5607", "#ff006e", "#8338ec", "#3a86ff" },
+            new() { "#390099", "#9e0059", "#ff0054", "#ff5400", "#ffbd00" },
+            new() { "#094074", "#3c6997", "#5adbff", "#ffdd4a", "#fe9000" },
+            new() { "#ff0000", "#ff8700", "#ffd300", "#deff0a", "#a1ff0a" },
+            new() { "#a1ff0a", "#0aff99", "#0aefff", "#147df5", "#580aff" },
+            new() { "#ffc800", "#ffe000", "#fff700", "#b8f500", "#95e214" },
+            new() { "#1e1a29", "#82c0d5", "#313344", "#127799", "#fbf8e9" },
+            new() { "#127969", "#254b44", "#edaa96", "#ff4924", "#ed9700" },
+            new() { "#c5856d", "#efccb4", "#fff5db", "#211f23", "#3e3c3e" },
+            new() { "#c8cb44", "#6b8b1b", "#265414", "#fbe191", "#f6bb46" },
+            new() { "#30302e", "#517b8b", "#2d3860", "#ffcc01", "#8a5204" },
+            new() { "#fac2b0", "#e90026", "#005746", "#f2e5d9", "#30302e" },
+            new() { "#16070a", "#512011", "#e65d2c", "#8a3c27", "#351e1b" },
+            new() { "#eab13f", "#588938", "#454913", "#efebc7", "#c4b594" }
         };
 
         public enum PolyhydraMainCategories
@@ -807,10 +815,13 @@ namespace TiltBrush
             return null;
         }
 
-        public string LabelFormatter(string text)
+        public static string LabelFormatter(string text)
         {
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            text = textInfo.ToTitleCase(text.Replace("_", " "));
+            // Camel case to spaces
+            text = Regex.Replace(text, @"[A-Z]", " $0");
+            // Underscores to spaces then title case
+            text = new CultureInfo("en-US", false).TextInfo
+                .ToTitleCase(text.Replace("_", " "));
             return text;
         }
 
@@ -849,44 +860,45 @@ namespace TiltBrush
         public void SetButtonTextAndIcon(PolyhydraButtonTypes buttonType, string label, string friendlyLabel = "")
         {
             if (string.IsNullOrEmpty(friendlyLabel)) friendlyLabel = label;
+            friendlyLabel = LabelFormatter(friendlyLabel);
 
             switch (buttonType)
             {
                 case PolyhydraButtonTypes.MainCategory:
                     ButtonMainCategory.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonMainCategory.SetDescriptionText($"Category: {LabelFormatter(friendlyLabel)}");
+                    ButtonMainCategory.SetDescriptionText($"Category: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.UniformType:
                     ButtonUniformType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonUniformType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
+                    ButtonUniformType.SetDescriptionText($"Type: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.RadialType:
                     ButtonRadialType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonRadialType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
+                    ButtonRadialType.SetDescriptionText($"Type: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.GridType:
                     ButtonGridType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonGridType.SetDescriptionText($"Grid Type: {LabelFormatter(friendlyLabel).Replace("_", "")}");
+                    ButtonGridType.SetDescriptionText($"Grid Type: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.OtherSolidsType:
                     ButtonOtherSolidsType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOtherSolidsType.SetDescriptionText($"Type: {LabelFormatter(friendlyLabel)}");
+                    ButtonOtherSolidsType.SetDescriptionText($"Type: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.GridShape:
                     ButtonGridShape.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonGridShape.SetDescriptionText($"Grid Shape: {LabelFormatter(friendlyLabel)}");
+                    ButtonGridShape.SetDescriptionText($"Grid Shape: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.OperatorType:
                     ButtonOpType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOpType.SetDescriptionText($"Operation: {LabelFormatter(friendlyLabel)}");
+                    ButtonOpType.SetDescriptionText($"Operation: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.FilterType:
                     ButtonOpFilterType.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonOpFilterType.SetDescriptionText($"Filter: {LabelFormatter(friendlyLabel)}");
+                    ButtonOpFilterType.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.ColorMethod:
                     ButtonColorMethod.SetButtonTexture(GetButtonTexture(buttonType, label));
-                    ButtonColorMethod.SetDescriptionText($"Filter: {LabelFormatter(friendlyLabel)}");
+                    ButtonColorMethod.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
             }
         }
@@ -1329,6 +1341,24 @@ namespace TiltBrush
         public void HandleSetAllColorsToCurrentButtonPressed()
         {
             SetAllFinalColors(PointerManager.m_Instance.PointerColor);
+            PreviewPolyhedron.m_Instance.RebuildPoly();
+        }
+
+        public void HandleSetColorsToPalette(int paletteIndex)
+        {
+            for (int index = 0; index < ColorPalletteButtons.Length; index++)
+            {
+                string colorString = ColorPalettes[paletteIndex][index];
+                if (ColorUtility.TryParseHtmlString(colorString, out Color color))
+                {
+                    SetFinalColor(color, index);
+                    Debug.Log($"{color}");
+                }
+                else
+                {
+                    Debug.Log($"XXXX {colorString}");
+                }
+            }
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 

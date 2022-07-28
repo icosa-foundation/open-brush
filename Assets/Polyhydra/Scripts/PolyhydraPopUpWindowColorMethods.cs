@@ -62,10 +62,11 @@ namespace TiltBrush
 
                 rButton.transform.localScale = Vector3.one;
                 string buttonName = itemList.Items[buttonIndex];
+                string friendlyName = PolyhydraPanel.LabelFormatter(buttonName);
                 PolyhydraPopupItemButton rButtonScript = rButton.GetComponent<PolyhydraPopupItemButton>();
                 rButtonScript.parentPopup = this;
-                rButtonScript.GetComponentInChildren<TextMeshPro>().text = buttonName;
-                rButtonScript.SetDescriptionText(buttonName);
+                rButtonScript.GetComponentInChildren<TextMeshPro>().text = friendlyName;
+                rButtonScript.SetDescriptionText(friendlyName);
                 rButtonScript.ButtonAction = buttonName;
                 rButtonScript.RegisterComponent();
                 _buttons.Add(rButton);
