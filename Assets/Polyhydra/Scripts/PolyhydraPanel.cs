@@ -740,17 +740,10 @@ namespace TiltBrush
 
         void SavePresetJson(string presetPath)
         {
-            // TODO deduplicate this logic
-            ColorMethods colorMethod = ColorMethods.ByRole;
-            if (PreviewPolyhedron.m_Instance.Operators.Any(o => o.opType == PolyMesh.Operation.AddTag))
-            {
-                colorMethod = ColorMethods.ByTags;
-            }
-
             var em = new EditableModel(
                 PreviewPolyhedron.m_Instance.m_PolyMesh,
                 EditableModelManager.CurrentModel.Colors,
-                colorMethod,
+                EditableModelManager.CurrentModel.ColorMethod,
                 EditableModelManager.CurrentModel.MaterialIndex,
                 EditableModelManager.CurrentModel.GeneratorType,
                 EditableModelManager.CurrentModel.GeneratorParameters,
