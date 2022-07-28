@@ -81,9 +81,7 @@ namespace TiltBrush
         public override void HandleButtonPress(string action, bool isFolder)
         {
             if (!Enum.TryParse(action, true, out ColorMethods colorMethod)) return;
-            EditableModelManager.CurrentModel.ColorMethod = colorMethod;
-            ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.ColorMethod, action);
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            ParentPanel.HandleSetColorMethod(colorMethod);
         }
 
         public void NextPage()

@@ -941,6 +941,7 @@ namespace TiltBrush
             }
             EditableModelManager.CurrentModel.Colors = (Color[])colors.Clone();
 
+            HandleSetColorMethod(emodel.ColorMethod);
             SetMaterial(emodel.MaterialIndex);
 
             EditableModelManager.CurrentModel.GeneratorType = emodel.GeneratorType;
@@ -1710,6 +1711,13 @@ namespace TiltBrush
         public bool PresetRootIsCurrent()
         {
             return Path.GetFullPath(DefaultPresetsDirectory()) == Path.GetFullPath(CurrentPresetsDirectory);
+        }
+
+        public void HandleSetColorMethod(ColorMethods colorMethod)
+        {
+            EditableModelManager.CurrentModel.ColorMethod = colorMethod;
+            SetButtonTextAndIcon(PolyhydraButtonTypes.ColorMethod, colorMethod.ToString());
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
     }
 
