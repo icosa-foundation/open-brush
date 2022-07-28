@@ -66,6 +66,13 @@ namespace TiltBrush
         private CreateModes m_CurrentCreateMode;
         private ModifyModes m_CurrentModifyMode;
 
+        public bool m_CurrentModeIsABrushMode =>
+            // Show if we are in a brush stroke creation mode
+            m_CurrentCreateMode is CreateModes.BrushStrokesFromFaces or CreateModes.BrushStrokesFromEdges ||
+            // or we are in a modify mode that creates strokes
+            m_CurrentModifyMode is ModifyModes.ApplyBrushStrokesToEdges or ModifyModes.ApplyBrushStrokesToFaces;
+        public FreePaintTool m_FreePaintTool => SketchSurfacePanel.m_Instance.GetToolOfType(ToolType.FreePaintTool) as FreePaintTool;
+
         private HashSet<EditableModelWidget> m_WidgetsModifiedThisClick;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
@@ -74,6 +81,29 @@ namespace TiltBrush
             base.Init();
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
             m_WidgetsModifiedThisClick = new HashSet<EditableModelWidget>();
+        }
+
+        public override bool ShouldShowPointer()
+        {
+            return !PanelManager.m_Instance.IntroSketchbookMode && m_CurrentModeIsABrushMode;
+        }
+
+        void PositionPointer()
+        {
+            // Angle the pointer according to the user-defined pointer angle.
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Vector3 pos = rAttachPoint.position;
+            Quaternion rot = rAttachPoint.rotation * FreePaintTool.sm_OrientationAdjust;
+
+            // Modify pointer position and rotation with stencils.
+            WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
+
+            if (PointerManager.m_Instance.positionJitter > 0)
+            {
+                pos = PointerManager.m_Instance.GenerateJitteredPosition(pos, PointerManager.m_Instance.positionJitter);
+            }
+
+            PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos, rot);
         }
 
         //What to do when the tool is enabled or disabled
@@ -109,6 +139,8 @@ namespace TiltBrush
         override public void UpdateTool()
         {
             base.UpdateTool();
+
+            PositionPointer();
 
             //keep description locked to controller
             SnapIntersectionObjectToController();
@@ -427,6 +459,7 @@ namespace TiltBrush
         override public void LateUpdateTool()
         {
             base.LateUpdateTool();
+            PositionPointer();
             UpdateTransformsFromControllers();
         }
 
@@ -446,6 +479,15 @@ namespace TiltBrush
             }
         }
 
+        override public void UpdateSize(float fAdjustAmount)
+        {
+            if (m_CurrentModeIsABrushMode)
+            {
+
+                m_FreePaintTool.UpdateSize(fAdjustAmount);
+            }
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             ResetDetection();
@@ -459,7 +501,7 @@ namespace TiltBrush
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (controller == InputManager.ControllerName.Brush)
+            if (controller == InputManager.ControllerName.Brush && m_CurrentModeIsABrushMode)
             {
                 InputManager.Brush.Geometry.ShowBrushSizer();
                 // if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())

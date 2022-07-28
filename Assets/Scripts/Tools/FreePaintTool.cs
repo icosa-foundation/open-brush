@@ -75,7 +75,7 @@ namespace TiltBrush
             return false;
         }
 
-        static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
+        public static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
         override public void UpdateTool()
         {
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check

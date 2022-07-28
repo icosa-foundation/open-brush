@@ -6243,10 +6243,20 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 593121476}
     m_Modifications:
+    - target: {fileID: 1072137337906129145, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 5613725442812470859, guid: 7a27a11733f068248b6137d124e53cb5,
         type: 3}
       propertyPath: m_Name
       value: PolyhydraTool
+      objectReference: {fileID: 0}
+    - target: {fileID: 5613725442812470859, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5613725442812470860, guid: 7a27a11733f068248b6137d124e53cb5,
         type: 3}
@@ -6302,6 +6312,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7665800326756668987, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7665800326756668987, guid: 7a27a11733f068248b6137d124e53cb5,
+        type: 3}
+      propertyPath: m_Parameters.widthCurve.m_Curve.Array.data[0].value
+      value: 0.01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7a27a11733f068248b6137d124e53cb5, type: 3}
