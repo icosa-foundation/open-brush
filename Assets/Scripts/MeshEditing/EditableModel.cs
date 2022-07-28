@@ -30,7 +30,7 @@ namespace TiltBrush.MeshEditing
         }
         public GeneratorTypes GeneratorType { get; set; }
         public PolyMesh PolyMesh { get; private set; }
-        public ColorMethods ColorMethod { get; set; }
+        public ColorMethods ColorMethod { get; set; } = ColorMethods.ByRole;
         public Dictionary<string, object> GeneratorParameters { get; set; }
         public List<Dictionary<string, object>> Operations { get; set; }
 

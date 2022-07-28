@@ -456,12 +456,12 @@ public class PreviewPolyhedron : MonoBehaviour
 
         EditableModelManager.CurrentModel.Operations = new List<Dictionary<string, object>>();
 
-        EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByRole;
+        // EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByRole;
 
         foreach (var op in Operators.ToList())
         {
             // If we've set any tags then assume we want to color by tags
-            if (op.opType == PolyMesh.Operation.AddTag) EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByTags;
+            // if (op.opType == PolyMesh.Operation.AddTag) EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByTags;
 
             EditableModelManager.CurrentModel.Operations.Add(new Dictionary<string, object>
             {

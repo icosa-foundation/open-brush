@@ -41,7 +41,8 @@ namespace TiltBrush
         GridShape,
         OperatorType,
         FilterType,
-        Preset
+        Preset,
+        ColorMethod
     }
 
     public class PolyhydraPanel : BasePanel
@@ -74,6 +75,7 @@ namespace TiltBrush
         public PolyhydraColorButton[] ColorPalletteButtons;
         public GameObject OpFilterControlParent;
         public PolyhydraOptionButton ButtonOpFilterType;
+        public PolyhydraOptionButton ButtonColorMethod;
         public PolyhydraSlider SliderOpFilterParam;
         public TextMeshPro LabelOpFilterName;
         public ActionToggleButton ButtonOpFilterNot;
@@ -95,6 +97,20 @@ namespace TiltBrush
 
         private PolyhydraMainCategories m_CurrentMainCategory;
         private OtherSolidsCategories m_OtherSolidsCategory;
+
+        [NonSerialized]
+        public List<List<string>> ColorPalettes = new()
+        {
+            // Just a few examples grabbed from https://coolors.co/
+            new() { "264653", "2a9d8f", "e9c46a", "f4a261", "e76f51" },
+            new() { "e63946", "f1faee", "a8dadc", "457b9d", "1d3557" },
+            new() { "ffbe0b", "fb5607", "ff006e", "8338ec", "3a86ff" },
+            new() { "390099", "9e0059", "ff0054", "ff5400", "ffbd00" },
+            new() { "094074", "3c6997", "5adbff", "ffdd4a", "fe9000" },
+            new() { "ff0000", "ff8700", "ffd300", "deff0a", "a1ff0a" },
+            new() { "a1ff0a", "0aff99", "0aefff", "147df5", "580aff" },
+            new() { "ffc800", "ffe000", "fff700", "b8f500", "95e214" },
+        };
 
         public enum PolyhydraMainCategories
         {
@@ -824,9 +840,7 @@ namespace TiltBrush
                 case PolyhydraButtonTypes.OperatorType:
                     path = $"IconButtons/{label}";
                     return Resources.Load<Texture2D>(path);
-                case PolyhydraButtonTypes.FilterType:
-                    return null;
-                case PolyhydraButtonTypes.Preset:
+                default:
                     return null;
             }
             return null;
@@ -869,6 +883,10 @@ namespace TiltBrush
                 case PolyhydraButtonTypes.FilterType:
                     ButtonOpFilterType.SetButtonTexture(GetButtonTexture(buttonType, label));
                     ButtonOpFilterType.SetDescriptionText($"Filter: {LabelFormatter(friendlyLabel)}");
+                    break;
+                case PolyhydraButtonTypes.ColorMethod:
+                    ButtonColorMethod.SetButtonTexture(GetButtonTexture(buttonType, label));
+                    ButtonColorMethod.SetDescriptionText($"Filter: {LabelFormatter(friendlyLabel)}");
                     break;
             }
         }

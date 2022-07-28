@@ -461,11 +461,11 @@ namespace TiltBrush
         {
             if (controller == InputManager.ControllerName.Brush)
             {
-                InputManager.Brush.Geometry.ShowStrokeOption();
-                if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
-                {
-                    // InputManager.Brush.Geometry.ShowStrokeOption();
-                }
+                InputManager.Brush.Geometry.ShowBrushSizer();
+                // if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
+                // {
+                //     InputManager.Brush.Geometry.ShowStrokeOption();
+                // }
             }
         }
         public void SetCreateMode(int modeIndex)
