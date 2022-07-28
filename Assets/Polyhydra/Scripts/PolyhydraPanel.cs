@@ -1352,11 +1352,6 @@ namespace TiltBrush
                 if (ColorUtility.TryParseHtmlString(colorString, out Color color))
                 {
                     SetFinalColor(color, index);
-                    Debug.Log($"{color}");
-                }
-                else
-                {
-                    Debug.Log($"XXXX {colorString}");
                 }
             }
             PreviewPolyhedron.m_Instance.RebuildPoly();
