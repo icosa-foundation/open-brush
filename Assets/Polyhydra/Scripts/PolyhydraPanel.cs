@@ -897,6 +897,7 @@ namespace TiltBrush
                     ButtonOpFilterType.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
                 case PolyhydraButtonTypes.ColorMethod:
+                    ButtonColorMethod.GetComponentInChildren<TextMeshPro>().text = friendlyLabel;
                     ButtonColorMethod.SetButtonTexture(GetButtonTexture(buttonType, label));
                     ButtonColorMethod.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
