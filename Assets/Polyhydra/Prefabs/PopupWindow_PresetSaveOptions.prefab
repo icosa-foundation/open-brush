@@ -169,7 +169,7 @@ MonoBehaviour:
   m_CharacterWidth: 0.175
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
-  m_BaseButtonOffset: {x: 0, y: 0, z: 0}
+  m_BaseButtonOffset: {x: -0.52, y: 0.15, z: -0.05}
   m_ReticleBounds: {x: 1.4, y: 0.75, z: 0}
   m_PopUpForwardOffset: -0.25
   m_AutoPlaceButtons: []

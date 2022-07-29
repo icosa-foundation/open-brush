@@ -99,6 +99,10 @@ namespace TiltBrush
         private PolyhydraMainCategories m_CurrentMainCategory;
         private OtherSolidsCategories m_OtherSolidsCategory;
 
+        [NonSerialized] public string CurrentPresetsDirectory;
+        [NonSerialized] public int CurrentOpCategoryIndex;
+        public OpCategories CurrentOpCategory => (OpCategories)CurrentOpCategoryIndex;
+
         [NonSerialized]
         public static List<List<string>> ColorPalettes = new()
         {
@@ -178,13 +182,12 @@ namespace TiltBrush
         }
         public int CurrentPresetPage { get; set; }
         public int CurrentOperatorPage { get; set; }
+        public int CurrentColorPalettePage { get; set; }
 
         private string DefaultPresetsDirectory()
         {
             return Path.Combine(App.UserPath(), "Media Library", "Shape Recipes");
         }
-
-        [NonSerialized] public string CurrentPresetsDirectory;
 
         protected override void OnEnablePanel()
         {
@@ -1362,6 +1365,8 @@ namespace TiltBrush
                 if (ColorUtility.TryParseHtmlString(colorString, out Color color))
                 {
                     SetFinalColor(color, index);
+                    PolyhydraColorButton btn = ColorPalletteButtons[index];
+                    Debug.Log($"Setting {btn.gameObject.name}: {index}/{btn.Index} to {colorString}");
                 }
             }
             PreviewPolyhedron.m_Instance.RebuildPoly();

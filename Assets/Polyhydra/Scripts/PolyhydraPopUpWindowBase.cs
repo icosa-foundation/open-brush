@@ -135,7 +135,7 @@ namespace TiltBrush
             float xOffset = _buttons.Count % m_NumColumns;
             float yOffset = Mathf.FloorToInt(_buttons.Count / (float)m_NumColumns);
             Vector3 position = new Vector3(xOffset, -yOffset, 0);
-            rButton.transform.localPosition = new Vector3(-0.52f, 0.15f, -0.08f) + (position * .35f);
+            rButton.transform.localPosition = m_BaseButtonOffset + (position * .35f);
             rButton.transform.localScale = Vector3.one * .3f;
             _buttons.Add(rButton);
             Renderer rButtonRenderer = rButton.GetComponent<Renderer>();

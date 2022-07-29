@@ -27,7 +27,7 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
             ParentPanel = rParent.GetComponent<PolyhydraPanel>();
-            FirstButtonIndex = 0;
+            FirstButtonIndex = ParentPanel.CurrentColorPalettePage * ButtonsPerPage;
             base.Init(rParent, sText);
         }
 
@@ -38,9 +38,11 @@ namespace TiltBrush
             bool nextPageExists = nextPageButtonIndex <= allItems.Count;
 
             return new ItemListResults(
-                Enumerable.Range(0, allItems.Count).Select(i => i.ToString()).ToList()
-                .Take(ButtonsPerPage)
-                .ToList(), nextPageExists);
+                    Enumerable.Range(0, allItems.Count)
+                    .Select(i => i.ToString()).ToList()
+                    .Skip(FirstButtonIndex)
+                    .Take(ButtonsPerPage)
+                    .ToList(), nextPageExists);
         }
 
         public override Texture2D GetButtonTexture(string action)
