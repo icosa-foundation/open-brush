@@ -72,7 +72,9 @@ namespace TiltBrush
             // duplicated editable models were slightly bigger than they should have been
             // Still don't fully understand why or whether commenting this out will have side effects...
             var thisId = GetId();
-            var newPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId).Duplicate();
+            var oldPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId);
+            var newPoly = oldPoly.Duplicate();
+            newPoly.ScalingFactor = oldPoly.ScalingFactor;
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
 
             return clone;
