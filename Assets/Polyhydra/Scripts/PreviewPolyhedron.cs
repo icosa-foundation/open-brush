@@ -258,7 +258,6 @@ public class PreviewPolyhedron : MonoBehaviour
             return;
         }
         m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyhedron, AssignMesh));
-        m_BuildMeshCoroutine = null;
     }
 
     public void ImmediateMakePolyhedron()
@@ -491,6 +490,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void AssignMesh()
     {
+        m_BuildMeshCoroutine = null;
 
         var mesh = m_PolyMesh.BuildUnityMesh(m_MeshData);
 
