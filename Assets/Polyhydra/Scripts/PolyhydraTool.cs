@@ -490,12 +490,16 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
-            ResetDetection();
             // Only intersect with EditableModelWidget instances
             var editableModelWidget = widget as EditableModelWidget;
             LastIntersectedEditableModelWidget = editableModelWidget;
             m_ValidWidgetFoundThisFrame = widget != null;
             return m_ValidWidgetFoundThisFrame;
+        }
+
+        public override float GetSize()
+        {
+            return 0.1f;
         }
 
 
