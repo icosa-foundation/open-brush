@@ -927,9 +927,7 @@ namespace TiltBrush
         {
             if (m_InitialMaterials == null)
             {
-                m_WidgetRenderers = GetComponentsInChildren<Renderer>();
-                m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
-                m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
+                CloneInitialMaterials(null);
             }
 
             foreach (var renderer in m_WidgetRenderers)
@@ -964,7 +962,7 @@ namespace TiltBrush
         /// It is necessary to call this function when cloning a widget as the widget will be selected
         /// and the clone will not have these values set, although they will be expected when deselection
         /// happens.
-        protected void CloneInitialMaterials(GrabWidget other)
+        protected virtual void CloneInitialMaterials(GrabWidget other)
         {
             m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);

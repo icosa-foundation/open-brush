@@ -14,6 +14,7 @@
 
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -40,13 +41,13 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_NewEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly);
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly, m_NewEditableModel.CurrentMaterial);
         }
 
         protected override void OnUndo()
         {
             EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_PreviousEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly);
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly, m_PreviousEditableModel.CurrentMaterial);
         }
 
     }

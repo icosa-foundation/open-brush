@@ -60,24 +60,29 @@ namespace TiltBrush
                 App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
                 clone.m_PolyCallbackActive = true;
             }
-            clone.CloneInitialMaterials(this);
+
             clone.TrySetCanvasKeywordsFromObject(transform);
 
             var polyGo = clone.GetId().gameObject;
             var col = polyGo.AddComponent<BoxCollider>();
             col.size = m_BoxCollider.size;
 
-            // TODO
-            // Commenting out the following fixed a bug whereby
-            // duplicated editable models were slightly bigger than they should have been
-            // Still don't fully understand why or whether commenting this out will have side effects...
             var thisId = GetId();
             var oldPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId);
             var newPoly = oldPoly.Duplicate();
             newPoly.ScalingFactor = oldPoly.ScalingFactor;
-            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
-
+            var oldEditableModel = EditableModelManager.m_Instance.EditableModels[thisId.guid];
+            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, oldEditableModel.CurrentMaterial);
             return clone;
+        }
+
+        protected override void CloneInitialMaterials(GrabWidget other)
+        {
+            m_WidgetRenderers = GetComponentsInChildren<Renderer>()
+                // Exclude the gameobject that has the editableModelId
+                .Where(r => r.gameObject.GetComponent<EditableModelId>() == null).ToArray();
+            m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
+            m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
         }
 
         public EditableModelId GetId()
