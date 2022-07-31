@@ -200,10 +200,12 @@ namespace TiltBrush
                                     break;
 
                                 case ModifyModes.ApplyColor:
-                                    Color[] colors = Enumerable.Repeat(
-                                        PointerManager.m_Instance.PointerColor,
-                                        EditableModelManager.CurrentModel.Colors.Length
-                                    ).ToArray();
+
+                                    Color color = PointerManager.m_Instance.CalculateJitteredColor(
+                                        PointerManager.m_Instance.PointerColor
+                                    );
+                                    Color[] colors = Enumerable.Repeat(color, EditableModelManager.CurrentModel.Colors.Length).ToArray();
+
                                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                         new RecolorPolyCommand(ewidget, colors)
                                     );
