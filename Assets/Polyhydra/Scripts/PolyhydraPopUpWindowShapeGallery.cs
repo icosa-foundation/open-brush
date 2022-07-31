@@ -167,7 +167,6 @@ namespace TiltBrush
             int totalItemCount = allItems.Count;
             int nextPageButtonIndex = FirstButtonIndex + ButtonsPerPage;
             bool nextPageExists = nextPageButtonIndex <= totalItemCount;
-            Debug.Log($"totalItemCount: {totalItemCount} nextPageButtonIndex: {nextPageButtonIndex} nextPageExists: {nextPageExists}");
             return new ItemListResults(
                 allItems.Skip(FirstButtonIndex).Take(ButtonsPerPage).ToList(),
                 nextPageExists

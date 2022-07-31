@@ -1366,7 +1366,6 @@ namespace TiltBrush
                 {
                     SetFinalColor(color, index);
                     PolyhydraColorButton btn = ColorPalletteButtons[index];
-                    Debug.Log($"Setting {btn.gameObject.name}: {index}/{btn.Index} to {colorString}");
                 }
             }
             PreviewPolyhedron.m_Instance.RebuildPoly();
