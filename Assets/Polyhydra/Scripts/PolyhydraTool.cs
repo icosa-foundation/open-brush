@@ -428,6 +428,12 @@ namespace TiltBrush
                     var vertexPos = vert + (nextVert - vert) * step;
                     vertexPos *= tr.scale;
                     vertexPos = tr.rotation * vertexPos;
+
+                    if (PointerManager.m_Instance.positionJitter > 0)
+                    {
+                        vertexPos = PointerManager.m_Instance.GenerateJitteredPosition(vertexPos, PointerManager.m_Instance.positionJitter);
+                    }
+
                     controlPoints.Add(new PointerManager.ControlPoint
                     {
                         m_Pos = tr.translation + vertexPos,
