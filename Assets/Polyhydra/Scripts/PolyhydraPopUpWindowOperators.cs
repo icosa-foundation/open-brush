@@ -220,6 +220,7 @@ namespace TiltBrush
             if (ParentPanel.CurrentOpCategoryIndex > 0)
             {
                 ParentPanel.CurrentOpCategoryIndex--;
+                UpdateCategoryLabel();
                 CreateButtons();
             }
             ParentPanel.CurrentOperatorPage = 0;
