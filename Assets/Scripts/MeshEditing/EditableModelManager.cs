@@ -67,11 +67,11 @@ namespace TiltBrush.MeshEditing
             m_EditableModels[id.guid] = emodel;
         }
 
-        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
+        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly, Material mat = null)
         {
             var id = widget.GetId();
             var emodel = m_EditableModels[id.guid];
-            var mat = id.gameObject.GetComponent<MeshRenderer>().material;
+            if (mat == null) mat = id.gameObject.GetComponent<MeshRenderer>().material;
             var meshData = poly.BuildMeshData(colors: emodel.Colors, colorMethod: emodel.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
             UpdateMesh(id.gameObject, mesh, mat);
