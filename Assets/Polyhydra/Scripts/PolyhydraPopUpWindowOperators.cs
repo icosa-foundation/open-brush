@@ -141,6 +141,9 @@ namespace TiltBrush
                 OpCategories.Deformations,
                 new()
                 {
+                    PolyMesh.Operation.TaperX,
+                    PolyMesh.Operation.TaperY,
+                    PolyMesh.Operation.TaperZ,
                     PolyMesh.Operation.Spherize,
                     PolyMesh.Operation.Cylinderize,
                     PolyMesh.Operation.Bulge,

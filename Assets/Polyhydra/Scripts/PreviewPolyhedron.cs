@@ -526,7 +526,6 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
-
         // Store the previous scaling factor to reapply afterwards
         float previousScalingFactor = conway.ScalingFactor;
 
