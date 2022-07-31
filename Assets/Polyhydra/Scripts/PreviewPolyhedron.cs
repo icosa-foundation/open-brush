@@ -526,6 +526,10 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public static PolyMesh ApplyOp(PolyMesh conway, OpDefinition op)
     {
+
+        // Store the previous scaling factor to reapply afterwards
+        float previousScalingFactor = conway.ScalingFactor;
+
         var _random = new Random();
         var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
 
@@ -561,6 +565,10 @@ public class PreviewPolyhedron : MonoBehaviour
         };
 
         conway = conway.AppyOperation(op.opType, opParams);
+
+        // Reapply the original scaling factor
+        conway.ScalingFactor = previousScalingFactor;
+
         return conway;
     }
 }
