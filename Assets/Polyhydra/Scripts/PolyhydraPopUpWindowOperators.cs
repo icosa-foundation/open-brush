@@ -30,6 +30,7 @@ namespace TiltBrush
         Thickening,
         Topology,
         Deformations,
+        Duplication,
     }
 
     public class PolyhydraPopUpWindowOperators : PolyhydraPopUpWindowBase
@@ -152,6 +153,19 @@ namespace TiltBrush
                     PolyMesh.Operation.PerlinNoiseX,
                     PolyMesh.Operation.PerlinNoiseY,
                     PolyMesh.Operation.PerlinNoiseZ,
+                }
+            },
+            {
+                OpCategories.Duplication,
+                new()
+                {
+                    PolyMesh.Operation.DuplicateX,
+                    PolyMesh.Operation.DuplicateY,
+                    PolyMesh.Operation.DuplicateZ,
+                    PolyMesh.Operation.MirrorX,
+                    PolyMesh.Operation.MirrorY,
+                    PolyMesh.Operation.MirrorZ,
+                    PolyMesh.Operation.AddDual,
                 }
             }
             // Store/Recall
