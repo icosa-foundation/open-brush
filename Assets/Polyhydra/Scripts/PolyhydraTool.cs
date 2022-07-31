@@ -56,7 +56,6 @@ namespace TiltBrush
 
         private Mesh previewMesh;
         private Material previewMaterial;
-        public int CurrentMaterialIndex;
 
         //whether this tool should follow the controller or not
         private bool m_LockToController;
@@ -354,9 +353,9 @@ namespace TiltBrush
                 }
 
                 Color strokeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex);
-                float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
                 if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
                 {
+                    float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
                     strokeColor = PointerManager.m_Instance.GenerateJitteredColor(strokeColor, colorLuminanceMin);
                 }
 
@@ -373,6 +372,7 @@ namespace TiltBrush
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                 stroke.Group = group;
+
                 stroke.Recreate(null, App.Scene.ActiveCanvas);
                 if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
@@ -389,6 +389,7 @@ namespace TiltBrush
             float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
 
             var group = App.GroupManager.NewUnusedGroup();
+            tr.scale *= poly.ScalingFactor;
 
             var drawnEdges = new HashSet<(Guid, Guid)?>();
 
@@ -401,7 +402,17 @@ namespace TiltBrush
                     edge.Face.Normal :
                     (edge.Face.Normal + edge.Pair.Face.Normal) / 2;
 
-                Color edgeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(poly.Faces.IndexOf(edge.Face));
+
+                // IndexOf is slow. However we need the index for ByIndex ColorMethod.
+                // Maybe iterate by faces and keep a list of edges we've already drawn?
+                int faceIndex = poly.Faces.IndexOf(edge.Face);
+                Color edgeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex);
+
+                if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
+                {
+                    float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
+                    edgeColor = PointerManager.m_Instance.GenerateJitteredColor(edgeColor, colorLuminanceMin);
+                }
                 var controlPoints = new List<PointerManager.ControlPoint>();
                 var edgeVerts = new[]
                 {
