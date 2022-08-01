@@ -55,9 +55,16 @@ namespace TiltBrush
 
     public class PresetConverter
     {
+        private static List<string> errors;
+        private static List<string> warnings;
+
         [MenuItem("Open Brush/Convert Old Polyhydra Presets")]
         public static void Convert()
         {
+
+            errors = new List<string>();
+            warnings = new List<string>();
+
             var userPath = Path.Combine(
                 System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal),
                 App.kAppFolderName
@@ -72,6 +79,8 @@ namespace TiltBrush
             {
                 ConvertOldPreset(f, newPath);
             }
+            Debug.LogError(String.Join("\n", errors));
+            Debug.LogWarning(String.Join("\n", warnings));
         }
         private static void ConvertOldPreset(FileInfo fileInfo, string newPath)
         {
@@ -129,7 +138,7 @@ namespace TiltBrush
                                         radialType = RadialSolids.RadialPolyType.Antiprism;
                                         break;
                                     default:
-                                        Debug.LogWarning($"Unsupported prism type for {oldPreset.Name}. Defaulting to prism");
+                                        warnings.Add($"Unsupported prism type for {oldPreset.Name}. Defaulting to prism");
                                         break;
                                 }
                                 generatorParameters = new Dictionary<string, object>
@@ -147,11 +156,10 @@ namespace TiltBrush
                                     { "type", polyType },
                                 };
                             }
-
                         }
                         else
                         {
-                            Debug.LogError($"Failed to parse: {oldPreset.PolyType} for {fileInfo.Name}");
+                            errors.Add($"Failed to parse: {oldPreset.PolyType} for {fileInfo.Name}");
                         }
                         break;
                     case GeneratorTypes.Waterman:
@@ -207,7 +215,7 @@ namespace TiltBrush
                         if (oldPreset.GridShape == "Torus")
                         {
                             oldPreset.GridShape = "Sphere";
-                            Debug.LogWarning($"Unsupported grid shape: Torus. Concerted to Sphere.");
+                            warnings.Add($"Unsupported grid shape: Torus. Concerted to Sphere.");
                         }
 
                         if (Enum.TryParse(oldPreset.GridType, true, out gridType) &&
@@ -223,7 +231,7 @@ namespace TiltBrush
                         }
                         else
                         {
-                            Debug.LogError($"Failed to parse: {oldPreset.GridType}/{oldPreset.GridShape} for {fileInfo.Name}");
+                            errors.Add($"Failed to parse: {oldPreset.GridType}/{oldPreset.GridShape} for {fileInfo.Name}");
                         }
                         break;
                     case GeneratorTypes.Radial:
@@ -264,7 +272,7 @@ namespace TiltBrush
                         }
                         else
                         {
-                            Debug.LogError($"Failed to parse: {oldPreset.JohnsonPolyType} for {fileInfo.Name}");
+                            errors.Add($"Failed to parse: {oldPreset.JohnsonPolyType} for {fileInfo.Name}");
                         }
 
                         break;
@@ -338,6 +346,7 @@ namespace TiltBrush
                         break;
                 }
 
+                generatorParameters["ColorMethod"] = ColorMethods.ByRole;
 
                 var operations = new List<Dictionary<string, object>>();
 
@@ -347,7 +356,17 @@ namespace TiltBrush
                     var newOp = new Dictionary<string, object>();
                     PolyMesh.Operation opType;
 
+                    if (oldOp.Disabled) continue;
+
                     if (oldOp.OpType == "FaceRotate") oldOp.OpType = "FaceRotateZ";
+                    if (oldOp.OpType == "AddCopyX") oldOp.OpType = "DuplicateX";
+                    if (oldOp.OpType == "AddCopyY") oldOp.OpType = "DuplicateY";
+                    if (oldOp.OpType == "AddCopyZ") oldOp.OpType = "DuplicateZ";
+                    if (oldOp.OpType == "AddMirrorX") oldOp.OpType = "MirrorX";
+                    if (oldOp.OpType == "AddMirrorY") oldOp.OpType = "MirrorY";
+                    if (oldOp.OpType == "AddMirrorZ") oldOp.OpType = "MirrorZ";
+                    if (oldOp.OpType == "VertexFlex") oldOp.OpType = "VertexOffset";
+
 
                     if (oldOp.OpType == "Slice" ||
                         oldOp.OpType == "Stretch" ||
@@ -355,23 +374,16 @@ namespace TiltBrush
                         oldOp.OpType == "Stash" ||
                         oldOp.OpType == "Unstash" ||
                         oldOp.OpType == "Hinge" ||
-                        oldOp.OpType == "AddDual" ||
                         oldOp.OpType == "FaceMerge" ||
-                        oldOp.OpType == "AddMirrorX" ||
                         oldOp.OpType == "Stack"
                         )
                     {
-                        Debug.LogWarning($"Skipping {oldOp.OpType} on {fileInfo.Name}");
+                        warnings.Add($"Skipping {oldOp.OpType} on {fileInfo.Name}");
                         skipped = true;
                         continue;
                     }
 
-                    if (oldOp.OpType == "VertexFlex") oldOp.OpType = "VertexOffset";
-
-                    if (oldOp.OpType == "FaceScale")
-                    {
-                        oldOp.Amount += 1f;
-                    }
+                    if (oldOp.OpType == "FaceScale") oldOp.Amount += 1f;
 
                     if (oldOp.OpType == "FaceKeep")
                     {
@@ -566,7 +578,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogError($"Failed to parse: {oldOp.OpType} for {fileInfo.Name}");
+                        errors.Add($"Failed to parse: {oldOp.OpType} for {fileInfo.Name}");
                         skipped = true;
                     }
                 }
@@ -592,7 +604,7 @@ namespace TiltBrush
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"Failed to copy thumbnail from {thumbnailSource} to {thumbNailDestination}");
+                    warnings.Add($"Failed to copy thumbnail from {thumbnailSource} to {thumbNailDestination}");
                 }
             }
         }
