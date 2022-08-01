@@ -35,7 +35,7 @@ Shader "Custom/StandardSurfWithVertexColorEdged"
                 "LightMode" = "ForwardBase"
             }
             Blend SrcAlpha OneMinusSrcAlpha
-            Cull Back
+            Cull Off
             CGPROGRAM
             #pragma vertex vert
             #pragma geometry geom

@@ -252,7 +252,7 @@ Material:
     - _RimIntensity: 0
     - _RimPower: 16
     - _SSRefractionProjectionModel: 0
-    - _Saturation: 0.8
+    - _Saturation: 1
     - _Shininess: 0.84
     - _Smoothness: 0.82
     - _SmoothnessRemapMax: 1
