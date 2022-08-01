@@ -241,8 +241,18 @@ public class PreviewPolyhedron : MonoBehaviour
 
         m_BuildMeshThread = new Thread(() =>
         {
-            toRun();
-            m_BuildMeshThreadIsFinished = true;
+            try
+            {
+                toRun();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+            finally
+            {
+                m_BuildMeshThreadIsFinished = true;
+            }
         });
         m_BuildMeshThread.Start();
         while (!m_BuildMeshThreadIsFinished)
