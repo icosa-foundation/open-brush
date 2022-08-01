@@ -184,11 +184,6 @@ namespace TiltBrush
         public int CurrentOperatorPage { get; set; }
         public int CurrentColorPalettePage { get; set; }
 
-        private string DefaultPresetsDirectory()
-        {
-            return Path.Combine(App.UserPath(), "Media Library", "Shape Recipes");
-        }
-
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
@@ -233,7 +228,7 @@ namespace TiltBrush
         public override void InitPanel()
         {
             base.InitPanel();
-            CurrentPresetsDirectory = DefaultPresetsDirectory();
+            CurrentPresetsDirectory = App.ShapeRecipesPath();
 
             InitPreviewPoly(false);
             ShowAllGeneratorControls();
@@ -242,10 +237,6 @@ namespace TiltBrush
             SetSliderConfiguration();
             SetMainButtonVisibility();
             EnablePresetSaveButtons(popupButtonEnabled: false);
-            if (!Directory.Exists(DefaultPresetsDirectory()))
-            {
-                Directory.CreateDirectory(DefaultPresetsDirectory());
-            }
 
             if (EditableModelManager.CurrentModel.Colors == null)
             {
@@ -340,6 +331,12 @@ namespace TiltBrush
             AllGeneratorControls.SetActive(false);
             AllOpControls.SetActive(true);
             AllAppearanceControls.SetActive(false);
+        }
+
+        public void OnInputFieldSelected()
+        {
+            Debug.Log($"OnInputFieldSelected");
+            var overlayKeyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
         }
 
         public void ShowAllAppearanceControls()
@@ -740,7 +737,7 @@ namespace TiltBrush
             if (string.IsNullOrEmpty(CurrentPresetPath))
             {
                 CurrentPresetPath = Path.Combine(
-                    DefaultPresetsDirectory(),
+                    App.ShapeRecipesPath(),
                     Guid.NewGuid().ToString().Substring(0, 8)
                 );
             }
@@ -909,10 +906,18 @@ namespace TiltBrush
                     break;
                 case PolyhydraButtonTypes.ColorMethod:
                     ButtonColorMethod.GetComponentInChildren<TextMeshPro>().text = friendlyLabel;
-                    ButtonColorMethod.SetButtonTexture(GetButtonTexture(buttonType, label));
                     ButtonColorMethod.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
             }
+        }
+
+        public void LoadFromId(EditableModelId id)
+        {
+            var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
+            // Clear the current preset path and enable insta-save
+            CurrentPresetPath = "";
+            EnablePresetSaveButtons(popupButtonEnabled: false);
+            LoadFromEditableModel(emodel);
         }
 
         public void LoadFromDefinition(EditableModelDefinition emd)
@@ -1724,12 +1729,12 @@ namespace TiltBrush
 
         public bool IsPresetsSubdirOrSameDir(string dirPath)
         {
-            return dirPath.StartsWith(DefaultPresetsDirectory());
+            return dirPath.StartsWith(App.ShapeRecipesPath());
         }
 
         public bool PresetRootIsCurrent()
         {
-            return Path.GetFullPath(DefaultPresetsDirectory()) == Path.GetFullPath(CurrentPresetsDirectory);
+            return Path.GetFullPath(App.ShapeRecipesPath()) == Path.GetFullPath(CurrentPresetsDirectory);
         }
 
         public void HandleSetColorMethod(ColorMethods colorMethod)

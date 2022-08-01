@@ -194,8 +194,7 @@ namespace TiltBrush
                                     break;
 
                                 case ModifyModes.GetSettings:
-                                    var emodel = EditableModelManager.m_Instance.EditableModels[id.guid];
-                                    polyhydraPanel.LoadFromEditableModel(emodel);
+                                    polyhydraPanel.LoadFromId(id);
                                     break;
 
                                 case ModifyModes.ApplyColor:

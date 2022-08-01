@@ -57,6 +57,7 @@ namespace TiltBrush.MeshEditing
 
         void Awake()
         {
+            App.InitShapeRecipesPath();
             m_Instance = this;
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }
