@@ -8,11 +8,10 @@
         android:requestLegacyExternalStorage="true">
         <activity
             android:launchMode="singleTask"
-            android:name="com.unity3d.player.UnityPlayerActivity"
-            android:excludeFromRecents="true">
+            android:name="com.unity3d.player.UnityPlayerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.INFO"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
