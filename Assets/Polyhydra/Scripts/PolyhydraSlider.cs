@@ -101,10 +101,18 @@ namespace TiltBrush
         override public void UpdateValue(float fValue)
         {
             var val = remap(fValue, 0, 1, Min, Max);
-            UpdateValueAbsolute(val);
+            _UpdateValueAbsolute(val);
         }
 
         public void UpdateValueAbsolute(float fValue)
+        {
+            // Set m_SafeLimits on if we are within the range, off we are outside the range
+            if (m_SafeLimits && (fValue < Min || fValue > Max)) { HandleChangeLimits(); }
+            if (!m_SafeLimits && (fValue >= Min && fValue <= Max)) { HandleChangeLimits(); }
+            _UpdateValueAbsolute(fValue);
+        }
+
+        private void _UpdateValueAbsolute(float fValue)
         {
             valueText.text = FormatValue(fValue);
             onUpdateValue.Invoke(new Vector3(opIndex, paramIndex, fValue));
@@ -122,12 +130,12 @@ namespace TiltBrush
 
         public void HandleIncrement()
         {
-            UpdateValueAbsolute(CurrentValueAbsolute + CalcIncDecAmount());
+            _UpdateValueAbsolute(CurrentValueAbsolute + CalcIncDecAmount());
         }
 
         public void HandleDecrement()
         {
-            UpdateValueAbsolute(CurrentValueAbsolute - CalcIncDecAmount());
+            _UpdateValueAbsolute(CurrentValueAbsolute - CalcIncDecAmount());
         }
 
         public void HandleChangeLimits()
@@ -146,7 +154,7 @@ namespace TiltBrush
             }
             minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
-            UpdateValueAbsolute(previousValue);
+            _UpdateValueAbsolute(previousValue);
         }
     }
 } // namespace TiltBrush
