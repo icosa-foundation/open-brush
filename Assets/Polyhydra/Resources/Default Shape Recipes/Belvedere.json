@@ -1,0 +1,72 @@
+{
+  "Colors": [ [ 0.5, 0.0, 0.0, 0.5 ], [ 0.5, 0.186612546, 0.0, 0.5 ], [ 0.5, 0.3732251, 0.0, 0.5 ], [ 0.5, 0.432813734, 0.0, 0.5 ], [ 0.5, 0.492402375, 0.0, 0.5 ], [ 0.322659284, 0.4962012, 0.0, 0.5 ], [ 0.145318568, 0.5, 0.0, 0.5 ], [ 0.0726592839, 0.4348699, 0.25, 0.5 ], [ 0.0, 0.369739771, 0.5, 0.5 ], [ 0.141481966, 0.184869781, 0.5, 0.5 ], [ 0.5, 2.78074364E-08, 0.0, 0.5 ], [ 0.5, 0.186612561, 0.0, 0.5 ]
+  ],
+  "ColorMethod": 1,
+  "MaterialIndex": 0,
+  "GeneratorType": 4,
+  "GeneratorParameters": {
+    "type": 0,
+    "sides": 4,
+    "height": 1.5422492,
+    "capheight": 1.5422492
+  },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [
+    {
+      "operation": 15,
+      "param1": 0.49,
+      "param1Randomize": false,
+      "param2": -0.007,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 90.0,
+      "filterParamInt": 90,
+      "filterNot": false
+    },
+    {
+      "operation": 46,
+      "param1": 0.451,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 7,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 56,
+      "param1": 0.0,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 7,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 37,
+      "param1": 0.171,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    }
+  ]
+}
