@@ -198,6 +198,13 @@ namespace TiltBrush
             var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
             //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
             cameraRig.disableEyeAnchorCameras = true;
+
+            List<float> rates = new List<float>(OVRManager.display.displayFrequenciesAvailable);
+            if (rates.Contains(90))
+            {
+                OVRPlugin.systemDisplayFrequency = 90;
+                Debug.Log("Target FPS set to 90");
+            }
 #endif // OCULUS_SUPPORTED
 
 #if PIMAX_SUPPORTED
