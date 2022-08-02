@@ -520,8 +520,8 @@ namespace TiltBrush
                 case PolyhydraMainCategories.Radial:
 
                     Slider1.gameObject.SetActive(true);
-                    Slider1.Min = 3;
-                    Slider1.Max = 16;
+                    Slider1.SetMin(3, 3);
+                    Slider1.SetMax(16, 64);
                     Slider1.SetDescriptionText("Sides");
                     Slider1.SliderType = SliderTypes.Int;
 
@@ -536,8 +536,8 @@ namespace TiltBrush
                         case RadialSolids.RadialPolyType.Cupola:
                             Slider2.gameObject.SetActive(true);
                             Slider2.SetDescriptionText("Height");
-                            Slider2.Min = .1f;
-                            Slider2.Max = 4;
+                            Slider2.SetMin(.1f, .1f);
+                            Slider2.SetMax(4, 16);
                             Slider2.SliderType = SliderTypes.Float;
                             Slider3.gameObject.SetActive(false);
                             break;
@@ -552,13 +552,13 @@ namespace TiltBrush
                         case RadialSolids.RadialPolyType.GyroelongatedBicupola:
                             Slider2.gameObject.SetActive(true);
                             Slider2.SetDescriptionText("Height");
-                            Slider2.Min = .1f;
-                            Slider2.Max = 4;
+                            Slider2.SetMin(.1f, .1f);
+                            Slider2.SetMax(4, 16);
                             Slider2.SliderType = SliderTypes.Float;
                             Slider3.gameObject.SetActive(true);
                             Slider3.SetDescriptionText("Cap Height");
-                            Slider3.Min = .1f;
-                            Slider3.Max = 4;
+                            Slider3.SetMin(.1f, .1f);
+                            Slider3.SetMax(4, 16);
                             Slider3.SliderType = SliderTypes.Float;
                             break;
                     }
@@ -571,10 +571,10 @@ namespace TiltBrush
                     Slider3.gameObject.SetActive(false);
                     Slider1.SetDescriptionText("Root");
                     Slider2.SetDescriptionText("C");
-                    Slider1.Min = 1;
-                    Slider1.Max = 80;
-                    Slider2.Min = 0;
-                    Slider2.Max = 6;
+                    Slider1.SetMin(1, 1);
+                    Slider1.SetMax(80, 80);
+                    Slider2.SetMin(0, 0);
+                    Slider2.SetMax(6, 6);
                     Slider1.SliderType = SliderTypes.Int;
                     Slider2.SliderType = SliderTypes.Int;
                     break;
@@ -586,10 +586,10 @@ namespace TiltBrush
                     Slider3.gameObject.SetActive(false);
                     Slider1.SetDescriptionText("Width");
                     Slider2.SetDescriptionText("Depth");
-                    Slider1.Min = 1;
-                    Slider1.Max = 16;
-                    Slider2.Min = 1;
-                    Slider2.Max = 16;
+                    Slider1.SetMin(1, 1);
+                    Slider1.SetMax(16, 48);
+                    Slider2.SetMin(1, 1);
+                    Slider2.SetMax(16, 48);
                     Slider1.SliderType = SliderTypes.Int;
                     Slider2.SliderType = SliderTypes.Int;
                     break;
@@ -603,8 +603,8 @@ namespace TiltBrush
                             Slider2.gameObject.SetActive(false);
                             Slider3.gameObject.SetActive(false);
                             Slider1.SliderType = SliderTypes.Int;
-                            Slider1.Min = 3;
-                            Slider1.Max = 16;
+                            Slider1.SetMin(3, 3);
+                            Slider1.SetMax(16, 48);
                             Slider1.SetDescriptionText("Sides");
                             break;
                         case OtherSolidsCategories.Star:
@@ -613,10 +613,10 @@ namespace TiltBrush
                             Slider3.gameObject.SetActive(false);
                             Slider1.SliderType = SliderTypes.Int;
                             Slider2.SliderType = SliderTypes.Float;
-                            Slider1.Min = 3;
-                            Slider1.Max = 16;
-                            Slider2.Min = 0.01f;
-                            Slider2.Max = 4f;
+                            Slider1.SetMin(3, 3);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(0.01f, 0.01f);
+                            Slider2.SetMax(4, 12);
                             Slider1.SetDescriptionText("Sides");
                             Slider2.SetDescriptionText("Amount");
                             break;
@@ -627,12 +627,12 @@ namespace TiltBrush
                             Slider1.SliderType = SliderTypes.Int;
                             Slider2.SliderType = SliderTypes.Int;
                             Slider3.SliderType = SliderTypes.Int;
-                            Slider1.Min = 1;
-                            Slider1.Max = 16;
-                            Slider2.Min = 1;
-                            Slider2.Max = 16;
-                            Slider3.Min = 1;
-                            Slider3.Max = 16;
+                            Slider1.SetMin(1, 1);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(1, 1);
+                            Slider2.SetMax(16, 48);
+                            Slider3.SetMin(1, 1);
+                            Slider3.SetMax(16, 48);
                             Slider1.SetDescriptionText("X Resolution");
                             Slider2.SetDescriptionText("Y Resolution");
                             Slider3.SetDescriptionText("Z Resolution");
@@ -644,10 +644,10 @@ namespace TiltBrush
                             Slider3.gameObject.SetActive(false);
                             Slider1.SliderType = SliderTypes.Int;
                             Slider2.SliderType = SliderTypes.Int;
-                            Slider1.Min = 1;
-                            Slider1.Max = 16;
-                            Slider2.Min = 1;
-                            Slider2.Max = 16;
+                            Slider1.SetMin(3, 3);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(3, 3);
+                            Slider2.SetMax(16, 48);
                             Slider1.SetDescriptionText("Sides");
                             Slider2.SetDescriptionText("Slices");
                             break;
@@ -658,12 +658,12 @@ namespace TiltBrush
                             Slider1.SliderType = SliderTypes.Int;
                             Slider2.SliderType = SliderTypes.Int;
                             Slider3.SliderType = SliderTypes.Float;
-                            Slider1.Min = 1;
-                            Slider1.Max = 16;
-                            Slider2.Min = 1;
-                            Slider2.Max = 16;
-                            Slider3.Min = .001f;
-                            Slider3.Max = 50f;
+                            Slider1.SetMin(3, 3);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(3, 3);
+                            Slider2.SetMax(16, 48);
+                            Slider3.SetMin(.01f, .01f);
+                            Slider3.SetMax(32, 80);
                             Slider1.SetDescriptionText("Sides");
                             Slider2.SetDescriptionText("Inner Sides");
                             Slider3.SetDescriptionText("Inner Radius");
@@ -677,12 +677,12 @@ namespace TiltBrush
                             Slider1.SliderType = SliderTypes.Float;
                             Slider2.SliderType = SliderTypes.Float;
                             Slider3.SliderType = SliderTypes.Float;
-                            Slider1.Min = .1f;
-                            Slider1.Max = 3f;
-                            Slider2.Min = .1f;
-                            Slider2.Max = 3f;
-                            Slider3.Min = .1f;
-                            Slider3.Max = 3f;
+                            Slider1.SetMin(.1f, .1f);
+                            Slider1.SetMax(3, 12);
+                            Slider2.SetMin(.1f, .1f);
+                            Slider2.SetMax(3, 12);
+                            Slider3.SetMin(.1f, .1f);
+                            Slider3.SetMax(3, 12);
                             Slider1.SetDescriptionText("Size 1");
                             Slider2.SetDescriptionText("Size 2");
                             Slider3.SetDescriptionText("Size 3");
@@ -694,12 +694,12 @@ namespace TiltBrush
                             Slider1.SliderType = SliderTypes.Int;
                             Slider2.SliderType = SliderTypes.Float;
                             Slider3.SliderType = SliderTypes.Float;
-                            Slider1.Min = 1f;
-                            Slider1.Max = 30f;
-                            Slider2.Min = .1f;
-                            Slider2.Max = 30f;
-                            Slider3.Min = .1f;
-                            Slider3.Max = 30f;
+                            Slider1.SetMin(1, 1);
+                            Slider1.SetMax(30, 80);
+                            Slider2.SetMin(.1f, .1f);
+                            Slider2.SetMax(30, 80);
+                            Slider3.SetMin(.1f, .1f);
+                            Slider3.SetMax(30, 80);
                             Slider1.SetDescriptionText("Steps");
                             Slider2.SetDescriptionText("Width");
                             Slider3.SetDescriptionText("Step Height");
@@ -862,7 +862,6 @@ namespace TiltBrush
                 default:
                     return null;
             }
-            return null;
         }
 
         public void SetButtonTextAndIcon(PolyhydraButtonTypes buttonType, string label, string friendlyLabel = "")
@@ -1262,8 +1261,8 @@ namespace TiltBrush
             if (opConfig.usesAmount)
             {
                 SliderOpParam1.gameObject.SetActive(true);
-                SliderOpParam1.Min = opConfig.amountSafeMin;
-                SliderOpParam1.Max = opConfig.amountSafeMax;
+                SliderOpParam1.SetMin(opConfig.amountSafeMin, opConfig.amountMin);
+                SliderOpParam1.SetMax(opConfig.amountSafeMax, opConfig.amountMax);
                 SliderOpParam1.UpdateValueAbsolute(op.amount);
                 SliderOpParam1.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amountRandomize);
             }
@@ -1275,8 +1274,8 @@ namespace TiltBrush
             if (opConfig.usesAmount2)
             {
                 SliderOpParam2.gameObject.SetActive(true);
-                SliderOpParam2.Min = opConfig.amount2SafeMin;
-                SliderOpParam2.Max = opConfig.amount2SafeMax;
+                SliderOpParam2.SetMin(opConfig.amount2SafeMin, opConfig.amount2Min);
+                SliderOpParam2.SetMax(opConfig.amount2SafeMax, opConfig.amount2Max);
                 SliderOpParam2.UpdateValueAbsolute(op.amount2);
                 SliderOpParam2.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amount2Randomize);
             }
@@ -1565,37 +1564,37 @@ namespace TiltBrush
                 case FilterTypes.Role:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
-                    SliderOpFilterParam.Min = 0;
-                    SliderOpFilterParam.Max = 10;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(10, 10);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case FilterTypes.OnlyNth:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
-                    SliderOpFilterParam.Min = 0;
-                    SliderOpFilterParam.Max = 100;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(32, 320);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case FilterTypes.EveryNth:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
-                    SliderOpFilterParam.Min = 1;
-                    SliderOpFilterParam.Max = 32;
+                    SliderOpFilterParam.SetMin(2, 2);
+                    SliderOpFilterParam.SetMax(8, 64);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case FilterTypes.FirstN:
                 case FilterTypes.LastN:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
-                    SliderOpFilterParam.Min = 1;
-                    SliderOpFilterParam.Max = 100;
+                    SliderOpFilterParam.SetMin(1, 1);
+                    SliderOpFilterParam.SetMax(32, 320);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
                 case FilterTypes.NSided:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Int;
-                    SliderOpFilterParam.Min = 3;
-                    SliderOpFilterParam.Max = 16;
+                    SliderOpFilterParam.SetMin(3, 3);
+                    SliderOpFilterParam.SetMax(12, 32);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamInt);
                     break;
 
@@ -1604,22 +1603,22 @@ namespace TiltBrush
                 case FilterTypes.FacingRight:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = 0f;
-                    SliderOpFilterParam.Max = 180f;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(180, 180);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case FilterTypes.FacingVertical:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = 0f;
-                    SliderOpFilterParam.Max = 90f;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(90, 90);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case FilterTypes.Random:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = 0f;
-                    SliderOpFilterParam.Max = 1f;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(1, 1);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case FilterTypes.PositionX:
@@ -1627,15 +1626,15 @@ namespace TiltBrush
                 case FilterTypes.PositionZ:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = -5f;
-                    SliderOpFilterParam.Max = 5f;
+                    SliderOpFilterParam.SetMin(-5, -30);
+                    SliderOpFilterParam.SetMax(5, 30);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
                 case FilterTypes.DistanceFromCenter:
                     SliderOpFilterParam.gameObject.SetActive(true);
                     SliderOpFilterParam.SliderType = SliderTypes.Float;
-                    SliderOpFilterParam.Min = 0f;
-                    SliderOpFilterParam.Max = 10f;
+                    SliderOpFilterParam.SetMin(0, 0);
+                    SliderOpFilterParam.SetMax(10, 30);
                     SliderOpFilterParam.UpdateValueAbsolute(op.filterParamFloat);
                     break;
             }

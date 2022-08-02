@@ -34,25 +34,31 @@ namespace TiltBrush
         public int opIndex;
         public int paramIndex;
 
-        private float min;
-        private float max;
-        public float Max
+        private float m_safeMin;
+        private float m_safeMax;
+        private float m_unsafeMin;
+        private float m_unsafeMax;
+
+        public bool m_SafeLimits = true;
+
+        public float Min => m_SafeLimits ? m_safeMin : m_unsafeMin;
+        public float Max => m_SafeLimits ? m_safeMax : m_unsafeMax;
+
+        public void SetMax(float safeMax, float unsafeMax)
         {
-            get => max;
-            set
-            {
-                maxText.text = FormatValue(value);
-                max = value;
-            }
+            maxText.text = FormatValue(safeMax);
+            m_safeMax = safeMax;
+            m_unsafeMax = unsafeMax;
+            m_SafeLimits = true;
+
         }
-        public float Min
+
+        public void SetMin(float safeMin, float unsafeMin)
         {
-            get => min;
-            set
-            {
-                minText.text = FormatValue(value);
-                min = value;
-            }
+            minText.text = FormatValue(safeMin);
+            m_safeMin = safeMin;
+            m_unsafeMin = unsafeMin;
+            m_SafeLimits = true;
         }
 
         [SerializeField] private TextMeshPro minText;
@@ -62,6 +68,7 @@ namespace TiltBrush
 
         [SerializeField] public sliderEvent onUpdateValue;
 
+        public float CurrentValueAbsolute => Mathf.Lerp(Min, Max, m_CurrentValue);
 
         float remap(float s, float a1, float a2, float b1, float b2)
         {
@@ -71,9 +78,8 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            m_CurrentValue = 0.5f;
-            SetSliderPositionToReflectValue();
-            minText.text = FormatValue(min);
+            UpdateValue(0.5f);
+            minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
             valueText.text = FormatValue(m_CurrentValue);
         }
@@ -94,7 +100,7 @@ namespace TiltBrush
 
         override public void UpdateValue(float fValue)
         {
-            var val = remap(fValue, 0, 1, min, Max);
+            var val = remap(fValue, 0, 1, Min, Max);
             UpdateValueAbsolute(val);
         }
 
@@ -102,8 +108,45 @@ namespace TiltBrush
         {
             valueText.text = FormatValue(fValue);
             onUpdateValue.Invoke(new Vector3(opIndex, paramIndex, fValue));
-            m_CurrentValue = Mathf.InverseLerp(min, Max, fValue);
+            m_CurrentValue = Mathf.InverseLerp(Min, Max, fValue);
             SetSliderPositionToReflectValue();
+        }
+
+        private float CalcIncDecAmount()
+        {
+            if (SliderType == SliderTypes.Int) return 1;
+            float range = Max - Min;
+            float magnitude = Mathf.Floor(Mathf.Log10(range));
+            return Mathf.Pow(10, magnitude) / 10f;
+        }
+
+        public void HandleIncrement()
+        {
+            UpdateValueAbsolute(CurrentValueAbsolute + CalcIncDecAmount());
+        }
+
+        public void HandleDecrement()
+        {
+            UpdateValueAbsolute(CurrentValueAbsolute - CalcIncDecAmount());
+        }
+
+        public void HandleChangeLimits()
+        {
+            float previousValue = CurrentValueAbsolute;
+            m_SafeLimits = !m_SafeLimits;
+            if (previousValue < Min)
+            {
+                m_CurrentValue = 0;
+                previousValue = Min;
+            }
+            if (previousValue > Max)
+            {
+                m_CurrentValue = 1;
+                previousValue = Max;
+            }
+            minText.text = FormatValue(Min);
+            maxText.text = FormatValue(Max);
+            UpdateValueAbsolute(previousValue);
         }
     }
 } // namespace TiltBrush
