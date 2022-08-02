@@ -91,7 +91,7 @@ BlendTree:
   m_Name: Grip
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 0e5733e7efb04dc48a7bcabfc2e082fd, type: 2}
+    m_Motion: {fileID: 7400000, guid: 44655e5760f36ea4dbcccef8ff941719, type: 2}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -99,7 +99,7 @@ BlendTree:
     m_DirectBlendParameter: Trigger
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 8e706ac07b35b6d4dbc2c2a6ff69b1e3, type: 2}
+    m_Motion: {fileID: 7400000, guid: f9b635e3228d2a444b9d1068e3a7ab8d, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -122,7 +122,7 @@ BlendTree:
   m_Name: Blend Tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 1c29a362fde0e0242a8eae0a4c6020ef, type: 2}
+    m_Motion: {fileID: 7400000, guid: 3cd2c93d0b50f2643bfa6bbd74319d5d, type: 2}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -130,7 +130,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: cab1c6712e9b02f45840fca6830b74e0, type: 2}
+    m_Motion: {fileID: 7400000, guid: f957a880b61917840a788e311b9f1998, type: 2}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -146,7 +146,7 @@ BlendTree:
   m_BlendType: 0
 --- !u!1102 &1102168572209795832
 AnimatorState:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -172,7 +172,7 @@ AnimatorState:
   m_TimeParameter: 
 --- !u!1102 &1102276529555987200
 AnimatorState:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -198,7 +198,7 @@ AnimatorState:
   m_TimeParameter: 
 --- !u!1102 &1102837451541670898
 AnimatorState:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -224,7 +224,7 @@ AnimatorState:
   m_TimeParameter: 
 --- !u!1107 &1107452100837280218
 AnimatorStateMachine:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -246,7 +246,7 @@ AnimatorStateMachine:
   m_DefaultState: {fileID: 1102168572209795832}
 --- !u!1107 &1107459804177561800
 AnimatorStateMachine:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -268,7 +268,7 @@ AnimatorStateMachine:
   m_DefaultState: {fileID: 1102276529555987200}
 --- !u!1107 &1107851180222780996
 AnimatorStateMachine:
-  serializedVersion: 5
+  serializedVersion: 6
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
