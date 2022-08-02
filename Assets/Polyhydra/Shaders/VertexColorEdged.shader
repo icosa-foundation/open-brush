@@ -126,6 +126,11 @@ Shader "Custom/StandardSurfWithVertexColorEdged"
                 return min(polyEdge, triEdge);
             }
 
+            float calcLuminance(float3 color)
+            {
+                return dot(color, float3(0.2126, 0.7152, 0.0722));
+            }
+
             float4 frag(v2f i) : SV_TARGET
             {
                 // Apply shadows
@@ -157,7 +162,10 @@ Shader "Custom/StandardSurfWithVertexColorEdged"
                 // Reduce this component to minimize double counting of main directional light.
                 lighting += float3(ShadeSH9(half4(normal, 1.0))) * 0.5;
 
-                return float4(lighting * lerp(i.vertexColor.rgb, float4(0,0,0,1), calcEdges(i.uv1, i.uv2)), i.vertexColor.a);
+                float3 faceColor = i.vertexColor.rgb;
+                float3 edgeColor = calcLuminance(faceColor) > 0.5 ? float4(0, 0, 0, 1) : float4(1, 1, 1, 1);
+                float3 finalColor = lerp(faceColor, edgeColor, calcEdges(i.uv1, i.uv2));
+                return float4(lighting * finalColor, i.vertexColor.a);
             }
             ENDCG
         }
