@@ -107,6 +107,7 @@ namespace TiltBrush
             switch (rMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
+                case PointerManager.SymmetryMode.TwoHanded:
                     m_LeftRightMesh.enabled = false;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {

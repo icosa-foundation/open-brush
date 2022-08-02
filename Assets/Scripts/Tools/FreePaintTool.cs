@@ -121,6 +121,9 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
+            // Allow API command to override painting mode
+            m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
+
             if (m_BimanualTape)
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ShowPinCushion))

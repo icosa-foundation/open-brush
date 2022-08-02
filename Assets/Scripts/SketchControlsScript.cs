@@ -143,6 +143,7 @@ namespace TiltBrush
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
+            SymmetryTwoHanded = 6003,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000
@@ -1378,6 +1379,7 @@ namespace TiltBrush
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
                         : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
+                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.TwoHanded
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -4325,6 +4327,19 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.SymmetryTwoHanded:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.TwoHanded);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
                 case GlobalCommands.StraightEdge:
                     PointerManager.m_Instance.StraightEdgeModeEnabled = !PointerManager.m_Instance.StraightEdgeModeEnabled;
                     if (PointerManager.m_Instance.StraightEdgeModeEnabled)
@@ -4898,15 +4913,15 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/help/commands");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/scripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/examplescripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.Null: break; // Intentionally blank.
                 default:
@@ -4955,6 +4970,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();

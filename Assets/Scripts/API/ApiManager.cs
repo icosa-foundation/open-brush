@@ -25,6 +25,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using Valve.Newtonsoft.Json.Utilities;
 
 namespace TiltBrush
 {
@@ -41,6 +42,7 @@ namespace TiltBrush
         private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
+        private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
         private static ApiManager m_Instance;
@@ -54,6 +56,7 @@ namespace TiltBrush
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        public bool ForcePaintingOn = false;
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -77,6 +80,7 @@ namespace TiltBrush
             PopulateApi();
             m_UserScripts = new Dictionary<string, string>();
             m_ExampleScripts = new Dictionary<string, string>();
+            m_CommandStatuses = new Dictionary<string, string>();
             PopulateExampleScripts();
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
@@ -167,34 +171,40 @@ namespace TiltBrush
                 var lines = File.ReadAllLines(startupScriptPath);
                 foreach (string pair in lines)
                 {
-                    EnqueueCommandString(pair);
+                    EnqueueCommand(pair);
                 }
             }
-
         }
 
-        private void EnqueueCommandString(string commandString)
+        private class EnqueuedApiCommand
+        {
+            private Guid m_Handle;
+            private string m_Command;
+            private string m_Parameters;
+
+            public Guid Handle => m_Handle;
+            public string Command => m_Command;
+            public string Parameters => m_Parameters;
+
+            public EnqueuedApiCommand(string command, string parameters)
+            {
+                m_Handle = Guid.NewGuid();
+                m_Command = command;
+                m_Parameters = parameters;
+            }
+        }
+
+        private EnqueuedApiCommand EnqueueCommand(string commandString)
         {
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
-            if (commandPair.Length == 1 && commandPair[0] != "")
-            {
-                Debug.Log($"Queuing {commandPair[0]}");
-                m_RequestedCommandQueue.Enqueue(
-                    new KeyValuePair<string, string>(commandPair[0], "")
-                );
-            }
-            else if (commandPair.Length == 2)
-            {
-                Debug.Log($"Queuing {commandPair[0]}={commandPair[1]}");
-                m_RequestedCommandQueue.Enqueue(
-                    new KeyValuePair<string, string>(
-                        commandPair[0],
-                        UnityWebRequest.UnEscapeURL(commandPair[1]
-                        )
-                    )
-                );
-            }
+            if (commandPair.Length < 1) return null;
+            string parameters;
+            parameters = commandPair.Length == 2 ? UnityWebRequest.UnEscapeURL(commandPair[1]) : "";
+            EnqueuedApiCommand cmd = new EnqueuedApiCommand(commandPair[0], parameters);
+            m_RequestedCommandQueue.Enqueue(cmd);
+            return cmd;
         }
+
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             var fileinfo = new FileInfo(e.FullPath);
@@ -209,6 +219,9 @@ namespace TiltBrush
             {
                 case "commands":
 
+                    var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+                    host = host.Replace("127.0.0.1", "localhost");
+
                     if (request.Url.Query.Contains("raw"))
                     {
                         html = String.Join("\n", endpoints.Keys);
@@ -221,10 +234,10 @@ namespace TiltBrush
                     {
                         var commandList = ListApiCommandsAsStrings();
                         builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
-                        builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
+                        builder.AppendLine($"<p>To run commands a request to this url with http://{host}/api/v1?</p>");
                         builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
                         builder.AppendLine("<p>Separate multiple commands with &</p>");
-                        builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
+                        builder.AppendLine($"<p>Example: <a href='http://{host}/api/v1?brush.turn.y=45&brush.draw=1'>http://{host}/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
                         builder.AppendLine("<dl>");
                         foreach (var key in commandList.Keys)
                         {
@@ -234,7 +247,7 @@ namespace TiltBrush
                                 paramList = $"({paramList})";
                             }
                             builder.AppendLine($@"<dt><strong>{key}</strong> {paramList}
- <a href=""http://localhost:40074/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
+ <a href=""/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
 <dd>{commandList[key].Item2}<br><br></dd>");
                         }
                         builder.AppendLine("</dl>");
@@ -381,21 +394,18 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler(ROOT_API_URL, ApiCommandCallback);
         }
 
-        public bool InvokeEndpoint(KeyValuePair<string, string> command)
+        private string InvokeEndpoint(EnqueuedApiCommand command)
         {
-            if (endpoints.ContainsKey(command.Key))
+            if (endpoints.ContainsKey(command.Command))
             {
-                var endpoint = endpoints[command.Key];
-                var parameters = endpoint.DecodeParams(command.Value);
-                endpoint.Invoke(parameters);
-                return true;
+                var endpoint = endpoints[command.Command];
+                var parameters = endpoint.DecodeParams(command.Parameters);
+                return endpoint.Invoke(parameters)?.ToString();
             }
-            else
-            {
-                Debug.LogError($"Invalid API command: {command.Key}");
-            }
-            return false;
+            Debug.LogError($"Invalid API command: {command.Command}");
+            return null;
         }
+
         [ContextMenu("Log Api Commands")]
         public void LogCommandsList()
         {
@@ -522,34 +532,68 @@ namespace TiltBrush
 
         string ApiCommandCallback(HttpListenerRequest request)
         {
+            // GET commands
+            string[] commandStrings = request.Url.Query.TrimStart('?').Split('&');
 
-            KeyValuePair<string, string> command;
-
-            // Handle GET
-            foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
-            {
-                EnqueueCommandString(pair);
-            }
-
-            // Handle POST
-            // TODO also accept JSON
+            // POST commands
             if (request.HasEntityBody)
             {
                 using (Stream body = request.InputStream)
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
+                        // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var pairs = formdata.Replace("+", " ").Split('&');
-                        foreach (var pair in pairs)
-                        {
-                            EnqueueCommandString(pair);
-                        }
+                        commandStrings.AddRange(formdata.Replace("+", " ").Split('&'));
                     }
                 }
             }
 
-            return "OK";
+            List<string> responses = new List<string>();
+
+            foreach (string commandString in commandStrings)
+            {
+                if (commandString.StartsWith("query."))
+                {
+                    responses.Add(HandleApiQuery(commandString));
+                }
+                else
+                {
+                    EnqueueCommand(commandString);
+                }
+            }
+
+            return String.Join("\n", responses);
+        }
+
+        private string HandleApiQuery(string commandString)
+        {
+
+            // API queries are distinct from commands in that they return immediate results and never change the scene
+
+            string[] commandPair = commandString.Split(new[] { '=' }, 2);
+            if (commandPair.Length < 1) return null;
+            switch (commandPair[0])
+            {
+                case "query.queue":
+                    return m_OutgoingCommandQueue.Count.ToString();
+                case "query.command":
+                    if (m_CommandStatuses.ContainsKey(commandPair[1]))
+                    {
+                        return m_CommandStatuses[commandPair[1]];
+                    }
+                    else
+                    {
+                        return $"pending";
+                    }
+                case "query.spectator.position":
+                    return ApiMainThreadObserver.Instance.SpectatorCamPosition.ToString();
+                case "query.spectator.rotation":
+                    return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
+                case "query.spectator.target":
+                    return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+            }
+            return "unknown query";
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
@@ -602,17 +646,18 @@ namespace TiltBrush
 
         private bool HandleApiCommand()
         {
-            KeyValuePair<string, string> command;
+            EnqueuedApiCommand command;
             try
             {
-                command = (KeyValuePair<string, string>)m_RequestedCommandQueue.Dequeue();
+                command = (EnqueuedApiCommand)m_RequestedCommandQueue.Dequeue();
             }
             catch (InvalidOperationException)
             {
                 return false;
             }
-            Debug.Log($"Invoking {command.Key}={command.Value}");
-            return Instance.InvokeEndpoint(command);
+            var result = Instance.InvokeEndpoint(command);
+            m_CommandStatuses[command.Handle.ToString()] = result;
+            return true;
         }
 
         private void Update()
@@ -756,6 +801,27 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
             }
+        }
+
+        public void HandleStrokeListeners(List<PointerManager.ControlPoint> controlPoints, BrushDescriptor currentBrush)
+        {
+            if (!HasOutgoingListeners) return;
+            var color = App.BrushColor.CurrentColor;
+            var pointsAsStrings = new List<string>();
+            foreach (var cp in controlPoints)
+            {
+                var pos = cp.m_Pos;
+                var rot = cp.m_Orient.eulerAngles;
+                pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+            }
+            EnqueueOutgoingCommands(
+                new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>("brush.type", currentBrush.m_Guid.ToString()),
+                    new KeyValuePair<string, string>("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                    new KeyValuePair<string, string>("draw.stroke", string.Join(",", pointsAsStrings))
+                }
+            );
         }
     }
 }
