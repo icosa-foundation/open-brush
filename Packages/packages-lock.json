@@ -7,7 +7,7 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=7#upm",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=8#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
