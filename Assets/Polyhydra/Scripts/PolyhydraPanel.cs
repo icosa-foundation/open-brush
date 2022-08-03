@@ -961,7 +961,9 @@ namespace TiltBrush
             {
                 colors = emodel.Colors;
             }
-            EditableModelManager.CurrentModel.Colors = (Color[])colors.Clone();
+
+            List<string> colorStrings = colors.Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();
+            SetColorsToPalette(colorStrings);
 
             HandleSetColorMethod(emodel.ColorMethod);
             SetMaterial(emodel.MaterialIndex);
@@ -1357,19 +1359,27 @@ namespace TiltBrush
 
         public void HandleSetAllColorsToCurrentButtonPressed()
         {
-            SetAllFinalColors(PointerManager.m_Instance.PointerColor);
+            var color = PointerManager.m_Instance.PointerColor;
+            for (var index = 0; index < ColorPalletteButtons.Length; index++)
+            {
+                SetFinalColor(color, index);
+            }
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleSetColorsToPalette(int paletteIndex)
         {
+            SetColorsToPalette(ColorPalettes[paletteIndex]);
+        }
+
+        private void SetColorsToPalette(List<string> palette)
+        {
             for (int index = 0; index < ColorPalletteButtons.Length; index++)
             {
-                string colorString = ColorPalettes[paletteIndex][index];
+                string colorString = palette[index];
                 if (ColorUtility.TryParseHtmlString(colorString, out Color color))
                 {
                     SetFinalColor(color, index);
-                    PolyhydraColorButton btn = ColorPalletteButtons[index];
                 }
             }
             PreviewPolyhedron.m_Instance.RebuildPoly();
@@ -1393,14 +1403,6 @@ namespace TiltBrush
                 SetFinalColor(newColor, index);
             }
             PreviewPolyhedron.m_Instance.RebuildPoly();
-        }
-
-        private void SetAllFinalColors(Color color)
-        {
-            for (var index = 0; index < ColorPalletteButtons.Length; index++)
-            {
-                SetFinalColor(color, index);
-            }
         }
 
         private void SetFinalColor(Color color, int index)
