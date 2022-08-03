@@ -60,9 +60,9 @@ namespace TiltBrush
         public PolyhydraOptionButton ButtonOtherSolidsType;
         public PolyhydraOptionButton ButtonGridShape;
 
-        public PolyhydraSlider Slider1;
-        public PolyhydraSlider Slider2;
-        public PolyhydraSlider Slider3;
+        public AdvancedSlider Slider1;
+        public AdvancedSlider Slider2;
+        public AdvancedSlider Slider3;
 
         public Transform m_PreviewAttachPoint;
         public GameObject AllGeneratorControls;
@@ -70,14 +70,14 @@ namespace TiltBrush
         public GameObject AllAppearanceControls;
         public GameObject OpPanel;
         public PolyhydraOptionButton ButtonOpType;
-        public PolyhydraSlider SliderOpParam1;
-        public PolyhydraSlider SliderOpParam2;
+        public AdvancedSlider SliderOpParam1;
+        public AdvancedSlider SliderOpParam2;
         public PolyhydraColorButton ButtonOpColorPicker;
         public PolyhydraColorButton[] ColorPalletteButtons;
         public GameObject OpFilterControlParent;
         public PolyhydraOptionButton ButtonOpFilterType;
         public PolyhydraOptionButton ButtonColorMethod;
-        public PolyhydraSlider SliderOpFilterParam;
+        public AdvancedSlider SliderOpFilterParam;
         public TextMeshPro LabelOpFilterName;
         public ActionToggleButton ButtonOpFilterNot;
         public ActionToggleButton ButtonOpDisable;

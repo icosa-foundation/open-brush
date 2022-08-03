@@ -784,7 +784,7 @@ PrefabInstance:
     - target: {fileID: 975834435814379478, guid: ebe6fa705c559de4084f3b11e7668c61,
         type: 3}
       propertyPath: m_Name
-      value: Polyhydra Slider
+      value: AdvancedSlider
       objectReference: {fileID: 0}
     - target: {fileID: 975834435814423874, guid: ebe6fa705c559de4084f3b11e7668c61,
         type: 3}

@@ -16,6 +16,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -29,10 +30,10 @@ namespace TiltBrush
         Float
     }
 
-    public class PolyhydraSlider : BaseSlider
+    public class AdvancedSlider : BaseSlider
     {
-        public int opIndex;
-        public int paramIndex;
+        [FormerlySerializedAs("opIndex")] public int m_Param1;
+        [FormerlySerializedAs("paramIndex")] public int m_Param2;
 
         private float m_safeMin;
         private float m_safeMax;
@@ -115,7 +116,7 @@ namespace TiltBrush
         private void _UpdateValueAbsolute(float fValue)
         {
             valueText.text = FormatValue(fValue);
-            onUpdateValue.Invoke(new Vector3(opIndex, paramIndex, fValue));
+            onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, fValue));
             m_CurrentValue = Mathf.InverseLerp(Min, Max, fValue);
             SetSliderPositionToReflectValue();
         }
