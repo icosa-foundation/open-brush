@@ -41,38 +41,17 @@ namespace TiltBrush
                     stroke, App.Scene.SelectionCanvas, null))
                 .ToList();
 
-            // Move duplicates of grouped strokes to their own groups.
-            var oldGroupToNewGroup = new Dictionary<SketchGroupTag, SketchGroupTag>();
-            foreach (var stroke in m_DuplicatedStrokes)
-            {
-                if (stroke.Group != SketchGroupTag.None)
-                {
-                    if (!oldGroupToNewGroup.ContainsKey(stroke.Group))
-                    {
-                        oldGroupToNewGroup.Add(stroke.Group, App.GroupManager.NewUnusedGroup());
-                    }
-                    stroke.Group = oldGroupToNewGroup[stroke.Group];
-                }
-            }
-
             // Save selected widgets.
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
-
-            // Save duplicated widgets and move them to their own group.
+            // Save duplicated widgets
             m_DuplicatedWidgets = new List<GrabWidget>();
             foreach (var widget in m_SelectedWidgets)
             {
                 var duplicatedWidget = widget.Clone();
-                if (widget.Group != SketchGroupTag.None)
-                {
-                    if (!oldGroupToNewGroup.ContainsKey(widget.Group))
-                    {
-                        oldGroupToNewGroup.Add(widget.Group, App.GroupManager.NewUnusedGroup());
-                    }
-                    duplicatedWidget.Group = oldGroupToNewGroup[widget.Group];
-                }
                 m_DuplicatedWidgets.Add(duplicatedWidget);
             }
+
+            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
             m_DuplicateTransform = xf;

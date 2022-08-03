@@ -193,6 +193,7 @@ namespace TiltBrush
         {
             switch (rCommand)
             {
+                case SketchCommands.AltActivate:
                 case SketchCommands.Activate:
                     return IsTriggerDown();
                 case SketchCommands.RewindTimeline:
@@ -211,6 +212,7 @@ namespace TiltBrush
                     return GetVrInputDown(VrInput.Button02 /*half_right*/);
                 case SketchCommands.Teleport:
                     return IsTriggerDown();
+                case SketchCommands.ShowPinCushion:
                 case SketchCommands.ToggleDefaultTool:
                     return GetVrInputDown(VrInput.Button03 /*app button*/);
                 case SketchCommands.MenuContextClick:
@@ -223,6 +225,47 @@ namespace TiltBrush
                     return GetVrInputDown(VrInput.Button04);
                 case SketchCommands.ToggleSelection:
                     return GetVrInputDown(VrInput.Button04);
+            }
+            return false;
+        }
+
+        /// Returns true if the current command *just* became active (rising-edge trigger).
+        public bool GetCommandUp(SketchCommands rCommand)
+        {
+            switch (rCommand)
+            {
+                case SketchCommands.AltActivate:
+                case SketchCommands.Activate:
+                    return IsTriggerUp();
+                case SketchCommands.RewindTimeline:
+                    return GetVrInputUp(VrInput.Button06 /*quad_down*/);
+                case SketchCommands.AdvanceTimeline:
+                    return GetVrInputUp(VrInput.Button05 /*quad_up*/);
+                case SketchCommands.TimelineHome:
+                    return IsTrigger() && GetVrInputUp(VrInput.Button06 /*quad_down*/);
+                case SketchCommands.TimelineEnd:
+                    return IsTrigger() && GetVrInputUp(VrInput.Button05 /*quad_up*/);
+                case SketchCommands.Reset:
+                    return GetVrInputUp(VrInput.Button05 /*quad_up*/);
+                case SketchCommands.Undo:
+                    return GetVrInputUp(VrInput.Button01 /*half_left*/);
+                case SketchCommands.Redo:
+                    return GetVrInputUp(VrInput.Button02 /*half_right*/);
+                case SketchCommands.Teleport:
+                    return IsTriggerUp();
+                case SketchCommands.ShowPinCushion:
+                case SketchCommands.ToggleDefaultTool:
+                    return GetVrInputUp(VrInput.Button03 /*app button*/);
+                case SketchCommands.MenuContextClick:
+                    return GetVrInputUp(VrInput.Button04 /*full-pad-button*/);
+                case SketchCommands.WorldTransformReset:
+                    return GetVrInputUp(VrInput.Button04 /*full-pad-button*/);
+                case SketchCommands.PinWidget:
+                    return IsTriggerUp();
+                case SketchCommands.DuplicateSelection:
+                    return GetVrInputUp(VrInput.Button04);
+                case SketchCommands.ToggleSelection:
+                    return GetVrInputUp(VrInput.Button04);
             }
             return false;
         }
@@ -325,6 +368,12 @@ namespace TiltBrush
             return GetVrInputDown(VrInput.Trigger);
         }
 
+        /// Returns the same value as GetVrInputDown(VrControllerInput.Trigger)
+        public bool IsTriggerUp()
+        {
+            return GetVrInputUp(VrInput.Trigger);
+        }
+
         /// Returns the same value as GetVrInputTouch(VrControllerInput.Touchpad)
         public bool GetPadTouch()
         {
@@ -384,6 +433,9 @@ namespace TiltBrush
 
         /// Returns true if the specified input has just been activated (rising-edge trigger).
         public abstract bool GetVrInputDown(VrInput input);
+
+        /// Returns true if the specified input has just been deactivated (falling-edge trigger).
+        public abstract bool GetVrInputUp(VrInput input);
 
         /// Returns true if the specified input is currently being touched, and if the controller
         /// supports it (currently: Oculus Touch, Knuckles).

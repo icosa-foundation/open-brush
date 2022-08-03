@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -34,9 +35,11 @@ namespace TiltBrush
         [SerializeField] private float m_RotationSpeedMultiplier = 14.3f;
         [SerializeField] private SketchControlsScript.GlobalCommands m_Command;
         [SerializeField] protected Option[] m_Options;
+        [SerializeField] protected bool DisplayTextLabel = false;
+        [SerializeField] protected bool DisplayIcon = true;
 
-        private int m_CurrentOptionIdx;
-        private GameObject m_OptionContainer;
+        protected int m_CurrentOptionIdx;
+        protected GameObject m_OptionContainer;
         private GameObject[] m_Sides;
         private Renderer[] m_SideRenderers;
         private Color? m_MaterialTint;
@@ -45,7 +48,7 @@ namespace TiltBrush
         private float m_TargetRotation;  // Degrees
         private bool m_IsRotating;
 
-        private int NumOptions
+        protected int NumOptions
         {
             get
             {
@@ -62,7 +65,7 @@ namespace TiltBrush
         }
 
         // Degrees between each option icon.
-        private float OptionAngleDeltaDegrees
+        protected virtual float OptionAngleDeltaDegrees
         {
             get
             {
@@ -198,6 +201,7 @@ namespace TiltBrush
             m_SideRenderers = new Renderer[NumOptions];
 
             m_OptionContainer = new GameObject();
+            m_OptionContainer.name = "Options Container";
             m_OptionContainer.transform.parent = transform;
             m_OptionContainer.transform.localPosition = new Vector3(0, 0, OptionSideDistance);
             m_OptionContainer.transform.localRotation = Quaternion.identity;
@@ -207,23 +211,45 @@ namespace TiltBrush
             {
                 Option option = m_Options[i];
                 GameObject side = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                m_Sides[i] = side;
-
-                side.GetComponent<Collider>().enabled = false;
                 side.transform.parent = m_OptionContainer.transform;
+                side.name = $"Option {i}";
+                m_Sides[i] = side;
+                side.GetComponent<Collider>().enabled = false;
+                if (DisplayTextLabel)
+                {
+                    GameObject sideLabel = new GameObject($"Option Label {i}");
+                    sideLabel.transform.parent = side.transform;
+                    TextMeshPro tmpText = sideLabel.AddComponent<TextMeshPro>();
+                    RectTransform rt = sideLabel.transform as RectTransform;
+                    rt.sizeDelta = new Vector2(1, 1);
+                    rt.localPosition = new Vector3(0, 0, -0.01f);
+                    rt.localScale = Vector3.one;
+                    tmpText.text = option.m_Description;
+                    tmpText.fontSize = 4;
+                    tmpText.alignment = TextAlignmentOptions.Center;
+                }
+
                 side.transform.localRotation = Quaternion.Euler(0, OptionAngleDeltaDegrees * (i + 1), 0);
                 side.transform.localPosition = side.transform.localRotation * new Vector3(0, 0, -OptionSideDistance);
                 side.transform.localScale = Vector3.one;
 
                 Renderer renderer = side.GetComponent<Renderer>();
                 m_SideRenderers[i] = renderer;
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                renderer.receiveShadows = false;
-                renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
-                renderer.materials = GetComponent<Renderer>().materials;
 
                 Material material = renderer.material;
+                renderer.materials = GetComponent<Renderer>().materials;
                 material.mainTexture = option.m_Texture;
+                if (DisplayIcon)
+                {
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                    renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+                }
+                else
+                {
+                    renderer.enabled = false;
+
+                }
                 if (m_MaterialTint.HasValue)
                 {
                     material.SetColor("_Color", m_MaterialTint.Value);
@@ -237,6 +263,7 @@ namespace TiltBrush
             // Keep all these new objects in the same layer as the button.
             HierarchyUtils.RecursivelySetLayer(m_OptionContainer.transform, gameObject.layer);
         }
+
 
         override protected void SetMaterialColor(Color rColor)
         {

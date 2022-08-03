@@ -54,6 +54,8 @@ namespace TiltBrush
             {
                 m_SpinSpeed = Mathf.Max(m_SpinSpeed - m_SpinSpeedDecay * Time.deltaTime, 0.0f);
                 m_SpinSpeedVel = 0.0f;
+                // TODO: Can we find a better place for this? Ah crap mom is gonna get mad dinner is getting cold!
+                m_BatchFilter = null;
             }
             m_SpinAmount += m_SpinSpeed * Time.deltaTime;
         }
@@ -97,6 +99,18 @@ namespace TiltBrush
                     rGroup.m_ParentBatch.ParentPool.Name, Time.frameCount);
                 return false;
             }
+
+            if (altSelect)
+            {
+                if (m_BatchFilter == null && rGroup.m_ParentBatch != null)
+                    m_BatchFilter = rGroup.m_ParentBatch;
+
+                if (!ReferenceEquals(m_BatchFilter, rGroup.m_ParentBatch))
+                    return true;
+            }
+            else
+                m_BatchFilter = null;
+
             SketchMemoryScript.m_Instance.MemorizeDeleteSelection(rGroup.m_Stroke);
             PlayModifyStrokeSound();
             return true;

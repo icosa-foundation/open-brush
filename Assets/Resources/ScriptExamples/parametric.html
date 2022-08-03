@@ -1,0 +1,1156 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset='UTF-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <style>div.container {line-height: 1.6; padding-bottom: 20px;} textarea, input, select { margin: 4px;} input:not([type=checkbox]) {width: 100px;}</style>
+</head>
+<body>
+<div class="container">
+    <form onsubmit="return false;">
+        <h3>Brush</h3>
+        <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label>
+        <label>Brush size: <input id="brush.size" value=".025"></label><br>
+
+        <label>Color Formula:<br><textarea id="colorformula" rows="1" cols="80">[(u+v)/2,0.5,1]</textarea></label><br>
+        <label>RGB<input type="radio" id="rgb" name="colormode" value="rgb"></label>
+        <label>HSV<input type="radio" id="hsv" name="colormode" value="hsv" checked></label><br>
+
+        <label>Origin: <input id="xorigin" value="0"><input id="yorigin" value="14"><input id="zorigin" value="4"></label><br>
+        <label>Scale: <input id="scale" value="1"></label><br>
+
+        <h3>Formula</h3>
+        <Label>Presets: <select id="presets"></select></Label><br>
+        <label>U Steps: <input id='usteps' value='32'></label>
+        <label>V Steps: <input id='vsteps' value='32'></label><br>
+
+        <label>U Min: <input id='umin' value='-2'></label>
+        <label>U Max: <input id='umax' value='2'></label><br>
+        <label>V Min: <input id='vmin' value='-2'></label>
+        <label>V Max: <input id='vmax' value='2'></label><br>
+
+        <label>X Formula:<br><textarea id="xformula" rows="3" cols="80">Math.cos(u+v)/(Math.sqrt(2)+Math.cos(v-u))</textarea></label><br>
+        <label>Y Formula:<br><textarea id="yformula" rows="3" cols="80">Math.sin(u+v)/(Math.sqrt(2)+Math.cos(v-u))</textarea></label><br>
+        <label>Z Formula:<br><textarea id="zformula" rows="3" cols="80">Math.sin(v-u)/(Math.sqrt(2)+Math.cos(v-u))</textarea></label><br>
+
+        <label>Draw U Strokes<input type="checkbox" id="ustrokes" checked></label>
+        <label>Draw V Strokes<input type="checkbox" id="vstrokes"></label><br>
+        <br>
+        <button onclick='run();'>Run</button><br>
+        <br><br>
+        <button onclick="sendCommands(['save.new']);">Save Current Scene</button>
+        <button onclick="sendCommands(['export.current']);">Export Current Scene</button>
+        <button onclick="sendCommands(['showfolder.exports']);">Show Exports Folder</button>
+        <br><br>
+        <button onclick="sendCommands(['new']);">Clear Current Scene</button>
+    </form>
+</div>
+
+<script>
+
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    }
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        menu.add(option);
+    }
+
+    function setBrushColor(u, v, umin, umax, vmin, vmax, xformula, yformula, zformula)
+    {
+        // Normalize to 0...1 range
+        u = (u - umin) / (umax - umin);
+        v = (v - vmin) / (vmax - vmin);
+
+        var x = eval(xformula), y = eval(yformula), z = eval(zformula);
+        var color = eval(document.getElementById('colorformula').value);
+        var colorParam = `${color[0]},${color[1]},${color[2]}`;
+        if (document.getElementById('rgb').checked==true) {
+            sendCommands([`color.set.rgb=${colorParam}`]);
+        } else {
+            sendCommands([`color.set.hsv=${colorParam}`]);
+        }
+    }
+
+    function run() {
+
+        var usteps = parseFloat(document.getElementById('usteps').value);
+        var vsteps = parseFloat(document.getElementById('vsteps').value);
+
+        var umin = eval(document.getElementById('umin').value);
+        var vmin = eval(document.getElementById('vmin').value);
+        var umax = eval(document.getElementById('umax').value);
+        var vmax = eval(document.getElementById('vmax').value);
+        var scale = eval(document.getElementById('scale').value);
+
+        var xformula = document.getElementById('xformula').value;
+        var yformula = document.getElementById('yformula').value;
+        var zformula = document.getElementById('zformula').value;
+        var colorformula = document.getElementById('colorformula').value;
+
+        // Origin
+        var xorigin = eval(document.getElementById('xorigin').value);
+        var yorigin = eval(document.getElementById('yorigin').value);
+        var zorigin = eval(document.getElementById('zorigin').value);
+
+        var uinc = (umax - umin) / usteps;
+        var vinc = (vmax - vmin) / vsteps;
+
+        sendCommands([
+            'brush.size.set=' + document.getElementById('brush.size').value,
+            'brush.type=' + document.getElementById('brush.type').value,
+        ]);
+
+        if (document.getElementById('ustrokes').checked) {
+
+            for (var v = vmin; v <= vmax; v += vinc) {
+                setBrushColor(umin, v, umin, umax, vmin, vmax, xformula, yformula, zformula);
+                var path = [];
+                for (var u = umin; u <= umax; u += uinc) {
+                    path.push('[');
+                    path.push(`${eval(xformula) * scale + xorigin},`);
+                    path.push(`${eval(yformula) * scale + yorigin},`);
+                    path.push(`${eval(zformula) * scale + zorigin}`);
+                    path.push('],');
+                }
+
+                sendCommands([`draw.path=${path.join('')}`]);
+            }
+        }
+
+        if (document.getElementById('vstrokes').checked) {
+            for (var u = umin; u <= umax; u += uinc) {
+                setBrushColor(u, vmin, umin, umax, vmin, vmax, xformula, yformula, zformula);
+                var path = [];
+                for (var v = vmin; v <= vmax; v += vinc) {
+                    path.push('[');
+                    path.push(`${eval(xformula) * scale + xorigin},`);
+                    path.push(`${eval(yformula) * scale + yorigin},`);
+                    path.push(`${eval(zformula) * scale + zorigin}`);
+                    path.push('],');
+                }
+                sendCommands([`draw.path=${path.join('')}`]);
+            }
+        }
+    }
+
+    // Original source: https://github.com/parisolab/mathmod
+    // Mathmod is licenced under the GPL v2
+
+    var mathmod = [
+        {
+            "name": "Catalan Surface",
+            "Description": ["Catalan Surface by Abderrahman Taha 28/11/2020"],
+            "constants": ["ki=80", "kj=5"],
+            "xformula": ["Math.cos(u)+2*Math.cos(2*u) +v*((8*Math.pow(Math.cos(u), 2)-Math.cos(u)-4)/(-32*Math.pow(Math.cos(u), 3)+24*Math.cos(u)+17),(1/2))"],
+            "yformula": ["Math.sin(u)-2*Math.sin(2*u) + v* (-Math.sin(u)*(8*Math.cos(u)+1)/(-32*Math.pow(Math.cos(u), 3)+24*Math.cos(u)+17),(1/2))"],
+            "zformula": ["2*Math.sin(3*u)"],
+            "umax": ["2*Math.PI"],
+            "umin": ["0"],
+            "vmax": ["Math.PI/4"],
+            "vmin": ["-Math.PI/4"]
+        },
+        {
+            "name": "Klein",
+            "xformula": ["4*(1-Math.cos(u)/2)*Math.cos(u)*Math.cos(v)+6*Math.cos(u)*(1+Math.sin(u))", "4*(1-Math.cos(u)/2)*Math.cos(v+Math.PI)+6*Math.cos(u)*(1+Math.sin(u))"],
+            "yformula": ["4*(1-Math.cos(u)/2)*Math.sin(u)*Math.cos(v)+16*Math.sin(u)", "16*Math.sin(u)"],
+            "zformula": ["4*(1-Math.cos(u)/2)*Math.sin(v)", "4*(1-Math.cos(u)/2)*Math.sin(v)"],
+            "umin": ["0", "Math.PI"],
+            "umax": ["Math.PI", "2*Math.PI"],
+            "vmin": ["0", "0"],
+            "vmax": ["2*Math.PI", "2*Math.PI"]
+        },
+        {
+            "name": "Klein 1",
+            "functions": ["function KleinFunction(u,v,t) {return (3*(1+Math.sin(v))+2*(1-Math.cos(v)/2)*Math.cos(u))*Math.cos(v);}"],
+            "xformula": ["KleinFunction(u,v,t)"],
+            "yformula": ["(4+2*(1-Math.cos(v)/2)*Math.cos(u))*Math.sin(v)"],
+            "zformula": ["-2*(1-Math.cos(v)/2)*Math.sin(u)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Shell",
+            "Cnd": ["(Math.pow(x,2)+Math.pow(y,2))>2"],
+            "xformula": ["Math.pow((6/5),v)*(Math.pow(Math.sin(u), 2)*Math.sin(v))"],
+            "yformula": ["Math.pow((6/5),v)*(Math.pow(Math.sin(u), 2)*Math.cos(v))"],
+            "zformula": ["Math.pow((6/5),v)*(Math.sin(u)*Math.cos(u))"],
+            "umax": ["Math.PI"],
+            "umin": ["0"],
+            "vmax": ["5*Math.PI/2"],
+            "vmin": ["-Math.PI/4"]
+        },
+        {
+            "name": "Torus",
+            "xformula": ["(1+Math.cos(u)/2)*Math.cos(v)"],
+            "yformula": ["(1+Math.cos(u)/2)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)/2"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "SinusPar",
+            "xformula": ["u"],
+            "yformula": ["v"],
+            "zformula": ["-Math.sin(Math.PI*(Math.pow(u,2)+Math.pow(v,2)))/3"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["-1"],
+            "vmax": ["1"]
+        },
+        {
+            "name": "Moebius",
+            "xformula": ["Math.cos(v)+u*Math.cos(v/2)*Math.cos(v)"],
+            "yformula": ["Math.sin(v)+u*Math.cos(v/2)*Math.sin(v)"],
+            "zformula": ["u*Math.sin(v/2)"],
+            "umin": ["-2/5"],
+            "umax": ["2/5"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Riemann",
+            "xformula": ["u*v"],
+            "yformula": ["Math.pow(v,2)-Math.pow(u,2)"],
+            "zformula": ["30*u"],
+            "umin": ["-6"],
+            "umax": ["6"],
+            "vmin": ["-25"],
+            "vmax": ["25"]
+        },
+        {
+            "name": "Klein 2",
+            "xformula": ["(2+Math.cos(v/2)*Math.sin(u)-Math.sin(v/2)*Math.sin(2*u))*Math.cos(v)"],
+            "yformula": ["(2+Math.cos(v/2)*Math.sin(u)-Math.sin(v/2)*Math.sin(2*u))*Math.sin(v)"],
+            "zformula": ["Math.sin(v/2)*Math.sin(u)+Math.cos(v/2)*Math.sin(2*u)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Henneberg",
+            "xformula": ["2*Math.sinh(u)*Math.cos(v)-(2/3)*Math.sinh(3*u)*Math.cos(3*v)"],
+            "yformula": ["2*Math.sinh(u)*Math.sin(v)+(2/3)*Math.sinh(3*u)*Math.sin(3*v)"],
+            "zformula": ["2*Math.cosh(2*u)*Math.cos(2*v)"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Enneper",
+            "xformula": ["u-Math.pow(u,3)/3+u*Math.pow(v,2)"],
+            "yformula": ["v-Math.pow(v,3)/3+v*Math.pow(u,2)"],
+            "zformula": ["Math.pow(u,2)-Math.pow(v,2)"],
+            "umin": ["-2"],
+            "umax": ["2"],
+            "vmin": ["-2"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Helix",
+            "xformula": ["(1-Math.cos(v)/10)*Math.cos(u)"],
+            "yformula": ["(1-Math.cos(v)/10)*Math.sin(u)"],
+            "zformula": ["(Math.sin(v)/10+u/17-1)"],
+            "umin": ["0"],
+            "umax": ["4*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Hexaedron",
+            "xformula": ["(Math.cos(v), 3)*Math.pow(Math.cos(u), 3)"],
+            "yformula": ["Math.pow(Math.sin(v),3)*Math.pow(Math.cos(u), 3)"],
+            "zformula": ["Math.pow(Math.sin(u), 3)"],
+            "umin": ["-13/10"],
+            "umax": ["13/10"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere",
+            "xformula": ["Math.cos(u)*Math.cos(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Catalan Minimal Surface",
+            "xformula": ["u-Math.sin(u)*Math.cosh(v)"],
+            "yformula": ["1-Math.cos(u)*Math.cosh(v)"],
+            "zformula": ["4*Math.sin(1/2*u)*Math.sinh(v/2)"],
+            "umin": ["-Math.PI"],
+            "umax": ["3*Math.PI"],
+            "vmin": ["-2"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Toupie",
+            "xformula": ["Math.pow((Math.abs(u)-1),2)*Math.cos(v)"],
+            "yformula": ["Math.pow((Math.abs(u)-1),2)*Math.sin(v)"],
+            "zformula": ["u"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Trumpet",
+            "xformula": ["Math.cos(u)*Math.sin(v)"],
+            "yformula": ["Math.sin(u)*Math.sin(v)"],
+            "zformula": ["(Math.cos(v)+Math.log(Math.tan(1/2*v)))"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["3/100"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Bonbon",
+            "xformula": ["u"],
+            "yformula": ["Math.cos(u)*Math.cos(v)"],
+            "zformula": ["Math.cos(u)*Math.sin(v)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Kuen",
+            "xformula": ["(2*(Math.cos(u)+u*Math.sin(u))*Math.sin(v))/(1+Math.pow(u,2)*Math.pow(Math.sin(v),2))"],
+            "yformula": ["(2*(Math.sin(u)-u*Math.cos(u))*Math.sin(v))/(1+Math.pow(u,2)*Math.pow(Math.sin(v),2))"],
+            "zformula": ["Math.log(Math.tan(1/2*v))+(2*Math.cos(v))/(1+Math.pow(u,2)*Math.pow(Math.sin(v),2))"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["(1/100)"],
+            "vmax": ["Math.PI-(1/100)"]
+        },
+        {
+            "name": "Catenoid",
+            "xformula": ["2*Math.cosh(v/2)*Math.cos(u)"],
+            "yformula": ["2*Math.cosh(v/2)*Math.sin(u)"],
+            "zformula": ["v"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Shoe",
+            "xformula": ["u"],
+            "yformula": ["v"],
+            "zformula": ["(1/3)*Math.pow(u,3)-(1/2)*Math.pow(v,2)"],
+            "umin": ["-2"],
+            "umax": ["2"],
+            "vmin": ["-2"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Helicoidal",
+            "xformula": ["Math.sinh(v)*Math.sin(u)"],
+            "yformula": ["-Math.sinh(v)*Math.cos(u)"],
+            "zformula": ["3*u"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Cresent",
+            "xformula": ["(2+Math.sin(2*Math.PI*u)*Math.sin(2*Math.PI*v))*Math.sin(3*Math.PI*v)"],
+            "yformula": ["(2+Math.sin(2*Math.PI*u)*Math.sin(2*Math.PI*v))*Math.cos(3*Math.PI*v)"],
+            "zformula": ["Math.cos(2*Math.PI*u)*Math.sin(2*Math.PI*v)+4*v-2"],
+            "umin": ["0"],
+            "umax": ["1"],
+            "vmin": ["0"],
+            "vmax": ["1"]
+        },
+        {
+            "name": "HyperbolicHelicoid",
+            "xformula": ["(Math.sinh(v)*Math.cos(3*u))/(1+Math.cosh(u)*Math.cosh(v))"],
+            "yformula": ["(Math.sinh(v)*Math.sin(3*u))/(1+Math.cosh(u)*Math.cosh(v))"],
+            "zformula": ["(Math.cosh(v)*Math.sinh(u))/(1+Math.cosh(u)*Math.cosh(v))"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Roman",
+            "xformula": ["Math.sin(2*u)*Math.pow(Math.sin(v),2)"],
+            "yformula": ["Math.sin(u)*Math.cos(2*v)"],
+            "zformula": ["Math.cos(u)*Math.sin(2*v)"],
+            "umin": ["0"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Snake",
+            "xformula": ["(6/5)*(1-v/(2*Math.PI))*Math.cos(3*v)*(1+Math.cos(u))+3*Math.cos(3*v)"],
+            "yformula": ["(6/5)*(1-v/(2*Math.PI))*Math.sin(3*v)*(1+Math.cos(u))+3*Math.sin(3*v)"],
+            "zformula": ["9*v/(2*Math.PI)+(6/5)*(1-v/(2*Math.PI))*Math.sin(u)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Horn",
+            "xformula": ["(2+u*Math.cos(v))*Math.sin(2*Math.PI*u)"],
+            "yformula": ["(2+u*Math.cos(v))*Math.cos(2*Math.PI*u)+2*u"],
+            "zformula": ["u*Math.sin(v)"],
+            "umin": ["0"],
+            "umax": ["1"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        // {
+        //     "name": "Fresnel 1",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)/(-2*Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)+Math.PI)/3)+(4/5))"],
+        //     "yformula": ["Math.sin(u)*Math.cos(v)/(-2*Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)+Math.PI)/3)+(4/5))"],
+        //     "zformula": ["Math.sin(v)/(-2*Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((965/3000)-(935/3000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)+Math.PI)/3)+(4/5))"],
+        //     "umin": ["0"],
+        //     "umax": ["2*Math.PI"],
+        //     "vmin": ["-Math.PI/2"],
+        //     "vmax": ["Math.PI/2"]
+        // },
+        {
+            "name": "Steiner",
+            "xformula": ["(Math.sin(2*u)*Math.cos(v)*Math.cos(v))"],
+            "yformula": ["(Math.sin(u)*Math.sin(2*v))"],
+            "zformula": ["(Math.cos(u)*Math.sin(2*v))"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Cross cap",
+            "xformula": ["(Math.sin(u)*Math.sin(2*v)/2)"],
+            "yformula": ["(Math.sin(2*u)*Math.cos(v)*Math.cos(v))"],
+            "zformula": ["(Math.cos(2*u)*Math.cos(v)*Math.cos(v))"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        // {
+        //     "name": "Fresnel 2",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)/(-2*Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+(4/5))"],
+        //     "yformula": ["Math.sin(u)*Math.cos(v)/(-2*Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+(4/5))"],
+        //     "zformula": ["Math.sin(v)/(-2*Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-(941/6000)+(374/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-(1309/6000)*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-(1221/1000)*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt((322/1000)-(312/1000)*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+(4/5))"],
+        //     "umin": ["0"],
+        //     "umax": ["2*Math.PI"],
+        //     "vmin": ["-Math.PI/2"],
+        //     "vmax": ["Math.PI/2"]
+        // },
+        {
+            "name": "Clifford Torus",
+            "xformula": ["Math.cos(u+v)/(Math.sqrt(2)+Math.cos(v-u))"],
+            "yformula": ["Math.sin(u+v)/(Math.sqrt(2)+Math.cos(v-u))"],
+            "zformula": ["Math.sin(v-u)/(Math.sqrt(2)+Math.cos(v-u))"],
+            "umin": ["0"],
+            "umax": ["Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Stereosphere",
+            "xformula": ["2*u/(u*u+v*v+1)"],
+            "yformula": ["2*v/(u*u+v*v+1)"],
+            "zformula": ["(u*u+v*v-1)/(u*u+v*v+1)"],
+            "umin": ["-2"],
+            "umax": ["2"],
+            "vmin": ["-2"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Enneper 2",
+            "xformula": ["u*Math.cos(v)-Math.pow(u,3)/3*Math.cos(3*v)"],
+            "yformula": ["-u*Math.sin(v)-Math.pow(u,3)/3*Math.sin(3*v)"],
+            "zformula": ["Math.pow(u,2)*Math.cos(2*v)"],
+            "umin": ["0"],
+            "umax": ["6/5"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Maeder's Owl",
+            "xformula": ["v*Math.cos(u)-Math.pow(v,2)*Math.cos(2*u)/2"],
+            "yformula": ["-v*Math.sin(u)-Math.pow(v,2)*Math.sin(2*u)/2"],
+            "zformula": ["4*Math.pow(v,(3/2))*Math.cos(3*u/2)/3"],
+            "umin": ["0"],
+            "umax": ["4*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["1"]
+        },
+        {
+            "name": "Boy",
+            "xformula": ["2/3*(Math.cos(u)*Math.cos(2*v)+Math.sqrt(2)*Math.sin(u)*Math.cos(v))*Math.cos(u)/(Math.sqrt(2)-Math.sin(2*u)*Math.sin(3*v))"],
+            "yformula": ["2/3*(Math.cos(u)*Math.sin(2*v)-Math.sqrt(2)*Math.sin(u)*Math.sin(v))*Math.cos(u)/(Math.sqrt(2)-Math.sin(2*u)*Math.sin(3*v))"],
+            "zformula": ["Math.sqrt(2)*Math.cos(u)*Math.cos(u)/(Math.sqrt(2)-Math.sin(2*u)*Math.sin(3*v))"],
+            "umin": ["0"],
+            "umax": ["Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Dini",
+            "xformula": ["Math.cos(u)*Math.sin(v)"],
+            "yformula": ["Math.sin(u)*Math.sin(v)"],
+            "zformula": ["(Math.cos(v)+Math.log(Math.tan(v/2)))+u/5"],
+            "umin": ["0"],
+            "umax": ["62/5"],
+            "vmin": ["1/10"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "EightSurface",
+            "xformula": ["Math.cos(u)*Math.sin(2*v)"],
+            "yformula": ["Math.sin(u)*Math.sin(2*v)"],
+            "zformula": ["Math.sin(v)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Helliptic paraboloid",
+            "xformula": ["v*2*Math.cos(u)"],
+            "yformula": ["v*Math.sin(u)"],
+            "zformula": ["Math.pow(v,2)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2"]
+        },
+        {
+            "name": "Plan",
+            "xformula": ["u"],
+            "yformula": ["0"],
+            "zformula": ["v"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["-1"],
+            "vmax": ["1"]
+        },
+        {
+            "name": "Apple",
+            "xformula": ["Math.cos(u)*(4+(19/5)*Math.cos(v))"],
+            "yformula": ["Math.sin(u)*(4+(19/5)*Math.cos(v))"],
+            "zformula": ["(Math.cos(v)+Math.sin(v)-1)*(1+Math.sin(v))*Math.log(1-Math.PI*v/10)+(15/2)*Math.sin(v)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Drop",
+            "xformula": ["u*Math.cos(v)"],
+            "yformula": ["u*Math.sin(v)"],
+            "zformula": ["exp(-u*u)*(Math.sin(2*Math.PI*u)-u*Math.cos(3*v))"],
+            "umin": ["0"],
+            "umax": ["2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Cone",
+            "xformula": ["u*Math.cos(v)"],
+            "yformula": ["u*Math.sin(v)"],
+            "zformula": ["u"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Kinky Torus",
+            "xformula": ["1/Math.cosh(u)-Math.cos(v)"],
+            "yformula": ["Math.sin(v)"],
+            "zformula": ["u/Math.PI-Math.tanh(v)"],
+            "umin": ["-2*Math.PI"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Kidney",
+            "xformula": ["Math.cos(u)*(3*Math.cos(v)-Math.cos(3*v))"],
+            "yformula": ["Math.sin(u)*(3*Math.cos(v)-Math.cos(3*v))"],
+            "zformula": ["3*Math.sin(v)-Math.sin(3*v)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Triaxial Hexatorus",
+            "xformula": ["Math.sin(u)/(Math.sqrt(2)+Math.cos(v))"],
+            "yformula": ["Math.sin(u+2*Math.PI/3)/(Math.sqrt(2)+Math.cos(v+2*Math.PI/3))"],
+            "zformula": ["Math.cos(u-2*Math.PI/3)/(Math.sqrt(2)+Math.cos(v-2*Math.PI/3))"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Limpet Torus",
+            "xformula": ["Math.cos(u)/(Math.sqrt(2)+Math.sin(v))"],
+            "yformula": ["Math.sin(u)/(Math.sqrt(2)+Math.sin(v))"],
+            "zformula": ["1/(Math.sqrt(2)+Math.cos(v))"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Twisted Triaxial",
+            "xformula": ["(1-Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI))*Math.cos(u)*Math.cos(v)+Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI)*Math.sin(u)*Math.sin(v)"],
+            "yformula": ["(1-Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI))*Math.cos(u+2*Math.PI/3)*Math.cos(v+2*Math.PI/3)+Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI)*Math.sin(u+2*Math.PI/3)*Math.sin(v+2*Math.PI/3)"],
+            "zformula": ["(1-Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI))*Math.cos(u+4*Math.PI/3)*Math.cos(v+4*Math.PI/3)+Math.sqrt(u*u+v*v)/Math.sqrt(2*Math.PI*Math.PI)*Math.sin(u+4*Math.PI/3)*Math.sin(v+4*Math.PI/3)"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Snail",
+            "xformula": ["u*Math.cos(v)*Math.sin(u)"],
+            "yformula": ["u*Math.cos(u)*Math.cos(v)"],
+            "zformula": ["-u*Math.sin(v)"],
+            "umin": ["0"],
+            "umax": ["2"],
+            "vmin": ["-Math.PI/2"],
+            "vmax": ["Math.PI/2"]
+        },
+        {
+            "name": "Implicit Lemniscape",
+            "xformula": ["Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.cos(u)"],
+            "yformula": ["Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.sin(u)"],
+            "zformula": ["Math.pow((Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.cos(u)),2)-Math.pow((Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.sin(u)),2)+2*(Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.cos(u))*(Math.cos(v)*Math.sqrt(Math.abs(Math.sin(2*u)))*Math.sin(u))*Math.pow((Math.tan(v),2))"],
+            "umin": ["0"],
+            "umax": ["Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Bent Horns",
+            "xformula": ["(2+Math.cos(u))*(v/3-Math.sin(v))"],
+            "yformula": ["(2+Math.cos(u-2*Math.PI/3))*(Math.cos(v)-1)"],
+            "zformula": ["(2+Math.cos(u+2*Math.PI/3))*(Math.cos(v)-1)"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-2*Math.PI"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Folium",
+            "xformula": ["Math.cos(u)*(2*v/Math.PI-Math.tanh(v))"],
+            "yformula": ["Math.cos(u+2*Math.PI/3)/Math.cosh(v)"],
+            "zformula": ["Math.cos(u-2*Math.PI/3)/Math.cosh(v)"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        // {
+        //     "name": "Heart",
+        //     "xformula": ["Math.cos(u)*(4*Math.sqrt(1-Math.pow(v,2))*Math.sin(Math.abs(u))^Math.abs(u))"],
+        //     "yformula": ["Math.sin(u)*(4*Math.sqrt(1-Math.pow(v,2))*Math.sin(Math.abs(u))^Math.abs(u))"],
+        //     "zformula": ["v"],
+        //     "umin": ["-Math.PI"],
+        //     "umax": ["Math.PI"],
+        //     "vmin": ["-1"],
+        //     "vmax": ["1"]
+        // },
+        // {
+        //     "name": "Cube",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)/(Math.pow((Math.abs(Math.cos(u)),100)+Math.abs(Math.sin(u))^100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100))^(1/100)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)/(Math.pow((Math.abs(Math.cos(u)),100)+Math.abs(Math.sin(u))^100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100))^(1/100)"],
+        //     "zformula": ["Math.sin(u)/(Math.pow(Math.abs(Math.cos(u)),100))+Math.pow(Math.abs(Math.sin(u))^100),(1/100))"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        // {
+        //     "name": "Prism",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(3*v/4))^500+Math.abs(Math.sin(3*v/4))^500)^(-1/260)*(Math.abs(Math.cos(u))^200+Math.abs(Math.sin(u))^200)^(-1/200)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(3*v/4))^500+Math.abs(Math.sin(3*v/4))^500)^(-1/260)*(Math.abs(Math.cos(u))^200+Math.abs(Math.sin(u))^200)^(-1/200)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(u))^200+Math.abs(Math.sin(u))^200)^(-1/200)"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        // {
+        //     "name": "Hexagon",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(u))^300+Math.abs(Math.sin(u))^300)^(-1/300)*(Math.abs(Math.cos(3*v/2))^400+Math.abs(Math.sin(3*v/2))^400)^(-1/1000)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(u))^300+Math.abs(Math.sin(u))^300)^(-1/300)*(Math.abs(Math.cos(3*v/2))^400+Math.abs(Math.sin(3*v/2))^400)^(-1/1000)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(u))^300+Math.abs(Math.sin(u))^300)^(-1/300)"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        {
+            "name": "Diamond",
+            "xformula": ["Math.cos(u)*Math.cos(v)/((Math.abs(Math.cos(u))+Math.abs(Math.sin(u)))*(Math.abs(Math.cos(v))+Math.abs(Math.sin(v))))"],
+            "yformula": ["Math.cos(u)*Math.sin(v)/((Math.abs(Math.cos(u))+Math.abs(Math.sin(u)))*(Math.abs(Math.cos(v))+Math.abs(Math.sin(v))))"],
+            "zformula": ["Math.sin(u)/(Math.abs(Math.cos(u))+Math.abs(Math.sin(u)))"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        // {
+        //     "name": "Star",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(1*u/4))^(1/2)+Math.abs(Math.sin(1*u/4))^(1/2))^(-10/3)*(Math.abs(Math.cos(5*v/4))^(17/10)+Math.abs(Math.sin(5*v/4))^(17/10))^(-10)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(1*u/4))^(1/2)+Math.abs(Math.sin(1*u/4))^(1/2))^(-10/3)*(Math.abs(Math.cos(5*v/4))^(17/10)+Math.abs(Math.sin(5*v/4))^(17/10))^(-10)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(1*u/4))^(1/2)+Math.abs(Math.sin(1*u/4))^(1/2))^(-10/3)"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["1/100000"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        // {
+        //     "name": "Star 7",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(7*v/4))^(17/10)+Math.abs(Math.sin(7*v/4))^(17/10))^(-5)*(Math.abs(Math.cos(7*u/4))^(17/10)+Math.abs(Math.sin(7*u/4))^(17/10))^(-5)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(7*v/4))^(17/10)+Math.abs(Math.sin(7*v/4))^(17/10))^(-5)*(Math.abs(Math.cos(7*u/4))^(17/10)+Math.abs(Math.sin(7*u/4))^(17/10))^(-5)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(7*u/4))^(17/10)+Math.abs(Math.sin(7*u/4))^(17/10))^(-5)"],
+        //     "umax": ["Math.PI/2"],
+        //     "umin": ["-Math.PI/2"],
+        //     "vmax": ["2*Math.PI"],
+        //     "vmin": ["1/10000"]
+        // },
+        // {
+        //     "name": "Shape 9",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(2*u/4))^10+Math.abs(Math.sin(2*u/4))^10)^(-1/10)*(Math.abs(Math.cos(8*v/4))^100+Math.abs(Math.sin(8*v/4))^30)^(-1/60)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(2*u/4))^10+Math.abs(Math.sin(2*u/4))^10)^(-1/10)*(Math.abs(Math.cos(8*v/4))^100+Math.abs(Math.sin(8*v/4))^30)^(-1/60)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(2*u/4))^10+Math.abs(Math.sin(2*u/4))^10)^(-1/10)"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        // {
+        //     "name": "Shape 10",
+        //     "xformula": ["Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(3*u/4))+Math.abs(Math.sin(3*u/4)))^(-1/1)*(Math.abs(Math.cos(6*v/4))+Math.abs(Math.sin(6*v/4)))^(-1/1)"],
+        //     "yformula": ["Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(3*u/4))+Math.abs(Math.sin(3*u/4)))^(-1/1)*(Math.abs(Math.cos(6*v/4))+Math.abs(Math.sin(6*v/4)))^(-1/1)"],
+        //     "zformula": ["Math.sin(u)*(Math.abs(Math.cos(3*u/4))^1+Math.abs(Math.sin(3*u/4))^1)^(-1/1)"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        {
+            "name": "Sphere 2",
+            "xformula": ["Math.cos(u)*Math.cos(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 3",
+            "xformula": ["Math.cos(u)*Math.cos(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.cos(v)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 4",
+            "xformula": ["Math.cos(u)*Math.cos(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 5",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 6",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(u)"],
+            "yformula": ["Math.sin(u)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.sin(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 7",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(u)"],
+            "yformula": ["Math.sin(u)*Math.sin(v)*Math.cos(u)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.sin(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 8",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(u)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)*Math.cos(u)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.sin(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Sphere 9",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(u)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)*Math.cos(u)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.sin(u)*Math.sin(v)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Sphere 10",
+            "xformula": ["Math.cos(u)*Math.cos(v)*Math.sin(u)*Math.sin(v)*Math.sin(v)*Math.sin(v)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)*Math.cos(u)*Math.sin(v)"],
+            "zformula": ["Math.sin(u)*Math.sin(v)*Math.sin(u)*Math.sin(v)*Math.cos(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["0"],
+            "vmin": ["0"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Curve",
+            "xformula": ["Math.cos(2*u)"],
+            "yformula": ["Math.sin(3*u)"],
+            "zformula": ["Math.cos(u)"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["0"]
+        },
+        {
+            "name": "Helice Curve",
+            "xformula": ["Math.sin(u)"],
+            "yformula": ["Math.cos(u)"],
+            "zformula": ["(Math.pow(u,2))/100"],
+            "umin": ["0"],
+            "umax": ["6*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["0"]
+        },
+        {
+            "name": "Pseudo Sphere",
+            "Description": ["Pseudo Sphere by Abderrahman Taha 05/11/2019"],
+            "xformula": ["Math.cos(u)*Math.cos(v)+Math.sin((Math.sin(u)+1)*2*Math.PI)"],
+            "yformula": ["Math.cos(u)*Math.sin(v)+Math.cos((Math.sin(u)+1)*2*Math.PI)"],
+            "zformula": ["4*Math.sin(u)"],
+            "umin": ["-Math.PI/2"],
+            "umax": ["Math.PI/2"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Pseudo Catenoid",
+            "Description": ["Pseudo Catenoid by Abderrahman Taha 05/11/2019"],
+            "xformula": ["(22/5)*(Math.cosh(v/2)*Math.cos(u))"],
+            "yformula": ["(3/2)*(2*Math.cosh(v/2)*Math.sin(u)*Math.cos(((22/5)*(Math.cosh(v/2)*Math.cos(u))+11)*(9/100)*Math.PI)-(9/5)*(v)*Math.sin(((22/5)*(Math.cosh(v/2)*Math.cos(u))+11)*(9/100)*Math.PI))"],
+            "zformula": ["(3/2)*(2*Math.cosh(v/2)*Math.sin(u)*Math.sin(((22/5)*(Math.cosh(v/2)*Math.cos(u))+11)*(9/100)*Math.PI)+(9/5)*(v)*Math.cos(((22/5)*(Math.cosh(v/2)*Math.cos(u))+11)*(9/100)*Math.PI))"],
+            "umin": ["-Math.PI"],
+            "umax": ["Math.PI"],
+            "vmin": ["-Math.PI"],
+            "vmax": ["Math.PI"]
+        },
+        {
+            "name": "Cone Distorsion",
+            "Description": ["Cone Distorsion by Abderrahman Taha 05/11/2019"],
+            "xformula": ["u*Math.cos(v)"],
+            "yformula": ["(17/20)*(u*Math.sin(v)*Math.cos((u*Math.cos(v)+1)*Math.PI)-u*Math.sin((u*Math.cos(v)+1)*Math.PI))"],
+            "zformula": ["(17/20)*(u*Math.sin(v)*Math.sin((u*Math.cos(v)+1)*Math.PI)+u*Math.cos((u*Math.cos(v)+1)*Math.PI))"],
+            "umin": ["-1"],
+            "umax": ["1"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        // {
+        //     "name": "Pseudo Hexagon",
+        //     "Description": ["Pseudo Hexagon by Abderrahman Taha 05/11/2019"],
+        //     "xformula": ["(17/10)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))"],
+        //     "yformula": ["(3/4)*((15/10)*(Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))*Math.cos(((17/10)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))+(17/10))*(9/50)*Math.PI)-(7/10)*(Math.sin(u)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300))*Math.sin(((17/10)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))+(17/10))*(9/50)*Math.PI))"],
+        //     "zformula": ["(3/4)*((15/10)*(Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))*Math.sin(((17/10)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))+(17/10))*(9/50)*Math.PI)+(7/10)*(Math.sin(u)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300))*Math.cos(((17/10)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(4*u/4))^300+Math.abs(Math.sin(4*u/4))^300)^(-1/300)*(Math.abs(Math.cos(6*v/4))^400+Math.abs(Math.sin(6*v/4))^400)^(-1/1000))+(17/10))*(9/50)*Math.PI))"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        // {
+        //     "name": "Pseudo Cube",
+        //     "Description": ["Pseudo Cube by Abderrahman Taha 05/11/2019"],
+        //     "xformula": ["(17/20)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100)^(-1/100)*Math.cos(((8/5)*(Math.sin(u)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100))+(8/5))*(19/100)*Math.PI)-Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100)^(-1/100)*Math.sin(((8/5)*(Math.sin(u)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100))+(8/5))*(19/100)*Math.PI))"],
+        //     "yformula": ["(17/20)*(Math.cos(u)*Math.cos(v)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100)^(-1/100)*Math.sin(((8/5)*(Math.sin(u)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100))+(8/5))*(19/100)*Math.PI)+Math.cos(u)*Math.sin(v)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100)*(Math.abs(Math.cos(v))^100+Math.abs(Math.sin(v))^100)^(-1/100)*Math.cos(((8/5)*(Math.sin(u)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100))+(8/5))*(19/100)*Math.PI))"],
+        //     "zformula": ["(8/5)*(Math.sin(u)*(Math.abs(Math.cos(u))^100+Math.abs(Math.sin(u))^100)^(-1/100))"],
+        //     "umin": ["-Math.PI/2"],
+        //     "umax": ["Math.PI/2"],
+        //     "vmin": ["0"],
+        //     "vmax": ["2*Math.PI"]
+        // },
+        {
+            "name": "Pseudo Torus",
+            "Description": ["Pseudo Torus by Abderrahman Taha 05/11/2019"],
+            "xformula": ["(1+Math.cos(u)/2)*Math.cos(v)"],
+            "yformula": ["(63/100)*((1+Math.cos(u)/2)*Math.sin(v)*Math.cos(((1+Math.cos(u)/2)*Math.cos(v)+(3/2))*(3/5)*Math.PI)-(1/2)*Math.sin(u)*Math.sin(((1+Math.cos(u)/2)*Math.cos(v)+(3/2))*(3/5)*Math.PI))"],
+            "zformula": ["(63/100)*((1+Math.cos(u)/2)*Math.sin(v)*Math.sin(((1+Math.cos(u)/2)*Math.cos(v)+(3/2))*(3/5)*Math.PI)+(1/2)*Math.sin(u)*Math.cos(((1+Math.cos(u)/2)*Math.cos(v)+(3/2))*(3/5)*Math.PI))"],
+            "umin": ["0"],
+            "umax": ["2*Math.PI"],
+            "vmin": ["0"],
+            "vmax": ["2*Math.PI"]
+        },
+        {
+            "name": "Hurricane",
+            "Description": ["Hurricane by Abderrahman Taha 05/11/2019"],
+            "xformula": ["1*(2*Math.cosh(v/2)*Math.cos(u)*Math.cos(((41/10)*v+(66/5))*(113/1000)*Math.PI)-(21/5)*Math.cosh(v/2)*Math.sin(u)*Math.sin(((41/10)*v+(66/5))*(113/1000)*Math.PI))"],
+            "yformula": ["1*(2*Math.cosh(v/2)*Math.cos(u)*Math.sin(((41/10)*v+(66/5))*(113/1000)*Math.PI)+(21/5)*Math.cosh(v/2)*Math.sin(u)*Math.cos(((41/10)*v+(66/5))*(113/1000)*Math.PI))"],
+            "zformula": ["(41/10)*v"],
+            "umax": ["Math.PI"],
+            "umin": ["-Math.PI"],
+            "vmax": ["Math.PI"],
+            "vmin": ["-Math.PI"]
+        },
+        {
+            "name": "Breather",
+            "Description": ["Breather by Abderrahman Taha 05/11/2019"],
+            "constants": ["A=Math.sqrt(21/25)", "B=2/5"],
+            "xformula": ["(2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*(Math.pow((A*Math.cosh(B*u)),2)+(B*Math.sin(A*v))^2))"],
+            "yformula": ["(2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*(Math.pow((A*Math.cosh(B*u)),2)+(B*Math.sin(A*v))^2))"],
+            "zformula": ["-u+((42/25)*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))"],
+            "umax": ["66/5"],
+            "umin": ["-66/5"],
+            "vmax": ["186/5"],
+            "vmin": ["-186/5"]
+        },
+        {
+            "name": "Helicoid To Catenoid",
+            "Description": ["Helicoid to Catenoid by Abderrahman Taha 04/11/2019"],
+            "xformula": ["Math.cos(2*0.5*Math.PI)*Math.sinh(v)*Math.sin(u)+Math.sin(2*0.5*Math.PI)*Math.cosh(v)*Math.cos(u)"],
+            "yformula": ["-Math.cos(2*0.5*Math.PI)*Math.sinh(v)*Math.cos(u)+Math.sin(2*0.5*Math.PI)*Math.cosh(v)*Math.sin(u)"],
+            "zformula": ["3*(u*Math.cos(2*0.5*Math.PI)+v*Math.sin(2*0.5*Math.PI))"],
+            "umax": ["Math.PI"],
+            "umin": ["-Math.PI"],
+            "vmax": ["Math.PI"],
+            "vmin": ["-Math.PI"]
+        },
+        {
+            "name": "Shell1",
+            "Description": ["Shells by Abderrahman Taha 04/11/2019"],
+            "constants": ["a=1/5", "b=1", "c=1/10", "n=2"],
+            "xformula": ["2*(1-exp(u/(6*Math.PI)))*Math.cos(u)*Math.pow(Math.cos(v/2),2)"],
+            "yformula": ["2*(-1+exp(u/(6*Math.PI)))*Math.sin(u)*Math.pow(Math.cos(v/2),2)"],
+            "zformula": ["1-exp(u/(3*Math.PI))-Math.sin(v)+exp(u/(6*Math.PI))*Math.sin(v)"],
+            "umax": ["6*Math.PI"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        // {
+        //     "name": "Fresnel Noise",
+        //     "Description": ["Torus Noise by Abderrahman Taha 04/11/2019"],
+        //     "constants": [
+        //         "A=941/6000",
+        //         "B=965/3000",
+        //         "C=935/3000",
+        //         "D=4/5",
+        //         "E=1309/6000",
+        //         "F=374/1000",
+        //         "G=1221/1000"],
+        //     "xformula": ["(Math.cos(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D))*(1-NoiseW((Math.cos(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(1),(2),0))"],
+        //     "yformula": ["(Math.sin(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D))*(1-NoiseW((Math.cos(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(1),(2),0))"],
+        //     "zformula": ["(Math.sin(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D))*(1-NoiseW((Math.cos(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(u)*Math.cos(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(Math.sin(v)/(-2*Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))*Math.cos((aMath.cos(-(-A+F*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4))-E*((Math.pow(Math.cos(u), 6)+Math.pow(Math.sin(u), 6))*(Math.cos(v), 6)+Math.pow(Math.sin(v),6))-G*Math.pow(Math.cos(u), 2)*(Math.cos(v), 4)*Math.pow(Math.sin(u), 2)*Math.pow(Math.sin(v),2))/Math.sqrt(B-C*((Math.pow(Math.cos(u), 4)+Math.pow(Math.sin(u), 4))*(Math.cos(v), 4)+Math.pow(Math.sin(v),4)))^3)-Math.PI)/3)+D)),(1),(2),0))"],
+        //     "umax": ["2*Math.PI"],
+        //     "umin": ["0"],
+        //     "vmax": ["Math.PI/2"],
+        //     "vmin": ["-Math.PI/2"]
+        // },
+        {
+            "name": "Torus Noise",
+            "Description": ["Torus Noise by Abderrahman Taha 04/11/2019"],
+            "xformula": ["(1+(1/2)*Math.cos(u))*Math.cos(v)*(1-NoiseW((1+(1/2)*Math.cos(u))*Math.cos(v),(1+(1/2)*Math.cos(u))*Math.sin(v),(1/2)*Math.sin(u),(1),(2),(0)))"],
+            "yformula": ["(1+(1/2)*Math.cos(u))*Math.sin(v)*(1-NoiseW((1+(1/2)*Math.cos(u))*Math.cos(v),(1+(1/2)*Math.cos(u))*Math.sin(v),(1/2)*Math.sin(u),(1),(2),(0)))"],
+            "zformula": ["Math.sin(u)*(1-NoiseW((1+(1/2)*Math.cos(u))*Math.cos(v),(1+(1/2)*Math.cos(u))*Math.sin(v),(1/2)*Math.sin(u),(1),(2),(0)))"],
+            "umax": ["2*Math.PI"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        // {
+        //     "name": "Breather Noise",
+        //     "Description": ["Breather Noise by Abderrahman Taha 04/11/2019"],
+        //     "constants": [
+        //         "A= Math.sqrt(21/25)",
+        //         "B= 2/5",
+        //         "C= 42/25"],
+        //     "xformula": ["((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1-NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),(0)))"],
+        //     "yformula": ["((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1-NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),(0)))"],
+        //     "zformula": ["(-u+(C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1-NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),(0)))"],
+        //     "umax": ["66/5"],
+        //     "umin": ["-66/5"],
+        //     "vmax": ["186/5"],
+        //     "vmin": ["-186/5"]
+        //
+        // },
+        {
+            "name": "Bottle shape",
+            "description ": ["Bottle shape surface by Robert Israel 01/11/2019"],
+            "xformula": [" (-2/15)*(Math.cos(u)*(3*Math.cos(v)-30*Math.sin(u) + 90*Math.pow(Math.cos(u), 4)*Math.sin(u) -60*Math.pow(Math.cos(u), 6)*Math.sin(u) +5*Math.cos(u)*Math.cos(v)*Math.sin(u))) "],
+            "yformula": [" (-1/15)*Math.sin(u)*(3*Math.cos(v)-3*Math.pow(Math.cos(u), 2)*Math.cos(v)-48*Math.pow(Math.cos(u), 4)*Math.cos(v)+48*Math.pow(Math.cos(u), 6) *Math.cos(v)-60*Math.sin(u)+5*Math.cos(u)*Math.cos(v)*Math.sin(u)-5*Math.pow(Math.cos(u), 3)*Math.cos(v)*Math.sin(u) -80*Math.pow(Math.cos(u), 5)*Math.cos(v)*Math.sin(u)+80*Math.pow(Math.cos(u), 7)*Math.cos(v)*Math.sin(u) ) "],
+            "zformula": [" (2/15)*(3+5*Math.cos(u)*Math.sin(u))*Math.sin(v) "],
+            "umax": ["Math.PI"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        {
+            "name": "Enneper k Curls",
+            "Description": ["Enneper k Curls by Abderrahman Taha 24/08/2020"],
+            "constants": ["k=4"],
+            "xformula": ["k*u*Math.cos(v+t)-Math.pow(u,(2*k-1)/6*Math.cos((2*k-1)*v+t)"],
+            "yformula": ["-k*u*Math.sin(v+t)-Math.pow(u,(2*k-1))/6*Math.sin((2*k-1)*v+t)"],
+            "zformula": ["(Math.pow(u,k)*Math.cos(k*v+t))"],
+            "umax": ["115/100"],
+            "umin": ["0"],
+            "vmax": ["Math.PI"],
+            "vmin": ["-Math.PI"]
+        },
+        {
+            "name": "Richmond Polar 2",
+            "Description": ["Richmond Polar 2  parametric surface by Abderrahman Taha 01/11/2019"],
+            "xformula": ["-Math.cos(v)/(2*u) - Math.pow(u,3)*Math.cos(3*v)/6"],
+            "yformula": ["-Math.sin(v)/(2*u) + Math.pow(u,3)*Math.sin(3*v)/6"],
+            "zformula": ["u*Math.cos(v)*Math.sin(v)"],
+            "umax": ["13/10"],
+            "umin": ["3/10"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        {
+            "name": "Richmond Polar 4",
+            "description ": ["richmondpolar(n)[t](u,v):={-Math.cos(t + v)/(2*u) Math.pow(-u,(2*n + 1))*Math.cos(t - (2*n + 1)*v)/(4*n + 2),-Math.sin(t + v)/(2*u) +Math.pow(u,(2*n + 1))*Math.sin(t - (2*n + 1)*v)/(4*n + 2),Math.pow(u,n*Math.cos(t - n*v))/n}is the polar parametrization of a 1-parameter family of minimal surfaces such that {r,theta}->richmondpolar[n][0][r,theta] is a minimal surface with one planar end of degree n."],
+            "xformula": ["-Math.cos(t + v)/(2*u) - Math.pow(u,3)*Math.cos(t - 3*v)/6"],
+            "yformula": ["-Math.sin(t + v)/(2*u) + Math.pow(u,3)*Math.sin(t - 3*v)/6"],
+            "zformula": ["u*Math.cos(t - v)"],
+            "umax": ["13/10"],
+            "umin": ["3/10"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        // {
+        //     "name": "Flower",
+        //     "Description": ["Flower by Abderrahman Taha 15/10/2019"],
+        //     "constants": ["A=Math.sqrt(84/100)", "B=4/10", "C=84/100"],
+        //     "xformula": ["((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1-NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(2*C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),0))"],
+        //     "yformula": ["((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1 -NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(2*C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),0))"],
+        //     "zformula": ["(-u+(2*C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2)))*(1 - NoiseW(((2*A*Math.cosh(B*u)*(-(A*Math.cos(v)*Math.cos(A*v))-Math.sin(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),((2*A*Math.cosh(B*u)*(-(A*Math.sin(v)*Math.cos(A*v))+Math.cos(v)*Math.sin(A*v)))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(-u+(2*C*Math.cosh(B*u)*Math.sinh(B*u))/(B*((A*Math.cosh(B*u))^2+(B*Math.sin(A*v))^2))),(1),(2),0))"],
+        //     "umax": ["132/10"],
+        //     "umin": ["-132/10"],
+        //     "vmax": ["372/10"],
+        //     "vmin": ["-372/10"]
+        // },
+        {
+            "name": "Blobby Torus",
+            "Description": ["Blobby Torus by Abderrahman Taha 07/10/2019"],
+            "functions": ["function G1(u,v,t) {return (8+(Math.sin(2*(u-v+t+Math.sin(v-u)))+3)*Math.cos(u))*Math.cos(v);}", "function G2(u,v,t) {return (8+(Math.sin(2*(u-v+t+Math.sin(v-u)))+3)*Math.cos(u))*Math.sin(v);}", "function G3(u,v,t) {return ((Math.sin(2*(u-v+t+Math.sin(v-u)))+3)*Math.sin(u));}"],
+            "xformula": ["-G1(u,v,t)"],
+            "yformula": ["G2(u,v,t)"],
+            "zformula": ["G3(u,v,t)"],
+            "umax": ["2*Math.PI"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        {
+            "name": "N Klein v1",
+            "Description": ["Jeener's Klein surface v1 by Abderrahman Taha 26/07/2018"],
+            "constants": ["T=5", "S=2", "P=6", "M=8"],
+            "functions": ["function W(u,v,t) {return ((S+1)/4)*Math.cos((S+1)*u + Math.PI/T) + Math.sqrt(2);}"],
+            "xformula": ["S*Math.cos(u) + Math.cos(S*u) - W(u,v,t)*Math.sin(u*(S-1)/2)*Math.cos(v)"],
+            "yformula": ["W(u,v,t)*Math.sin(v)"],
+            "zformula": ["S*Math.sin(u) - Math.sin(S*u) - W(u,v,t)*Math.cos(u*(S-1)/2)*Math.cos(v)"],
+            "umax": ["2*Math.PI"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        },
+        {
+            "name": "Under The Sea",
+            "description ": ["Under Sea by Abderrahman Taha 25/03/2016"],
+            "constants": ["M=9", "N=6", "A=5"],
+            "xformula": ["u*Math.cos(v)"],
+            "yformula": ["u*Math.sin(v)"],
+            "zformula": ["A*exp(-u*u) * (Math.sin(M*Math.PI*(u)/3) -u*Math.cos(N*v))/5"],
+            "umax": ["2"],
+            "umin": ["0"],
+            "vmax": ["2*Math.PI"],
+            "vmin": ["0"]
+        }
+    ];
+
+    var presets = {};
+
+    var select = document.getElementById("presets");
+
+    for (var preset of mathmod) {
+        if ('functions' in preset || 'constants' in preset) continue;
+        var option = document.createElement("option");
+        option.text = preset.name;
+        option.name = preset.name;
+        select.add(option);
+        presets[preset.name] = preset;
+        select.onchange = o => {
+
+            var preset = presets[o.target.value];
+
+            document.getElementById('umin').value = preset['umin'][0];
+            document.getElementById('vmin').value = preset['vmin'][0];
+            document.getElementById('umax').value = preset['umax'][0];
+            document.getElementById('vmax').value = preset['vmax'][0];
+            document.getElementById('xformula').value = preset['xformula'][0];
+            document.getElementById('yformula').value = preset['yformula'][0];
+            document.getElementById('zformula').value = preset['zformula'][0];
+        };
+    }
+
+</script>
+
+</body>
+</html>

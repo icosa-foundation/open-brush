@@ -105,14 +105,28 @@ namespace TiltBrush.LachlanSleight
 
 
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 vMovement = m_BrushController.forward;
 
-            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly))
+            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly) ||
+                InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.Forward))
             {
+                Vector3 position;
+                Vector3 vMovement;
+
+                if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+                {
+                    position = App.Scene.Pose.translation;
+                    vMovement = Camera.main.transform.forward;
+                }
+                else
+                {
+                    position = m_BrushController.position;
+                    vMovement = m_BrushController.forward;
+                }
+
                 m_Velocity = Vector3.Lerp(m_Velocity, vMovement * m_MaxSpeed, Time.deltaTime * m_DampingUp);
 
                 AudioManager.m_Instance.WorldGrabLoop(true);
-                AudioManager.m_Instance.WorldGrabbed(m_BrushController.position);
+                AudioManager.m_Instance.WorldGrabbed(position);
                 AudioManager.m_Instance.ChangeLoopVolume("WorldGrab",
                     Mathf.Clamp((m_Velocity.magnitude / m_MaxSpeed) /
                         AudioManager.m_Instance.m_WorldGrabLoopAttenuation, 0f,

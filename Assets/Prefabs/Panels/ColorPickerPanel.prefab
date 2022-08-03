@@ -2566,26 +2566,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4000012065142580}
     m_Modifications:
-    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_Command
-      value: 7000
-      objectReference: {fileID: 0}
-    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_PopupText
-      value: Color Jitter
-      objectReference: {fileID: 0}
-    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_ButtonTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: 9b82f38d1c06a854faadd9c2ea76b48b, type: 3}
-    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_DescriptionText
-      value: Color Jitter
-      objectReference: {fileID: 0}
     - target: {fileID: 7630606763700834929, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
       propertyPath: m_Name
@@ -2595,21 +2575,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_RootOrder
       value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}

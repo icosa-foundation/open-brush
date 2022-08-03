@@ -15,7 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -52,6 +54,7 @@ namespace TiltBrush
         //this is the list of meshes that make up the standard pointer look: cone + ring
         [SerializeField] private Renderer[] m_PrimaryMeshes;
         [SerializeField] private Transform m_BrushSizeIndicator;
+        [SerializeField] private Transform m_BrushPressureIndicator;
         [SerializeField] private bool m_PreviewLineEnabled;
         [SerializeField] private float m_PreviewLineControlPointLife = 1.0f;
         [SerializeField] private float m_PreviewLineIdealLength = 1.0f;
@@ -320,6 +323,17 @@ namespace TiltBrush
                     // Adjust volume of each layer based on brush speed
                     m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
                     m_AudioSources[i].pitch += fPitchAdjust;
+                }
+            }
+
+
+            // match pressure with indicator
+            if (App.Instance.IsInStateThatAllowsPainting())
+            {
+                if (m_BrushPressureIndicator != null)
+                {
+                    float scaledPressure = Remap(GetPressure(), 0, 1, m_BrushSizeRange.x, m_CurrentBrushSize);
+                    m_BrushPressureIndicator.localScale = new Vector3(scaledPressure, scaledPressure, scaledPressure);
                 }
             }
         }
@@ -685,6 +699,18 @@ namespace TiltBrush
             m_CurrentPressure = fPressure;
         }
 
+        public float GetPressure()
+        {
+            return m_CurrentPressure;
+        }
+
+        // Utility that maps one range into another
+        float Remap(float value, float from1, float to1, float from2, float to2)
+        {
+            return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+        }
+
+
         public void SetColor(Color rColor)
         {
             m_CurrentColor = rColor;
@@ -836,9 +862,15 @@ namespace TiltBrush
             m_LastUsedBrushSize_CS = (1 / Coords.CanvasPose.scale) * BrushSizeAbsolute;
             m_LineLength_CS = 0.0f;
 
+            float jitteredBrushSize = m_CurrentBrushSize;
+            if (PointerManager.m_Instance.JitterEnabled)
+            {
+                jitteredBrushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, m_CurrentBrushSize);
+            }
+
             m_CurrentLine = BaseBrushScript.Create(
                 canvas.transform, xf_CS,
-                desc, m_CurrentColor, m_CurrentBrushSize);
+                desc, m_CurrentColor, jitteredBrushSize);
         }
 
         /// Like BeginLineFromMemory + EndLineFromMemory
@@ -903,6 +935,26 @@ namespace TiltBrush
             Stroke rMemoryObjectForPlayback,
             SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None)
         {
+            if (ApiManager.Instance.HasOutgoingListeners)
+            {
+                var color = App.BrushColor.CurrentColor;
+                var pointsAsStrings = new List<string>();
+                foreach (var cp in m_ControlPoints)
+                {
+                    var pos = cp.m_Pos;
+                    var rot = cp.m_Orient.eulerAngles;
+                    pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+                }
+                ApiManager.Instance.EnqueueOutgoingCommands(
+                    new List<KeyValuePair<string, string>>
+                    {
+                        new KeyValuePair<string, string>("brush.type", CurrentBrush.m_Guid.ToString()),
+                        new KeyValuePair<string, string>("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                        new KeyValuePair<string, string>("draw.stroke", string.Join(",", pointsAsStrings))
+                    }
+                );
+            }
+
             if (rMemoryObjectForPlayback != null)
             {
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);

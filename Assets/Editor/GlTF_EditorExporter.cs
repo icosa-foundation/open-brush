@@ -99,7 +99,9 @@ namespace TiltBrush
                 binary: false,
                 doExtras: true,
                 gltfVersion: 1,
-                includeLocalMediaContent: false);
+                includeLocalMediaContent: false,
+                selfContained: true
+            );
         }
 
         [MenuItem("Tilt/glTF/Export Brush Strokes to glb v1", false, 3)]
@@ -111,7 +113,9 @@ namespace TiltBrush
                 binary: true,
                 doExtras: false,
                 gltfVersion: 1,
-                includeLocalMediaContent: true);
+                includeLocalMediaContent: true,
+                selfContained: true
+            );
         }
 
         [MenuItem("Tilt/glTF/Export Brush Strokes to glTF v1", true)]
@@ -205,6 +209,14 @@ namespace TiltBrush
             foreach (BrushDescriptor desc in productionManifest.UniqueBrushes())
             {
                 cat.Add(desc.m_Guid, desc);
+            }
+
+            TiltBrushManifest experimentalManifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>(
+                "Assets/Manifest_Experimental.asset");
+
+            foreach (BrushDescriptor desc in experimentalManifest.UniqueBrushes())
+            {
+                cat[desc.m_Guid] = desc;
             }
 
             return cat;
@@ -321,12 +333,9 @@ namespace TiltBrush
             {
                 return null;
             }
-            else if (values.Count > 1)
-            {
-                throw new ExportException(
-                    "{0}: Too many cull modes: {1}", filename, values);
-            }
 
+            // Only use the first value
+            // TODO TubeToonInverted has two cull values
             string value = values[0];
             if (value == "off")
             {

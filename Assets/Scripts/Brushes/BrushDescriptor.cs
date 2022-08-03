@@ -72,6 +72,10 @@ namespace TiltBrush
 
         [DisabledProperty]
         public GameObject m_BrushPrefab;
+
+        [Tooltip("A category that can be used to determine whether a brush will be included in the brush panel")]
+        public List<string> m_Tags = new List<string> { "default" };
+
         [Tooltip("Set to true if brush should not be checked for save/load determinism")]
         public bool m_Nondeterministic;
 
@@ -298,6 +302,7 @@ namespace TiltBrush
                 ExportGlTF.ExportedBrush ret;
                 if (!GltfManifest.brushes.TryGetValue(m_Guid, out ret))
                 {
+                    Debug.LogWarning($"GltfManifest.brushes has no {BrushCatalog.m_Instance.GetBrush(m_Guid).name} {m_Guid}");
                     throw new InvalidOperationException("No detailed material info");
                 }
                 return ret;

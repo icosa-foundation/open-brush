@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace TiltBrush
     public class SelectionManager : MonoBehaviour
     {
         public static SelectionManager m_Instance;
+        private SnapGrid3D m_SnapGridVisualization;
 
         [SerializeField] private SelectionWidget m_SelectionWidget;
 
@@ -66,6 +68,13 @@ namespace TiltBrush
         private bool m_IsAnimatingTossFromGrabbingGroup;
         private bool m_IsGrabbingGroup;
         private BaseTool.ToolType m_ToolTypeBeforeGrabbingGroup;
+
+        private float m_snappingAngle;
+        private float m_snappingGridSize;
+        private float[] m_AngleSnaps;
+        private float[] m_GridSnaps;
+        private int m_CurrentSnapAngleIndex;
+        private int m_CurrentSnapGridIndex;
 
         // As opposed to 'add to selection'.  When this is true, strokes picked up
         // by the selection tool will be removed from selected strokes.  When false, they'll be added
@@ -256,6 +265,10 @@ namespace TiltBrush
         }
 
         public bool IsAnimatingTossFromGrabbingGroup => m_IsAnimatingTossFromGrabbingGroup;
+        public int CurrentSnapAngleIndex => m_CurrentSnapAngleIndex;
+        public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
+        public float SnappingAngle => m_snappingAngle;
+        public float SnappingGridSize => m_snappingGridSize;
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
@@ -379,6 +392,8 @@ namespace TiltBrush
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
             m_SelectedWidgets = new HashSet<GrabWidget>();
+            m_AngleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
+            m_GridSnaps = new[] { 0f, .1f, .25f, .5f, 1f, 2f, 3f, 5f };
         }
 
         public void CacheSelectionTool(SelectionTool tool)
@@ -928,6 +943,41 @@ namespace TiltBrush
 
             return totalBounds_CS;
         }
+
+        public bool AngleOrPositionSnapEnabled()
+        {
+            return (
+                CurrentSnapAngleIndex != 0 ||
+                CurrentSnapGridIndex != 0
+            );
+        }
+
+        public void SetSnappingAngle(int snapIndex)
+        {
+            m_CurrentSnapAngleIndex = snapIndex;
+            m_snappingAngle = m_AngleSnaps[snapIndex];
+        }
+
+        public void SetSnappingGridSize(int snapIndex)
+        {
+            m_CurrentSnapGridIndex = snapIndex;
+            m_snappingGridSize = m_GridSnaps[snapIndex];
+            if (m_SnapGridVisualization == null)
+            {
+                m_SnapGridVisualization = App.Scene.MainCanvas.GetComponentInChildren<SnapGrid3D>();
+            }
+            if (m_snappingGridSize > 0)
+            {
+                m_SnapGridVisualization.enabled = true;
+                m_SnapGridVisualization.gridInterval = m_snappingGridSize;
+            }
+            else
+            {
+                m_SnapGridVisualization.enabled = false;
+            }
+        }
+
+
     }
 
 } // namespace TiltBrush

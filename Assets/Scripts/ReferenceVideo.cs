@@ -267,7 +267,7 @@ namespace TiltBrush
                 else
                 {
                     string fullPath = System.IO.Path.Combine(App.VideoLibraryPath(), PersistentPath);
-                    m_VideoPlayer.url = $"file:///{fullPath}";
+                    m_VideoPlayer.url = $"{fullPath}";
                 }
                 m_VideoPlayer.isLooping = true;
                 m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;

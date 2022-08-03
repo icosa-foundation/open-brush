@@ -1,0 +1,33 @@
+<html><head></head>
+<body>
+<script>
+
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    }
+    
+    var color = "white";
+    var x = 0;
+    sendCommands([
+        "new",
+        "brush.type=paper",
+    ]);
+    for (var i=0; i<40; i++) {
+    
+        var width = Math.random()*.2 + .01;
+        sendCommands([
+            `color.set.html=${color}`,
+            `brush.size.set=${width*1.5}`,
+            `brush.move.to=${x+(width/2)},${13 + (i/100)},-3`,
+            `brush.draw=5`,
+        ]);
+        color = (color=="white") ? color="black" : color="white";
+        x += width;
+    }
+    
+</script>
+</body>
+</html>

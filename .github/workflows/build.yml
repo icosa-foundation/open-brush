@@ -1,4 +1,5 @@
 # yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
 name: Builds
 
@@ -39,6 +40,7 @@ jobs:
       changelog: ${{ steps.changelog.outputs.changelog }}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
+      itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -50,7 +52,7 @@ jobs:
         id: version
         run: |
           MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
+          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
           STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
           if [ $PATCH_VERSION == $MAJOR_MINOR ]
           then
@@ -58,9 +60,12 @@ jobs:
             STAMP=""
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "::set-output name=prerelease::false"
+            echo "::set-output name=itchchannelname::release"
+
           else
             echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
             echo "::set-output name=prerelease::true"
+            echo "::set-output name=itchchannelname::beta"
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "::set-output name=version::$VERSION"
@@ -76,7 +81,7 @@ jobs:
           else
             PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
-          CHANGELOG=$(git log --pretty=oneline $PREV..HEAD)
+          CHANGELOG=$(git log --pretty=oneline --first-parent $PREV..HEAD)
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
@@ -172,7 +177,8 @@ jobs:
           #echo "Listing 100 largest packages"
           #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing large packages"
-          sudo apt-get remove -y '^ghc-8.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get update
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
           sudo apt-get autoremove -y
           sudo apt-get clean
           echo "Removing remaining large directories"
@@ -189,9 +195,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 27.0
+          # version 34.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=4231499270194643 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=4585423734833742 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
@@ -241,7 +247,7 @@ jobs:
             Library-${{ matrix.targetPlatform }}-
 
       - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2
         if: matrix.vrsdk == 'Oculus'
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -304,23 +310,12 @@ jobs:
           SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
           sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
 
-      - name: Enable the use of a custom keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-        if: |
-          github.event_name == 'push' &&
-          env.ANDROID_KEYSTORE_BASE64 != null &&
-          env.ANDROID_KEYSTORE_PASS != null &&
-          env.ANDROID_KEYALIAS_NAME != null &&
-          env.ANDROID_KEYALIAS_PASS != null
+      - name: Enable keystore
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-6
+        uses: game-ci/unity-builder@v2
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
@@ -332,10 +327,10 @@ jobs:
           version: ${{ needs.configuration.outputs.version }}
           buildMethod: BuildTiltBrush.CommandLine
           androidKeystoreName: openbrush.keystore
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
@@ -348,6 +343,19 @@ jobs:
           tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
           rm -rf build/*
           mv OpenBrush.tgz build/
+
+      # We have to do this here, because only this worker has docker installed
+      - name: Extract Android symbol files
+        if: matrix.targetPlatform == 'Android'
+        run: |
+          # Change permissions for the build directory, which was created as root only
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod o+w build
+          mkdir build/symbols
+          docker_image=$(docker create unityci/editor:${UNITY_VERSION}-android-0)
+          docker cp ${docker_image}:/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Symbols/armeabi-v7a/libunity.sym.so build/symbols/
+          docker cp ${docker_image}:/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Symbols/armeabi-v7a/libmain.sym.so build/symbols/
+          docker rm ${docker_image}
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
@@ -363,9 +371,6 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Download Build Artifacts (Windows SteamVR)
@@ -453,6 +458,169 @@ jobs:
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+
+  publish_steam:
+    name: Publish Steam Release
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+      - name: Setup steamcmd
+        uses: CyberAndrii/setup-steamcmd@v1.1.1
+      - name: Restore steam login config
+        run: |
+          mkdir -p /home/runner/Steam/config
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
+      - name: Download Build Artifacts (Windows SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR
+          path: build_windows_steamvr
+      - name: Download Build Artifacts (Windows SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR Experimental
+          path: build_windows_steamvr_experimental
+      - name: Upload Regular Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_steamvr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_steamvr/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          CHANNEL: prerelease
+      - name: Upload Experimental Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_steamvr_experimental/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr_experimental/main_depot.vdf
+          cp Support/steam/installscript_win.vdf build_windows_steamvr_experimental/
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr_experimental/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          CHANNEL: prerelease-experimental
+      - name: Save logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: steamcmd logs
+          path: build_output/
+
+
+  publish_itch:
+    name: Publish Itch.io Release
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    env:
+      ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
+      BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+      ITCH_GAME: openbrush
+      ITCH_USER: openbrush
+      VERSION: ${{ needs.configuration.outputs.version }}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Windows SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR
+          path: build_windows_steamvr
+
+      - name: Download Build Artifacts (Windows SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows SteamVR Experimental
+          path: build_windows_steamvr_experimental
+
+      - name: Download Build Artifacts (Linux SteamVR)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR
+          path: build_linux_steamvr
+
+      - name: Download Build Artifacts (Linux SteamVR Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Linux SteamVR Experimental
+          path: build_linux_steamvr_experimental
+
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+
+      - name: Download Build Artifacts (Oculus Quest Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Oculus Quest Experimental
+          path: build_oculus_quest_experimental
+
+      - name: Package Artifacts for release
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
+          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
+          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
+          cd releases
+          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
+          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
+      - name: Publish Windows
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
+      - name: Publish Windows Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
+      - name: Publish Linux
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Linux_${{ needs.configuration.outputs.version }}
+      - name: Publish Linux Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Linux_Experimental_${{ needs.configuration.outputs.version }}
+      - name: Publish Quest
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Quest Experimental
+        uses: josephbmanley/butler-publish-itchio-action@master
+        env:
+          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
+          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
+
   publish_oculus:
     name: Publish Oculus Release
     needs: [configuration, build]
@@ -461,9 +629,6 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
@@ -492,11 +657,12 @@ jobs:
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
+
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug-symbols-dir ../build_oculus_quest/symbols/ --debug-symbols-pattern '*.sym.so'
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           else
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug-symbols-dir ../build_oculus_quest/symbols/ --debug-symbols-pattern '*.sym.so'
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           fi

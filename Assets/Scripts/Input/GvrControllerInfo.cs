@@ -149,6 +149,30 @@ namespace TiltBrush
             return false;
         }
 
+        public override bool GetVrInputUp(VrInput input)
+        {
+            switch (input)
+            {
+                case VrInput.Button03:
+                    return GetAppButtonUp();
+                case VrInput.Button01: /*half_left*/
+                case VrInput.Button02: /*half_right*/
+                case VrInput.Button05: /*quad_up*/
+                case VrInput.Button06: /*quad_down*/
+                    return GetClickButtonUp() && IsInPosition(GetTouchPos(), input);
+
+                case VrInput.Button04: /*full-pad button*/
+                    return GetClickButtonUp();
+
+                case VrInput.Trigger:
+                    return GetTriggerButtonUp();
+
+                case VrInput.Any:
+                    return GetTriggerButtonUp() || GetAppButtonUp() || GetClickButtonUp();
+            }
+            return false;
+        }
+
         public override bool GetVrInputDown(VrInput input)
         {
             switch (input)
@@ -218,6 +242,13 @@ namespace TiltBrush
                 : GvrControllerInput.TriggerButtonDownRight;
         }
 
+        private bool GetTriggerButtonUp()
+        {
+            if (GetControllerGrip()) { return false; }
+            return m_isLeftHand ? GvrControllerInput.TriggerButtonUpLeft
+                : GvrControllerInput.TriggerButtonUpRight;
+        }
+
         private bool GetIsTouching()
         {
             return m_isLeftHand ? GvrControllerInput.IsTouchingLeft
@@ -251,6 +282,13 @@ namespace TiltBrush
                 : GvrControllerInput.ClickButtonDownRight;
         }
 
+        private bool GetClickButtonUp()
+        {
+            if (GetControllerGrip()) { return false; }
+            return m_isLeftHand ? GvrControllerInput.ClickButtonUpLeft
+                : GvrControllerInput.ClickButtonUpRight;
+        }
+
         private bool GetAppButton()
         {
             return m_isLeftHand ? GvrControllerInput.AppButtonLeft
@@ -262,5 +300,12 @@ namespace TiltBrush
             return m_isLeftHand ? GvrControllerInput.AppButtonDownLeft
                 : GvrControllerInput.AppButtonDownRight;
         }
+
+        private bool GetAppButtonUp()
+        {
+            return m_isLeftHand ? GvrControllerInput.AppButtonUpLeft
+                : GvrControllerInput.AppButtonUpRight;
+        }
+
     }
 } // namespace TiltBrush

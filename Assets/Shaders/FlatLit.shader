@@ -27,7 +27,7 @@ SubShader {
   Pass {
     Tags { "LightMode" = "ForwardBase" }
     Blend SrcAlpha OneMinusSrcAlpha
-
+    Cull Back
     CGPROGRAM
 
     #pragma vertex vert
