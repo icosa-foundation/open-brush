@@ -724,15 +724,6 @@ namespace TiltBrush
         {
             get
             {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                if (Config.IsExperimental)
-                {
-                    if (App.Scene.ActiveCanvas != App.Scene.MainCanvas)
-                    {
-                        return true;
-                    }
-                }
-#endif
                 return false;
             }
         }
@@ -749,7 +740,10 @@ namespace TiltBrush
             {
                 if (InGrabCanvasMode)
                 {
-                    App.Scene.ActiveCanvas.Pose = value;
+                    foreach (var canvas in App.Scene.AllCanvases)
+                    {
+                        canvas.Pose = value;
+                    }
                 }
                 else
                 {
