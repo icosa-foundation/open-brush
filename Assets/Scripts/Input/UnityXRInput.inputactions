@@ -246,6 +246,28 @@
                     "isPartOfComposite": false
                 },
                 {
+                    "name": "Pico Fake Touch Stick",
+                    "id": "947ac4f7-75e5-4adc-90db-67313e74f32e",
+                    "path": "PicoFakeTouchStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "028c52b4-043e-4ab9-beb2-759e9d934af4",
+                    "path": "<PXR_Controller>{RightHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "d38db390-e23f-499c-b7e2-5424fae71eb5",
                     "path": "<XRController>{RightHand}/touchpadTouch",
@@ -688,6 +710,28 @@
                     "action": "PadTouch",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "Pico Fake Touch Stick",
+                    "id": "480c435e-a84d-47ad-9a9a-228de2e608a0",
+                    "path": "PicoFakeTouchStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "08719879-9565-438f-97f1-3a8a2539e9f0",
+                    "path": "<PXR_Controller>{LeftHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 },
                 {
                     "name": "",
