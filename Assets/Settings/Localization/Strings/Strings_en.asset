@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Strings_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: c84355079ab3f3e4f8f3812258805f86, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 6606866780160
+    m_Localized: 'Use Grip To Grab
+
+      The Blinking Panel'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6887293751296
+    m_Localized: 'Toss The Panel
+
+      To Dismiss It'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9169397780480
+    m_Localized: Video successfully uploaded to YouTube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9359005487104
+    m_Localized: Check your Desktop!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10372936536064
+    m_Localized: My
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10508081205248
+    m_Localized: Check out my
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10778529927168
+    m_Localized: Tilt Meter Full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11105966657536
+    m_Localized: 'Sketch Cost: Low'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11327010672640
+    m_Localized: 'Sketch Cost: Medium'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11410951278592
+    m_Localized: 'Sketch Cost: High'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11531013230592
+    m_Localized: 'Sketch Cost: Highest'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11625947107328
+    m_Localized: 'Sketch Cost: Picasso'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13240867393536
+    m_Localized: Autosave_{0:yyyy-MM-dd_HH-mm-ss}.tilt
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []
