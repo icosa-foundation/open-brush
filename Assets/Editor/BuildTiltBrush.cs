@@ -987,59 +987,86 @@ static class BuildTiltBrush
 
     class TempSetOpenXrFeatureGroup : IDisposable
     {
-        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> m_FeaturesNotEnabled;
+        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
+        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
         readonly BuildTargetGroup m_targetGroup;
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
-            m_FeaturesNotEnabled = new();
+            enabledFeatures = new();
+            requiredFeatures = new();
+            List<string> requiredFeatureStrings = new();
 
-            if (tiltOptions.XrSdk != XrSdkMode.OpenXR)
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Oculus:
+                    // requiredFeatureStrings.Add("com.oculus.openxr.feature.oculusxr");
+                    // if (m_targetGroup == BuildTargetGroup.Android)
+                    // {
+                    //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
+                    // }
+                    break;
+            }
+
+            if (requiredFeatureStrings.Count == 0)
             {
                 return;
             }
 
-            List<string> requiredFeatures = new();
-            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            // Refresh list of features present in project, then iterate and disable all of them.
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
-
-            switch (tiltOptions.XrSdk)
+            var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
+            int featuresCount = UnityEngine.XR.OpenXR.OpenXRSettings.Instance.GetFeatures(featureList);
+            if (featuresCount > 0)
             {
-                // case XrSdkMode.Oculus:
-                //     requiredFeatures.Add("com.oculus.openxr.feature.oculusxr");
-                //     if (m_targetGroup == BuildTargetGroup.Android)
-                //     {
-                //         requiredFeatures.Add("com.unity.openxr.feature.oculusquest");
-                //     }
-                //     break;
+                foreach (var feature in featureList)
+                {
+                    if (feature.enabled)
+                    {
+                        enabledFeatures.Add(feature);
+                    }
+                    feature.enabled = false;
+                }
+            }
+
+            foreach (var feature in featureList)
+            {
+                if (feature.enabled)
+                {
+                    throw new BuildFailedException($"Shouldn't be here! {feature.name}");
+                }
             }
 
             // Locate and enable features, fail if not found.
-            foreach (string requiredFeature in requiredFeatures)
+            foreach (string requiredFeatureString in requiredFeatureStrings)
             {
-                var foundFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeature);
-                if (foundFeature == null)
+                var requiredFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeatureString);
+                if (requiredFeature == null)
                 {
-                    Die(6, "Could not find required OpenXR Feature \"{0}\"", requiredFeature);
+                    throw new BuildFailedException($"Could not find required OpenXR Feature {requiredFeatureString}. Is it installed?");
                 }
-
-                if (!foundFeature.enabled)
-                {
-                    // TODO: This is as good as we can do without the API suggested below to 'restore' the state.
-                    m_FeaturesNotEnabled.Add(foundFeature);
-                    foundFeature.enabled = true;
-                }
+                requiredFeatures.Add(requiredFeature);
+                requiredFeature.enabled = true;
             }
 
-            // TODO: There currently isn't a way to get a list of all features for target group without giving it a list of known feature IDs.
-            // I'm not sure if we need it but we may need to disable all other non-required features per SdkMode.
+
         }
 
         public void Dispose()
         {
-            foreach (var feature in m_FeaturesNotEnabled)
+            foreach (var requiredFeature in requiredFeatures)
             {
-                feature.enabled = false;
+                if (!enabledFeatures.Contains(requiredFeature))
+                {
+                    requiredFeature.enabled = false;
+                }
+            }
+
+            foreach (var enabledFeature in enabledFeatures)
+            {
+                enabledFeature.enabled = true;
             }
         }
     }
