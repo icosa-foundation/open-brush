@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Tilt Brush Authors
+// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,23 +22,30 @@ namespace TiltBrush
         public Texture2D m_TextureOn;
         public Texture2D m_TextureOff;
 
+        public bool ToggleState
+        {
+            get
+            {
+                return m_ToggleActive;
+            }
+            set
+            {
+                m_ToggleActive = value;
+                SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
+            }
+        }
+
         override protected void Awake()
         {
             base.Awake();
             m_ToggleActive = m_InitialToggleState;
-            SetToggleState(m_ToggleActive);
+            ToggleState = m_ToggleActive;
         }
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            SetToggleState(!m_ToggleActive);
-        }
-
-        public void SetToggleState(bool state)
-        {
-            m_ToggleActive = state;
-            SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
+            ToggleState = !ToggleState;
         }
     }
 } // namespace TiltBrush
