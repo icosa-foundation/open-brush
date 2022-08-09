@@ -175,6 +175,10 @@ MonoBehaviour:
     m_Key: CONTROLLER_CONSOLE_TITLE
     m_Metadata:
       m_Items: []
+  - m_Id: 287897575133184
+    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
