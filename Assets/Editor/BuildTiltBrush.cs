@@ -1050,8 +1050,6 @@ static class BuildTiltBrush
                 requiredFeatures.Add(requiredFeature);
                 requiredFeature.enabled = true;
             }
-
-
         }
 
         public void Dispose()
@@ -1078,7 +1076,8 @@ static class BuildTiltBrush
 
         public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
-            string[] targetXrPluginsRequired;
+            m_plugins = new();
+            string[] targetXrPluginsRequired = new string[] { };
 
             switch (tiltOptions.XrSdk)
             {
@@ -1089,7 +1088,7 @@ static class BuildTiltBrush
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
                 default:
-                    return;
+                    break;
             }
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
@@ -1104,7 +1103,6 @@ static class BuildTiltBrush
                 {
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
-
             }
             // Add any missing loaders.
             foreach (var loaderName in targetXrPluginsRequired.ToList())
@@ -1117,7 +1115,6 @@ static class BuildTiltBrush
             }
 
             Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
-
             EditorUtility.SetDirty(targetSettings);
         }
 
