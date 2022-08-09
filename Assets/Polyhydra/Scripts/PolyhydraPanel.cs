@@ -1258,7 +1258,7 @@ namespace TiltBrush
             OpPanel.SetActive(true);
             OpConfig opConfig = OpConfigs.Configs[op.opType];
             OpFilterControlParent.SetActive(opConfig.usesFilter);
-            ButtonOpDisable.SetToggleState(op.disabled);
+            ButtonOpDisable.ToggleState = op.disabled;
 
             if (opConfig.usesAmount)
             {
@@ -1266,7 +1266,7 @@ namespace TiltBrush
                 SliderOpParam1.SetMin(opConfig.amountSafeMin, opConfig.amountMin);
                 SliderOpParam1.SetMax(opConfig.amountSafeMax, opConfig.amountMax);
                 SliderOpParam1.UpdateValueAbsolute(op.amount);
-                SliderOpParam1.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amountRandomize);
+                SliderOpParam1.GetComponentInChildren<ActionToggleButton>().ToggleState = op.amountRandomize;
             }
             else
             {
@@ -1279,7 +1279,7 @@ namespace TiltBrush
                 SliderOpParam2.SetMin(opConfig.amount2SafeMin, opConfig.amount2Min);
                 SliderOpParam2.SetMax(opConfig.amount2SafeMax, opConfig.amount2Max);
                 SliderOpParam2.UpdateValueAbsolute(op.amount2);
-                SliderOpParam2.GetComponentInChildren<ActionToggleButton>().SetToggleState(op.amount2Randomize);
+                SliderOpParam2.GetComponentInChildren<ActionToggleButton>().ToggleState = op.amount2Randomize;
             }
             else
             {
@@ -1553,7 +1553,7 @@ namespace TiltBrush
             ButtonOpFilterType.SetDescriptionText(opFilterName);
 
             ButtonOpFilterNot.gameObject.SetActive(true);
-            ButtonOpFilterNot.SetToggleState(op.filterNot);
+            ButtonOpFilterNot.ToggleState = op.filterNot;
             LabelOpFilterName.text = opFilterName;
 
             switch (op.filterType)
