@@ -74,6 +74,94 @@ MonoBehaviour:
     m_Localized: Autosave_{0:yyyy-MM-dd_HH-mm-ss}.tilt
     m_Metadata:
       m_Items: []
+  - m_Id: 249453461278720
+    m_Localized: Eraser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 249886669967360
+    m_Localized: Free Paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 251895636725760
+    m_Localized: Swipe to Change
+    m_Metadata:
+      m_Items: []
+  - m_Id: 252524492918784
+    m_Localized: Snapshot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 254616443981824
+    m_Localized: Auto-Gif
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255232243306496
+    m_Localized: 5 Second Gif
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255577010900992
+    m_Localized: Video
+    m_Metadata:
+      m_Items: []
+  - m_Id: 259940966109184
+    m_Localized: Finalizing Video...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260046566100992
+    m_Localized: Video Preview
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260157501247488
+    m_Localized: Upload to YouTube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260325810278400
+    m_Localized: Video
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260740236873728
+    m_Localized: Looking for audio...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260825024729088
+    m_Localized: Audio found!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260910827606016
+    m_Localized: No audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261025797672960
+    m_Localized: Uploading...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261135713603584
+    m_Localized: Please Login
+    m_Metadata:
+      m_Items: []
+  - m_Id: 264453647142912
+    m_Localized: Trigger To Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265487907983360
+    m_Localized: Re-paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265936560099328
+    m_Localized: Re-Color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267911297142784
+    m_Localized: Re-Brush
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268509593636864
+    m_Localized: Spherical Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274600943587328
+    m_Localized: Pin
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -121,7 +121,7 @@ namespace TiltBrush
         [Header("Video Processing")]
         [SerializeField] private TextMeshPro m_VideoRecordTimer;
         [SerializeField] private GameObject m_VideoSavingRoot;
-        [SerializeField] private string m_VideoSavingText = "Loading Video...";
+        [SerializeField] private string m_VideoSavingText = "Finalizing Video...";
         [SerializeField] private string m_VideoPlaybackText = "Video Preview";
         [SerializeField] private string m_VideoPreviewToolText;
         [SerializeField] private string m_VideoReadyToolText;

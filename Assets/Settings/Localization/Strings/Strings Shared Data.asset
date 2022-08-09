@@ -15,6 +15,22 @@ MonoBehaviour:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
+  - m_Id: 249453461278720
+    m_Key: ERASER_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 249886669967360
+    m_Key: FREEPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 252524492918784
+    m_Key: MULTICAM_TOOL_SNAPSHOT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 251895636725760
+    m_Key: MULTICAM_TOOL_SWIPE_HINT_TEXT
+    m_Metadata:
+      m_Items: []
   - m_Id: 6606866780160
     m_Key: PROMOMANAGER_GRAB_PANEL_HINT_TEXT
     m_Metadata:
@@ -23,32 +39,12 @@ MonoBehaviour:
     m_Key: PROMOMANAGER_TOSS_PANEL_HINT_TEXT
     m_Metadata:
       m_Items: []
-  - m_Id: 9169397780480
-    m_Key: YOUTUBE_UPLOAD_SUCCESSFUL
-    m_Metadata:
-      m_Items: []
-  - m_Id: 9359005487104
-    m_Key: YOUTUBE_AUTHORIZE_MESSAGE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10372936536064
-    m_Key: YOUTUBE_DEFAULT_TITLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10508081205248
-    m_Key: YOUTUBE_DEFAULT_DESCRIPTION
+  - m_Id: 13240867393536
+    m_Key: SAVELOAD_AUTOSAVE_FILENAME_PATTERN
     m_Metadata:
       m_Items: []
   - m_Id: 10778529927168
     m_Key: TILTMETER_MAX_METER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 11105966657536
-    m_Key: TILTMETER_SKETCH_COST_LOW
-    m_Metadata:
-      m_Items: []
-  - m_Id: 11327010672640
-    m_Key: TILTMETER_SKETCH_COST_MEDIUM
     m_Metadata:
       m_Items: []
   - m_Id: 11410951278592
@@ -59,12 +55,104 @@ MonoBehaviour:
     m_Key: TILTMETER_SKETCH_COST_HIGHEST
     m_Metadata:
       m_Items: []
+  - m_Id: 11105966657536
+    m_Key: TILTMETER_SKETCH_COST_LOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11327010672640
+    m_Key: TILTMETER_SKETCH_COST_MEDIUM
+    m_Metadata:
+      m_Items: []
   - m_Id: 11625947107328
     m_Key: TILTMETER_SKETCH_COST_PICASSO
     m_Metadata:
       m_Items: []
-  - m_Id: 13240867393536
-    m_Key: SAVELOAD_AUTOSAVE_FILENAME_PATTERN
+  - m_Id: 9359005487104
+    m_Key: YOUTUBE_AUTHORIZE_MESSAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10508081205248
+    m_Key: YOUTUBE_DEFAULT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10372936536064
+    m_Key: YOUTUBE_DEFAULT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9169397780480
+    m_Key: YOUTUBE_UPLOAD_SUCCESSFUL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 254616443981824
+    m_Key: MULTICAM_TOOL_AUTOGIF_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255232243306496
+    m_Key: MULTICAM_TOOL_TIMEGIF_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255577010900992
+    m_Key: MULTICAM_TOOL_VIDEO_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 259940966109184
+    m_Key: MULTICAM_TOOL_VIDEO_SAVING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260046566100992
+    m_Key: MULTICAM_TOOL_VIDEO_PLAYBACK_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260157501247488
+    m_Key: MULTICAM_TOOL_VIDEO_PREVIEW_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260325810278400
+    m_Key: MULTICAM_TOOL_VIDEO_READY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260740236873728
+    m_Key: MULTICAM_TOOL_AUDIO_LOOKING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260825024729088
+    m_Key: MULTICAM_TOOL_AUDIO_FOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260910827606016
+    m_Key: MULTICAM_TOOL_AUDIO_NONE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261025797672960
+    m_Key: MULTICAM_TOOL_UPLOADING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261135713603584
+    m_Key: MULTICAM_TOOL_AUTH_NEEDED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 264453647142912
+    m_Key: DROPPER_TOOL_BRUSH_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265487907983360
+    m_Key: REPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265936560099328
+    m_Key: RECOLOR_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267911297142784
+    m_Key: REBRUSH_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268509593636864
+    m_Key: SELECTION_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274600943587328
+    m_Key: PIN_TOOL_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:
