@@ -261,13 +261,17 @@ namespace TiltBrush
         {
             PreviewPolyhedron.m_Instance.Param1Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.Param1Float = value.z;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleSlider2(Vector3 value)
         {
             PreviewPolyhedron.m_Instance.Param2Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.Param2Float = value.z;
+            RebuildPreviewAndLinked();
+        }
+        private void RebuildPreviewAndLinked()
+        {
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
@@ -275,7 +279,7 @@ namespace TiltBrush
         {
             PreviewPolyhedron.m_Instance.Param3Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.Param3Float = value.z;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleOpAmountSlider(Vector3 value)
@@ -293,7 +297,7 @@ namespace TiltBrush
                     break;
             }
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleOpDisableButton()
@@ -302,7 +306,7 @@ namespace TiltBrush
             op.disabled = !op.disabled;
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
             RefreshOpSelectButtons();
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleOpRandomizeButton(int paramIndex)
@@ -318,7 +322,7 @@ namespace TiltBrush
                     break;
             }
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void ShowAllGeneratorControls()
@@ -354,7 +358,7 @@ namespace TiltBrush
             op.filterParamInt = Mathf.FloorToInt(value.z);
             op.filterParamFloat = value.z;
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleButtonOpNot()
@@ -362,7 +366,7 @@ namespace TiltBrush
             var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.filterNot = !op.filterNot;
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         void AnimateOpParentIntoPlace()
@@ -1192,7 +1196,7 @@ namespace TiltBrush
 
             ShowAllGeneratorControls();
 
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public static Bounds CalculateBounds(GameObject go)
@@ -1356,7 +1360,7 @@ namespace TiltBrush
             popup.ColorPicker.ColorPicked += c =>
             {
                 SetFinalColor(c, index);
-                PreviewPolyhedron.m_Instance.RebuildPoly();
+                RebuildPreviewAndLinked();
             };
 
             // Init must be called after all popup.ColorPicked actions have been assigned.
@@ -1399,7 +1403,7 @@ namespace TiltBrush
             var op = PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex];
             op.paramColor = color;
             PreviewPolyhedron.m_Instance.Operators[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleSetAllColorsToCurrentButtonPressed()
@@ -1409,7 +1413,7 @@ namespace TiltBrush
             {
                 SetFinalColor(color, index);
             }
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleSetColorsToPalette(int paletteIndex)
@@ -1427,7 +1431,7 @@ namespace TiltBrush
                     SetFinalColor(color, index);
                 }
             }
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleResetAllColorsToDefaultButtonPressed()
@@ -1436,7 +1440,7 @@ namespace TiltBrush
             {
                 SetFinalColor(DefaultColorPalette[index], index);
             }
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         public void HandleJitterAllColorsButtonPressed()
@@ -1447,7 +1451,7 @@ namespace TiltBrush
                 Color newColor = PointerManager.m_Instance.CalculateJitteredColor(currentColor);
                 SetFinalColor(newColor, index);
             }
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
 
         private void SetFinalColor(Color color, int index)
@@ -1696,7 +1700,7 @@ namespace TiltBrush
             PreviewPolyhedron.m_Instance.Operators.RemoveAt(CurrentActiveOpIndex);
             CurrentActiveOpIndex = Mathf.Min(PreviewPolyhedron.m_Instance.Operators.Count - 1, CurrentActiveOpIndex);
             HandleSelectOpButton(CurrentActiveOpIndex);
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
             RefreshOpSelectButtons();
         }
 
@@ -1773,7 +1777,7 @@ namespace TiltBrush
             CurrentActiveOpIndex += delta;
             PreviewPolyhedron.m_Instance.Operators.Insert(CurrentActiveOpIndex, op);
             HandleSelectOpButton(CurrentActiveOpIndex);
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
             RefreshOpSelectButtons();
         }
 
@@ -1787,11 +1791,16 @@ namespace TiltBrush
             return Path.GetFullPath(App.ShapeRecipesPath()) == Path.GetFullPath(CurrentPresetsDirectory);
         }
 
+        public static void HandleUnlinkWidgets()
+        {
+            EditableModelManager.m_Instance.LinkedWidgets.Clear();
+        }
+
         public void HandleSetColorMethod(ColorMethods colorMethod)
         {
             EditableModelManager.CurrentModel.ColorMethod = colorMethod;
             SetButtonTextAndIcon(PolyhydraButtonTypes.ColorMethod, colorMethod.ToString());
-            PreviewPolyhedron.m_Instance.RebuildPoly();
+            RebuildPreviewAndLinked();
         }
     }
 

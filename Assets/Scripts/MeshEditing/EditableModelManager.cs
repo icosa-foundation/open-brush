@@ -42,6 +42,10 @@ namespace TiltBrush.MeshEditing
         private EditableModel m_CurrentModel;
         private Dictionary<string, EditableModel> m_EditableModels;
         public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
+
+        // List of widgets that should be updated whenever we rebuild the preview
+        public HashSet<EditableModelWidget> LinkedWidgets;
+
         public static EditableModel CurrentModel
         {
             get
@@ -67,8 +71,11 @@ namespace TiltBrush.MeshEditing
             {
                 Debug.LogWarning($"Failed to Init Shape Recipes Path");
             }
+
             m_Instance = this;
+
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
+            if (LinkedWidgets == null) LinkedWidgets = new HashSet<EditableModelWidget>();
         }
 
         public void UpdateEditableModel(EditableModelWidget widget, EditableModel emodel)
@@ -209,6 +216,12 @@ namespace TiltBrush.MeshEditing
             var prevId = id.guid;
             id.guid = Guid.NewGuid().ToString();
             m_EditableModels[id.guid] = m_EditableModels[prevId];
+        }
+        public static void UpdateWidgetFromPolyMesh(EditableModelWidget widget, PolyMesh poly)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyPolyCommand(widget, poly, EditableModelManager.CurrentModel)
+            );
         }
     }
 

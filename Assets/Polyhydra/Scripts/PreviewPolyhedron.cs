@@ -323,6 +323,11 @@ public class PreviewPolyhedron : MonoBehaviour
                 meshFilter.sharedMesh = mesh;
             }
         }
+
+        foreach (var widget in EditableModelManager.m_Instance.LinkedWidgets)
+        {
+            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh);
+        }
     }
 
     private void ScalePreviewMesh()

@@ -781,7 +781,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
@@ -815,6 +815,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
+      propertyPath: m_Options.Array.data[5].m_Texture
+      value: 
+      objectReference: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
+    - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
+        type: 3}
       propertyPath: m_Options.Array.data[0].m_Description
       value: Grab Settings
       objectReference: {fileID: 0}
@@ -837,6 +842,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Options.Array.data[4].m_Description
       value: Apply Brush Strokes to Edges
+      objectReference: {fileID: 0}
+    - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
+        type: 3}
+      propertyPath: m_Options.Array.data[5].m_Description
+      value: Link To Shape Designer
       objectReference: {fileID: 0}
     - target: {fileID: 6551201295385468615, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}

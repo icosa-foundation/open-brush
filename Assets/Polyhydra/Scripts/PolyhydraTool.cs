@@ -39,7 +39,8 @@ namespace TiltBrush
             ApplySettings,
             ApplyColor,
             ApplyBrushStrokesToFaces,
-            ApplyBrushStrokesToEdges
+            ApplyBrushStrokesToEdges,
+            LinkToShapeDesigner
         }
 
         //the parent of all of our tool's visual indicator objects
@@ -191,9 +192,7 @@ namespace TiltBrush
                             {
                                 case ModifyModes.ApplySettings:
                                     var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                                        new ModifyPolyCommand(ewidget, newPoly, EditableModelManager.CurrentModel)
-                                    );
+                                    EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly);
                                     break;
 
                                 case ModifyModes.GetSettings:
@@ -224,6 +223,10 @@ namespace TiltBrush
                                         EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
                                         Coords.AsCanvas[ewidget.transform]
                                     );
+                                    break;
+
+                                case ModifyModes.LinkToShapeDesigner:
+                                    EditableModelManager.m_Instance.LinkedWidgets.Add(ewidget);
                                     break;
                             }
                             AudioManager.m_Instance.PlayDuplicateSound(
