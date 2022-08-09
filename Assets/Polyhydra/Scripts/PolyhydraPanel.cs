@@ -982,7 +982,6 @@ namespace TiltBrush
             switch (emodel.GeneratorType)
             {
                 case GeneratorTypes.FileSystem:
-                case GeneratorTypes.GeometryData:
                 case GeneratorTypes.ConwayString:
                 case GeneratorTypes.Johnson:
                     Debug.LogError($"Preset has unsupported generator type: {emodel.GeneratorType}");

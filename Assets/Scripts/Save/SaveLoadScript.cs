@@ -759,145 +759,89 @@ namespace TiltBrush
                         // Rebuild generated models
                         foreach (var model in generatedModels)
                         {
-
-                            // TODO Unify this with similar code in PreviewPolyhedron.cs
-
                             var emd = jsonData.EditableModelDefinitions[model.AssetId];
-                            PolyMesh poly = null;
                             var p = emd.GeneratorParameters;
+                            PolyDefinition def = new PolyDefinition
+                            {
+                                GeneratorType = emd.GeneratorType
+                            };
 
                             switch (emd.GeneratorType)
                             {
-                                case GeneratorTypes.GeometryData:
-                                    // TODO simplify face tag data structure
-                                    var faceTags = new List<HashSet<string>>();
-                                    foreach (var t in emd.FaceTags)
-                                    {
-                                        var tagSet = new HashSet<string>(t);
-                                        faceTags.Add(tagSet);
-                                    }
-                                    poly = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
-                                    break;
-                                case GeneratorTypes.Johnson:
-                                    poly = JohnsonSolids.Build(
-                                        Convert.ToInt32(p["type"])
-                                    );
-                                    break;
+                                // case GeneratorTypes.GeometryData:
+                                //     // TODO simplify face tag data structure
+                                //     var faceTags = new List<HashSet<string>>();
+                                //     foreach (var t in emd.FaceTags)
+                                //     {
+                                //         var tagSet = new HashSet<string>(t);
+                                //         faceTags.Add(tagSet);
+                                //     }
+                                //     def = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
+                                //     break;
+                                // case GeneratorTypes.Johnson:
+                                //     def.JohnsonPolyType = Convert.ToInt32(p["type"]);
+                                //     break;
                                 case GeneratorTypes.Shapes:
-                                    poly = Shapes.Build(
-                                        (ShapeTypes)Convert.ToInt32(p["type"]),
-                                        Convert.ToSingle(p["a"]),
-                                        Convert.ToSingle(p["b"]),
-                                        Convert.ToSingle(p["c"])
-                                    );
+                                    def.ShapeType = (ShapeTypes)Convert.ToInt32(p["type"]);
+                                    def.Param1Float = Convert.ToSingle(p["a"]);
+                                    def.Param2Float = Convert.ToSingle(p["b"]);
+                                    def.Param3Float = Convert.ToSingle(p["c"]);
                                     break;
                                 case GeneratorTypes.Radial:
-                                    poly = RadialSolids.Build(
-                                        (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]),
-                                        Convert.ToInt32(p["sides"]),
-                                        Convert.ToSingle(p["height"]),
-                                        Convert.ToSingle(p["capheight"])
-                                    );
+                                    def.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]);
+                                    def.Param1Int = Convert.ToInt32(p["sides"]);
+                                    def.Param1Float = Convert.ToSingle(p["height"]);
+                                    def.Param2Float = Convert.ToSingle(p["capheight"]);
                                     break;
                                 case GeneratorTypes.Uniform:
-                                    var wythoff = new WythoffPoly((UniformTypes)Convert.ToInt32(p["type"]));
-                                    poly = wythoff.Build();
-                                    poly = poly.SitLevel();
+                                    def.UniformPolyType = (UniformTypes)Convert.ToInt32(p["type"]);
                                     break;
                                 case GeneratorTypes.Waterman:
-                                    try
-                                    {
-                                        poly = WatermanPoly.Build(
-                                            root: Convert.ToInt32(p["root"]),
-                                            c: Convert.ToInt32(p["c"]),
-                                            mergeFaces: true
-                                        );
-                                    }
-                                    catch (ArgumentException e)
-                                    {
-                                        Debug.LogError("Invalid Waterman Polyhedra");
-                                    }
+                                    def.Param1Int = Convert.ToInt32(p["root"]);
+                                    def.Param2Int = Convert.ToInt32(p["c"]);
                                     break;
                                 case GeneratorTypes.Grid:
-                                    poly = Grids.Build(
-                                        (GridEnums.GridTypes)Convert.ToInt32(p["type"]),
-                                        (GridEnums.GridShapes)Convert.ToInt32(p["shape"]),
-                                        Convert.ToInt32(p["x"]),
-                                        Convert.ToInt32(p["y"])
-                                    );
+                                    def.GridType = (GridEnums.GridTypes)Convert.ToInt32(p["type"]);
+                                    def.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p["shape"]);
+                                    def.Param1Int = Convert.ToInt32(p["x"]);
+                                    def.Param2Int = Convert.ToInt32(p["y"]);
                                     break;
                                 case GeneratorTypes.Various:
-                                    var type = (VariousSolidTypes)Convert.ToInt32(p["type"]);
-                                    switch (type)
+                                    def.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p["type"]);
+                                    switch (def.VariousSolidsType)
                                     {
                                         case VariousSolidTypes.Box:
-                                            poly = VariousSolids.Box(
-                                                Convert.ToInt32(p["x"]),
-                                                Convert.ToInt32(p["y"]),
-                                                Convert.ToInt32(p["z"])
-                                            );
+                                            def.Param1Int = Convert.ToInt32(p["x"]);
+                                            def.Param2Int = Convert.ToInt32(p["y"]);
+                                            def.Param3Int = Convert.ToInt32(p["z"]);
                                             break;
                                         case VariousSolidTypes.Torus:
-                                            poly = VariousSolids.Torus(
-                                                Convert.ToInt32(p["x"]),
-                                                Convert.ToInt32(p["y"]),
-                                                Convert.ToSingle(p["z"])
-                                            );
+                                            def.Param1Int = Convert.ToInt32(p["x"]);
+                                            def.Param2Int = Convert.ToInt32(p["y"]);
+                                            def.Param1Float = Convert.ToSingle(p["z"]);
                                             break;
                                         case VariousSolidTypes.Stairs:
-                                            poly = VariousSolids.Stairs(
-                                                Convert.ToInt32(p["x"]),
-                                                Convert.ToSingle(p["y"]),
-                                                Convert.ToSingle(p["z"])
-                                            );
+                                            def.Param1Int = Convert.ToInt32(p["x"]);
+                                            def.Param1Float = Convert.ToSingle(p["y"]);
+                                            def.Param2Float = Convert.ToSingle(p["z"]);
                                             break;
                                         case VariousSolidTypes.UvSphere:
-                                            poly = VariousSolids.UvSphere(
-                                                Convert.ToInt32(p["x"]),
-                                                Convert.ToInt32(p["y"])
-                                            );
-                                            break;
                                         case VariousSolidTypes.UvHemisphere:
-                                            poly = VariousSolids.UvSphere(
-                                                Convert.ToInt32(p["x"]),
-                                                Convert.ToInt32(p["y"])
-                                            );
+                                            def.Param1Int = Convert.ToInt32(p["x"]);
+                                            def.Param2Int = Convert.ToInt32(p["y"]);
                                             break;
                                     }
                                     break;
                             }
 
-                            if (poly != null && emd.Operations != null)
-                            {
-                                foreach (var opDict in emd.Operations)
-                                {
-                                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
-                                    if (disabled) continue;
-                                    var op = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                                    float param1 = Convert.ToSingle(opDict["param1"]);
-                                    float param2 = Convert.ToSingle(opDict["param2"]);
-                                    Color paramColor = Color.white;
-                                    if (opDict.ContainsKey("paramColor"))
-                                    {
-                                        var colorData = (opDict["paramColor"] as JArray);
-                                        paramColor = new Color(
-                                            colorData[0].Value<float>(),
-                                            colorData[1].Value<float>(),
-                                            colorData[2].Value<float>()
-                                        );
-                                    }
-                                    var filter = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
-                                    var parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
-                                    poly = poly.AppyOperation(op, parameters);
-                                }
-                            }
+                            var (poly, _) = PolyBuilder.BuildFromPolyDef(def);
 
                             // Handle saves with missing colors (legacy)
                             Color[] colors;
                             if (emd.Colors == null || emd.Colors.Length == 0)
                             {
-                                var polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                                colors = (Color[])polyhydraPanel.DefaultColorPalette.Clone();
+                                PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+                                colors = (Color[])polyPanel.DefaultColorPalette.Clone();
                             }
                             else
                             {

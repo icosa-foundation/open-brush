@@ -19,6 +19,7 @@ using System.Linq;
 using System.Threading;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
+using TiltBrush;
 using TiltBrush.MeshEditing;
 using UnityEngine;
 using Random = System.Random;
@@ -30,6 +31,7 @@ public class PreviewPolyhedron : MonoBehaviour
     public bool GenerateSubmeshes = false;
 
     public int RebuildSkipFrames = 4;
+
     public UniformTypes UniformPolyType;
     public RadialSolids.RadialPolyType RadialPolyType;
     public VariousSolidTypes VariousSolidsType;
@@ -267,235 +269,35 @@ public class PreviewPolyhedron : MonoBehaviour
             Debug.LogWarning("Coroutine already exists. Aborting.");
             return;
         }
-        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyhedron, AssignMesh));
+        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyHedron, AssignMesh));
     }
 
     public void ImmediateMakePolyhedron()
     {
-        DoMakePolyhedron();
+        DoMakePolyHedron();
         AssignMesh();
     }
 
-    private void DoMakePolyhedron()
+    private void DoMakePolyHedron()
     {
-        // TODO Unify this with similar code in SaveLoadScript.cs
-
-        switch (EditableModelManager.CurrentModel.GeneratorType)
+        PolyDefinition def = new PolyDefinition
         {
-            case GeneratorTypes.Uniform:
-
-                var wythoff = new WythoffPoly(UniformPolyType);
-                m_PolyMesh = wythoff.Build();
-                m_PolyMesh = m_PolyMesh.SitLevel();
-                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                {
-                    {"type", UniformPolyType},
-                };
-                m_PolyMesh.ScalingFactor = 0.864f;
-                break;
-            case GeneratorTypes.Waterman:
-                m_PolyMesh = WatermanPoly.Build(root: Param1Int, c: Param2Int, mergeFaces: true);
-                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                {
-                    {"root", Param1Int},
-                    {"c", Param2Int},
-                };
-                break;
-            case GeneratorTypes.Grid:
-                m_PolyMesh = Grids.Build(GridType, GridShape, Param1Int, Param2Int);
-                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                {
-                    {"type", GridType},
-                    {"shape", GridShape},
-                    {"x", Param1Int},
-                    {"y", Param2Int},
-                };
-                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f) / 2f;
-                break;
-            case GeneratorTypes.Radial:
-                Param1Int = Mathf.Max(Param1Int, 3);
-                float height, capHeight;
-                switch (RadialPolyType)
-                {
-                    case RadialSolids.RadialPolyType.Prism:
-                    case RadialSolids.RadialPolyType.Antiprism:
-                    case RadialSolids.RadialPolyType.Pyramid:
-                    case RadialSolids.RadialPolyType.Dipyramid:
-                    case RadialSolids.RadialPolyType.OrthoBicupola:
-                    case RadialSolids.RadialPolyType.GyroBicupola:
-                    case RadialSolids.RadialPolyType.Cupola:
-                        height = Param2Float;
-                        capHeight = Param2Float;
-                        break;
-                    default:
-                        height = Param2Float;
-                        capHeight = Param3Float;
-                        break;
-                }
-
-                m_PolyMesh = RadialSolids.Build(RadialPolyType, Param1Int, height, capHeight);
-                EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                {
-                    {"type", RadialPolyType},
-                    {"sides", Param1Int},
-                    {"height", height},
-                    {"capheight", capHeight},
-                };
-                m_PolyMesh.ScalingFactor = Mathf.Sqrt(2f) / 2f;
-                break;
-            case GeneratorTypes.Shapes:
-                switch (ShapeType)
-                {
-                    case ShapeTypes.Polygon:
-                        Param1Int = Mathf.Max(Param1Int, 3);
-                        m_PolyMesh = Shapes.Build(ShapeTypes.Polygon, Param1Int);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", ShapeTypes.Polygon},
-                            {"sides", Param1Int},
-                        };
-                        // Intentionally different to radial scaling.
-                        // Set so side lengths will match for any polygon
-                        m_PolyMesh.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / Param1Int));
-                        break;
-                    case ShapeTypes.Star:
-                        Param1Int = Mathf.Max(Param1Int, 3);
-                        m_PolyMesh = Shapes.Build(ShapeTypes.Star, Param1Int, Param2Float);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", ShapeTypes.Star},
-                            {"sides", Param1Int},
-                            {"sharpness", Param2Float},
-                        };
-                        m_PolyMesh.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / Param1Int)); ;
-                        break;
-                    case ShapeTypes.L_Shape:
-                        m_PolyMesh = Shapes.Build(ShapeTypes.L_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", ShapeTypes.L_Shape},
-                            {"a", Param1Float},
-                            {"b", Param2Float},
-                            {"c", Param3Float},
-                        };
-                        break;
-                    case ShapeTypes.C_Shape:
-                        m_PolyMesh = Shapes.Build(ShapeTypes.C_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", ShapeTypes.C_Shape},
-                            {"a", Param1Float},
-                            {"b", Param2Float},
-                            {"c", Param3Float},
-                        };
-                        break;
-                    case ShapeTypes.H_Shape:
-                        m_PolyMesh = Shapes.Build(ShapeTypes.H_Shape, Param1Float, Param2Float, Param3Float, Shapes.Method.Convex);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", ShapeTypes.H_Shape},
-                            {"a", Param1Float},
-                            {"b", Param2Float},
-                            {"c", Param3Float},
-                        };
-                        break;
-                }
-                break;
-            case GeneratorTypes.Various:
-                switch (VariousSolidsType)
-                {
-                    case VariousSolidTypes.Box:
-                        m_PolyMesh = VariousSolids.Box(Param1Int, Param2Int, Param3Int);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", VariousSolidTypes.Box},
-                            {"x", Param1Int},
-                            {"y", Param2Int},
-                            {"z", Param3Int},
-                        };
-                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
-                        break;
-                    case VariousSolidTypes.UvSphere:
-                        m_PolyMesh = VariousSolids.UvSphere(Param1Int, Param2Int);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", VariousSolidTypes.UvSphere},
-                            {"x", Param1Int},
-                            {"y", Param2Int},
-                        };
-                        m_PolyMesh.ScalingFactor = 0.5f;
-                        break;
-                    case VariousSolidTypes.UvHemisphere:
-                        m_PolyMesh = VariousSolids.UvHemisphere(Param1Int, Param2Int);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", VariousSolidTypes.UvHemisphere},
-                            {"x", Param1Int},
-                            {"y", Param2Int},
-                        };
-                        m_PolyMesh.ScalingFactor = 0.5f;
-                        break;
-                    case VariousSolidTypes.Torus:
-                        m_PolyMesh = VariousSolids.Torus(Param1Int, Param2Int, Param3Float);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", VariousSolidTypes.Torus},
-                            {"x", Param1Int},
-                            {"y", Param2Int},
-                            {"z", Param3Float},
-                        };
-                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
-                        break;
-                    case VariousSolidTypes.Stairs:
-                        m_PolyMesh = VariousSolids.Stairs(Param1Int, Param2Float, Param3Float);
-                        EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                        {
-                            {"type", VariousSolidTypes.Stairs},
-                            {"x", Param1Int},
-                            {"y", Param2Float},
-                            {"z", Param3Float},
-                        };
-                        m_PolyMesh.ScalingFactor = 1f / Mathf.Sqrt(2f);
-                        break;
-                }
-                break;
-        }
-
-        if (m_PolyMesh == null) Debug.LogError($"No initial poly generated for: GeneratorType: {EditableModelManager.CurrentModel.GeneratorType}");
-
-        EditableModelManager.CurrentModel.Operations = new List<Dictionary<string, object>>();
-
-        // EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByRole;
-
-        foreach (var op in Operators.ToList())
-        {
-            // If we've set any tags then assume we want to color by tags
-            // if (op.opType == PolyMesh.Operation.AddTag) EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByTags;
-
-            EditableModelManager.CurrentModel.Operations.Add(new Dictionary<string, object>
-            {
-                {"operation", op.opType},
-                {"param1", op.amount},
-                {"param1Randomize", op.amountRandomize},
-                {"param2", op.amount2},
-                {"param2Randomize", op.amount2Randomize},
-                {"paramColor", op.paramColor},
-                {"disabled", op.disabled},
-                {"filterType", op.filterType},
-                {"filterParamFloat", op.filterParamFloat},
-                {"filterParamInt", op.filterParamInt},
-                {"filterNot", op.filterNot},
-            });
-            if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
-            m_PolyMesh = ApplyOp(m_PolyMesh, op);
-        }
-
-        m_MeshData = m_PolyMesh.BuildMeshData(
-            GenerateSubmeshes,
-            EditableModelManager.CurrentModel.Colors,
-            EditableModelManager.CurrentModel.ColorMethod
-        );
-
+            GeneratorType = EditableModelManager.CurrentModel.GeneratorType,
+            UniformPolyType = UniformPolyType,
+            RadialPolyType = RadialPolyType,
+            VariousSolidsType = VariousSolidsType,
+            ShapeType = ShapeType,
+            GridType = GridType,
+            GridShape = GridShape,
+            Param1Int = Param1Int,
+            Param2Int = Param2Int,
+            Param3Int = Param3Int,
+            Param1Float = Param1Float,
+            Param2Float = Param2Float,
+            Param3Float = Param3Float,
+            Operators = Operators,
+        };
+        (m_PolyMesh, m_MeshData) = PolyBuilder.BuildFromPolyDef(def);
     }
 
     private void AssignMesh()
@@ -503,7 +305,6 @@ public class PreviewPolyhedron : MonoBehaviour
         m_BuildMeshCoroutine = null;
 
         var mesh = m_PolyMesh.BuildUnityMesh(m_MeshData);
-
         if (mesh == null)
         {
             Debug.LogError($"Failed to generate preview mesh");

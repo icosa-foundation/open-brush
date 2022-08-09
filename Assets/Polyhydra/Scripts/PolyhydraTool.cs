@@ -65,6 +65,9 @@ namespace TiltBrush
         private CreateModes m_CurrentCreateMode;
         private ModifyModes m_CurrentModifyMode;
 
+        // How much should we increment the timestamp for each generated brush stroke?
+        private const int m_TimeStep = 1;
+
         public bool m_CurrentModeIsABrushMode =>
             // Show if we are in a brush stroke creation mode
             m_CurrentCreateMode is CreateModes.BrushStrokesFromFaces or CreateModes.BrushStrokesFromEdges ||
@@ -313,6 +316,8 @@ namespace TiltBrush
             var group = App.GroupManager.NewUnusedGroup();
             tr.scale *= poly.ScalingFactor;
 
+            uint incrementedTime = (uint)(Time.unscaledTime / 1000f);
+
             foreach (var (face, faceIndex) in poly.Faces.WithIndex())
             {
                 var controlPoints = new List<PointerManager.ControlPoint>();
@@ -339,8 +344,9 @@ namespace TiltBrush
                             m_Pos = tr.translation + vertexPos,
                             m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
                             m_Pressure = pressure,
-                            m_TimestampMs = (uint)(Time.unscaledTime * 1000)
+                            m_TimestampMs = incrementedTime
                         });
+                        incrementedTime += m_TimeStep;
                     }
                 }
 
@@ -392,6 +398,8 @@ namespace TiltBrush
 
             var drawnEdges = new HashSet<(Guid, Guid)?>();
 
+            uint incrementedTime = (uint)(Time.unscaledTime / 1000f);
+
             foreach (var (edge, edgeIndex) in poly.Halfedges.WithIndex())
             {
                 if (drawnEdges.Contains(edge.PairedName)) continue;
@@ -438,8 +446,9 @@ namespace TiltBrush
                         m_Pos = tr.translation + vertexPos,
                         m_Orient = Quaternion.LookRotation(edgeNormal, Vector3.up),
                         m_Pressure = pressure,
-                        m_TimestampMs = (uint)(Time.unscaledTime * 1000)
+                        m_TimestampMs = incrementedTime
                     });
+                    incrementedTime += m_TimeStep;
                 }
 
                 var stroke = new Stroke
@@ -451,7 +460,7 @@ namespace TiltBrush
                     m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
                     m_Color = edgeColor,
                     m_Seed = 0,
-                    m_ControlPoints = controlPoints.ToArray(),
+                    m_ControlPoints = controlPoints.ToArray()
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                 stroke.Group = group;
