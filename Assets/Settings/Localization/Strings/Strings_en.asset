@@ -162,6 +162,22 @@ MonoBehaviour:
     m_Localized: Pin
     m_Metadata:
       m_Items: []
+  - m_Id: 278827682140160
+    m_Localized: Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 279130447974400
+    m_Localized: Hold Grip to Move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281134452871168
+    m_Localized: Spectator
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281373578530816
+    m_Localized: Hold Grip to Move
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
