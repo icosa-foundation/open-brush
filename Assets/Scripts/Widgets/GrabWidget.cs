@@ -1258,9 +1258,9 @@ namespace TiltBrush
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                round(localCanvasPos.x),
-                round(localCanvasPos.y),
-                round(localCanvasPos.z)
+                SelectionManager.m_Instance.m_LockSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
+                SelectionManager.m_Instance.m_LockSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
+                SelectionManager.m_Instance.m_LockSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
@@ -1381,7 +1381,15 @@ namespace TiltBrush
                     }
                 }
             }
+
+            outXf_GS = ApplyAxisLocks(outXf_GS);
+
             return outXf_GS;
+        }
+
+        protected virtual TrTransform ApplyAxisLocks(TrTransform xf_GS)
+        {
+            return xf_GS;
         }
 
         protected virtual bool AllowSnapping()

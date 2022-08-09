@@ -83,6 +83,16 @@ namespace TiltBrush
 
         private bool m_bSelectionWidgetNeedsUpdate;
 
+        [NonSerialized] public bool m_LockTranslationX = false;
+        [NonSerialized] public bool m_LockTranslationY = false;
+        [NonSerialized] public bool m_LockTranslationZ = false;
+        [NonSerialized] public bool m_LockRotationX = false;
+        [NonSerialized] public bool m_LockRotationY = false;
+        [NonSerialized] public bool m_LockRotationZ = false;
+        [NonSerialized] public bool m_LockSnapTranslationX = false;
+        [NonSerialized] public bool m_LockSnapTranslationY = false;
+        [NonSerialized] public bool m_LockSnapTranslationZ = false;
+
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
         {
