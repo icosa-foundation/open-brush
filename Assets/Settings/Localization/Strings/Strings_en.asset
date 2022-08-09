@@ -178,6 +178,10 @@ MonoBehaviour:
     m_Localized: Hold Grip to Move
     m_Metadata:
       m_Items: []
+  - m_Id: 286778752929792
+    m_Localized: Info
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

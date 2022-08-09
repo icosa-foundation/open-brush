@@ -171,6 +171,10 @@ MonoBehaviour:
     m_Key: DROPCAM_WIDGET_HINT
     m_Metadata:
       m_Items: []
+  - m_Id: 286778752929792
+    m_Key: CONTROLLER_CONSOLE_TITLE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
