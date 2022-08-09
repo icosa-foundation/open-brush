@@ -76,6 +76,7 @@ public class IconGenerator : MonoBehaviour
 
         for (var index = 0; index < names.Length; index++)
         {
+            var oldRot = PreviewPolyhedron.m_Instance.transform.rotation;
             filename = PolyScreenShotName($"other_{names[index]}");
             PreviewPolyhedron.m_Instance.ShapeType = (ShapeTypes)index;
             switch (PreviewPolyhedron.m_Instance.ShapeType)
@@ -85,6 +86,13 @@ public class IconGenerator : MonoBehaviour
                     PreviewPolyhedron.m_Instance.Param1Int = 6;
                     PreviewPolyhedron.m_Instance.Param2Float = .5f;
                     break;
+                case ShapeTypes.Arc:
+                case ShapeTypes.Arch:
+                    PreviewPolyhedron.m_Instance.transform.Rotate(new Vector3(-90, 0, 0));
+                    PreviewPolyhedron.m_Instance.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.Param2Float = .333f;
+                    PreviewPolyhedron.m_Instance.Param3Float = .75f;
+                    break;
                 default:
                     PreviewPolyhedron.m_Instance.Param1Float = 1f;
                     PreviewPolyhedron.m_Instance.Param2Float = 1f;
@@ -92,6 +100,7 @@ public class IconGenerator : MonoBehaviour
                     break;
             }
             CreateThumbnail();
+            PreviewPolyhedron.m_Instance.transform.rotation = oldRot;
         }
     }
 

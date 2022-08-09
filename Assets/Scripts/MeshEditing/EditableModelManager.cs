@@ -57,7 +57,16 @@ namespace TiltBrush.MeshEditing
 
         void Awake()
         {
-            App.InitShapeRecipesPath();
+            // Taking editable model screenshots uses EditableModelManager
+            // but doesn't have an App object - so catch the exception
+            try
+            {
+                App.InitShapeRecipesPath();
+            }
+            catch (NullReferenceException)
+            {
+                Debug.LogWarning($"Failed to Init Shape Recipes Path");
+            }
             m_Instance = this;
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
         }

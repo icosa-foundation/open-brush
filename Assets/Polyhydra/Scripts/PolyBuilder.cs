@@ -150,6 +150,26 @@ namespace TiltBrush
                                 { "c", p.Param3Float },
                             };
                             break;
+                        case ShapeTypes.Arc:
+                            poly = Shapes.Build(ShapeTypes.Arc, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.Arc },
+                                { "a", p.Param1Int },
+                                { "b", p.Param2Float },
+                                { "c", p.Param3Float },
+                            };
+                            break;
+                        case ShapeTypes.Arch:
+                            poly = Shapes.Build(ShapeTypes.Arch, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.Arch },
+                                { "a", p.Param1Int },
+                                { "b", p.Param2Float },
+                                { "c", p.Param3Float },
+                            };
+                            break;
                     }
                     break;
                 case GeneratorTypes.Various:

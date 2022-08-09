@@ -171,6 +171,8 @@ namespace TiltBrush
             C_Shape,
             L_Shape,
             H_Shape,
+            Arc,
+            Arch,
         }
 
         public string CurrentPresetPath
@@ -687,6 +689,40 @@ namespace TiltBrush
                             Slider2.SetDescriptionText("Size 2");
                             Slider3.SetDescriptionText("Size 3");
                             break;
+                        case OtherSolidsCategories.Arc:
+                            Slider1.gameObject.SetActive(true);
+                            Slider2.gameObject.SetActive(true);
+                            Slider3.gameObject.SetActive(true);
+                            Slider1.SliderType = SliderTypes.Int;
+                            Slider2.SliderType = SliderTypes.Float;
+                            Slider3.SliderType = SliderTypes.Float;
+                            Slider1.SetMin(1f, 1f);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(.01f, .01f);
+                            Slider2.SetMax(4, 12);
+                            Slider3.SetMin(.01f, .01f);
+                            Slider3.SetMax(1, 16);
+                            Slider1.SetDescriptionText("Size 1");
+                            Slider2.SetDescriptionText("Size 2");
+                            Slider3.SetDescriptionText("Size 3");
+                            break;
+                        case OtherSolidsCategories.Arch:
+                            Slider1.gameObject.SetActive(true);
+                            Slider2.gameObject.SetActive(true);
+                            Slider3.gameObject.SetActive(true);
+                            Slider1.SliderType = SliderTypes.Int;
+                            Slider2.SliderType = SliderTypes.Float;
+                            Slider3.SliderType = SliderTypes.Float;
+                            Slider1.SetMin(1f, 1f);
+                            Slider1.SetMax(16, 48);
+                            Slider2.SetMin(.01f, .01f);
+                            Slider2.SetMax(4, 12);
+                            Slider3.SetMin(.01f, .01f);
+                            Slider3.SetMax(12, 48);
+                            Slider1.SetDescriptionText("Size 1");
+                            Slider2.SetDescriptionText("Size 2");
+                            Slider3.SetDescriptionText("Size 3");
+                            break;
                         case OtherSolidsCategories.Stairs:
                             Slider1.gameObject.SetActive(true);
                             Slider2.gameObject.SetActive(true);
@@ -1020,6 +1056,16 @@ namespace TiltBrush
                         case ShapeTypes.H_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.H_Shape;
                             PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.H_Shape;
+                            sliderParamNames = new List<string> { "a", "b", "c" };
+                            break;
+                        case ShapeTypes.Arc:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Arc;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.Arc;
+                            sliderParamNames = new List<string> { "a", "b", "c" };
+                            break;
+                        case ShapeTypes.Arch:
+                            m_OtherSolidsCategory = OtherSolidsCategories.Arch;
+                            PreviewPolyhedron.m_Instance.ShapeType = ShapeTypes.Arch;
                             sliderParamNames = new List<string> { "a", "b", "c" };
                             break;
                     }
@@ -1439,6 +1485,8 @@ namespace TiltBrush
                 case OtherSolidsCategories.C_Shape:
                 case OtherSolidsCategories.L_Shape:
                 case OtherSolidsCategories.H_Shape:
+                case OtherSolidsCategories.Arc:
+                case OtherSolidsCategories.Arch:
                     EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Shapes;
                     PreviewPolyhedron.m_Instance.ShapeType = (ShapeTypes)Enum.Parse(typeof(ShapeTypes), action);
                     break;
@@ -1500,6 +1548,8 @@ namespace TiltBrush
                         case OtherSolidsCategories.C_Shape:
                         case OtherSolidsCategories.L_Shape:
                         case OtherSolidsCategories.H_Shape:
+                        case OtherSolidsCategories.Arc:
+                        case OtherSolidsCategories.Arch:
                             EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Shapes;
                             PreviewPolyhedron.m_Instance.ShapeType = 0;
                             SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, PreviewPolyhedron.m_Instance.ShapeType.ToString());
