@@ -834,6 +834,53 @@ namespace TiltBrush
                                     break;
                             }
 
+                            def.Operators = new List<PreviewPolyhedron.OpDefinition>();
+                            if (emd.Operations != null)
+                            {
+                                foreach (var opDict in emd.Operations)
+                                {
+                                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
+                                    PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
+                                    float amount = Convert.ToSingle(opDict["param1"]);
+                                    float amount2 = Convert.ToSingle(opDict["param2"]);
+                                    Color paramColor = Color.white;
+                                    if (opDict.ContainsKey("paramColor"))
+                                    {
+                                        var colorData = (opDict["paramColor"] as JArray);
+                                        paramColor = new Color(
+                                            colorData[0].Value<float>(),
+                                            colorData[1].Value<float>(),
+                                            colorData[2].Value<float>()
+                                        );
+                                    }
+
+                                    // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
+                                    // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
+                                    FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
+                                    bool amountRandomize = Convert.ToBoolean(opDict["param1Randomize"]);
+                                    bool amount2Randomize = Convert.ToBoolean(opDict["param2Randomize"]);
+                                    float filterParamFloat = Convert.ToSingle(opDict["filterParamFloat"]);
+                                    int filterParamInt = Convert.ToInt32(opDict["filterParamInt"]);
+                                    bool filterNot = Convert.ToBoolean(opDict["filterNot"]);
+
+                                    var opDef = new PreviewPolyhedron.OpDefinition
+                                    {
+                                        opType = opType,
+                                        amount = amount,
+                                        amountRandomize = amountRandomize,
+                                        amount2 = amount2,
+                                        amount2Randomize = amount2Randomize,
+                                        disabled = disabled,
+                                        filterType = filterType,
+                                        filterParamFloat = filterParamFloat,
+                                        filterParamInt = filterParamInt,
+                                        paramColor = paramColor,
+                                        filterNot = filterNot,
+                                    };
+                                    def.Operators.Add(opDef);
+                                }
+                            }
+
                             var (poly, _) = PolyBuilder.BuildFromPolyDef(def);
 
                             // Handle saves with missing colors (legacy)
