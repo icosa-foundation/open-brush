@@ -228,6 +228,7 @@ namespace TiltBrush
                 ParentPanel.CurrentOpCategoryIndex++;
                 UpdateCategoryLabel();
                 ParentPanel.CurrentOperatorPage = 0;
+                FirstButtonIndex = 0;
                 CreateButtons();
             }
         }
@@ -239,6 +240,7 @@ namespace TiltBrush
                 ParentPanel.CurrentOpCategoryIndex--;
                 UpdateCategoryLabel();
                 ParentPanel.CurrentOperatorPage = 0;
+                FirstButtonIndex = 0;
                 CreateButtons();
             }
         }
