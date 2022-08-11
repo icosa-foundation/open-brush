@@ -25,7 +25,6 @@ using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
-using Valve.Newtonsoft.Json.Utilities;
 
 namespace TiltBrush
 {
