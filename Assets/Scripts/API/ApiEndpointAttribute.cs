@@ -58,9 +58,9 @@ namespace TiltBrush
             return paramInfo;
         }
 
-        public void Invoke(System.Object[] parameters)
+        public object Invoke(System.Object[] parameters)
         {
-            methodInfo.Invoke(instance, parameters);
+            return methodInfo.Invoke(instance, parameters);
         }
 
         public object[] DecodeParams(string commandValue)
@@ -104,6 +104,12 @@ namespace TiltBrush
                         float.Parse(tokens[tokenIndex++]),
                         float.Parse(tokens[tokenIndex++])
                     );
+                }
+                else if (paramType.ParameterType == typeof(bool))
+                {
+                    paramValue = tokens[tokenIndex++];
+                    string str = paramValue.ToString().ToLower();
+                    paramValue = (str == "true" || str == "on" || str == "1");
                 }
                 else
                 {

@@ -149,6 +149,13 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint("twohandeded.toggle", "Toggles painting with both hands at once")]
+        public static void SymmetryTwoHanded()
+        {
+            SketchControlsScript.GlobalCommands rEnum = SketchControlsScript.GlobalCommands.SymmetryTwoHanded;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
         // TODO on and off explicitly
         [ApiEndpoint("straightedge.toggle", "Toggles the straight edge tool on or off")]
         public static void StraightEdge()

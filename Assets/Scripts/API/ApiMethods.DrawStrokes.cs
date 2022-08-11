@@ -89,7 +89,7 @@ namespace TiltBrush
             DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
 
-        [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the localhost:40074/help screen")]
+        [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the /help screen")]
         public static void Brush(string brushType)
         {
             BrushDescriptor brushDescriptor = null;

@@ -157,8 +157,7 @@ namespace TiltBrush
         public static void SpectatorLookAt(Vector3 position)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-            Quaternion qNewRotation = _LookAt(cam.transform.position, position);
-            cam.transform.rotation = qNewRotation;
+            cam.transform.LookAt(position);
         }
 
         // [ApiEndpoint("user.look.at", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]
@@ -444,6 +443,12 @@ namespace TiltBrush
         public static void PositionModel(int index, Vector3 position)
         {
             _PositionWidget(_GetActiveModel(index), position);
+        }
+
+        [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
+        public static void ForcePainting(bool active)
+        {
+            ApiManager.Instance.ForcePaintingOn = active;
         }
 
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]

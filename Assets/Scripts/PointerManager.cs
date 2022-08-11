@@ -44,6 +44,7 @@ namespace TiltBrush
             FourAroundY,
             DebugMultiple,
             CustomSymmetryMode = 5000,
+            TwoHanded = 6000,
         }
 
         // Modifying this struct has implications for binary compatibility.
@@ -718,6 +719,7 @@ namespace TiltBrush
                     active = 1;
                     break;
                 case SymmetryMode.SinglePlane:
+                case SymmetryMode.TwoHanded:
                     active = 2;
                     break;
                 case SymmetryMode.FourAroundY:
@@ -858,6 +860,10 @@ namespace TiltBrush
                         return xfLift * xfMain;
                     }
 
+                case SymmetryMode.TwoHanded:
+                    {
+                        return TrTransform.T(xfMain.translation - InputManager.m_Instance.GetWandControllerAttachPoint().position);
+                    }
                 default:
                     return xfMain;
             }
@@ -990,13 +996,21 @@ namespace TiltBrush
                         }
                         break;
                     }
+                case SymmetryMode.TwoHanded:
+                    {
+                        var xf0 = m_Pointers[0].m_Script.transform;
+                        var xf = m_Pointers[1].m_Script.transform;
+                        xf.position = InputManager.m_Instance.GetWandControllerAttachPoint().position;
+                        xf.rotation = InputManager.m_Instance.GetWandControllerAttachPoint().rotation;
+                    }
+                    break;
             }
         }
 
         /// Called every frame while Activate is disallowed
         void OnDrawDisallowed()
         {
-            InputManager.m_Instance.TriggerHaptics(ControllerName.Brush, 0.1f);
+            InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
         }
 
         int NumFreePlaybackPointers()
