@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using TiltBrush.MeshEditing;
 #if FBX_SUPPORTED
 using Autodesk.Fbx;
 #endif
@@ -37,6 +38,8 @@ namespace TiltBrush
         private Dictionary<Material, IExportableMaterial> m_MaterialToIem =
             new Dictionary<Material, IExportableMaterial>();
         private int m_numAdded = 0;
+        private static readonly int Metallic = Shader.PropertyToID("_Metallic");
+        private static readonly int Glossiness = Shader.PropertyToID("_Glossiness");
 
         // Pass:
         //   randomSeed -
@@ -135,20 +138,13 @@ namespace TiltBrush
         }
 
         // Used for generated models
-        public void Add(Material im)
+        public void AddAllEditableModelMaterials()
         {
-            var iem = new DynamicExportableMaterial(
-                parent: TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor,
-                durableName: "GeneratedVertexMaterial",
-                uniqueName: MakeDeterministicUniqueName(m_numAdded++, "GeneratedVertexMaterial"),
-                uriBase: m_AssetLocation)
+            var dict = EditableModelManager.m_Instance.m_ExportableMaterials;
+            foreach (var key in dict.Keys)
             {
-                BaseColorFactor = Color.white,
-                BaseColorTex = null,
-                MetallicFactor = .5f,
-                RoughnessFactor = .5f
-            };
-            m_MaterialToIem.Add(im, iem);
+                m_MaterialToIem.Add(key, dict[key]);
+            }
         }
 
         [JetBrains.Annotations.Pure]

@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Polyhydra.Core;
+using TiltBrushToolkit;
 using UnityEngine;
 
 namespace TiltBrush.MeshEditing
@@ -38,6 +39,7 @@ namespace TiltBrush.MeshEditing
     {
         public static EditableModelManager m_Instance;
         public Material[] m_Materials;
+        [NonSerialized] public Dictionary<Material, DynamicExportableMaterial> m_ExportableMaterials;
 
         private EditableModel m_CurrentModel;
         private Dictionary<string, EditableModel> m_EditableModels;
@@ -76,6 +78,77 @@ namespace TiltBrush.MeshEditing
 
             if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
             if (LinkedWidgets == null) LinkedWidgets = new HashSet<EditableModelWidget>();
+            CreateExportableMaterials();
+        }
+
+        private void CreateExportableMaterials()
+        {
+
+            Guid MakeDeterministicUniqueName(int data, string data2)
+            {
+                return GuidUtils.Uuid5(GuidUtils.Uuid5(
+                        Guid.Empty, "internal"),
+                    string.Format("{0}_{1}", data, data2)
+                );
+            }
+
+            m_ExportableMaterials = new Dictionary<Material, DynamicExportableMaterial>();
+
+            for (var i = 0; i < m_Materials.Length; i++)
+            {
+                var mat = m_Materials[i];
+                BrushDescriptor parent = null;
+                float metallic = 1;
+                float gloss = 1;
+                Color color = Color.white;
+
+                switch (i)
+                {
+                    case 0: // Shiny
+                        parent = TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor;
+                        metallic = 0.9f;
+                        gloss = 0.1f;
+                        break;
+                    case 1: // Matte
+                        parent = TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor;
+                        metallic = 0.03f;
+                        gloss = 0.04f;
+                        break;
+                    case 2: // Unlit
+                        parent = TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor;
+                        metallic = 0;
+                        gloss = 0;
+                        break;
+                    case 3: // Diamond
+                        parent = TbtSettings.Instance.m_PbrBlendDoubleSided.descriptor;
+                        metallic = 0.82f;
+                        gloss = 0.1f;
+                        break;
+                    case 4: // Metal
+                        parent = TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor;
+                        metallic = 0.825f;
+                        gloss = 0.825f;
+                        break;
+                    case 5: // Edged
+                        parent = TbtSettings.Instance.m_PbrOpaqueDoubleSided.descriptor;
+                        metallic = 0.9f;
+                        gloss = 0.05f;
+                        break;
+                }
+
+                var iem = new DynamicExportableMaterial(
+                    parent: parent,
+                    durableName: mat.name,
+                    uniqueName: MakeDeterministicUniqueName(i, mat.name),
+                    uriBase: "internal")
+                {
+                    BaseColorFactor = color,
+                    BaseColorTex = null,
+                    MetallicFactor = metallic,
+                    RoughnessFactor = gloss,
+                };
+                m_ExportableMaterials.Add(mat, iem);
+            }
         }
 
         public void UpdateEditableModel(EditableModelWidget widget, EditableModel emodel)

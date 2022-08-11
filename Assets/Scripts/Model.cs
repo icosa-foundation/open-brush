@@ -746,8 +746,7 @@ namespace TiltBrush
             {
                 m_AllowExport = true;
                 m_ImportMaterialCollector = new ImportMaterialCollector("generated", "generated");
-                var mat = EditableModelManager.m_Instance.m_Materials[0];
-                m_ImportMaterialCollector.Add(mat);
+                m_ImportMaterialCollector.AddAllEditableModelMaterials();
             }
 
             // If we weren't provided a GameObject, construct one now.
