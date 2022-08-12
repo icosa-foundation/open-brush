@@ -173,129 +173,16 @@ namespace TiltBrush
         
         private void Align(int axis)
         {
-            float val = GetAnchorPosition(axis);
-            
-            // TODO respect groups
-            
-            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-
-                float offset = 0;
-                switch (m_AlignBoundsType)
-                {
-                    case BoundsTypes.Min:
-                        offset = val - stroke.m_BatchSubset.m_Bounds.min[axis];
-                        break;
-                    case BoundsTypes.Center:
-                        offset = val - stroke.m_BatchSubset.m_Bounds.center[axis];
-                        break;
-                    case BoundsTypes.Max:
-                        offset = val - stroke.m_BatchSubset.m_Bounds.max[axis];
-                        break;
-                }
-                
-                var tr = TrTransform.T(new Vector3(
-                    axis==0 ? offset : 0,
-                    axis==1 ? offset : 0,
-                    axis==2 ? offset : 0
-                ));
-                stroke.Recreate(tr);
-            }
-            
-            foreach (GrabWidget widget in GetValidSelectedWidgets())
-            {
-                var tr = widget.LocalTransform;
-                tr.translation = new Vector3(
-                    axis==0 ? val : tr.translation.x,
-                    axis==1 ? val : tr.translation.y,
-                    axis==2 ? val : tr.translation.z
-                );
-                widget.LocalTransform = tr;
-            }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new AlignSelectedCommand(axis, m_AlignBoundsType)
+            );
         }
 
         private void Distribute(int axis)
         {
-            var objectList = new List<(float, object)>();
-            
-            objectList.AddRange(SelectionManager.m_Instance
-                .SelectedStrokes.Select(s =>
-                {
-                    switch (m_DistributeBoundsType)
-                    {
-                        case BoundsTypes.Min:
-                            return (s.m_BatchSubset.m_Bounds.min[axis], s);
-                        case BoundsTypes.Max:
-                            return (s.m_BatchSubset.m_Bounds.max[axis], s);
-                        default:
-                            return (s.m_BatchSubset.m_Bounds.center[axis], (object)s);
-                    }
-                }));
-            
-            var widgets = GetValidSelectedWidgets();
-            objectList.AddRange(widgets.Select(w=>(w.transform.position[axis], (object)w)));
-            objectList = objectList.OrderBy(x=>x.Item1).ToList();
-
-            float min = objectList.Select(x => x.Item1).Min();
-            float max = objectList.Select(x => x.Item1).Max();
-            float inc = (max - min) / (objectList.Count - 1);
-            float pos = min;
-            foreach (var tuple in objectList)
-            {
-                object o = tuple.Item2;
-                if (o.GetType() == typeof(Stroke))
-                {
-                    Stroke stroke = o as Stroke;
-                    var offset = pos - stroke!.m_BatchSubset.m_Bounds.min[axis];
-                    var tr = TrTransform.T(new Vector3(
-                        axis==0 ? offset : 0,
-                        axis==1 ? offset : 0,
-                        axis==2 ? offset : 0
-                    ));
-                    stroke.Recreate(tr);
-                }
-                else
-                {
-                    GrabWidget widget = o as GrabWidget;
-                    var tr = widget!.LocalTransform;
-                    tr.translation = new Vector3(
-                        axis==0 ? pos : tr.translation.x,
-                        axis==1 ? pos : tr.translation.y,
-                        axis==2 ? pos : tr.translation.z
-                    );
-                    widget.LocalTransform = tr;
-                    
-                }
-                pos += inc;
-            }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new DistributeSelectedCommand(axis, m_AlignBoundsType)
+            );
         }
-        
-        private float GetAnchorPosition(int axis)
-        {
-            var items = GetPositionList(axis);
-            return items.Count > 0 ? items.Average() : 0;
-        }
-        
-        private List<float> GetPositionList(int axis)
-        {
-            var positionList = new List<float>();
-            positionList.AddRange(SelectionManager.m_Instance
-                .SelectedStrokes.Select(s =>
-                {
-                    switch (m_AlignBoundsType)
-                    {
-                        case BoundsTypes.Min:
-                            return s.m_BatchSubset.m_Bounds.min[axis];
-                        case BoundsTypes.Max:
-                            return s.m_BatchSubset.m_Bounds.max[axis];
-                        default:
-                            return s.m_BatchSubset.m_Bounds.center[axis];
-                    }
-                }));
-            positionList.AddRange(GetValidSelectedWidgets().Select(w=>w.transform.position[axis]));
-            return positionList;
-        }
-
-        private static IEnumerable<GrabWidget> GetValidSelectedWidgets() => SelectionManager.m_Instance.SelectedWidgets;
     }
 }
