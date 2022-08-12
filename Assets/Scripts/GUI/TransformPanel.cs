@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
+
 namespace TiltBrush
 {
     public enum TransformPanelToggleType
@@ -43,6 +42,13 @@ namespace TiltBrush
         DistributeZ,
     }
 
+    public enum BoundsTypes
+    {
+        Min,
+        Center,
+        Max,
+    }
+
     public class TransformPanel : BasePanel
     {
 
@@ -56,6 +62,9 @@ namespace TiltBrush
         public TextMeshPro m_LabelForRotationY;
         public TextMeshPro m_LabelForRotationZ;
 
+        private BoundsTypes m_AlignBoundsType = BoundsTypes.Center;
+        private BoundsTypes m_DistributeBoundsType = BoundsTypes.Center;
+        
         void Update()
         {
             BaseUpdate();
@@ -91,7 +100,7 @@ namespace TiltBrush
             return (Mathf.FloorToInt(val*100)/100f).ToString("G5");
         }
 
-        public static void HandleToggle(TransformPanelToggleButton btn)
+        public void HandleToggle(TransformPanelToggleButton btn)
         {
             switch (btn.m_ButtonType)
             {
@@ -104,6 +113,7 @@ namespace TiltBrush
                 case TransformPanelToggleType.LockRotateZ:
                     SelectionManager.m_Instance.m_LockRotationZ = btn.ToggleState;
                     break;
+                
                 case TransformPanelToggleType.LockTranslateX:
                     SelectionManager.m_Instance.m_LockTranslationX = btn.ToggleState;
                     break;
@@ -113,16 +123,20 @@ namespace TiltBrush
                 case TransformPanelToggleType.LockTranslateZ:
                     SelectionManager.m_Instance.m_LockTranslationZ = btn.ToggleState;
                     break;
+                
                 case TransformPanelToggleType.LockSnapTranslateX:
                     SelectionManager.m_Instance.m_LockSnapTranslationX = btn.ToggleState;
                     break;
                 case TransformPanelToggleType.LockSnapTranslateY:
                     SelectionManager.m_Instance.m_LockSnapTranslationY = btn.ToggleState;
                     break;
+                case TransformPanelToggleType.LockSnapTranslateZ:
+                    SelectionManager.m_Instance.m_LockSnapTranslationZ = btn.ToggleState;
+                    break;
             }
         }
 
-        public static void HandleAction(TransformPanelActionButton btn)
+        public void HandleAction(TransformPanelActionButton btn)
         {
             switch (btn.m_ButtonType)
             {
@@ -147,43 +161,139 @@ namespace TiltBrush
             }
         }
 
-
-        private static void Distribute(int axis)
+        public void HandleAlignStateButton(int state)
         {
+            m_AlignBoundsType = (BoundsTypes)state;
         }
 
-        private static void Align(int axis)
+        public void HandleDistributeStateButton(int state)
         {
-            var center = GetAveragePosition();
+            m_DistributeBoundsType = (BoundsTypes)state;
+        }
+        
+        private void Align(int axis)
+        {
+            float val = GetAnchorPosition(axis);
+            
+            // TODO respect groups
+            
             foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                var offset = stroke.StrokeTransform.position - center;
+
+                float offset = 0;
+                switch (m_AlignBoundsType)
+                {
+                    case BoundsTypes.Min:
+                        offset = val - stroke.m_BatchSubset.m_Bounds.min[axis];
+                        break;
+                    case BoundsTypes.Center:
+                        offset = val - stroke.m_BatchSubset.m_Bounds.center[axis];
+                        break;
+                    case BoundsTypes.Max:
+                        offset = val - stroke.m_BatchSubset.m_Bounds.max[axis];
+                        break;
+                }
+                
                 var tr = TrTransform.T(new Vector3(
-                    axis==0 ? offset.x : 0,
-                    axis==1 ? offset.y : 0,
-                    axis==2 ? offset.z : 0
+                    axis==0 ? offset : 0,
+                    axis==1 ? offset : 0,
+                    axis==2 ? offset : 0
                 ));
-                Debug.Log($"Moving stroke by {offset}");
                 stroke.Recreate(tr);
             }
-            foreach (var widget in GetValidSelectedWidgets())
+            
+            foreach (GrabWidget widget in GetValidSelectedWidgets())
             {
                 var tr = widget.LocalTransform;
                 tr.translation = new Vector3(
-                    axis==0 ? center.x : tr.translation.x,
-                    axis==1 ? center.y : tr.translation.y,
-                    axis==2 ? center.z : tr.translation.z
+                    axis==0 ? val : tr.translation.x,
+                    axis==1 ? val : tr.translation.y,
+                    axis==2 ? val : tr.translation.z
                 );
                 widget.LocalTransform = tr;
             }
         }
 
-        private static Vector3 GetAveragePosition()
+        private void Distribute(int axis)
         {
-            var positionList = new List<Vector3>();
-            positionList.AddRange(SelectionManager.m_Instance.SelectedStrokes.Select(s => s.StrokeTransform.position));
-            positionList.AddRange(GetValidSelectedWidgets().Select(w=>w.transform.position));
-            return positionList.Aggregate(new Vector3(0,0,0), (s,v) => s + v) / (float)positionList.Count;
+            var objectList = new List<(float, object)>();
+            
+            objectList.AddRange(SelectionManager.m_Instance
+                .SelectedStrokes.Select(s =>
+                {
+                    switch (m_DistributeBoundsType)
+                    {
+                        case BoundsTypes.Min:
+                            return (s.m_BatchSubset.m_Bounds.min[axis], s);
+                        case BoundsTypes.Max:
+                            return (s.m_BatchSubset.m_Bounds.max[axis], s);
+                        default:
+                            return (s.m_BatchSubset.m_Bounds.center[axis], (object)s);
+                    }
+                }));
+            
+            var widgets = GetValidSelectedWidgets();
+            objectList.AddRange(widgets.Select(w=>(w.transform.position[axis], (object)w)));
+            objectList = objectList.OrderBy(x=>x.Item1).ToList();
+
+            float min = objectList.Select(x => x.Item1).Min();
+            float max = objectList.Select(x => x.Item1).Max();
+            float inc = (max - min) / (objectList.Count - 1);
+            float pos = min;
+            foreach (var tuple in objectList)
+            {
+                object o = tuple.Item2;
+                if (o.GetType() == typeof(Stroke))
+                {
+                    Stroke stroke = o as Stroke;
+                    var offset = pos - stroke!.m_BatchSubset.m_Bounds.min[axis];
+                    var tr = TrTransform.T(new Vector3(
+                        axis==0 ? offset : 0,
+                        axis==1 ? offset : 0,
+                        axis==2 ? offset : 0
+                    ));
+                    stroke.Recreate(tr);
+                }
+                else
+                {
+                    GrabWidget widget = o as GrabWidget;
+                    var tr = widget!.LocalTransform;
+                    tr.translation = new Vector3(
+                        axis==0 ? pos : tr.translation.x,
+                        axis==1 ? pos : tr.translation.y,
+                        axis==2 ? pos : tr.translation.z
+                    );
+                    widget.LocalTransform = tr;
+                    
+                }
+                pos += inc;
+            }
+        }
+        
+        private float GetAnchorPosition(int axis)
+        {
+            var items = GetPositionList(axis);
+            return items.Count > 0 ? items.Average() : 0;
+        }
+        
+        private List<float> GetPositionList(int axis)
+        {
+            var positionList = new List<float>();
+            positionList.AddRange(SelectionManager.m_Instance
+                .SelectedStrokes.Select(s =>
+                {
+                    switch (m_AlignBoundsType)
+                    {
+                        case BoundsTypes.Min:
+                            return s.m_BatchSubset.m_Bounds.min[axis];
+                        case BoundsTypes.Max:
+                            return s.m_BatchSubset.m_Bounds.max[axis];
+                        default:
+                            return s.m_BatchSubset.m_Bounds.center[axis];
+                    }
+                }));
+            positionList.AddRange(GetValidSelectedWidgets().Select(w=>w.transform.position[axis]));
+            return positionList;
         }
 
         private static IEnumerable<GrabWidget> GetValidSelectedWidgets() => SelectionManager.m_Instance.SelectedWidgets;
