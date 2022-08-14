@@ -790,8 +790,23 @@ namespace TiltBrush
                                 case GeneratorTypes.Radial:
                                     def.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]);
                                     def.Param1Int = Convert.ToInt32(p["sides"]);
-                                    def.Param1Float = Convert.ToSingle(p["height"]);
-                                    def.Param2Float = Convert.ToSingle(p["capheight"]);
+                                    switch (def.RadialPolyType)
+                                    {
+                                        case RadialSolids.RadialPolyType.Prism:
+                                        case RadialSolids.RadialPolyType.Antiprism:
+                                        case RadialSolids.RadialPolyType.Pyramid:
+                                        case RadialSolids.RadialPolyType.Dipyramid:
+                                        case RadialSolids.RadialPolyType.OrthoBicupola:
+                                        case RadialSolids.RadialPolyType.GyroBicupola:
+                                        case RadialSolids.RadialPolyType.Cupola:
+                                            def.Param2Float = Convert.ToSingle(p["height"]);
+                                            def.Param2Float = Convert.ToSingle(p["capheight"]);
+                                            break;
+                                        default:
+                                            def.Param2Float = Convert.ToSingle(p["height"]);
+                                            def.Param3Float = Convert.ToSingle(p["capheight"]);
+                                            break;
+                                    }
                                     break;
                                 case GeneratorTypes.Uniform:
                                     def.UniformPolyType = (UniformTypes)Convert.ToInt32(p["type"]);
