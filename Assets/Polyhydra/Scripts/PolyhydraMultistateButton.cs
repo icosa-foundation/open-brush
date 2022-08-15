@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
 namespace TiltBrush
 {
     public class PolyhydraMultistateButton : MultistateButton
     {
+
+        [SerializeField] private int m_InitialIndex = 0;
+        public ModeTypes ModeType;
 
         public enum ModeTypes
         {
@@ -23,14 +27,18 @@ namespace TiltBrush
             ModifyMode
         }
 
-        public ModeTypes ModeType;
-
         public Option CurrentOption
         {
             get
             {
                 return m_Options[m_CurrentOptionIdx];
             }
+        }
+
+        override protected void OnStart()
+        {
+            base.OnStart();
+            ForceSelectedOption(m_InitialIndex);
         }
 
         override protected void OnButtonPressed()
