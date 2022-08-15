@@ -680,29 +680,33 @@ namespace TiltBrush
         {
             foreach (var widget in widgets)
             {
-                if (IsWidgetSelected(widget))
-                {
-                    Debug.LogWarning("Attempted to select widget that is already selected.");
-                    continue;
-                }
-
-                widget.SetCanvas(App.Scene.SelectionCanvas);
-                HierarchyUtils.RecursivelySetLayer(widget.transform,
-                    App.Scene.SelectionCanvas.gameObject.layer);
-                m_SelectedWidgets.Add(widget);
-
-                if (!m_GroupToSelectedWidgets.TryGetValue(widget.Group, out var groupWidgets))
-                {
-                    groupWidgets = m_GroupToSelectedWidgets[widget.Group] = new HashSet<GrabWidget>();
-                }
-                Debug.Assert(!groupWidgets.Contains(widget));
-                groupWidgets.Add(widget);
+                SelectWidget(widget);
             }
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
             // undo causing something to be highlighted, force the user to have the SelectionTool.
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
+        }
+
+        public void SelectWidget(GrabWidget widget)
+        {
+            if (IsWidgetSelected(widget))
+            {
+                Debug.LogWarning("Attempted to select widget that is already selected.");
+                return;
+            }
+            widget.SetCanvas(App.Scene.SelectionCanvas);
+            HierarchyUtils.RecursivelySetLayer(widget.transform,
+                App.Scene.SelectionCanvas.gameObject.layer);
+            m_SelectedWidgets.Add(widget);
+
+            if (!m_GroupToSelectedWidgets.TryGetValue(widget.Group, out var groupWidgets))
+            {
+                groupWidgets = m_GroupToSelectedWidgets[widget.Group] = new HashSet<GrabWidget>();
+            }
+            Debug.Assert(!groupWidgets.Contains(widget));
+            groupWidgets.Add(widget);
         }
 
         public void DeselectWidgets(IEnumerable<GrabWidget> widgets)

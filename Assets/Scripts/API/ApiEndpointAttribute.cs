@@ -58,18 +58,19 @@ namespace TiltBrush
             return paramInfo;
         }
 
-        public void Invoke(System.Object[] parameters)
+        public object Invoke(System.Object[] parameters)
         {
-            methodInfo.Invoke(instance, parameters);
+            return methodInfo.Invoke(instance, parameters);
         }
 
         public object[] DecodeParams(string commandValue)
         {
             var parameters = new object[parameterInfo.Length];
 
-            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).ToArray();
+            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
 
             int tokenIndex = 0;
+
             for (var i = 0; i < parameterInfo.Length; i++)
             {
                 ParameterInfo paramType = parameterInfo[i];
@@ -104,11 +105,21 @@ namespace TiltBrush
                         float.Parse(tokens[tokenIndex++])
                     );
                 }
+                else if (paramType.ParameterType == typeof(bool))
+                {
+                    paramValue = tokens[tokenIndex++];
+                    string str = paramValue.ToString().ToLower();
+                    paramValue = (str == "true" || str == "on" || str == "1");
+                }
                 else
                 {
                     paramValue = TypeDescriptor.GetConverter(paramType).ConvertFromString(tokens[tokenIndex++]);
                 }
                 parameters[i] = paramValue;
+
+                // Running out of tokens happens if we're calling a method with optional parameters
+                if (tokenIndex >= tokens.Length) break;
+
             }
             return parameters;
         }
