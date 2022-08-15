@@ -984,7 +984,7 @@ namespace TiltBrush
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
             if (SnappingAngle == 0) return Quaternion.identity;
-            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle;}
+            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle; }
             Vector3 euler = rotation.eulerAngles;
             float y = euler.y;
             euler = new Vector3(round(euler.x), 0, round(euler.z));
