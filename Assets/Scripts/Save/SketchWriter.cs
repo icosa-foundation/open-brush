@@ -329,7 +329,10 @@ namespace TiltBrush
 
             // stopwatch.Stop();
             // Debug.LogFormat("Reading took {0}", stopwatch.Elapsed);
-            GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+            if (bAdditive)
+            {
+                GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+            }
             return true;
         }
 
