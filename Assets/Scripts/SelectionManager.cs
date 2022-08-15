@@ -987,15 +987,38 @@ namespace TiltBrush
             }
         }
 
+        public Vector3 SnapToGrid(Vector3 position)
+        {
+            float gridSize = SnappingGridSize;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                m_LockSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
+                m_LockSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
+                m_LockSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+        
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SnappingAngle;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
         // Used by align/distribute etc
         // Controls which widget types should be affected
         // Currently it's "any subclass of MediaWidget or StencilWidget"
         public List<GrabWidget> GetValidSelectedWidgets() => SelectedWidgets
-                .Where(widget => 
-                    widget.GetType().IsSubclassOf(typeof(MediaWidget)) ||
-                    widget.GetType().IsSubclassOf(typeof(StencilWidget))
-                )
-                .ToList();
+            .Where(widget => 
+                widget.GetType().IsSubclassOf(typeof(MediaWidget)) ||
+                widget.GetType().IsSubclassOf(typeof(StencilWidget))
+            )
+            .ToList();
     }
 
 } // namespace TiltBrush

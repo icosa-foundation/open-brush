@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -222,7 +220,7 @@ namespace TiltBrush
             foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
             {
                 var tr = widget.LocalTransform;
-                tr.rotation = GrabWidget.QuantizeAngle(tr.rotation);
+                tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
                 // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 //     new MoveWidgetCommand();
                 // );
