@@ -1242,7 +1242,7 @@ namespace TiltBrush
             return outXf_GS;
         }
 
-        private Quaternion QuantizeAngle(Quaternion rotation)
+        public static Quaternion QuantizeAngle(Quaternion rotation)
         {
             var snapAngle = SelectionManager.m_Instance.SnappingAngle;
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }

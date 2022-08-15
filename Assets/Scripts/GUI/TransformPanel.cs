@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -47,6 +46,7 @@ namespace TiltBrush
         Min,
         Center,
         Max,
+        Gaps,
     }
 
     public class TransformPanel : BasePanel
@@ -54,13 +54,13 @@ namespace TiltBrush
 
         public GrabWidget m_LastWidget;
 
-        public TextMeshPro m_LabelForTranslationX;
-        public TextMeshPro m_LabelForTranslationY;
-        public TextMeshPro m_LabelForTranslationZ;
+        public EditableLabel m_LabelForTranslationX;
+        public EditableLabel m_LabelForTranslationY;
+        public EditableLabel m_LabelForTranslationZ;
 
-        public TextMeshPro m_LabelForRotationX;
-        public TextMeshPro m_LabelForRotationY;
-        public TextMeshPro m_LabelForRotationZ;
+        public EditableLabel m_LabelForRotationX;
+        public EditableLabel m_LabelForRotationY;
+        public EditableLabel m_LabelForRotationZ;
 
         private BoundsTypes m_AlignBoundsType = BoundsTypes.Center;
         private BoundsTypes m_DistributeBoundsType = BoundsTypes.Center;
@@ -68,6 +68,18 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
+            var activeTr = GetActiveTransform();
+
+            m_LabelForTranslationX.SetValue(FormatValue(activeTr.translation.x));
+            m_LabelForTranslationY.SetValue(FormatValue(activeTr.translation.y));
+            m_LabelForTranslationZ.SetValue(FormatValue(activeTr.translation.z));
+            m_LabelForRotationX.SetValue(FormatValue(activeTr.translation.x));
+            m_LabelForRotationY.SetValue(FormatValue(activeTr.translation.y));
+            m_LabelForRotationZ.SetValue(FormatValue(activeTr.translation.z));
+        }
+        
+        private TrTransform GetActiveTransform()
+        {
             TrTransform activeTr = TrTransform.identity;
             if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
             {
@@ -77,7 +89,6 @@ namespace TiltBrush
             if (SelectionManager.m_Instance.HasSelection)
             {
                 m_LastWidget = null;
-
                 activeTr = SelectionManager.m_Instance.SelectionTransform;
                 activeTr.translation += App.Scene.SelectionCanvas.GetCanvasBoundingBox(true).center;
             }
@@ -85,13 +96,26 @@ namespace TiltBrush
             {
                 activeTr = m_LastWidget.Canvas.LocalPose;
             }
+            return activeTr;
+        }
+        
+        private void SetActiveTransform(TrTransform tr)
+        {
+            TrTransform activeTr = TrTransform.identity;
+            if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
+            {
+                m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+            }
 
-            m_LabelForTranslationX.text = FormatValue(activeTr.translation.x);
-            m_LabelForTranslationY.text = FormatValue(activeTr.translation.y);
-            m_LabelForTranslationZ.text = FormatValue(activeTr.translation.z);
-            m_LabelForRotationX.text = FormatValue(activeTr.translation.x);
-            m_LabelForRotationY.text = FormatValue(activeTr.translation.y);
-            m_LabelForRotationZ.text = FormatValue(activeTr.translation.z);
+            if (SelectionManager.m_Instance.HasSelection)
+            {
+                m_LastWidget = null;
+                SelectionManager.m_Instance.SelectionTransform = tr;
+            }
+            else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
+            {
+                m_LastWidget.LocalTransform = tr;
+            }
         }
 
         private string FormatValue(float val)
@@ -136,6 +160,22 @@ namespace TiltBrush
             }
         }
 
+        public void HandleLabelEdited(EditableLabel label)
+        {
+            m_LabelForTranslationX.SetValue(label.LastTextInput);
+            var activeTr = GetActiveTransform();
+            if (float.TryParse(label.LastTextInput, out float value))
+            {
+                m_LabelForTranslationX.SetError(false);
+                activeTr.translation.x = value;
+                SetActiveTransform(activeTr);
+            }
+            else
+            {
+                m_LabelForTranslationX.SetError(true);
+            }
+        }
+
         public void HandleAction(TransformPanelActionButton btn)
         {
             switch (btn.m_ButtonType)
@@ -158,6 +198,35 @@ namespace TiltBrush
                 case TransformPanelActionType.DistributeZ:
                     Distribute(2);
                     break;
+            }
+        }
+
+        public void HandleSnapSelectionToGrid()
+        {
+            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
+            {
+                var tr = widget.LocalTransform;
+                tr.translation = FreePaintTool.SnapToGrid(widget.LocalTransform.translation);
+                widget.LocalTransform = tr;
+            }
+            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                var pos = stroke.m_BatchSubset.m_Bounds.center;
+                var newPos = FreePaintTool.SnapToGrid(pos);
+                stroke.Recreate(TrTransform.T(pos = newPos));
+            }
+        }
+
+        public void HandleSnapSelectedRotationAngles()
+        {
+            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
+            {
+                var tr = widget.LocalTransform;
+                tr.rotation = GrabWidget.QuantizeAngle(tr.rotation);
+                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                //     new MoveWidgetCommand();
+                // );
+                widget.LocalTransform = tr;
             }
         }
 

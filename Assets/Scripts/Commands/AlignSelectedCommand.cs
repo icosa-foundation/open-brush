@@ -34,7 +34,7 @@ namespace TiltBrush
             m_Axis = axis;
             m_AlignBoundsType = alignBoundsType;
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            m_ValidSelectedWidgets = GetValidSelectedWidgets();
+            m_ValidSelectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
             
             float anchorValue = GetAnchorPosition(m_Axis);
             
@@ -136,8 +136,6 @@ namespace TiltBrush
             var items = GetPositionList(axis);
             return items.Count > 0 ? items.Average() : 0;
         }
-
-        private static List<GrabWidget> GetValidSelectedWidgets() => 
-            SelectionManager.m_Instance.SelectedWidgets.ToList();
+        
     }
 } // namespace TiltBrush

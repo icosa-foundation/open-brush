@@ -47,12 +47,15 @@ namespace TiltBrush
                             return (s.m_BatchSubset.m_Bounds.min[m_Axis], s);
                         case BoundsTypes.Max:
                             return (s.m_BatchSubset.m_Bounds.max[m_Axis], s);
+                        case BoundsTypes.Gaps:
+                            // TODO
+                            return (s.m_BatchSubset.m_Bounds.center[m_Axis], (object)s);
                         default:
                             return (s.m_BatchSubset.m_Bounds.center[m_Axis], (object)s);
                     }
                 }));
             
-            var widgets = GetValidSelectedWidgets();
+            var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
             m_ObjectList.AddRange(widgets.Select(w=>(w.transform.position[m_Axis], (object)w)));
             m_ObjectList = m_ObjectList.OrderBy(x=>x.Item1).ToList();
         }
@@ -84,6 +87,10 @@ namespace TiltBrush
                             break;
                         case BoundsTypes.Max:
                             offset = pos - bounds.max[m_Axis] + bounds.extents[m_Axis];
+                            break;
+                        case BoundsTypes.Gaps:
+                            // TODO
+                            offset = pos - bounds.center[m_Axis];
                             break;
                         default:
                             offset = pos - bounds.center[m_Axis];
@@ -142,8 +149,5 @@ namespace TiltBrush
                 }
             }
         }
-
-        private static List<GrabWidget> GetValidSelectedWidgets() => 
-            SelectionManager.m_Instance.SelectedWidgets.ToList();
     }
 } // namespace TiltBrush
