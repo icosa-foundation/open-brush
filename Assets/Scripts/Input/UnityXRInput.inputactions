@@ -174,7 +174,7 @@
                     "path": "<XRController>{RightHand}/grip",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -196,7 +196,7 @@
                     "path": "<XRController>{RightHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -952,6 +952,17 @@
             "devices": [
                 {
                     "devicePath": "<WMRSpatialController>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        },
+        {
+            "name": "Pico Controller",
+            "bindingGroup": "Pico Controller",
+            "devices": [
+                {
+                    "devicePath": "<PXR_Controller>",
                     "isOptional": false,
                     "isOR": false
                 }

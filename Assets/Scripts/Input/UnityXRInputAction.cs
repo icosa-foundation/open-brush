@@ -198,7 +198,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -220,7 +220,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -980,6 +980,17 @@ namespace TiltBrush
                     ""isOR"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Pico Controller"",
+            ""bindingGroup"": ""Pico Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<PXR_Controller>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
         }
     ]
 }");
@@ -1360,6 +1371,15 @@ namespace TiltBrush
             {
                 if (m_WMRControllerSchemeIndex == -1) m_WMRControllerSchemeIndex = asset.FindControlSchemeIndex("WMR Controller");
                 return asset.controlSchemes[m_WMRControllerSchemeIndex];
+            }
+        }
+        private int m_PicoControllerSchemeIndex = -1;
+        public InputControlScheme PicoControllerScheme
+        {
+            get
+            {
+                if (m_PicoControllerSchemeIndex == -1) m_PicoControllerSchemeIndex = asset.FindControlSchemeIndex("Pico Controller");
+                return asset.controlSchemes[m_PicoControllerSchemeIndex];
             }
         }
         public interface IBrushActions
