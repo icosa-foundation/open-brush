@@ -37,7 +37,7 @@ namespace TiltBrush
         {
             string enumName = action.Replace(" ", "_");
             UniformTypes polyType = (UniformTypes)Enum.Parse(typeof(UniformTypes), enumName, true);
-            PreviewPolyhedron.m_Instance.UniformPolyType = polyType;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.UniformPolyType = polyType;
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.UniformType, action);
             ParentPanel.SetSliderConfiguration();
             PreviewPolyhedron.m_Instance.RebuildPoly();

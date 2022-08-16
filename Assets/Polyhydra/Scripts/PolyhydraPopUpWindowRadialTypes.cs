@@ -34,7 +34,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action, bool isFolder)
         {
-            PreviewPolyhedron.m_Instance.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.RadialPolyType = (RadialSolids.RadialPolyType)Enum.Parse(typeof(RadialSolids.RadialPolyType), action);
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.RadialType, action);
             ParentPanel.SetSliderConfiguration();
             PreviewPolyhedron.m_Instance.RebuildPoly();

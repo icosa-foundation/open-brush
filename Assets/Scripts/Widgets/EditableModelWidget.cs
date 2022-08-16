@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Linq;
+using Polyhydra.Core;
 using UnityEngine;
 using TiltBrush.MeshEditing;
 
@@ -21,6 +22,10 @@ namespace TiltBrush
 
     public class EditableModelWidget : ModelWidget
     {
+
+        public PolyRecipe m_PolyRecipe;
+        public PolyMesh m_PolyMesh;
+        public string id;
 
         override public GrabWidget Clone()
         {
@@ -37,7 +42,6 @@ namespace TiltBrush
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(m_Size);
-            EditableModelManager.m_Instance.CloneEditableModel(clone);
 
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
@@ -63,16 +67,14 @@ namespace TiltBrush
 
             clone.TrySetCanvasKeywordsFromObject(transform);
 
-            var polyGo = clone.GetId().gameObject;
+            var polyGo = clone.GetModelGameObject();
             var col = polyGo.AddComponent<BoxCollider>();
             col.size = m_BoxCollider.size;
 
-            var thisId = GetId();
-            var oldPoly = EditableModelManager.m_Instance.GetPolyMesh(thisId);
-            var newPoly = oldPoly.Duplicate();
+            PolyMesh oldPoly = m_PolyMesh;
+            PolyMesh newPoly = oldPoly.Duplicate();
             newPoly.ScalingFactor = oldPoly.ScalingFactor;
-            var oldEditableModel = EditableModelManager.m_Instance.EditableModels[thisId.guid];
-            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, oldEditableModel.CurrentMaterial);
+            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
             return clone;
         }
 
@@ -80,20 +82,20 @@ namespace TiltBrush
         {
             m_WidgetRenderers = GetComponentsInChildren<Renderer>()
                 // Exclude the gameobject that has the editableModelId
-                .Where(r => r.gameObject.GetComponent<EditableModelId>() == null).ToArray();
+                .Where(r => r.gameObject != GetModelGameObject()).ToArray();
             m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
             m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
         }
 
-        public EditableModelId GetId()
+        public GameObject GetModelGameObject()
         {
-            return gameObject.GetComponentInChildren<EditableModelId>();
+            return gameObject.GetComponentInChildren<ObjModelScript>().gameObject;
         }
 
         public override void RegisterHighlight()
         {
 #if !UNITY_ANDROID
-            var mf = GetId().GetComponent<MeshFilter>();
+            var mf = GetModelGameObject().GetComponent<MeshFilter>();
             App.Instance.SelectionEffect.RegisterMesh(mf);
             return;
 #endif
@@ -103,7 +105,7 @@ namespace TiltBrush
         protected override void UnregisterHighlight()
         {
 #if !UNITY_ANDROID
-            var mf = GetId().GetComponent<MeshFilter>();
+            var mf = GetModelGameObject().GetComponent<MeshFilter>();
             App.Instance.SelectionEffect.UnregisterMesh(mf);
             return;
 #endif

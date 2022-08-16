@@ -79,7 +79,8 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            UpdateValue(0.5f);
+            m_CurrentValue = Mathf.InverseLerp(Min, Max, .5f);
+            SetSliderPositionToReflectValue();
             minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
             valueText.text = FormatValue(m_CurrentValue);

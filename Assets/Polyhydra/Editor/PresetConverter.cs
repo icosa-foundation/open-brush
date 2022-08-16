@@ -348,12 +348,12 @@ namespace TiltBrush
 
                 generatorParameters["ColorMethod"] = ColorMethods.ByRole;
 
-                var operations = new List<Dictionary<string, object>>();
+                var operations = new List<PreviewPolyhedron.OpDefinition>();
 
                 bool skipped = false;
                 foreach (var oldOp in oldPreset.Ops)
                 {
-                    var newOp = new Dictionary<string, object>();
+                    var newOp = new PreviewPolyhedron.OpDefinition();
                     PolyMesh.Operation opType;
 
                     if (oldOp.Disabled) continue;
@@ -388,116 +388,116 @@ namespace TiltBrush
                     if (oldOp.OpType == "FaceKeep")
                     {
                         oldOp.OpType = "FaceRemove";
-                        newOp["filterNot"] = true;
+                        newOp.filterNot = true;
                     }
 
                     if (Enum.TryParse(oldOp.OpType, true, out opType))
                     {
-                        newOp["operation"] = opType;
-                        newOp["param1"] = oldOp.Amount;
-                        newOp["param1Randomize"] = oldOp.Randomize;
-                        newOp["param2"] = oldOp.Amount2;
-                        newOp["disabled"] = oldOp.Disabled;
+                        newOp.opType = opType;
+                        newOp.amount = oldOp.Amount;
+                        newOp.amountRandomize = oldOp.Randomize;
+                        newOp.amount2 = oldOp.Amount2;
+                        newOp.disabled = oldOp.Disabled;
 
                         switch (oldOp.FaceSelections)
                         {
                             case "All":
                                 break;
                             case "ThreeSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 3;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 3;
                                 break;
                             case "FourSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 4;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 4;
                                 break;
                             case "FiveSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 5;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 5;
                                 break;
                             case "SixSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 6;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 6;
                                 break;
                             case "SevenSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 7;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 7;
                                 break;
                             case "EightSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 8;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 8;
                                 break;
                             case "NineSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 9;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 9;
                                 break;
                             case "TenSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 10;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 10;
                                 break;
                             case "ElevenSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 11;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 11;
                                 break;
                             case "TwelveSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = 12;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = 12;
                                 break;
                             case "PSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = oldPreset.PrismP;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = oldPreset.PrismP;
                                 break;
                             case "QSided":
-                                newOp["filterType"] = FilterTypes.NSided;
-                                newOp["filterParamInt"] = oldPreset.PrismQ;
+                                newOp.filterType = FilterTypes.NSided;
+                                newOp.filterParamInt = oldPreset.PrismQ;
                                 break;
                             case "EvenSided":
-                                newOp["filterType"] = FilterTypes.EvenSided;
+                                newOp.filterType = FilterTypes.EvenSided;
                                 break;
                             case "OddSided":
-                                newOp["filterType"] = FilterTypes.EvenSided;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.EvenSided;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingUp":
-                                newOp["filterType"] = FilterTypes.FacingUp;
-                                newOp["filterParamFloat"] = 90;
+                                newOp.filterType = FilterTypes.FacingUp;
+                                newOp.filterParamFloat = 90;
                                 break;
                             case "FacingStraightUp":
-                                newOp["filterType"] = FilterTypes.FacingUp;
-                                newOp["filterParamFloat"] = 1;
+                                newOp.filterType = FilterTypes.FacingUp;
+                                newOp.filterParamFloat = 1;
                                 break;
                             case "FacingDown":
-                                newOp["filterType"] = FilterTypes.FacingUp;
-                                newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FacingUp;
+                                newOp.filterParamFloat = 90;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingStraightDown":
-                                newOp["filterType"] = FilterTypes.FacingUp;
-                                newOp["filterParamFloat"] = 179;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FacingUp;
+                                newOp.filterParamFloat = 179;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingForward":
-                                newOp["filterType"] = FilterTypes.FacingForward;
-                                newOp["filterParamFloat"] = 90;
+                                newOp.filterType = FilterTypes.FacingForward;
+                                newOp.filterParamFloat = 90;
                                 break;
                             case "FacingBackward":
-                                newOp["filterType"] = FilterTypes.FacingForward;
-                                newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FacingForward;
+                                newOp.filterParamFloat = 90;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingStraightForward":
-                                newOp["filterType"] = FilterTypes.FacingForward;
-                                newOp["filterParamFloat"] = 90;
+                                newOp.filterType = FilterTypes.FacingForward;
+                                newOp.filterParamFloat = 90;
                                 break;
                             case "FacingStraightBackward":
-                                newOp["filterType"] = FilterTypes.FacingForward;
-                                newOp["filterParamFloat"] = 90;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FacingForward;
+                                newOp.filterParamFloat = 90;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingLevel":
-                                newOp["filterType"] = FilterTypes.FacingVertical;
-                                newOp["filterParamFloat"] = 45;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FacingVertical;
+                                newOp.filterParamFloat = 45;
+                                newOp.filterNot = true;
                                 break;
                             case "FacingCenter":
                                 break;
@@ -506,66 +506,66 @@ namespace TiltBrush
                             case "FacingOut":
                                 break;
                             case "Ignored":
-                                newOp["filterType"] = FilterTypes.Role;
-                                newOp["filterParamInt"] = Roles.Ignored;
+                                newOp.filterType = FilterTypes.Role;
+                                newOp.filterParamInt = (int)Roles.Ignored;
                                 break;
                             case "Existing":
-                                newOp["filterType"] = FilterTypes.Role;
-                                newOp["filterParamInt"] = Roles.Existing;
+                                newOp.filterType = FilterTypes.Role;
+                                newOp.filterParamInt = (int)Roles.Existing;
                                 break;
                             case "New":
-                                newOp["filterType"] = FilterTypes.Role;
-                                newOp["filterParamInt"] = Roles.New;
+                                newOp.filterType = FilterTypes.Role;
+                                newOp.filterParamInt = (int)Roles.New;
                                 break;
                             case "NewAlt":
-                                newOp["filterType"] = FilterTypes.Role;
-                                newOp["filterParamInt"] = Roles.NewAlt;
+                                newOp.filterType = FilterTypes.Role;
+                                newOp.filterParamInt = (int)Roles.NewAlt;
                                 break;
                             case "AllNew":
-                                newOp["filterType"] = FilterTypes.Role;
-                                newOp["filterParamInt"] = Roles.New;
+                                newOp.filterType = FilterTypes.Role;
+                                newOp.filterParamInt = (int)Roles.New;
                                 break;
                             case "Odd":
-                                newOp["filterType"] = FilterTypes.EveryNth;
-                                newOp["filterParamInt"] = 2;
+                                newOp.filterType = FilterTypes.EveryNth;
+                                newOp.filterParamInt = 2;
                                 break;
                             case "Even":
-                                newOp["filterType"] = FilterTypes.EveryNth;
-                                newOp["filterParamInt"] = 2;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.EveryNth;
+                                newOp.filterParamInt = 2;
+                                newOp.filterNot = true;
                                 break;
                             case "OnlyFirst":
-                                newOp["filterType"] = FilterTypes.FirstN;
-                                newOp["filterParamInt"] = 1;
+                                newOp.filterType = FilterTypes.FirstN;
+                                newOp.filterParamInt = 1;
                                 break;
                             case "ExceptFirst":
-                                newOp["filterType"] = FilterTypes.FirstN;
-                                newOp["filterParamInt"] = 1;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.FirstN;
+                                newOp.filterParamInt = 1;
+                                newOp.filterNot = true;
                                 break;
                             case "OnlyLast":
-                                newOp["filterType"] = FilterTypes.LastN;
-                                newOp["filterParamInt"] = 1;
+                                newOp.filterType = FilterTypes.LastN;
+                                newOp.filterParamInt = 1;
                                 break;
                             case "ExceptLast":
-                                newOp["filterType"] = FilterTypes.LastN;
-                                newOp["filterParamInt"] = 1;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.LastN;
+                                newOp.filterParamInt = 1;
+                                newOp.filterNot = true;
                                 break;
                             case "Random":
-                                newOp["filterType"] = FilterTypes.Random;
-                                newOp["filterParamFloat"] = 0.5f;
+                                newOp.filterType = FilterTypes.Random;
+                                newOp.filterParamFloat = 0.5f;
                                 break;
                             case "Inner":
-                                newOp["filterType"] = FilterTypes.Inner;
+                                newOp.filterType = FilterTypes.Inner;
                                 break;
                             case "Outer":
-                                newOp["filterType"] = FilterTypes.Inner;
-                                newOp["filterNot"] = true;
+                                newOp.filterType = FilterTypes.Inner;
+                                newOp.filterNot = true;
                                 break;
                             case "TopHalf":
-                                newOp["filterType"] = FilterTypes.PositionY;
-                                newOp["filterParamFloat"] = 0.5f;
+                                newOp.filterType = FilterTypes.PositionY;
+                                newOp.filterParamFloat = 0.5f;
                                 break;
                             // case "Smaller":
                             //     break;
@@ -583,7 +583,11 @@ namespace TiltBrush
                     }
                 }
                 if (skipped) return;
-                var emd = new EditableModelDefinition(generatorType, generatorParameters, operations);
+                var recipe = new PolyRecipe
+                {
+                    Operators = operations,
+                };
+                var emd = new EditableModelDefinition(recipe);
 
                 var jsonSerializer = new JsonSerializer
                 {

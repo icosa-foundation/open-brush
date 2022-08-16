@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
@@ -7,8 +9,16 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public struct PolyDefinition
+    public struct PolyRecipe
     {
+        // Used for polymeshes that use GeneratorType FileSystem or GeometryData
+        public List<Vector3> Vertices;
+        public List<List<int>> Faces;
+        public List<int> FaceRoles;
+        public List<int> VertexRoles;
+        public List<HashSet<string>> FaceTags;
+
+        // Used for polymeshes that use any other GeneratorType
         public GeneratorTypes GeneratorType;
         public UniformTypes UniformPolyType;
         public RadialSolids.RadialPolyType RadialPolyType;
@@ -22,12 +32,166 @@ namespace TiltBrush
         public float Param1Float;
         public float Param2Float;
         public float Param3Float;
+
+        // Used for all polymeshes
         public List<PreviewPolyhedron.OpDefinition> Operators;
+        public int MaterialIndex;
+        public ColorMethods ColorMethod;
+
+        public Color[] Colors
+        {
+            get => _colors;
+            set => _colors = (Color[])value.Clone();
+        }
+        private Color[] _colors;
+
+        public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
+
+        public static PolyRecipe FromDef(EditableModelDefinition emd)
+        {
+            var recipe = new PolyRecipe
+            {
+                GeneratorType = emd.GeneratorType
+            };
+
+            var p = emd.GeneratorParameters;
+
+            switch (emd.GeneratorType)
+            {
+                // case GeneratorTypes.GeometryData:
+                //     // TODO simplify face tag data structure
+                //     var faceTags = new List<HashSet<string>>();
+                //     foreach (var t in emd.FaceTags)
+                //     {
+                //         var tagSet = new HashSet<string>(t);
+                //         faceTags.Add(tagSet);
+                //     }
+                //     def = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
+                //     break;
+                // case GeneratorTypes.Johnson:
+                //     def.JohnsonPolyType = Convert.ToInt32(p["type"]);
+                //     break;
+                case GeneratorTypes.Shapes:
+                    recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p["type"]);
+                    recipe.Param1Float = Convert.ToSingle(p["a"]);
+                    recipe.Param2Float = Convert.ToSingle(p["b"]);
+                    recipe.Param3Float = Convert.ToSingle(p["c"]);
+                    break;
+                case GeneratorTypes.Radial:
+                    recipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]);
+                    recipe.Param1Int = Convert.ToInt32(p["sides"]);
+                    switch (recipe.RadialPolyType)
+                    {
+                        case RadialSolids.RadialPolyType.Prism:
+                        case RadialSolids.RadialPolyType.Antiprism:
+                        case RadialSolids.RadialPolyType.Pyramid:
+                        case RadialSolids.RadialPolyType.Dipyramid:
+                        case RadialSolids.RadialPolyType.OrthoBicupola:
+                        case RadialSolids.RadialPolyType.GyroBicupola:
+                        case RadialSolids.RadialPolyType.Cupola:
+                            recipe.Param2Float = Convert.ToSingle(p["height"]);
+                            recipe.Param2Float = Convert.ToSingle(p["capheight"]);
+                            break;
+                        default:
+                            recipe.Param2Float = Convert.ToSingle(p["height"]);
+                            recipe.Param3Float = Convert.ToSingle(p["capheight"]);
+                            break;
+                    }
+                    break;
+                case GeneratorTypes.Uniform:
+                    recipe.UniformPolyType = (UniformTypes)Convert.ToInt32(p["type"]);
+                    break;
+                case GeneratorTypes.Waterman:
+                    recipe.Param1Int = Convert.ToInt32(p["root"]);
+                    recipe.Param2Int = Convert.ToInt32(p["c"]);
+                    break;
+                case GeneratorTypes.Grid:
+                    recipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(p["type"]);
+                    recipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p["shape"]);
+                    recipe.Param1Int = Convert.ToInt32(p["x"]);
+                    recipe.Param2Int = Convert.ToInt32(p["y"]);
+                    break;
+                case GeneratorTypes.Various:
+                    recipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p["type"]);
+                    switch (recipe.VariousSolidsType)
+                    {
+                        case VariousSolidTypes.Box:
+                            recipe.Param1Int = Convert.ToInt32(p["x"]);
+                            recipe.Param2Int = Convert.ToInt32(p["y"]);
+                            recipe.Param3Int = Convert.ToInt32(p["z"]);
+                            break;
+                        case VariousSolidTypes.Torus:
+                            recipe.Param1Int = Convert.ToInt32(p["x"]);
+                            recipe.Param2Int = Convert.ToInt32(p["y"]);
+                            recipe.Param1Float = Convert.ToSingle(p["z"]);
+                            break;
+                        case VariousSolidTypes.Stairs:
+                            recipe.Param1Int = Convert.ToInt32(p["x"]);
+                            recipe.Param1Float = Convert.ToSingle(p["y"]);
+                            recipe.Param2Float = Convert.ToSingle(p["z"]);
+                            break;
+                        case VariousSolidTypes.UvSphere:
+                        case VariousSolidTypes.UvHemisphere:
+                            recipe.Param1Int = Convert.ToInt32(p["x"]);
+                            recipe.Param2Int = Convert.ToInt32(p["y"]);
+                            break;
+                    }
+                    break;
+            }
+
+            recipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
+            if (emd.Operations != null)
+            {
+                foreach (var opDict in emd.Operations)
+                {
+                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
+                    PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
+                    float amount = Convert.ToSingle(opDict["param1"]);
+                    float amount2 = Convert.ToSingle(opDict["param2"]);
+                    Color paramColor = Color.white;
+                    if (opDict.ContainsKey("paramColor"))
+                    {
+                        var colorData = (opDict["paramColor"] as JArray);
+                        paramColor = new Color(
+                            colorData[0].Value<float>(),
+                            colorData[1].Value<float>(),
+                            colorData[2].Value<float>()
+                        );
+                    }
+
+                    // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
+                    // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
+                    FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
+                    bool amountRandomize = Convert.ToBoolean(opDict["param1Randomize"]);
+                    bool amount2Randomize = Convert.ToBoolean(opDict["param2Randomize"]);
+                    float filterParamFloat = Convert.ToSingle(opDict["filterParamFloat"]);
+                    int filterParamInt = Convert.ToInt32(opDict["filterParamInt"]);
+                    bool filterNot = Convert.ToBoolean(opDict["filterNot"]);
+
+                    var opDef = new PreviewPolyhedron.OpDefinition
+                    {
+                        opType = opType,
+                        amount = amount,
+                        amountRandomize = amountRandomize,
+                        amount2 = amount2,
+                        amount2Randomize = amount2Randomize,
+                        disabled = disabled,
+                        filterType = filterType,
+                        filterParamFloat = filterParamFloat,
+                        filterParamInt = filterParamInt,
+                        paramColor = paramColor,
+                        filterNot = filterNot,
+                    };
+                    recipe.Operators.Add(opDef);
+                }
+            }
+            return recipe;
+        }
     }
 
     public static class PolyBuilder
     {
-        public static (PolyMesh, PolyMesh.MeshData) BuildFromPolyDef(PolyDefinition p)
+        public static (PolyMesh, PolyMesh.MeshData) BuildFromPolyDef(PolyRecipe p)
         {
             PolyMesh poly = null;
 
@@ -38,29 +202,13 @@ namespace TiltBrush
                     var wythoff = new WythoffPoly(p.UniformPolyType);
                     poly = wythoff.Build();
                     poly = poly.SitLevel();
-                    EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                    {
-                        { "type", p.UniformPolyType },
-                    };
                     poly.ScalingFactor = 0.864f;
                     break;
                 case GeneratorTypes.Waterman:
                     poly = WatermanPoly.Build(root: p.Param1Int, c: p.Param2Int, mergeFaces: true);
-                    EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                    {
-                        { "root", p.Param1Int },
-                        { "c", p.Param2Int },
-                    };
                     break;
                 case GeneratorTypes.Grid:
                     poly = Grids.Build(p.GridType, p.GridShape, p.Param1Int, p.Param2Int);
-                    EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                    {
-                        { "type", p.GridType },
-                        { "shape", p.GridShape },
-                        { "x", p.Param1Int },
-                        { "y", p.Param2Int },
-                    };
                     poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     break;
                 case GeneratorTypes.Radial:
@@ -85,13 +233,6 @@ namespace TiltBrush
                     }
 
                     poly = RadialSolids.Build(p.RadialPolyType, p.Param1Int, height, capHeight);
-                    EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                    {
-                        { "type", p.RadialPolyType },
-                        { "sides", p.Param1Int },
-                        { "height", height },
-                        { "capheight", capHeight },
-                    };
                     poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     break;
                 case GeneratorTypes.Shapes:
@@ -100,11 +241,6 @@ namespace TiltBrush
                         case ShapeTypes.Polygon:
                             p.Param1Int = Mathf.Max(p.Param1Int, 3);
                             poly = Shapes.Build(ShapeTypes.Polygon, p.Param1Int);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.Polygon },
-                                { "sides", p.Param1Int },
-                            };
                             // Intentionally different to radial scaling.
                             // Set so side lengths will match for any polygon
                             poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.Param1Int));
@@ -112,63 +248,22 @@ namespace TiltBrush
                         case ShapeTypes.Star:
                             p.Param1Int = Mathf.Max(p.Param1Int, 3);
                             poly = Shapes.Build(ShapeTypes.Star, p.Param1Int, p.Param2Float);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.Star },
-                                { "sides", p.Param1Int },
-                                { "sharpness", p.Param2Float },
-                            };
                             poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.Param1Int));
                             break;
                         case ShapeTypes.L_Shape:
                             poly = Shapes.Build(ShapeTypes.L_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.L_Shape },
-                                { "a", p.Param1Float },
-                                { "b", p.Param2Float },
-                                { "c", p.Param3Float },
-                            };
                             break;
                         case ShapeTypes.C_Shape:
                             poly = Shapes.Build(ShapeTypes.C_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.C_Shape },
-                                { "a", p.Param1Float },
-                                { "b", p.Param2Float },
-                                { "c", p.Param3Float },
-                            };
                             break;
                         case ShapeTypes.H_Shape:
                             poly = Shapes.Build(ShapeTypes.H_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.H_Shape },
-                                { "a", p.Param1Float },
-                                { "b", p.Param2Float },
-                                { "c", p.Param3Float },
-                            };
                             break;
                         case ShapeTypes.Arc:
                             poly = Shapes.Build(ShapeTypes.Arc, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.Arc },
-                                { "a", p.Param1Int },
-                                { "b", p.Param2Float },
-                                { "c", p.Param3Float },
-                            };
                             break;
                         case ShapeTypes.Arch:
                             poly = Shapes.Build(ShapeTypes.Arch, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.Arch },
-                                { "a", p.Param1Int },
-                                { "b", p.Param2Float },
-                                { "c", p.Param3Float },
-                            };
                             break;
                     }
                     break;
@@ -177,55 +272,22 @@ namespace TiltBrush
                     {
                         case VariousSolidTypes.Box:
                             poly = VariousSolids.Box(p.Param1Int, p.Param2Int, p.Param3Int);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", VariousSolidTypes.Box },
-                                { "x", p.Param1Int },
-                                { "y", p.Param2Int },
-                                { "z", p.Param3Int },
-                            };
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                         case VariousSolidTypes.UvSphere:
                             poly = VariousSolids.UvSphere(p.Param1Int, p.Param2Int);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", VariousSolidTypes.UvSphere },
-                                { "x", p.Param1Int },
-                                { "y", p.Param2Int },
-                            };
                             poly.ScalingFactor = 0.5f;
                             break;
                         case VariousSolidTypes.UvHemisphere:
                             poly = VariousSolids.UvHemisphere(p.Param1Int, p.Param2Int);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", VariousSolidTypes.UvHemisphere },
-                                { "x", p.Param1Int },
-                                { "y", p.Param2Int },
-                            };
                             poly.ScalingFactor = 0.5f;
                             break;
                         case VariousSolidTypes.Torus:
                             poly = VariousSolids.Torus(p.Param1Int, p.Param2Int, p.Param3Float);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", VariousSolidTypes.Torus },
-                                { "x", p.Param1Int },
-                                { "y", p.Param2Int },
-                                { "z", p.Param3Float },
-                            };
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                         case VariousSolidTypes.Stairs:
                             poly = VariousSolids.Stairs(p.Param1Int, p.Param2Float, p.Param3Float);
-                            EditableModelManager.CurrentModel.GeneratorParameters = new Dictionary<string, object>
-                            {
-                                { "type", VariousSolidTypes.Stairs },
-                                { "x", p.Param1Int },
-                                { "y", p.Param2Float },
-                                { "z", p.Param3Float },
-                            };
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                     }
@@ -234,30 +296,15 @@ namespace TiltBrush
 
             if (poly == null) Debug.LogError($"No initial poly generated for: GeneratorType: {p.GeneratorType}");
 
-            EditableModelManager.CurrentModel.Operations = new List<Dictionary<string, object>>();
             if (p.Operators != null)
             {
                 foreach (var op in p.Operators.ToList())
                 {
-                    EditableModelManager.CurrentModel.Operations.Add(new Dictionary<string, object>
-                    {
-                        { "operation", op.opType },
-                        { "param1", op.amount },
-                        { "param1Randomize", op.amountRandomize },
-                        { "param2", op.amount2 },
-                        { "param2Randomize", op.amount2Randomize },
-                        { "paramColor", op.paramColor },
-                        { "disabled", op.disabled },
-                        { "filterType", op.filterType },
-                        { "filterParamFloat", op.filterParamFloat },
-                        { "filterParamInt", op.filterParamInt },
-                        { "filterNot", op.filterNot },
-                    });
                     if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
                     poly = ApplyOp(poly, op);
                 }
             }
-            PolyMesh.MeshData meshData = poly.BuildMeshData(false, EditableModelManager.CurrentModel.Colors, EditableModelManager.CurrentModel.ColorMethod);
+            PolyMesh.MeshData meshData = poly.BuildMeshData(false, p.Colors, p.ColorMethod);
             return (poly, meshData);
         }
 

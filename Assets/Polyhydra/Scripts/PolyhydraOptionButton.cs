@@ -16,7 +16,5 @@ namespace TiltBrush
 {
     public class PolyhydraOptionButton : OptionButton
     {
-
-
     }
 }

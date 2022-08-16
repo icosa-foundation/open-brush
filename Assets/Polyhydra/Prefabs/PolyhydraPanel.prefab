@@ -502,7 +502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Shape Type
+  m_DescriptionText: Main Category
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -740,7 +740,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 9e10d6dfde4a66949b4ca315b45416c3, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 4f79e23bf966e24429d134de927b4a54, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1586,7 +1586,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3436736470497247897
 Transform:
   m_ObjectHideFlags: 0
@@ -1670,7 +1670,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: e4370c8a814b26e4381aa6dc57305971, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 59a6d564d68464747993063d1efac86a, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1856,7 +1856,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &61235771753237257
 Transform:
   m_ObjectHideFlags: 0
@@ -1900,7 +1900,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2755180235950392214
 Transform:
   m_ObjectHideFlags: 0
@@ -1980,11 +1980,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Grid Shape
+  m_DescriptionText: Grid Type
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: a8b4dc202417ffa418c16b78379c26bc, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 80275117517c1be4eb157f2e9771543c, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -6998,7 +6998,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5118941350917217695
 Transform:
   m_ObjectHideFlags: 0
@@ -7082,7 +7082,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 349d6a21ee8abcf42afa176455271830, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: fefe4f2d0b061ea4496349e72b741c75, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -7135,7 +7135,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4715986279839559956
 Transform:
   m_ObjectHideFlags: 0
@@ -7219,7 +7219,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: dcc20df7aab7119409e0fa26d1bc90ca, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 52d71a4a3d96a4c45a4aa1e8c1943c5f, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0

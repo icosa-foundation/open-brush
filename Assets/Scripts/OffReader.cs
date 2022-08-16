@@ -51,7 +51,6 @@ namespace TiltBrush
                 var meshData = poly.BuildMeshData(colorMethod: colMethod);
                 var mesh = poly.BuildUnityMesh(meshData);
                 EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
-                EditableModelManager.m_Instance.RegisterEditableMesh(go, poly, null, ColorMethods.ByTags, 0, GeneratorTypes.FileSystem);
             }
             return (go, warnings.Distinct().ToList(), m_collector);
         }

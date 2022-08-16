@@ -60,10 +60,10 @@ public class IconGenerator : MonoBehaviour
     void TakeCategoryScreenshot()
     {
         Init();
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Waterman;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Waterman;
         filename = PolyScreenShotName($"Waterman");
-        PreviewPolyhedron.m_Instance.Param1Int = 35;
-        PreviewPolyhedron.m_Instance.Param2Int = 5;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 35;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 5;
         CreateThumbnail();
     }
 
@@ -72,31 +72,31 @@ public class IconGenerator : MonoBehaviour
     {
         Init();
         var names = Enum.GetNames(typeof(ShapeTypes));
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Shapes;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Shapes;
 
         for (var index = 0; index < names.Length; index++)
         {
             var oldRot = PreviewPolyhedron.m_Instance.transform.rotation;
             filename = PolyScreenShotName($"other_{names[index]}");
-            PreviewPolyhedron.m_Instance.ShapeType = (ShapeTypes)index;
-            switch (PreviewPolyhedron.m_Instance.ShapeType)
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.ShapeType = (ShapeTypes)index;
+            switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.ShapeType)
             {
                 case ShapeTypes.Polygon:
                 case ShapeTypes.Star:
-                    PreviewPolyhedron.m_Instance.Param1Int = 6;
-                    PreviewPolyhedron.m_Instance.Param2Float = .5f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 6;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = .5f;
                     break;
                 case ShapeTypes.Arc:
                 case ShapeTypes.Arch:
                     PreviewPolyhedron.m_Instance.transform.Rotate(new Vector3(-90, 0, 0));
-                    PreviewPolyhedron.m_Instance.Param1Int = 8;
-                    PreviewPolyhedron.m_Instance.Param2Float = .333f;
-                    PreviewPolyhedron.m_Instance.Param3Float = .75f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = .333f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = .75f;
                     break;
                 default:
-                    PreviewPolyhedron.m_Instance.Param1Float = 1f;
-                    PreviewPolyhedron.m_Instance.Param2Float = 1f;
-                    PreviewPolyhedron.m_Instance.Param3Float = 1f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Float = 1f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = 1f;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = 1f;
                     break;
             }
             CreateThumbnail();
@@ -109,36 +109,36 @@ public class IconGenerator : MonoBehaviour
     {
         Init();
         var names = Enum.GetNames(typeof(VariousSolidTypes));
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Various;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Various;
 
         for (var index = 0; index < names.Length; index++)
         {
             filename = PolyScreenShotName($"other_{names[index]}");
-            PreviewPolyhedron.m_Instance.VariousSolidsType = (VariousSolidTypes)index;
-            switch (PreviewPolyhedron.m_Instance.VariousSolidsType)
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType = (VariousSolidTypes)index;
+            switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType)
             {
                 case VariousSolidTypes.Box:
-                    PreviewPolyhedron.m_Instance.Param1Int = 3;
-                    PreviewPolyhedron.m_Instance.Param2Int = 4;
-                    PreviewPolyhedron.m_Instance.Param3Int = 3;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 3;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 4;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Int = 3;
                     break;
                 case VariousSolidTypes.Stairs:
-                    PreviewPolyhedron.m_Instance.Param1Int = 3;
-                    PreviewPolyhedron.m_Instance.Param2Float = 3;
-                    PreviewPolyhedron.m_Instance.Param3Float = 3;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 3;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = 3;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = 3;
                     break;
                 case VariousSolidTypes.UvHemisphere:
-                    PreviewPolyhedron.m_Instance.Param1Int = 8;
-                    PreviewPolyhedron.m_Instance.Param2Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 8;
                     break;
                 case VariousSolidTypes.UvSphere:
-                    PreviewPolyhedron.m_Instance.Param1Int = 8;
-                    PreviewPolyhedron.m_Instance.Param2Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 8;
                     break;
                 case VariousSolidTypes.Torus:
-                    PreviewPolyhedron.m_Instance.Param1Int = 8;
-                    PreviewPolyhedron.m_Instance.Param2Int = 8;
-                    PreviewPolyhedron.m_Instance.Param3Float = 16;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = 16;
                     break;
             }
             CreateThumbnail();
@@ -149,30 +149,30 @@ public class IconGenerator : MonoBehaviour
     void TakeAllGridShapeScreenshots()
     {
         Init();
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Grid;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Grid;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridShapes));
-        PreviewPolyhedron.m_Instance.GridType = GridEnums.GridTypes.K_3_3_3_3_3_3;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = GridEnums.GridTypes.K_3_3_3_3_3_3;
         for (var index = 0; index < gridNames.Length; index++)
         {
             switch ((GridEnums.GridShapes)index)
             {
                 case GridEnums.GridShapes.Sphere:
-                    PreviewPolyhedron.m_Instance.Param1Int = 12;
-                    PreviewPolyhedron.m_Instance.Param2Int = 12;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 12;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 12;
                     break;
                 case GridEnums.GridShapes.Plane:
-                    PreviewPolyhedron.m_Instance.Param1Int = 4;
-                    PreviewPolyhedron.m_Instance.Param2Int = 4;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 4;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 4;
                     break;
                 case GridEnums.GridShapes.Cone:
                 case GridEnums.GridShapes.Cylinder:
                 case GridEnums.GridShapes.Polar:
-                    PreviewPolyhedron.m_Instance.Param1Int = 8;
-                    PreviewPolyhedron.m_Instance.Param2Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 8;
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 8;
                     break;
             }
             filename = PolyScreenShotName($"gridshape_{gridNames[index]}");
-            PreviewPolyhedron.m_Instance.GridShape = (GridEnums.GridShapes)index;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = (GridEnums.GridShapes)index;
             CreateThumbnail();
         }
     }
@@ -183,15 +183,15 @@ public class IconGenerator : MonoBehaviour
     {
         var oldPos = cameraPosition;
         Init();
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Grid;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Grid;
         var gridNames = Enum.GetNames(typeof(GridEnums.GridTypes));
-        PreviewPolyhedron.m_Instance.GridShape = GridEnums.GridShapes.Plane;
-        PreviewPolyhedron.m_Instance.Param1Int = 2;
-        PreviewPolyhedron.m_Instance.Param2Int = 2;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = GridEnums.GridShapes.Plane;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 2;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 2;
         for (var index = 0; index < gridNames.Length; index++)
         {
             filename = PolyScreenShotName($"grid_{gridNames[index]}");
-            PreviewPolyhedron.m_Instance.GridType = (GridEnums.GridTypes)index;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = (GridEnums.GridTypes)index;
             cameraPosition = new Vector3(0, 1, -.5f);
             CreateThumbnail();
         }
@@ -203,16 +203,16 @@ public class IconGenerator : MonoBehaviour
     {
         Init();
         var radialNames = Enum.GetNames(typeof(RadialSolids.RadialPolyType));
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Radial;
-        PreviewPolyhedron.m_Instance.Param1Int = 5;
-        PreviewPolyhedron.m_Instance.Param2Int = 2;
-        PreviewPolyhedron.m_Instance.Param1Float = .75f;
-        PreviewPolyhedron.m_Instance.Param2Float = .75f;
-        PreviewPolyhedron.m_Instance.Param3Float = .75f;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Radial;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = 5;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = 2;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Float = .75f;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = .75f;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = .75f;
         for (var index = 0; index < radialNames.Length; index++)
         {
             filename = PolyScreenShotName($"radial_{radialNames[index]}");
-            PreviewPolyhedron.m_Instance.RadialPolyType = (RadialSolids.RadialPolyType)index;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.RadialPolyType = (RadialSolids.RadialPolyType)index;
             CreateThumbnail();
         }
     }
@@ -222,26 +222,26 @@ public class IconGenerator : MonoBehaviour
     {
         Init();
         var uniformNames = Enum.GetNames(typeof(UniformTypes));
-        EditableModelManager.CurrentModel.GeneratorType = GeneratorTypes.Uniform;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = GeneratorTypes.Uniform;
         for (var index = 5; index < uniformNames.Length; index++)
         {
             filename = PolyScreenShotName($"uniform_{uniformNames[index]}");
-            PreviewPolyhedron.m_Instance.UniformPolyType = (UniformTypes)index;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.UniformPolyType = (UniformTypes)index;
             CreateThumbnail();
         }
     }
 
     private void CreateThumbnail()
     {
-        EditableModelManager.CurrentModel.Colors = DefaultColors;
-        EditableModelManager.CurrentModel.ColorMethod = ColorMethods.ByRole;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors = DefaultColors;
+        PreviewPolyhedron.m_Instance.m_PolyRecipe.ColorMethod = ColorMethods.ByRole;
         PreviewPolyhedron.m_Instance.ImmediateMakePolyhedron();
         PreviewPolyhedron.m_Instance.m_PolyMesh.Recenter();
-        switch (EditableModelManager.CurrentModel.GeneratorType)
+        switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType)
         {
             case GeneratorTypes.Various:
                 PreviewPolyhedron.m_Instance.transform.localScale = Vector3.one;
-                switch (PreviewPolyhedron.m_Instance.VariousSolidsType)
+                switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType)
                 {
                     case VariousSolidTypes.Box:
                         PreviewPolyhedron.m_Instance.transform.localRotation = Quaternion.Euler(-30, 30, 0);
@@ -255,8 +255,8 @@ public class IconGenerator : MonoBehaviour
                 }
                 break;
             case GeneratorTypes.Uniform:
-                EditableModelManager.CurrentModel.ColorMethod = ColorMethods.BySides;
-                if (PreviewPolyhedron.m_Instance.UniformPolyType == UniformTypes.Cube)
+                PreviewPolyhedron.m_Instance.m_PolyRecipe.ColorMethod = ColorMethods.BySides;
+                if (PreviewPolyhedron.m_Instance.m_PolyRecipe.UniformPolyType == UniformTypes.Cube)
                 {
                     PreviewPolyhedron.m_Instance.transform.localRotation = Quaternion.Euler(-30, 30, 0);
                     PreviewPolyhedron.m_Instance.transform.localScale = Vector3.one * .3333f;

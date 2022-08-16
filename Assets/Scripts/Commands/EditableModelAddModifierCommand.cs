@@ -21,7 +21,7 @@ namespace TiltBrush
     {
 
         private EditableModelWidget m_widget;
-        private Dictionary<string, object> m_parameters;
+        private PreviewPolyhedron.OpDefinition m_OpDefinition;
         private PolyMesh m_previousPoly;
 
         override public bool NeedsSave
@@ -32,39 +32,22 @@ namespace TiltBrush
             }
         }
 
-        public EditableModelAddModifierCommand(EditableModelWidget widget, Dictionary<string, object> parameters, BaseCommand parent = null) : base(parent)
+        public EditableModelAddModifierCommand(EditableModelWidget widget, PreviewPolyhedron.OpDefinition opDefinition, BaseCommand parent = null) : base(parent)
         {
             m_widget = widget;
-            m_parameters = parameters;
+            m_OpDefinition = opDefinition;
         }
 
         protected override void OnRedo()
         {
-            var id = m_widget.GetId();
-            var poly = EditableModelManager.m_Instance.GetPolyMesh(id);
+            var poly = m_widget.m_PolyMesh;
             m_previousPoly = poly;
-            OpParams p;
-            if (m_parameters.ContainsKey("param1") && m_parameters.ContainsKey("param2"))
-            {
-                p = new OpParams((float)m_parameters["param1"], (float)m_parameters["param2"]);
-            }
-            else if (m_parameters.ContainsKey("param1"))
-            {
-                p = new OpParams((float)m_parameters["param1"]);
-            }
-            else
-            {
-                p = new OpParams();
-            }
-            poly = poly.AppyOperation((PolyMesh.Operation)m_parameters["type"], p);
-            EditableModelManager.m_Instance.RecordOperation(m_widget, m_parameters);
+            poly = PreviewPolyhedron.ApplyOp(poly, m_OpDefinition);
             EditableModelManager.m_Instance.RegenerateMesh(m_widget, poly);
-
         }
 
         protected override void OnUndo()
         {
-            EditableModelManager.m_Instance.RemoveLastOperation(m_widget);
             EditableModelManager.m_Instance.RegenerateMesh(m_widget, m_previousPoly);
         }
     }

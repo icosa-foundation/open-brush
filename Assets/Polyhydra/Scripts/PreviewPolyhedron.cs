@@ -15,7 +15,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
@@ -27,31 +26,14 @@ using Random = System.Random;
 public class PreviewPolyhedron : MonoBehaviour
 {
     public static PreviewPolyhedron m_Instance;
-
-    public bool GenerateSubmeshes = false;
-
+    public bool GenerateSubmeshes;
     public int RebuildSkipFrames = 4;
-
-    public UniformTypes UniformPolyType;
-    public RadialSolids.RadialPolyType RadialPolyType;
-    public VariousSolidTypes VariousSolidsType;
-    public ShapeTypes ShapeType;
-    public GridEnums.GridTypes GridType;
-    public GridEnums.GridShapes GridShape;
-    public int Param1Int;
-    public int Param2Int;
-    public int Param3Int = 3;
-    public float Param1Float;
-    public float Param2Float;
-    public float Param3Float = 1f;
-
     public bool SafeLimits;
-
     public PolyMesh m_PolyMesh;
-    private MeshFilter meshFilter;
-
+    public PolyRecipe m_PolyRecipe;
     public Material SymmetryWidgetMaterial;
 
+    private MeshFilter meshFilter;
     private PolyMesh.MeshData m_MeshData;
     private bool NeedsRebuild;
 
@@ -62,7 +44,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     void Start()
     {
-        Operators = new List<OpDefinition>();
+        m_PolyRecipe.Operators = new List<OpDefinition>();
         Init();
         BackgroundMakePolyhedron();
     }
@@ -158,8 +140,6 @@ public class PreviewPolyhedron : MonoBehaviour
         }
     }
 
-    public List<OpDefinition> Operators;
-
     private Thread m_BuildMeshThread;
     private bool m_BuildMeshThreadIsFinished;
     private Coroutine m_BuildMeshCoroutine;
@@ -181,19 +161,19 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void Validate()
     {
-        if (EditableModelManager.CurrentModel.GeneratorType == GeneratorTypes.Uniform)
+        if (EditableModelManager.CurrentPoly.GeneratorType == GeneratorTypes.Uniform)
         {
-            if (Param1Int < 3) { Param1Int = 3; }
-            if (Param1Int > 16) Param1Int = 16;
-            if (Param2Int > Param1Int - 2) Param2Int = Param1Int - 2;
-            if (Param2Int < 2) Param2Int = 2;
+            if (m_PolyRecipe.Param1Int < 3) { m_PolyRecipe.Param1Int = 3; }
+            if (m_PolyRecipe.Param1Int > 16) m_PolyRecipe.Param1Int = 16;
+            if (m_PolyRecipe.Param2Int > m_PolyRecipe.Param1Int - 2) m_PolyRecipe.Param2Int = m_PolyRecipe.Param1Int - 2;
+            if (m_PolyRecipe.Param2Int < 2) m_PolyRecipe.Param2Int = 2;
         }
 
         // Control the amount variables to some degree
-        for (var i = 0; i < Operators.Count; i++)
+        for (var i = 0; i < m_PolyRecipe.Operators.Count; i++)
         {
             if (OpConfigs.Configs == null) continue;
-            var op = Operators[i];
+            var op = m_PolyRecipe.Operators[i];
             if (OpConfigs.Configs[op.opType].usesAmount)
             {
                 op.amount = Mathf.Round(op.amount * 1000) / 1000f;
@@ -217,15 +197,15 @@ public class PreviewPolyhedron : MonoBehaviour
             {
                 op.amount = 0;
             }
-            Operators[i] = op;
+            m_PolyRecipe.Operators[i] = op;
         }
     }
 
     public Color GetFaceColorForStrokes(int faceIndex)
     {
         return m_PolyMesh.CalcFaceColor(
-            EditableModelManager.CurrentModel.Colors,
-            EditableModelManager.CurrentModel.ColorMethod,
+            EditableModelManager.CurrentPoly.Colors,
+            EditableModelManager.CurrentPoly.ColorMethod,
             faceIndex
         );
     }
@@ -280,24 +260,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     private void DoMakePolyHedron()
     {
-        PolyDefinition def = new PolyDefinition
-        {
-            GeneratorType = EditableModelManager.CurrentModel.GeneratorType,
-            UniformPolyType = UniformPolyType,
-            RadialPolyType = RadialPolyType,
-            VariousSolidsType = VariousSolidsType,
-            ShapeType = ShapeType,
-            GridType = GridType,
-            GridShape = GridShape,
-            Param1Int = Param1Int,
-            Param2Int = Param2Int,
-            Param3Int = Param3Int,
-            Param1Float = Param1Float,
-            Param2Float = Param2Float,
-            Param3Float = Param3Float,
-            Operators = Operators,
-        };
-        (m_PolyMesh, m_MeshData) = PolyBuilder.BuildFromPolyDef(def);
+        (m_PolyMesh, m_MeshData) = PolyBuilder.BuildFromPolyDef(m_PolyRecipe);
     }
 
     private void AssignMesh()
@@ -326,7 +289,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
         foreach (var widget in EditableModelManager.m_Instance.LinkedWidgets)
         {
-            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh);
+            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe);
         }
     }
 

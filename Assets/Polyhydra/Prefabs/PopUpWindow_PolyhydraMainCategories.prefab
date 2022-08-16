@@ -359,7 +359,7 @@ GameObject:
   - component: {fileID: 11477574}
   - component: {fileID: 114242525141314656}
   m_Layer: 0
-  m_Name: PopUpWindow_PolyhydraShapeTypes
+  m_Name: PopUpWindow_PolyhydraMainCategories
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

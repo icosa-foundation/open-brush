@@ -36,7 +36,7 @@ namespace TiltBrush
 
         public override void HandleButtonPress(string action, bool isFolder)
         {
-            PreviewPolyhedron.m_Instance.GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), action);
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), action);
             ParentPanel.SetButtonTextAndIcon(PolyhydraButtonTypes.GridShape, action);
             PreviewPolyhedron.m_Instance.RebuildPoly();
         }

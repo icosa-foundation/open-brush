@@ -14,7 +14,6 @@
 
 using Polyhydra.Core;
 using TiltBrush.MeshEditing;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -23,31 +22,30 @@ namespace TiltBrush
         private readonly EditableModelWidget m_Ewidget;
         private readonly PolyMesh m_NewPoly;
         private readonly PolyMesh m_PreviousPoly;
-        private readonly EditableModel m_NewEditableModel;
-        private readonly EditableModel m_PreviousEditableModel;
+        private readonly PolyRecipe m_NewPolyRecipe;
+        private readonly PolyRecipe m_PreviousPolyRecipe;
 
         public override bool NeedsSave { get { return true; } }
 
-        public ModifyPolyCommand(EditableModelWidget ewidget, PolyMesh newPoly, EditableModel newEditableModel)
+        public ModifyPolyCommand(EditableModelWidget ewidget, PolyMesh newPoly, PolyRecipe newPolyRecipe)
         {
             m_Ewidget = ewidget;
             m_NewPoly = newPoly;
-            m_NewEditableModel = newEditableModel;
-            EditableModelId id = ewidget.GetId();
-            m_PreviousPoly = EditableModelManager.m_Instance.GetPolyMesh(id);
-            m_PreviousEditableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+            m_NewPolyRecipe = newPolyRecipe;
+            m_PreviousPoly = ewidget.m_PolyMesh;
+            m_PreviousPolyRecipe = ewidget.m_PolyRecipe;
         }
 
         protected override void OnRedo()
         {
-            EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_NewEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly, m_NewEditableModel.CurrentMaterial);
+            m_Ewidget.m_PolyRecipe = m_NewPolyRecipe;
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly);
         }
 
         protected override void OnUndo()
         {
-            EditableModelManager.m_Instance.UpdateEditableModel(m_Ewidget, m_PreviousEditableModel);
-            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly, m_PreviousEditableModel.CurrentMaterial);
+            m_Ewidget.m_PolyRecipe = m_PreviousPolyRecipe;
+            EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly);
         }
 
     }

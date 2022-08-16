@@ -24,6 +24,7 @@ namespace TiltBrush.MeshEditing
     {
         FileSystem = 0,
         GeometryData = 1,
+
         Grid = 2,
         Shapes = 3,
 
@@ -41,24 +42,18 @@ namespace TiltBrush.MeshEditing
         public Material[] m_Materials;
         [NonSerialized] public Dictionary<Material, DynamicExportableMaterial> m_ExportableMaterials;
 
-        private EditableModel m_CurrentModel;
-        private Dictionary<string, EditableModel> m_EditableModels;
-        public Dictionary<string, EditableModel> EditableModels => m_EditableModels;
+        private PolyRecipe m_CurrentPoly;
 
         // List of widgets that should be updated whenever we rebuild the preview
         public HashSet<EditableModelWidget> LinkedWidgets;
 
-        public static EditableModel CurrentModel
+        public static PolyRecipe CurrentPoly
         {
             get
             {
-                if (m_Instance.m_CurrentModel == null)
-                {
-                    m_Instance.m_CurrentModel = new EditableModel(GeneratorTypes.Uniform);
-                }
-                return m_Instance.m_CurrentModel;
+                return m_Instance.m_CurrentPoly;
             }
-            set => m_Instance.m_CurrentModel = value;
+            set => m_Instance.m_CurrentPoly = value;
         }
 
         void Awake()
@@ -76,7 +71,6 @@ namespace TiltBrush.MeshEditing
 
             m_Instance = this;
 
-            if (m_EditableModels == null) m_EditableModels = new Dictionary<string, EditableModel>();
             if (LinkedWidgets == null) LinkedWidgets = new HashSet<EditableModelWidget>();
             CreateExportableMaterials();
         }
@@ -151,36 +145,14 @@ namespace TiltBrush.MeshEditing
             }
         }
 
-        public void UpdateEditableModel(EditableModelWidget widget, EditableModel emodel)
+        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
         {
-            var id = widget.GetId();
-            m_EditableModels[id.guid] = emodel;
-        }
-
-        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly, Material mat = null)
-        {
-            var id = widget.GetId();
-            var emodel = m_EditableModels[id.guid];
-            if (mat == null) mat = id.gameObject.GetComponent<MeshRenderer>().material;
-            var meshData = poly.BuildMeshData(colors: emodel.Colors, colorMethod: emodel.ColorMethod);
+            var go = widget.GetModelGameObject();
+            var mat = go.GetComponent<MeshRenderer>().material;
+            var meshData = poly.BuildMeshData(colors: widget.m_PolyRecipe.Colors, colorMethod: widget.m_PolyRecipe.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
-            UpdateMesh(id.gameObject, mesh, mat);
-            emodel.SetPolyMesh(poly);
-            m_EditableModels[id.guid] = emodel;
-        }
-
-        public void RecordOperation(EditableModelWidget widget, Dictionary<string, object> parameters)
-        {
-            var id = widget.GetId();
-            var emesh = m_EditableModels[id.guid];
-            emesh.Operations.Add(parameters);
-        }
-
-        public void RemoveLastOperation(EditableModelWidget widget)
-        {
-            var id = widget.GetId();
-            var emesh = m_EditableModels[id.guid];
-            emesh.Operations.RemoveAt(emesh.Operations.Count - 1);
+            UpdateMesh(go, mesh, mat);
+            widget.m_PolyMesh = poly;
         }
 
         public void UpdateMesh(GameObject polyGo, Mesh mesh, Material mat)
@@ -198,52 +170,23 @@ namespace TiltBrush.MeshEditing
             col.size = mesh.bounds.size;
         }
 
-        public void RegisterEditableMesh(
-            GameObject modelGo, PolyMesh poly,
-            Color[] colors, ColorMethods colorMethod, int materialIndex,
-            GeneratorTypes type, Dictionary<string, object> parameters = null)
+
+        public void GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
         {
-            var id = modelGo.AddComponent<EditableModelId>();
-            id.guid = Guid.NewGuid().ToString();
-            var emesh = new EditableModel(poly, colors, colorMethod, materialIndex, type, parameters);
-            m_EditableModels[id.guid] = emesh;
+            var meshData = poly.BuildMeshData(colors: polyRecipe.Colors, colorMethod: polyRecipe.ColorMethod);
+            GeneratePolyMesh(poly, polyRecipe, tr, meshData);
         }
 
-        public PolyMesh GetPolyMesh(EditableModelWidget widget)
-        {
-            return GetPolyMesh(widget.GetComponentInChildren<EditableModelId>());
-        }
-
-        public PolyMesh GetPolyMesh(EditableModelId id)
-        {
-            var guid = id.guid;
-            return m_EditableModels[guid].PolyMesh;
-        }
-
-        public ColorMethods GetColorMethod(EditableModelId id)
-        {
-            var guid = id.guid;
-            return m_EditableModels[guid].ColorMethod;
-        }
-
-        public void GeneratePolyMesh(PolyMesh poly, TrTransform tr,
-                                     ColorMethods colMethod,
-                                     GeneratorTypes generatorType,
-                                     Color[] colors = null,
-                                     int materialIndex = 0,
-                                     Dictionary<string, object> parameters = null,
-                                     List<Dictionary<string, object>> operations = null)
+        public void GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr, PolyMesh.MeshData meshData)
         {
             // Create Mesh from PolyMesh
             // var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
-            var mat = m_Materials[materialIndex];
-            var meshData = poly.BuildMeshData(colors: colors, colorMethod: colMethod);
+            var mat = m_Materials[polyRecipe.MaterialIndex];
             var mesh = poly.BuildUnityMesh(meshData);
 
             // Create the EditableModel gameobject
             var polyGo = new GameObject();
             UpdateMesh(polyGo, mesh, mat);
-            RegisterEditableMesh(polyGo, poly, colors, colMethod, materialIndex, generatorType, parameters);
 
             // Create the widget
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
@@ -252,14 +195,12 @@ namespace TiltBrush.MeshEditing
             var widget = createCommand.Widget as EditableModelWidget;
             if (widget != null)
             {
-                var model = new Model(Model.Location.Generated(polyGo.GetComponent<EditableModelId>()));
+                var model = new Model(Model.Location.Generated(Guid.NewGuid().ToString()));
                 model.LoadEditableModel(polyGo);
                 widget.Model = model;
+                widget.m_PolyRecipe = polyRecipe;
+                widget.m_PolyMesh = poly;
                 widget.Show(true);
-                foreach (var op in operations)
-                {
-                    RecordOperation(widget, op);
-                }
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
@@ -283,17 +224,10 @@ namespace TiltBrush.MeshEditing
             return stencilWidget;
         }
 
-        public void CloneEditableModel(EditableModelWidget clone)
-        {
-            var id = clone.GetComponentInChildren<EditableModelId>(true);
-            var prevId = id.guid;
-            id.guid = Guid.NewGuid().ToString();
-            m_EditableModels[id.guid] = m_EditableModels[prevId];
-        }
-        public static void UpdateWidgetFromPolyMesh(EditableModelWidget widget, PolyMesh poly)
+        public static void UpdateWidgetFromPolyMesh(EditableModelWidget widget, PolyMesh poly, PolyRecipe polyRecipe)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new ModifyPolyCommand(widget, poly, EditableModelManager.CurrentModel)
+                new ModifyPolyCommand(widget, poly, polyRecipe)
             );
         }
     }

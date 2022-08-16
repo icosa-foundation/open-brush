@@ -223,7 +223,10 @@ namespace TiltBrush
             m_Instance = this;
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
-            m_JsonSerializer.Error += HandleDeserializationError;
+            if (!Application.isEditor)
+            {
+                m_JsonSerializer.Error += HandleDeserializationError;
+            }
 
             ResetLastFilename();
 
@@ -741,6 +744,7 @@ namespace TiltBrush
                     {
                         var generatedModels = new List<TiltEditableModels>();
                         var filesystemModels = new List<TiltEditableModels>();
+
                         foreach (var model in jsonData.EditableModelIndex)
                         {
                             if (jsonData.EditableModelDefinitions != null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
@@ -757,169 +761,20 @@ namespace TiltBrush
                         WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
 
                         // Rebuild generated models
-                        foreach (var model in generatedModels)
+                        foreach (TiltEditableModels model in generatedModels)
                         {
-                            var emd = jsonData.EditableModelDefinitions[model.AssetId];
-                            var p = emd.GeneratorParameters;
-                            PolyDefinition def = new PolyDefinition
-                            {
-                                GeneratorType = emd.GeneratorType
-                            };
-
-                            switch (emd.GeneratorType)
-                            {
-                                // case GeneratorTypes.GeometryData:
-                                //     // TODO simplify face tag data structure
-                                //     var faceTags = new List<HashSet<string>>();
-                                //     foreach (var t in emd.FaceTags)
-                                //     {
-                                //         var tagSet = new HashSet<string>(t);
-                                //         faceTags.Add(tagSet);
-                                //     }
-                                //     def = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
-                                //     break;
-                                // case GeneratorTypes.Johnson:
-                                //     def.JohnsonPolyType = Convert.ToInt32(p["type"]);
-                                //     break;
-                                case GeneratorTypes.Shapes:
-                                    def.ShapeType = (ShapeTypes)Convert.ToInt32(p["type"]);
-                                    def.Param1Float = Convert.ToSingle(p["a"]);
-                                    def.Param2Float = Convert.ToSingle(p["b"]);
-                                    def.Param3Float = Convert.ToSingle(p["c"]);
-                                    break;
-                                case GeneratorTypes.Radial:
-                                    def.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]);
-                                    def.Param1Int = Convert.ToInt32(p["sides"]);
-                                    switch (def.RadialPolyType)
-                                    {
-                                        case RadialSolids.RadialPolyType.Prism:
-                                        case RadialSolids.RadialPolyType.Antiprism:
-                                        case RadialSolids.RadialPolyType.Pyramid:
-                                        case RadialSolids.RadialPolyType.Dipyramid:
-                                        case RadialSolids.RadialPolyType.OrthoBicupola:
-                                        case RadialSolids.RadialPolyType.GyroBicupola:
-                                        case RadialSolids.RadialPolyType.Cupola:
-                                            def.Param2Float = Convert.ToSingle(p["height"]);
-                                            def.Param2Float = Convert.ToSingle(p["capheight"]);
-                                            break;
-                                        default:
-                                            def.Param2Float = Convert.ToSingle(p["height"]);
-                                            def.Param3Float = Convert.ToSingle(p["capheight"]);
-                                            break;
-                                    }
-                                    break;
-                                case GeneratorTypes.Uniform:
-                                    def.UniformPolyType = (UniformTypes)Convert.ToInt32(p["type"]);
-                                    break;
-                                case GeneratorTypes.Waterman:
-                                    def.Param1Int = Convert.ToInt32(p["root"]);
-                                    def.Param2Int = Convert.ToInt32(p["c"]);
-                                    break;
-                                case GeneratorTypes.Grid:
-                                    def.GridType = (GridEnums.GridTypes)Convert.ToInt32(p["type"]);
-                                    def.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p["shape"]);
-                                    def.Param1Int = Convert.ToInt32(p["x"]);
-                                    def.Param2Int = Convert.ToInt32(p["y"]);
-                                    break;
-                                case GeneratorTypes.Various:
-                                    def.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p["type"]);
-                                    switch (def.VariousSolidsType)
-                                    {
-                                        case VariousSolidTypes.Box:
-                                            def.Param1Int = Convert.ToInt32(p["x"]);
-                                            def.Param2Int = Convert.ToInt32(p["y"]);
-                                            def.Param3Int = Convert.ToInt32(p["z"]);
-                                            break;
-                                        case VariousSolidTypes.Torus:
-                                            def.Param1Int = Convert.ToInt32(p["x"]);
-                                            def.Param2Int = Convert.ToInt32(p["y"]);
-                                            def.Param1Float = Convert.ToSingle(p["z"]);
-                                            break;
-                                        case VariousSolidTypes.Stairs:
-                                            def.Param1Int = Convert.ToInt32(p["x"]);
-                                            def.Param1Float = Convert.ToSingle(p["y"]);
-                                            def.Param2Float = Convert.ToSingle(p["z"]);
-                                            break;
-                                        case VariousSolidTypes.UvSphere:
-                                        case VariousSolidTypes.UvHemisphere:
-                                            def.Param1Int = Convert.ToInt32(p["x"]);
-                                            def.Param2Int = Convert.ToInt32(p["y"]);
-                                            break;
-                                    }
-                                    break;
-                            }
-
-                            def.Operators = new List<PreviewPolyhedron.OpDefinition>();
-                            if (emd.Operations != null)
-                            {
-                                foreach (var opDict in emd.Operations)
-                                {
-                                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
-                                    PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                                    float amount = Convert.ToSingle(opDict["param1"]);
-                                    float amount2 = Convert.ToSingle(opDict["param2"]);
-                                    Color paramColor = Color.white;
-                                    if (opDict.ContainsKey("paramColor"))
-                                    {
-                                        var colorData = (opDict["paramColor"] as JArray);
-                                        paramColor = new Color(
-                                            colorData[0].Value<float>(),
-                                            colorData[1].Value<float>(),
-                                            colorData[2].Value<float>()
-                                        );
-                                    }
-
-                                    // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
-                                    // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
-                                    FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
-                                    bool amountRandomize = Convert.ToBoolean(opDict["param1Randomize"]);
-                                    bool amount2Randomize = Convert.ToBoolean(opDict["param2Randomize"]);
-                                    float filterParamFloat = Convert.ToSingle(opDict["filterParamFloat"]);
-                                    int filterParamInt = Convert.ToInt32(opDict["filterParamInt"]);
-                                    bool filterNot = Convert.ToBoolean(opDict["filterNot"]);
-
-                                    var opDef = new PreviewPolyhedron.OpDefinition
-                                    {
-                                        opType = opType,
-                                        amount = amount,
-                                        amountRandomize = amountRandomize,
-                                        amount2 = amount2,
-                                        amount2Randomize = amount2Randomize,
-                                        disabled = disabled,
-                                        filterType = filterType,
-                                        filterParamFloat = filterParamFloat,
-                                        filterParamInt = filterParamInt,
-                                        paramColor = paramColor,
-                                        filterNot = filterNot,
-                                    };
-                                    def.Operators.Add(opDef);
-                                }
-                            }
-
-                            var (poly, _) = PolyBuilder.BuildFromPolyDef(def);
+                            PolyRecipe recipe = PolyRecipe.FromDef(jsonData.EditableModelDefinitions[model.AssetId]);
 
                             // Handle saves with missing colors (legacy)
-                            Color[] colors;
-                            if (emd.Colors == null || emd.Colors.Length == 0)
+                            if (recipe.Colors == null || recipe.Colors.Length == 0)
                             {
                                 PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
-                                colors = (Color[])polyPanel.DefaultColorPalette.Clone();
+                                recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
                             }
-                            else
+                            foreach (var tr in model.RawTransforms)
                             {
-                                colors = emd.Colors;
-                            }
-
-                            if (poly != null)
-                            {
-                                foreach (var tr in model.RawTransforms)
-                                {
-                                    EditableModelManager.m_Instance.GeneratePolyMesh(
-                                        poly, tr,
-                                        emd.ColorMethod, emd.GeneratorType, colors, emd.MaterialIndex,
-                                        emd.GeneratorParameters, emd.Operations
-                                    );
-                                }
+                                var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
+                                EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
                             }
                         }
                     }

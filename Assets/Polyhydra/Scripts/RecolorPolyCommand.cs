@@ -22,7 +22,6 @@ namespace TiltBrush
     {
         private readonly EditableModelWidget m_Ewidget;
         private readonly PolyMesh m_PolyMesh;
-        private readonly EditableModel m_EditableModel;
         private readonly Color[] m_NewColors;
         private readonly Color[] m_PreviousColors;
 
@@ -31,22 +30,20 @@ namespace TiltBrush
         public RecolorPolyCommand(EditableModelWidget ewidget, Color[] colors)
         {
             m_Ewidget = ewidget;
-            EditableModelId id = ewidget.GetId();
-            m_PolyMesh = EditableModelManager.m_Instance.GetPolyMesh(id);
-            m_EditableModel = EditableModelManager.m_Instance.EditableModels[id.guid];
+            m_PolyMesh = ewidget.m_PolyMesh;
             m_NewColors = colors;
-            m_PreviousColors = (Color[])m_EditableModel.Colors.Clone();
+            m_PreviousColors = (Color[])ewidget.m_PolyRecipe.Colors.Clone();
         }
 
         protected override void OnRedo()
         {
-            m_EditableModel.Colors = m_NewColors;
+            m_Ewidget.m_PolyRecipe.Colors = m_NewColors;
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 
         protected override void OnUndo()
         {
-            m_EditableModel.Colors = m_PreviousColors;
+            m_Ewidget.m_PolyRecipe.Colors = m_PreviousColors;
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 

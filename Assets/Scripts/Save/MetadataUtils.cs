@@ -154,49 +154,11 @@ namespace TiltBrush
         public static Dictionary<string, EditableModelDefinition> GetEditableModelDefinitions()
         {
             var dict = new Dictionary<string, EditableModelDefinition>();
-            foreach (var em in EditableModelManager.m_Instance.EditableModels)
+            foreach (var em in WidgetManager.m_Instance.ActiveEditableModelWidgets)
             {
-                dict[em.Key] = GetEditableModelDefinition(em.Value);
+                dict[em.WidgetScript.Model.AssetId] = new EditableModelDefinition(em.WidgetScript.m_PolyRecipe);
             }
             return dict;
-        }
-
-        public static EditableModelDefinition GetEditableModelDefinition(EditableModel em)
-        {
-            if (em.GeneratorType == GeneratorTypes.FileSystem)
-            {
-                return new EditableModelDefinition(em.Operations);
-            }
-            else if (em.GeneratorType == GeneratorTypes.GeometryData)
-            {
-                // TODO Store mesh data in a file
-                var polyMesh = em.PolyMesh;
-                return new EditableModelDefinition
-                (
-                    polyMesh.ListVerticesByPoints(),
-                    polyMesh.ListFacesByVertexIndices(),
-                    polyMesh.FaceRoles,
-                    polyMesh.VertexRoles,
-                    polyMesh.FaceTags,
-                    em.Colors,
-                    em.ColorMethod,
-                    em.MaterialIndex,
-                    em.GeneratorType,
-                    em.GeneratorParameters,
-                    em.Operations);
-            }
-            else
-            {
-                return new EditableModelDefinition
-                (
-                    em.Colors,
-                    em.ColorMethod,
-                    em.MaterialIndex,
-                    em.GeneratorType,
-                    em.GeneratorParameters,
-                    em.Operations
-                );
-            }
         }
 
         public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)

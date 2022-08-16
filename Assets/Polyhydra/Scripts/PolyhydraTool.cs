@@ -182,57 +182,53 @@ namespace TiltBrush
                 m_WidgetsModifiedThisClick.Add(ewidget);
                 if (ewidget != null)
                 {
-                    var id = ewidget.GetId();
-                    if (id != null)
+                    PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                    if (polyhydraPanel != null)
                     {
-                        PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                        if (polyhydraPanel != null)
+                        switch (m_CurrentModifyMode)
                         {
-                            switch (m_CurrentModifyMode)
-                            {
-                                case ModifyModes.ApplySettings:
-                                    var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                                    EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly);
-                                    break;
+                            case ModifyModes.ApplySettings:
+                                var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
+                                EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe);
+                                break;
 
-                                case ModifyModes.GetSettings:
-                                    polyhydraPanel.LoadFromId(id);
-                                    break;
+                            case ModifyModes.GetSettings:
+                                polyhydraPanel.LoadFromWidget(ewidget);
+                                break;
 
-                                case ModifyModes.ApplyColor:
+                            case ModifyModes.ApplyColor:
 
-                                    Color color = PointerManager.m_Instance.CalculateJitteredColor(
-                                        PointerManager.m_Instance.PointerColor
-                                    );
-                                    Color[] colors = Enumerable.Repeat(color, EditableModelManager.CurrentModel.Colors.Length).ToArray();
+                                Color color = PointerManager.m_Instance.CalculateJitteredColor(
+                                    PointerManager.m_Instance.PointerColor
+                                );
+                                Color[] colors = Enumerable.Repeat(color, EditableModelManager.CurrentPoly.Colors.Length).ToArray();
 
-                                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                                        new RecolorPolyCommand(ewidget, colors)
-                                    );
-                                    break;
+                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                                    new RecolorPolyCommand(ewidget, colors)
+                                );
+                                break;
 
-                                case ModifyModes.ApplyBrushStrokesToFaces:
-                                    CreateBrushStrokesForPoly(
-                                        EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
-                                        Coords.AsCanvas[ewidget.transform]
-                                    );
-                                    break;
+                            case ModifyModes.ApplyBrushStrokesToFaces:
+                                CreateBrushStrokesForPoly(
+                                    ewidget.m_PolyMesh,
+                                    Coords.AsCanvas[ewidget.transform]
+                                );
+                                break;
 
-                                case ModifyModes.ApplyBrushStrokesToEdges:
-                                    CreateBrushStrokesForPolyEdges(
-                                        EditableModelManager.m_Instance.EditableModels[id.guid].PolyMesh,
-                                        Coords.AsCanvas[ewidget.transform]
-                                    );
-                                    break;
+                            case ModifyModes.ApplyBrushStrokesToEdges:
+                                CreateBrushStrokesForPolyEdges(
+                                    ewidget.m_PolyMesh,
+                                    Coords.AsCanvas[ewidget.transform]
+                                );
+                                break;
 
-                                case ModifyModes.LinkToShapeDesigner:
-                                    EditableModelManager.m_Instance.LinkedWidgets.Add(ewidget);
-                                    break;
-                            }
-                            AudioManager.m_Instance.PlayDuplicateSound(
-                                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
-                            );
+                            case ModifyModes.LinkToShapeDesigner:
+                                EditableModelManager.m_Instance.LinkedWidgets.Add(ewidget);
+                                break;
                         }
+                        AudioManager.m_Instance.PlayDuplicateSound(
+                            InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                        );
                     }
                 }
             }
@@ -291,7 +287,7 @@ namespace TiltBrush
             switch (m_CurrentCreateMode)
             {
                 case CreateModes.EditableModel:
-                    PolyhydraPanel.CreateWidgetForPolyhedron(poly, tr);
+                    PolyhydraPanel.CreateWidgetForPolyhedron(poly, PreviewPolyhedron.m_Instance.m_PolyRecipe, tr);
                     break;
                 case CreateModes.BrushStrokesFromFaces:
                     CreateBrushStrokesForPoly(poly, tr);
