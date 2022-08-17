@@ -185,6 +185,10 @@ namespace TiltBrush
                     recipe.Operators.Add(opDef);
                 }
             }
+
+            recipe.Colors = (Color[])emd.Colors.Clone();
+            recipe.MaterialIndex = emd.MaterialIndex;
+            recipe.ColorMethod = emd.ColorMethod;
             return recipe;
         }
     }
