@@ -142,7 +142,6 @@ namespace TiltBrush
         override public void UpdateTool()
         {
             base.UpdateTool();
-
             PositionPointer();
 
             //keep description locked to controller
@@ -178,7 +177,7 @@ namespace TiltBrush
                 !m_WidgetsModifiedThisClick.Contains(LastIntersectedEditableModelWidget) && // Don't modify widgets more than once per interaction
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
             {
-                var ewidget = LastIntersectedEditableModelWidget;
+                EditableModelWidget ewidget = LastIntersectedEditableModelWidget;
                 m_WidgetsModifiedThisClick.Add(ewidget);
                 if (ewidget != null)
                 {

@@ -341,7 +341,6 @@ namespace TiltBrush
 
         public void OnInputFieldSelected()
         {
-            Debug.Log($"OnInputFieldSelected");
             var overlayKeyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
         }
 
@@ -950,7 +949,9 @@ namespace TiltBrush
 
         public void LoadFromWidget(EditableModelWidget ewidget)
         {
-            LoadFromRecipe(ewidget.m_PolyRecipe);
+            // LoadFromRecipe(ewidget.m_PolyRecipe);
+            var edef = new EditableModelDefinition(ewidget.m_PolyRecipe);
+            LoadFromDefinition(edef);
         }
 
         public void LoadFromDefinition(EditableModelDefinition edef)
@@ -1121,7 +1122,6 @@ namespace TiltBrush
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Clear();
 
-            // TODO This has some similarities to code in SaveLoadScript and PreviewPolyhedron
             foreach (var opDict in edef.Operations)
             {
                 var newOp = new PreviewPolyhedron.OpDefinition
@@ -1176,9 +1176,15 @@ namespace TiltBrush
             RebuildPreviewAndLinked();
         }
 
-
+        // I'm actually only using LoadFromDefinition currently
+        // and converting recipes to EditableDefinition beforehand
+        // This method currently doesn't set up the op buttons correctly
+        // It also duplicates a ton of logic with LoadFromDefinition
+        // Keeping it around mainly for reference purposes at the moment
         public void LoadFromRecipe(PolyRecipe recipe)
         {
+            PreviewPolyhedron.m_Instance.m_PolyRecipe = recipe;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators = recipe.Operators;  // Clone
 
             // If no colors are supplied then use the current palette
             Color[] colors;
@@ -1328,14 +1334,9 @@ namespace TiltBrush
 
             // Widgets must be visible when setting textures
             ShowAllOpControls();
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Clear();
-            foreach (var _ in recipe.Operators)
-            {
-                AddOpButton();
-            }
 
             RefreshOpSelectButtons();
-            HandleSelectOpButton(PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1);
+            HandleSelectOpButton(recipe.Operators.Count - 1);
             ShowAllGeneratorControls();
             RebuildPreviewAndLinked();
         }
@@ -1728,7 +1729,6 @@ namespace TiltBrush
         public List<string> GetUniformPolyNames()
         {
             Uniform[] uniformList = null;
-            Debug.Log($"m_CurrentMainCategory: {m_CurrentMainCategory}");
             switch (m_CurrentMainCategory)
             {
                 case PolyhydraMainCategories.Platonic:
@@ -1851,8 +1851,9 @@ namespace TiltBrush
         [ContextMenu("Test RefreshOpSelectButtons")]
         private void RefreshOpSelectButtons()
         {
-            OpPanel.gameObject.SetActive(PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count > 0);
-            OperatorSelectPopupTools.gameObject.SetActive(PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count > 0);
+            bool hasOps = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count > 0;
+            OpPanel.gameObject.SetActive(hasOps);
+            OperatorSelectPopupTools.gameObject.SetActive(hasOps);
 
             var btns = OperatorSelectButtonParent.GetComponentsInChildren<PolyhydraSelectOpButton>();
 

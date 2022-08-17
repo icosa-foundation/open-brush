@@ -12,6 +12,7 @@ namespace TiltBrush
     public struct PolyRecipe
     {
         // Used for polymeshes that use GeneratorType FileSystem or GeometryData
+        // TODO Clone on assignment?
         public List<Vector3> Vertices;
         public List<List<int>> Faces;
         public List<int> FaceRoles;
@@ -32,18 +33,21 @@ namespace TiltBrush
         public float Param1Float;
         public float Param2Float;
         public float Param3Float;
-
+        private List<PreviewPolyhedron.OpDefinition> _operators;
+        public List<PreviewPolyhedron.OpDefinition> Operators
+        {
+            get => _operators;
+            set => _operators = new List<PreviewPolyhedron.OpDefinition>(value);
+        }
         // Used for all polymeshes
-        public List<PreviewPolyhedron.OpDefinition> Operators;
         public int MaterialIndex;
         public ColorMethods ColorMethod;
-
+        private Color[] _colors;
         public Color[] Colors
         {
             get => _colors;
             set => _colors = (Color[])value.Clone();
         }
-        private Color[] _colors;
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
 
@@ -65,17 +69,16 @@ namespace TiltBrush
                     recipe.FaceTags = emd.FaceTags;
                     break;
                 // case GeneratorTypes.Johnson:
-                //     recipe.JohnsonPolyType = Convert.ToInt32(p["type"]);
-                //     break;
+                //     recipe.JohnsonPolyType = Convert.ToInt32(p.GetValueOrDefault("type"]);)                //     break;
                 case GeneratorTypes.Shapes:
-                    recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p["type"]);
-                    recipe.Param1Float = Convert.ToSingle(p["a"]);
-                    recipe.Param2Float = Convert.ToSingle(p["b"]);
-                    recipe.Param3Float = Convert.ToSingle(p["c"]);
+                    recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
+                    recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("a"));
+                    recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
+                    recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
                     break;
                 case GeneratorTypes.Radial:
-                    recipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p["type"]);
-                    recipe.Param1Int = Convert.ToInt32(p["sides"]);
+                    recipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p.GetValueOrDefault("type"));
+                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("sides"));
                     switch (recipe.RadialPolyType)
                     {
                         case RadialSolids.RadialPolyType.Prism:
@@ -85,51 +88,51 @@ namespace TiltBrush
                         case RadialSolids.RadialPolyType.OrthoBicupola:
                         case RadialSolids.RadialPolyType.GyroBicupola:
                         case RadialSolids.RadialPolyType.Cupola:
-                            recipe.Param2Float = Convert.ToSingle(p["height"]);
-                            recipe.Param2Float = Convert.ToSingle(p["capheight"]);
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("height"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("capheight"));
                             break;
                         default:
-                            recipe.Param2Float = Convert.ToSingle(p["height"]);
-                            recipe.Param3Float = Convert.ToSingle(p["capheight"]);
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("height"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("capheight"));
                             break;
                     }
                     break;
                 case GeneratorTypes.Uniform:
-                    recipe.UniformPolyType = (UniformTypes)Convert.ToInt32(p["type"]);
+                    recipe.UniformPolyType = (UniformTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
                     break;
                 case GeneratorTypes.Waterman:
-                    recipe.Param1Int = Convert.ToInt32(p["root"]);
-                    recipe.Param2Int = Convert.ToInt32(p["c"]);
+                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("root"));
+                    recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("c"));
                     break;
                 case GeneratorTypes.Grid:
-                    recipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(p["type"]);
-                    recipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p["shape"]);
-                    recipe.Param1Int = Convert.ToInt32(p["x"]);
-                    recipe.Param2Int = Convert.ToInt32(p["y"]);
+                    recipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
+                    recipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p.GetValueOrDefault("shape"));
+                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                    recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
                     break;
                 case GeneratorTypes.Various:
-                    recipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p["type"]);
+                    recipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
                     switch (recipe.VariousSolidsType)
                     {
                         case VariousSolidTypes.Box:
-                            recipe.Param1Int = Convert.ToInt32(p["x"]);
-                            recipe.Param2Int = Convert.ToInt32(p["y"]);
-                            recipe.Param3Int = Convert.ToInt32(p["z"]);
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
+                            recipe.Param3Int = Convert.ToInt32(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.Torus:
-                            recipe.Param1Int = Convert.ToInt32(p["x"]);
-                            recipe.Param2Int = Convert.ToInt32(p["y"]);
-                            recipe.Param1Float = Convert.ToSingle(p["z"]);
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
+                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.Stairs:
-                            recipe.Param1Int = Convert.ToInt32(p["x"]);
-                            recipe.Param1Float = Convert.ToSingle(p["y"]);
-                            recipe.Param2Float = Convert.ToSingle(p["z"]);
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("y"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.UvSphere:
                         case VariousSolidTypes.UvHemisphere:
-                            recipe.Param1Int = Convert.ToInt32(p["x"]);
-                            recipe.Param2Int = Convert.ToInt32(p["y"]);
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
                             break;
                     }
                     break;
@@ -140,10 +143,10 @@ namespace TiltBrush
             {
                 foreach (var opDict in emd.Operations)
                 {
-                    bool disabled = Convert.ToBoolean(opDict["disabled"]);
+                    bool disabled = Convert.ToBoolean(opDict.GetValueOrDefault("disabled"));
                     PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                    float amount = Convert.ToSingle(opDict["param1"]);
-                    float amount2 = Convert.ToSingle(opDict["param2"]);
+                    float amount = Convert.ToSingle(opDict.GetValueOrDefault("param1"));
+                    float amount2 = Convert.ToSingle(opDict.GetValueOrDefault("param2"));
                     Color paramColor = Color.white;
                     if (opDict.ContainsKey("paramColor"))
                     {
@@ -158,11 +161,11 @@ namespace TiltBrush
                     // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
                     // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
                     FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
-                    bool amountRandomize = Convert.ToBoolean(opDict["param1Randomize"]);
-                    bool amount2Randomize = Convert.ToBoolean(opDict["param2Randomize"]);
-                    float filterParamFloat = Convert.ToSingle(opDict["filterParamFloat"]);
-                    int filterParamInt = Convert.ToInt32(opDict["filterParamInt"]);
-                    bool filterNot = Convert.ToBoolean(opDict["filterNot"]);
+                    bool amountRandomize = Convert.ToBoolean(opDict.GetValueOrDefault("param1Randomize"));
+                    bool amount2Randomize = Convert.ToBoolean(opDict.GetValueOrDefault("param2Randomize"));
+                    float filterParamFloat = Convert.ToSingle(opDict.GetValueOrDefault("filterParamFloat"));
+                    int filterParamInt = Convert.ToInt32(opDict.GetValueOrDefault("filterParamInt"));
+                    bool filterNot = Convert.ToBoolean(opDict.GetValueOrDefault("filterNot"));
 
                     var opDef = new PreviewPolyhedron.OpDefinition
                     {
@@ -181,8 +184,17 @@ namespace TiltBrush
                     recipe.Operators.Add(opDef);
                 }
             }
-
-            recipe.Colors = (Color[])emd.Colors.Clone();
+            Color[] colors;
+            if (emd.Colors == null || emd.Colors.Length == 0)
+            {
+                PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                colors = polyhydraPanel.DefaultColorPalette;
+            }
+            else
+            {
+                colors = (Color[])emd.Colors.Clone();
+            }
+            recipe.Colors = colors;
             recipe.MaterialIndex = emd.MaterialIndex;
             recipe.ColorMethod = emd.ColorMethod;
             return recipe;

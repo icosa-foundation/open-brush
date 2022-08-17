@@ -221,6 +221,7 @@ public class PreviewPolyhedron : MonoBehaviour
         m_BuildMeshThreadIsFinished = false;
         m_BuildMeshThread = null;
 
+        bool error = false;
         m_BuildMeshThread = new Thread(() =>
         {
             try
@@ -230,6 +231,7 @@ public class PreviewPolyhedron : MonoBehaviour
             catch (Exception e)
             {
                 Debug.LogError(e);
+                error = true;
             }
             finally
             {
@@ -239,7 +241,14 @@ public class PreviewPolyhedron : MonoBehaviour
         m_BuildMeshThread.Start();
         while (!m_BuildMeshThreadIsFinished)
             yield return null;
-        callback();
+        if (error)
+        {
+            OutputWindowScript.Error("Error: Failed to Build Shape");
+        }
+        else
+        {
+            callback();
+        }
     }
 
     public void BackgroundMakePolyhedron()

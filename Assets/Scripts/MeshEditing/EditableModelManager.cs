@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Polyhydra.Core;
 using TiltBrushToolkit;
 using UnityEngine;
@@ -188,6 +189,8 @@ namespace TiltBrush.MeshEditing
                 model.LoadEditableModel(polyGo);
                 widget.Model = model;
                 widget.m_PolyRecipe = polyRecipe;
+                // Force a clone.
+                widget.m_PolyRecipe.Operators = polyRecipe.Operators;
                 widget.m_PolyMesh = poly;
                 widget.Show(true);
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());

@@ -22,10 +22,8 @@ namespace TiltBrush
 
     public class EditableModelWidget : ModelWidget
     {
-
         public PolyRecipe m_PolyRecipe;
         public PolyMesh m_PolyMesh;
-        public string id;
 
         override public GrabWidget Clone()
         {
