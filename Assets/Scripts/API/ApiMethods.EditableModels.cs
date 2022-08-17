@@ -145,9 +145,6 @@ namespace TiltBrush
         private static EditableModelWidget GetActiveEditableModel(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveEditableModelWidgets);
-            // Debug.Log($"index: {index} of {WidgetManager.m_Instance.ActiveEditableModelWidgets.Count}");
-            // // Debug.Log($"{WidgetManager.m_Instance.ActiveEditableModelWidgets.First()}");
-            // Debug.Log($"{WidgetManager.m_Instance.ActiveEditableModelWidgets[0]}");
             return WidgetManager.m_Instance.ActiveEditableModelWidgets[index].WidgetScript;
         }
 
@@ -436,19 +433,14 @@ namespace TiltBrush
             }
 
             var poly = Grids.Build(gridType, gridShape, width, depth);
-            var parameters = new Dictionary<string, object>
-            {
-                {"type", type},
-                {"shape", shape},
-                {"x", width},
-                {"y", depth},
-            };
             var recipe = new PolyRecipe
             {
-                Faces = poly.ListFacesByVertexIndices().ToList(),
-                Vertices = poly.Vertices.Select(v => v.Position).ToList(),
                 ColorMethod = ColorMethods.ByRole,
-                // TODO
+                GeneratorType = GeneratorTypes.Grid,
+                GridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type),
+                GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape),
+                Param1Int = width,
+                Param2Int = depth,
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
         }
@@ -458,60 +450,66 @@ namespace TiltBrush
         {
             var type = VariousSolidTypes.Box;
             var poly = VariousSolids.Box(width, height, depth);
-            var parameters = new Dictionary<string, object>
-            {
-                {"type", type},
-                {"x", width},
-                {"y", height},
-                {"z", depth},
-            };
             var recipe = new PolyRecipe
             {
-                // TODO
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Various,
+                VariousSolidsType = VariousSolidTypes.Box,
+                Param1Int = width,
+                Param2Int = height,
+                Param3Int = depth,
             };
             EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
         }
 
-        // [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
-        // public static void CreateSphere(int width, int height)
-        // {
-        //     var type = VariousSolidTypes.UvSphere;
-        //     var poly = VariousSolids.UvSphere(width, height);
-        //     var parameters = new Dictionary<string, object>
-        //     {
-        //         {"type", type},
-        //         {"x", width},
-        //         {"y", height},
-        //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, 0, parameters);
-        // }
+        [ApiEndpoint("editablemodel.create.sphere", "Generates a sphere")]
+        public static void CreateSphere(int width, int height)
+        {
+            var type = VariousSolidTypes.UvSphere;
+            var poly = VariousSolids.UvSphere(width, height);
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Various,
+                VariousSolidsType = VariousSolidTypes.UvSphere,
+                Param1Int = width,
+                Param2Int = height,
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+        }
 
-        // [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
-        // public static void CreateHemiphere(int width, int height)
-        // {
-        //     var type = VariousSolidTypes.UvHemisphere;
-        //     var poly = VariousSolids.UvHemisphere(width, height);
-        //     var parameters = new Dictionary<string, object>
-        //     {
-        //         {"type", type},
-        //         {"x", width},
-        //         {"y", height},
-        //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Various, null, 0, parameters);
-        // }
+        [ApiEndpoint("editablemodel.create.hemisphere", "Generates a hemisphere")]
+        public static void CreateHemiphere(int width, int height)
+        {
+            var type = VariousSolidTypes.UvHemisphere;
+            var poly = VariousSolids.UvHemisphere(width, height);
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Various,
+                VariousSolidsType = VariousSolidTypes.UvHemisphere,
+                Param1Int = width,
+                Param2Int = height,
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+        }
 
-        // [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
-        // public static void CreatePolyhedron(string type)
-        // {
-        //     var wythoff = new WythoffPoly(type);
-        //     var poly = wythoff.Build();
-        //     var parameters = new Dictionary<string, object>
-        //     {
-        //         {"type", type},
-        //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Uniform, null, 0, parameters);
-        // }
+        [ApiEndpoint("editablemodel.create.polyhedron", "Generates a uniform polyhedron")]
+        public static void CreatePolyhedron(string type)
+        {
+            var wythoff = new WythoffPoly(type);
+            var poly = wythoff.Build();
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Uniform,
+                // TODO More tolerant parsing of names
+                UniformPolyType = Enum.Parse<UniformTypes>(type.Replace(" ", "_").Replace("%20", "_"))
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+        }
 
+        // TODO
         // [ApiEndpoint("editablemodel.create.johnsonsolid", "Generates a Johnson Solid")]
         // public static void CreateJohnsonSolid(string type)
         // {
@@ -523,41 +521,45 @@ namespace TiltBrush
         //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
         // }
 
-        // [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
-        // public static void CreateWatermanSolid(int root, int c)
-        // {
-        //     var poly = WatermanPoly.Build(1f, root, c, true);
-        //     var parameters = new Dictionary<string, object>
-        //     {
-        //         {"root", root},
-        //         {"c", c},
-        //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Johnson, null, 0, parameters);
-        // }
+        [ApiEndpoint("editablemodel.create.watermansolid", "Generates a Waterman Solid")]
+        public static void CreateWatermanSolid(int root, int c)
+        {
+            var poly = WatermanPoly.Build(1f, root, c, true);
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Waterman,
+                Param1Int = root,
+                Param2Int = c,
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+        }
 
-        // [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
-        // public static void CreateRotationalSolid(string type, int sides)
-        // {
-        //     if (!Enum.TryParse(type, true, out PolyMesh.Operation solidType)) return;
-        //     var poly = RadialSolids.Build((RadialSolids.RadialPolyType)solidType, sides);
-        //     var parameters = new Dictionary<string, object>
-        //     {
-        //         {"type", type},
-        //         {"sides", sides},
-        //     };
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(poly, _CurrentTransform(), ColorMethods.ByTags, GeneratorTypes.Radial, null, 0, parameters);
-        // }
+        [ApiEndpoint("editablemodel.create.rotationalsolid", "Generates a Rotational Solid (Prism, Pyramid etc")]
+        public static void CreateRotationalSolid(string type, int sides, float height1, float height2)
+        {
+            if (!Enum.TryParse(type, true, out PolyMesh.Operation solidType)) return;
+            var poly = RadialSolids.Build((RadialSolids.RadialPolyType)solidType, sides);
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByRole,
+                GeneratorType = GeneratorTypes.Radial,
+                RadialPolyType = Enum.Parse<RadialSolids.RadialPolyType>(type),
+                Param1Int = sides,
+                Param2Float = height1,
+                Param3Float = height2
+            };
+            EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, _CurrentTransform());
+        }
 
-
-        // [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
-        // public static void CustomGuideFromEditableModel(int index)
-        // {
-        //     EditableModelWidget modelWidget = GetActiveEditableModel(index);
-        //     var poly = EditableModelManager.m_Instance.GetPolyMesh(modelWidget);
-        //     var tr = _CurrentTransform();
-        //     var stencilWidget = EditableModelManager.AddCustomGuide(poly, tr);
-        //     stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
-        // }
+        [ApiEndpoint("guide.createfrom.editablemodel", "Creates a guide from an editable model")]
+        public static void CustomGuideFromEditableModel(int index)
+        {
+            EditableModelWidget modelWidget = GetActiveEditableModel(index);
+            var tr = _CurrentTransform();
+            var stencilWidget = EditableModelManager.AddCustomGuide(modelWidget.m_PolyMesh, tr);
+            stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
+        }
 
         // [ApiEndpoint("editablemodel.modify.color", "Changes the color of an editable model")]
         // public static void ModifyModelColor(int index, Vector3 rgb)
@@ -580,44 +582,51 @@ namespace TiltBrush
         //     _ApplyOp(index, parameters);
         // }
 
-        // [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]
-        // // TODO transfer color and/or textures
-        // public static void ConvertModelToEditable(int index, float smoothing = 0.01f)
-        // {
-        //     ModelWidget widget = _GetActiveModel(index);
-        //     widget.enabled = false;
-        //     var meshes = widget.Model.GetMeshes();
-        //     var faces = new List<List<int>>();
-        //     var verts = new List<Vector3>();
-        //
-        //     foreach (var mf in meshes)
-        //     {
-        //         var startV = verts.Count - 1;
-        //         verts.AddRange(mf.mesh.vertices);
-        //
-        //         var tris = mf.mesh.triangles;
-        //         for (var i = 0; i < tris.Length; i += 3)
-        //         {
-        //             faces.Add(
-        //                 new List<int>
-        //                 {
-        //                     tris[i] + startV,
-        //                     tris[i + 1] + startV,
-        //                     tris[i + 2] + startV
-        //                 }
-        //             );
-        //         }
-        //     }
-        //
-        //     var poly = new PolyMesh(verts, faces);
-        //     poly.MergeCoplanarFaces(smoothing);
-        //     poly.InitTags(App.BrushColor.CurrentColor);
-        //     EditableModelManager.m_Instance.GeneratePolyMesh(
-        //         poly,
-        //         _CurrentTransform(),
-        //         ColorMethods.ByTags,
-        //         GeneratorTypes.GeometryData
-        //     );
-        // }
+        [ApiEndpoint("editablemodel.createfrom.model", "Creates a new editable model from an existing model")]
+        // TODO transfer color and/or textures
+        public static void ConvertModelToEditable(int index, float smoothing = 0.01f)
+        {
+            ModelWidget widget = _GetActiveModel(index);
+            widget.enabled = false;
+            var meshes = widget.Model.GetMeshes();
+            var faces = new List<List<int>>();
+            var verts = new List<Vector3>();
+
+            foreach (var mf in meshes)
+            {
+                var startV = verts.Count - 1;
+                verts.AddRange(mf.mesh.vertices);
+
+                var tris = mf.mesh.triangles;
+                for (var i = 0; i < tris.Length; i += 3)
+                {
+                    faces.Add(
+                        new List<int>
+                        {
+                            tris[i] + startV,
+                            tris[i + 1] + startV,
+                            tris[i + 2] + startV
+                        }
+                    );
+                }
+            }
+
+            var recipe = new PolyRecipe
+            {
+                ColorMethod = ColorMethods.ByTags,
+                GeneratorType = GeneratorTypes.GeometryData,
+                Vertices = verts,
+                Faces = faces,
+            };
+
+            var poly = new PolyMesh(verts, faces);
+            poly.MergeCoplanarFaces(smoothing);
+            poly.InitTags(App.BrushColor.CurrentColor);
+            EditableModelManager.m_Instance.GeneratePolyMesh(
+                poly,
+                recipe,
+                _CurrentTransform()
+            );
+        }
     }
 }
