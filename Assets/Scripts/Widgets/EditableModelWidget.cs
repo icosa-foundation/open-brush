@@ -74,6 +74,7 @@ namespace TiltBrush
             PolyMesh oldPoly = m_PolyMesh;
             PolyMesh newPoly = oldPoly.Duplicate();
             newPoly.ScalingFactor = oldPoly.ScalingFactor;
+            clone.m_PolyRecipe = m_PolyRecipe;
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly);
             return clone;
         }
