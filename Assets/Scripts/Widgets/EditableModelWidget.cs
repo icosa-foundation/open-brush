@@ -90,6 +90,7 @@ namespace TiltBrush
 
         public GameObject GetModelGameObject()
         {
+            // Returns the child GameObject that contains the editable model itself
             return gameObject.GetComponentInChildren<ObjModelScript>().gameObject;
         }
 
