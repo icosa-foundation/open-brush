@@ -25,7 +25,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Class for responding to Http Requests. request handlers can be added for specfic paths.
+    /// Class for responding to Http Requests. request handlers can be added for specific paths.
     public class HttpServer : MonoBehaviour
     {
         [SerializeField] private int m_httpListenerPort = 40074;
