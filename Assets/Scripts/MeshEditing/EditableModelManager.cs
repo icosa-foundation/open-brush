@@ -134,10 +134,10 @@ namespace TiltBrush.MeshEditing
             }
         }
 
-        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly)
+        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly, Material mat = null)
         {
             var go = widget.GetModelGameObject();
-            var mat = go.GetComponent<MeshRenderer>().material;
+            if (mat == null) mat = widget.m_PolyRecipe.CurrentMaterial;
             var meshData = poly.BuildMeshData(colors: widget.m_PolyRecipe.Colors, colorMethod: widget.m_PolyRecipe.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
             UpdateMesh(go, mesh, mat);
