@@ -42,19 +42,8 @@ namespace TiltBrush.MeshEditing
         public Material[] m_Materials;
         [NonSerialized] public Dictionary<Material, DynamicExportableMaterial> m_ExportableMaterials;
 
-        private PolyRecipe m_CurrentPoly;
-
         // List of widgets that should be updated whenever we rebuild the preview
         public HashSet<EditableModelWidget> LinkedWidgets;
-
-        public static PolyRecipe CurrentPoly
-        {
-            get
-            {
-                return m_Instance.m_CurrentPoly;
-            }
-            set => m_Instance.m_CurrentPoly = value;
-        }
 
         void Awake()
         {

@@ -35,7 +35,7 @@ namespace TiltBrush
 
         public enum ModifyModes
         {
-            GetSettings,
+            GrabSettings,
             ApplySettings,
             ApplyColor,
             ApplyBrushStrokesToFaces,
@@ -192,7 +192,7 @@ namespace TiltBrush
                                 EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe);
                                 break;
 
-                            case ModifyModes.GetSettings:
+                            case ModifyModes.GrabSettings:
                                 polyhydraPanel.LoadFromWidget(ewidget);
                                 break;
 
@@ -201,7 +201,7 @@ namespace TiltBrush
                                 Color color = PointerManager.m_Instance.CalculateJitteredColor(
                                     PointerManager.m_Instance.PointerColor
                                 );
-                                Color[] colors = Enumerable.Repeat(color, EditableModelManager.CurrentPoly.Colors.Length).ToArray();
+                                Color[] colors = Enumerable.Repeat(color, PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors.Length).ToArray();
 
                                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                     new RecolorPolyCommand(ewidget, colors)
@@ -317,6 +317,8 @@ namespace TiltBrush
 
             uint incrementedTime = (uint)(Time.unscaledTime / 1000f);
 
+            var drawnEdges = new Dictionary<(Guid, Guid), int>();
+
             foreach (var (face, faceIndex) in poly.Faces.WithIndex())
             {
                 var controlPoints = new List<PointerManager.ControlPoint>();
@@ -327,9 +329,25 @@ namespace TiltBrush
                     var vert = faceVerts[vertexIndex];
                     var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
 
+                    float lift = 0;
+                    var key = vert.Halfedge.PairedName.Value;
+
+                    if (drawnEdges.ContainsKey(key))
+                    {
+                        // TODO how much lift?
+                        lift = drawnEdges[key] * 0.001f;
+                        drawnEdges[key]++;
+                    }
+                    else
+                    {
+                        drawnEdges[key] = 1;
+                    }
+
+                    Vector3 offsettedVert = vert.Position + vert.Normal * lift;
+
                     for (float step = 0; step < 1f; step += .25f)
                     {
-                        var vertexPos = vert.Position + (nextVert.Position - vert.Position) * step;
+                        var vertexPos = offsettedVert + (nextVert.Position - vert.Position) * step;
                         vertexPos *= tr.scale;
                         vertexPos = tr.rotation * vertexPos;
 

@@ -161,7 +161,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public void Validate()
     {
-        if (EditableModelManager.CurrentPoly.GeneratorType == GeneratorTypes.Uniform)
+        if (m_PolyRecipe.GeneratorType == GeneratorTypes.Uniform)
         {
             if (m_PolyRecipe.Param1Int < 3) { m_PolyRecipe.Param1Int = 3; }
             if (m_PolyRecipe.Param1Int > 16) m_PolyRecipe.Param1Int = 16;
@@ -204,8 +204,8 @@ public class PreviewPolyhedron : MonoBehaviour
     public Color GetFaceColorForStrokes(int faceIndex)
     {
         return m_PolyMesh.CalcFaceColor(
-            EditableModelManager.CurrentPoly.Colors,
-            EditableModelManager.CurrentPoly.ColorMethod,
+            m_PolyRecipe.Colors,
+            m_PolyRecipe.ColorMethod,
             faceIndex
         );
     }
