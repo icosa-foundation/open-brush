@@ -39,6 +39,11 @@ namespace TiltBrush
                 Generated
             }
 
+            public bool IsGenerated()
+            {
+                return type == Type.Generated;
+            }
+
             private Type type;
             private string path;
             private string id; // Only valid when the type is PolyAssetId.
@@ -731,7 +736,10 @@ namespace TiltBrush
             if (m_Valid)
             {
                 // This case is handled properly but it seems wasteful.
-                Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                if (!m_Location.IsGenerated())
+                {
+                    Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                }
             }
 
             List<string> warnings = new List<string>();
