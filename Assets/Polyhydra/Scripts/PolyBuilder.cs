@@ -58,18 +58,14 @@ namespace TiltBrush
 
             switch (emd.GeneratorType)
             {
-                // case GeneratorTypes.GeometryData:
-                //     // TODO simplify face tag data structure
-                //     var faceTags = new List<HashSet<string>>();
-                //     foreach (var t in emd.FaceTags)
-                //     {
-                //         var tagSet = new HashSet<string>(t);
-                //         faceTags.Add(tagSet);
-                //     }
-                //     def = new PolyMesh(emd.Vertices, emd.Faces, emd.FaceRoles, emd.VertexRoles, faceTags);
-                //     break;
+                case GeneratorTypes.GeometryData:
+                    recipe.Vertices = emd.Vertices.ToList();
+                    recipe.Faces = emd.Faces.ToList();
+                    recipe.FaceRoles = emd.FaceRoles.Select(r => (int)r).ToList();
+                    recipe.FaceTags = emd.FaceTags;
+                    break;
                 // case GeneratorTypes.Johnson:
-                //     def.JohnsonPolyType = Convert.ToInt32(p["type"]);
+                //     recipe.JohnsonPolyType = Convert.ToInt32(p["type"]);
                 //     break;
                 case GeneratorTypes.Shapes:
                     recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p["type"]);
