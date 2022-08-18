@@ -1120,7 +1120,7 @@ namespace TiltBrush
             // Widgets must be visible when setting textures
             ShowAllOpControls();
 
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Clear();
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
 
             foreach (var opDict in edef.Operations)
             {

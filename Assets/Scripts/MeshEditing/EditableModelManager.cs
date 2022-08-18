@@ -190,7 +190,8 @@ namespace TiltBrush.MeshEditing
                 widget.Model = model;
                 widget.m_PolyRecipe = polyRecipe;
                 // Force a clone.
-                widget.m_PolyRecipe.Operators = polyRecipe.Operators;
+                // TODO Why doesn't the Operator property assignment do this correctly?
+                widget.m_PolyRecipe.Operators = new List<PreviewPolyhedron.OpDefinition>(polyRecipe.Operators);
                 widget.m_PolyMesh = poly;
                 widget.Show(true);
                 createCommand.SetWidgetCost(widget.GetTiltMeterCost());
