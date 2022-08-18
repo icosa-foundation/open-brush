@@ -49,7 +49,7 @@ namespace TiltBrush
 
         public void CreateGUI()
         {
-            TwoPaneSplitView splitView = new TwoPaneSplitView(0, 250, TwoPaneSplitViewOrientation.Horizontal);
+            TwoPaneSplitView splitView = new TwoPaneSplitView(0, 150, TwoPaneSplitViewOrientation.Horizontal);
 
             // var btn = new Button(DoUpdate);
             // btn.Add(new Label("Refresh"));
@@ -66,16 +66,17 @@ namespace TiltBrush
             m_LeftPane.bindItem = (item, index) =>
             {
                 var widget = m_AllWidgets[index];
-                ((Label)item).text = $"{index}: {widget.m_PolyRecipe.GeneratorType.ToString()}"; ;
+                ((Label)item).text = $"{index}: {widget.m_PolyRecipe.GeneratorType} + {widget.m_PolyRecipe.Operators.Count} ops"; ;
             };
-            m_LeftPane.selectedIndex = m_SelectedIndex;
-            m_LeftPane.onSelectionChange += (items) => { m_SelectedIndex = m_LeftPane.selectedIndex; };
+            m_SelectedIndex = 0;
             DoUpdate();
         }
 
         public void DoUpdate()
         {
             if (!Application.isPlaying) return;
+            m_LeftPane.selectedIndex = m_SelectedIndex;
+            m_LeftPane.onSelectionChange += (items) => { m_SelectedIndex = m_LeftPane.selectedIndex; };
             m_AllWidgets = FindObjectsOfType<EditableModelWidget>();
             m_LeftPane.itemsSource = m_AllWidgets;
             m_LeftPane.RefreshItems();
@@ -84,15 +85,17 @@ namespace TiltBrush
         private void OnWidgetSelectionChange(IEnumerable<object> selectedItems)
         {
             m_RightPane.Clear();
-            var selectedWidget = selectedItems.First() as EditableModelWidget;
-            if (selectedWidget == null) return;
+            var widget = selectedItems.First() as EditableModelWidget;
+            if (widget == null) return;
 
-            EditableModelDefinition emDef = new EditableModelDefinition(PreviewPolyhedron.m_Instance.m_PolyRecipe);
+            EditableModelDefinition emDef = new EditableModelDefinition(widget.m_PolyRecipe);
             var jsonSerializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
             using var stringWriter = new StringWriter();
             using var jsonWriter = new CustomJsonWriter(stringWriter);
             jsonSerializer.Serialize(jsonWriter, emDef);
-            m_RightPane.Add(new Label(stringWriter.ToString()));
+            m_RightPane.Add(new Label($"{m_SelectedIndex} {widget.m_PolyRecipe.GeneratorType} + {widget.m_PolyRecipe.Operators.Count} ops"));
+            m_RightPane.Add(new Label(""));
+            m_RightPane.Add(new Label($"{stringWriter}"));
         }
     }
 }
