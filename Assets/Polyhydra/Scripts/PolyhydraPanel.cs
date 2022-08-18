@@ -974,11 +974,11 @@ namespace TiltBrush
             Color[] colors;
             if (edef.Colors == null || edef.Colors.Length == 0)
             {
-                colors = (Color[])edef.Colors.Clone();
+                colors = (Color[])DefaultColorPalette.Clone();
             }
             else
             {
-                colors = edef.Colors;
+                colors = (Color[])edef.Colors.Clone();
             }
 
             List<string> colorStrings = colors.Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();

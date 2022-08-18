@@ -73,9 +73,7 @@ namespace TiltBrush
             PolyMesh oldPoly = m_PolyMesh;
             PolyMesh newPoly = oldPoly.Duplicate();
             newPoly.ScalingFactor = oldPoly.ScalingFactor;
-            clone.m_PolyRecipe = m_PolyRecipe;
-            // TODO Figure out why the property assignment doesn't break the ref
-            clone.m_PolyRecipe.Operators = new List<PreviewPolyhedron.OpDefinition>(m_PolyRecipe.Operators);
+            clone.m_PolyRecipe = m_PolyRecipe.Clone();
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, m_PolyRecipe.CurrentMaterial);
             return clone;
         }

@@ -298,7 +298,7 @@ public class PreviewPolyhedron : MonoBehaviour
 
         foreach (var widget in EditableModelManager.m_Instance.LinkedWidgets)
         {
-            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe);
+            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe.Clone());
         }
     }
 

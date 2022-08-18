@@ -773,7 +773,7 @@ namespace TiltBrush
             Colors = (Color[])recipe.Colors?.Clone();
         }
 
-        private static List<Dictionary<string, object>> OpsFromRecipe(PolyRecipe recipe)
+        public static List<Dictionary<string, object>> OpsFromRecipe(PolyRecipe recipe)
         {
             var opsDict = new List<Dictionary<string, object>>();
             if (recipe.Operators != null)
@@ -799,7 +799,7 @@ namespace TiltBrush
             return opsDict;
         }
 
-        private static Dictionary<string, object> ParametersFromRecipe(PolyRecipe recipe)
+        public static Dictionary<string, object> ParametersFromRecipe(PolyRecipe recipe)
         {
             var generatorParameters = new Dictionary<string, object>();
 

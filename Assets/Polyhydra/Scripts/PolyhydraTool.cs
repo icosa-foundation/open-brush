@@ -188,7 +188,7 @@ namespace TiltBrush
                         {
                             case ModifyModes.ApplySettings:
                                 var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                                EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe);
+                                EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe.Clone());
                                 break;
 
                             case ModifyModes.GrabSettings:

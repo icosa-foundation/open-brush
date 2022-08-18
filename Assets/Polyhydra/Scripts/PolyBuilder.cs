@@ -33,23 +33,22 @@ namespace TiltBrush
         public float Param1Float;
         public float Param2Float;
         public float Param3Float;
-        private List<PreviewPolyhedron.OpDefinition> _operators;
-        public List<PreviewPolyhedron.OpDefinition> Operators
-        {
-            get => _operators;
-            set => _operators = new List<PreviewPolyhedron.OpDefinition>(value);
-        }
+        public List<PreviewPolyhedron.OpDefinition> Operators;
+
         // Used for all polymeshes
         public int MaterialIndex;
         public ColorMethods ColorMethod;
-        private Color[] _colors;
-        public Color[] Colors
-        {
-            get => _colors;
-            set => _colors = (Color[])value.Clone();
-        }
+        public Color[] Colors;
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
+
+        public PolyRecipe Clone()
+        {
+            var clone = this;
+            clone.Colors = (Color[])Colors.Clone();
+            clone.Operators = new List<PreviewPolyhedron.OpDefinition>(Operators);
+            return clone;
+        }
 
         public static PolyRecipe FromDef(EditableModelDefinition emd)
         {
@@ -188,7 +187,7 @@ namespace TiltBrush
             if (emd.Colors == null || emd.Colors.Length == 0)
             {
                 PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                colors = polyhydraPanel.DefaultColorPalette;
+                colors = (Color[])polyhydraPanel.DefaultColorPalette.Clone();
             }
             else
             {
