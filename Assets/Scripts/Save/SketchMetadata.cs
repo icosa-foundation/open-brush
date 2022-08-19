@@ -421,6 +421,9 @@ namespace TiltBrush
         // Group IDs for widgets. 0 for ungrouped items. Added in M22.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
     }
 
     [Serializable]
@@ -441,6 +444,7 @@ namespace TiltBrush
             public bool Pinned { get; set; }
             // Group ID for widget. 0 for ungrouped items. Added in M22.
             public uint GroupId { get; set; }
+            public int LayerId { get; set; }
         }
 
         // This is the accessor used by Json.NET for reading/writing the "Type" field.
@@ -639,6 +643,8 @@ namespace TiltBrush
         // Group IDs for widgets. 0 for ungrouped items. Added in M22.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
     }
 
     [Serializable]
@@ -659,6 +665,7 @@ namespace TiltBrush
         public float Volume { get; set; }
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
