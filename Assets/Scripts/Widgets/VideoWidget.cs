@@ -166,6 +166,8 @@ namespace TiltBrush
                 videoWidget.PinFromSave();
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
+            videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId));
+
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);
             videoWidget.UpdateScale();
         }
