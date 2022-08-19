@@ -1044,7 +1044,6 @@ namespace TiltBrush
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
-            GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
             GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
