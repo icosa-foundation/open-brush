@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using CSCore.XAudio2.X3DAudio;
-using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class HoverActionButton : ActionButton
+    public class UpdateSelectedModelsToggleButton : ActionToggleButton
     {
-        [SerializeField] private UnityEngine.Events.UnityEvent m_HoverAction;
-        private bool m_IsEmitting = false;
+        private bool m_IsEmitting;
         private ParticleSystem ps;
 
         protected override void Awake()
@@ -43,11 +40,11 @@ namespace TiltBrush
 
         void Update()
         {
-            if (!m_IsEmitting) return;
+            if (!m_IsEmitting || !m_ToggleActive) return;
 
             if (Time.frameCount % 3 != 0) return; // Throttle emission
 
-            foreach (var widget in EditableModelManager.m_Instance.LinkedWidgets)
+            foreach (var widget in PreviewPolyhedron.m_Instance.GetSelectedWidgets())
             {
                 var vector = widget.transform.position - transform.position;
                 var emitParams = new ParticleSystem.EmitParams();

@@ -692,7 +692,7 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers)
+                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
@@ -771,10 +771,16 @@ namespace TiltBrush
                                 PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
                                 recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
                             }
-                            foreach (var tr in model.RawTransforms)
+                            for (var i = 0; i < model.RawTransforms.Length; i++)
                             {
+                                var tr = model.RawTransforms[i];
                                 var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
-                                EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
+                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
+                                if (model.LayerIds != null && i < model.LayerIds.Length)
+                                {
+                                    var canvas = App.Scene.GetOrCreateLayer(model.LayerIds[i]);
+                                    widget.SetCanvas(canvas);
+                                }
                             }
                         }
                     }

@@ -1856,7 +1856,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &61235771753237257
 Transform:
   m_ObjectHideFlags: 0
@@ -2070,7 +2070,7 @@ GameObject:
   - component: {fileID: 7950636509825611922}
   - component: {fileID: 7753213281777987035}
   m_Layer: 16
-  m_Name: Button_LinkedWidgets
+  m_Name: Button_UpdateSelectedToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2155,12 +2155,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Linked 3D Models
+  m_DescriptionText: Update Selected Models
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
-  m_AtlasTexture: 1
+  m_ButtonTexture: {fileID: 0}
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -2174,19 +2174,20 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 114000011608528800}
         m_TargetAssemblyTypeName: TiltBrush.PolyhydraPanel, Assembly-CSharp
-        m_MethodName: HandleUnlinkWidgets
-        m_Mode: 1
+        m_MethodName: HandleUpdateSelectedModelsToggle
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 3153722733485878123}
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.UpdateSelectedModelsToggleButton,
+            Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_HoverAction:
-    m_PersistentCalls:
-      m_Calls: []
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: f1391717815375c489895509a7baffca, type: 3}
 --- !u!65 &8151510745781941552
 BoxCollider:
   m_ObjectHideFlags: 0

@@ -44,8 +44,8 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
-            base.OnButtonPressed();
             ToggleState = !ToggleState;
+            base.OnButtonPressed();
         }
     }
 } // namespace TiltBrush

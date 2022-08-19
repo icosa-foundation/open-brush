@@ -494,6 +494,9 @@ namespace TiltBrush
         // Group IDs for widgets. 0 for ungrouped items.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
     }
 
     [Serializable]

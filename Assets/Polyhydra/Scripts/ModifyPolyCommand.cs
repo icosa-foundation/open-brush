@@ -38,13 +38,13 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            m_Ewidget.m_PolyRecipe = m_NewPolyRecipe;
+            m_Ewidget.m_PolyRecipe = m_NewPolyRecipe.Clone();
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_NewPoly);
         }
 
         protected override void OnUndo()
         {
-            m_Ewidget.m_PolyRecipe = m_PreviousPolyRecipe;
+            m_Ewidget.m_PolyRecipe = m_PreviousPolyRecipe.Clone();
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PreviousPoly);
         }
 

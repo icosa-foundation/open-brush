@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
@@ -28,23 +29,24 @@ namespace TiltBrush
 
         override public GrabWidget Clone()
         {
-            EditableModelWidget clone = Instantiate(WidgetManager.m_Instance.EditableModelWidgetPrefab);
-
-            // TODO everything after here and before var "editableModelId"
-            // is duplicated with ModelWidget.Clone
+            EditableModelWidget clone = EditableModelManager.m_Instance.GeneratePolyMesh(
+                m_PolyMesh,
+                m_PolyRecipe.Clone(),
+                TrTransform.FromLocalTransform(transform)
+            );
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
-            clone.Model = Model;
-            // We're obviously not loading from a sketch.  This is to prevent the intro animation.
-            // TODO: Change variable name to something more explicit of what this flag does.
-            clone.m_LoadingFromSketch = true;
-            clone.Show(true, false);
+
+            PolyMesh oldPoly = m_PolyMesh;
+            PolyMesh newPoly = oldPoly.Duplicate();
+            newPoly.ScalingFactor = oldPoly.ScalingFactor;
+            clone.m_PolyRecipe = m_PolyRecipe.Clone();
+            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, m_PolyRecipe.CurrentMaterial);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(m_Size);
-
+            clone.m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
-
             CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
             if (canvas != null)
             {
@@ -57,24 +59,7 @@ namespace TiltBrush
                     }
                 }
             }
-
-            if (!clone.Model.m_Valid)
-            {
-                App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
-                clone.m_PolyCallbackActive = true;
-            }
-
             clone.TrySetCanvasKeywordsFromObject(transform);
-
-            var polyGo = clone.GetModelGameObject();
-            var col = polyGo.AddComponent<BoxCollider>();
-            col.size = m_BoxCollider.size;
-
-            PolyMesh oldPoly = m_PolyMesh;
-            PolyMesh newPoly = oldPoly.Duplicate();
-            newPoly.ScalingFactor = oldPoly.ScalingFactor;
-            clone.m_PolyRecipe = m_PolyRecipe.Clone();
-            EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, m_PolyRecipe.CurrentMaterial);
             return clone;
         }
 

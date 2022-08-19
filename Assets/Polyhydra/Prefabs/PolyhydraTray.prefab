@@ -781,7 +781,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.size
-      value: 6
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
@@ -831,7 +831,7 @@ PrefabInstance:
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}
       propertyPath: m_Options.Array.data[2].m_Description
-      value: Apply Color
+      value: Apply Current Brush Color
       objectReference: {fileID: 0}
     - target: {fileID: 5569317677073040932, guid: 7a973533d0111dc4e9f1425773a21ba4,
         type: 3}

@@ -1851,7 +1851,9 @@ namespace TiltBrush
         [ContextMenu("Test RefreshOpSelectButtons")]
         private void RefreshOpSelectButtons()
         {
-            bool hasOps = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count > 0;
+            var recipe = PreviewPolyhedron.m_Instance.m_PolyRecipe;
+            bool hasOps = recipe.Operators.Count > 0;
+            CurrentActiveOpIndex = Mathf.Min(CurrentActiveOpIndex, recipe.Operators.Count - 1);
             OpPanel.gameObject.SetActive(hasOps);
             OperatorSelectPopupTools.gameObject.SetActive(hasOps);
 
@@ -1861,12 +1863,12 @@ namespace TiltBrush
             {
                 var btn = btns[i];
                 var btnParent = btn.transform.parent;
-                if (i > PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1)
+                if (i > recipe.Operators.Count - 1)
                 {
                     Destroy(btnParent.gameObject);
                     continue;
                 }
-                var op = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators[i];
+                var op = recipe.Operators[i];
                 btn.OpIndex = i;
                 string opName = op.opType.ToString();
                 btn.SetDescriptionText(LabelFormatter(opName));
@@ -1890,7 +1892,7 @@ namespace TiltBrush
                     OperatorSelectPopupTools.localPosition = popupPos;
                     OperatorSelectPopupTools.localScale = Vector3.one * 0.2f;
                     ToolBtnPrev.gameObject.SetActive(i > 0);
-                    ToolBtnNext.gameObject.SetActive(i < PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1);
+                    ToolBtnNext.gameObject.SetActive(i < recipe.Operators.Count - 1);
                     FriendlyOpLabels.TryGetValue(opName, out string friendlyLabel);
                     SetButtonTextAndIcon(PolyhydraButtonTypes.OperatorType, opName, friendlyLabel);
                 }
@@ -1913,6 +1915,23 @@ namespace TiltBrush
             var mat = PreviewPolyhedron.m_Instance.m_PolyRecipe.CurrentMaterial;
             var mr = PreviewPolyhedron.m_Instance.GetComponent<MeshRenderer>();
             mr.material = mat;
+
+            // TODO
+            // We can do this
+            RebuildPreviewAndLinked();
+
+            // ...which does what we want but also a ton of extra work.
+            // But all we really are missing is this bit
+            // from "AssignMesh":
+            // if (m_UpdateSelectedModels)
+            // {
+            //     foreach (var widget in GetSelectedWidgets())
+            //     {
+            //         EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe.Clone());
+            //     }
+            // }
+            // Probably can refactor to just do the last bit without all the rest
+            // without code duplication?
         }
 
         public void HandleOpMove(int delta)
@@ -1936,9 +1955,9 @@ namespace TiltBrush
             return Path.GetFullPath(App.ShapeRecipesPath()) == Path.GetFullPath(CurrentPresetsDirectory);
         }
 
-        public static void HandleUnlinkWidgets()
+        public void HandleUpdateSelectedModelsToggle(UpdateSelectedModelsToggleButton btn)
         {
-            EditableModelManager.m_Instance.LinkedWidgets.Clear();
+            PreviewPolyhedron.m_Instance.m_UpdateSelectedModels = btn.ToggleState;
         }
 
         public void HandleSetColorMethod(ColorMethods colorMethod)

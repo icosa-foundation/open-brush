@@ -187,6 +187,7 @@ namespace TiltBrush
                 newEntry.xf = widget.GetSaveTransform();
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -203,11 +204,13 @@ namespace TiltBrush
                 val.PinStates = new bool[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
+                    val.LayerIds[i] = ordered[i].layerId;
                 }
                 models.Add(val);
             }

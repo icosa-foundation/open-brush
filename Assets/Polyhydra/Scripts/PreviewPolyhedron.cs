@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
@@ -36,6 +37,7 @@ public class PreviewPolyhedron : MonoBehaviour
     private MeshFilter meshFilter;
     private PolyMesh.MeshData m_MeshData;
     private bool NeedsRebuild;
+    public bool m_UpdateSelectedModels;
 
     private void Awake()
     {
@@ -296,9 +298,12 @@ public class PreviewPolyhedron : MonoBehaviour
             }
         }
 
-        foreach (var widget in EditableModelManager.m_Instance.LinkedWidgets)
+        if (m_UpdateSelectedModels)
         {
-            EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe.Clone());
+            foreach (var widget in GetSelectedWidgets())
+            {
+                EditableModelManager.UpdateWidgetFromPolyMesh(widget, m_PolyMesh, m_PolyRecipe.Clone());
+            }
         }
     }
 
@@ -358,4 +363,14 @@ public class PreviewPolyhedron : MonoBehaviour
 
         return conway;
     }
+
+    public List<EditableModelWidget> GetSelectedWidgets() => SelectionManager
+        .m_Instance
+        .SelectedWidgets
+        .Where(widget =>
+            widget.GetType() == typeof(EditableModelWidget)
+        )
+        .Select(w => w as EditableModelWidget)
+        .ToList();
 }
+

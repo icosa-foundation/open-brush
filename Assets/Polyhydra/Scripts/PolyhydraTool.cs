@@ -39,8 +39,7 @@ namespace TiltBrush
             ApplySettings,
             ApplyColor,
             ApplyBrushStrokesToFaces,
-            ApplyBrushStrokesToEdges,
-            LinkToShapeDesigner
+            ApplyBrushStrokesToEdges
         }
 
         //the parent of all of our tool's visual indicator objects
@@ -219,10 +218,6 @@ namespace TiltBrush
                                     ewidget.m_PolyMesh,
                                     Coords.AsCanvas[ewidget.transform]
                                 );
-                                break;
-
-                            case ModifyModes.LinkToShapeDesigner:
-                                EditableModelManager.m_Instance.LinkedWidgets.Add(ewidget);
                                 break;
                         }
                         AudioManager.m_Instance.PlayDuplicateSound(

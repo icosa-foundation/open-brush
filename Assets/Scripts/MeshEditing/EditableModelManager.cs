@@ -43,9 +43,6 @@ namespace TiltBrush.MeshEditing
         public Material[] m_Materials;
         [NonSerialized] public Dictionary<Material, DynamicExportableMaterial> m_ExportableMaterials;
 
-        // List of widgets that should be updated whenever we rebuild the preview
-        public HashSet<EditableModelWidget> LinkedWidgets;
-
         void Awake()
         {
             // Taking editable model screenshots uses EditableModelManager
@@ -61,7 +58,6 @@ namespace TiltBrush.MeshEditing
 
             m_Instance = this;
 
-            if (LinkedWidgets == null) LinkedWidgets = new HashSet<EditableModelWidget>();
             CreateExportableMaterials();
         }
 
@@ -161,13 +157,13 @@ namespace TiltBrush.MeshEditing
         }
 
 
-        public void GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
+        public EditableModelWidget GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
         {
             var meshData = poly.BuildMeshData(colors: polyRecipe.Colors, colorMethod: polyRecipe.ColorMethod);
-            GeneratePolyMesh(poly, polyRecipe, tr, meshData);
+            return GeneratePolyMesh(poly, polyRecipe, tr, meshData);
         }
 
-        public void GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr, PolyMesh.MeshData meshData)
+        public EditableModelWidget GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr, PolyMesh.MeshData meshData)
         {
             // Create Mesh from PolyMesh
             // var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
@@ -197,6 +193,7 @@ namespace TiltBrush.MeshEditing
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
             }
+            return widget;
         }
 
         public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr)
