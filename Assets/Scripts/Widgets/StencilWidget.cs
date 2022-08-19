@@ -87,6 +87,7 @@ namespace TiltBrush
                     PinFromSave();
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
+                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
             }
         }
 
