@@ -41,6 +41,7 @@ namespace TiltBrush
             ActivateControllers(m_KnucklesControllers, false);
 
             // Enable whatever style is active.
+            // TODO:Mike - check if we need anything for UnityXR
             switch (style)
             {
                 case ControllerStyle.OculusTouch:

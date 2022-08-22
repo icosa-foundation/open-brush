@@ -19,8 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using SimpleJSON;
-using ICSharpCode.SharpZipLibUnityPort.Core;
-using ICSharpCode.SharpZipLibUnityPort.Zip;
+using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
 using static TiltBrush.ExportUtils;
 
 namespace TiltBrush

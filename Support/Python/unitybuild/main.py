@@ -310,7 +310,9 @@ def get_editor_unity_version(editor_app, editor_data_dir):
 
     # I can't find a way to get the version out of 2019.x.
     # This is pretty janky so only use for Jenkins and 2019.
-    for m in re.finditer(r"Unity/(Unity_)?(2019)\.(\d+)\.(\d+)", editor_data_dir):
+    for m in re.finditer(
+        r"Unity/(Unity_)?(2019|2020|2021)\.(\d+)\.(\d+)", editor_data_dir
+    ):
         _, major, minor, point = m.groups()
         ret = (major, minor, point)
         print(
@@ -318,7 +320,9 @@ def get_editor_unity_version(editor_app, editor_data_dir):
             % (editor_data_dir, ret)
         )
         return ret
-    for m in re.finditer(r"Unity/Hub/Editor/(2019)\.(\d+)\.(\d+)", editor_data_dir):
+    for m in re.finditer(
+        r"Unity/Hub/Editor/(2019|2020|2021)\.(\d+)\.(\d+)", editor_data_dir
+    ):
         major, minor, point = m.groups()
         ret = (major, minor, point)
         print(

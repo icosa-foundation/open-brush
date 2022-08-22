@@ -32,23 +32,14 @@ namespace TiltBrush
         [SerializeField] private float m_HapticAmplitudeScale = 1.0f;
 
         [Header("Input Zones")]
-        [SerializeField] private Vector2 m_TriggerActivationRange = new Vector2(0.15f, .8f);
-        [SerializeField] private Vector2 m_GripActivationRange = new Vector2(0.15f, .8f);
         [SerializeField] private Vector2 m_TouchpadActivationRange = new Vector2(-.8f, .8f);
-        [SerializeField] private Vector2 m_LogitechPenActivationRange = new Vector2(0.0f, 1.0f);
         [SerializeField] private float m_WandRotateJoystickPercent = 0.7f;
 
         // VR headsets (e.g., Rift, Vive, Wmr) use different hardware for their controllers,
         // they require a scaled duration for the haptics to be felt in users hand.
-        public float HapticsDurationScale
-        {
-            get { return m_HapticsDurationScale; }
-        }
+        public float HapticsDurationScale => m_HapticsDurationScale;
 
-        public float HapticsAmplitudeScale
-        {
-            get { return m_HapticAmplitudeScale; }
-        }
+        public float HapticsAmplitudeScale => m_HapticAmplitudeScale;
 
         public BaseControllerBehavior GetBehavior(InputManager.ControllerName name)
         {
@@ -59,8 +50,7 @@ namespace TiltBrush
                 case InputManager.ControllerName.Wand:
                     return m_Wand;
                 default:
-                    throw new System.ArgumentException(
-                        string.Format("Unknown controller behavior {0}", name));
+                    throw new System.ArgumentException($"Unknown controller behavior {name}");
             }
         }
 
@@ -92,29 +82,22 @@ namespace TiltBrush
 
         public Vector2 TouchpadActivationRange
         {
-            get { return m_TouchpadActivationRange; }
+            get => m_TouchpadActivationRange;
         }
 
         public float WandRotateJoystickPercent
         {
-            get { return m_WandRotateJoystickPercent; }
-        }
-
-        /// The usable range of the raw grip value.
-        /// This is currently only used as the threshold for analog -> boolean conversion.
-        public Vector2 GripActivationRange
-        {
-            get { return m_GripActivationRange; }
+            get => m_WandRotateJoystickPercent;
         }
 
         public ControllerBehaviorWand Wand
         {
-            get { return m_Wand; }
+            get => m_Wand;
         }
 
         public ControllerBehaviorBrush Brush
         {
-            get { return m_Brush; }
+            get => m_Brush;
         }
 
         public bool LogitechPenIsPresent()
@@ -131,16 +114,6 @@ namespace TiltBrush
                 return false;
             }
             return true;
-        }
-
-        public Vector2 TriggerActivationRange(InputManager.ControllerName name)
-        {
-            var behavior = GetBehavior(name);
-            if (behavior.ControllerGeometry.Style == ControllerStyle.LogitechPen)
-            {
-                return m_LogitechPenActivationRange;
-            }
-            return m_TriggerActivationRange;
         }
 
         /// Enable or disable tracking

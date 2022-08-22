@@ -29,7 +29,7 @@ namespace TiltBrush
         private static TiltBrushManifest brushManifest;
         private static TiltBrushManifest brushManifestX;
 
-        [MenuItem("Tilt/Info/Brush Lister")]
+        [MenuItem("Open Brush/Info/Brush Lister")]
         static void ListBrushes()
         {
             brushList = new StringBuilder();
