@@ -28616,7 +28616,6 @@ GameObject:
   - component: {fileID: 1796800575}
   - component: {fileID: 1796800577}
   - component: {fileID: 1796800571}
-  - component: {fileID: 1796800578}
   m_Layer: 0
   m_Name: SketchControls
   m_TagString: Untagged
@@ -28825,7 +28824,7 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
-  - m_PanelPrefab: {fileID: 1000816559363234, guid: fa1eb8dde798ea54e95ddf4744cc180e,
+  - m_PanelPrefab: {fileID: 1101360102585764085, guid: fa1eb8dde798ea54e95ddf4744cc180e,
       type: 3}
     m_ModeVr: 0
     m_ModeVrExperimental: 0
@@ -29249,49 +29248,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DuplicateOffset: {x: 0.1, y: 1, z: 0.1}
---- !u!114 &1796800578
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796800567}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TrackedObjects:
-  - rid: 6394126504544960541
-  references:
-    version: 2
-    RefIds:
-    - rid: 6394126504544960541
-      type: {class: TrackedMonoBehaviourObject, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
-        asm: Unity.Localization}
-      data:
-        m_Target: {fileID: 1796800570}
-        m_TrackedProperties:
-          items:
-          - rid: 6394126504544960542
-        m_UpdateType: 0
-        m_Changed:
-          m_PersistentCalls:
-            m_Calls: []
-    - rid: 6394126504544960542
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 13240867393536
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_AutosaveFilenamePattern
 --- !u!4 &1798914841 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 54db8f5fcfbb46e44956444a27d43b5a,
@@ -31854,6 +31810,10 @@ PrefabInstance:
     - target: {fileID: 126712, guid: f636b2bdcf1c7f5498e324d362ac1ba8, type: 3}
       propertyPath: m_Name
       value: MainText
+      objectReference: {fileID: 0}
+    - target: {fileID: 2385760, guid: f636b2bdcf1c7f5498e324d362ac1ba8, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3316878, guid: f636b2bdcf1c7f5498e324d362ac1ba8, type: 3}
       propertyPath: m_Mesh

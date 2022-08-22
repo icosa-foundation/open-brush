@@ -186,6 +186,64 @@ MonoBehaviour:
     m_Localized: Loading...
     m_Metadata:
       m_Items: []
+  - m_Id: 5056691860905984
+    m_Localized: 'Unlock
+
+      advanced features'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064085647106048
+    m_Localized: Requires Sign-In
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064369941225472
+    m_Localized: Sketchbook
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064506084139008
+    m_Localized: Save Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065040224559104
+    m_Localized: Upload
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065176065482752
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065289022283776
+    m_Localized: More Options...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065459298443264
+    m_Localized: Accounts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065626072358912
+    m_Localized: Accounts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065710952488960
+    m_Localized: Advanced Mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065842783657984
+    m_Localized: Beginner Mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066003496804352
+    m_Localized: Clear Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066113400152064
+    m_Localized: Clear Sketch?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5067123833151488
+    m_Localized: More Options
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

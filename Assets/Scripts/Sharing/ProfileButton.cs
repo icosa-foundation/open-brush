@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -22,12 +23,40 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_AnonymousTexture;
 
         [SerializeField] private string m_LoggedInText;
+        [SerializeField] private LocalizedString m_LocalizedLoggedInText;
         [SerializeField] private string m_LogInText;
+        [SerializeField] private LocalizedString m_LocalizedLogInText;
 
         // Source of identity - change when we merge VrAssetService & YouTube
         private OAuth2Identity m_Identity;
 
         private const string kIconSizeSuffix = "?sz=128";
+
+        [SerializeField]
+        public string LoggedInText
+        {
+            get
+            {
+                if (m_LocalizedLoggedInText.TableReference != null)
+                {
+                    return m_LocalizedLoggedInText.GetLocalizedString();
+                }
+                return m_LoggedInText;
+            }
+        }
+
+        [SerializeField]
+        public string LogInText
+        {
+            get
+            {
+                if (m_LocalizedLogInText.TableReference != null)
+                {
+                    return m_LocalizedLogInText.GetLocalizedString();
+                }
+                return m_LogInText;
+            }
+        }
 
         override protected void Awake()
         {
@@ -58,7 +87,7 @@ namespace TiltBrush
             OAuth2Identity.UserInfo userInfo = m_Identity.Profile;
             if (userInfo != null)
             {
-                SetDescriptionText(m_LoggedInText);
+                SetDescriptionText(LoggedInText);
                 if (userInfo.icon != null)
                 {
                     SetButtonTexture(userInfo.icon);
@@ -67,7 +96,7 @@ namespace TiltBrush
             else
             {
                 // Go back to anonymous
-                SetDescriptionText(m_LogInText);
+                SetDescriptionText(LogInText);
                 SetButtonTexture(m_AnonymousTexture);
             }
         }

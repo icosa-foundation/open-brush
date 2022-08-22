@@ -179,6 +179,62 @@ MonoBehaviour:
     m_Key: LOADING_SCENE_OVERLAY_MESSAGE
     m_Metadata:
       m_Items: []
+  - m_Id: 5056691860905984
+    m_Key: ADMIN_PANEL_ADVANCED_PROMO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064085647106048
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_LOGGED_OUT_EXTRA_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064369941225472
+    m_Key: ADMIN_PANEL_SKETCHBOOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064506084139008
+    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065040224559104
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065176065482752
+    m_Key: ADMIN_PANEL_SETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065289022283776
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065459298443264
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGGEDIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065626072358912
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065710952488960
+    m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065842783657984
+    m_Key: ADMIN_PANEL_BEGINNER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066003496804352
+    m_Key: ADMIN_PANEL_NEW_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066113400152064
+    m_Key: ADMIN_PANEL_NEW_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5067123833151488
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

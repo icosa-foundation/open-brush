@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -26,12 +27,39 @@ namespace TiltBrush
         [SerializeField] protected bool m_CenterPopupOnButton = false;
         [SerializeField] protected Vector3 m_PopupOffset;
         [SerializeField] protected string m_PopupText = "";
+        [SerializeField] protected LocalizedString m_LocalizedPopup;
         [SerializeField] protected string m_ToggleOnDescription = "";
+        [SerializeField] protected LocalizedString m_LocalizedToggleOnDescription;
         [SerializeField] protected Texture2D m_ToggleOnTexture;
         [SerializeField] protected bool m_AllowUnavailable = false;
         [SerializeField] private GameObject m_LinkedUIObject;
         private string m_DefaultDescription;
         private Texture2D m_DefaultTexture;
+
+        public string ToggleOnDescription
+        {
+            get
+            {
+                if (m_LocalizedToggleOnDescription.TableReference != null)
+                {
+                    return m_LocalizedToggleOnDescription.GetLocalizedString();
+                }
+                return m_ToggleOnDescription;
+            }
+        }
+
+        public string PopupText
+        {
+            get
+            {
+                if (m_LocalizedPopup.TableReference != null)
+                {
+                    return m_LocalizedPopup.GetLocalizedString();
+                }
+                return m_PopupText;
+            }
+        }
+
 
         public void SetCommandParameters(int iCommandParam, int iCommandParam2 = -1)
         {

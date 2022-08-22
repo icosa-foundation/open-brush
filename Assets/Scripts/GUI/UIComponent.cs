@@ -15,6 +15,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -44,6 +45,7 @@ namespace TiltBrush
         [SerializeField] private DescriptionType m_DescriptionType = DescriptionType.Button;
         [SerializeField] protected float m_DescriptionYOffset;
         [SerializeField] protected string m_DescriptionText;
+        [SerializeField] protected LocalizedString m_LocalizedDescription;
         [SerializeField] protected string m_DescriptionTextExtra;
         [SerializeField] protected float m_DescriptionActivateSpeed = 12.0f;
         [SerializeField] protected float m_DescriptionZScale = 1.0f;
@@ -69,7 +71,18 @@ namespace TiltBrush
         protected bool m_HadButtonPress;
 
         public virtual Collider GetCollider() { return m_Collider; }
-        public string Description { get { return m_DescriptionText; } }
+        public string Description
+        {
+            get
+            {
+                if (m_LocalizedDescription.TableReference != null)
+                {
+                    return m_LocalizedDescription.GetLocalizedString();
+                }
+                return m_DescriptionText;
+            }
+        }
+
         public string DescriptionExtra { get { return m_DescriptionTextExtra; } }
         public bool IsDescriptionActive()
         {
@@ -135,6 +148,12 @@ namespace TiltBrush
             {
                 m_DescriptionScript.AdjustDescriptionScale();
             }
+        }
+
+        private void OnLocaleChanged(UnityEngine.Localization.Locale locale)
+        {
+            Debug.Log($"locale changed! {Description}");
+            SetDescriptionText(Description, DescriptionExtra);
         }
 
         virtual public void SetColor(Color rColor) { }
