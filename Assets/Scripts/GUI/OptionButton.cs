@@ -121,9 +121,9 @@ namespace TiltBrush
                     {
                         SetButtonActivated(true);
 
-                        if (m_ToggleOnDescription != "")
+                        if (ToggleOnDescription != "")
                         {
-                            SetDescriptionText(m_ToggleOnDescription);
+                            SetDescriptionText(ToggleOnDescription);
                         }
                         if (m_ToggleOnTexture != null)
                         {
@@ -134,7 +134,7 @@ namespace TiltBrush
                     {
                         SetButtonActivated(false);
 
-                        if (m_ToggleOnDescription != "")
+                        if (ToggleOnDescription != "")
                         {
                             SetDescriptionText(m_DefaultDescription);
                         }
@@ -171,7 +171,7 @@ namespace TiltBrush
                     if (panel != null)
                     {
                         panel.CreatePopUp(m_Command, m_CommandParam, m_CommandParam2, m_PopupOffset,
-                            m_PopupText);
+                            PopupText);
                         if (m_CenterPopupOnButton)
                         {
                             panel.PositionPopUp(transform.position +

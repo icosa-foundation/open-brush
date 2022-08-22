@@ -244,6 +244,106 @@ MonoBehaviour:
     m_Localized: More Options
     m_Metadata:
       m_Items: []
+  - m_Id: 5142890986315776
+    m_Localized: Tools
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143299389890560
+    m_Localized: Eraser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143517279789056
+    m_Localized: Dropper
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143592097783808
+    m_Localized: Repaint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143682283708416
+    m_Localized: Cameras
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143754866139136
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143817222856704
+    m_Localized: Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143986307833856
+    m_Localized: Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144088976007168
+    m_Localized: Straightedge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144159373205504
+    m_Localized: Fly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144350784462848
+    m_Localized: More Tools...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144456485117952
+    m_Localized: Snip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144771179552768
+    m_Localized: Group Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145130421690368
+    m_Localized: Flip Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145273980133376
+    m_Localized: Select All
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145342544420864
+    m_Localized: Invert Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145561143156736
+    m_Localized: Recolor Off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145968804339712
+    m_Localized: Ungroup Selection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146654665318400
+    m_Localized: Resize On
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146583311818752
+    m_Localized: Resize Off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146868541267968
+    m_Localized: Rebrush Off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146944894377984
+    m_Localized: Rebrush On
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147011692863488
+    m_Localized: Jitter Off
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147092923949056
+    m_Localized: Jitter On
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5148146801549312
+    m_Localized: More Tools
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

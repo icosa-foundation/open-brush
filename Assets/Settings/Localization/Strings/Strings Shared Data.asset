@@ -235,6 +235,110 @@ MonoBehaviour:
     m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 5142890986315776
+    m_Key: ADVANCEDTOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143299389890560
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143517279789056
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143592097783808
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143682283708416
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143754866139136
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143817222856704
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143986307833856
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144088976007168
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144159373205504
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_FLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144350784462848
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144456485117952
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144771179552768
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_GROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145130421690368
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_FLIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145273980133376
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145342544420864
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_INVERT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145561143156736
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145968804339712
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_UNGROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146583311818752
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146654665318400
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146868541267968
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146944894377984
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147011692863488
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147092923949056
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5148146801549312
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
