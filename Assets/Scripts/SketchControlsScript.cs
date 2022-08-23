@@ -316,6 +316,10 @@ namespace TiltBrush
         [SerializeField] string m_PrivacyURL;
         [SerializeField] string m_QuestSideLoadingHowToURL;
 
+        [Multiline]
+        [SerializeField] string m_ContributionPromoText;
+        [SerializeField] string m_DonationURL;
+
         [SerializeField] float m_WorldTransformMinScale = .1f;
         [SerializeField] float m_WorldTransformMaxScale = 10.0f;
 
@@ -4706,6 +4710,13 @@ namespace TiltBrush
                     CameraConfig.PostEffects = !CameraConfig.PostEffects;
                     break;
                 case GlobalCommands.ToggleWatermark:
+                    if (PlayerPrefs.GetInt("Promo_Contribution", 0) == 0)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Wand,
+                            m_ContributionPromoText, fPopScalar: 1.0f);
+                        PlayerPrefs.SetInt("Promo_Contribution", 1);
+                    }
                     CameraConfig.Watermark = !CameraConfig.Watermark;
                     break;
                 case GlobalCommands.LoadConfirmComplexHigh:
