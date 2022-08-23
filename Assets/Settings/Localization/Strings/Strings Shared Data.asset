@@ -367,6 +367,22 @@ MonoBehaviour:
     m_Key: BACKDROP_PANEL_UNLOCKSKBOX_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 5335779313950720
+    m_Key: BRUSH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335959689994240
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5336069865971712
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5337337812459520
+    m_Key: BRUSH_PANEL_MORE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
