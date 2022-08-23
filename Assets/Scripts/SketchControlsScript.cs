@@ -141,6 +141,7 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            ShowContribution,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -318,7 +319,7 @@ namespace TiltBrush
 
         [Multiline]
         [SerializeField] string m_ContributionPromoText;
-        [SerializeField] string m_DonationURL;
+        [SerializeField] string m_ContributionURL;
 
         [SerializeField] float m_WorldTransformMinScale = .1f;
         [SerializeField] float m_WorldTransformMaxScale = 10.0f;
@@ -4847,6 +4848,16 @@ namespace TiltBrush
                             kRemoveHeadsetFyi, fPopScalar: 0.5f);
                     }
                     App.OpenURL(m_QuestSideLoadingHowToURL);
+                    break;
+                case GlobalCommands.ShowContribution:
+                    EatGazeObjectInput();
+                    if (!App.Config.IsMobileHardware)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush,
+                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
+                    }
+                    App.OpenURL(m_ContributionURL);
                     break;
                 case GlobalCommands.UnloadReferenceImageCatalog:
                     ReferenceImageCatalog.m_Instance.UnloadAllImages();
