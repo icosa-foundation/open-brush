@@ -344,6 +344,34 @@ MonoBehaviour:
     m_Localized: More Tools
     m_Metadata:
       m_Items: []
+  - m_Id: 5322973046874112
+    m_Localized: Backdrop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324587094745088
+    m_Localized: Fog
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324999763927040
+    m_Localized: Sky
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325291863646208
+    m_Localized: Density
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325700112031744
+    m_Localized: Fog Color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5329997507829760
+    m_Localized: color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5330470583377920
+    m_Localized: Switch to Custom Sky
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

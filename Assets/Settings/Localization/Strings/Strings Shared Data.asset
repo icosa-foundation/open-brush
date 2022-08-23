@@ -339,6 +339,34 @@ MonoBehaviour:
     m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 5322973046874112
+    m_Key: BACKDROP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324587094745088
+    m_Key: BACKDROP_PANEL_FOG_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324999763927040
+    m_Key: BACKDROP_PANEL_SKYBOX_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325291863646208
+    m_Key: BACKDROP_PANEL_FOGDENSITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325700112031744
+    m_Key: BACKDROP_PANEL_FOGCOLOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5329997507829760
+    m_Key: BACKDROP_PANEL_SKYBOX_COLOR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5330470583377920
+    m_Key: BACKDROP_PANEL_UNLOCKSKBOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
