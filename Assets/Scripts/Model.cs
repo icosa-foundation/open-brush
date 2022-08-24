@@ -692,8 +692,29 @@ namespace TiltBrush
 
         public void CalcBoundsGltf(GameObject go)
         {
-            // TODO
-            m_MeshBounds = new Bounds(go.transform.position, Vector3.one);
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
+            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x=>x.bounds));
+            foreach (Bounds bounds in boundsList)
+            {
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+            m_MeshBounds = b;
+            if (first)
+            {
+                // There was no geometry
+                Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
+            }
         }
 
         private void CalcBoundsNonGltf(GameObject go)
