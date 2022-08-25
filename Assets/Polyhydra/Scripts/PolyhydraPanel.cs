@@ -270,16 +270,17 @@ namespace TiltBrush
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = value.z;
             RebuildPreviewAndLinked();
         }
-        private void RebuildPreviewAndLinked()
-        {
-            PreviewPolyhedron.m_Instance.RebuildPoly();
-        }
 
         public void HandleSlider3(Vector3 value)
         {
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = value.z;
             RebuildPreviewAndLinked();
+        }
+
+        private void RebuildPreviewAndLinked()
+        {
+            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         public void HandleOpAmountSlider(Vector3 value)
@@ -606,7 +607,7 @@ namespace TiltBrush
 
                 case PolyhydraMainCategories.Various:
 
-                    switch (VariousToOther(PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType))
+                    switch (m_OtherSolidsCategory)
                     {
                         case OtherSolidsCategories.Polygon:
                             Slider1.gameObject.SetActive(true);
@@ -757,26 +758,9 @@ namespace TiltBrush
 
                     break;
             }
-            Slider1.UpdateValue(Slider1.GetCurrentValue());
-            Slider2.UpdateValue(Slider2.GetCurrentValue());
-        }
-
-        private OtherSolidsCategories VariousToOther(VariousSolidTypes variousSolidsType)
-        {
-            switch (variousSolidsType)
-            {
-                case VariousSolidTypes.Box:
-                    return OtherSolidsCategories.Box;
-                case VariousSolidTypes.Stairs:
-                    return OtherSolidsCategories.Stairs;
-                case VariousSolidTypes.UvSphere:
-                    return OtherSolidsCategories.UvSphere;
-                case VariousSolidTypes.UvHemisphere:
-                    return OtherSolidsCategories.UvHemisphere;
-                case VariousSolidTypes.Torus:
-                    return OtherSolidsCategories.Torus;
-            }
-            throw new InvalidOperationException();
+            Slider1.UpdateValueAbsolute(Slider1.GetCurrentValue());
+            Slider2.UpdateValueAbsolute(Slider2.GetCurrentValue());
+            Slider3.UpdateValueAbsolute(Slider3.GetCurrentValue());
         }
 
         public static void CreateWidgetForPolyhedron(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
