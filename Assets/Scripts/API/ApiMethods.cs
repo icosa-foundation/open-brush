@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using UnityEngine;
 
 namespace TiltBrush
@@ -330,12 +329,6 @@ namespace TiltBrush
         {
             Debug.Log($"Brush position: {ApiManager.Instance.BrushPosition}");
             Debug.Log($"Brush rotation: {ApiManager.Instance.BrushRotation.eulerAngles}");
-        }
-
-        [ApiEndpoint("model.import", "Imports a model given a url, a filename in Media Library\\Models or Google Poly ID")]
-        public static void ImportModel(string location)
-        {
-            _ImportModel(location, false);
         }
 
         private static ReferenceImage _LoadReferenceImage(string location)

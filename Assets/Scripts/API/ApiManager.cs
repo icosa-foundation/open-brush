@@ -403,7 +403,6 @@ namespace TiltBrush
                 return endpoint.Invoke(parameters)?.ToString();
             }
             Debug.LogError($"Invalid API command: {command.Command}");
-
             return null;
         }
 
