@@ -499,16 +499,13 @@ namespace TiltBrush
 
         void LoadGltf(List<string> warnings)
         {
-            // This is intended to be identical to using GltfModelBuilder, except synchronous.
-            GameObject go;
             string localPath = m_Location.AbsolutePath;
             string assetLocation = Path.GetDirectoryName(localPath);
-            // Synchronous, so don't use slow image loading
             try
             {
                 ImportGltfast.StartSyncImport(
                     localPath,
-                    new ImportMaterialCollector(assetLocation, uniqueSeed: localPath),
+                    assetLocation,
                     this,
                     warnings
                 );
@@ -516,8 +513,6 @@ namespace TiltBrush
             catch (Exception ex)
             {
                 m_LoadError = new LoadError("Invalid data", ex.Message);
-                go = null;
-                m_AllowExport = false;
                 Debug.LogException(ex);
             }
         }

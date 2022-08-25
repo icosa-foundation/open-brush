@@ -53,24 +53,35 @@ namespace TiltBrush
 
         public static async void StartSyncImport(
             string localPath,
-            ImportMaterialCollector importMaterialCollector,
+            string assetLocation,
             Model model,
             List<string> warnings)
         {
-            
             var gltf = new GltfImport();
-            var success = await gltf.Load(localPath);
+            var importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+            bool success = await gltf.Load(localPath);
             var go = new GameObject();
             if (success) {
                 gltf.InstantiateMainScene(go.transform);
                 var result = new GltfImportResult();
                 result.root = go;
                 result.materialCollector = importMaterialCollector;
-                model.CalcBoundsGltf(go);
-                model.EndCreatePrefab(go, warnings);
             } else {
-                Debug.LogError("Loading glTF failed!");
+                // Fall back to the older import code
+                var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+
+                var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
+                var importOptions = new GltfImportOptions
+                {
+                    rescalingMode = GltfImportOptions.RescalingMode.CONVERT,
+                    scaleFactor = App.METERS_TO_UNITS,
+                    recenter = false
+                };
+                ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+                go = result.root;
             }
+            model.CalcBoundsGltf(go);
+            model.EndCreatePrefab(go, warnings);
         }
     }
 }
