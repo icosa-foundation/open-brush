@@ -175,55 +175,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GenerateSubmeshes: 0
   RebuildSkipFrames: 4
-  UniformPolyType: 5
-  RadialPolyType: 0
-  VariousSolidsType: 0
-  ShapeType: 0
-  GridType: 0
-  GridShape: 0
-  Param1Int: 1
-  Param2Int: 1
-  Param3Int: 1
-  Param1Float: 1
-  Param2Float: 1
-  Param3Float: 1
   SafeLimits: 0
   SymmetryWidgetMaterial: {fileID: 2100000, guid: d8c8bb0576ffd75428fca1625a6cc9e3,
     type: 2}
-  Operators:
-  - opType: 0
-    amount: 0
-    amountRandomize: 0
-    amount2: 0
-    amount2Randomize: 0
-    disabled: 0
-    filterType: 0
-    filterParamFloat: 0
-    filterParamInt: 0
-    paramColor: {r: 0, g: 0, b: 0, a: 0}
-    filterNot: 0
-  - opType: 0
-    amount: 0
-    amountRandomize: 0
-    amount2: 0
-    amount2Randomize: 0
-    disabled: 0
-    filterType: 0
-    filterParamFloat: 0
-    filterParamInt: 0
-    paramColor: {r: 0, g: 0, b: 0, a: 0}
-    filterNot: 0
-  - opType: 0
-    amount: 0
-    amountRandomize: 0
-    amount2: 0
-    amount2Randomize: 0
-    disabled: 0
-    filterType: 0
-    filterParamFloat: 0
-    filterParamInt: 0
-    paramColor: {r: 0, g: 0, b: 0, a: 0}
-    filterNot: 0
+  m_ErrorMesh: {fileID: 4300000, guid: 793b0c4790e0a1645977c07a1f99a01d, type: 3}
+  m_UpdateSelectedModels: 0
 --- !u!1 &8926346732728584422
 GameObject:
   m_ObjectHideFlags: 0

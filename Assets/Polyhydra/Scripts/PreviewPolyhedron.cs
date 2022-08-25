@@ -33,6 +33,7 @@ public class PreviewPolyhedron : MonoBehaviour
     public PolyMesh m_PolyMesh;
     public PolyRecipe m_PolyRecipe;
     public Material SymmetryWidgetMaterial;
+    public Mesh m_ErrorMesh;
 
     private MeshFilter meshFilter;
     private PolyMesh.MeshData m_MeshData;
@@ -213,7 +214,7 @@ public class PreviewPolyhedron : MonoBehaviour
     }
 
     // This is a helper coroutine
-    IEnumerator RunOffMainThread(Action toRun, Action callback)
+    IEnumerator RunOffMainThread(Action toRun, Action callback, Action errorCallback)
     {
         if (m_BuildMeshThread != null && m_BuildMeshThread.IsAlive)
         {
@@ -246,6 +247,7 @@ public class PreviewPolyhedron : MonoBehaviour
         if (error)
         {
             OutputWindowScript.Error("Error: Failed to Build Shape");
+            errorCallback();
         }
         else
         {
@@ -260,7 +262,7 @@ public class PreviewPolyhedron : MonoBehaviour
             Debug.LogWarning("Coroutine already exists. Aborting.");
             return;
         }
-        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyHedron, AssignMesh));
+        m_BuildMeshCoroutine = StartCoroutine(RunOffMainThread(DoMakePolyHedron, AssignMesh, FailedMakePolyhedron));
     }
 
     public void ImmediateMakePolyhedron()
@@ -272,6 +274,13 @@ public class PreviewPolyhedron : MonoBehaviour
     private void DoMakePolyHedron()
     {
         (m_PolyMesh, m_MeshData) = PolyBuilder.BuildFromPolyDef(m_PolyRecipe);
+    }
+
+    private void FailedMakePolyhedron()
+    {
+        m_BuildMeshCoroutine = null;
+        meshFilter.mesh = m_ErrorMesh;
+        transform.localScale = Vector3.one;
     }
 
     private void AssignMesh()
