@@ -51,7 +51,11 @@ namespace TiltBrush
             m_safeMax = safeMax;
             m_unsafeMax = unsafeMax;
             m_SafeLimits = true;
-
+            if (m_CurrentValue > safeMax)
+            {
+                m_CurrentValue = safeMax;
+                SetSliderPositionToReflectValue();
+            }
         }
 
         public void SetMin(float safeMin, float unsafeMin)
@@ -60,6 +64,11 @@ namespace TiltBrush
             m_safeMin = safeMin;
             m_unsafeMin = unsafeMin;
             m_SafeLimits = true;
+            if (m_CurrentValue < safeMin)
+            {
+                m_CurrentValue = safeMin;
+                SetSliderPositionToReflectValue();
+            }
         }
 
         [SerializeField] private TextMeshPro minText;
