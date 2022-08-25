@@ -691,7 +691,7 @@ namespace TiltBrush
             bool first = true;
             var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
             var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
-            boundsList.AddRange(skinnedMeshRenderers.Select(x=>x.bounds));
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
             foreach (Bounds bounds in boundsList)
             {
                 if (first)
@@ -766,7 +766,7 @@ namespace TiltBrush
 
             m_Valid = true;
             DisplayWarnings(warnings);
-            
+
         }
 
         public void UnloadModel()

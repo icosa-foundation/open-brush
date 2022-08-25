@@ -33,7 +33,8 @@ namespace TiltBrush
                 unityFromGltf = AxisConvention.GetToUnity(axes);
             }
 
-            public void Dispose() {
+            public void Dispose()
+            {
                 // if (root != null) { root.Dispose(); }
             }
         }
@@ -43,7 +44,7 @@ namespace TiltBrush
             public GameObject root;
             public ImportMaterialCollector materialCollector;
         }
-        
+
         public static GltfImportResult EndAsyncImport(ImportState state)
         {
             var result = new GltfImportResult();
@@ -61,12 +62,15 @@ namespace TiltBrush
             var importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             bool success = await gltf.Load(localPath);
             var go = new GameObject();
-            if (success) {
+            if (success)
+            {
                 gltf.InstantiateMainScene(go.transform);
                 var result = new GltfImportResult();
                 result.root = go;
                 result.materialCollector = importMaterialCollector;
-            } else {
+            }
+            else
+            {
                 // Fall back to the older import code
                 var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
 
