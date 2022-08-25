@@ -33,7 +33,7 @@ namespace TiltBrush
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
         public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
-        
+
         public int NumMeshes
         {
             get { return m_MeshChildren.Length + m_SkinnedMeshChildren.Length; }
@@ -78,7 +78,7 @@ namespace TiltBrush
             {
                 filters.Add(meshFilter);
             }
-            
+
             var smr = t.GetComponent<SkinnedMeshRenderer>();
             if (smr != null && smr.sharedMesh != null)
             {
