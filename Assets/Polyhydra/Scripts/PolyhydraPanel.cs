@@ -959,12 +959,12 @@ namespace TiltBrush
             LoadFromDefinition(edef);
         }
 
-        public void LoadFromDefinition(EditableModelDefinition edef)
+        public void LoadFromDefinition(EditableModelDefinition emd)
         {
             void setSlidersFromGeneratorParams(List<string> names)
             {
                 if (names.Count == 0) return;
-                var sliderParamValues = names.Select(n => Convert.ToSingle(edef.GeneratorParameters[n])).ToList();
+                var sliderParamValues = names.Select(n => Convert.ToSingle(emd.GeneratorParameters[n])).ToList();
 
                 Slider1.UpdateValueAbsolute(sliderParamValues[0]);
                 if (sliderParamValues.Count == 1) return;
@@ -977,20 +977,20 @@ namespace TiltBrush
 
             // If no colors are supplied then use the current palette
             Color[] colors;
-            if (edef.Colors == null || edef.Colors.Length == 0)
+            if (emd.Colors == null || emd.Colors.Length == 0)
             {
                 colors = (Color[])DefaultColorPalette.Clone();
             }
             else
             {
-                colors = (Color[])edef.Colors.Clone();
+                colors = (Color[])emd.Colors.Clone();
             }
             List<string> colorStrings = colors.Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();
             SetColorsToPalette(colorStrings);
-            HandleSetColorMethod(edef.ColorMethod);
-            SetMaterial(edef.MaterialIndex);
+            HandleSetColorMethod(emd.ColorMethod);
+            SetMaterial(emd.MaterialIndex);
 
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = edef.GeneratorType;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = emd.GeneratorType;
 
             var sliderParamNames = new List<string>();
 
@@ -999,22 +999,22 @@ namespace TiltBrush
             // Widgets must be visible when setting textures
             ShowAllGeneratorControls();
 
-            switch (edef.GeneratorType)
+            switch (emd.GeneratorType)
             {
                 case GeneratorTypes.FileSystem:
                 case GeneratorTypes.ConwayString:
                 case GeneratorTypes.Johnson:
-                    Debug.LogError($"Preset has unsupported generator type: {edef.GeneratorType}");
+                    Debug.LogError($"Preset has unsupported generator type: {emd.GeneratorType}");
                     break;
                 case GeneratorTypes.Grid:
                     m_CurrentMainCategory = PolyhydraMainCategories.Grids;
-                    PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(edef.GeneratorParameters["type"]);
-                    PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(edef.GeneratorParameters["shape"]);
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(emd.GeneratorParameters["shape"]);
                     sliderParamNames = new List<string> { "x", "y" };
                     break;
                 case GeneratorTypes.Shapes:
                     m_CurrentMainCategory = PolyhydraMainCategories.Various;
-                    PreviewPolyhedron.m_Instance.m_PolyRecipe.ShapeType = (ShapeTypes)Convert.ToInt32(edef.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.ShapeType = (ShapeTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
                     switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.ShapeType)
                     {
                         case ShapeTypes.Polygon:
@@ -1056,7 +1056,7 @@ namespace TiltBrush
                     break;
                 case GeneratorTypes.Various:
                     m_CurrentMainCategory = PolyhydraMainCategories.Various;
-                    PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(edef.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(emd.GeneratorParameters["type"]);
                     switch (PreviewPolyhedron.m_Instance.m_PolyRecipe.VariousSolidsType)
                     {
                         case VariousSolidTypes.Box:
@@ -1088,7 +1088,7 @@ namespace TiltBrush
                     break;
                 case GeneratorTypes.Radial:
                     m_CurrentMainCategory = PolyhydraMainCategories.Radial;
-                    PreviewPolyhedron.m_Instance.m_PolyRecipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(edef.GeneratorParameters["type"]);
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(emd.GeneratorParameters["type"]);
                     sliderParamNames = new List<string> { "sides", "height", "capheight" };
                     break;
                 case GeneratorTypes.Waterman:
@@ -1096,7 +1096,7 @@ namespace TiltBrush
                     sliderParamNames = new List<string> { "root", "c" };
                     break;
                 case GeneratorTypes.Uniform:
-                    int subtypeID = Convert.ToInt32(edef.GeneratorParameters["type"]);
+                    int subtypeID = Convert.ToInt32(emd.GeneratorParameters["type"]);
                     var uniformType = Uniform.Uniforms[subtypeID];
                     if (Uniform.Platonic.Contains(uniformType))
                     {
@@ -1125,7 +1125,7 @@ namespace TiltBrush
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
 
-            foreach (var opDict in edef.Operations)
+            foreach (var opDict in emd.Operations)
             {
                 var newOp = new PreviewPolyhedron.OpDefinition
                 {
