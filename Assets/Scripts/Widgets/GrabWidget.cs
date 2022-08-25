@@ -68,6 +68,8 @@ namespace TiltBrush
         public float m_GrabDistance;
         public float m_CollisionRadius = 1.2f;
 
+        public CanvasScript m_previousCanvas;
+
         [SerializeField] private bool m_AllowTwoHandGrab = false;
         [SerializeField] private bool m_DestroyOnHide = false;
         [SerializeField] private bool m_AllowHideWithToss = false;

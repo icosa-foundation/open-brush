@@ -112,13 +112,7 @@ namespace TiltBrush.Layers
         public void SetActiveLayer(GameObject widget)
         {
             var newActiveCanvas = GetCanvasFromWidget(widget);
-            // If we don't clear the selection now,
-            //  when the user deselects later, the selected items are moved to the current layer.
-            // which is more confusing than just dropping the selection.
-            var deselectCommand = SelectionManager.m_Instance.CreateEndSelectionCommand();
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(deselectCommand);
-            var activateLayerCommand = new ActivateLayerCommand(newActiveCanvas);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(activateLayerCommand);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
         }
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)

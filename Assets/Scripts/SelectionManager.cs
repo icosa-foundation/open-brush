@@ -632,6 +632,7 @@ namespace TiltBrush
                     continue;
                 }
 
+                stroke.m_PreviousCanvas = stroke.Canvas;
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
 
@@ -659,7 +660,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                stroke.SetParentKeepWorldPosition(App.ActiveCanvas, SelectionTransform);
+                stroke.SetParentKeepWorldPosition(stroke.m_PreviousCanvas, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
@@ -696,6 +697,7 @@ namespace TiltBrush
                 Debug.LogWarning("Attempted to select widget that is already selected.");
                 return;
             }
+            widget.m_previousCanvas = widget.Canvas;
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
@@ -719,7 +721,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                widget.SetCanvas(App.ActiveCanvas);
+                widget.SetCanvas(widget.m_previousCanvas);
                 widget.RestoreGameObjectLayer(App.ActiveCanvas.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
