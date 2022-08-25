@@ -80,15 +80,8 @@ namespace TiltBrush
             }
 
             var smr = t.GetComponent<SkinnedMeshRenderer>();
-            if (smr != null && smr.sharedMesh != null)
-            {
-                smrs.Add(smr);
-            }
-
-            foreach (Transform child in t)
-            {
-                GetAllMeshes(filters, smrs, child, isRoot: false);
-            }
+            if (smr != null && smr.sharedMesh != null) smrs.Add(smr);
+            foreach (Transform child in t) GetAllMeshes(filters, smrs, child, isRoot: false);
         }
 
         public void Init()
