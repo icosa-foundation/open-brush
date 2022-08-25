@@ -84,7 +84,7 @@ namespace TiltBrush
 
         public List<GameObject> MonoscopicOnlyButtons;
 
-        public int CurrentActiveOpIndex;
+        public int CurrentActiveOpIndex = -1;
         public Transform OperatorSelectButtonParent;
         public Transform OperatorSelectButtonPrefab;
         public Transform OperatorSelectPopupTools;
@@ -433,6 +433,11 @@ namespace TiltBrush
         {
             BaseUpdate();
             m_PreviewAttachPoint.Rotate(0, 0.25f, 0);
+            if (PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count > 0 && CurrentActiveOpIndex > PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1)
+            {
+                Debug.LogError($"Mismatch between {CurrentActiveOpIndex} and Operators.Count: {PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count}");
+                CurrentActiveOpIndex = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1;
+            }
         }
 
         public void SetMainButtonVisibility()
@@ -980,10 +985,8 @@ namespace TiltBrush
             {
                 colors = (Color[])edef.Colors.Clone();
             }
-
             List<string> colorStrings = colors.Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();
             SetColorsToPalette(colorStrings);
-
             HandleSetColorMethod(edef.ColorMethod);
             SetMaterial(edef.MaterialIndex);
 
@@ -1165,6 +1168,11 @@ namespace TiltBrush
 
                 PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Add(newOp);
                 AddOpButton();
+            }
+
+            if (CurrentActiveOpIndex > PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1)
+            {
+                CurrentActiveOpIndex = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1;
             }
 
             RefreshOpSelectButtons();
@@ -1413,8 +1421,11 @@ namespace TiltBrush
 
         public void ChangeCurrentOpType(string operationName)
         {
-            var ops = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators;
-            var op = ops[CurrentActiveOpIndex];
+            var op = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators[CurrentActiveOpIndex];
+            if (CurrentActiveOpIndex > PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count - 1)
+            {
+                Debug.LogWarning($"CurrentActiveOpIndex: {CurrentActiveOpIndex} and Operators.Count: {PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Count}");
+            }
             op.opType = (PolyMesh.Operation)Enum.Parse(typeof(PolyMesh.Operation), operationName);
 
             OpConfig opConfig = OpConfigs.Configs[op.opType];
@@ -1422,8 +1433,7 @@ namespace TiltBrush
 
             op.amount = opConfig.amountDefault;
             op.amount2 = opConfig.amount2Default;
-            ops[CurrentActiveOpIndex] = op;
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators = ops;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators[CurrentActiveOpIndex] = op;
 
             RefreshOpSelectButtons();
             ConfigureOpPanel(op);
