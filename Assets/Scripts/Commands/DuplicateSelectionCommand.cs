@@ -71,7 +71,7 @@ namespace TiltBrush
             {
                 SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
             }
-            
+
             // Deselect selected widgets.
             if (m_SelectedWidgets != null)
             {
