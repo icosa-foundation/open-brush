@@ -34,6 +34,7 @@ namespace TiltBrush
                 m_PolyRecipe.Clone(),
                 TrTransform.FromLocalTransform(transform)
             );
+            clone.m_previousCanvas = m_previousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
 
