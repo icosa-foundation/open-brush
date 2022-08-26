@@ -50,7 +50,7 @@ namespace TiltBrush
                         case BoundsTypes.Gaps:
                             // TODO
                             return (s.m_BatchSubset.m_Bounds.center[m_Axis], (object)s);
-                        default:
+                        default: // Center
                             return (s.m_BatchSubset.m_Bounds.center[m_Axis], (object)s);
                     }
                 }));
