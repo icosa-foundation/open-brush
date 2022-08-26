@@ -1211,7 +1211,7 @@ namespace TiltBrush
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
                 var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
-                Quaternion nearestSnapRotation_CS = QuantizeAngle(rot_CS);
+                Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
 
                 float snapAngle = SelectionManager.m_Instance.SnappingAngle;
                 float stickiness = m_ValidSnapRotationStickyAngle / 90f;
@@ -1236,35 +1236,11 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SnapToGrid(outXf_GS.translation);
+                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid(outXf_GS.translation);
             }
 
             return outXf_GS;
         }
-
-        private Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
-            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
-        }
-
-        public static Vector3 SnapToGrid(Vector3 position)
-        {
-            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
-            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
-            Vector3 roundedCanvasPos = new Vector3(
-                round(localCanvasPos.x),
-                round(localCanvasPos.y),
-                round(localCanvasPos.z)
-            );
-            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
-        }
-
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {
