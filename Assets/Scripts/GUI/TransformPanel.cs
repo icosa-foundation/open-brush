@@ -99,7 +99,6 @@ namespace TiltBrush
         
         private void SetActiveTransform(TrTransform tr)
         {
-            TrTransform activeTr = TrTransform.identity;
             if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
             {
                 m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
@@ -147,25 +146,54 @@ namespace TiltBrush
                     break;
                 
                 case TransformPanelToggleType.LockSnapTranslateX:
-                    SelectionManager.m_Instance.m_LockSnapTranslationX = btn.ToggleState;
+                    SelectionManager.m_Instance.m_EnableSnapTranslationX = btn.ToggleState;
                     break;
                 case TransformPanelToggleType.LockSnapTranslateY:
-                    SelectionManager.m_Instance.m_LockSnapTranslationY = btn.ToggleState;
+                    SelectionManager.m_Instance.m_EnableSnapTranslationY = btn.ToggleState;
                     break;
                 case TransformPanelToggleType.LockSnapTranslateZ:
-                    SelectionManager.m_Instance.m_LockSnapTranslationZ = btn.ToggleState;
+                    SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
                     break;
             }
         }
 
         public void HandleLabelEdited(EditableLabel label)
         {
-            m_LabelForTranslationX.SetValue(label.LastTextInput);
+            label.SetValue(label.LastTextInput);
             var activeTr = GetActiveTransform();
             if (float.TryParse(label.LastTextInput, out float value))
             {
-                m_LabelForTranslationX.SetError(false);
-                activeTr.translation.x = value;
+                label.SetError(false);
+                switch (label.m_LabelTag)
+                {
+                    case "TX":
+                        activeTr.translation.x = value;
+                        break;
+                    case "TY":
+                        activeTr.translation.y = value;
+                        break;
+                    case "TZ":
+                        activeTr.translation.z = value;
+                        break;
+                    case "RX":
+                        activeTr.rotation.x = value;
+                        break;
+                    case "RY":
+                        activeTr.rotation.y = value;
+                        break;
+                    case "RZ":
+                        activeTr.rotation.z = value;
+                        break;
+                    case "SX":
+                        activeTr.scale = value;
+                        break;
+                    // case "SY":
+                    //     activeTr.scale.y = value;
+                    //     break;
+                    // case "SZ":
+                    //     activeTr.scale.z = value;
+                    //     break;
+                }
                 SetActiveTransform(activeTr);
             }
             else
@@ -211,7 +239,7 @@ namespace TiltBrush
             {
                 var pos = stroke.m_BatchSubset.m_Bounds.center;
                 var newPos = FreePaintTool.SnapToGrid(pos);
-                stroke.Recreate(TrTransform.T(pos = newPos));
+                stroke.Recreate(TrTransform.T(newPos));
             }
         }
 
@@ -248,7 +276,7 @@ namespace TiltBrush
         private void Distribute(int axis)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new DistributeSelectedCommand(axis, m_AlignBoundsType)
+                new DistributeSelectedCommand(axis, m_DistributeBoundsType)
             );
         }
     }

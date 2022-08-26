@@ -89,9 +89,9 @@ namespace TiltBrush
         [NonSerialized] public bool m_LockRotationX = false;
         [NonSerialized] public bool m_LockRotationY = false;
         [NonSerialized] public bool m_LockRotationZ = false;
-        [NonSerialized] public bool m_LockSnapTranslationX = false;
-        [NonSerialized] public bool m_LockSnapTranslationY = false;
-        [NonSerialized] public bool m_LockSnapTranslationZ = false;
+        [NonSerialized] public bool m_EnableSnapTranslationX = false;
+        [NonSerialized] public bool m_EnableSnapTranslationY = false;
+        [NonSerialized] public bool m_EnableSnapTranslationZ = false;
 
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
@@ -993,9 +993,9 @@ namespace TiltBrush
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                m_LockSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
-                m_LockSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
-                m_LockSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
+                !m_EnableSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
+                !m_EnableSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
+                !m_EnableSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
