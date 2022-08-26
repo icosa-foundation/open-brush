@@ -60,12 +60,15 @@ namespace TiltBrush
         public EditableLabel m_LabelForRotationY;
         public EditableLabel m_LabelForRotationZ;
 
+        public EditableLabel m_LabelForScale;
+        
         private BoundsTypes m_AlignBoundsType = BoundsTypes.Center;
         private BoundsTypes m_DistributeBoundsType = BoundsTypes.Center;
         
         void Update()
         {
             BaseUpdate();
+            
             var activeTr = GetActiveTransform();
 
             m_LabelForTranslationX.SetValue(FormatValue(activeTr.translation.x));
@@ -74,6 +77,7 @@ namespace TiltBrush
             m_LabelForRotationX.SetValue(FormatValue(activeTr.translation.x));
             m_LabelForRotationY.SetValue(FormatValue(activeTr.translation.y));
             m_LabelForRotationZ.SetValue(FormatValue(activeTr.translation.z));
+            m_LabelForScale.SetValue(FormatValue(activeTr.scale));
         }
         
         private TrTransform GetActiveTransform()

@@ -307,6 +307,7 @@ MonoBehaviour:
   m_LabelForRotationX: {fileID: 8668551261619482146}
   m_LabelForRotationY: {fileID: 8555349481716374173}
   m_LabelForRotationZ: {fileID: 8963769559412800881}
+  m_LabelForScale: {fileID: 6065908374879938499}
 --- !u!114 &11478692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5898,6 +5899,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8bb0baa9952ccde4b9924f40665e09e6, type: 3}
+--- !u!114 &6065908374879938499 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6337363389148917606, guid: 8bb0baa9952ccde4b9924f40665e09e6,
+    type: 3}
+  m_PrefabInstance: {fileID: 278301698944944293}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c15fd7e779967043a28eb07f121f330, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &6263834598847048345 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6138729045310054972, guid: 8bb0baa9952ccde4b9924f40665e09e6,
