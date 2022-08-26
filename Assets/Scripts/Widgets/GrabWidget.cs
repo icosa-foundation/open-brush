@@ -783,6 +783,7 @@ namespace TiltBrush
         {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
             GrabWidget clone = GameObject.Instantiate(this);
+            clone.m_previousCanvas = m_previousCanvas;
             clone.transform.parent = transform.parent;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
