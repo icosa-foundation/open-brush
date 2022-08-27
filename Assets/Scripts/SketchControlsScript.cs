@@ -141,6 +141,7 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            ShowContribution,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -315,6 +316,10 @@ namespace TiltBrush
         [SerializeField] string m_TosURL;
         [SerializeField] string m_PrivacyURL;
         [SerializeField] string m_QuestSideLoadingHowToURL;
+
+        [Multiline]
+        [SerializeField] string m_ContributionPromoText;
+        [SerializeField] string m_ContributionURL;
 
         [SerializeField] float m_WorldTransformMinScale = .1f;
         [SerializeField] float m_WorldTransformMaxScale = 10.0f;
@@ -4706,6 +4711,13 @@ namespace TiltBrush
                     CameraConfig.PostEffects = !CameraConfig.PostEffects;
                     break;
                 case GlobalCommands.ToggleWatermark:
+                    if (PlayerPrefs.GetInt("Promo_Contribution", 0) == 0)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Wand,
+                            m_ContributionPromoText, fPopScalar: 1.0f);
+                        PlayerPrefs.SetInt("Promo_Contribution", 1);
+                    }
                     CameraConfig.Watermark = !CameraConfig.Watermark;
                     break;
                 case GlobalCommands.LoadConfirmComplexHigh:
@@ -4836,6 +4848,16 @@ namespace TiltBrush
                             kRemoveHeadsetFyi, fPopScalar: 0.5f);
                     }
                     App.OpenURL(m_QuestSideLoadingHowToURL);
+                    break;
+                case GlobalCommands.ShowContribution:
+                    EatGazeObjectInput();
+                    if (!App.Config.IsMobileHardware)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush,
+                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
+                    }
+                    App.OpenURL(m_ContributionURL);
                     break;
                 case GlobalCommands.UnloadReferenceImageCatalog:
                     ReferenceImageCatalog.m_Instance.UnloadAllImages();

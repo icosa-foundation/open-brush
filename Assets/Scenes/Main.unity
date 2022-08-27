@@ -28243,12 +28243,17 @@ MonoBehaviour:
   m_YouTubeChatPrefab: {fileID: 113562, guid: 9676f38a8f59017418608d24ddc492e1, type: 3}
   m_Decor: {fileID: 294061574}
   m_InitialTool: 0
-  m_ReleaseNotesURL: https://docs.google.com/document/d/11ZsHozYn9FnWG7y3s3WAyKIACfbfwb4PbaS8cZ_xjvo/preview
-  m_HelpCenterURL: https://support.google.com/tiltbrush/
-  m_ThirdPartyNoticesURL: https://docs.google.com/document/d/1L70mH-vmrLMxZX4525qpffAyqVcg770I74Pw_RGN8Ic/view
-  m_TosURL: http://www.google.com/intl/en/policies/terms/
-  m_PrivacyURL: http://www.google.com/intl/en/policies/privacy/
-  m_QuestSideLoadingHowToURL: https://support.google.com/tiltbrush/answer/9427219?hl=en&ref_topic=7074683
+  m_ReleaseNotesURL: https://docs.openbrush.app/release-history
+  m_HelpCenterURL: https://docs.openbrush.app/user-guide
+  m_ThirdPartyNoticesURL: https://github.com/icosa-gallery/open-brush/blob/main/Support/ThirdParty/GeneratedThirdPartyNotices.txt
+  m_TosURL: https://openbrush.app/privacy-policy
+  m_PrivacyURL: https://openbrush.app/privacy-policy
+  m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
+  m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
+
+    If
+    you enjoy the app, please consider donating in the settings menu!'
+  m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
   m_UndoRedoHold_DurationBeforeStart: 0.5

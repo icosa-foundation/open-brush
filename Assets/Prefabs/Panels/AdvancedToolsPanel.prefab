@@ -1157,7 +1157,7 @@ GameObject:
   - component: {fileID: 33759398813900666}
   - component: {fileID: 23773859719338524}
   - component: {fileID: 65901329732289008}
-  - component: {fileID: 114954839914571604}
+  - component: {fileID: 1174263549636321217}
   m_Layer: 16
   m_Name: Button_Camera
   m_TagString: Untagged
@@ -1239,7 +1239,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &114954839914571604
+--- !u!114 &1174263549636321217
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1248,7 +1248,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1652457776899484}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1267,8 +1267,17 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 16
-  m_EatGazeInputOnPress: 1
+  m_Command: 37
+  m_CommandParam: -1
+  m_CommandParam2: -1
+  m_RequiresPopup: 0
+  m_CenterPopupOnButton: 0
+  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupText: 
+  m_ToggleOnDescription: 
+  m_ToggleOnTexture: {fileID: 0}
+  m_AllowUnavailable: 0
+  m_LinkedUIObject: {fileID: 0}
 --- !u!1 &1684631367195094
 GameObject:
   m_ObjectHideFlags: 0
