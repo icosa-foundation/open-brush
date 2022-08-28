@@ -69,12 +69,17 @@ namespace TiltBrush
 
         void OnSelectionPoseChanged(TrTransform _, TrTransform __)
         {
-            var activeTr = GetActiveTransform();
-            var sel = App.Scene.SelectionCanvas;
-            var trs = sel.transform;
-            var translation = activeTr.MultiplyPoint(m_SelectionBounds.center);
-            var rotation = Coords.AsCanvas[trs].rotation.eulerAngles;
-            var scale = Coords.AsCanvas[trs].scale;
+            OnSelectionPoseChanged();
+        }
+        
+        void OnSelectionPoseChanged()
+        {
+            
+            var translation = CurrentSelectionPos();
+            
+            var selectionTr = SelectionManager.m_Instance.SelectionTransform;
+            var rotation = selectionTr.rotation.eulerAngles;
+            var scale = selectionTr.scale;
             m_LabelForTranslationX.SetValue(FormatValue(translation.x));
             m_LabelForTranslationY.SetValue(FormatValue(translation.y));
             m_LabelForTranslationZ.SetValue(FormatValue(translation.z));
@@ -84,6 +89,13 @@ namespace TiltBrush
             m_LabelForScale.SetValue(FormatValue(scale));
         }
         
+        private Vector3 CurrentSelectionPos()
+        {
+            var selectionTr = SelectionManager.m_Instance.SelectionTransform;
+            var translation = selectionTr.MultiplyPoint(m_SelectionBounds.center);
+            return translation;
+        }
+
         void Awake()
         {
             App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
@@ -92,54 +104,55 @@ namespace TiltBrush
 
         void OnDestroy()
         {
+            App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
         }
         
         private void OnSelectionChanged()
         {
-            Debug.Log($"OnSelectionChanged");
             m_SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+            OnSelectionPoseChanged();
         }
 
-        private TrTransform GetActiveTransform()
-        {
-            TrTransform activeTr = TrTransform.identity;
-            if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
-            {
-                m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
-            }
-
-            // Prefer to use selection if it exists
-            if (SelectionManager.m_Instance.HasSelection)
-            {
-                m_LastWidget = null;
-                activeTr = SelectionManager.m_Instance.SelectionTransform;
-            }
-            // if no selection then the panel should control the last widget interacted with
-            else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
-            {
-                activeTr = m_LastWidget.LocalTransform;
-            }
-            return activeTr;
-        }
-        
-        private void SetActiveTransform(TrTransform tr)
-        {
-            if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
-            {
-                m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
-            }
-
-            if (SelectionManager.m_Instance.HasSelection)
-            {
-                m_LastWidget = null;
-                SelectionManager.m_Instance.SelectionTransform = tr;
-            }
-            else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
-            {
-                m_LastWidget.LocalTransform = tr;
-            }
-        }
+        // private TrTransform GetActiveTransform()
+        // {
+        //     TrTransform activeTr = TrTransform.identity;
+        //     if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
+        //     {
+        //         m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+        //     }
+        //
+        //     // Prefer to use selection if it exists
+        //     if (SelectionManager.m_Instance.HasSelection)
+        //     {
+        //         m_LastWidget = null;
+        //         activeTr = SelectionManager.m_Instance.SelectionTransform;
+        //     }
+        //     // if no selection then the panel should control the last widget interacted with
+        //     else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
+        //     {
+        //         activeTr = m_LastWidget.LocalTransform;
+        //     }
+        //     return activeTr;
+        // }
+        //
+        // private void SetActiveTransform(TrTransform tr)
+        // {
+        //     if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
+        //     {
+        //         m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+        //     }
+        //
+        //     if (SelectionManager.m_Instance.HasSelection)
+        //     {
+        //         m_LastWidget = null;
+        //         SelectionManager.m_Instance.SelectionTransform = tr;
+        //     }
+        //     else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
+        //     {
+        //         m_LastWidget.LocalTransform = tr;
+        //     }
+        // }
 
         private string FormatValue(float val)
         {
@@ -185,34 +198,35 @@ namespace TiltBrush
 
         public void HandleLabelEdited(EditableLabel label)
         {
-            var tr = GetActiveTransform();
-            Debug.Log($"Setting {label.m_LabelTag} to {label.LastTextInput}");
+            var selectionTr = SelectionManager.m_Instance.SelectionTransform;
+            var currentTranslation = selectionTr.MultiplyPoint(m_SelectionBounds.center);
+            var newTranslation = currentTranslation;
+
             if (float.TryParse(label.LastTextInput, out float value))
             {
-                Debug.Log($"{label.LastTextInput} parsed to {value}");
                 label.SetError(false);
                 switch (label.m_LabelTag)
                 {
                     case "TX":
-                        tr.translation.x = value;
+                        newTranslation.x = value;
                         break;
                     case "TY":
-                        tr.translation.y = value;
+                        newTranslation.y = value;
                         break;
                     case "TZ":
-                        tr.translation.z = value;
+                        newTranslation.z = value;
                         break;
                     case "RX":
-                        tr.rotation.x = value;
+                        selectionTr.rotation.x = value;
                         break;
                     case "RY":
-                        tr.rotation.y = value;
+                        selectionTr.rotation.y = value;
                         break;
                     case "RZ":
-                        tr.rotation.z = value;
+                        selectionTr.rotation.z = value;
                         break;
                     case "SX":
-                        tr.scale = value;
+                        selectionTr.scale = value;
                         break;
                     // case "SY":
                     //     activeTr.scale.y = value;
@@ -221,12 +235,13 @@ namespace TiltBrush
                     //     activeTr.scale.z = value;
                     //     break;
                 }
-                SetActiveTransform(tr);
-                label.SetValue(label.LastTextInput);
+
+                var offset = newTranslation - currentTranslation;
+                selectionTr.translation += offset; 
+                SelectionManager.m_Instance.SelectionTransform = selectionTr;
             }
             else
             {
-                Debug.Log($"{label.LastTextInput} failed to parse");
                 m_LabelForTranslationX.SetError(true);
             }
         }
