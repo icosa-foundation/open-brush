@@ -150,10 +150,14 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
-          - name: Pico
+          - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+          - name: Android Pico Experimental
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
 
 
     steps:

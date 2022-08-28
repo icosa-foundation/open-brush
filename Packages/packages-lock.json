@@ -145,7 +145,8 @@
       "source": "registry",
       "dependencies": {
         "com.unity.modules.xr": "1.0.0"
-      }
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.xr.interaction.toolkit": {
       "version": "0.9.4-preview",
