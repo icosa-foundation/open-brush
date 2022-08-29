@@ -459,6 +459,18 @@ MonoBehaviour:
     m_Key: CAMERAPATH_PANEL_ADDPATH_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7678055402938368
+    m_Key: COLORPICKER_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688701444071424
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688987650793472
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

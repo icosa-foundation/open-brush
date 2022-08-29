@@ -464,6 +464,18 @@ MonoBehaviour:
     m_Localized: Add New Path
     m_Metadata:
       m_Items: []
+  - m_Id: 7678055402938368
+    m_Localized: Color Picker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688701444071424
+    m_Localized: Jitter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688987650793472
+    m_Localized: Jitter
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
