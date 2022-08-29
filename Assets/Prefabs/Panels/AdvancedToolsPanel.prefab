@@ -1398,7 +1398,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Cameras
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143682283708416
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1419,10 +1428,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1684631367195094
 GameObject:
   m_ObjectHideFlags: 0
