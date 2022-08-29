@@ -383,6 +383,82 @@ MonoBehaviour:
     m_Key: BRUSH_PANEL_MORE_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7673072670449664
+    m_Key: CAMERA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673215754936320
+    m_Key: CAMERA_PANEL_POSTEFFECTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673323997339648
+    m_Key: CAMERA_PANEL_WATERMARK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673467597725696
+    m_Key: CAMERA_PANEL_FOV_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673684577460224
+    m_Key: CAMERA_PANEL_SMOOTHCAM_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7674180243529728
+    m_Key: CAMERA_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675077484847104
+    m_Key: CAMERAPATH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675859500244992
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675982082973696
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676094104444928
+    m_Key: CAMERAPATH_PANEL_TOGGLEVISIBILITY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676309209325568
+    m_Key: CAMERAPATH_PANEL_DELETEPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676408429780992
+    m_Key: CAMERPATH_PANEL_DELETEPATH_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676581176385536
+    m_Key: CAMERAPATH_PANEL_RECORDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676879580143616
+    m_Key: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677024573038592
+    m_Key: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677371119017984
+    m_Key: CAMERAPATH_PANEL_ADDROTATIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677444783579136
+    m_Key: CAMERAPATH_PANEL_ADDSPEEDKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677508033683456
+    m_Key: CAMERAPATH_PANEL_ADDFOVKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677699654656000
+    m_Key: CAMERAPATH_PANEL_ADDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -388,6 +388,82 @@ MonoBehaviour:
     m_Localized: More...
     m_Metadata:
       m_Items: []
+  - m_Id: 7673072670449664
+    m_Localized: Camera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673215754936320
+    m_Localized: Post Effects
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673323997339648
+    m_Localized: Watermark
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673467597725696
+    m_Localized: Field of View
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673684577460224
+    m_Localized: Video Smoothing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7674180243529728
+    m_Localized: Close Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675077484847104
+    m_Localized: Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675859500244992
+    m_Localized: Select Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675982082973696
+    m_Localized: Camera Paths
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676094104444928
+    m_Localized: Show Paths
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676309209325568
+    m_Localized: Delete Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676408429780992
+    m_Localized: Delete Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676581176385536
+    m_Localized: Record Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676879580143616
+    m_Localized: Add Anchor Point
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677024573038592
+    m_Localized: Delete Points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677371119017984
+    m_Localized: Add Direction Point
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677444783579136
+    m_Localized: Add Speed Point
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677508033683456
+    m_Localized: Add Zoom Point
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677699654656000
+    m_Localized: Add New Path
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
