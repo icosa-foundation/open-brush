@@ -471,6 +471,38 @@ MonoBehaviour:
     m_Key: COLORPICKER_PANEL_JITTER_BUTTON_POPUP
     m_Metadata:
       m_Items: []
+  - m_Id: 7689873479409664
+    m_Key: EXTRA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690667696037888
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690784670982144
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690924718792704
+    m_Key: EXTRA_PANEL_LIGHTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691111650533376
+    m_Key: EXTRA_PANEL_BACKDROP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691186472722432
+    m_Key: EXTRA_PANEL_GUIDES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691576060649472
+    m_Key: EXTRA_PANEL_POLY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691821452599296
+    m_Key: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

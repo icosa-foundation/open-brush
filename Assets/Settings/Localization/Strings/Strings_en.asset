@@ -476,6 +476,38 @@ MonoBehaviour:
     m_Localized: Jitter
     m_Metadata:
       m_Items: []
+  - m_Id: 7689873479409664
+    m_Localized: More...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690667696037888
+    m_Localized: Environment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690784670982144
+    m_Localized: Environment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690924718792704
+    m_Localized: Lights
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691111650533376
+    m_Localized: Backdrop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691186472722432
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691576060649472
+    m_Localized: Poly Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691821452599296
+    m_Localized: Camera Paths
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
