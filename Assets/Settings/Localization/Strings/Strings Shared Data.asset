@@ -503,6 +503,150 @@ MonoBehaviour:
     m_Key: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7860833050402816
+    m_Key: GUIDESETTINGS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7861838345379840
+    m_Key: GUIDESETTINGS_PANEL_SNAPDISTANCE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862047624372224
+    m_Key: GUIDESETTINGS_PANEL_GRIDSIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862159872335872
+    m_Key: GUIDESETTINGS_PANEL_LINEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862314168197120
+    m_Key: GUIDESETTINGS_PANEL_FRAMEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862801433075712
+    m_Key: GUIDETOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7864726178209792
+    m_Key: GUIDETOOLS_PANEL_DRAFTING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865004726132736
+    m_Key: GUIDETOOLS_PANEL_PLANEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865139518480384
+    m_Key: GUIDETOOLS_PANEL_SPHEREGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865252521418752
+    m_Key: GUIDETOOLS_PANEL_CUBEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865322218168320
+    m_Key: GUIDETOOLS_PANEL_CAPSULEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865394515386368
+    m_Key: GUIDETOOLS_PANEL_ELLIPSOIDGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866040475951104
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866191982600192
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866297771335680
+    m_Key: GUIDETOOLS_PANEL_GUIDESETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866918104702976
+    m_Key: LABS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867354345873408
+    m_Key: LABS_PANEL_TWITCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867485648560128
+    m_Key: LABS_PANEL_YOUTUBE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867554347065344
+    m_Key: LABS_PANEL_TILTASAURUS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867671724662784
+    m_Key: LABS_PANEL_LOCALMEDIA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867814297444352
+    m_Key: LABS_PANEL_TILTASAURUS_PANEL_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868186579673088
+    m_Key: LABS_PANEL_MODELPIN_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539698126848
+    m_Key: LABS_PANEL_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7869944320204800
+    m_Key: LABS_PANEL_SPECTATOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870646065012736
+    m_Key: LABS_PANEL_SCRIPTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870824155160576
+    m_Key: LABS_PANEL_SNAP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870978190974976
+    m_Key: LABS_PANEL_CAMERAMODE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7872343826997248
+    m_Key: LAYERS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7873280473800704
+    m_Key: LAYERS_PANEL_SHOWHIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874007866777600
+    m_Key: LAYERS_PANEL_CLEAR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874216034279424
+    m_Key: LAYERS_PANEL_SQUASH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874341855010816
+    m_Key: LAYERS_PANEL_ACTIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874528715448320
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874610038808576
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874683799838720
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_TOGGLE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7879279536480256
+    m_Key: LAYERS_PANEL_ADDLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

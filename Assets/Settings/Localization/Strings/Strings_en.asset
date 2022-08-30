@@ -508,6 +508,150 @@ MonoBehaviour:
     m_Localized: Camera Paths
     m_Metadata:
       m_Items: []
+  - m_Id: 7860833050402816
+    m_Localized: Guide Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7861838345379840
+    m_Localized: Pointer Snap Distance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862047624372224
+    m_Localized: Grid Size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862159872335872
+    m_Localized: Grid Line Width
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862314168197120
+    m_Localized: Grid Frame Width
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862801433075712
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7864726178209792
+    m_Localized: Show/Hide Drafting Lines
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865004726132736
+    m_Localized: Plane Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865139518480384
+    m_Localized: Sphere Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865252521418752
+    m_Localized: Cube Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865322218168320
+    m_Localized: Capsule Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865394515386368
+    m_Localized: Ellipsoid Guide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866040475951104
+    m_Localized: Toggle Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866191982600192
+    m_Localized: Toggle Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866297771335680
+    m_Localized: Guide Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866918104702976
+    m_Localized: Labs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867354345873408
+    m_Localized: Twitch Chat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867485648560128
+    m_Localized: YouTube Chat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867554347065344
+    m_Localized: '"Guess the Word"'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867671724662784
+    m_Localized: Local Media Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867814297444352
+    m_Localized: Tiltasaurus says... (only you see this)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868186579673088
+    m_Localized: Model Pin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539698126848
+    m_Localized: Export
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7869944320204800
+    m_Localized: Spectator Camera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870646065012736
+    m_Localized: Scripts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870824155160576
+    m_Localized: Snap and Stroke Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870978190974976
+    m_Localized: Camera Mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7872343826997248
+    m_Localized: Layers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7873280473800704
+    m_Localized: Hide/Show
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874007866777600
+    m_Localized: Clear Contents
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874216034279424
+    m_Localized: Squash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874341855010816
+    m_Localized: Make Active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874528715448320
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874610038808576
+    m_Localized: Delete Layer?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874683799838720
+    m_Localized: Are you sure you want to delete this layer?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7879279536480256
+    m_Localized: Add New Layer
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
