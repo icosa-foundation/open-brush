@@ -795,6 +795,22 @@ MonoBehaviour:
     m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 7940280365588480
+    m_Key: SCRIPTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943571044540416
+    m_Key: SCRIPTS_PANEL_EXAMPLES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943711960571904
+    m_Key: SCRIPTS_PANEL_SCRIPTSLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943936175480832
+    m_Key: SCRIPTS_PANEL_COMMANDLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

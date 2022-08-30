@@ -835,6 +835,22 @@ MonoBehaviour:
     m_Localized: View in browser
     m_Metadata:
       m_Items: []
+  - m_Id: 7940280365588480
+    m_Localized: Scripts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943571044540416
+    m_Localized: Examples Scripts List
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943711960571904
+    m_Localized: Scripts List
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943936175480832
+    m_Localized: Commands List
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
