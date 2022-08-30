@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -21,7 +22,7 @@ namespace TiltBrush
     {
         void Start()
         {
-            TextMesh rTest = GetComponent<TextMesh>();
+            TMP_Text rTest = GetComponent<TMP_Text>();
             if (rTest)
             {
                 rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";

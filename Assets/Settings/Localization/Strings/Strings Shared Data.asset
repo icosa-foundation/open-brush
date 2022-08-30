@@ -811,6 +811,78 @@ MonoBehaviour:
     m_Key: SCRIPTS_PANEL_COMMANDLIST_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7948094068727808
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948187597512704
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948298104840192
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948470994051072
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949356432596992
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949438875836416
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949594065084416
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949642022756352
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949724893814784
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949811581689856
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950172098895872
+    m_Key: SETTINGS_PANEL_POINTERANGLE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950275601735680
+    m_Key: SETTINGS_PANEL_QUALITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950347307556864
+    m_Key: SETTINGS_PANEL_SIMPLIFICATION_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951591048716288
+    m_Key: SETTINGS_PANEL_SIMPLIFYACCEPT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951827204808704
+    m_Key: SETTINGS_PANEL_SIMPLIFYDECLINE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7952483592413184
+    m_Key: SETTINGS_PANEL_UPDATE_SIMPLIFICATION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7959094121701376
+    m_Key: SETTINGS_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7961508530855936
+    m_Key: SETTINGS_PANEL_SCENECOST_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

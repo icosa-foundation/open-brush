@@ -851,6 +851,80 @@ MonoBehaviour:
     m_Localized: Commands List
     m_Metadata:
       m_Items: []
+  - m_Id: 7948094068727808
+    m_Localized: Help
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948187597512704
+    m_Localized: Help
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948298104840192
+    m_Localized: About
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948470994051072
+    m_Localized: Opens in External Browser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949356432596992
+    m_Localized: Opens in External Browser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949438875836416
+    m_Localized: Contribute
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949594065084416
+    m_Localized: Distance Indicator
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949642022756352
+    m_Localized: On Straightedge Tool
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949724893814784
+    m_Localized: Autosimplification
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949811581689856
+    m_Localized: Simplify on Load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950172098895872
+    m_Localized: Brush Tip Angle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950275601735680
+    m_Localized: Visual Quality
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950347307556864
+    m_Localized: Stroke Simplification
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951591048716288
+    m_Localized: Update
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951827204808704
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7952483592413184
+    m_Localized: 'Update
+
+      Simplification?'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7959094121701376
+    m_Localized: Close Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7961508530855936
+    m_Localized: Scene Cost
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
