@@ -198,15 +198,9 @@ namespace TiltBrush
 
         public void HandleLabelEdited(EditableLabel label)
         {
-            var selectionTr = SelectionManager.m_Instance.SelectionTransform;
-            var currentTranslation = selectionTr.MultiplyPoint(m_SelectionBounds.center);
-            var newTranslation = currentTranslation;
-
-            var currentRotation = selectionTr.rotation.eulerAngles;
-            var newRotation = currentRotation;
-            
-            var currentScale = selectionTr.scale;
-            var newScale = currentScale;
+            var currentPose = SelectionManager.m_Instance.SelectionTransform;
+            currentPose.translation += m_SelectionBounds.center;
+            var newTr = TrTransform.identity;
 
             if (float.TryParse(label.LastTextInput, out float value))
             {
@@ -214,53 +208,32 @@ namespace TiltBrush
                 switch (label.m_LabelTag)
                 {
                     case "TX":
-                        newTranslation.x = value;
+                        newTr.translation.x = value - currentPose.translation.x;
                         break;
                     case "TY":
-                        newTranslation.y = value;
+                        newTr.translation.y = value - currentPose.translation.y;
                         break;
                     case "TZ":
-                        newTranslation.z = value;
+                        newTr.translation.z = value - currentPose.translation.z;
                         break;
                     case "RX":
-                        newRotation.x = value;
+                        newTr.rotation.eulerAngles = new Vector3(value, 0, 0) - currentPose.rotation.eulerAngles;
                         break;
                     case "RY":
-                        newRotation.y = value;
+                        newTr.rotation.eulerAngles = new Vector3(0, value, 0) - currentPose.rotation.eulerAngles;
                         break;
                     case "RZ":
-                        newRotation.z = value;
+                        newTr.rotation.eulerAngles = new Vector3(0, 0, value) - currentPose.rotation.eulerAngles;
                         break;
                     case "SX":
-                        newScale = value;
+                        newTr.scale = value - currentPose.scale;
                         break;
-                    // case "SY":
-                    //     activeTr.scale.y = value;
-                    //     break;
-                    // case "SZ":
-                    //     activeTr.scale.z = value;
-                    //     break;
                 }
 
-                if (label.m_LabelTag.StartsWith("T"))
-                {
-                    var translationAmount = currentTranslation - newTranslation;
-                    selectionTr.translation -= translationAmount;
-                }
-                else if (label.m_LabelTag.StartsWith("R"))
-                {
-                    selectionTr.rotation.eulerAngles = newRotation;
-                    var offset = TrTransform.R(Quaternion.Euler(newRotation - currentRotation)).MultiplyPoint(m_SelectionBounds.center);
-                    selectionTr.translation += m_SelectionBounds.center - offset;
-                }
-                else if (label.m_LabelTag.StartsWith("S"))
-                {
-                    selectionTr.scale = newScale;
-                    selectionTr.translation -= (m_SelectionBounds.center * (newScale - currentScale));
-                }
-   
+                var selectionTr = newTr.TransformBy(TrTransform.T(m_SelectionBounds.center));
+                // selectionTr.translation -= m_SelectionBounds.center;
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformSelectionCommand(selectionTr)
+                    new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
                 );
             }
             else
