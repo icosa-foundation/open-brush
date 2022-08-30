@@ -37,8 +37,6 @@ namespace TiltBrush
             {
                 var popupButton = m_OnClose.Target as PopupButton;
                 var label = popupButton.GetComponentInParent<EditableLabel>(); 
-                // Save our input field on our label
-                label.m_LabelTag = $"{m_OnClose.Method}:{m_OnClose.Target}";
                 label.LastTextInput = m_InputField.text;
             }
             RequestClose();
