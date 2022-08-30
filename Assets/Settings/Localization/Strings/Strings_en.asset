@@ -652,6 +652,38 @@ MonoBehaviour:
     m_Localized: Add New Layer
     m_Metadata:
       m_Items: []
+  - m_Id: 7883364289454080
+    m_Localized: Lights
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7884096078061568
+    m_Localized: Main Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7885974799097856
+    m_Localized: Color Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886169574187008
+    m_Localized: Secondary Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886276944175104
+    m_Localized: Color Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886356342349824
+    m_Localized: Fill Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886474181320704
+    m_Localized: Color Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7887557695873024
+    m_Localized: Light Color
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

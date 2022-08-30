@@ -47,6 +47,7 @@ namespace TiltBrush
         [SerializeField] protected string m_DescriptionText;
         [SerializeField] protected LocalizedString m_LocalizedDescription;
         [SerializeField] protected string m_DescriptionTextExtra;
+        [SerializeField] protected LocalizedString m_LocalizedDescriptionExtra;
         [SerializeField] protected float m_DescriptionActivateSpeed = 12.0f;
         [SerializeField] protected float m_DescriptionZScale = 1.0f;
 
@@ -71,6 +72,7 @@ namespace TiltBrush
         protected bool m_HadButtonPress;
 
         public virtual Collider GetCollider() { return m_Collider; }
+
         public string Description
         {
             get
@@ -83,7 +85,17 @@ namespace TiltBrush
             }
         }
 
-        public string DescriptionExtra { get { return m_DescriptionTextExtra; } }
+        public string DescriptionExtra
+        {
+            get
+            {
+                if (m_LocalizedDescriptionExtra.TableReference != null)
+                {
+                    return m_LocalizedDescriptionExtra.GetLocalizedString();
+                }
+                return m_DescriptionTextExtra;
+            }
+        }
         public bool IsDescriptionActive()
         {
             return m_DescriptionState != DescriptionState.Deactivated;

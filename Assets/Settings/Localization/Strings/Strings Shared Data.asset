@@ -647,6 +647,38 @@ MonoBehaviour:
     m_Key: LAYERS_PANEL_ADDLAYER_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7883364289454080
+    m_Key: LIGHTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7884096078061568
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7885974799097856
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886169574187008
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886276944175104
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886356342349824
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886474181320704
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7887557695873024
+    m_Key: LIGHTS_PANEL_COLOR_LABEL_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
