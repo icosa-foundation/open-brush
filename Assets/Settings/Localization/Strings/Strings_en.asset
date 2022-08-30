@@ -718,6 +718,123 @@ MonoBehaviour:
     m_Localized: Understood
     m_Metadata:
       m_Items: []
+  - m_Id: 7930140920881152
+    m_Localized: Your Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930206087782400
+    m_Localized: Poly Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482240
+    m_Localized: Featured Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930550461112320
+    m_Localized: Liked Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931482930388992
+    m_Localized: Only remixable models available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931629680697344
+    m_Localized: Only published models available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931780608532480
+    m_Localized: Browse Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931977472385024
+    m_Localized: Your Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977408
+    m_Localized: Featured Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932251041669120
+    m_Localized: Liked Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932559960547328
+    m_Localized: 'Share to Poly
+
+      to see models and
+
+      Blocks objects here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932746569326592
+    m_Localized: OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932977482539008
+    m_Localized: 'Loading models from Poly
+
+
+      Check back soon!'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933149889404928
+    m_Localized: 'Like       models
+
+      on Poly to
+
+      see them here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933313635033088
+    m_Localized: OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933450197377024
+    m_Localized: 'Sign in on desktop
+
+      to load
+
+      Poly models'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933561489039360
+    m_Localized: SIGN IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933827554713600
+    m_Localized: 'Share to Poly
+
+      to see your
+
+      models here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933944802287616
+    m_Localized: LEARN MORE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934076549570560
+    m_Localized: 'Poly was shut down
+
+      on 2021/06/30
+
+
+      Icosa Gallery support
+
+      coming
+      soon!'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934199497203712
+    m_Localized: 'Error Connecting
+
+      to Poly'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7939526611410944
+    m_Localized: View in browser
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

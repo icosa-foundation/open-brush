@@ -707,6 +707,94 @@ MonoBehaviour:
     m_Key: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7930140920881152
+    m_Key: POLY_PANEL_TITLE_STANDARD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930206087782400
+    m_Key: POLY_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482240
+    m_Key: POLY_PANEL_TITLE_FEATURED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930550461112320
+    m_Key: POLY_PANEL_TITLE_LIKED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931482930388992
+    m_Key: POLY_PANEL_SUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931629680697344
+    m_Key: POLY_PANEL_USERSUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931780608532480
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931977472385024
+    m_Key: POLY_PANEL_USERMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977408
+    m_Key: POLY_PANEL_FEATUREDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932251041669120
+    m_Key: POLY_PANEL_LIKEDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932559960547328
+    m_Key: POLY_PANEL_NOOBJECTS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932746569326592
+    m_Key: POLY_PANEL_NOOBJECTS_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932977482539008
+    m_Key: POLY_PANEL_INTERNETERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933149889404928
+    m_Key: POLY_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933313635033088
+    m_Key: POLY_PANEL_NOLIKES_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933450197377024
+    m_Key: POLY_PANEL_NOLOGIN_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933561489039360
+    m_Key: POLY_PANEL_NOLOGIN_SIGNIN_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933827554713600
+    m_Key: POLY_PANEL_NOAUTHORED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933944802287616
+    m_Key: POLY_PANEL_NOAUTHORED_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934076549570560
+    m_Key: POLY_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934199497203712
+    m_Key: POLY_PANEL_CONNECTIONERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7939526611410944
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
