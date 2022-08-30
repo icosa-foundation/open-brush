@@ -202,6 +202,12 @@ namespace TiltBrush
             var currentTranslation = selectionTr.MultiplyPoint(m_SelectionBounds.center);
             var newTranslation = currentTranslation;
 
+            var currentRotation = selectionTr.rotation.eulerAngles;
+            var newRotation = currentRotation;
+            
+            var currentScale = selectionTr.scale;
+            var newScale = currentScale;
+
             if (float.TryParse(label.LastTextInput, out float value))
             {
                 label.SetError(false);
@@ -217,16 +223,16 @@ namespace TiltBrush
                         newTranslation.z = value;
                         break;
                     case "RX":
-                        selectionTr.rotation.x = value;
+                        newRotation.x = value;
                         break;
                     case "RY":
-                        selectionTr.rotation.y = value;
+                        newRotation.y = value;
                         break;
                     case "RZ":
-                        selectionTr.rotation.z = value;
+                        newRotation.z = value;
                         break;
                     case "SX":
-                        selectionTr.scale = value;
+                        newScale = value;
                         break;
                     // case "SY":
                     //     activeTr.scale.y = value;
@@ -236,9 +242,26 @@ namespace TiltBrush
                     //     break;
                 }
 
-                var offset = newTranslation - currentTranslation;
-                selectionTr.translation += offset; 
-                SelectionManager.m_Instance.SelectionTransform = selectionTr;
+                if (label.m_LabelTag.StartsWith("T"))
+                {
+                    var translationAmount = currentTranslation - newTranslation;
+                    selectionTr.translation -= translationAmount;
+                }
+                else if (label.m_LabelTag.StartsWith("R"))
+                {
+                    selectionTr.rotation.eulerAngles = newRotation;
+                    var offset = TrTransform.R(Quaternion.Euler(newRotation - currentRotation)).MultiplyPoint(m_SelectionBounds.center);
+                    selectionTr.translation += m_SelectionBounds.center - offset;
+                }
+                else if (label.m_LabelTag.StartsWith("S"))
+                {
+                    selectionTr.scale = newScale;
+                    selectionTr.translation -= (m_SelectionBounds.center * (newScale - currentScale));
+                }
+   
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new TransformSelectionCommand(selectionTr)
+                );
             }
             else
             {
