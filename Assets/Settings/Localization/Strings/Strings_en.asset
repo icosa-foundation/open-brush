@@ -684,6 +684,40 @@ MonoBehaviour:
     m_Localized: Light Color
     m_Metadata:
       m_Items: []
+  - m_Id: 7891809302454272
+    m_Localized: Memory Limit Caution
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891984230096896
+    m_Localized: Memory Limit Exceeded
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892226182717440
+    m_Localized: 'This operation will put you beyond a safe memory limit.
+
+      Proceed
+      with caution.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892372832362496
+    m_Localized: 'You are now in the danger zone.
+
+      Further work may cause crashes
+      and lost work.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892515468058624
+    m_Localized: Cancel Action
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892717637705728
+    m_Localized: Understood
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892854560759808
+    m_Localized: Understood
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

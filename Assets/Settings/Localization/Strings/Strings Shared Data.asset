@@ -679,6 +679,34 @@ MonoBehaviour:
     m_Key: LIGHTS_PANEL_COLOR_LABEL_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 7891809302454272
+    m_Key: MEMORYWARNING_PANEL_WARNING_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891984230096896
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892226182717440
+    m_Key: MEMORYWARNING_PANEL_WARNING_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892372832362496
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892515468058624
+    m_Key: MEMORYWARNING_PANEL_WARNINGBACK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892717637705728
+    m_Key: MEMORYWARNING_PANEL_WARNINGOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892854560759808
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
