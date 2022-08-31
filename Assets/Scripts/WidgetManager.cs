@@ -1482,5 +1482,15 @@ namespace TiltBrush
                 Debug.Log("No media in sketch");
             }
         }
+
+        public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets =>
+            m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
+            m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
+            m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
+            m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+
     }
 }
