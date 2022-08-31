@@ -206,9 +206,13 @@ namespace TiltBrush
                 case VrInput.Touchpad:
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
-                    return FindAction("TriggerButton").IsPressed();
+                    var triggerValue = GetTriggerValue();
+                    Vector2 triggerRange = App.VrSdk.VrControls.TriggerActivationRange(Behavior.ControllerName);
+                    return triggerValue > triggerRange.x;
                 case VrInput.Grip:
-                    return FindAction("GripAxis").IsPressed();
+                    var gripValue = GetGripValue();
+                    Vector2 gripRange = App.VrSdk.VrControls.GripActivationRange;
+                    return gripValue > gripRange.x;
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
@@ -239,7 +243,7 @@ namespace TiltBrush
                     selectedAction = "PadButton";
                     break;
                 case VrInput.Trigger:
-                    selectedAction = "TriggerButton";
+                    selectedAction = "TriggerAxis";
                     break;
                 case VrInput.Grip:
                     selectedAction = "GripAxis";
