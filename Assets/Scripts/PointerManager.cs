@@ -869,7 +869,7 @@ namespace TiltBrush
                         var matrices = GetCustomMirrorMatrices();
                         var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                         TrTransform cur = TrTransform.identity;
-                        for (int i = 0; i < m_NumActivePointers; i++)
+                        for (int i = 0; i < matrices.Count; i++)
                         {
                             tr = TrTransform.FromMatrix4x4(matrices[i]);
                             // convert from widget-local coords to world coords
