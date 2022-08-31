@@ -43,6 +43,19 @@ namespace TiltBrush
             DebugMultiple,
             TwoHanded,
         }
+        
+        [Serializable]
+        public enum CustomSymmetryType
+        {
+            Point,
+            Wallpaper,
+            Polyhedra
+        }
+        
+        [NonSerialized] public CustomSymmetryType m_CustomSymmetryType;
+        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily;
+        [NonSerialized] public int m_PointSymmetryOrder = 6;
+        [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup;
 
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
@@ -712,7 +725,7 @@ namespace TiltBrush
                     active = 2;
                     break;
                 case SymmetryMode.FourAroundY:
-                    active = 4;
+                    active = GetCustomMirrorMatrices().Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -784,15 +797,15 @@ namespace TiltBrush
                 case SymmetryMode.FourAroundY:
                     {
                         // aboutY is an operator that rotates worldspace objects N degrees around the widget's Y
-                        TrTransform aboutY;
+                        TrTransform tr;
                         {
+                            var matrices = GetCustomMirrorMatrices();
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            float angle = (360f * child) / m_NumActivePointers;
-                            aboutY = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(angle, Vector3.up));
                             // convert from widget-local coords to world coords
-                            aboutY = aboutY.TransformBy(xfWidget);
+                            tr = TrTransform.FromMatrix4x4(matrices[child]);
+                            tr = tr.TransformBy(xfWidget);
                         }
-                        return aboutY * xfMain;
+                        return tr * xfMain;
                     }
 
                 case SymmetryMode.DebugMultiple:
@@ -808,6 +821,22 @@ namespace TiltBrush
                 default:
                     return xfMain;
             }
+        }
+        
+        private List<Matrix4x4> GetCustomMirrorMatrices()
+        {
+            List<Matrix4x4> matrices = null;
+            switch (m_CustomSymmetryType)
+            {
+                case CustomSymmetryType.Wallpaper:
+                case CustomSymmetryType.Point:
+                case CustomSymmetryType.Polyhedra:
+                default:
+                    var sym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0);
+                    matrices = sym.matrices;
+                    break;
+            }
+            return matrices;
         }
 
         void UpdateSymmetryPointerTransforms()
@@ -836,21 +865,16 @@ namespace TiltBrush
                 case SymmetryMode.FourAroundY:
                     {
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                        // aboutY is an operator that rotates worldspace objects N degrees around the widget's Y
-                        TrTransform aboutY;
-                        {
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            float angle = 360f / m_NumActivePointers;
-                            aboutY = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(angle, Vector3.up));
-                            // convert from widget-local coords to world coords
-                            aboutY = xfWidget * aboutY * xfWidget.inverse;
-                        }
-
+                        TrTransform tr;
+                        var matrices = GetCustomMirrorMatrices();
+                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                         TrTransform cur = TrTransform.identity;
-                        for (int i = 1; i < m_NumActivePointers; ++i)
+                        for (int i = 0; i < m_NumActivePointers; i++)
                         {
-                            cur = aboutY * cur;         // stack another rotation on top
-                            var tmp = (cur * pointer0); // Work around 2018.3.x Mono parse bug
+                            tr = TrTransform.FromMatrix4x4(matrices[i]);
+                            // convert from widget-local coords to world coords
+                            tr = xfWidget * tr * xfWidget.inverse;
+                            var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;
