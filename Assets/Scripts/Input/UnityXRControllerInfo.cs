@@ -49,6 +49,7 @@ namespace TiltBrush
         private void Init()
         {
             device = InputDevices.GetDeviceAtXRNode(isBrush ? XRNode.RightHand : XRNode.LeftHand);
+            SetActionMask();
             if (isBrush)
             {
                 actionSet.Brush.Enable();
@@ -58,7 +59,32 @@ namespace TiltBrush
             {
                 actionSet.Wand.Enable();
                 actionSet.Brush.Disable();
+                SetActionMask();
             }
+        }
+
+        private void SetActionMask()
+        {
+            string bindingGroup = string.Empty;
+            switch (Behavior.ControllerGeometry.Style)
+            {
+                case ControllerStyle.Vive:
+                    bindingGroup = actionSet.HTCViveControllerScheme.bindingGroup;
+                    break;
+                case ControllerStyle.Knuckles:
+                    bindingGroup = actionSet.IndexControllerScheme.bindingGroup;
+                    break;
+                case ControllerStyle.OculusTouch:
+                    bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
+                    break;
+                case ControllerStyle.Wmr:
+                    bindingGroup = actionSet.WMRControllerScheme.bindingGroup;
+                    break;
+                default:
+                    break;
+            }
+
+            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
         }
 
         private InputAction FindAction(string actionName)
@@ -182,7 +208,7 @@ namespace TiltBrush
                 case VrInput.Trigger:
                     return FindAction("TriggerButton").IsPressed();
                 case VrInput.Grip:
-                    return FindAction("GripButton").IsPressed();
+                    return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
@@ -216,7 +242,7 @@ namespace TiltBrush
                     selectedAction = "TriggerButton";
                     break;
                 case VrInput.Grip:
-                    selectedAction = "GripButton";
+                    selectedAction = "GripAxis";
                     break;
                 case VrInput.Button01:
                 case VrInput.Button04:
