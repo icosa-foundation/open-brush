@@ -6,6 +6,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.ixxy.unitysymmetry": {
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=1#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "8fb807afed8b2624fab29c4b6608fdf6007953fd"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
