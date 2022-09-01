@@ -644,8 +644,9 @@ namespace TiltBrush
                         // This will probably not work once new headsets are released.
                         // Maybe something like this instead?
                         //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
-                        bool isQuestController = (XRDevice.refreshRate < 81f) ||
-                            (App.Config.VrHardware == VrHardware.Quest);
+                        // bool isQuestController = (XRDevice.refreshRate < 81f) ||
+                        //     (App.Config.VrHardware == VrHardware.Quest);
+                        bool isQuestController = App.Config.IsMobileHardware;
                         controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
 #if OCULUS_SUPPORTED
                         // If we're using Oculus' own plugin rather than OpenXR, the controller pose is different.

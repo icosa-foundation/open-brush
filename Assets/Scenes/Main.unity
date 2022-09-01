@@ -18079,7 +18079,7 @@ MonoBehaviour:
     type: 3}
   m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
     type: 3}
-  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: 69c3c19f56c3e5a42906ce154be66897,
+  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
   m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
