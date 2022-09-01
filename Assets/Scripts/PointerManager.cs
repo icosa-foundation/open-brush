@@ -55,6 +55,8 @@ namespace TiltBrush
         [NonSerialized] public CustomSymmetryType m_CustomSymmetryType;
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
+        [NonSerialized] public int m_WallpaperSymmetryX = 3;
+        [NonSerialized] public int m_WallpaperSymmetryY = 3;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup;
 
         // Modifying this struct has implications for binary compatibility.
@@ -796,13 +798,12 @@ namespace TiltBrush
 
                 case SymmetryMode.FourAroundY:
                     {
-                        // aboutY is an operator that rotates worldspace objects N degrees around the widget's Y
                         TrTransform tr;
                         {
                             var matrices = GetCustomMirrorMatrices();
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                             // convert from widget-local coords to world coords
-                            tr = TrTransform.FromMatrix4x4(matrices[child]);
+                            tr = TrFromMatrixWithFixedReflections(matrices[child]);
                             tr = tr.TransformBy(xfWidget);
                         }
                         return tr * xfMain;
@@ -825,15 +826,22 @@ namespace TiltBrush
         
         private List<Matrix4x4> GetCustomMirrorMatrices()
         {
-            List<Matrix4x4> matrices = null;
+            List<Matrix4x4> matrices;
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
+                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY);
+                    matrices = wallpaperSym.matrices;
+                    break;
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:
                 default:
-                    var sym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0);
-                    matrices = sym.matrices;
+                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0);
+                    matrices = pointSym.matrices;
+                    for (var i = 0; i < matrices.Count; i++)
+                    {
+                        var m = matrices[i];
+                    }
                     break;
             }
             return matrices;
@@ -871,7 +879,7 @@ namespace TiltBrush
                         TrTransform cur = TrTransform.identity;
                         for (int i = 0; i < matrices.Count; i++)
                         {
-                            tr = TrTransform.FromMatrix4x4(matrices[i]);
+                            tr = TrFromMatrixWithFixedReflections(matrices[i]);
                             // convert from widget-local coords to world coords
                             tr = xfWidget * tr * xfWidget.inverse;
                             var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
@@ -900,6 +908,29 @@ namespace TiltBrush
                     }
                     break;
             }
+        }
+        
+        private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
+        {
+            // Custom symmetry matrices have negative scale which brushscripts don't support
+            var tr = TrTransform.FromMatrix4x4(m);
+            return tr;
+            if (tr.scale < 0)
+            {
+                Debug.Log($"Fixing scale");
+                tr.scale = Mathf.Abs(tr.scale);
+                
+                // tr = new Plane(Vector3.left, 0).ReflectPoseKeepHandedness(tr);
+                // tr = new Plane(Vector3.down, 0).ReflectPoseKeepHandedness(tr);
+
+                // tr = new Plane(Vector3.left, 0).ReflectPoseKeepHandedness(tr);
+                tr = new Plane(Vector3.forward, 0).ReflectPoseKeepHandedness(tr);
+
+                // tr = new Plane(Vector3.down, 0).ReflectPoseKeepHandedness(tr);
+                // tr = new Plane(Vector3.back, 0).ReflectPoseKeepHandedness(tr);
+
+            }
+            return tr;
         }
 
         /// Called every frame while Activate is disallowed

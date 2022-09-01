@@ -18,6 +18,22 @@ namespace TiltBrush
 {
     public class MirrorOptionsPopUpWindow : OptionsPopUpWindow
     {
+
+        public GameObject m_PointSymmetryControls;
+        public GameObject m_WallpaperSymmetryControls;
+
+        private void Awake()
+        {
+            if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
+            {
+                HandleShowPointSymmetry();
+            }
+            else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Wallpaper)
+            {
+                HandleShowWallpaperSymmetry();
+            }
+        }
+        
         public void HandleChangeMirrorTypeButton(MirrorTypeButton btn)
         {
             PointerManager.m_Instance.m_CustomSymmetryType = btn.m_CustomSymmetryType;
@@ -36,5 +52,30 @@ namespace TiltBrush
         {
             PointerManager.m_Instance.m_PointSymmetryOrder = Mathf.FloorToInt(value.z);
         }
+        
+        public void HandleChangeWallpaperSymmetryX(Vector3 value)
+        {
+            PointerManager.m_Instance.m_WallpaperSymmetryX = Mathf.FloorToInt(value.z);
+        }
+        
+        public void HandleChangeWallpaperSymmetryY(Vector3 value)
+        {
+            PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
+        }
+
+        public void HandleShowPointSymmetry()
+        {
+            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
+            m_PointSymmetryControls.SetActive(true);
+            m_WallpaperSymmetryControls.SetActive(false);
+        }
+
+        public void HandleShowWallpaperSymmetry()
+        {
+            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(true);
+        }
+
     }
 }
