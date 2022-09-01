@@ -925,6 +925,161 @@ MonoBehaviour:
     m_Localized: Scene Cost
     m_Metadata:
       m_Items: []
+  - m_Id: 8042722189090816
+    m_Localized: Your Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8043915934146560
+    m_Localized: Featured Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044071635099648
+    m_Localized: Liked Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044139993866240
+    m_Localized: Backed-up Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044507112906752
+    m_Localized: Close Sketchbook
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051469124870144
+    m_Localized: Your Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051592198332416
+    m_Localized: From This Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051847228792832
+    m_Localized: Featured Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052065399709696
+    m_Localized: From Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052141249503232
+    m_Localized: Liked Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052215190888448
+    m_Localized: From Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052288863838208
+    m_Localized: Backed-up Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052489070551040
+    m_Localized: On Google Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053396663410688
+    m_Localized: Browse Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053860821868544
+    m_Localized: Backing up on Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054034549940224
+    m_Localized: Drive Backup Complete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054126757519360
+    m_Localized: Drive Backup Disabled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054220533768192
+    m_Localized: Drive Backup Full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132688213876736
+    m_Localized: 'No saved
+
+      sketches'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132930728534016
+    m_Localized: 'No Google Drive
+
+      sketches
+
+      available'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133179773722624
+    m_Localized: 'Like       sketches
+
+      on Poly to
+
+      see them here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133306584309760
+    m_Localized: OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133516949626880
+    m_Localized: 'Retrieving
+
+      sketches...'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134247853236224
+    m_Localized: 'Error gathering sketches from Poly
+
+      <color=#969696>
+
+      How''s
+      your Internet?</color>'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134539248312320
+    m_Localized: 'Sign in to access
+
+      Poly sketches'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134688972382208
+    m_Localized: 'Sign in to access
+
+      Google Drive'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134789291745280
+    m_Localized: 'Poly was shut down
+
+      on 2021/06/30
+
+
+      Icosa Gallery support
+
+      coming
+      soon!'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134947404423168
+    m_Localized: 'Error Connecting
+
+      to Poly'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137717402476544
+    m_Localized: SIGN IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137908562075648
+    m_Localized: SIGN IN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10138131262840832
+    m_Localized: New Sketch
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

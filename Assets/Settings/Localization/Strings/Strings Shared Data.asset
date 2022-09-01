@@ -883,6 +883,130 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_SCENECOST_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 8042722189090816
+    m_Key: SKETCHBOOK_PANEL_STANDARD_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8043915934146560
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044071635099648
+    m_Key: SKETCHBOOK_PANEL_LIKED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044139993866240
+    m_Key: SKETCHBOOK_PANEL_DRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044507112906752
+    m_Key: SKETCHBOOK_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051469124870144
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051592198332416
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051847228792832
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052065399709696
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052141249503232
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052215190888448
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052288863838208
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052489070551040
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053396663410688
+    m_Key: SKETCHBOOK_PANEL_ONLINEGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053860821868544
+    m_Key: SKETCHBOOK_PANEL_DRIVESYNCING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054034549940224
+    m_Key: SKETCHBOOK_PANEL_DRIVEENABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054126757519360
+    m_Key: SKETCHBOOK_PANEL_DRIVEDISABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054220533768192
+    m_Key: SKETCHBOOK_PANEL_DRIVEFULL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132688213876736
+    m_Key: SKETCHBOOK_PANEL_NOSKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132930728534016
+    m_Key: SKETCHBOOK_PANEL_NODRIVESKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133179773722624
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133306584309760
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133516949626880
+    m_Key: SKETCHBOOK_PANEL_CONTACTSERVER_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134247853236224
+    m_Key: SKETCHBOOK_PANEL_SHOWCASEERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134539248312320
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134688972382208
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134789291745280
+    m_Key: SKETCHBOOK_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134947404423168
+    m_Key: SKETCHBOOK_PANEL_NOPOLYCONNECTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137717402476544
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137908562075648
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10138131262840832
+    m_Key: SKETCHBOOK_PANEL_NEWSKETCH_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
