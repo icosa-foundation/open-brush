@@ -1415,7 +1415,7 @@ static class BuildTiltBrush
             //config.OnValidate(xrSdk, TargetToGroup(target));
             config.DoBuildTimeConfiguration(target);
 
-            if (BuildTiltBrush.GuiSelectedBuildTarget == BuildTarget.Android)
+            if (GuiSelectedBuildTarget == BuildTarget.Android)
             {
                 if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
                 {

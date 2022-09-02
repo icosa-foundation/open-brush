@@ -123,14 +123,6 @@ namespace TiltBrush
             InputManager.OnSwapControllers -= AttachToBrush;
         }
 
-        void Start()
-        {
-            if (App.Config.VrHardware == VrHardware.None)
-            {
-                gameObject.SetActive(false);
-            }
-        }
-
         void Update()
         {
             //update state according to player's view to meter
