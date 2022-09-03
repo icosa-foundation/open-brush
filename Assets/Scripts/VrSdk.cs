@@ -873,6 +873,10 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Vive);
             }
+            else if (device.name.StartsWith("Windows MR Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Wmr);
+            }
             else
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);
