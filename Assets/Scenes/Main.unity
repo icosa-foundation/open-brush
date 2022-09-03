@@ -28535,7 +28535,7 @@ MonoBehaviour:
     m_ModeVr: 1
     m_ModeVrExperimental: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
