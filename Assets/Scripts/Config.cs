@@ -36,7 +36,7 @@ namespace TiltBrush
 {
     public enum XrSdkMode
     {
-        Mono = -1,
+        Monoscopic = -1,
         OpenXR = 0,
         Oculus,
         Wave,

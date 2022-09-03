@@ -110,6 +110,9 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
+            // Mono
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -195,7 +198,7 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Mono);
+            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -394,13 +397,13 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
     static void MenuItem_Plugin_Mono()
     {
-        GuiSelectedSdk = XrSdkMode.Mono;
+        GuiSelectedSdk = XrSdkMode.Monoscopic;
     }
 
     [MenuItem(kMenuPluginMono, isValidateFunction: true)]
     static bool MenuItem_Plugin_Mono_Validate()
     {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Mono);
+        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
         return true;
     }
 
@@ -632,6 +635,17 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
+        }
+    }
+
+    static public SdkMode XrTargetToSdk(XrSdkMode mode)
+    {
+        switch (mode)
+        {
+            case XrSdkMode.Monoscopic:
+                return SdkMode.Monoscopic;
+            default:
+                return SdkMode.UnityXR;
         }
     }
 
@@ -1012,6 +1026,9 @@ static class BuildTiltBrush
                     //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
                     // }
                     break;
+                case XrSdkMode.Monoscopic:
+                    requiredFeatureStrings.Add("com.unity.openxr.feature.mockruntime");
+                    break;
             }
 
             if (requiredFeatureStrings.Count == 0)
@@ -1089,6 +1106,7 @@ static class BuildTiltBrush
                     targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
                     break;
                 case XrSdkMode.OpenXR:
+                case XrSdkMode.Monoscopic:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
                 default:
@@ -1411,8 +1429,8 @@ static class BuildTiltBrush
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
-            //config.m_SdkMode = xrSdk;
+            // TODO: can we think of a better way of switching to mono/something else in the future?
+            config.m_SdkMode = XrTargetToSdk(xrSdk);
             config.m_IsExperimental = tiltOptions.Experimental;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;

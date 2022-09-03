@@ -138,6 +138,10 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             extraoptions: -btb-experimental
+          - name: Windows Monoscopic Experimental
+            targetPlatform: StandaloneWindows64
+            vrsdk: Monoscopic
+            extraoptions: -btb-experimental
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
@@ -342,6 +346,12 @@ jobs:
           name: Windows Rift Experimental
           path: build_windows_rift_experimental
 
+      - name: Download Build Artifacts (Windows Monoscopic Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Windows Monoscopic Experimental
+          path: build_windows_mono_experimental
+
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v2
         with:
@@ -365,15 +375,18 @@ jobs:
           mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
           mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
+          mv build_windows_mono_experimental/StandaloneWindows64-Monoscopic/ releases/OpenBrush_Mono_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
+          zip -r OpenBrush_Mono_Experimental_$VERSION.zip OpenBrush_Mono_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Desktop_Experimental_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
           rm -rf OpenBrush_Rift_Experimental_$VERSION
+          rm -rf OpenBrush_Mono_Experimental_$VERSION
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
