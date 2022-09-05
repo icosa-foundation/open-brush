@@ -1080,6 +1080,30 @@ MonoBehaviour:
     m_Localized: New Sketch
     m_Metadata:
       m_Items: []
+  - m_Id: 10142251554152448
+    m_Localized: Snap and Stroke Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142405791293440
+    m_Localized: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149748172103680
+    m_Localized: Snap Angle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149812609196032
+    m_Localized: Snap Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149921501716480
+    m_Localized: Snap Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10160187903811584
+    m_Localized: Jitter
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -1007,6 +1007,30 @@ MonoBehaviour:
     m_Key: SKETCHBOOK_PANEL_NEWSKETCH_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 10142251554152448
+    m_Key: SNAP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142405791293440
+    m_Key: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149748172103680
+    m_Key: SNAP_PANEL_ANGLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149812609196032
+    m_Key: SNAP_PANEL_GRID_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149921501716480
+    m_Key: SNAP_PANEL_SNAPGRID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10160187903811584
+    m_Key: SNAP_PANEL_JITTER_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
