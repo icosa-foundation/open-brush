@@ -25,7 +25,7 @@ namespace TiltBrush
         public bool m_IsToggledOn;
         public UnityEvent m_OnToggle;
 
-        protected override bool IsButtonActive()
+        public override bool IsButtonActive()
         {
             return m_IsToggledOn;
         }

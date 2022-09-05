@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -21,7 +22,13 @@ namespace TiltBrush
 
         public GameObject m_PointSymmetryControls;
         public GameObject m_WallpaperSymmetryControls;
-
+        public AdvancedSlider m_PointSymmetryOrderSlider;
+        public AdvancedSlider m_WallpaperScaleSlider;
+        public AdvancedSlider m_WallpaperRepeatXSlider;
+        public AdvancedSlider m_WallpaperRepeatYSlider;
+        
+        private bool m_MirrorState;
+        
         private void Awake()
         {
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
@@ -32,8 +39,41 @@ namespace TiltBrush
             {
                 HandleShowWallpaperSymmetry();
             }
+            
+            m_PointSymmetryOrderSlider.m_InitialValue = PointerManager.m_Instance.m_PointSymmetryOrder;
+            m_WallpaperScaleSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScale;
+            m_WallpaperRepeatXSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryX;
+            m_WallpaperRepeatYSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryY;
         }
-        
+
+        public OptionButton GetParentButton()
+        {
+            return m_ParentPanel.GetComponentsInChildren<LongPressButton>().First(
+                b => b.m_Command == SketchControlsScript.GlobalCommands.SymmetryFour
+            );
+        }
+
+        public override bool RequestClose(bool bForceClose = false)
+        {
+            bool close = base.RequestClose(bForceClose);
+            if (close)
+            {
+                // Restore mirror state as the long press button misbehaves sometimes
+                if (GetParentButton().IsButtonActive() != m_MirrorState)
+                {
+                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.SymmetryFour);
+                }
+            }
+            return close;
+        }
+
+        public override void Init(GameObject rParent, string sText)
+        {
+            base.Init(rParent, sText);
+            // Store mirror state as the long press button misbehaves sometimes
+            m_MirrorState = GetParentButton().IsButtonActive();
+        }
+
         public void HandleChangeMirrorTypeButton(MirrorTypeButton btn)
         {
             PointerManager.m_Instance.m_CustomSymmetryType = btn.m_CustomSymmetryType;
@@ -61,6 +101,11 @@ namespace TiltBrush
         public void HandleChangeWallpaperSymmetryY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
+        }
+        
+        public void HandleChangeWallpaperSymmetryScale(Vector3 value)
+        {
+            PointerManager.m_Instance.m_WallpaperSymmetryScale = value.z;
         }
 
         public void HandleShowPointSymmetry()

@@ -58,7 +58,8 @@ namespace TiltBrush
         [NonSerialized] public int m_WallpaperSymmetryX = 3;
         [NonSerialized] public int m_WallpaperSymmetryY = 3;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup;
-
+        [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
+        
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
         // See SketchMemoryScript.ReadMemory.
@@ -830,7 +831,9 @@ namespace TiltBrush
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
-                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY);
+                    float canvasScale = App.ActiveCanvas.Pose.scale;
+                    float mirrorScale = canvasScale * m_WallpaperSymmetryScale;
+                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, mirrorScale);
                     matrices = wallpaperSym.matrices;
                     break;
                 case CustomSymmetryType.Point:
