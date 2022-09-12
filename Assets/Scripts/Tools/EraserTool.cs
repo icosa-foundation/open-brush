@@ -26,6 +26,15 @@ namespace TiltBrush
         private float m_SpinSpeedVel;
         private float m_SpinAmount;
 
+        public override bool IsHot
+        {
+            get
+            {
+                return !m_EatInput && !m_ToolHidden &&
+                    InputManager.m_Instance.GetCommand(InputManager.SketchCommands.SpecialErase);
+            }
+        }
+
         override public void HideTool(bool bHide)
         {
             base.HideTool(bHide);

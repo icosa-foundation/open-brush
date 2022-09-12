@@ -86,6 +86,8 @@ namespace TiltBrush
             Trash,
             Share,
             Fly,
+            SpecialErase,
+            SpecialPaint
         }
 
         /// WARNING: do not arbitrarily rename these enum values.
@@ -462,6 +464,15 @@ namespace TiltBrush
             Wand.Behavior.SetTouchLocatorActive(Wand.GetPadTouch());
             Wand.Behavior.SetTouchLocatorPosition(Wand.GetPadValue());
             Brush.Behavior.SetTouchLocatorPosition(Brush.GetPadValue());
+
+            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.SpecialErase))
+            {
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.EraserTool);
+            }
+            else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.SpecialPaint))
+            {
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FreePaintTool);
+            }
         }
 
         void LateUpdate()
@@ -599,6 +610,10 @@ namespace TiltBrush
                 case SketchCommands.Redo:
                     return Wand.GetCommand(rCommand);
                 case SketchCommands.Fly:
+                    return Brush.GetCommand(rCommand);
+                case SketchCommands.SpecialErase:
+                    return Brush.GetCommand(rCommand);
+                case SketchCommands.SpecialPaint:
                     return Brush.GetCommand(rCommand);
             }
 
