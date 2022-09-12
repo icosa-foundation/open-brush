@@ -1,43 +1,45 @@
-# Open Brush - A Tilt Brush fork
+# Open Brush - Tilt Brush Evolved
 
 [![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
 [![All GitHub releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-gallery/open-brush/releases/latest)
 [![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)
+![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)
 
+[![Open Brush Banner](open-brush.png)](https://openbrush.app)
 
-**Current Version: ![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)**
+Open Brush is a free fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We have made a large number of changes from the original repository, including Unity upgrades and feature additions to bring Open Brush up to modern XR development standards. You can find the notable changes on our [docs site](https://docs.openbrush.app/differences-between-open-brush-and-tilt-brush).
 
-**Pre-release Version: ![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)**
-
-Open brush is a fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We hope to maintain and improve upon Tilt Brush as a community-led project, free forever!
+We hope to maintain and improve upon Tilt Brush as a community-led project, free forever!
 
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
 
 [User Guide](https://docs.openbrush.app/)  
 [Developer Notes](https://docs.openbrush.app/developer-notes)  
+[Roadmap](https://github.com/orgs/icosa-gallery/projects/1)  
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
-[Open Brush Trello](https://trello.com/b/jItetqYe/open-brush)  
 [List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
 **[Support us on Open Collective!](https://opencollective.com/icosa)**  
 
 ## Downloads
 ### Stores (Did we mention it's free?)
-- [itch.io](https://openbrush.itch.io/openbrush)
 - [SideQuest](https://sidequestvr.com/app/2852/open-brush)
 - [Oculus App Lab](https://www.oculus.com/experiences/quest/3600360710032222)
-- [Oculus Rift](https://www.oculus.com/experiences/rift/5227489953989768)
 - [Steam](https://store.steampowered.com/app/1634870/Open_Brush)
+- [Oculus Rift](https://www.oculus.com/experiences/rift/5227489953989768)
 - [Viveport Desktop](https://www.viveport.com/f1f3d00b-cf8a-443f-825e-4fea2dd3b005)
+- [itch.io](https://openbrush.itch.io/openbrush)
 ### GitHub
 - [Formal GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
 - [Bleeding Edge GitHub Releases](#bleeding-edge-releases)
 
 
 ## Acknowledgements
-* Thank you to the Tilt Brush developers for your amazing work! 
+* Thank you to the Tilt Brush developers for your amazing work and for finding a way to open source the app! 
 * [SiMonk0](http://www.furjandesign.com/) for the great new logo!
 * The [SideQuest](https://sidequestvr.com/) team for your support.
+* [VR Rosie](https://twitter.com/vr_rosie) for promotional artwork, banners, and videos.
 
 ## Bleeding Edge Releases
 
@@ -47,7 +49,7 @@ These builds share a save location with the official Open Brush release, but can
 
 Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
 
-In addition, there are also versions created for Linux (SteamVR and Monoscopic), OS X (Monoscopic only), and Windows Monoscopic that are listed as "Artifacts" of the Github Actions, however, these are intended only for developers, and should not be used by general users. You can find them by browsing to the [commit list](https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts (6)** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop SteamVR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. Note that if you download a Mac OS X build, you'll need to run `xattr -d com.apple.quarantine /path/to/OpenBrush-github.app` prior to be able to launch the app, as it is not signed with Apple developer keys. 
+In addition, there is also a version created for  Windows Monoscopic that is listed as an "Artifact" of the Github Actions, however, this is intended only for developers, and should not be used by general users. You can find it by browsing to the [commit list](https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop OpenXR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. 
 
 ## Important note from the original Tilt Brush README
 
@@ -58,7 +60,7 @@ the Tilt Brush Trademarks other than those permitted in these guidelines must be
 approved in advance.
 
 For more information, read the
-[Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md).
+[Tilt Brush Brand Guidelines](TILT_BRUSH_BRAND_GUIDELINES.md).
 
 ---
 
@@ -68,7 +70,7 @@ Get the Open Brush open-source application running on your own devices.
 
 ### Prerequisites
 
-*   [Unity 2019.4.25f1](unityhub://2019.4.25f1/01a0494af254)
+*   [Unity 2021.3.9f1](unityhub://2019.4.25f1/01a0494af254)
 *   [Python 3](https://www.python.org/downloads/) (Optional —
     needed only if you wish to run the scripts in the `Support/bin` directory)
     Tested with Python 3.8.
@@ -92,8 +94,8 @@ These steps have been tested with Release 1.0.54.
 
 Although it's possible to build Open Brush using the standard Unity build tools,
 we recommend using a build script to ensure the application builds with the
-correct settings. To run this script, go to **Tilt** > **Build** > **Do Build**,
-or build from the Open Brush build window by navigating to **Tilt** >
+correct settings. To run this script, go to **Open Brush** > **Build** > **Do Build**,
+or build from the Open Brush build window by navigating to **Open Brush** >
 **Build** > **Build Window**.
 
 Note: The application may take a while to build the first time.
@@ -215,9 +217,9 @@ enable native Oculus support:
 
 1.  Enable the Oculus desktop package in the Package Manager.
 1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/27.0/).
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/41.0/).
 
-**Note:** The above link goes to version 27.0 which is the current latest version. You only need to include the `Platform` and `VR` subdirectories when you import.
+**Note:** The above link goes to version 41.0. You only need to include the `Platform` and `VR` subdirectories when you import.
 
 1.  If you see a dialog about upgrading the Unity Oculus plugin, click
     **Accept**.
@@ -233,12 +235,12 @@ Follow these steps to build your app for Oculus Quest:
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
-    *   **Tilt** > **Build** > **SDK: OVR**
-    *   **Tilt** > **Build** > **Platform: Android**
-    *   **Tilt** > **Build** > **Runtime: Mono**
-1.  Navigate to **Tilt** > **Build** > **Do Build**.
+    *   **Open Brush** > **Build** > **SDK: OVR**
+    *   **Open Brush** > **Build** > **Platform: Android**
+    *   **Open Brush** > **Build** > **Runtime: Mono**
+1.  Navigate to **Open Brush** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
-    `../Builds/OculusMobile_Release_OpenBrush_FromGui/`.
+    `../Builds/OculusMobile_Release_OpenBrush/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
 **Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
@@ -276,7 +278,7 @@ Follow these steps to replace or alter the intro sketch:
 
 1.  Make sure the sketch of your choice is already loaded. Run Open Brush in the
     Unity Editor.
-1.  Select **Tilt** > **Convert To Intro Materials** in the main Unity menu.
+1.  Select **Open Brush** > **Convert To Intro Materials** in the main Unity menu.
     This converts the materials in the sketch to the intro versions. \
     You will get warnings in the console for any materials it could not convert,
     as well as a summary of how many materials it converted.
@@ -285,8 +287,8 @@ Follow these steps to replace or alter the intro sketch:
     the intro materials set.
 1.  Move any objects that do not start with `Batch_` out from under the **Main
     Canvas** node.
-1.  Select the **Main Canvas** node and run the **Tilt** > **Save Game Object As
-    Prefab** menu command. \
+1.  Select the **Main Canvas** node and run the **Open Brush** > **Save Game Object As Prefab**
+menu command. \
     The scene will be saved as a `*.prefab` file called `gameobject_to_prefab`.
     under the `Assets/TestData` folder.
 1.  Move the game object into the `Assets/Prefabs/Intro` folder.
