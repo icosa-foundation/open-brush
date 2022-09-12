@@ -444,35 +444,24 @@ namespace TiltBrush
             // If we're initializing our controllers, continue to look for them.
             if (App.VrSdk.IsInitializingUnityXR)
             {
-                // TODO:Mike - is this holding state needed?
+                return;
             }
-            else
+
+            // Update controller infos.
+            for (int i = 0; i < m_ControllerInfos.Length; ++i)
             {
-                // Update controller infos.
-                for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                {
-                    m_ControllerInfos[i].Update();
-                }
-
-                // // TODO:Mike - what is this even for?
-                // //cache touch inputs so we can control their usage
-                // m_Touch.m_Valid = (Touchscreen.current.touches.Count > 0) 
-                //     && (Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began);
-                // if (m_Touch.m_Valid)
-                // {
-                //     m_Touch.m_Pos = Touchscreen.current.primaryTouch.ReadValue().position;
-                // }
-
-                // Update touch locators.
-                // Controller pad touch locator should be active if thumb is on the pad.
-                // For the brush controller, tools can override this, unless we're in the intro tutorial.
-                Brush.Behavior.SetTouchLocatorActive(Brush.GetPadTouch() &&
-                    (SketchSurfacePanel.m_Instance.ActiveTool.ShouldShowTouch() ||
-                    TutorialManager.m_Instance.TutorialActive()));
-                Wand.Behavior.SetTouchLocatorActive(Wand.GetPadTouch());
-                Wand.Behavior.SetTouchLocatorPosition(Wand.GetPadValue());
-                Brush.Behavior.SetTouchLocatorPosition(Brush.GetPadValue());
+                m_ControllerInfos[i].Update();
             }
+
+            // Update touch locators.
+            // Controller pad touch locator should be active if thumb is on the pad.
+            // For the brush controller, tools can override this, unless we're in the intro tutorial.
+            Brush.Behavior.SetTouchLocatorActive(Brush.GetPadTouch() &&
+                (SketchSurfacePanel.m_Instance.ActiveTool.ShouldShowTouch() ||
+                TutorialManager.m_Instance.TutorialActive()));
+            Wand.Behavior.SetTouchLocatorActive(Wand.GetPadTouch());
+            Wand.Behavior.SetTouchLocatorPosition(Wand.GetPadValue());
+            Brush.Behavior.SetTouchLocatorPosition(Brush.GetPadValue());
         }
 
         void LateUpdate()

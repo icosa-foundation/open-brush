@@ -209,13 +209,9 @@ namespace TiltBrush
                 case VrInput.Touchpad:
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
-                    var triggerValue = GetTriggerValue();
-                    Vector2 triggerRange = App.VrSdk.VrControls.TriggerActivationRange(Behavior.ControllerName);
-                    return triggerValue > triggerRange.x;
+                    return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
-                    var gripValue = GetGripValue();
-                    Vector2 gripRange = App.VrSdk.VrControls.GripActivationRange;
-                    return gripValue > gripRange.x;
+                    return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
@@ -283,10 +279,9 @@ namespace TiltBrush
         }
         public override void TriggerControllerHaptics(float seconds)
         {
-            device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, seconds);
+            float durationSeconds = seconds * App.VrSdk.VrControls.HapticsDurationScale;
+            device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, durationSeconds);
         }
-
-
     }
 
 } // namespace TiltBrush

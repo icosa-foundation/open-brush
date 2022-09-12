@@ -154,12 +154,9 @@ MonoBehaviour:
   m_TrackingComponents:
   - {fileID: 114096517187107858}
   - {fileID: 114587168986135948}
-  m_HapticsDurationScale: 1
+  m_HapticsDurationScale: 0.01
   m_HapticAmplitudeScale: 0.25
-  m_TriggerActivationRange: {x: 0.15, y: 0.8}
-  m_GripActivationRange: {x: 0.25, y: 0.8}
   m_TouchpadActivationRange: {x: -0.8, y: 0.8}
-  m_LogitechPenActivationRange: {x: 0, y: 1}
   m_WandRotateJoystickPercent: 0.25
 --- !u!1 &1697162171492074
 GameObject:
