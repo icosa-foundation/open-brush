@@ -17,6 +17,7 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 
 [User Guide](https://docs.openbrush.app/)  
 [Developer Notes](https://docs.openbrush.app/developer-notes)  
+[Roadmap](https://github.com/orgs/icosa-gallery/projects/1)  
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
 [List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
 **[Support us on Open Collective!](https://opencollective.com/icosa)**  
