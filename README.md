@@ -7,7 +7,7 @@
 ![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)
 ![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)
 
-[![Open Brush Banner](./open-brush.png)](https://openbrush.app)
+[![Open Brush Banner](open-brush.png)](https://openbrush.app)
 
 Open Brush is a free fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We have made a large number of changes from the original repository, including Unity upgrades and feature additions to bring Open Brush up to modern XR development standards. You can find the notable changes on our [docs site](https://docs.openbrush.app/differences-between-open-brush-and-tilt-brush).
 
@@ -60,7 +60,7 @@ the Tilt Brush Trademarks other than those permitted in these guidelines must be
 approved in advance.
 
 For more information, read the
-[Tilt Brush Brand Guidelines](BRAND_GUIDELINES.md).
+[Tilt Brush Brand Guidelines](TILT_BRUSH_BRAND_GUIDELINES.md).
 
 ---
 
