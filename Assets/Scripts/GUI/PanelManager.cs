@@ -47,8 +47,6 @@ namespace TiltBrush
                         return m_ModeQuest;
                     }
                     return m_ModeVr;
-                case SdkMode.Gvr:
-                    return m_ModeGvr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
                 default:

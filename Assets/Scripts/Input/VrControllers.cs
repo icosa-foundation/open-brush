@@ -32,10 +32,7 @@ namespace TiltBrush
         [SerializeField] private float m_HapticAmplitudeScale = 1.0f;
 
         [Header("Input Zones")]
-        [SerializeField] private Vector2 m_TriggerActivationRange = new Vector2(0.15f, .8f);
-        [SerializeField] private Vector2 m_GripActivationRange = new Vector2(0.15f, .8f);
         [SerializeField] private Vector2 m_TouchpadActivationRange = new Vector2(-.8f, .8f);
-        [SerializeField] private Vector2 m_LogitechPenActivationRange = new Vector2(0.0f, 1.0f);
         [SerializeField] private float m_WandRotateJoystickPercent = 0.7f;
 
         // VR headsets (e.g., Rift, Vive, Wmr) use different hardware for their controllers,
@@ -93,13 +90,6 @@ namespace TiltBrush
             get => m_WandRotateJoystickPercent;
         }
 
-        /// The usable range of the raw grip value.
-        /// This is currently only used as the threshold for analog -> boolean conversion.
-        public Vector2 GripActivationRange
-        {
-            get => m_GripActivationRange;
-        }
-
         public ControllerBehaviorWand Wand
         {
             get => m_Wand;
@@ -124,16 +114,6 @@ namespace TiltBrush
                 return false;
             }
             return true;
-        }
-
-        public Vector2 TriggerActivationRange(InputManager.ControllerName name)
-        {
-            var behavior = GetBehavior(name);
-            if (behavior.ControllerGeometry.Style == ControllerStyle.LogitechPen)
-            {
-                return m_LogitechPenActivationRange;
-            }
-            return m_TriggerActivationRange;
         }
 
         /// Enable or disable tracking

@@ -3236,7 +3236,7 @@ MonoBehaviour:
   m_OdsFps: 30
   m_OdsOutputPath: 
   m_OdsOutputPrefix: 
-  m_VersionNumber: 0.3.0
+  m_VersionNumber: 2.0.0
   m_BuildStamp: 
   m_UseBatchedBrushes: 1
   m_EnableBatchMemoryOptimization: 1
@@ -7690,13 +7690,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9935,7 +9933,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
   m_DefaultImages:
-  - DefaultImages/TiltBrushLogo.png
+  - DefaultImages/OpenBrushLogo.png
 --- !u!114 &652605561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14063,6 +14061,7 @@ Transform:
   - {fileID: 1427708067}
   - {fileID: 1972976745}
   - {fileID: 756778887}
+  - {fileID: 1572529038}
   m_Father: {fileID: 1796800572}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 24.228498, y: -180, z: 0}
@@ -18075,17 +18074,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffad114bb615d7c48879446723017243, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AnalogGripBinaryThreshold_Rift: 0.9
   m_GvrOverlayPrefab: {fileID: 114044421867326160, guid: 50a6faaa5f4e1cf4487e55d232fa8d39,
     type: 3}
-  m_OverlayMaxAlpha: 0.5
-  m_OverlayMaxSize: 8
   m_VrSystem: {fileID: 17776372}
   m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}
   m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
     type: 3}
-  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: 69c3c19f56c3e5a42906ce154be66897,
+  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
   m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
@@ -20124,6 +20120,36 @@ MonoBehaviour:
   m_Fps: {fileID: 948093181}
   m_FrameTime: {fileID: 1605183600}
   m_Smoothing: 0.9
+--- !u!1 &1572529037
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1572529038}
+  m_Layer: 18
+  m_Name: Target
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1572529038
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1572529037}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1038705377}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1575833612
 GameObject:
   m_ObjectHideFlags: 0
@@ -27205,6 +27231,25 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1712388236}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1717152977 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4492044767078796463, guid: 382dabebd59956d499aefb54b02f804d,
+    type: 3}
+  m_PrefabInstance: {fileID: 4492044766644994641}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1717152978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1717152977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c9acfb4340bf4549a26cb8f6891ebcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SpectatorCamTarget: {fileID: 1572529038}
 --- !u!1 &1726887557
 GameObject:
   m_ObjectHideFlags: 0
@@ -28200,12 +28245,16 @@ MonoBehaviour:
   m_YouTubeChatPrefab: {fileID: 113562, guid: 9676f38a8f59017418608d24ddc492e1, type: 3}
   m_Decor: {fileID: 294061574}
   m_InitialTool: 0
-  m_ReleaseNotesURL: https://docs.google.com/document/d/11ZsHozYn9FnWG7y3s3WAyKIACfbfwb4PbaS8cZ_xjvo/preview
-  m_HelpCenterURL: https://support.google.com/tiltbrush/
-  m_ThirdPartyNoticesURL: https://docs.google.com/document/d/1L70mH-vmrLMxZX4525qpffAyqVcg770I74Pw_RGN8Ic/view
-  m_TosURL: http://www.google.com/intl/en/policies/terms/
-  m_PrivacyURL: http://www.google.com/intl/en/policies/privacy/
-  m_QuestSideLoadingHowToURL: https://support.google.com/tiltbrush/answer/9427219?hl=en&ref_topic=7074683
+  m_ReleaseNotesURL: https://docs.openbrush.app/release-history
+  m_HelpCenterURL: https://docs.openbrush.app/user-guide
+  m_ThirdPartyNoticesURL: https://github.com/icosa-gallery/open-brush/blob/main/Support/ThirdParty/GeneratedThirdPartyNotices.txt
+  m_TosURL: https://openbrush.app/privacy-policy
+  m_PrivacyURL: https://openbrush.app/privacy-policy
+  m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
+  m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
+
+    If you enjoy the app, please consider donating in the settings menu!'
+  m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
   m_UndoRedoHold_DurationBeforeStart: 0.5
@@ -28492,7 +28541,7 @@ MonoBehaviour:
     m_ModeVr: 1
     m_ModeVrExperimental: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1

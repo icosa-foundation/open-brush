@@ -141,9 +141,11 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            ShowContribution,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
+            SymmetryTwoHanded = 6003,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
@@ -315,6 +317,10 @@ namespace TiltBrush
         [SerializeField] string m_TosURL;
         [SerializeField] string m_PrivacyURL;
         [SerializeField] string m_QuestSideLoadingHowToURL;
+
+        [Multiline]
+        [SerializeField] string m_ContributionPromoText;
+        [SerializeField] string m_ContributionURL;
 
         [SerializeField] float m_WorldTransformMinScale = .1f;
         [SerializeField] float m_WorldTransformMaxScale = 10.0f;
@@ -721,41 +727,17 @@ namespace TiltBrush
             return m_GrabWorldState == GrabWorldState.Normal;
         }
 
-        public bool InGrabCanvasMode
-        {
-            get
-            {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                if (Config.IsExperimental)
-                {
-                    if (App.Scene.ActiveCanvas != App.Scene.MainCanvas)
-                    {
-                        return true;
-                    }
-                }
-#endif
-                return false;
-            }
-        }
-
         // Internal: modify Coords.ScenePose or Coords.CanvasPose depending on the
         // state of m_InTransformCanvasMode
         TrTransform GrabbedPose
         {
             get
             {
-                return InGrabCanvasMode ? App.Scene.ActiveCanvas.Pose : App.Scene.Pose;
+                return App.Scene.Pose;
             }
             set
             {
-                if (InGrabCanvasMode)
-                {
-                    App.Scene.ActiveCanvas.Pose = value;
-                }
-                else
-                {
-                    App.Scene.Pose = value;
-                }
+                App.Scene.Pose = value;
             }
         }
 
@@ -1379,6 +1361,7 @@ namespace TiltBrush
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
                         : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
+                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.TwoHanded
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -2432,11 +2415,8 @@ namespace TiltBrush
         bool CheckToggleTiltProtection()
         {
             if (
-                !InGrabCanvasMode &&
-                (
                 InputManager.Wand.GetCommandDown(InputManager.SketchCommands.Redo) ||
                 InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Redo)
-                )
             )
             {
                 App.Scene.disableTiltProtection = !App.Scene.disableTiltProtection;
@@ -2529,50 +2509,38 @@ namespace TiltBrush
                         TrTransform xfNew;
                         float deltaScaleMin = WorldTransformMinScale / xfOld.scale;
                         float deltaScaleMax = WorldTransformMaxScale / xfOld.scale;
-                        // Constrain the transform depending on the mode.
-                        if (InGrabCanvasMode)
+                        bool fixOffset = false;
+                        fixOffset = CheckToggleTiltProtection();
+                        xfNew = MathUtils.TwoPointObjectTransformation(
+                            m_GrabBrush.grabTransform, m_GrabWand.grabTransform,
+                            grabXfBrush, grabXfWand,
+                            xfOld,
+                            rotationAxisConstraint: (App.Scene.disableTiltProtection ? default(Vector3) : Vector3.up),
+                            deltaScaleMin: deltaScaleMin, deltaScaleMax: deltaScaleMax);
+                        float fCurrentWorldTransformSpeed =
+                            Mathf.Abs((xfNew.scale - xfOld.scale) / Time.deltaTime);
+                        m_WorldTransformSpeedSmoothed =
+                            Mathf.Lerp(m_WorldTransformSpeedSmoothed, fCurrentWorldTransformSpeed,
+                                AudioManager.m_Instance.m_WorldGrabLoopSmoothSpeed * Time.deltaTime);
+                        AudioManager.m_Instance.ChangeLoopVolume("WorldGrab",
+                            Mathf.Clamp(m_WorldTransformSpeedSmoothed /
+                                AudioManager.m_Instance.m_WorldGrabLoopAttenuation, 0f,
+                                AudioManager.m_Instance.m_WorldGrabLoopMaxVolume));
+
+                        if (fixOffset)
                         {
-                            xfNew = MathUtils.TwoPointObjectTransformation(
-                                m_GrabBrush.grabTransform, m_GrabWand.grabTransform,
-                                grabXfBrush, grabXfWand,
-                                xfOld,
-                                deltaScaleMin: deltaScaleMin, deltaScaleMax: deltaScaleMax);
-                        }
-                        else
-                        {
-                            bool fixOffset = false;
-                            fixOffset = CheckToggleTiltProtection();
-                            xfNew = MathUtils.TwoPointObjectTransformation(
-                                m_GrabBrush.grabTransform, m_GrabWand.grabTransform,
-                                grabXfBrush, grabXfWand,
-                                xfOld,
-                                rotationAxisConstraint: (App.Scene.disableTiltProtection ? default(Vector3) : Vector3.up),
-                                deltaScaleMin: deltaScaleMin, deltaScaleMax: deltaScaleMax);
-                            float fCurrentWorldTransformSpeed =
-                                Mathf.Abs((xfNew.scale - xfOld.scale) / Time.deltaTime);
-                            m_WorldTransformSpeedSmoothed =
-                                Mathf.Lerp(m_WorldTransformSpeedSmoothed, fCurrentWorldTransformSpeed,
-                                    AudioManager.m_Instance.m_WorldGrabLoopSmoothSpeed * Time.deltaTime);
-                            AudioManager.m_Instance.ChangeLoopVolume("WorldGrab",
-                                Mathf.Clamp(m_WorldTransformSpeedSmoothed /
-                                    AudioManager.m_Instance.m_WorldGrabLoopAttenuation, 0f,
-                                    AudioManager.m_Instance.m_WorldGrabLoopMaxVolume));
+                            Vector3 midPoint = Vector3.Lerp(grabXfBrush.translation, grabXfWand.translation, 0.5f);
 
-                            if (fixOffset)
-                            {
-                                Vector3 midPoint = Vector3.Lerp(grabXfBrush.translation, grabXfWand.translation, 0.5f);
+                            Vector3 localMidPointOldXF = xfOld.inverse * midPoint;
 
-                                Vector3 localMidPointOldXF = xfOld.inverse * midPoint;
+                            // assign this to force the axial protection
+                            GrabbedPose = xfNew;
+                            xfNew = GrabbedPose;
 
-                                // assign this to force the axial protection
-                                GrabbedPose = xfNew;
-                                xfNew = GrabbedPose;
+                            Vector3 midPointXFNew = xfNew * localMidPointOldXF;
 
-                                Vector3 midPointXFNew = xfNew * localMidPointOldXF;
-
-                                TrTransform xfDelta1 = TrTransform.T(midPoint - midPointXFNew);
-                                xfNew = xfDelta1 * xfNew;
-                            }
+                            TrTransform xfDelta1 = TrTransform.T(midPoint - midPointXFNew);
+                            xfNew = xfDelta1 * xfNew;
                         }
                         GrabbedPose = xfNew;
                     }
@@ -2612,16 +2580,13 @@ namespace TiltBrush
             if (grabsChanged || bAllowWorldTransformChanged)
             {
                 // Fade in grid when doing two handed spin.
-                if (!InGrabCanvasMode)
+                if (nGrabs == 2 && !bAllowWorldTransformChanged)
                 {
-                    if (nGrabs == 2 && !bAllowWorldTransformChanged)
-                    {
-                        ViewpointScript.m_Instance.FadeGroundPlaneIn(m_GrabWorldGridColor, m_GrabWorldFadeSpeed);
-                    }
-                    else
-                    {
-                        ViewpointScript.m_Instance.FadeGroundPlaneOut(m_GrabWorldFadeSpeed);
-                    }
+                    ViewpointScript.m_Instance.FadeGroundPlaneIn(m_GrabWorldGridColor, m_GrabWorldFadeSpeed);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.FadeGroundPlaneOut(m_GrabWorldFadeSpeed);
                 }
             }
 
@@ -3766,14 +3731,7 @@ namespace TiltBrush
                 App.Scene.Pose = TrTransform.identity;
                 Coords.CanvasLocalPose = TrTransform.identity;
             }
-            if (InGrabCanvasMode)
-            {
-                Coords.CanvasLocalPose = TrTransform.identity;
-            }
-            else
-            {
-                App.Scene.Pose = TrTransform.identity;
-            }
+            App.Scene.Pose = TrTransform.identity;
 
             //reset orientation and pointer
             ResetSketchSurfaceOrientation();
@@ -4327,6 +4285,19 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.SymmetryTwoHanded:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.TwoHanded);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
+                    }
+                    else
+                    {
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
+                    }
+                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
                 case GlobalCommands.StraightEdge:
                     PointerManager.m_Instance.StraightEdgeModeEnabled = !PointerManager.m_Instance.StraightEdgeModeEnabled;
                     if (PointerManager.m_Instance.StraightEdgeModeEnabled)
@@ -4742,6 +4713,13 @@ namespace TiltBrush
                     CameraConfig.PostEffects = !CameraConfig.PostEffects;
                     break;
                 case GlobalCommands.ToggleWatermark:
+                    if (PlayerPrefs.GetInt("Promo_Contribution", 0) == 0)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Wand,
+                            m_ContributionPromoText, fPopScalar: 1.0f);
+                        PlayerPrefs.SetInt("Promo_Contribution", 1);
+                    }
                     CameraConfig.Watermark = !CameraConfig.Watermark;
                     break;
                 case GlobalCommands.LoadConfirmComplexHigh:
@@ -4873,6 +4851,16 @@ namespace TiltBrush
                     }
                     App.OpenURL(m_QuestSideLoadingHowToURL);
                     break;
+                case GlobalCommands.ShowContribution:
+                    EatGazeObjectInput();
+                    if (!App.Config.IsMobileHardware)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush,
+                            kRemoveHeadsetFyi, fPopScalar: 0.5f);
+                    }
+                    App.OpenURL(m_ContributionURL);
+                    break;
                 case GlobalCommands.UnloadReferenceImageCatalog:
                     ReferenceImageCatalog.m_Instance.UnloadAllImages();
                     break;
@@ -4900,15 +4888,15 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/help/commands");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/help/commands");
                     break;
                 case GlobalCommands.OpenScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/scripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/scripts");
                     break;
                 case GlobalCommands.OpenExampleScriptsList:
                     // TODO refactor code above to use this method
-                    OpenUrl("http://localhost:40074/examplescripts");
+                    OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.Null: break; // Intentionally blank.
                 default:
@@ -4957,6 +4945,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();

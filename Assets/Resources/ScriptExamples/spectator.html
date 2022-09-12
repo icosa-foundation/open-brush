@@ -17,35 +17,51 @@
     <form onsubmit="return false;">
         <h4>Environment:</h4>
         <Label>Environment type: <select id="environment.type" name="environment.type"></select></Label>
+        <br>
         <button onclick='setEnv()'>Set</button>
         <br><br>
+
         <h4>Brush:</h4>
         <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label>
         <label>Brush size: <input id="brush.size" value=".0001"></label>
         <label>Brush color: <input id="brush.color" value="#FF5533" type="color"></label>
-        <button onclick='setBrush()'>Set</button>
+        <br>
+        <button onclick='setBrush()'>Set</button>&nbsp;&nbsp;
+        <button onclick='saveBrush(0)'>Save Slot 1</button>
+        <button onclick='saveBrush(1)'>Save Slot 2</button>
+        <button onclick='loadBrush(0)'>Load Slot 1</button>
+        <button onclick='loadBrush(1)'>Load Slot 2</button>
+
         <br><br>
+
+        <h4>Show/Hide</h4>
+        Main Canvas: <button onclick="sendCommand('spectator.show=strokes');">On</button><button onclick="sendCommand('spectator.hide=strokes');">Off</button>
+        Selection Canvas: <button onclick="sendCommand('spectator.show=selection');">On</button><button onclick="sendCommand('spectator.hide=selection');">Off</button>
+        UI: <button onclick="sendCommand('spectator.show=ui');">On</button><button onclick="sendCommand('spectator.hide=ui');">Off</button>
+        Headset: <button onclick="sendCommand('spectator.show=headset');">On</button><button onclick="sendCommand('spectator.hide=headset');">Off</button>
+        Panels: <button onclick="sendCommand('spectator.show=panels');">On</button><button onclick="sendCommand('spectator.hide=panels');">Off</button>
+        Widgets: <button onclick="sendCommand('spectator.show=widgets');">On</button><button onclick="sendCommand('spectator.hide=widgets');">Off</button>
+        User Tools: <button onclick="sendCommand('spectator.show=usertools');">On</button><button onclick="sendCommand('spectator.hide=usertools');">Off</button>
+        </label><br><br>
+
         <h4>Spectator Camera:</h4>
-        <label>Status: <button onclick="spectatorOn()">On</button><button onclick="spectatorOff()">Off</button></label><br>
+        <label>Status: <button onclick="spectatorOn()">On</button><button onclick="spectatorOff()">Off</button></label>&nbsp;
         <label>Mode:
             <button onclick="sendCommand('spectator.mode=stationary');">Stationary</button>
             <button onclick="sendCommand('spectator.mode=slowfollow');">Follow</button>
             <button onclick="sendCommand('spectator.mode=circular');">Circular</button>
             <button onclick="sendCommand('spectator.mode=wobble');">Wobble</button>
         </label><br><br>
-        <h4>Show/Hide</h4>
 
-            Main Canvas: <button onclick="sendCommand('spectator.show=strokes');">On</button><button onclick="sendCommand('spectator.hide=strokes');">Off</button>
-            Selection Canvas: <button onclick="sendCommand('spectator.show=selection');">On</button><button onclick="sendCommand('spectator.hide=selection');">Off</button>
-            UI: <button onclick="sendCommand('spectator.show=ui');">On</button><button onclick="sendCommand('spectator.hide=ui');">Off</button>
-            Headset: <button onclick="sendCommand('spectator.show=headset');">On</button><button onclick="sendCommand('spectator.hide=headset');">Off</button>
-            Panels: <button onclick="sendCommand('spectator.show=panels');">On</button><button onclick="sendCommand('spectator.hide=panels');">Off</button>
-            Widgets: <button onclick="sendCommand('spectator.show=widgets');">On</button><button onclick="sendCommand('spectator.hide=widgets');">Off</button>
-            User Tools: <button onclick="sendCommand('spectator.show=usertools');">On</button><button onclick="sendCommand('spectator.hide=usertools');">Off</button>
-        </label><br><br>
         <label>Position: <input id="campos.x" value="0">,<input id="campos.y" value="11">,<input id="campos.z" value="0"></label><br>
-        <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="11">,<input id="camtarget.z" value="-3"></label><br>
-        <button onclick='setCam();'>Set</button><br><br>
+        <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="11">,<input id="camtarget.z" value="8"></label><br>
+        <button onclick='setCam();'>Set</button>&nbsp;&nbsp;
+        <button onclick='saveCamera(0)'>Save Slot 1</button>
+        <button onclick='saveCamera(1)'>Save Slot 2</button>
+        <button onclick='loadCamera(0)'>Load Slot 1</button>
+        <button onclick='loadCamera(1)'>Load Slot 2</button>
+        <br><br><br><br>
+
         <label>Look:
             <button type="button" id='lookLeft'>←</button>
             <button type="button" id='lookUp'>↑</button>
@@ -60,15 +76,15 @@
             <button type="button" id='moveRight'>→</button>
             <button type="button" id='moveBack'>↓↓</button>
         </label>
-
         <br><br>
+
         <h4>Actions:</h4>
         <button onclick="sendCommand('save');">Save Current Scene</button>
         <button onclick="sendCommand('export');">Export Current Scene</button>
         <button onclick="sendCommand('showfolder.exports');">Show Exports Folder</button>
-        <br><br>
+        <br><br><br><br><br>
         <button onclick="sendCommand('new');">Clear Current Scene</button>
-        <button onclick="sendCommand('brush.move.to=0,11,3'); sendCommand('draw.path=[-1,0,0],[1,0,0],[0,1,0],[-1,0,0]');">Test</button>
+
     </form>
 </div>
 
@@ -99,23 +115,97 @@
         var url = '/api/v1?' + command;
         xmlHttp.open('GET', url, false);
         xmlHttp.send(null);
+        return xmlHttp.responseText;
+    }
+
+    function getBrushInputs()
+    {
+        return {
+            'color': document.getElementById("brush.color").value.replace("#", ""),
+            'size': document.getElementById("brush.size").value,
+            'brushtype': document.getElementById("brush.type").value
+        }
+    }
+
+    function setBrushInputs(brush) {
+        document.getElementById("brush.color").value = '#' + brush.color;
+        document.getElementById("brush.size").value = brush.size;
+        document.getElementById("brush.type").value = brush.brushtype;
     }
 
     function setBrush() {
-        sendCommand('color.set.html=' + document.getElementById("brush.color").value.replace("#", ""));
-        sendCommand('brush.size.set=' + document.getElementById("brush.size").value);
-        sendCommand('brush.type=' + document.getElementById("brush.type").value);
+        var brush = getBrushInputs();
+        sendCommand('color.set.html=' + brush.color);
+        sendCommand('brush.size.set=' + brush.size);
+        sendCommand('brush.type=' + brush.brushtype);
+    }
+
+    function saveBrush(slot) {
+        var brush = getBrushInputs();
+        localStorage.setItem('color' + slot, brush.color);
+        localStorage.setItem('size' + slot, brush.size);
+        localStorage.setItem('brushtype' + slot, brush.brushtype);
+    }
+
+    function loadBrush(slot) {
+        var brush = {
+            'color': localStorage.getItem('color' + slot),
+            'size': localStorage.getItem('size' + slot),
+            'brushtype': localStorage.getItem('brushtype' + slot),
+        }
+        setBrushInputs(brush);
+        sendCommand('color.set.html=' + brush.color);
+        sendCommand('brush.size.set=' + brush.size);
+        sendCommand('brush.type=' + brush.brushtype);
     }
 
     function setEnv() {
         sendCommand('environment.type=' + document.getElementById("environment.type").value);
     }
 
+    function getPosInputs() {
+        return `${document.getElementById("campos.x").value},${document.getElementById("campos.y").value},${document.getElementById("campos.z").value}`;
+    }
+
+    function getTargetInputs() {
+        return `${document.getElementById("camtarget.x").value},${document.getElementById("camtarget.y").value},${document.getElementById("camtarget.z").value}`;
+    }
+
+    function setPosInputs(campos) {
+        var items = campos.split(",");
+        document.getElementById("campos.x").value = items[0];
+        document.getElementById("campos.y").value = items[1];
+        document.getElementById("campos.z").value = items[2];
+    }
+
+    function setTargetInputs(camtarget) {
+        var items = camtarget.split(",");
+        document.getElementById("camtarget.x").value = items[0];
+        document.getElementById("camtarget.y").value = items[1];
+        document.getElementById("camtarget.z").value = items[2];
+    }
+
     function setCam() {
-        var position = `${document.getElementById("campos.x").value},${document.getElementById("campos.y").value},${document.getElementById("campos.z").value}`
-        var target = `${document.getElementById("camtarget.x").value},${document.getElementById("camtarget.y").value},${document.getElementById("camtarget.z").value}`
-        sendCommand('spectator.move.to=' + position);
-        sendCommand('spectator.look.at=' + target);
+        var campos = getPosInputs();
+        var camtarget = getTargetInputs();
+        sendCommand('spectator.move.to=' + campos);
+        sendCommand('spectator.look.at=' + camtarget);
+    }
+
+    function saveCamera(slot) {
+        var campos = getPosInputs();
+        var camtarget = getTargetInputs();
+        localStorage.setItem('campos' + slot, campos);
+        localStorage.setItem('camtarget' + slot, camtarget);
+    }
+
+    function loadCamera(slot) {
+        var campos = localStorage.getItem('campos' + slot);
+        setPosInputs(campos);
+        var camtarget = localStorage.getItem('camtarget' + slot);
+        setTargetInputs(camtarget);
+        sendCommand('spectator.move.to=' + campos);
+        sendCommand('spectator.look.at=' + camtarget);
     }
 
     var spectatorOn = function(e) {
@@ -127,33 +217,52 @@
         sendCommand("spectator.off");
     };
 
+    // Removes brackets and spaces from the Vector3 values returned from API queries
+    var trimVector3String = function(txt) {
+        txt = txt.replace("(", "").replace(")", "").replace(" ", "");
+        return txt;
+    }
+
+    // Read back the new spectator camera transforms and update the form fields to match
+    var updateCamFormFields = function() {
+        var camPosResponse = sendCommand('query.spectator.position');
+        var targetPosResponse = sendCommand('query.spectator.target');
+        var camPos = trimVector3String(camPosResponse);
+        var targetPos = trimVector3String(targetPosResponse);
+        setPosInputs(camPos);
+        setTargetInputs(targetPos);
+    }
+
     var turnCamera = function(e) {
-        if (e.target.id==="lookUp") {
+        if (e.target.id === "lookUp") {
             sendCommand("spectator.turn.x=15");
-        } else if (e.target.id==="lookDown") {
+        } else if (e.target.id === "lookDown") {
             sendCommand("spectator.turn.x=-15");
-        } else if (e.target.id==="lookLeft") {
+        } else if (e.target.id === "lookLeft") {
             sendCommand("spectator.turn.y=-15");
-        } else if (e.target.id==="lookRight") {
+        } else if (e.target.id === "lookRight") {
             sendCommand("spectator.turn.y=15");
         }
-
+        // A delay to allow the previous commands to finish
+        setTimeout(updateCamFormFields, 200);
     }
 
     var moveCamera = function(e) {
-        if (e.target.id==="moveUp") {
+        if (e.target.id === "moveUp") {
             sendCommand("spectator.move.by=0,1,0");
-        } else if (e.target.id==="moveDown") {
+        } else if (e.target.id === "moveDown") {
             sendCommand("spectator.move.by=0,-1,0");
-        } else if (e.target.id==="moveLeft") {
+        } else if (e.target.id === "moveLeft") {
             sendCommand("spectator.move.by=-1,0,0");
-        } else if (e.target.id==="moveRight") {
+        } else if (e.target.id === "moveRight") {
             sendCommand("spectator.move.by=1,0,0");
-        } else if (e.target.id==="moveForward") {
+        } else if (e.target.id === "moveForward") {
             sendCommand("spectator.move.by=0,0,1");
-        } else if (e.target.id==="moveBack") {
+        } else if (e.target.id === "moveBack") {
             sendCommand("spectator.move.by=0,0,-1");
         }
+        // A delay to allow the previous commands to finish
+        setTimeout(updateCamFormFields, 200);
     }
 
     document.getElementById("lookUp").addEventListener('click', turnCamera);

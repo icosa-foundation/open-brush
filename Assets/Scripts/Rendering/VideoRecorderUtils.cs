@@ -159,8 +159,6 @@ namespace TiltBrush
                 QualityControls.m_Instance.QualityLevel = m_DebugVideoCaptureQualityLevel;
             }
 
-            App.VrSdk.SetHmdScalingFactor(m_VideoCaptureResolutionScale);
-
             // Setup SSAA
             RenderWrapper wrapper = recorder.gameObject.GetComponent<RenderWrapper>();
             m_PreCaptureSuperSampling = wrapper.SuperSampling;
@@ -207,8 +205,6 @@ namespace TiltBrush
             {
                 QualityControls.m_Instance.QualityLevel = m_PreCaptureQualityLevel;
             }
-
-            App.VrSdk.SetHmdScalingFactor(1.0f);
 
             // Stop capturing, reset colors
             m_ActiveVideoRecording.gameObject.GetComponent<RenderWrapper>().SuperSampling =

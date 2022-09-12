@@ -31,8 +31,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.XR;
-using UnityEngine.InputSystem;
 
 namespace TiltBrush
 {
@@ -53,28 +51,8 @@ namespace TiltBrush
     {
         Unset = -1,
         UnityXR,
-        Cardboard_Deprecated,
         Monoscopic,
         Ods,    // Video rendering
-        Gvr,    // Google VR
-    }
-
-    // These names are used in our analytics, so they must be protected from obfuscation.
-    // Do not change the names of any of them, unless they've never been released.
-    // This enum should be "VrHeadsetHardware".  Controller type is not necessarily
-    // implied by headset type.
-    [Serializable]
-    public enum VrHardware
-    {
-        Unset,          // Not set yet.
-        Unsupported,    // We did not recognise the hardware.        
-        None,
-        Rift,
-        Vive,
-        Daydream,
-        Wmr,            // Windows Mixed Reality
-        Quest,
-        OpenXR,
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -149,83 +127,6 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
         public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
-
-        // This indicates which hardware (Rift or Vive) is being used. This is distinct from which SDK
-        // is being used.
-        public VrHardware VrHardware
-        {
-            // This is set lazily the first time VrHardware is accessed.
-            get
-            {
-                if (m_VrHardware == VrHardware.Unset)
-                {
-                    // TODO:Mike - may want to pinch the IsMobileHardware for other things hardware selection related.
-                    // if (m_SdkMode == SdkMode.Oulus)
-                    // {
-                    //     if (App.Config.IsMobileHardware)
-                    //     {
-                    //         m_VrHardware = VrHardware.Quest;
-                    //     }
-                    //     else
-                    //     {
-                    //         m_VrHardware = VrHardware.Rift;
-                    //     }
-                    // }
-                    if (m_SdkMode == SdkMode.UnityXR)
-                    {
-                        m_VrHardware = VrHardware.OpenXR;
-                    }
-                    // // TODO:Mike - Replace with OpenXR callout
-                    // else if (m_SdkMode == SdkMode.SteamVR)
-                    // {
-                    //     // If SteamVR fails for some reason we will discover it here.
-                    //     try
-                    //     {      
-                    //         // TODO:Mike - commented out as namespace no longer available.                      
-                    //         // if (Valve.VR.OpenVR.System == null)
-                    //         // {
-                    //         //     m_VrHardware = VrHardware.None;
-                    //         //     return m_VrHardware;
-                    //         // }
-                    //     }
-                    //     catch (Exception)
-                    //     {
-                    //         m_VrHardware = VrHardware.None;
-                    //         return m_VrHardware;
-                    //     }
-                    //
-                    //     // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
-                    //     m_VrHardware = GetHwTrackedInSteamVr();
-                    // }
-                    else if (m_SdkMode == SdkMode.Gvr)
-                    {
-                        m_VrHardware = VrHardware.Daydream;
-                    }
-                    else
-                    {
-                        m_VrHardware = VrHardware.None;
-                    }
-                }
-
-                return m_VrHardware;
-            }
-        }
-
-        public String HeadsetModelName
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_HeadsetModelName))
-                {
-                    // TODO:Mike - is this the correct way to get the headset name?
-                    // Pulled from https://forum.unity.com/threads/openxr-is-it-no-longer-possible-to-get-descriptive-device-names.1051493/
-
-                    //m_HeadsetModelName = UnityEngine.XR.XRDevice.model;
-                    m_HeadsetModelName = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name;
-                }
-                return m_HeadsetModelName;
-            }
-        }
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -308,9 +209,6 @@ namespace TiltBrush
         public float m_IntroSketchSpeed = 1.0f;
         public bool m_IntroLooped = false;
 
-        [Header("Shader Warmup")]
-        public bool CreateShaderWarmupList;
-
         [Header("Description Prefabs")]
         [SerializeField] GameObject m_ButtonDescriptionOneLinePrefab;
         [SerializeField] GameObject m_ButtonDescriptionTwoLinesPrefab;
@@ -389,12 +287,8 @@ namespace TiltBrush
         // ------------------------------------------------------------
         // Private data
         // ------------------------------------------------------------
-        private VrHardware m_VrHardware = VrHardware.Unset; // This should not be used outside of
-        // VrHardware as it is lazily set inside
-        // VrHardware.
         private Dictionary<Guid, Guid> m_BrushReplacement = null;
         private List<UserConfigChange> m_UserConfigChanges = new List<UserConfigChange>();
-        private string m_HeadsetModelName;
 
         // ------------------------------------------------------------
         // Yucky externals
@@ -412,7 +306,7 @@ namespace TiltBrush
 
         void ParseArgs(string[] args)
         {
-            System.Collections.Generic.List<string> files = new System.Collections.Generic.List<string>();
+            List<string> files = new List<string>();
 
             bool isInBatchMode = false;
 
@@ -595,7 +489,7 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
         public static bool IsExperimental
         {
             get => App.Config.m_IsExperimental;
@@ -638,7 +532,7 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
             if (IsExperimental)
             {
                 foreach (var brush in m_BrushReplacementMap)
@@ -648,59 +542,6 @@ namespace TiltBrush
             }
 #endif
         }
-
-        // TODO:Mike - This function had zero references, let's see if it's true later
-
-        // private string GetSteamVrDeviceStringProperty(Valve.VR.ETrackedDeviceProperty property)
-        // {
-        //     uint index = 0; // Index 0 is always the headset
-        //     var system = Valve.VR.OpenVR.System;
-        //     // If system == null, then somehow, the SteamVR SDK was not properly loaded in.
-        //     Debug.Assert(system != null, "OpenVR System not found, check \"Virtual Reality Supported\"");
-
-        //     var error = Valve.VR.ETrackedPropertyError.TrackedProp_Success;
-
-        //     var capacity = system.GetStringTrackedDeviceProperty(index, property, null, 0, ref error);
-        //     System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)capacity);
-        //     system.GetStringTrackedDeviceProperty(index, property, buffer, capacity, ref error);
-        //     if (error == Valve.VR.ETrackedPropertyError.TrackedProp_Success)
-        //     {
-        //         return buffer.ToString();
-        //     }
-        //     else
-        //     {
-        //         Debug.LogErrorFormat("GetStringTrackedDeviceProperty error {0}", error.ToString());
-        //         return null;
-        //     }
-        // }
-
-        // Checking what kind of hardware (Rift, Vive, of WMR) is being used in SteamVR.
-        // private VrHardware GetHwTrackedInSteamVr()
-        // {
-        //     // TODO:Mike - Do we need this, or can the xr subsystem provide these details instead?
-        //     return VrHardware.Vive;
-        //     
-        //     // string manufacturer = GetSteamVrDeviceStringProperty(
-        //     //     Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
-        //
-        //     // if (string.IsNullOrEmpty(manufacturer))
-        //     // {
-        //     //     OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
-        //     //     return VrHardware.Vive;
-        //     // }
-        //     // else if (manufacturer.Contains("Oculus"))
-        //     // {
-        //     //     return VrHardware.Rift;
-        //     // }
-        //     // else if (manufacturer.Contains("WindowsMR"))
-        //     // {
-        //     //     return VrHardware.Wmr;
-        //     // }
-        //     // else
-        //     // {
-        //     //     return VrHardware.Vive;
-        //     // }
-        // }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value
         /// Where Section and Setting should be valid members of UserConfig.

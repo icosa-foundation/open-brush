@@ -103,12 +103,12 @@ namespace TiltBrush
                 },
                 {
                     ""name"": ""GripButton"",
-                    ""type"": ""Button"",
+                    ""type"": ""Value"",
                     ""id"": ""c27a451f-8196-4911-b54c-4ad40c55efe8"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 },
                 {
                     ""name"": ""PrimaryTouch"",
@@ -198,7 +198,18 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6bc6c02c-4693-4eac-ad02-04edc00cc05f"",
+                    ""path"": ""<XRController>{RightHand}/gripForce"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Index Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -209,7 +220,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -315,17 +326,6 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
-                    ""id"": ""bdc39c64-9dac-47a6-8a92-9ce8d493e197"",
-                    ""path"": ""<XRController>{RightHand}/touchpadClick"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""PadButton"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""946e923e-f3b0-4b4c-86aa-b93d7e2f05ca"",
                     ""path"": ""<XRController>{RightHand}/joystickClicked"",
                     ""interactions"": """",
@@ -337,11 +337,22 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""bdc39c64-9dac-47a6-8a92-9ce8d493e197"",
+                    ""path"": ""<XRController>{RightHand}/touchpadClick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""HTC Vive Controller"",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""e2134103-3299-4a1e-9bb8-d23c02b7a2a1"",
                     ""path"": ""<XRController>{RightHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""PadButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -369,7 +380,7 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""Vive Pad Right"",
+                    ""name"": ""Pad Right"",
                     ""id"": ""2ebfb718-c777-42c4-975a-2c1b95c7b9ff"",
                     ""path"": ""VivePadButton(min=0.1,max=1)"",
                     ""interactions"": """",
@@ -382,10 +393,10 @@ namespace TiltBrush
                 {
                     ""name"": ""padButton"",
                     ""id"": ""7d7a589a-5c5a-4639-87e2-d35af20eaa27"",
-                    ""path"": ""<ViveController>{RightHand}/trackpadClicked"",
+                    ""path"": ""<XRController>{RightHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -393,16 +404,16 @@ namespace TiltBrush
                 {
                     ""name"": ""axisToModify"",
                     ""id"": ""e1e38b8d-d589-4bed-bba6-8077a416f1ad"",
-                    ""path"": ""<ViveController>{RightHand}/trackpad/x"",
+                    ""path"": ""<XRController>{RightHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": ""Vive Pad Left"",
+                    ""name"": ""Pad Left"",
                     ""id"": ""7a934ba3-3ece-417f-8993-713e4e646425"",
                     ""path"": ""VivePadButton(min=-1,max=-0.1)"",
                     ""interactions"": """",
@@ -415,10 +426,10 @@ namespace TiltBrush
                 {
                     ""name"": ""padButton"",
                     ""id"": ""789a8d32-17b1-4518-ad85-123ee4871bc7"",
-                    ""path"": ""<ViveController>{RightHand}/trackpadClicked"",
+                    ""path"": ""<XRController>{RightHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -426,13 +437,24 @@ namespace TiltBrush
                 {
                     ""name"": ""axisToModify"",
                     ""id"": ""2b21db98-9d6c-49bd-9cc1-9e117ad78504"",
-                    ""path"": ""<ViveController>{RightHand}/trackpad/x"",
+                    ""path"": ""<XRController>{RightHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""003127ee-6573-4af2-96c7-f007ac20ae79"",
+                    ""path"": ""<XRController>{RightHand}/gripForce"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Index Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -609,7 +631,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -620,7 +642,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -793,10 +815,10 @@ namespace TiltBrush
                 {
                     ""name"": ""padButton"",
                     ""id"": ""ca4a4aa2-0bbe-4a45-9d2f-57f833b5707c"",
-                    ""path"": ""<ViveController>{LeftHand}/trackpadClicked"",
+                    ""path"": ""<XRController>{LeftHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -804,16 +826,16 @@ namespace TiltBrush
                 {
                     ""name"": ""axisToModify"",
                     ""id"": ""8ad41a33-9308-403b-95fc-d54bb3687dce"",
-                    ""path"": ""<ViveController>{LeftHand}/trackpad/x"",
+                    ""path"": ""<XRController>{LeftHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": ""Vive Pad Left"",
+                    ""name"": ""Pad Left"",
                     ""id"": ""0c7ffe69-898f-4d53-b66f-41f4ea0da3a4"",
                     ""path"": ""VivePadButton(min=-1,max=-0.1)"",
                     ""interactions"": """",
@@ -826,10 +848,10 @@ namespace TiltBrush
                 {
                     ""name"": ""padButton"",
                     ""id"": ""c59eeed9-cd72-4533-a70e-2cf8ea386489"",
-                    ""path"": ""<ViveController>{LeftHand}/trackpadClicked"",
+                    ""path"": ""<XRController>{LeftHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -837,18 +859,85 @@ namespace TiltBrush
                 {
                     ""name"": ""axisToModify"",
                     ""id"": ""52a7e2df-742c-4fcf-a41f-66a37c66e9cd"",
-                    ""path"": ""<ViveController>{LeftHand}/trackpad/x"",
+                    ""path"": ""<XRController>{LeftHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""HTC Vive Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a9ac6fbd-6257-4c59-a22b-1d2c497dca49"",
+                    ""path"": ""<XRController>{LeftHand}/gripForce"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Index Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a4ddb938-ad49-405f-928d-2419a98c0a78"",
+                    ""path"": ""<XRController>{LeftHand}/gripForce"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Index Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
     ],
-    ""controlSchemes"": []
+    ""controlSchemes"": [
+        {
+            ""name"": ""Index Controller"",
+            ""bindingGroup"": ""Index Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<ValveIndexController>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""HTC Vive Controller"",
+            ""bindingGroup"": ""HTC Vive Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<ViveController>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Oculus Touch Controller"",
+            ""bindingGroup"": ""Oculus Touch Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<OculusTouchController>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""WMR Controller"",
+            ""bindingGroup"": ""WMR Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<WMRSpatialController>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        }
+    ]
 }");
             // Brush
             m_Brush = asset.FindActionMap("Brush", throwIfNotFound: true);
@@ -1193,6 +1282,42 @@ namespace TiltBrush
             }
         }
         public WandActions @Wand => new WandActions(this);
+        private int m_IndexControllerSchemeIndex = -1;
+        public InputControlScheme IndexControllerScheme
+        {
+            get
+            {
+                if (m_IndexControllerSchemeIndex == -1) m_IndexControllerSchemeIndex = asset.FindControlSchemeIndex("Index Controller");
+                return asset.controlSchemes[m_IndexControllerSchemeIndex];
+            }
+        }
+        private int m_HTCViveControllerSchemeIndex = -1;
+        public InputControlScheme HTCViveControllerScheme
+        {
+            get
+            {
+                if (m_HTCViveControllerSchemeIndex == -1) m_HTCViveControllerSchemeIndex = asset.FindControlSchemeIndex("HTC Vive Controller");
+                return asset.controlSchemes[m_HTCViveControllerSchemeIndex];
+            }
+        }
+        private int m_OculusTouchControllerSchemeIndex = -1;
+        public InputControlScheme OculusTouchControllerScheme
+        {
+            get
+            {
+                if (m_OculusTouchControllerSchemeIndex == -1) m_OculusTouchControllerSchemeIndex = asset.FindControlSchemeIndex("Oculus Touch Controller");
+                return asset.controlSchemes[m_OculusTouchControllerSchemeIndex];
+            }
+        }
+        private int m_WMRControllerSchemeIndex = -1;
+        public InputControlScheme WMRControllerScheme
+        {
+            get
+            {
+                if (m_WMRControllerSchemeIndex == -1) m_WMRControllerSchemeIndex = asset.FindControlSchemeIndex("WMR Controller");
+                return asset.controlSchemes[m_WMRControllerSchemeIndex];
+            }
+        }
         public interface IBrushActions
         {
             void OnTriggerAxis(InputAction.CallbackContext context);
