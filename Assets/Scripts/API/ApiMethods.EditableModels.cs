@@ -594,7 +594,7 @@ namespace TiltBrush
 
             foreach (var mf in meshes)
             {
-                var startV = verts.Count - 1;
+                var startV = verts.Count;
                 verts.AddRange(mf.mesh.vertices);
 
                 var tris = mf.mesh.triangles;
@@ -618,6 +618,10 @@ namespace TiltBrush
                 Vertices = verts,
                 Faces = faces,
             };
+
+            PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+            recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
+            recipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
 
             var poly = new PolyMesh(verts, faces);
             poly.MergeCoplanarFaces(smoothing);
