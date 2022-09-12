@@ -43,6 +43,7 @@ namespace TiltBrush
         {
             base.Awake();
             m_Type = StencilType.Custom;
+            EditableModelManager.SetCustomStencil(this, PreviewPolyhedron.m_Instance.m_PolyMesh);
         }
 
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)

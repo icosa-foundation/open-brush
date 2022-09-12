@@ -202,13 +202,18 @@ namespace TiltBrush.MeshEditing
                 WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var stencilWidget = createCommand.Widget as StencilWidget;
+            SetCustomStencil(stencilWidget, poly);
+            return stencilWidget;
+        }
+
+        public static void SetCustomStencil(StencilWidget stencilWidget, PolyMesh poly)
+        {
             poly = poly.ConvexHull();
             var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByRole);
             Mesh mesh = poly.BuildUnityMesh(meshData);
             var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
             collider.sharedMesh = mesh;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
-            return stencilWidget;
         }
 
         public static void UpdateWidgetFromPolyMesh(EditableModelWidget widget, PolyMesh poly, PolyRecipe polyRecipe)
