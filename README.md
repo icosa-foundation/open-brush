@@ -1,16 +1,17 @@
-# Open Brush - A Tilt Brush fork
+# Open Brush - Tilt Brush Evolved
 
 [![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
 [![All GitHub releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-gallery/open-brush/releases/latest)
 [![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
+![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)
+![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)
 
+[![Open Brush Banner](./open-brush.png)](https://openbrush.app)
 
-**Current Version: ![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)**
+Open Brush is a free fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We have made a large number of changes from the original repository, including Unity upgrades and feature additions to bring Open Brush up to modern XR development standards. You can find the notable changes on our [docs site](https://docs.openbrush.app/differences-between-open-brush-and-tilt-brush).
 
-**Pre-release Version: ![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)**
-
-Open brush is a fork of Tilt Brush, a room-scale 3D-painting virtual-reality application available from Google, originally developed by Skillman & Hackett. We hope to maintain and improve upon Tilt Brush as a community-led project, free forever!
+We hope to maintain and improve upon Tilt Brush as a community-led project, free forever!
 
 As the original repo is archived we cannot submit PRs, so feel free to submit them here! 
 
