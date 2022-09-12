@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 using Newtonsoft.Json;
 #if USD_SUPPORTED
 using Unity.Formats.USD;
@@ -604,10 +604,9 @@ namespace TiltBrush
             }
             else
             {
-                //TODO: Mike - Updated this reference to attempt to find headset name in new XR system
                 Debug.LogFormat("Sdk mode: {0} XRDevice.model: {1}",
-                    //App.Config.m_SdkMode, UnityEngine.XR.XRDevice.model);
-                    App.Config.m_SdkMode, UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).name);
+                    Config.m_SdkMode,
+                    UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head).manufacturer);
             }
 
             m_TargetFrameRate = VrSdk.GetHmdTargetFrameRate();
@@ -2131,19 +2130,19 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
         {
             var manifest = m_Manifest;
-            // #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            //             if (Config.IsExperimental)
-            //             {
-            //                 // At build time, we don't want the user config to affect the build output.
-            //                 if (consultUserConfig
-            //                     && m_UserConfig.Flags.ShowDangerousBrushes
-            //                     && m_ManifestExperimental != null)
-            //                 {
-            //                     manifest = Instantiate(m_Manifest);
-            //                     manifest.AppendFrom(m_ManifestExperimental);
-            //                 }
-            //             }
-            // #endif
+#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                        if (Config.IsExperimental)
+                        {
+                            // At build time, we don't want the user config to affect the build output.
+                            if (consultUserConfig
+                                && m_UserConfig.Flags.ShowDangerousBrushes
+                                && m_ManifestExperimental != null)
+                            {
+                                manifest = Instantiate(m_Manifest);
+                                manifest.AppendFrom(m_ManifestExperimental);
+                            }
+                        }
+#endif
             return manifest;
         }
 
