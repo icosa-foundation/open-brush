@@ -141,6 +141,8 @@ namespace TiltBrush
             LoadWaitOnDownload,
             SignOutConfirm,
             ReadOnlyNotice,
+            ShowContribution,
+            CustomSymmetryCommand = 5000,
             PolyhydraOpenMainCategoryPopup = 5001,
             PolyhydraOpenUniformsPopup = 5002,
             PolyhydraGridTypesPopup = 5003,
