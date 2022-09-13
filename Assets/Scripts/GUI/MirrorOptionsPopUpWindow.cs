@@ -26,6 +26,7 @@ namespace TiltBrush
         public AdvancedSlider m_WallpaperScaleSlider;
         public AdvancedSlider m_WallpaperRepeatXSlider;
         public AdvancedSlider m_WallpaperRepeatYSlider;
+        public ActionToggleButton m_ToggleJitter;
         
         private bool m_MirrorState;
         
@@ -44,6 +45,7 @@ namespace TiltBrush
             m_WallpaperScaleSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScale;
             m_WallpaperRepeatXSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryX;
             m_WallpaperRepeatYSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryY;
+            m_ToggleJitter.m_InitialToggleState = PointerManager.m_Instance.m_SymmetryRespectsJitter;
         }
 
         public OptionButton GetParentButton()
@@ -86,26 +88,36 @@ namespace TiltBrush
                     PointerManager.m_Instance.m_WallpaperSymmetryGroup = btn.m_WallpaperSymmetryGroup;
                     break;
             }
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
 
         public void HandleChangePointSymmetryOrder(Vector3 value)
         {
             PointerManager.m_Instance.m_PointSymmetryOrder = Mathf.FloorToInt(value.z);
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
         
         public void HandleChangeWallpaperSymmetryX(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryX = Mathf.FloorToInt(value.z);
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
         
         public void HandleChangeWallpaperSymmetryY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
         
         public void HandleChangeWallpaperSymmetryScale(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScale = value.z;
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
 
         public void HandleShowPointSymmetry()
@@ -113,6 +125,8 @@ namespace TiltBrush
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
             m_PointSymmetryControls.SetActive(true);
             m_WallpaperSymmetryControls.SetActive(false);
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
 
         public void HandleShowWallpaperSymmetry()
@@ -120,7 +134,13 @@ namespace TiltBrush
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
             m_PointSymmetryControls.SetActive(false);
             m_WallpaperSymmetryControls.SetActive(true);
+            // Regenerate
+            PointerManager.m_Instance.GetCustomMirrorMatrices(true);
         }
 
+        public void HandleToggleJitter(ActionToggleButton btn)
+        {
+            PointerManager.m_Instance.m_SymmetryRespectsJitter = btn.ToggleState;
+        }
     }
 }

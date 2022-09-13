@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
@@ -59,6 +60,8 @@ namespace TiltBrush
         [NonSerialized] public int m_WallpaperSymmetryY = 3;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
+        [NonSerialized] public bool m_SymmetryRespectsJitter;
+
         
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
@@ -181,7 +184,8 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepthIncrement = 0.0001f;
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
-
+        private List<Matrix4x4> m_CustomMirrorMatrices;
+        
         // ---- events
 
         public event Action<TiltBrush.BrushDescriptor> OnMainPointerBrushChange
@@ -403,6 +407,8 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
+            m_CustomMirrorMatrices = new List<Matrix4x4>();
+            GetCustomMirrorMatrices(true);
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -825,29 +831,31 @@ namespace TiltBrush
             }
         }
         
-        private List<Matrix4x4> GetCustomMirrorMatrices()
+        public List<Matrix4x4> GetCustomMirrorMatrices(bool regenerate=false)
         {
-            List<Matrix4x4> matrices;
+            // Cached
+            if (m_CustomMirrorMatrices.Count == 0 && !regenerate) return m_CustomMirrorMatrices;
+            
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
                     float canvasScale = App.ActiveCanvas.Pose.scale;
                     float mirrorScale = canvasScale * m_WallpaperSymmetryScale;
                     var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, mirrorScale);
-                    matrices = wallpaperSym.matrices;
+                    m_CustomMirrorMatrices = wallpaperSym.matrices;
                     break;
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:
                 default:
                     var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0);
-                    matrices = pointSym.matrices;
-                    for (var i = 0; i < matrices.Count; i++)
+                    m_CustomMirrorMatrices = pointSym.matrices;
+                    for (var i = 0; i < m_CustomMirrorMatrices.Count; i++)
                     {
-                        var m = matrices[i];
+                        var m = m_CustomMirrorMatrices[i];
                     }
                     break;
             }
-            return matrices;
+            return m_CustomMirrorMatrices;
         }
 
         void UpdateSymmetryPointerTransforms()
@@ -918,6 +926,7 @@ namespace TiltBrush
             // Custom symmetry matrices have negative scale which brushscripts don't support
             var tr = TrTransform.FromMatrix4x4(m);
             return tr;
+            
             if (tr.scale < 0)
             {
                 Debug.Log($"Fixing scale");
@@ -1123,6 +1132,7 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
         }
+        
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
             Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
@@ -1274,7 +1284,14 @@ namespace TiltBrush
                             break;
                     }
                 }
-
+                
+                if (m_SymmetryRespectsJitter)
+                {
+                        script.SetColor(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
+                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
+                        script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
+                }
+                
                 script.CreateNewLine(
                     canvas, xfPointer_CS, currentCreator,
                     m_StraightEdgeProxyActive ? m_StraightEdgeProxyBrush : null);
@@ -1290,7 +1307,6 @@ namespace TiltBrush
 
             // Update other pointers.
             UpdateSymmetryPointerTransforms();
-
             InitiateLine(false);
         }
 
