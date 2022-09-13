@@ -15,6 +15,7 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -32,9 +33,13 @@ namespace TiltBrush
     public class SymmetryWidget : GrabWidget
     {
         [SerializeField] private Renderer m_LeftRightMesh;
+        [SerializeField] private Renderer m_FrontBackMesh;
         [SerializeField] private TextMeshPro m_TitleText;
         [SerializeField] private GameObject m_HintText;
         [SerializeField] private GrabWidgetHome m_Home;
+
+        [SerializeField] private Mesh m_CustomSymmetryMesh;
+        [SerializeField] private Material m_CustomSymmetryMaterial;
 
         public enum BeamDirection
         {
@@ -59,6 +64,7 @@ namespace TiltBrush
 
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
+        private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
 
         public Plane ReflectionPlane
         {
@@ -107,8 +113,12 @@ namespace TiltBrush
             switch (rMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
+                    m_LeftRightMesh.enabled = false;
+                    m_FrontBackMesh.enabled = false;
+                    break;
                 case PointerManager.SymmetryMode.TwoHanded:
                     m_LeftRightMesh.enabled = false;
+                    m_FrontBackMesh.enabled = true;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
@@ -116,11 +126,10 @@ namespace TiltBrush
                     }
                     break;
                 case PointerManager.SymmetryMode.FourAroundY:
-                    m_LeftRightMesh.enabled = true;
-                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    m_LeftRightMesh.enabled = false;
+                    m_FrontBackMesh.enabled = true;
+                    if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
                     {
-                        m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&
-                            (m_GuideBeams[i].m_Direction != BeamDirection.Down));
                     }
                     break;
             }
@@ -251,6 +260,11 @@ namespace TiltBrush
 
                 transform.hasChanged = false;
                 m_GuideBeamShowRatio = fShowRatio;
+            }
+
+            if (PointerManager.m_Instance.CurrentSymmetryMode==PointerManager.SymmetryMode.FourAroundY)
+            {
+                DrawCustomSymmetryGuides();
             }
         }
 
@@ -425,6 +439,26 @@ namespace TiltBrush
                 // Play mirror sound
                 AudioManager.m_Instance.PlayMirrorSound(transform.position);
             }
+        }
+        
+        public void DrawCustomSymmetryGuides()
+        {
+            var matrices = PointerManager.m_Instance.GetCustomMirrorMatrices();
+            for (var i = 0; i < matrices.Count; i++)
+            {
+                var m = matrices[i];
+                m = transform.localToWorldMatrix * m;
+                m *= Matrix4x4.TRS(new Vector3(2, .5f, .05f), Quaternion.identity, new Vector3(0.5f, 0.4f, 0));
+                matrices[i] = m;
+            }
+            
+            m_CustomSymmetryMaterial.color = Color.gray;
+            m_CustomSymmetryMaterial.enableInstancing = true;
+            m_CustomSymmetryMaterial.SetFloat(OutlineWidth, -0.01f);
+            Graphics.DrawMeshInstanced(
+                m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
+                matrices, null, ShadowCastingMode.Off, false
+            );
         }
     }
 } // namespace TiltBrush
