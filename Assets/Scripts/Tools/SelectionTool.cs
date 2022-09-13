@@ -172,6 +172,10 @@ namespace TiltBrush
 
             var isSelected = SelectionManager.m_Instance.IsWidgetSelected(widget);
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
+
+            // Only select from the active layer
+            if (!removeFromSelection && (widget.Canvas != App.Scene.ActiveCanvas)) return true;
+
             if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
             {
                 Debug.LogWarning(
