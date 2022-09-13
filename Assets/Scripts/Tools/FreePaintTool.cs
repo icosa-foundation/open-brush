@@ -155,6 +155,8 @@ namespace TiltBrush
                     m_LazyInputActive = !m_LazyInputActive;
             }
 
+            m_LazyInputActive = false;
+
             PointerManager.m_Instance.EnableLine(m_PaintingActive);
             PointerManager.m_Instance.PointerPressure = m_brushTriggerRatio;
 

@@ -183,9 +183,9 @@ namespace TiltBrush
                 case SketchCommands.Fly:
                     return IsTrigger();
                 case SketchCommands.SpecialErase:
-                    return GetVrInput(VrInput.Button01) || GetVrInput(VrInput.Button02);
+                    return GetVrInput(VrInput.Button01);
                 case SketchCommands.SpecialPaint:
-                    return IsTrigger();
+                    return GetVrInput(VrInput.Button02);
             }
 
             return false;

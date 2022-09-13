@@ -1180,7 +1180,7 @@ namespace TiltBrush
 
             bool show =
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.ShowPinCushion);
-            m_PinCushion.ShowPinCushion(show && !m_EatPinCushionInput);
+            m_PinCushion.ShowPinCushion(false && !m_EatPinCushionInput);
             m_EatPinCushionInput = m_EatPinCushionInput && show;
         }
 
