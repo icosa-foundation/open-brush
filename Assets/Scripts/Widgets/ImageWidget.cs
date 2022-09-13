@@ -61,6 +61,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             ImageWidget clone = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
+            clone.m_previousCanvas = m_previousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
@@ -234,6 +235,7 @@ namespace TiltBrush
                 }
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
+                image.SetCanvas(App.Scene.GetOrCreateLayer(tiltImage.LayerIds[i]));
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }
