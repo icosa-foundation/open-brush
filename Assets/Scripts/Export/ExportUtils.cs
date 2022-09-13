@@ -213,7 +213,7 @@ namespace TiltBrush
             /// The default vertexLimit is the maximum size allowed by Unity.
             /// If a single stroke exceeds the vertex limit, the stroke will be ignored.
             /// TODO: dangerous! vertexLimit should be a soft limit, with a hard limit of 65k
-            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit = 65534)
+            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit = 2147483645)
             {
                 var layout = BrushCatalog.m_Instance.GetBrush(m_desc.m_Guid).VertexLayout;
                 var pool = new GeometryPool();

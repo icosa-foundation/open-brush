@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:installLocation="auto" package="com.icosa.openbrush"
+    android:installLocation="auto" package="com.Icosa.OpenBrush"
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="false"

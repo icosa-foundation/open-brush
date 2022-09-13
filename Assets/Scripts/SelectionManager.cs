@@ -988,6 +988,7 @@ namespace TiltBrush
                 m_SnapGridVisualization.enabled = false;
             }
         }
+
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
             if (SnappingAngle == 0) return Quaternion.identity;

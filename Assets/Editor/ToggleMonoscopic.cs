@@ -30,9 +30,6 @@ public class ToggleMonoscopic : MonoBehaviour
     public static void EnableMono()
     {
         SetConfigSDKMode(SdkMode.Monoscopic);
-        // TODO:Mike - Mono toggling mode expects SteamVR for some reason
-        // SteamVrSettings.autoEnableVR = false;
-        // EditorUtility.SetDirty(SteamVrSettings);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
     }
@@ -41,38 +38,9 @@ public class ToggleMonoscopic : MonoBehaviour
     public static void DisableMono()
     {
         SetConfigSDKMode(SdkMode.UnityXR);
-        // TODO:Mike - Mono toggling mode expects SteamVR for some reason
-        // SteamVrSettings.autoEnableVR = true;
-        // EditorUtility.SetDirty(SteamVrSettings);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
     }
-
-    // TODO:Mike - Mono toggling mode expects SteamVR for some reason
-    // private static SteamVR_Settings SteamVrSettings
-    // {
-    //     get
-    //     {
-    //         string[] svr = AssetDatabase.FindAssets("t:SteamVR_Settings");
-    //         if (svr.Length == 1)
-    //         {
-    //             string path = AssetDatabase.GUIDToAssetPath(svr[0]);
-    //             return (SteamVR_Settings)AssetDatabase.LoadAssetAtPath(path, typeof(SteamVR_Settings));
-    //         }
-    //         else
-    //         {
-    //             if (svr.Length == 0)
-    //             {
-    //                 Debug.LogWarning("No SteamVR_Settings found");
-    //             }
-    //             else
-    //             {
-    //                 Debug.LogWarning("Multiple SteamVR_Settings found");
-    //             }
-    //             return null;
-    //         }
-    //     }
-    // }
 
     private static void SetConfigSDKMode(SdkMode mode)
     {

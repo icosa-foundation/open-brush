@@ -119,8 +119,8 @@ namespace TiltBrush.LachlanSleight
                 }
                 else
                 {
-                    position = m_BrushController.position;
-                    vMovement = m_BrushController.forward;
+                    position = rAttachPoint.position;
+                    vMovement = rAttachPoint.forward;
                 }
 
                 m_Velocity = Vector3.Lerp(m_Velocity, vMovement * m_MaxSpeed, Time.deltaTime * m_DampingUp);
@@ -182,11 +182,12 @@ namespace TiltBrush.LachlanSleight
 
         private void UpdateTransformsFromControllers()
         {
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             // Lock tool to camera controller.
             if (m_LockToController)
             {
-                transform.position = m_BrushController.position;
-                transform.rotation = m_BrushController.rotation;
+                transform.position = rAttachPoint.position;
+                transform.rotation = rAttachPoint.rotation;
             }
             else
             {
