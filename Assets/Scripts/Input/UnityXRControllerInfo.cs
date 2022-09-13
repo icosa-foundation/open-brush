@@ -276,10 +276,9 @@ namespace TiltBrush
         }
         public override void TriggerControllerHaptics(float seconds)
         {
-            device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, seconds);
+            float durationSeconds = seconds * App.VrSdk.VrControls.HapticsDurationScale;
+            device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, durationSeconds);
         }
-
-
     }
 
 } // namespace TiltBrush

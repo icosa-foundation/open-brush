@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.XR;
 
 namespace TiltBrush
 {
-
     // If these names are used in analytics etc, they must be protected from obfuscation.
     // Do not change the names of any of them, unless they've never been released.
     [Serializable]
@@ -51,13 +50,7 @@ namespace TiltBrush
     //
     public class VrSdk : MonoBehaviour
     {
-        [SerializeField] private float m_AnalogGripBinaryThreshold_Rift;
-
-        // TODO:Mike - commmented this overlay as class is from SteamVR, what does it do?
-        //[SerializeField] private SteamVR_Overlay m_SteamVROverlay;
         [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
-        [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
-        [SerializeField] private float m_OverlayMaxSize = 8;
 
         // VR  Data and Prefabs for specific VR systems
         [SerializeField] private GameObject m_VrSystem;
@@ -86,22 +79,18 @@ namespace TiltBrush
         public VrControllers VrControls { get { return m_VrControls; } }
 
         private bool m_HasVrFocus = true;
-        private OverlayMode m_OverlayMode;
+        private OverlayMode m_OverlayMode = OverlayMode.None;
 
         // Oculus Overlay
 #if OCULUS_SUPPORTED
         private OVROverlay m_OVROverlay;
 #endif // OCULUS_SUPPORTED
 
-        // Mobile Overlay
+        // Fallback Overlay
         private bool m_MobileOverlayOn;
-        private GvrOverlay m_MobileOverlay;
+        private GvrOverlay m_FallbackOverlay;
 
         private Bounds? m_RoomBoundsAabbCached;
-
-        // TODO:Mike - another object to comment out - seems to be for measuring dropped frames.
-        // Cached object to avoid interop overhead
-        //private Compositor_FrameTiming m_FrameTiming;
 
         private Action[] m_OldOnPoseApplied;
 
@@ -111,9 +100,8 @@ namespace TiltBrush
         private enum OverlayMode
         {
             None,
-            Steam,
             OVR,
-            Mobile
+            Fallback
         }
 
         // Degrees of Freedom.
@@ -135,11 +123,6 @@ namespace TiltBrush
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
 
-        public float AnalogGripBinaryThreshold_Rift
-        {
-            get { return m_AnalogGripBinaryThreshold_Rift; }
-        }
-
         public bool OverlayIsOVR => m_OverlayMode == OverlayMode.OVR;
 
         public bool IsInitializingUnityXR
@@ -157,19 +140,47 @@ namespace TiltBrush
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
+
+                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
+                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+                if (!tryGetUnityXRController.isValid)
+                {
+                    // Try the right hand instead
+                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+                }
+
+                if (!tryGetUnityXRController.isValid)
+                {
+                    // Leave for when UnityXR is ready.
+                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
+                }
+                else
+                {
+                    SetUnityXRControllerStyle(tryGetUnityXRController);
+                }
+            }
+            else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                // ---------------------------------------------------------------------------------------- //
+                // Monoscopic
+                // ---------------------------------------------------------------------------------------- //
+                m_VrCamera.gameObject.AddComponent<MonoCameraControlScript>();
+                var xrOrigin = m_VrCamera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+                xrOrigin.CameraFloorOffsetObject.transform.localPosition = new Vector3(0.0f, 1.5f, 0.0f);
+                SetControllerStyle(ControllerStyle.None);
+            }
+            else
+            {
+                // ---------------------------------------------------------------------------------------- //
+                // Non-VR
+                // ---------------------------------------------------------------------------------------- //
+                SetControllerStyle(ControllerStyle.None);
             }
 
-            if (App.Config.IsMobileHardware && m_GvrOverlayPrefab != null)
-            {
-                m_OverlayMode = OverlayMode.Mobile;
-                m_MobileOverlay = Instantiate(m_GvrOverlayPrefab);
-                m_MobileOverlay.gameObject.SetActive(false);
-            }
-            // TODO:Mike - Mmore overlay stuff to turn off
-            // else if (App.Config.m_SdkMode == SdkMode.SteamVR && m_SteamVROverlay != null)
-            // {
-            //     m_OverlayMode = OverlayMode.Steam;
-            // }
+            m_VrCamera.gameObject.SetActive(true);
+            m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
+
 #if OCULUS_SUPPORTED
             // ---------------------------------------------------------------------------------------- //
             // OculusVR
@@ -201,83 +212,20 @@ namespace TiltBrush
 #endif // OCULUS_SUPPORTED
 
 #if PIMAX_SUPPORTED
-                // Pimax currently requires initialising their Platform SDK.
-                if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
-                {
-                    Pimax.Platform.PvrPlatform.init();
-                    Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
-                }
+            // Pimax currently requires initialising their Platform SDK.
+            if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
+            {
+                Pimax.Platform.PvrPlatform.init();
+                Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
+            }
 #endif // PIMAX_SUPPORTED
 
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            if (m_OverlayMode == OverlayMode.None && m_GvrOverlayPrefab != null)
             {
-                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
-                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
-                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Try the right hand instead
-                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-                }
-
-                // @bill - I don't believe this will ever be valid under UnityXR as I believe the devices are
-                //         registered after Awake()
-                if (!tryGetUnityXRController.isValid)
-                {
-                    // Leave for when UnityXR is ready.
-                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
-                }
-                else
-                {
-                    SetUnityXRControllerStyle(tryGetUnityXRController);
-                }
+                m_OverlayMode = OverlayMode.Fallback;
+                m_FallbackOverlay = Instantiate(m_GvrOverlayPrefab);
+                m_FallbackOverlay.gameObject.SetActive(false);
             }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // GoogleVR
-                // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(ControllerStyle.Gvr);
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = null;
-
-                // TODO: Why is this offset needed? This should also be in a prefab, not here.
-                var pos = m_VrSystem.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrSystem.gameObject.transform.localPosition = pos;
-
-                pos = m_VrControls.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrControls.gameObject.transform.localPosition = pos;
-
-#if UNITY_EDITOR && false
-                // Instant preview
-                m_VrCamera.gameObject.AddComponent<InstantPreviewHelper>();
-                var ip = m_VrCamera.gameObject.AddComponent<Gvr.Internal.InstantPreview>();
-                ip.OutputResolution = Gvr.Internal.InstantPreview.Resolutions.Big;
-                ip.MultisampleCount = Gvr.Internal.InstantPreview.MultisampleCounts.One;
-                ip.BitRate = Gvr.Internal.InstantPreview.BitRates._16000;
-#endif
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = m_VrCamera.transform.parent;
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // Monoscopic
-                // ---------------------------------------------------------------------------------------- //
-                m_VrCamera.gameObject.AddComponent<MonoCameraControlScript>();
-                SetControllerStyle(ControllerStyle.None);
-            }
-            else
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // Non-VR
-                // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(ControllerStyle.None);
-            }
-            m_VrCamera.gameObject.SetActive(true);
-            m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
         }
 
         void Start()
@@ -286,30 +234,12 @@ namespace TiltBrush
             {
                 Application.onBeforeRender += OnNewPoses;
             }
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // TODO:Mike - SteamVR init. Needs new XR init
-            //     // if (SteamVR.instance != null)
-            //     // {
-            //     //     SteamVR_Events.InputFocus.Listen(OnInputFocusSteam);
-            //     //     SteamVR_Events.NewPosesApplied.Listen(OnNewPoses);
-            //     // }
-            //     // m_FrameTiming = new Compositor_FrameTiming
-            //     // {
-            //     //     m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(
-            //     //         typeof(Compositor_FrameTiming))
-            //     // };
-            // }
+
 #if OCULUS_SUPPORTED
             // We shouldn't call this frequently, hence the local cache and callbacks.
             OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
             OVRManager.VrFocusLost += () => { OnInputFocus(false); };
 #endif // OCULUS_SUPPORTED
-            //            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            //            {
-            //                var brushGeom = InputManager.Brush.Geometry;
-            //                GvrControllerInput.OnPostControllerInputUpdated += OnNewPoses;
-            //            }
 
             if (m_NeedsToAttachConsoleScript && m_VrControls != null)
             {
@@ -331,16 +261,6 @@ namespace TiltBrush
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender -= OnNewPoses;
-            }
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // TODO:Mike - SteamVR cleanup process, investiage
-            //     // SteamVR_Events.InputFocus.Remove(OnInputFocusSteam);
-            //     // SteamVR_Events.NewPosesApplied.Remove(OnNewPoses);
-            // }
-            // else
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
             }
@@ -363,11 +283,6 @@ namespace TiltBrush
             OnNewControllerPosesApplied?.Invoke();
         }
 
-        private void OnInputFocusSteam(bool arg)
-        {
-            OnInputFocus(arg);
-        }
-
         // -------------------------------------------------------------------------------------------- //
         // Camera Methods
         // -------------------------------------------------------------------------------------------- //
@@ -384,47 +299,13 @@ namespace TiltBrush
             return m_VrCamera;
         }
 
-        public void SetScreenMirroring(bool enabled)
-        {
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // Get the camera mask if this is the first use of mirroring
-            //     if (enabled)
-            //     {
-            //         Screen.SetResolution(1920, 1080, false);
-            //         SetHmdScalingFactor(1.875f);
-            //     }
-            //     else
-            //     {
-            //         Screen.SetResolution(1024, 768, false);
-            //         SetHmdScalingFactor(1.0f);
-            //     }
-            // }
-        }
-
         // -------------------------------------------------------------------------------------------- //
         // Profiling / VR Utility Methods
         // -------------------------------------------------------------------------------------------- //
 
-        // Returns a string representing the user's hardware and SDK configuration.
-        public string DisplayIdentifier => $"{App.Config.m_SdkMode}; {App.Config.VrHardware}";
-
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
         {
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // TODO:Mike - More SteamVR specific stuff.
-            //     // SteamVR vr = SteamVR.instance;
-            //     // if (vr != null)
-            //     // {
-            //     //     if (vr.compositor.GetFrameTiming(ref m_FrameTiming, 0 /* most recent frame */))
-            //     //     {
-            //     //         return (int)m_FrameTiming.m_nNumDroppedFrames;
-            //     //     }
-            //     // }
-            // }
-
 #if OCULUS_SUPPORTED
             // TODO: Currently not supported on Oculus OpenXR backend.
             // OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
@@ -479,7 +360,7 @@ namespace TiltBrush
 #else // OCULUS_SUPPORTED
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
-            //     // TODO:Mike - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
+            //     // TODO - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
             //     // var chaperone = OpenVR.Chaperone;
             //     // if (chaperone != null)
             //     // {
@@ -642,8 +523,9 @@ namespace TiltBrush
                         // This will probably not work once new headsets are released.
                         // Maybe something like this instead?
                         //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
-                        bool isQuestController = (XRDevice.refreshRate < 81f) ||
-                            (App.Config.VrHardware == VrHardware.Quest);
+                        // bool isQuestController = (XRDevice.refreshRate < 81f) ||
+                        //     (App.Config.VrHardware == VrHardware.Quest);
+                        bool isQuestController = App.Config.IsMobileHardware;
                         controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
 #if OCULUS_SUPPORTED
                         // If we're using Oculus' own plugin rather than OpenXR, the controller pose is different.
@@ -744,12 +626,6 @@ namespace TiltBrush
                 wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
                 brushPose.SetPoseSource(tempType, tempSource);
             }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                var tmp = InputManager.Controllers[0];
-                InputManager.Controllers[0] = InputManager.Controllers[1];
-                InputManager.Controllers[1] = tmp;
-            }
 
             return leftRightSwapped;
         }
@@ -761,9 +637,6 @@ namespace TiltBrush
             {
                 case SdkMode.UnityXR:
                     // @bill - Won't this depend of the device?
-                    return DoF.Six;
-
-                case SdkMode.Gvr:
                     return DoF.Six;
 
                 case SdkMode.Monoscopic:
@@ -782,37 +655,32 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                // TODO:Mike overlay disable
-                // case OverlayMode.Steam:
-                //     m_SteamVROverlay.alpha = ratio * m_OverlayMaxAlpha;
-                //     OverlayEnabled = ratio > 0.0f;
-                //     break;
                 case OverlayMode.OVR:
                     OverlayEnabled = ratio == 1;
                     break;
-                case OverlayMode.Mobile:
+                case OverlayMode.Fallback:
                     if (!OverlayEnabled && ratio > 0.0f)
                     {
                         // Position screen overlay in front of the camera.
-                        m_MobileOverlay.transform.parent = GetVrCamera().transform;
-                        m_MobileOverlay.transform.localPosition = Vector3.zero;
-                        m_MobileOverlay.transform.localRotation = Quaternion.identity;
+                        m_FallbackOverlay.transform.parent = GetVrCamera().transform;
+                        m_FallbackOverlay.transform.localPosition = Vector3.zero;
+                        m_FallbackOverlay.transform.localRotation = Quaternion.identity;
                         float scale = 0.5f * GetVrCamera().farClipPlane / GetVrCamera().transform.lossyScale.z;
-                        m_MobileOverlay.transform.localScale = Vector3.one * scale;
+                        m_FallbackOverlay.transform.localScale = Vector3.one * scale;
 
                         // Reparent the overlay so that it doesn't move with the headset.
-                        m_MobileOverlay.transform.parent = null;
+                        m_FallbackOverlay.transform.parent = null;
 
                         // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_MobileOverlay.transform.localRotation.eulerAngles;
-                        m_MobileOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
+                        Vector3 eulerAngles = m_FallbackOverlay.transform.localRotation.eulerAngles;
+                        m_FallbackOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
 
-                        m_MobileOverlay.gameObject.SetActive(true);
+                        m_FallbackOverlay.gameObject.SetActive(true);
                         OverlayEnabled = true;
                     }
                     else if (OverlayEnabled && ratio == 0.0f)
                     {
-                        m_MobileOverlay.gameObject.SetActive(false);
+                        m_FallbackOverlay.gameObject.SetActive(false);
                         OverlayEnabled = false;
                     }
                     break;
@@ -825,16 +693,13 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    // TODO:Mike overlay disable
-                    // case OverlayMode.Steam:
-                    //     return m_SteamVROverlay.gameObject.activeSelf;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                         return m_OVROverlay.enabled;
 #else
                         return false;
 #endif // OCULUS_SUPPORTED
-                    case OverlayMode.Mobile:
+                    case OverlayMode.Fallback:
                         return m_MobileOverlayOn;
                     default:
                         return false;
@@ -844,16 +709,12 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    // TODO:Mike - disable overlay
-                    // case OverlayMode.Steam:
-                    //     m_SteamVROverlay.gameObject.SetActive(value);
-                    //     break;
                     case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                         m_OVROverlay.enabled = value;
 #endif // OCULUS_SUPPORTED
                         break;
-                    case OverlayMode.Mobile:
+                    case OverlayMode.Fallback:
                         m_MobileOverlayOn = value;
                         break;
                 }
@@ -864,11 +725,6 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                // TODO:Mike - disable overlay
-                // case OverlayMode.Steam:
-                //     m_SteamVROverlay.texture = tex;
-                //     m_SteamVROverlay.UpdateOverlay();
-                //     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                     m_OVROverlay.textures = new[] { tex };
@@ -887,13 +743,6 @@ namespace TiltBrush
 
             switch (m_OverlayMode)
             {
-                // TODO:Mike - disable overlay
-                // case OverlayMode.Steam:
-                //     vOverlayPosition += (vOverlayDirection * distance);
-                //     vOverlayPosition.y = height;
-                //     m_SteamVROverlay.transform.position = vOverlayPosition;
-                //     m_SteamVROverlay.transform.forward = vOverlayDirection;
-                //     break;
                 case OverlayMode.OVR:
 #if OCULUS_SUPPORTED
                     vOverlayPosition += (vOverlayDirection * distance / 10);
@@ -920,14 +769,6 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                // TODO:Mike - Overlay disable
-                // case OverlayMode.Steam:
-                //     SteamVR rVR = SteamVR.instance;
-                //     if (rVR != null && rVR.compositor != null)
-                //     {
-                //         rVR.compositor.FadeGrid(fadeTime, fadeToCompositor);
-                //     }
-                //     break;
                 case OverlayMode.OVR:
                     FadeBlack(fadeTime, fadeToCompositor);
                     break;
@@ -938,10 +779,6 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                // TODO:Mike - Disable overlay
-                // case OverlayMode.Steam:
-                //     SteamVR_Render.pauseRendering = bPause;
-                //     break;
                 case OverlayMode.OVR:
                     // :(
                     break;
@@ -1036,6 +873,10 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Vive);
             }
+            else if (device.name.StartsWith("Windows MR Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Wmr);
+            }
             else
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);
@@ -1070,27 +911,13 @@ namespace TiltBrush
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
         {
-            // TODO:Mike - Is there a real way to determine if initialised at start like the other SDKs?
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            switch (App.Config.m_SdkMode)
             {
-                return true;
+                case SdkMode.UnityXR:
+                    return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
+                default:
+                    return true;
             }
-            // TODO:Mike - More SteamVR specific setup
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
-            // {
-            //     return false;
-            // }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // We used to be able to check the GvrViewer state, but this has been moved internal to Unity.
-                // Now just return true and hope for the best.
-                return true;
-            }
-
-            /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
-              return false;
-            } */
-            return true;
         }
 
         // Returns the native frame rate of the HMD (or screen) in frames per second.
@@ -1100,19 +927,12 @@ namespace TiltBrush
             {
                 case SdkMode.UnityXR:
                     return 60; // 90?
-                // TODO:Mike - Interesting that steamvr has the ability to override fps. surely XR can do that too
-                // case SdkMode.SteamVR:
-                //     return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
-                case SdkMode.Gvr:
-                    return 75;
                 case SdkMode.Monoscopic:
                     return 60;
                 case SdkMode.Ods:
                     // TODO: 30 would be correct, buf feels too slow.
                     return 60;
                 default:
-                    // TODO:Mike - is default just UnityXR now? do we need to throw?
-                    //throw new NotImplementedException("Unknown VR SDK Mode");
                     return 60;
             }
         }
@@ -1122,7 +942,6 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.Gvr:
                 case SdkMode.UnityXR:
                     return DoF.Six;
                 default:
@@ -1134,18 +953,6 @@ namespace TiltBrush
         public bool IsAppFocusBlocked()
         {
             return !m_HasVrFocus;
-        }
-
-        // Scales the rendered image that the user sees by \p scale.
-        // Scale is clamped to [0.1, 2].
-        public void SetHmdScalingFactor(float scale)
-        {
-            scale = Mathf.Clamp(scale, 0.1f, 2f);
-            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            // {
-            //     // TODO:Mike - Steamvr camera specific stuff again
-            //     // SteamVR_Camera.sceneResolutionScale = scale;
-            // }
         }
 
         // -------------------------------------------------------------------------------------------- //

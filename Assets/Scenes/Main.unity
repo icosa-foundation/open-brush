@@ -3128,7 +3128,7 @@ MonoBehaviour:
   m_OdsFps: 30
   m_OdsOutputPath: 
   m_OdsOutputPrefix: 
-  m_VersionNumber: 0.3.0
+  m_VersionNumber: 2.0.0
   m_BuildStamp: 
   m_UseBatchedBrushes: 1
   m_EnableBatchMemoryOptimization: 1
@@ -7450,13 +7450,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -17146,17 +17144,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffad114bb615d7c48879446723017243, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AnalogGripBinaryThreshold_Rift: 0.9
   m_GvrOverlayPrefab: {fileID: 114044421867326160, guid: 50a6faaa5f4e1cf4487e55d232fa8d39,
     type: 3}
-  m_OverlayMaxAlpha: 0.5
-  m_OverlayMaxSize: 8
   m_VrSystem: {fileID: 17776372}
   m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}
   m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
     type: 3}
-  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: 69c3c19f56c3e5a42906ce154be66897,
+  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
   m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
     type: 3}
@@ -27143,8 +27138,7 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If
-    you enjoy the app, please consider donating in the settings menu!'
+    If you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -27432,7 +27426,7 @@ MonoBehaviour:
     m_ModeVr: 1
     m_ModeVrExperimental: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
