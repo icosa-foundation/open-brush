@@ -544,7 +544,7 @@ namespace TiltBrush
                     {
                         // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s=>s.Trim().Length>0);
+                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
                         commandStrings.AddRange(formdataCommands);
                     }
                 }
@@ -655,7 +655,7 @@ namespace TiltBrush
                 yield return webRequest.SendWebRequest();
             }
         }
-        
+
         IEnumerator PostRequest(string uri, Dictionary<string, string> formData)
         {
             using (UnityWebRequest webRequest = UnityWebRequest.Post(uri, formData))

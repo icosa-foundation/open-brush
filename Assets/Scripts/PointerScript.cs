@@ -940,10 +940,10 @@ namespace TiltBrush
             {
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);
             }
-            
+
             if (ApiManager.Instance.HasOutgoingListeners)
             {
-                if (rMemoryObjectForPlayback==null)
+                if (rMemoryObjectForPlayback == null)
                 {
                     // Painting
                     ApiManager.Instance.HandleStrokeListeners(
@@ -957,13 +957,13 @@ namespace TiltBrush
                 {
                     // Playback
                     var brush = BrushCatalog.m_Instance.GetBrush(rMemoryObjectForPlayback.m_BrushGuid);
-                    
+
                     var size = Mathf.InverseLerp(
                         _FromRadius(brush.m_BrushSizeRange.x),
                         _FromRadius(brush.m_BrushSizeRange.y),
                         _FromRadius(rMemoryObjectForPlayback.m_BrushSize)
                     ) * rMemoryObjectForPlayback.m_BrushScale;
-                    
+
                     ApiManager.Instance.HandleStrokeListeners(
                         rMemoryObjectForPlayback.m_ControlPoints,
                         rMemoryObjectForPlayback.m_BrushGuid,
