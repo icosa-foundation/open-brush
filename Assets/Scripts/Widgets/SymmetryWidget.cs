@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -88,7 +89,7 @@ namespace TiltBrush
         {
             base.Awake();
 
-            m_AngVelDampThreshold = 600f;
+            m_AngVelDampThreshold = 50f;
 
             //initialize beams
             for (int i = 0; i < m_GuideBeams.Length; ++i)
@@ -443,7 +444,16 @@ namespace TiltBrush
         
         public void DrawCustomSymmetryGuides()
         {
-            var matrices = PointerManager.m_Instance.GetCustomMirrorMatrices();
+            var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+            
+            // This can get called before we've had a chance to set up matrices
+            if (matrices.Count < 1)
+            {
+                PointerManager.m_Instance.CalculateMirrorMatrices();
+                matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+            }
+            
+            // Scale the guides away from the origin
             for (var i = 0; i < matrices.Count; i++)
             {
                 var m = matrices[i];

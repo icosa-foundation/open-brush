@@ -53,14 +53,14 @@ namespace TiltBrush
             Polyhedra
         }
         
-        [NonSerialized] public CustomSymmetryType m_CustomSymmetryType;
-        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily;
+        [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
+        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
+        [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
-        [NonSerialized] public int m_WallpaperSymmetryX = 3;
-        [NonSerialized] public int m_WallpaperSymmetryY = 3;
-        [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup;
+        [NonSerialized] public int m_WallpaperSymmetryX = 2;
+        [NonSerialized] public int m_WallpaperSymmetryY = 2;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
-        [NonSerialized] public bool m_SymmetryRespectsJitter;
+        [NonSerialized] public bool m_SymmetryRespectsJitter = false;
 
         
         // Modifying this struct has implications for binary compatibility.
@@ -304,6 +304,7 @@ namespace TiltBrush
             }
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
+        public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
 
         static public void ClearPlayerPrefs()
         {
@@ -408,8 +409,7 @@ namespace TiltBrush
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
             m_CustomMirrorMatrices = new List<Matrix4x4>();
-            GetCustomMirrorMatrices(true);
-
+            
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
                 //set our main pointer as the zero index
@@ -734,7 +734,8 @@ namespace TiltBrush
                     active = 2;
                     break;
                 case SymmetryMode.FourAroundY:
-                    active = GetCustomMirrorMatrices().Count;
+                    CalculateMirrorMatrices(initPointers: false);
+                    active = m_CustomMirrorMatrices.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -807,10 +808,9 @@ namespace TiltBrush
                     {
                         TrTransform tr;
                         {
-                            var matrices = GetCustomMirrorMatrices();
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                             // convert from widget-local coords to world coords
-                            tr = TrFromMatrixWithFixedReflections(matrices[child]);
+                            tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
                             tr = tr.TransformBy(xfWidget);
                         }
                         return tr * xfMain;
@@ -831,11 +831,8 @@ namespace TiltBrush
             }
         }
         
-        public List<Matrix4x4> GetCustomMirrorMatrices(bool regenerate=false)
+        public void CalculateMirrorMatrices(bool initPointers = true)
         {
-            // Cached
-            if (m_CustomMirrorMatrices.Count == 0 && !regenerate) return m_CustomMirrorMatrices;
-            
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
@@ -847,15 +844,30 @@ namespace TiltBrush
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:
                 default:
-                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0);
+                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
                     m_CustomMirrorMatrices = pointSym.matrices;
-                    for (var i = 0; i < m_CustomMirrorMatrices.Count; i++)
-                    {
-                        var m = m_CustomMirrorMatrices[i];
-                    }
                     break;
             }
-            return m_CustomMirrorMatrices;
+            
+            // If we're calling this from any place other than SetSymmetryMode
+            // then we need to set up pointers.
+            // SetSymmetryMode will do this by itself.
+            if (initPointers)
+            {
+                m_NumActivePointers = m_CustomMirrorMatrices.Count;
+                for (int i = 1; i < m_Pointers.Length; ++i)
+                {
+                    var pointer = m_Pointers[i];
+                    bool enabled = i < m_NumActivePointers;
+                    pointer.m_UiEnabled = enabled;
+                    pointer.m_Script.gameObject.SetActive(enabled);
+                    pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
+                    if (enabled)
+                    {
+                        pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
+                    }
+                }
+            }
         }
 
         void UpdateSymmetryPointerTransforms()
@@ -885,12 +897,11 @@ namespace TiltBrush
                     {
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         TrTransform tr;
-                        var matrices = GetCustomMirrorMatrices();
                         var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                         TrTransform cur = TrTransform.identity;
-                        for (int i = 0; i < matrices.Count; i++)
+                        for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
-                            tr = TrFromMatrixWithFixedReflections(matrices[i]);
+                            tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
                             // convert from widget-local coords to world coords
                             tr = xfWidget * tr * xfWidget.inverse;
                             var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
