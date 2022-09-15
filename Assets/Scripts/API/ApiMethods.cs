@@ -71,6 +71,13 @@ namespace TiltBrush
             cam.transform.position = position;
         }
 
+        [ApiEndpoint("spectator.fov.set", "Changes the field of view of the spectator camera")]
+        public static void SetSpectatorFov(float fov)
+        {
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.GetComponentInChildren<Camera>().fieldOfView = fov;
+        }
+        
         [ApiEndpoint("user.move.to", "Moves the user to the given position")]
         public static void MoveUserTo(Vector3 position)
         {

@@ -31,6 +31,7 @@ public class ApiMainThreadObserver : MonoBehaviour
     [NonSerialized] public Vector3 SpectatorCamPosition;
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
     [NonSerialized] public Quaternion SpectatorCamRotation;
+    [NonSerialized] public float SpectatorCamFov;
 
     public Transform SpectatorCamTarget;
 
@@ -50,6 +51,7 @@ public class ApiMainThreadObserver : MonoBehaviour
         SpectatorCamPosition = spectatorTr.position;
         SpectatorCamRotation = spectatorTr.rotation;
         SpectatorCamTargetPosition = SpectatorCamTarget.position;
+        SpectatorCamFov = spectator.GetComponentInChildren<Camera>().fieldOfView;
         //     m_Status = StatusTypes.Ready;
         // }
 

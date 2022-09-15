@@ -55,6 +55,7 @@
 
         <label>Position: <input id="campos.x" value="0">,<input id="campos.y" value="11">,<input id="campos.z" value="0"></label><br>
         <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="11">,<input id="camtarget.z" value="8"></label><br>
+        <label>FOV: <input id="camfov" value="80"></label><br>
         <button onclick='setCam();'>Set</button>&nbsp;&nbsp;
         <button onclick='saveCamera(0)'>Save Slot 1</button>
         <button onclick='saveCamera(1)'>Save Slot 2</button>
@@ -171,6 +172,10 @@
         return `${document.getElementById("camtarget.x").value},${document.getElementById("camtarget.y").value},${document.getElementById("camtarget.z").value}`;
     }
 
+    function getFovInput() {
+        return `${document.getElementById("camfov").value}`;
+    }
+    
     function setPosInputs(campos) {
         var items = campos.split(",");
         document.getElementById("campos.x").value = items[0];
@@ -184,28 +189,38 @@
         document.getElementById("camtarget.y").value = items[1];
         document.getElementById("camtarget.z").value = items[2];
     }
+    
+    function setFovInput(fov) {
+        document.getElementById("camfov").value = fov;
+    }
 
     function setCam() {
         var campos = getPosInputs();
         var camtarget = getTargetInputs();
+        var camfov = getFovInput();
         sendCommand('spectator.move.to=' + campos);
         sendCommand('spectator.look.at=' + camtarget);
+        sendCommand('spectator.fov.set=' + camfov);
     }
 
     function saveCamera(slot) {
         var campos = getPosInputs();
         var camtarget = getTargetInputs();
+        var camfov = getFovInput();
         localStorage.setItem('campos' + slot, campos);
         localStorage.setItem('camtarget' + slot, camtarget);
+        localStorage.setItem('camfov' + slot, camfov);
     }
 
     function loadCamera(slot) {
         var campos = localStorage.getItem('campos' + slot);
         setPosInputs(campos);
         var camtarget = localStorage.getItem('camtarget' + slot);
+        var camfov = localStorage.getItem('camfov' + slot);
         setTargetInputs(camtarget);
         sendCommand('spectator.move.to=' + campos);
         sendCommand('spectator.look.at=' + camtarget);
+        sendCommand('spectator.fov.set=' + camfov);
     }
 
     var spectatorOn = function(e) {
@@ -227,10 +242,13 @@
     var updateCamFormFields = function() {
         var camPosResponse = sendCommand('query.spectator.position');
         var targetPosResponse = sendCommand('query.spectator.target');
+        var camFovResponse = sendCommand('query.spectator.fov');
         var camPos = trimVector3String(camPosResponse);
         var targetPos = trimVector3String(targetPosResponse);
+        var camFov = camFovResponse.replace(" ", "");
         setPosInputs(camPos);
         setTargetInputs(targetPos);
+        setFovInput(camFov);
     }
 
     var turnCamera = function(e) {

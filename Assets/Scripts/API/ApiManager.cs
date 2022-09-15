@@ -591,6 +591,8 @@ namespace TiltBrush
                     return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+                case "query.spectator.fov":
+                    return ApiMainThreadObserver.Instance.SpectatorCamFov.ToString();
             }
             return "unknown query";
         }
