@@ -823,7 +823,6 @@ namespace TiltBrush
                             // convert from widget-local coords to world coords
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
                             tr = tr.TransformBy(xfWidget);
-                            tr = tr.TransformBy(TrTransform.R(90, Vector3.up));
                         }
                         return tr * xfMain;
                     }
@@ -848,9 +847,7 @@ namespace TiltBrush
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
-                    float canvasScale = App.ActiveCanvas.Pose.scale;
-                    float mirrorScale = canvasScale * m_WallpaperSymmetryScale;
-                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, mirrorScale);
+                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, 1);
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
                     m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
                     break;
@@ -861,7 +858,7 @@ namespace TiltBrush
                     m_CustomMirrorMatrices = pointSym.matrices;
                     break;
             }
-            
+
             // If we're calling this from any place other than SetSymmetryMode
             // then we need to set up pointers.
             // SetSymmetryMode will do this by itself.
@@ -944,11 +941,18 @@ namespace TiltBrush
                     break;
             }
         }
+
+        public float GetCustomMirrorScale()
+        {
+            float canvasScale = App.ActiveCanvas.Pose.scale;
+            return canvasScale * m_WallpaperSymmetryScale;
+        }
         
         private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
         {
             // Custom symmetry matrices have negative scale which brushscripts don't support
             var tr = TrTransform.FromMatrix4x4(m);
+            tr.translation *= GetCustomMirrorScale();
             return tr;
             
             if (tr.scale < 0)

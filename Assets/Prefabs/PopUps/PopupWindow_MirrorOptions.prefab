@@ -535,7 +535,7 @@ MonoBehaviour:
         m_CallState: 2
   m_InitialToggleState: 0
   m_TextureOn: {fileID: 2800000, guid: 9b82f38d1c06a854faadd9c2ea76b48b, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 9b82f38d1c06a854faadd9c2ea76b48b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: aeb61a7dfe5b7da42b00345e9a224f89, type: 3}
 --- !u!1 &436332205580575180
 GameObject:
   m_ObjectHideFlags: 0

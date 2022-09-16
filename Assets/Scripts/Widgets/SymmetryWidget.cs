@@ -457,6 +457,8 @@ namespace TiltBrush
                 PointerManager.m_Instance.CalculateMirrorMatrices();
                 matrices = PointerManager.m_Instance.CustomMirrorMatrices;
             }
+            
+            float mirrorScale = PointerManager.m_Instance.GetCustomMirrorScale();
 
             lrs = m_SymmetryDomainParent.GetComponentsInChildren<LineRenderer>().ToList();
             foreach (var lr in lrs)
@@ -488,7 +490,12 @@ namespace TiltBrush
                     // var path = PointerManager.m_Instance.CustomMirrorDomain;
                     float insetAmount = i==0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping 
                     var path = InsetPolygon(PointerManager.m_Instance.CustomMirrorDomain, insetAmount);
-                    var path3d = path.Select(v => m0.MultiplyPoint3x4(v)).ToArray();
+                    var path3d = path.Select(v =>
+                    {
+                        var p = m0.MultiplyPoint3x4(v);
+                        p *= mirrorScale;
+                        return p;
+                    }).ToArray();
                     lr.positionCount = path3d.Length;
                     lr.SetPositions(path3d);
                     if (i == 0)
