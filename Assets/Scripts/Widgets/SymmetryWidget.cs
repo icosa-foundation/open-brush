@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -66,6 +67,9 @@ namespace TiltBrush
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
         private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
+        [SerializeField] private Transform m_SymmetryDomainPrefab;
+        [SerializeField] private Transform m_SymmetryDomainParent;
+
 
         public Plane ReflectionPlane
         {
@@ -444,6 +448,7 @@ namespace TiltBrush
         
         public void DrawCustomSymmetryGuides()
         {
+            List<LineRenderer> lrs = new List<LineRenderer>();
             var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
             
             // This can get called before we've had a chance to set up matrices
@@ -452,23 +457,91 @@ namespace TiltBrush
                 PointerManager.m_Instance.CalculateMirrorMatrices();
                 matrices = PointerManager.m_Instance.CustomMirrorMatrices;
             }
-            
-            // Scale the guides away from the origin
+
+            lrs = m_SymmetryDomainParent.GetComponentsInChildren<LineRenderer>().ToList();
+            foreach (var lr in lrs)
+            {
+                lr.gameObject.SetActive(false);
+            }
+
             for (var i = 0; i < matrices.Count; i++)
             {
-                var m = matrices[i];
-                m = transform.localToWorldMatrix * m;
+                var m0 = matrices[i];
+                var m = transform.localToWorldMatrix * m0;
+                // Scale the guides away from the origin
                 m *= Matrix4x4.TRS(new Vector3(2, .5f, .05f), Quaternion.identity, new Vector3(0.5f, 0.4f, 0));
                 matrices[i] = m;
+
+                if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Wallpaper)
+                {
+                    LineRenderer lr;
+                    if (i < lrs.Count)
+                    {
+                        lr = lrs[i];
+                    }
+                    else
+                    {
+                        var go = Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent);
+                        lr = go.GetComponent<LineRenderer>();
+                    }
+                    lr.gameObject.SetActive(true);
+                    // var path = PointerManager.m_Instance.CustomMirrorDomain;
+                    float insetAmount = i==0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping 
+                    var path = InsetPolygon(PointerManager.m_Instance.CustomMirrorDomain, insetAmount);
+                    var path3d = path.Select(v => m0.MultiplyPoint3x4(v)).ToArray();
+                    lr.positionCount = path3d.Length;
+                    lr.SetPositions(path3d);
+                    if (i == 0)
+                    {
+                        lr.startColor = Color.white;
+                        lr.endColor = Color.white;
+                    }
+                    else
+                    {
+                        lr.startColor = Color.blue;
+                        lr.endColor = Color.blue;
+                    }
+                }
             }
             
-            m_CustomSymmetryMaterial.color = Color.gray;
-            m_CustomSymmetryMaterial.enableInstancing = true;
-            m_CustomSymmetryMaterial.SetFloat(OutlineWidth, -0.01f);
-            Graphics.DrawMeshInstanced(
-                m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
-                matrices, null, ShadowCastingMode.Off, false
-            );
+            if (PointerManager.m_Instance.m_CustomSymmetryType != PointerManager.CustomSymmetryType.Wallpaper)
+            {
+                m_CustomSymmetryMaterial.color = Color.gray;
+                m_CustomSymmetryMaterial.enableInstancing = true;
+                m_CustomSymmetryMaterial.SetFloat(OutlineWidth, -0.01f);
+                Graphics.DrawMeshInstanced(
+                    m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
+                    matrices, null, ShadowCastingMode.Off, false
+                );
+            }
+        }
+        
+        public static List<Vector2> InsetPolygon(List<Vector2> originalPoly, float insetAmount)
+        {
+            insetAmount = -insetAmount;
+            int Mod(int x, int m) {return (x % m + m) % m;}
+            
+            Vector2 offsetDir = Vector2.zero;
+
+            // Create the Vector3 vertices
+            List<Vector2> offsetPoly = new List<Vector2>();
+            for (int i = 0; i < originalPoly.Count; i++)
+            {
+                if (insetAmount != 0)
+                {
+                    Vector2 tangent1 = (originalPoly[(i + 1) % originalPoly.Count] - originalPoly[i]).normalized;
+                    Vector2 tangent2 = (originalPoly[i] - originalPoly[Mod(i - 1, originalPoly.Count)]).normalized;
+
+                    Vector2 normal1 = new Vector2(-tangent1.y, tangent1.x).normalized;
+                    Vector2 normal2 = new Vector2(-tangent2.y, tangent2.x).normalized;
+
+                    offsetDir = (normal1 + normal2) / 2;
+                    offsetDir *= insetAmount / offsetDir.magnitude;
+                }
+                offsetPoly.Add(new Vector2(originalPoly[i].x - offsetDir.x, originalPoly[i].y - offsetDir.y));
+            }
+
+            return offsetPoly;
         }
     }
 } // namespace TiltBrush

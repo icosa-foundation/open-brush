@@ -185,7 +185,8 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
         private List<Matrix4x4> m_CustomMirrorMatrices;
-        
+        private Vector2[] m_CustomMirrorDomain;
+
         // ---- events
 
         public event Action<TiltBrush.BrushDescriptor> OnMainPointerBrushChange
@@ -304,8 +305,10 @@ namespace TiltBrush
             }
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
+        
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
-
+        public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
+        
         static public void ClearPlayerPrefs()
         {
             PlayerPrefs.DeleteKey(PLAYER_PREFS_POINTER_ANGLE_OLD);
@@ -431,6 +434,8 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
             m_StraightEdgeProxyActive = false;
             m_StraightEdgeGesture = new CircleGesture();
+            App.Scene.MainCanvas.PoseChanged += OnActiveCanvasPoseChanged;
+
 
             if (m_SymmetryWidget)
             {
@@ -443,6 +448,11 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
+        }
+        
+        private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
+        {
+            CalculateMirrorMatrices(initPointers: false);
         }
 
         void Start()
@@ -809,9 +819,11 @@ namespace TiltBrush
                         TrTransform tr;
                         {
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                            
                             // convert from widget-local coords to world coords
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
                             tr = tr.TransformBy(xfWidget);
+                            tr = tr.TransformBy(TrTransform.R(90, Vector3.up));
                         }
                         return tr * xfMain;
                     }
@@ -840,6 +852,7 @@ namespace TiltBrush
                     float mirrorScale = canvasScale * m_WallpaperSymmetryScale;
                     var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, mirrorScale);
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
+                    m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
                     break;
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:

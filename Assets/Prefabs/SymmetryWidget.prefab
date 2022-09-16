@@ -434,6 +434,7 @@ Transform:
   - {fileID: 5419288071783472824}
   - {fileID: 5419288071119248285}
   - {fileID: 5419288071219613452}
+  - {fileID: 1551846571074858292}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -452,6 +453,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.5
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -509,6 +511,9 @@ MonoBehaviour:
   m_SnapXZPlaneStickyAmount: 25
   m_JumpToUserControllerOffsetDistance: 1.25
   m_JumpToUserControllerYOffset: 2
+  m_SymmetryDomainPrefab: {fileID: 5706923482183073426, guid: a9d2d6d7c589868478582328363b3a90,
+    type: 3}
+  m_SymmetryDomainParent: {fileID: 1551846571074858292}
 --- !u!114 &5419288072186775205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -522,6 +527,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Parent: 0
+--- !u!1 &6266660327517675210
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1551846571074858292}
+  m_Layer: 18
+  m_Name: DomainLineRenderers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1551846571074858292
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6266660327517675210}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5419288072186775211}
+  m_RootOrder: 11
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &5419288070310795033
 PrefabInstance:
   m_ObjectHideFlags: 0
