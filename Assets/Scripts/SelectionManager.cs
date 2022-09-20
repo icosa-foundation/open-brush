@@ -632,6 +632,7 @@ namespace TiltBrush
                     continue;
                 }
 
+                stroke.m_PreviousCanvas = stroke.Canvas;
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
 
@@ -649,8 +650,11 @@ namespace TiltBrush
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
         }
 
-        public void DeselectStrokes(IEnumerable<Stroke> strokes)
+        public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)
         {
+            // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
+            // Pass in targetCanvas to override this.
+
             foreach (var stroke in strokes)
             {
                 if (!IsStrokeSelected(stroke))
@@ -658,8 +662,8 @@ namespace TiltBrush
                     Debug.LogWarning("Attempted to deselect stroke that is not selected.");
                     continue;
                 }
-
-                stroke.SetParentKeepWorldPosition(App.ActiveCanvas, SelectionTransform);
+                var canvas = targetCanvas == null ? stroke.m_PreviousCanvas : targetCanvas;
+                stroke.SetParentKeepWorldPosition(canvas, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
@@ -696,6 +700,7 @@ namespace TiltBrush
                 Debug.LogWarning("Attempted to select widget that is already selected.");
                 return;
             }
+            widget.m_previousCanvas = widget.Canvas;
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
@@ -709,8 +714,11 @@ namespace TiltBrush
             groupWidgets.Add(widget);
         }
 
-        public void DeselectWidgets(IEnumerable<GrabWidget> widgets)
+        public void DeselectWidgets(IEnumerable<GrabWidget> widgets, CanvasScript targetCanvas = null)
         {
+            // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
+            // Pass in targetCanvas to override this.
+
             foreach (var widget in widgets)
             {
                 if (!IsWidgetSelected(widget))
@@ -719,7 +727,8 @@ namespace TiltBrush
                     continue;
                 }
 
-                widget.SetCanvas(App.ActiveCanvas);
+                var canvas = targetCanvas == null ? widget.m_previousCanvas : targetCanvas;
+                widget.SetCanvas(canvas);
                 widget.RestoreGameObjectLayer(App.ActiveCanvas.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
@@ -980,8 +989,6 @@ namespace TiltBrush
                 m_SnapGridVisualization.enabled = false;
             }
         }
-
-
     }
 
 } // namespace TiltBrush

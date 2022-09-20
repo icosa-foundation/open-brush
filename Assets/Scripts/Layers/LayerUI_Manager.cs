@@ -130,5 +130,12 @@ namespace TiltBrush.Layers
             var index = m_Canvases.IndexOf(canvas);
             return index >= 0 ? m_Widgets[index] : null;
         }
+
+        public void HandleCopySelectionToCurrentLayer()
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new DuplicateSelectionCommand(SelectionManager.m_Instance.SelectionTransform)
+            );
+        }
     }
 }

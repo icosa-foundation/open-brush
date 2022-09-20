@@ -46,7 +46,7 @@ static class BuildTiltBrush
     // Types, consts, enums
 
     // The vendor name - used for naming android builds - shouldn't have spaces.
-    public const string kVendorName = "icosa";
+    public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
     public const string kDisplayVendorName = "Icosa Gallery";
 
@@ -59,7 +59,7 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"com.{kVendorName}.{kGuiBuildExecutableName.ToLowerInvariant()}";
+    public static string GuiBuildAndroidApplicationIdentifier => $"com.{kVendorName}.{kGuiBuildExecutableName}";
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
 
