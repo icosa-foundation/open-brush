@@ -49,8 +49,31 @@ namespace TiltBrush
             m_DuplicatedWidgets = new List<GrabWidget>();
             foreach (var widget in m_SelectedWidgets)
             {
-                var duplicatedWidget = widget.Clone();
-                m_DuplicatedWidgets.Add(duplicatedWidget);
+                if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.FourAroundY)
+                {
+                    var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+                    TrTransform pointer0 = TrTransform.FromTransform(widget.transform);
+                    TrTransform tr;
+                    var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                    TrTransform cur = TrTransform.identity;
+                    foreach (var m in matrices)
+                    {
+                        var duplicatedWidget = widget.Clone();
+                        tr = TrTransform.FromMatrix4x4(m);
+                        // convert from widget-local coords to world coords
+                        tr = xfWidget * tr * xfWidget.inverse;
+                        var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
+                        // Preserve size but mirror if needed
+                        duplicatedWidget.RecordAndSetSize(widget.GetSignedWidgetSize() * Mathf.Sign(tmp.scale));
+                        duplicatedWidget.RecordAndSetPosRot(tmp);
+                        m_DuplicatedWidgets.Add(duplicatedWidget);
+                    }
+                }
+                else
+                {
+                    var duplicatedWidget = widget.Clone();
+                    m_DuplicatedWidgets.Add(duplicatedWidget);
+                }
             }
 
             m_CurrentCanvas = App.ActiveCanvas;

@@ -135,6 +135,14 @@ namespace TiltBrush
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
 
+        public Transform SymmetryWidget
+        {
+            get
+            {
+                return m_SymmetryWidget;
+            }
+        }
+
         /// This array is horrible. It is sort-of a preallocated pool of pointers,
         /// but different ranges are used for different purposes, and the ranges overlap.
         ///
