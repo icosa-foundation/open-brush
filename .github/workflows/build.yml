@@ -237,9 +237,9 @@ jobs:
       - name: Install Pico unity package
         if: matrix.vrsdk == 'Pico'
         run: |
-          # version 2.0.5
+          # version 2.0.7
           mkdir Packages/com.unity.xr.picoxr
-          wget -q https://sdk.picovr.com/developer-platform/sdk/Pico%20Unity%20Integration%20SDK-2.0.5.zip -O package.zip
+          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20UnityXR%20Integration%20SDK%20v207.zip -O package.zip
           unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
