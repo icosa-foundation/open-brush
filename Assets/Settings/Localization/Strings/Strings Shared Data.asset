@@ -1031,6 +1031,46 @@ MonoBehaviour:
     m_Key: SNAP_PANEL_JITTER_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 15506037610950656
+    m_Key: TOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506183434317824
+    m_Key: TOOLS_PANEL_ERASER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506327693209600
+    m_Key: TOOLS_PANEL_STRAIGHTEDGE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506435650400256
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506545880903680
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506686318784512
+    m_Key: TOOLS_PANEL_CAMERA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506782473203712
+    m_Key: TOOLS_PANEL_TELEPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506869836361728
+    m_Key: TOOLS_PANEL_MIRROR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507089726943232
+    m_Key: TOOLS_PANEL_UNDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507184623071232
+    m_Key: TOOLS_PANEL_REDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
