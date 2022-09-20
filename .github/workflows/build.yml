@@ -509,81 +509,12 @@ jobs:
       - name: Publish Pimax Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_pimax/StandaloneWindows64-SteamVR/ releases/
+          Move-Item -Path build_windows_pimax/StandaloneWindows64-OpenXR/ releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_$env:VERSION.zip
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
           pimax-dev-util.exe login -u $env:PIMAX_USERNAME  -p $env:PIMAX_PASSWORD
           pimax-dev-util.exe upload-pc-build -a $env:PIMAX_APP_ID -d OpenBrush_Pimax_$env:VERSION.zip
-
-  publish_steam_xr_v2:
-    name: Publish Steam Release (xr_v2)
-    needs: [configuration, build]
-    if: |
-      github.event_name == 'push'  &&
-      github.repository == 'icosa-gallery/open-brush' &&
-      (github.ref == 'refs/heads/feature/xr_v2')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-      - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.1
-      - name: Restore steam login config
-        run: |
-          mkdir -p /home/runner/Steam/config
-          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
-          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
-      - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows OpenXR
-          path: build_windows_openxr
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-      - name: Upload Regular Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: openxr
-      - name: Upload Experimental Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: openxr-experimental
-      - name: Save logs
-        uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
-        with:
-          name: steamcmd logs
-          path: build_output/
-
 
   publish_itch:
     name: Publish Itch.io Release
@@ -651,48 +582,6 @@ jobs:
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
-
-  publish_itch_xr_v2:
-    name: Publish Itch Release (xr_v2)
-    needs: [configuration, build]
-    if: |
-      github.event_name == 'push'  &&
-      github.repository == 'icosa-gallery/open-brush' &&
-      (github.ref == 'refs/heads/feature/xr_v2')
-    runs-on: ubuntu-latest
-    env:
-      BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
-      ITCH_GAME: openbrush
-      ITCH_USER: openbrush
-      VERSION: ${{ needs.configuration.outputs.version }}
-    steps:
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest
-          path: build_oculus_quest
-
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
-
-      - name: Package Artifacts for release
-        run: |
-          mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-      - name: Publish Quest
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: android-quest-openxr
-          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
-      - name: Publish Quest Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: android-quest-openxr-experimental
           PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus:

@@ -18,6 +18,10 @@ Shader "Custom/ColorPicker" {
     _MainTex ("Base (RGB)", 2D) = "white" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
+  CGINCLUDE
+    #include "Assets/Shaders/Include/ColorSpaceConvert.cginc"
+  ENDCG
+
   SubShader {
     Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
@@ -37,7 +41,7 @@ Shader "Custom/ColorPicker" {
     void surf (Input IN, inout SurfaceOutput o) {
       half4 tex = tex2D (_MainTex, IN.uv_MainTex);
       float4 c = tex * _Color;
-      o.Emission = c.rgb;
+      o.Emission = SrgbToLinear(c).rgb;
       o.Albedo = 0;
       if (c.a < _Cutoff) {
         discard;
