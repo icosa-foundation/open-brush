@@ -640,7 +640,7 @@
                     "path": "<XRController>{LeftHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
