@@ -1079,6 +1079,18 @@ MonoBehaviour:
     m_Key: TUTORIAL_PANEL_DISMISS_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 15520387964907520
+    m_Key: POPUP_CONFIRM_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520489844551680
+    m_Key: POPUP_DECLINE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520598732877824
+    m_Key: POPUP_OK_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

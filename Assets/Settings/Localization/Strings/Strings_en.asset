@@ -1152,6 +1152,18 @@ MonoBehaviour:
     m_Localized: Toss to Dismiss
     m_Metadata:
       m_Items: []
+  - m_Id: 15520387964907520
+    m_Localized: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520489844551680
+    m_Localized: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520598732877824
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
