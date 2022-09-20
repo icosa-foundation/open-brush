@@ -136,7 +136,7 @@ namespace TiltBrush
             Model = null;
         }
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             clone.m_previousCanvas = m_previousCanvas;
@@ -148,7 +148,7 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(this.m_Size);
+            clone.SetSignedWidgetSize(size);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 

@@ -779,11 +779,19 @@ namespace TiltBrush
             }
         }
 
-        virtual public GrabWidget Clone()
+        public virtual GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, GetSignedWidgetSize());
+        }
+        
+        public virtual GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
-            GrabWidget clone = GameObject.Instantiate(this);
+            GrabWidget clone = Instantiate(this);
             clone.m_previousCanvas = m_previousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.SetSignedWidgetSize(size);
             clone.transform.parent = transform.parent;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
