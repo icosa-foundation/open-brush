@@ -9,7 +9,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 141494, guid: a71be6f60d7230c46b3f4c851f6f5933, type: 3}
       propertyPath: m_Name
-      value: PolyPanel Variant
+      value: PolyPanel_Mobile
       objectReference: {fileID: 0}
     - target: {fileID: 471112, guid: a71be6f60d7230c46b3f4c851f6f5933, type: 3}
       propertyPath: m_RootOrder
@@ -79,7 +79,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[0].m_PopUpPrefab
       value: 
-      objectReference: {fileID: 6531991733820145875, guid: ec854564bb8c53444b9d68ac3ba817eb,
+      objectReference: {fileID: 563727746153209697, guid: 60ddeefaa28cf76478a6671a1193e2c9,
         type: 3}
     - target: {fileID: 114000010862122888, guid: a71be6f60d7230c46b3f4c851f6f5933,
         type: 3}

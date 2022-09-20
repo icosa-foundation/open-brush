@@ -1091,6 +1091,22 @@ MonoBehaviour:
     m_Key: POPUP_OK_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 15522362785837056
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15524391402909696
+    m_Key: POPUP_ACCOUNTS_DRIVELINK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15526523405381632
+    m_Key: POPUP_ACCOUNTS_CANCEL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15531555001511936
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_CONFIRM_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

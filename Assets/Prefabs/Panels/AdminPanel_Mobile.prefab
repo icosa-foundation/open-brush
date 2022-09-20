@@ -9,7 +9,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1000816559363234, guid: f5b291cbc819737469486452ea6748b8, type: 3}
       propertyPath: m_Name
-      value: AdminPanel Variant
+      value: AdminPanel_Mobile
       objectReference: {fileID: 0}
     - target: {fileID: 4482757564845618, guid: f5b291cbc819737469486452ea6748b8, type: 3}
       propertyPath: m_RootOrder
@@ -76,7 +76,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[4].m_PopUpPrefab
       value: 
-      objectReference: {fileID: 6531991733820145875, guid: ec854564bb8c53444b9d68ac3ba817eb,
+      objectReference: {fileID: 563727746153209697, guid: 60ddeefaa28cf76478a6671a1193e2c9,
         type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f5b291cbc819737469486452ea6748b8, type: 3}
