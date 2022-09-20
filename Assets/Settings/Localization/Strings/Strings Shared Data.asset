@@ -1071,6 +1071,14 @@ MonoBehaviour:
     m_Key: TOOLS_PANEL_REDO_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 15508321694691328
+    m_Key: TUTORIAL_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15509162824609792
+    m_Key: TUTORIAL_PANEL_DISMISS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

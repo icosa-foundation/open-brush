@@ -1144,6 +1144,14 @@ MonoBehaviour:
     m_Localized: Redo
     m_Metadata:
       m_Items: []
+  - m_Id: 15508321694691328
+    m_Localized: Tips 'N Tricks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15509162824609792
+    m_Localized: Toss to Dismiss
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
