@@ -81,6 +81,7 @@ namespace TiltBrush
                     bindingGroup = actionSet.WMRControllerScheme.bindingGroup;
                     break;
                 case ControllerStyle.Neo3:
+                case ControllerStyle.Phoenix:
                     bindingGroup = actionSet.PicoControllerScheme.bindingGroup;
                     break;
                 default:
