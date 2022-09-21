@@ -1180,6 +1180,26 @@ MonoBehaviour:
     m_Localized: Sign Out?
     m_Metadata:
       m_Items: []
+  - m_Id: 18090084441858048
+    m_Localized: Audio found!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090455927169024
+    m_Localized: Looking for audio...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090764850241536
+    m_Localized: Stop Listening
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090913311825920
+    m_Localized: Status
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18091078533849088
+    m_Localized: Play some music on your computer!
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

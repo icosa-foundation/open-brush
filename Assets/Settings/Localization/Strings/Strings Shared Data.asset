@@ -1107,6 +1107,26 @@ MonoBehaviour:
     m_Key: POPUP_ACCOUNTS_SIGNOUT_CONFIRM_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 18090084441858048
+    m_Key: POPUP_AUDIOVIZ_AUDIOFOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090455927169024
+    m_Key: POPUP_AUDIOVIZ_LOOKAUDIO_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090764850241536
+    m_Key: POPUP_AUDIOVIZ_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090913311825920
+    m_Key: POPUP_AUDIOVIZ_STATUS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18091078533849088
+    m_Key: POPUP_AUDIOVIZ_HINT_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
