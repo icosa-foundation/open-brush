@@ -170,34 +170,12 @@
                 },
                 {
                     "name": "",
-                    "id": "d172b06b-b295-4491-aabb-d67cdb987182",
-                    "path": "<XRController>{RightHand}/grip",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
-                    "action": "GripAxis",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "6bc6c02c-4693-4eac-ad02-04edc00cc05f",
                     "path": "<XRController>{RightHand}/gripForce",
                     "interactions": "",
                     "processors": "",
                     "groups": "Index Controller",
                     "action": "GripAxis",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "34e41acb-65d2-4ab3-b058-f2c13687d92d",
-                    "path": "<XRController>{RightHand}/gripPressed",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
-                    "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -598,28 +576,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "PadAxis",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "e29be70f-1153-420f-926c-927b472a4610",
-                    "path": "<XRController>{LeftHand}/grip",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
-                    "action": "GripAxis",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "c16d376c-ec23-4bc6-9424-9296529d2793",
-                    "path": "<XRController>{LeftHand}/gripPressed",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
-                    "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
