@@ -34,7 +34,7 @@ namespace TiltBrush
         Gvr,
         LogitechPen,
         Cosmos,
-        Pico
+        Neo3
     }
 
     //
@@ -62,7 +62,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRWmrControlsPrefab;
         [SerializeField] private GameObject m_UnityXRKnucklesControlsPrefab;
         [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
-        [SerializeField] private GameObject m_UnityXRPicoControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -460,7 +460,7 @@ namespace TiltBrush
                 style == ControllerStyle.OculusTouch ||
                 style == ControllerStyle.Knuckles ||
                 style == ControllerStyle.Cosmos ||
-                style == ControllerStyle.Pico;
+                style == ControllerStyle.Neo3;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -540,8 +540,8 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                     controlsPrefab = m_UnityXRWmrControlsPrefab;
                     break;
-                case ControllerStyle.Pico:
-                    controlsPrefab = m_UnityXRPicoControlsPrefab;
+                case ControllerStyle.Neo3:
+                    controlsPrefab = m_UnityXRNeo3ControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -885,7 +885,7 @@ namespace TiltBrush
             }
             else if (device.name.Contains("PicoXR Controller"))
             {
-                SetControllerStyle(ControllerStyle.Pico);
+                SetControllerStyle(ControllerStyle.Neo3);
             }
             else
             {

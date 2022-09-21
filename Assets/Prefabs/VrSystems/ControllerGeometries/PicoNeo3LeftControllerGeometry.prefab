@@ -4076,7 +4076,7 @@ GameObject:
   - component: {fileID: 4430097445729154}
   - component: {fileID: 114346084812737864}
   m_Layer: 14
-  m_Name: PicoLeftControllerGeometry
+  m_Name: PicoNeo3LeftControllerGeometry
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

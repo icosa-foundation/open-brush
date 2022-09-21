@@ -413,7 +413,7 @@ namespace TiltBrush
             {
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     JoystickMesh.material.SetColor("_EmissionColor", tintColor);
                     JoystickPad.material.SetColor("_EmissionColor", tintColor);
                     Button01Mesh.material.SetColor("_EmissionColor", tintColor);
@@ -498,7 +498,7 @@ namespace TiltBrush
             {
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     // TODO: This code is generic enough to be used for all "real" controllers; merge?
                     UpdatePadAnimation(m_JoyAnimState, JoystickPad.material);
                     UpdatePadAnimation(m_PadAnimState, PadMesh.material);
@@ -547,7 +547,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickPad, Materials.Blank);
                     Materials.Assign(Button01Mesh, Materials.Blank);
                     Materials.Assign(Button02Mesh, Materials.Blank);
@@ -576,7 +576,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
                     break;
             }
@@ -601,7 +601,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, mat);
                     if (enableFillTimer)
                     {
@@ -627,7 +627,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
                     break;
             }
@@ -649,7 +649,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
                     break;
             }
@@ -673,7 +673,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button02Mesh, padMat);
                     Materials.Assign(Button01Mesh, Materials.WorldTransformReset);
                     break;
@@ -696,7 +696,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickPad,
                         SelectThumbStickTouched(Materials.BrushSizerActive, Materials.BrushSizer));
                     Materials.Assign(JoystickMesh,
@@ -730,7 +730,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickPad, SelectPadTouched(Materials.BrushSizerActive, Materials.BrushSizer));
                     Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, Materials.BrushSizer));
                     float ratio = GetPadRatio(VrInput.Directional);
@@ -765,7 +765,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickPad, SelectPadTouched(Materials.BrushSizerActive, Materials.BrushSizer));
                     Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, Materials.BrushSizer));
                     float ratio = GetPadRatio(VrInput.Directional);
@@ -791,7 +791,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, Materials.SelectionOptions);
                     Button01Mesh.material.SetFloat("_Ratio",
                         GetPadRatio(VrInput.Button01));
@@ -810,7 +810,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, ControllerMaterialCatalog.m_Instance.SelectionOptions);
                     break;
             }
@@ -832,7 +832,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, enabled ? Materials.Trash : Materials.Blank);
                     Button01Mesh.material.SetFloat("_Ratio", ratio);
                     break;
@@ -858,7 +858,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     // Show the camera on the "joystick mesh" only when not active.
                     // When the thumb IS on the joystick, show the hint if requested, else the active camera icon.
                     Material hint = SelectPadTouched(Materials.Blank,
@@ -889,7 +889,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, Materials.Blank);
                     break;
             }
@@ -916,7 +916,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, SelectIfTouched(VrInput.Button01,
                         Materials.ShareYtActive, Materials.ShareYt));
 
@@ -1014,7 +1014,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button01Mesh, Materials.Yes);
                     Materials.Assign(Button02Mesh, Materials.Cancel);
 
@@ -1038,7 +1038,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickMesh, SelectThumbStickTouched(Materials.Blank, mat));
                     Materials.Assign(JoystickPad, mat);
                     break;
@@ -1077,7 +1077,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     if (canUndo)
                     {
                         Materials.Assign(Button01Mesh, Materials.Undo);
@@ -1098,7 +1098,7 @@ namespace TiltBrush
             {
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(Button02Mesh, Materials.PinCushion);
                     break;
                 case ControllerStyle.Wmr:
@@ -1126,7 +1126,7 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.OculusTouch:
                 case ControllerStyle.Knuckles:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, mat));
                     Materials.Assign(JoystickPad, mat);
                     JoystickPad.material.SetFloat("_Ratio", ratio);
@@ -1153,7 +1153,7 @@ namespace TiltBrush
                     Materials.Assign(PadMesh, Materials.Blank);
                     break;
                 case ControllerStyle.OculusTouch:
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                 case ControllerStyle.Knuckles:
                     Materials.Assign(JoystickMesh, Materials.Blank);
                     Materials.Assign(JoystickPad, Materials.Blank);

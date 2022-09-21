@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ControllerPicoBase_Disabled
+  m_Name: ControllerPicoNeo3Base
   m_Shader: {fileID: 4800000, guid: 93d897b9b6be22b4ca39d36a93786845, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords:

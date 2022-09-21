@@ -80,7 +80,7 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                     bindingGroup = actionSet.WMRControllerScheme.bindingGroup;
                     break;
-                case ControllerStyle.Pico:
+                case ControllerStyle.Neo3:
                     bindingGroup = actionSet.PicoControllerScheme.bindingGroup;
                     break;
                 default:
