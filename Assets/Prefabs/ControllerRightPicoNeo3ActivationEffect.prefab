@@ -4799,7 +4799,7 @@ GameObject:
   - component: {fileID: 4779949055333234}
   - component: {fileID: 1547801781249717275}
   m_Layer: 0
-  m_Name: ControllerRightPicoActivationEffect
+  m_Name: ControllerRightPicoNeo3ActivationEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
