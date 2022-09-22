@@ -1589,9 +1589,9 @@ MonoBehaviour:
   m_UnpinHint: {fileID: 114000012766137386}
   m_PreviewKnotHint: {fileID: 8471063589368407932}
   m_TransformVisualsRenderer: {fileID: 23000012659756648}
-  m_ActivateEffectPrefab: {fileID: 1946532704157676, guid: cee4ed56823cfea4b9c0e3a72cf9169b,
+  m_ActivateEffectPrefab: {fileID: 1946532704157676, guid: 4e97df8fbfd34cb44b967b3d586ff648,
     type: 3}
-  m_HighlightEffectPrefab: {fileID: 1946532704157676, guid: c0250a3c05ae55f4b8682c4c34f757ca,
+  m_HighlightEffectPrefab: {fileID: 1946532704157676, guid: 4b46ece4769f6044b9e0e508e4c6fe62,
     type: 3}
   m_XRayVisuals: {fileID: 1000013600148666}
   m_TriggerRotation: {x: 0, y: 10}
