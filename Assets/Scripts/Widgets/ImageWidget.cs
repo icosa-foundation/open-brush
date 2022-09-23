@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             ImageWidget clone = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
+            clone.m_previousCanvas = m_previousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
@@ -205,6 +206,7 @@ namespace TiltBrush
         {
             var refImage = ReferenceImageCatalog.m_Instance.FileNameToImage(tiltImage.FileName);
             var groupIds = tiltImage.GroupIds;
+            var layerIds = tiltImage.LayerIds;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -234,6 +236,8 @@ namespace TiltBrush
                 }
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
+                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
+                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

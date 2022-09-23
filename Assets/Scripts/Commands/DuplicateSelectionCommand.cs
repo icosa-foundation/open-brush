@@ -30,6 +30,8 @@ namespace TiltBrush
         private TrTransform m_OriginTransform;
         private TrTransform m_DuplicateTransform;
 
+        private CanvasScript m_CurrentCanvas;
+
         private bool m_DupeInPlace;
 
         public DuplicateSelectionCommand(TrTransform xf, BaseCommand parent = null) : base(parent)
@@ -51,6 +53,8 @@ namespace TiltBrush
                 m_DuplicatedWidgets.Add(duplicatedWidget);
             }
 
+            m_CurrentCanvas = App.ActiveCanvas;
+
             GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
@@ -62,15 +66,16 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            // Deselect selected strokes.
+            // Deselect selected strokes to current canvas.
             if (m_SelectedStrokes != null)
             {
-                SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes);
+                SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
             }
+
             // Deselect selected widgets.
             if (m_SelectedWidgets != null)
             {
-                SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets);
+                SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets, m_CurrentCanvas);
             }
 
             // Place duplicated strokes.

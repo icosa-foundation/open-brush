@@ -24,7 +24,7 @@ namespace TiltBrush
     ///
     /// The act of selecting means to move the objects from the active canvas to the
     /// selection canvas, and deselecting moves the objects from the selection canvas
-    /// back to the active canvas.
+    /// back to the original canvas.
     ///
     /// It also remembers the selection's transform from before the selection/deselection
     /// took place. This is used in the case of undoing a deselection of all selected
@@ -47,7 +47,7 @@ namespace TiltBrush
             {
                 // We only need to save if objects have been moved, and that only
                 // occurs when a transformed selection has been deselecting, which
-                // rebakes that object into the main canvas.
+                // rebakes that object into the original canvas.
                 return m_Deselect && m_InitialTransform != TrTransform.identity;
             }
         }

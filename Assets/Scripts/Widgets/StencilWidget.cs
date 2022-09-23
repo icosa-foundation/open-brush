@@ -87,6 +87,7 @@ namespace TiltBrush
                     PinFromSave();
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
+                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
             }
         }
 
@@ -150,6 +151,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             StencilWidget clone = Instantiate(WidgetManager.m_Instance.GetStencilPrefab(this.Type));
+            clone.m_previousCanvas = m_previousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
             clone.m_SkipIntroAnim = true;
