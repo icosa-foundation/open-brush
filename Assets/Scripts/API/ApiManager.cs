@@ -65,6 +65,7 @@ namespace TiltBrush
         }
         [NonSerialized] public Stack<(Vector3, Quaternion)> BrushTransformStack;
         [NonSerialized] public Dictionary<string, string> CommandExamples;
+        public string m_startupScriptName = "startup.sketchscript";
 
         public string UserScriptsPath() { return m_UserScriptsPath; }
 
@@ -163,7 +164,7 @@ namespace TiltBrush
 
             if (!(oldState == App.AppState.LoadingBrushesAndLighting && newState == App.AppState.Standard)) return;
 
-            var startupScriptPath = Path.Combine(m_UserScriptsPath, "startup.sketchscript");
+            var startupScriptPath = Path.Combine(m_UserScriptsPath, m_startupScriptName);
 
             if (File.Exists(startupScriptPath))
             {
@@ -532,7 +533,7 @@ namespace TiltBrush
         string ApiCommandCallback(HttpListenerRequest request)
         {
             // GET commands
-            string[] commandStrings = request.Url.Query.TrimStart('?').Split('&');
+            List<string> commandStrings = request.Url.Query.TrimStart('?').Split('&').ToList();
 
             // POST commands
             if (request.HasEntityBody)
@@ -543,7 +544,8 @@ namespace TiltBrush
                     {
                         // TODO also accept JSON
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        commandStrings.AddRange(formdata.Replace("+", " ").Split('&'));
+                        var formdataCommands = formdata.Replace("+", " ").Split('&').Where(s => s.Trim().Length > 0);
+                        commandStrings.AddRange(formdataCommands);
                     }
                 }
             }
@@ -630,14 +632,33 @@ namespace TiltBrush
 
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
-                string uri = $"{listenerUrl}?{command.Key}={command.Value}";
-                StartCoroutine(GetRequest(uri));
+                string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                {
+                    StartCoroutine(GetRequest(getUri));
+                }
+                else
+                {
+                    var formData = new Dictionary<string, string>
+                    {
+                        {command.Key, command.Value}
+                    };
+                    StartCoroutine(PostRequest(listenerUrl.ToString(), formData));
+                }
             }
         }
 
         IEnumerator GetRequest(string uri)
         {
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+            {
+                yield return webRequest.SendWebRequest();
+            }
+        }
+
+        IEnumerator PostRequest(string uri, Dictionary<string, string> formData)
+        {
+            using (UnityWebRequest webRequest = UnityWebRequest.Post(uri, formData))
             {
                 yield return webRequest.SendWebRequest();
             }
@@ -802,10 +823,9 @@ namespace TiltBrush
             }
         }
 
-        public void HandleStrokeListeners(List<PointerManager.ControlPoint> controlPoints, BrushDescriptor currentBrush)
+        public void HandleStrokeListeners(IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
         {
             if (!HasOutgoingListeners) return;
-            var color = App.BrushColor.CurrentColor;
             var pointsAsStrings = new List<string>();
             foreach (var cp in controlPoints)
             {
@@ -816,9 +836,10 @@ namespace TiltBrush
             EnqueueOutgoingCommands(
                 new List<KeyValuePair<string, string>>
                 {
-                    new KeyValuePair<string, string>("brush.type", currentBrush.m_Guid.ToString()),
-                    new KeyValuePair<string, string>("color.set.rgb", $"{color.r},{color.g},{color.b}"),
-                    new KeyValuePair<string, string>("draw.stroke", string.Join(",", pointsAsStrings))
+                    new ("brush.type", guid.ToString()),
+                    new ("brush.size.set", size.ToString()),
+                    new ("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                    new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
         }
