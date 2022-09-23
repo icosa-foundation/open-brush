@@ -335,12 +335,7 @@ namespace TiltBrush
         {
             location = Path.Combine(App.MediaLibraryPath(), "Images", location);
             var image = new ReferenceImage(location);
-            bool result;
-            int timeout = 0;
-            do
-            {
-                result = image.RequestLoad();
-            } while (result == false && timeout++ < 100000);
+            image.SynchronousLoad();
             return image;
         }
 
@@ -388,7 +383,7 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.squash", "Move all brush strokes from one layer to another and removes the empty layer")]
+        [ApiEndpoint("layer.squash", "Move everything from one layer to another then removes the empty layer")]
         public static void SquashLayer(int squashedLayer, int destinationLayer)
         {
             Debug.Log($"squashedLayer {squashedLayer} destinationLayer {destinationLayer}");
@@ -396,7 +391,7 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.activate", "Make a layer active")]
+        [ApiEndpoint("layer.activate", "Make a layer the active layer")]
         public static void ActivateLayer(int layer)
         {
             ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
