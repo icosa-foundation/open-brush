@@ -172,7 +172,7 @@ GameObject:
   - component: {fileID: 2624272951161731143}
   - component: {fileID: 2323353000080118199}
   m_Layer: 16
-  m_Name: Button_ShowGeneratorControls
+  m_Name: TextActionButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
