@@ -3262,7 +3262,6 @@ MonoBehaviour:
   m_IntroSketchUsdFilename: 
   m_IntroSketchSpeed: 1
   m_IntroLooped: 0
-  CreateShaderWarmupList: 0
   m_ButtonDescriptionOneLinePrefab: {fileID: 1163110351714502, guid: c1acdd71059735e47bb9b229d03ec97a,
     type: 3}
   m_ButtonDescriptionTwoLinesPrefab: {fileID: 1163110351714502, guid: a0426ce3b8e3b5442bf9e321b7ca2ea2,
@@ -7690,11 +7689,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
