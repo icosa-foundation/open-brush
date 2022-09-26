@@ -376,6 +376,14 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
+        [ApiEndpoint("layer.clear", "Clears the contents of a layer")]
+        public static void ClearLayer(int layer)
+        {
+            ClearLayerCommand cmd = new ClearLayerCommand(layer);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+
+        }
+
         [ApiEndpoint("layer.delete", "Deletes a layer")]
         public static void DeleteLayer(int layer)
         {
