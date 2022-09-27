@@ -54,12 +54,16 @@ namespace TiltBrush
         }
         
         [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
-        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
+        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cnv;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
-        [NonSerialized] public int m_PointSymmetryOrder = 6;
+        [NonSerialized] public int m_PointSymmetryOrder = 1;
         [NonSerialized] public int m_WallpaperSymmetryX = 2;
         [NonSerialized] public int m_WallpaperSymmetryY = 2;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
+        [NonSerialized] public float m_WallpaperSymmetryScaleX = 1f;
+        [NonSerialized] public float m_WallpaperSymmetryScaleY = 1f;
+        [NonSerialized] public float m_WallpaperSymmetrySkewX = 0;
+        [NonSerialized] public float m_WallpaperSymmetrySkewY = 0;
         [NonSerialized] public bool m_SymmetryRespectsJitter = false;
 
         
@@ -855,7 +859,16 @@ namespace TiltBrush
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Wallpaper:
-                    var wallpaperSym = new WallpaperSymmetry(m_WallpaperSymmetryGroup, m_WallpaperSymmetryX, m_WallpaperSymmetryY, 1);
+                    var wallpaperSym = new WallpaperSymmetry(
+                        m_WallpaperSymmetryGroup,
+                        m_WallpaperSymmetryX,
+                        m_WallpaperSymmetryY,
+                        1,
+                        m_WallpaperSymmetryScaleX,
+                        m_WallpaperSymmetryScaleY,
+                        m_WallpaperSymmetrySkewX,
+                        m_WallpaperSymmetrySkewY
+                    );
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
                     m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
                     break;
@@ -916,12 +929,10 @@ namespace TiltBrush
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         TrTransform tr;
                         var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                        TrTransform cur = TrTransform.identity;
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
-                            // convert from widget-local coords to world coords
-                            tr = xfWidget * tr * xfWidget.inverse;
+                            tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
                             var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
@@ -955,14 +966,22 @@ namespace TiltBrush
             float canvasScale = App.ActiveCanvas.Pose.scale;
             return canvasScale * m_WallpaperSymmetryScale;
         }
-        
-        private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
+
+        public TrTransform TrFromMatrix(Matrix4x4 m)
         {
-            // Custom symmetry matrices have negative scale which brushscripts don't support
             var tr = TrTransform.FromMatrix4x4(m);
             tr.translation *= GetCustomMirrorScale();
             return tr;
-            
+        }
+
+        private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
+        {
+            var tr = TrFromMatrix(m);
+
+            // TODO fix this method
+            return tr;
+
+            // Custom symmetry matrices have negative scale which brushscripts don't support
             if (tr.scale < 0)
             {
                 Debug.Log($"Fixing scale");
