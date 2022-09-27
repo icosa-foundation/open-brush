@@ -676,6 +676,8 @@ namespace TiltBrush
                 else if (ext == ".ply")
                 {
                     go = LoadPly(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else
                 {
