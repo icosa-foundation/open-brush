@@ -1139,6 +1139,18 @@ MonoBehaviour:
     m_Key: POPUP_CAMERAPATHS_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 18098512052690944
+    m_Key: POPUP_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098764352659456
+    m_Key: POPUP_CANTLOADSKETCH_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098892484452352
+    m_Key: POPUP_CANTLOADSKETCH_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

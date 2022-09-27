@@ -1212,6 +1212,19 @@ MonoBehaviour:
     m_Localized: Camera Paths
     m_Metadata:
       m_Items: []
+  - m_Id: 18098512052690944
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098764352659456
+    m_Localized: Sketch Not Supported
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098892484452352
+    m_Localized: This sketch is beyond size limitations and cannot be loaded on this
+      platform.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
