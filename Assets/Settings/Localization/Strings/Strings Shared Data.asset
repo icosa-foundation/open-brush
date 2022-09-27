@@ -1151,6 +1151,26 @@ MonoBehaviour:
     m_Key: POPUP_CANTLOADSKETCH_DESCRIPTION_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 18101292528115712
+    m_Key: POPUP_COLOROPTIONS_HUE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101388099526656
+    m_Key: POPUP_COLOROPTIONS_SAT_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101440956145664
+    m_Key: POPUP_COLOROPTIONS_VAL_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101498871095296
+    m_Key: POPUP_COLOROPTIONS_SIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101557633294336
+    m_Key: POPUP_COLOROPTIONS_POSITION_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

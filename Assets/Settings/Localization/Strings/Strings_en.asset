@@ -1225,6 +1225,26 @@ MonoBehaviour:
       platform.
     m_Metadata:
       m_Items: []
+  - m_Id: 18101292528115712
+    m_Localized: Hue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101388099526656
+    m_Localized: Saturation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101440956145664
+    m_Localized: Brightness
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101498871095296
+    m_Localized: Size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101557633294336
+    m_Localized: POPUP_COLOROPTIONS_POSITION_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
