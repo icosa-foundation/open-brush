@@ -1200,6 +1200,18 @@ MonoBehaviour:
     m_Localized: Play some music on your computer!
     m_Metadata:
       m_Items: []
+  - m_Id: 18094306084331520
+    m_Localized: Cameras
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094451278553088
+    m_Localized: Camera Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18095883364933632
+    m_Localized: Camera Paths
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

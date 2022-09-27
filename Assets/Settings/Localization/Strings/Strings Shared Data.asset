@@ -1127,6 +1127,18 @@ MonoBehaviour:
     m_Key: POPUP_AUDIOVIZ_HINT_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 18094306084331520
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094451278553088
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAOPTIONS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18095883364933632
+    m_Key: POPUP_CAMERAPATHS_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
