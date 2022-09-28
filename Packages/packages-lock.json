@@ -7,11 +7,11 @@
       "dependencies": {}
     },
     "com.ixxy.unitysymmetry": {
-      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=5#upm",
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "75f3684993475f2e237719553d81a63656d3fd40"
+      "hash": "fec33a44c78cccfbeed6f0e22e7c57c3ded34d6e"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
