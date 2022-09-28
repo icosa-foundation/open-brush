@@ -893,7 +893,7 @@ namespace TiltBrush
             {
                 SetControllerStyle(ControllerStyle.Wmr);
             }
-            else if (device.name.Contains("PicoXR Controller"))
+            else if (device.name.Contains("PICO Controller"))
             {
                 // Controller name isn't specified in Pico's device layout
                 // so we have to run some additional checks if available.
