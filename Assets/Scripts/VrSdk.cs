@@ -17,6 +17,10 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.XR;
 
+#if PICO_SUPPORTED
+using PicoInput = Unity.XR.PXR.PXR_Input;
+#endif
+
 namespace TiltBrush
 {
     // If these names are used in analytics etc, they must be protected from obfuscation.
@@ -891,9 +895,22 @@ namespace TiltBrush
             }
             else if (device.name.Contains("PicoXR Controller"))
             {
-                SetControllerStyle(ControllerStyle.Neo3);
-                //TODO: Phoenix specific detection
-                //SetControllerStyle(ControllerStyle.Phoenix);
+                // Controller name isn't specified in Pico's device layout
+                // so we have to run some additional checks if available.
+                // Default to Pico 4 as newest.
+#if !PICO_SUPPORTED
+                SetControllerStyle(ControllerStyle.Phoenix);
+#else
+                switch(PicoInput.GetControllerDeviceType())
+                {
+                    case PicoInput.ControllerDevice.Neo3:
+                        SetControllerStyle(ControllerStyle.Neo3);
+                        break;
+                    default:
+                        SetControllerStyle(ControllerStyle.Phoenix);
+                        break;
+                }
+#endif
             }
             else
             {
