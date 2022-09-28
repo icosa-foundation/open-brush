@@ -2127,7 +2127,7 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental=false)
+        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
         {
             var manifest = m_Manifest;
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
