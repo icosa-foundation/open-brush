@@ -183,9 +183,9 @@ jobs:
       - name: Install Oculus unity package
         if: matrix.vrsdk == 'Oculus'
         run: |
-          # version 41.0
+          # version 43.0
           # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=5287225527986889 -O package.tmp
+          wget -q https://securecdn.oculus.com/binaries/download/?id=5461031177272989 -O package.tmp
           mkdir tmp
           tar -C tmp -xzf package.tmp
           find tmp -type f | xargs chmod a-x
