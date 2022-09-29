@@ -203,6 +203,8 @@ jobs:
           cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
           rm -rf tmp package.tmp
           ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
+          # HACK to stop Oculus preventing building in gamma color space with OpenXR.
+          sed -i '/linear lighting/d' Assets/Oculus/VR/Editor/OVRGradleGeneration.cs
 
       - name: Install Pimax unity package
         if: matrix.name == 'Windows Pimax'
