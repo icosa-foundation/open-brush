@@ -38,10 +38,32 @@ namespace TiltBrush
         {
             // Save selected and duplicated strokes.
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            m_DuplicatedStrokes = m_SelectedStrokes
-                .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                    stroke, App.Scene.SelectionCanvas, null))
-                .ToList();
+            m_DuplicatedStrokes = new List<Stroke>();
+            foreach (var stroke in m_SelectedStrokes)
+            {
+                if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.FourAroundY)
+                {
+                    var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+                    TrTransform strokeTransform = Coords.AsCanvas[stroke.StrokeTransform];
+                    TrTransform tr;
+                    var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                    foreach (var m in matrices)
+                    {
+                        tr = PointerManager.m_Instance.TrFromMatrix(m);
+                        tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
+                        var tmp = tr; // * strokeTransform;       // Work around 2018.3.x Mono parse bug
+                        tmp *= App.Scene.Pose;
+                        tmp *= TrTransform.T(Vector3.one * (Random.value * .00001f)); // Small jitter to prevent z-fighting
+                        var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, tmp);
+                        m_DuplicatedStrokes.Add(duplicatedStroke);
+                    }
+                }
+                else
+                {
+                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, null);
+                    m_DuplicatedStrokes.Add(duplicatedStroke);
+                }
+            }
 
             // Save selected widgets.
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
@@ -52,17 +74,15 @@ namespace TiltBrush
                 if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.FourAroundY)
                 {
                     var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
-                    TrTransform pointer0 = TrTransform.FromTransform(widget.transform);
+                    TrTransform widgetTransform = TrTransform.FromTransform(widget.transform);
                     TrTransform tr;
                     var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
-                    TrTransform cur = TrTransform.identity;
                     foreach (var m in matrices)
                     {
                         var duplicatedWidget = widget.Clone();
-                        tr = TrTransform.FromMatrix4x4(m);
-                        // convert from widget-local coords to world coords
-                        tr = xfWidget * tr * xfWidget.inverse;
-                        var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
+                        tr = PointerManager.m_Instance.TrFromMatrix(m);
+                        tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
+                        var tmp = tr * widgetTransform; // Work around 2018.3.x Mono parse bug
                         // Preserve size but mirror if needed
                         duplicatedWidget.RecordAndSetSize(widget.GetSignedWidgetSize() * Mathf.Sign(tmp.scale));
                         duplicatedWidget.RecordAndSetPosRot(tmp);
