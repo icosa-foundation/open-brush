@@ -1,4 +1,4 @@
-// Copyright 2020 The Tilt Brush Authors
+// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,48 +18,71 @@ using System.Linq;
 
 namespace TiltBrush
 {
-    public class DuplicateSelectionCommand : BaseCommand
+    public class MultiMirrorSelectionCommand : BaseCommand
     {
-        // This command stores a copy of the selection and a copy of the duplicate.
         private List<Stroke> m_SelectedStrokes;
         private List<GrabWidget> m_SelectedWidgets;
 
         private List<Stroke> m_DuplicatedStrokes;
         private List<GrabWidget> m_DuplicatedWidgets;
 
-        private TrTransform m_OriginTransform;
-        private TrTransform m_DuplicateTransform;
-
+        private TrTransform m_Transform;
         private CanvasScript m_CurrentCanvas;
+        private bool m_StampMode;
 
-        private bool m_DupeInPlace;
-
-        public DuplicateSelectionCommand(TrTransform xf, BaseCommand parent = null) : base(parent)
+        public MultiMirrorSelectionCommand(TrTransform xf, bool dupInPlace, BaseCommand parent = null) : base(parent)
         {
-            // Save selected and duplicated strokes.
-            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            m_DuplicatedStrokes = m_SelectedStrokes
-                .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                    stroke, App.Scene.SelectionCanvas, null))
-                .ToList();
+            m_CurrentCanvas = App.ActiveCanvas;
+            m_StampMode = !dupInPlace;
+            m_Transform = xf;
 
-            // Save selected widgets.
+            m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+            m_DuplicatedStrokes = new List<Stroke>();
+            IEnumerable<Matrix4x4> matrices;
+
+            matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+
+            // If we're not stamping then we don't want to duplicate the original
+            if (!m_StampMode) matrices = matrices.Skip(1).ToList();
+
+            foreach (var stroke in m_SelectedStrokes)
+            {
+                TrTransform strokeTransform = Coords.AsCanvas[stroke.StrokeTransform];
+                TrTransform tr;
+                var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                foreach (var m in matrices)
+                {
+                    tr = PointerManager.m_Instance.TrFromMatrix(m);
+                    tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr; // * strokeTransform;       // Work around 2018.3.x Mono parse bug
+                    tmp *= App.Scene.Pose;
+                    tmp *= TrTransform.T(Vector3.one * (Random.value * .00001f)); // Small jitter to prevent z-fighting
+                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, tmp);
+                    m_DuplicatedStrokes.Add(duplicatedStroke);
+                }
+            }
+
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
-            // Save duplicated widgets
             m_DuplicatedWidgets = new List<GrabWidget>();
             foreach (var widget in m_SelectedWidgets)
             {
-                var duplicatedWidget = widget.Clone();
-                m_DuplicatedWidgets.Add(duplicatedWidget);
+                TrTransform widgetTransform = TrTransform.FromTransform(widget.transform);
+                TrTransform tr;
+                var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                foreach (var m in matrices)
+                {
+                    var duplicatedWidget = widget.Clone();
+                    tr = PointerManager.m_Instance.TrFromMatrix(m);
+                    tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr * widgetTransform; // Work around 2018.3.x Mono parse bug
+                    // Preserve size but mirror if needed
+                    duplicatedWidget.RecordAndSetSize(widget.GetSignedWidgetSize() * Mathf.Sign(tmp.scale));
+                    duplicatedWidget.RecordAndSetPosRot(tmp);
+                    duplicatedWidget.SetCanvas(m_CurrentCanvas);
+                    m_DuplicatedWidgets.Add(duplicatedWidget);
+                }
             }
-
-            m_CurrentCanvas = App.ActiveCanvas;
-
             GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
-
-            m_OriginTransform = SelectionManager.m_Instance.SelectionTransform;
-            m_DuplicateTransform = xf;
-            m_DupeInPlace = m_OriginTransform == m_DuplicateTransform;
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -70,12 +93,6 @@ namespace TiltBrush
             if (m_SelectedStrokes != null)
             {
                 SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
-            }
-
-            // Deselect selected widgets.
-            if (m_SelectedWidgets != null)
-            {
-                SelectionManager.m_Instance.DeselectWidgets(m_SelectedWidgets, m_CurrentCanvas);
             }
 
             // Place duplicated strokes.
@@ -110,10 +127,22 @@ namespace TiltBrush
             {
                 m_DuplicatedWidgets[i].RestoreFromToss();
             }
-            SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+
+            // Deselect selected widgets.
+            if (m_DuplicatedWidgets != null)
+            {
+                if (m_StampMode)
+                {
+                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets, m_CurrentCanvas);
+                }
+                else
+                {
+                    SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                }
+            }
 
             // Set selection widget transforms.
-            SelectionManager.m_Instance.SelectionTransform = m_DuplicateTransform;
+            SelectionManager.m_Instance.SelectionTransform = m_Transform;
             SelectionManager.m_Instance.UpdateSelectionWidget();
         }
 
@@ -154,7 +183,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
 
             // Reset the selection transform before we select strokes.
-            SelectionManager.m_Instance.SelectionTransform = m_OriginTransform;
+            SelectionManager.m_Instance.SelectionTransform = m_Transform;
 
             // Select strokes.
             if (m_SelectedStrokes != null)
@@ -163,7 +192,14 @@ namespace TiltBrush
             }
             if (m_SelectedWidgets != null)
             {
-                SelectionManager.m_Instance.SelectWidgets(m_SelectedWidgets);
+                // Deselect selected widgets.
+                if (m_DuplicatedWidgets != null)
+                {
+                    if (!m_StampMode)
+                    {
+                        SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                    }
+                }
             }
 
             SelectionManager.m_Instance.UpdateSelectionWidget();
@@ -171,7 +207,7 @@ namespace TiltBrush
 
         public override bool Merge(BaseCommand other)
         {
-            if (!m_DupeInPlace)
+            if (!m_StampMode)
             {
                 return false;
             }
