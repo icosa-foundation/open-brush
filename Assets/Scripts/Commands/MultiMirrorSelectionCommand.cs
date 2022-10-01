@@ -137,6 +137,7 @@ namespace TiltBrush
                 }
                 else
                 {
+                    SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
                     SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
                 }
             }
