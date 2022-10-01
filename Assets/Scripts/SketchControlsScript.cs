@@ -4618,7 +4618,7 @@ namespace TiltBrush
                         else
                         {
                             ClipboardManager.Instance.DuplicateSelection(
-                                dupInPlace: !IsUserInteractingWithSelectionWidget());
+                                stampMode: IsUserInteractingWithSelectionWidget());
                         }
                         EatToolScaleInput();
                         break;
