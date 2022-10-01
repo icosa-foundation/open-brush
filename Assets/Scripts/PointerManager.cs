@@ -65,6 +65,7 @@ namespace TiltBrush
         [NonSerialized] public float m_WallpaperSymmetrySkewX = 0;
         [NonSerialized] public float m_WallpaperSymmetrySkewY = 0;
         [NonSerialized] public bool m_SymmetryRespectsJitter = false;
+        [NonSerialized] public bool m_SymmetryLockedToController = false;
 
         
         // Modifying this struct has implications for binary compatibility.
@@ -830,11 +831,14 @@ namespace TiltBrush
                     {
                         TrTransform tr;
                         {
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            
+                            var xfCenter = TrTransform.FromTransform(
+                                m_SymmetryLockedToController ?
+                                MainPointer.transform : m_SymmetryWidget
+                            );
+
                             // convert from widget-local coords to world coords
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
-                            tr = tr.TransformBy(xfWidget);
+                            tr = tr.TransformBy(xfCenter);
                         }
                         return tr * xfMain;
                     }
@@ -928,11 +932,16 @@ namespace TiltBrush
                     {
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         TrTransform tr;
-                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+
+                        var xfCenter = TrTransform.FromTransform(
+                            m_SymmetryLockedToController ?
+                            MainPointer.transform : m_SymmetryWidget
+                        );
+
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
-                            tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
+                            tr = xfCenter * tr * xfCenter.inverse; // convert from widget-local coords to world coords
                             var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
@@ -976,17 +985,32 @@ namespace TiltBrush
 
         private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
         {
-            var tr = TrFromMatrix(m);
 
-            // TODO fix this method
+            return TrFromMatrix(m);
+
+            TrTransform tr;
+            Debug.Log($"scale: {m.lossyScale}");
+            if (m.lossyScale.x < 0 || m.lossyScale.y < 0 || m.lossyScale.z < 0)
+            {
+                tr = TrTransform.TR(
+                    m.MultiplyPoint3x4(Vector3.one),
+                    m.rotation
+                );
+                tr = new Plane(-tr.right, 0).ReflectPoseKeepHandedness(tr);
+            }
+            else
+            {
+                tr = TrFromMatrix(m);
+            }
+
+
             return tr;
 
             // Custom symmetry matrices have negative scale which brushscripts don't support
             if (tr.scale < 0)
             {
-                Debug.Log($"Fixing scale");
                 tr.scale = Mathf.Abs(tr.scale);
-                
+
                 // tr = new Plane(Vector3.left, 0).ReflectPoseKeepHandedness(tr);
                 // tr = new Plane(Vector3.down, 0).ReflectPoseKeepHandedness(tr);
 
