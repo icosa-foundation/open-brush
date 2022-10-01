@@ -40,7 +40,7 @@ namespace TiltBrush
         {
             None,
             SinglePlane,
-            FourAroundY,
+            MultiMirror,
             DebugMultiple,
             TwoHanded,
         }
@@ -507,7 +507,7 @@ namespace TiltBrush
                         m_SymmetryWidget.position = Vector3.zero;
                         m_SymmetryWidget.rotation = Quaternion.identity;
                     }
-                    else if (m_CurrentSymmetryMode == SymmetryMode.FourAroundY)
+                    else if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
                     {
                         m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
                         m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
@@ -756,7 +756,7 @@ namespace TiltBrush
                 case SymmetryMode.TwoHanded:
                     active = 2;
                     break;
-                case SymmetryMode.FourAroundY:
+                case SymmetryMode.MultiMirror:
                     CalculateMirrorMatrices(initPointers: false);
                     active = m_CustomMirrorMatrices.Count;
                     break;
@@ -827,7 +827,7 @@ namespace TiltBrush
                         return m_SymmetryWidgetScript.ReflectionPlane.ReflectPoseKeepHandedness(xfMain);
                     }
 
-                case SymmetryMode.FourAroundY:
+                case SymmetryMode.MultiMirror:
                     {
                         TrTransform tr;
                         {
@@ -928,7 +928,7 @@ namespace TiltBrush
                         break;
                     }
 
-                case SymmetryMode.FourAroundY:
+                case SymmetryMode.MultiMirror:
                     {
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         TrTransform tr;

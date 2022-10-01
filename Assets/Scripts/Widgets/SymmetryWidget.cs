@@ -130,7 +130,7 @@ namespace TiltBrush
                             (m_GuideBeams[i].m_Direction != BeamDirection.Right));
                     }
                     break;
-                case PointerManager.SymmetryMode.FourAroundY:
+                case PointerManager.SymmetryMode.MultiMirror:
                     m_LeftRightMesh.enabled = false;
                     m_FrontBackMesh.enabled = true;
                     if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
@@ -157,7 +157,7 @@ namespace TiltBrush
             // It's a bit obnoxious to do this when the user's grabbing it. Maybe we should
             // also not do this when the canvas is being manipulated?
             if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel 
-                && PointerManager.m_Instance.CurrentSymmetryMode!=PointerManager.SymmetryMode.FourAroundY)
+                && PointerManager.m_Instance.CurrentSymmetryMode!=PointerManager.SymmetryMode.MultiMirror)
             {
                 // Doing the rotation in object space makes it easier to prove that the
                 // plane normal will never be affected.
@@ -268,7 +268,7 @@ namespace TiltBrush
                 m_GuideBeamShowRatio = fShowRatio;
             }
 
-            if (PointerManager.m_Instance.CurrentSymmetryMode==PointerManager.SymmetryMode.FourAroundY)
+            if (PointerManager.m_Instance.CurrentSymmetryMode==PointerManager.SymmetryMode.MultiMirror)
             {
                 DrawCustomSymmetryGuides();
             }

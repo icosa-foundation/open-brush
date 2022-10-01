@@ -1358,8 +1358,8 @@ namespace TiltBrush
                     var cur = PointerManager.m_Instance.CurrentSymmetryMode;
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
-                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
-                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.TwoHanded
+                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.MultiMirror
+                        : (cur == SymmetryMode.MultiMirror) ? SymmetryMode.TwoHanded
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -4271,9 +4271,9 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.SymmetryFour:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.FourAroundY)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.MultiMirror)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.FourAroundY);
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.MultiMirror);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
@@ -4942,7 +4942,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
-                case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
