@@ -69,7 +69,7 @@ namespace TiltBrush
         public OptionButton GetParentButton()
         {
             return m_ParentPanel.GetComponentsInChildren<LongPressButton>().First(
-                b => b.m_Command == SketchControlsScript.GlobalCommands.SymmetryFour
+                b => b.m_Command == SketchControlsScript.GlobalCommands.MultiMirror
             );
         }
 
@@ -81,7 +81,7 @@ namespace TiltBrush
                 // Restore mirror state as the long press button misbehaves sometimes
                 if (GetParentButton().IsButtonActive() != m_MirrorState)
                 {
-                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.SymmetryFour);
+                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.MultiMirror);
                 }
             }
             return close;

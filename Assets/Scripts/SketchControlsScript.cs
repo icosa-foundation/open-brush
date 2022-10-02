@@ -55,7 +55,7 @@ namespace TiltBrush
             ResetAllPanels,
             SketchOrigin,
             SymmetryPlane,
-            SymmetryFour,
+            MultiMirror,
             ViewOnly,
             SaveGallery,
             LightingLdr,
@@ -4270,7 +4270,7 @@ namespace TiltBrush
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Off");
                     }
                     break;
-                case GlobalCommands.SymmetryFour:
+                case GlobalCommands.MultiMirror:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.MultiMirror)
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.MultiMirror);
@@ -4942,7 +4942,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
-                case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;

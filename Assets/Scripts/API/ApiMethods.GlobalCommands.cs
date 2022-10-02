@@ -142,10 +142,10 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("symmetry.doublemirror", "Sets the symmetry mode to 'double mirror'")]
-        public static void SymmetryFour()
+        [ApiEndpoint("symmetry.multimirror", "Sets the symmetry mode to 'multimirror'")]
+        public static void MultiMirror()
         {
-            var rEnum = SketchControlsScript.GlobalCommands.SymmetryFour;
+            var rEnum = SketchControlsScript.GlobalCommands.MultiMirror;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
@@ -354,14 +354,14 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1);
         // }
 
-        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection")]
+        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection (uses symmetry mirrors if active")]
         public static void DuplicateSelection()
         {
             var rEnum = SketchControlsScript.GlobalCommands.Duplicate;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("selection.delete", "Create a duplicate of the current selection")]
+        [ApiEndpoint("selection.delete", "Deletes the current selection")]
         public static void DeleteSelection()
         {
             SelectionManager.m_Instance.DeleteSelection();
