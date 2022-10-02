@@ -69,7 +69,7 @@ namespace TiltBrush
             {
                 // Multimirrored dups never use the offset transform
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new MultiMirrorSelectionCommand(SelectionManager.m_Instance.SelectionTransform, stampMode)
+                    new MultimirrorDuplicateCommand(SelectionManager.m_Instance.SelectionTransform, stampMode)
                 );
             }
             else

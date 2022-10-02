@@ -18,7 +18,7 @@ using System.Linq;
 
 namespace TiltBrush
 {
-    public class MultiMirrorSelectionCommand : BaseCommand
+    public class MultimirrorDuplicateCommand : BaseCommand
     {
         private List<Stroke> m_SelectedStrokes;
         private List<GrabWidget> m_SelectedWidgets;
@@ -30,8 +30,9 @@ namespace TiltBrush
         private CanvasScript m_CurrentCanvas;
         private bool m_StampMode;
 
-        public MultiMirrorSelectionCommand(TrTransform xf, bool stampMode, BaseCommand parent = null) : base(parent)
+        public MultimirrorDuplicateCommand(TrTransform xf, bool stampMode, BaseCommand parent = null) : base(parent)
         {
+            CanvasScript targetCanvas;
             m_CurrentCanvas = App.ActiveCanvas;
             m_StampMode = stampMode;
             m_Transform = xf;
@@ -42,22 +43,29 @@ namespace TiltBrush
 
             matrices = PointerManager.m_Instance.CustomMirrorMatrices;
 
-            // If we're not stamping then we don't want to duplicate the original
-            if (!m_StampMode) matrices = matrices.Skip(1).ToList();
+            if (m_StampMode)
+            {
+                targetCanvas = m_CurrentCanvas;
+            }
+            else
+            {
+                targetCanvas = App.Scene.SelectionCanvas;
+                // If we're not stamping then we don't want to duplicate the original
+                matrices = matrices.Skip(1).ToList();
+            }
 
             foreach (var stroke in m_SelectedStrokes)
             {
-                TrTransform strokeTransform = Coords.AsCanvas[stroke.StrokeTransform];
+                TrTransform strokeTransform = targetCanvas.AsCanvas[stroke.StrokeTransform];
                 TrTransform tr;
                 var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
                 foreach (var m in matrices)
                 {
                     tr = PointerManager.m_Instance.TrFromMatrix(m);
                     tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
-                    var tmp = tr; // * strokeTransform;       // Work around 2018.3.x Mono parse bug
-                    tmp *= App.Scene.Pose;
+                    var tmp = tr * strokeTransform; // Work around 2018.3.x Mono parse bug
                     tmp *= TrTransform.T(Vector3.one * (Random.value * .00001f)); // Small jitter to prevent z-fighting
-                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, App.Scene.SelectionCanvas, tmp);
+                    var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }
             }
@@ -129,14 +137,11 @@ namespace TiltBrush
                 m_DuplicatedWidgets[i].RestoreFromToss();
             }
 
-            // Deselect selected widgets.
-            if (m_DuplicatedWidgets != null)
+            // Select widgets.
+            if (m_DuplicatedWidgets != null && !m_StampMode)
             {
-                if (!m_StampMode)
-                {
-                    SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
-                    SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-                }
+                SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
             }
 
             // Set selection widget transforms.
@@ -174,18 +179,10 @@ namespace TiltBrush
             SelectionManager.m_Instance.DeregisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
 
             // Deselect selected widgets.
-            if (m_DuplicatedWidgets != null)
+            if (m_DuplicatedWidgets != null && !m_StampMode)
             {
-                if (m_StampMode)
-                {
-                    // SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
-                    // SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-                }
-                else
-                {
-                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets);
-                    SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-                }
+                SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets);
+                SelectionManager.m_Instance.DeregisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
             }
 
             // Remove duplicated widgets.
