@@ -295,18 +295,21 @@ namespace TiltBrush
 
         public void HandleWaveformButtons(TextActionButton btn)
         {
-            switch (btn.m_ButtonLabel)
+            switch (btn.m_ButtonLabel.ToLower())
             {
-                case "Sine":
+                case "sine":
                     UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SineWave);
                     break;
-                case "Triangle":
+                case "triangle":
                     UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.TriangleWave);
                     break;
-                case "Sawtooth":
+                case "sawtooth":
                     UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SawtoothWave);
                     break;
-                case "Noise":
+                case "square":
+                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SquareWave);
+                    break;
+                case "noise":
                     UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.Noise);
                     break;
             }

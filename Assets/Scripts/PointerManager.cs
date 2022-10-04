@@ -94,7 +94,7 @@ namespace TiltBrush
 
         private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
         {
-            mode = ColorShiftMode.SineWave, amp = 1, freq = 1
+            mode = ColorShiftMode.SineWave, amp = 0, freq = 1
         };
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
@@ -1295,35 +1295,38 @@ namespace TiltBrush
             h = _CalcColorShiftH(h, mod, m_SymmetryColorShiftSettingHue);
             s = _CalcColorShiftSV(s, mod, m_SymmetryColorShiftSettingSaturation);
             v = _CalcColorShiftSV(v, mod, m_SymmetryColorShiftSettingBrightness);
-            return Color.HSVToRGB(h, s, v);
+            return Color.HSVToRGB(Mathf.Clamp01(h), s, v);
         }
 
         private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
         {
+            // Input is 0 to +1, output is -1 to +1
             return mode switch
             {
-                ColorShiftMode.SineWave => (Mathf.Sin(x * freq * Mathf.PI * 2f) + 1f) / 2f,
-                ColorShiftMode.Noise => Mathf.PerlinNoise(x * freq, 0) + 0.5f,
-                ColorShiftMode.SquareWave => ((x * freq) % 1) < 0.5 ? 0 : 1,
-                ColorShiftMode.SawtoothWave => (x * freq % 1 - .5f) * 2f,
-                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq) % 4 - 2) + 0.5f,
+                ColorShiftMode.SineWave => Mathf.Sin(x * freq * Mathf.PI * 2f),
+                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
+                ColorShiftMode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
+                ColorShiftMode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
+                ColorShiftMode.Noise => (Mathf.PerlinNoise(x * freq * 2, 0) * 2.2f) - 1,
                 _ => x
             };
         }
 
         public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
         {
-            return Mathf.Lerp(
-                x - settings.amp/2,
-                x + settings.amp/2,
+            // Expects x to vary from -1 to +1
+            return Mathf.LerpUnclamped(
+                x,
+                x + settings.amp / 2,
                 CalcColorWaveform(mod, settings.mode, settings.freq));
         }
 
         public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
         {
-            return Mathf.Lerp(
-                Mathf.Clamp01(x - settings.amp/2f),
-                Mathf.Clamp01(x + settings.amp/2f),
+            // Expects x to vary from -1 to +1
+            return Mathf.LerpUnclamped(
+                x,
+                x + settings.amp / 2,
                 CalcColorWaveform(mod, settings.mode, settings.freq)
             );
         }
@@ -1469,7 +1472,7 @@ namespace TiltBrush
 
                 if (m_SymmetryColorShiftEnabled)
                 {
-                    script.SetColor(m_SymmetryPointerColors[i % m_NumActivePointers]);
+                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                 }
 
                 script.CreateNewLine(
