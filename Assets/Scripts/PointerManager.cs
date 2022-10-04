@@ -44,7 +44,7 @@ namespace TiltBrush
             DebugMultiple,
             TwoHanded,
         }
-        
+
         [Serializable]
         public enum CustomSymmetryType
         {
@@ -52,7 +52,23 @@ namespace TiltBrush
             Wallpaper,
             Polyhedra
         }
-        
+
+        public enum ColorShiftMode
+        {
+            SineWave,
+            SquareWave,
+            SawtoothWave,
+            TriangleWave,
+            Noise
+        }
+
+        public enum ColorShiftComponent
+        {
+            Hue,
+            Saturation,
+            Brightness
+        }
+
         [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cnv;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
@@ -64,10 +80,27 @@ namespace TiltBrush
         [NonSerialized] public float m_WallpaperSymmetryScaleY = 1f;
         [NonSerialized] public float m_WallpaperSymmetrySkewX = 0;
         [NonSerialized] public float m_WallpaperSymmetrySkewY = 0;
-        [NonSerialized] public bool m_SymmetryRespectsJitter = false;
+
         [NonSerialized] public bool m_SymmetryLockedToController = false;
 
-        
+        [NonSerialized] public bool m_SymmetryColorShiftEnabled;
+
+        [Serializable] public struct ColorShiftComponentSetting
+        {
+            public ColorShiftMode mode;
+            public float amp;
+            public float freq;
+        }
+
+        private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
+        {
+            mode = ColorShiftMode.SineWave, amp = 1, freq = 1
+        };
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingBrightness = m_defaultColorShiftComponentSetting;
+
+
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
         // See SketchMemoryScript.ReadMemory.
@@ -198,6 +231,7 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
         private List<Matrix4x4> m_CustomMirrorMatrices;
+        private List<Color> m_SymmetryPointerColors;
         private Vector2[] m_CustomMirrorDomain;
 
         // ---- events
@@ -234,6 +268,7 @@ namespace TiltBrush
             {
                 ChangeAllPointerColorsDirectly(value);
                 m_lastChosenColor = value;
+                CalculateMirrorColors();
                 OnPointerColorChange();
             }
         }
@@ -318,10 +353,11 @@ namespace TiltBrush
             }
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
-        
+
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
+        public List<Color> SymmetryPointerColors => m_SymmetryPointerColors.ToList();
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
-        
+
         static public void ClearPlayerPrefs()
         {
             PlayerPrefs.DeleteKey(PLAYER_PREFS_POINTER_ANGLE_OLD);
@@ -425,7 +461,7 @@ namespace TiltBrush
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
             m_CustomMirrorMatrices = new List<Matrix4x4>();
-            
+
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
                 //set our main pointer as the zero index
@@ -462,10 +498,10 @@ namespace TiltBrush
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
         }
-        
+
         private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
         {
-            CalculateMirrorMatrices(initPointers: false);
+            CalculateMirrorMatrices();
         }
 
         void Start()
@@ -757,7 +793,10 @@ namespace TiltBrush
                     active = 2;
                     break;
                 case SymmetryMode.MultiMirror:
-                    CalculateMirrorMatrices(initPointers: false);
+                    // Don't call CalculateMirrorPointers
+                    // as this is handled below
+                    CalculateMirrorMatrices();
+                    CalculateMirrorColors();
                     active = m_CustomMirrorMatrices.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
@@ -833,7 +872,7 @@ namespace TiltBrush
                         {
                             var xfCenter = TrTransform.FromTransform(
                                 m_SymmetryLockedToController ?
-                                MainPointer.transform : m_SymmetryWidget
+                                    MainPointer.transform : m_SymmetryWidget
                             );
 
                             // convert from widget-local coords to world coords
@@ -857,8 +896,15 @@ namespace TiltBrush
                     return xfMain;
             }
         }
-        
-        public void CalculateMirrorMatrices(bool initPointers = true)
+
+        public void CalculateMirrors()
+        {
+            CalculateMirrorMatrices();
+            CalculateMirrorColors();
+            CalculateMirrorPointers();
+        }
+
+        private void CalculateMirrorMatrices()
         {
             switch (m_CustomSymmetryType)
             {
@@ -883,24 +929,34 @@ namespace TiltBrush
                     m_CustomMirrorMatrices = pointSym.matrices;
                     break;
             }
+        }
 
-            // If we're calling this from any place other than SetSymmetryMode
-            // then we need to set up pointers.
-            // SetSymmetryMode will do this by itself.
-            if (initPointers)
+        public void CalculateMirrorColors()
+        {
+            if (m_SymmetryColorShiftEnabled)
             {
-                m_NumActivePointers = m_CustomMirrorMatrices.Count;
-                for (int i = 1; i < m_Pointers.Length; ++i)
+                m_SymmetryPointerColors = new List<Color>();
+                for (float i = 0; i < m_NumActivePointers; i++)
                 {
-                    var pointer = m_Pointers[i];
-                    bool enabled = i < m_NumActivePointers;
-                    pointer.m_UiEnabled = enabled;
-                    pointer.m_Script.gameObject.SetActive(enabled);
-                    pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
-                    if (enabled)
-                    {
-                        pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
-                    }
+                    m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
+                    // BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
+                    // script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
+                }
+            }
+        }
+        public void CalculateMirrorPointers()
+        {
+            m_NumActivePointers = m_CustomMirrorMatrices.Count;
+            for (int i = 1; i < m_Pointers.Length; ++i)
+            {
+                var pointer = m_Pointers[i];
+                bool enabled = i < m_NumActivePointers;
+                pointer.m_UiEnabled = enabled;
+                pointer.m_Script.gameObject.SetActive(enabled);
+                pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
+                if (enabled)
+                {
+                    pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
             }
         }
@@ -1214,14 +1270,61 @@ namespace TiltBrush
         
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
-            Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
-            return ColorPickerUtils.ClampLuminance(
-                Random.ColorHSV(
-                    h - colorJitter.x, h + colorJitter.x,
-                    s - colorJitter.y, s + colorJitter.y,
-                    v - colorJitter.z, v + colorJitter.z
-                ),
-                colorLuminanceMin
+            return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);
+        }
+
+        public Color GenerateJitteredColor(Color currentColor, float colorLuminanceMin)
+        {
+            return ColorPickerUtils.ClampLuminance(CalculateJitteredColor(currentColor), colorLuminanceMin);
+        }
+
+
+        public Color CalculateJitteredColor(Color currentColor)
+        {
+            Color.RGBToHSV(currentColor, out var h, out var s, out var v);
+            return Random.ColorHSV(
+                h - colorJitter.x, h + colorJitter.x,
+                s - colorJitter.y, s + colorJitter.y,
+                v - colorJitter.z, v + colorJitter.z
+            );
+        }
+
+        public Color CalcColorShift(Color color, float mod)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            h = _CalcColorShiftH(h, mod, m_SymmetryColorShiftSettingHue);
+            s = _CalcColorShiftSV(s, mod, m_SymmetryColorShiftSettingSaturation);
+            v = _CalcColorShiftSV(v, mod, m_SymmetryColorShiftSettingBrightness);
+            return Color.HSVToRGB(h, s, v);
+        }
+
+        private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
+        {
+            return mode switch
+            {
+                ColorShiftMode.SineWave => (Mathf.Sin(x * freq * Mathf.PI * 2f) + 1f) / 2f,
+                ColorShiftMode.Noise => Mathf.PerlinNoise(x * freq, 0) + 0.5f,
+                ColorShiftMode.SquareWave => ((x * freq) % 1) < 0.5 ? 0 : 1,
+                ColorShiftMode.SawtoothWave => (x * freq % 1 - .5f) * 2f,
+                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq) % 4 - 2) + 0.5f,
+                _ => x
+            };
+        }
+
+        public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
+        {
+            return Mathf.Lerp(
+                x - settings.amp/2,
+                x + settings.amp/2,
+                CalcColorWaveform(mod, settings.mode, settings.freq));
+        }
+
+        public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
+        {
+            return Mathf.Lerp(
+                Mathf.Clamp01(x - settings.amp/2f),
+                Mathf.Clamp01(x + settings.amp/2f),
+                CalcColorWaveform(mod, settings.mode, settings.freq)
             );
         }
 
@@ -1363,14 +1466,12 @@ namespace TiltBrush
                             break;
                     }
                 }
-                
-                if (m_SymmetryRespectsJitter)
+
+                if (m_SymmetryColorShiftEnabled)
                 {
-                        script.SetColor(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
-                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
-                        script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
+                    script.SetColor(m_SymmetryPointerColors[i]);
                 }
-                
+
                 script.CreateNewLine(
                     canvas, xfPointer_CS, currentCreator,
                     m_StraightEdgeProxyActive ? m_StraightEdgeProxyBrush : null);

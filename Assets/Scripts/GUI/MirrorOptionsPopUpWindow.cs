@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -23,6 +23,7 @@ namespace TiltBrush
 
         public GameObject m_PointSymmetryControls;
         public GameObject m_WallpaperSymmetryControls;
+        public GameObject m_OptionsControls;
         public AdvancedSlider m_PointSymmetryOrderSlider;
         public AdvancedSlider m_WallpaperRepeatXSlider;
         public AdvancedSlider m_WallpaperRepeatYSlider;
@@ -31,6 +32,8 @@ namespace TiltBrush
         public AdvancedSlider m_WallpaperScaleSliderY;
         public AdvancedSlider m_WallpaperSkewSliderX;
         public AdvancedSlider m_WallpaperSkewSliderY;
+        public GameObject m_ColorPreview;
+        public Transform m_ColorPreviewSwatch;
         public ActionToggleButton m_ToggleJitter;
 
         public ActionButton m_ButtonWallpaperRepeats;
@@ -42,7 +45,9 @@ namespace TiltBrush
         public Transform m_WallpaperSkewControls;
 
         private bool m_MirrorState;
-        
+
+        [NonSerialized] public PointerManager.ColorShiftComponent m_currentSelectedColorComponent;
+
         private void Awake()
         {
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
@@ -63,7 +68,7 @@ namespace TiltBrush
             m_WallpaperSkewSliderX.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetrySkewX;
             m_WallpaperSkewSliderY.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetrySkewY;
 
-            m_ToggleJitter.m_InitialToggleState = PointerManager.m_Instance.m_SymmetryRespectsJitter;
+            // m_ToggleJitter.m_InitialToggleState = PointerManager.m_Instance.m_SymmetryColorShiftEnabled;
         }
 
         public OptionButton GetParentButton()
@@ -141,7 +146,7 @@ namespace TiltBrush
                     break;
             }
             // Regenerate
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         private void UpdateWallpaperSettingControls()
@@ -200,49 +205,49 @@ namespace TiltBrush
         {
             PointerManager.m_Instance.m_PointSymmetryOrder = Mathf.FloorToInt(value.z);
             // Regenerate
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
         
         public void HandleChangeWallpaperSymmetryX(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryX = Mathf.FloorToInt(value.z);
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
         
         public void HandleChangeWallpaperSymmetryY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
         
         public void HandleChangeWallpaperSymmetryScale(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScale = value.z;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleChangeWallpaperSymmetryScaleX(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScaleX = value.z;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleChangeWallpaperSymmetryScaleY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScaleY = value.z;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleChangeWallpaperSymmetrySkewX(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetrySkewX = value.z;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleChangeWallpaperSymmetrySkewY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetrySkewY = value.z;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleShowPointSymmetry()
@@ -250,7 +255,8 @@ namespace TiltBrush
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
             m_PointSymmetryControls.SetActive(true);
             m_WallpaperSymmetryControls.SetActive(false);
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            m_OptionsControls.SetActive(false);
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
         public void HandleShowWallpaperSymmetry()
@@ -258,12 +264,137 @@ namespace TiltBrush
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
             m_PointSymmetryControls.SetActive(false);
             m_WallpaperSymmetryControls.SetActive(true);
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            m_OptionsControls.SetActive(false);
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        public void HandleToggleJitter(ActionToggleButton btn)
+        public void HandleShowOptions()
         {
-            PointerManager.m_Instance.m_SymmetryRespectsJitter = btn.ToggleState;
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(false);
+            m_OptionsControls.SetActive(true);
+            PointerManager.m_Instance.CalculateMirrors();
+            UpdateColorPreview();
         }
+
+        public void HandleColorComponentButtons(TextActionButton btn)
+        {
+            switch (btn.m_ButtonLabel)
+            {
+                case "Hue":
+                    m_currentSelectedColorComponent = PointerManager.ColorShiftComponent.Hue;
+                    break;
+                case "Saturation":
+                    m_currentSelectedColorComponent = PointerManager.ColorShiftComponent.Saturation;
+                    break;
+                case "Brightness":
+                    m_currentSelectedColorComponent = PointerManager.ColorShiftComponent.Brightness;
+                    break;
+            }
+        }
+
+        public void HandleWaveformButtons(TextActionButton btn)
+        {
+            switch (btn.m_ButtonLabel)
+            {
+                case "Sine":
+                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SineWave);
+                    break;
+                case "Triangle":
+                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.TriangleWave);
+                    break;
+                case "Sawtooth":
+                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.SawtoothWave);
+                    break;
+                case "Noise":
+                    UpdateActiveColorShiftMode(PointerManager.ColorShiftMode.Noise);
+                    break;
+            }
+        }
+
+        public void HandleToggleColorShift(ActionToggleButton btn)
+        {
+            PointerManager.m_Instance.m_SymmetryColorShiftEnabled = btn.ToggleState;
+        }
+
+        public void HandleChangeAmp(Vector3 value)
+        {
+            UpdateActiveColorShiftValues(freq: -1, amp: value.z);
+        }
+
+        public void HandleChangeFreq(Vector3 value)
+        {
+            UpdateActiveColorShiftValues(freq: value.z, amp: -1);
+        }
+
+        private void UpdateActiveColorShiftValues(float freq, float amp)
+        {
+            PointerManager.ColorShiftComponentSetting settings;
+            switch (m_currentSelectedColorComponent)
+            {
+                case PointerManager.ColorShiftComponent.Hue:
+                    settings = PointerManager.m_Instance.m_SymmetryColorShiftSettingHue;
+                    settings.amp = amp != -1 ? amp : settings.amp;
+                    settings.freq = freq != -1 ? freq : settings.freq;
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingHue = settings;
+                    break;
+                case PointerManager.ColorShiftComponent.Saturation:
+                    settings = PointerManager.m_Instance.m_SymmetryColorShiftSettingSaturation;
+                    settings.amp = amp != -1 ? amp : settings.amp;
+                    settings.freq = freq != -1 ? freq : settings.freq;
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingSaturation = settings;
+                    break;
+                case PointerManager.ColorShiftComponent.Brightness:
+                    settings = PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness;
+                    settings.amp = amp != -1 ? amp : settings.amp;
+                    settings.freq = freq != -1 ? freq : settings.freq;
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness = settings;
+                    break;
+            }
+            PointerManager.m_Instance.CalculateMirrors();
+            UpdateColorPreview();
+        }
+
+        private void UpdateActiveColorShiftMode(PointerManager.ColorShiftMode mode)
+        {
+            switch (m_currentSelectedColorComponent)
+            {
+                case PointerManager.ColorShiftComponent.Hue:
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingHue.mode = mode;
+                    break;
+                case PointerManager.ColorShiftComponent.Saturation:
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingSaturation.mode = mode;
+                    break;
+                case PointerManager.ColorShiftComponent.Brightness:
+                    PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness.mode = mode;
+                    break;
+            }
+            PointerManager.m_Instance.CalculateMirrors();
+            UpdateColorPreview();
+        }
+
+        private void UpdateColorPreview()
+        {
+            foreach (Transform swatch in m_ColorPreview.transform)
+            {
+                Destroy(swatch.gameObject);
+            }
+            var colors = PointerManager.m_Instance.SymmetryPointerColors;
+            for (int i = 0; i < colors.Count; i++)
+            {
+                Debug.Log($"{i}: {colors[i]}");
+                var instance = Instantiate(m_ColorPreviewSwatch, m_ColorPreview.transform);
+                var sr = instance.GetComponent<SpriteRenderer>();
+                sr.color = colors[i];
+                sr.sortingOrder = i;
+                float x = (float)i / colors.Count;
+                Transform tr = instance.transform;
+                tr.localPosition = new Vector3(Mathf.Lerp(-.6f, .6f, x), 0, 0);
+                tr.localScale = new Vector3(1.2f/colors.Count, .1f, 1);
+
+            }
+        }
+
+
     }
 }

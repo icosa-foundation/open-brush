@@ -13,71 +13,100 @@
 // limitations under the License.
 
 using System;
+using UnityEngine;
 
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("mirror.type", "")]
+        [ApiEndpoint("symmetry.type", "")]
         public static void CustomSymmetryType(string type)
         {
             Enum.TryParse(type, ignoreCase: true, out PointerManager.CustomSymmetryType _type);
             PointerManager.m_Instance.m_CustomSymmetryType = _type;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.pointfamily", "")]
+        [ApiEndpoint("symmetry.pointfamily", "")]
         public static void PointSymmetryFamily(string family)
         {
             Enum.TryParse(family, ignoreCase: true, out PointSymmetry.Family _family);
             PointerManager.m_Instance.m_PointSymmetryFamily = _family;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.wallpapergroup", "")]
+        [ApiEndpoint("symmetry.wallpapergroup", "")]
         public static void WallpaperSymmetryGroup(string group)
         {
             Enum.TryParse(group, ignoreCase: true, out SymmetryGroup.R _group);
             PointerManager.m_Instance.m_WallpaperSymmetryGroup = _group;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.pointorder", "")]
+        [ApiEndpoint("symmetry.pointorder", "")]
         public static void PointSymmetryOrder(int order)
         {
             PointerManager.m_Instance.m_PointSymmetryOrder = order;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.wallpaperrepeats", "")]
+        [ApiEndpoint("symmetry.wallpaperrepeats", "")]
         public static void WallpaperSymmetryX(int x, int y)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryX = x;
             PointerManager.m_Instance.m_WallpaperSymmetryY = y;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.wallpaperscale", "")]
+        [ApiEndpoint("symmetry.wallpaperscale", "")]
         public static void WallpaperSymmetryScaleX(float x, float y)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScaleX = x;
             PointerManager.m_Instance.m_WallpaperSymmetryScaleY = y;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.wallpaperskew", "")]
+        [ApiEndpoint("symmetry.wallpaperskew", "")]
         public static void WallpaperSymmetrySkewX(float x, float y)
         {
             PointerManager.m_Instance.m_WallpaperSymmetrySkewX = x;
             PointerManager.m_Instance.m_WallpaperSymmetrySkewY = y;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.CalculateMirrors();
         }
 
-        [ApiEndpoint("mirror.symmetryjitter", "")]
-        public static void SymmetryRespectsJitter(bool jitter)
+        [ApiEndpoint("symmetry.colorshift.enabled", "")]
+        public static void SymmetryColorShiftEnabled(bool enabled)
         {
-            PointerManager.m_Instance.m_SymmetryRespectsJitter = jitter;
-            PointerManager.m_Instance.CalculateMirrorMatrices();
+            PointerManager.m_Instance.m_SymmetryColorShiftEnabled = enabled;
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        [ApiEndpoint("symmetry.colorshift.hue", "")]
+        public static void SymmetryColorShiftHue(string mode, float amplitude, float frequency)
+        {
+            PointerManager.m_Instance.m_SymmetryColorShiftSettingHue = _SymmetryColorShift(mode, amplitude, frequency);
+        }
+
+        [ApiEndpoint("symmetry.colorshift.saturation", "")]
+        public static void SymmetryColorShiftSaturation(string mode, float amplitude, float frequency)
+        {
+            PointerManager.m_Instance.m_SymmetryColorShiftSettingSaturation = _SymmetryColorShift(mode, amplitude, frequency);
+        }
+
+        [ApiEndpoint("symmetry.colorshift.brightness", "")]
+        public static void SymmetryColorShiftBrightness(string mode, float amplitude, float frequency)
+        {
+            PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness = _SymmetryColorShift(mode, amplitude, frequency);
+        }
+
+        private static PointerManager.ColorShiftComponentSetting _SymmetryColorShift(string mode, float amplitude, float frequency)
+        {
+            Enum.TryParse(mode, ignoreCase: true, out PointerManager.ColorShiftMode _mode);
+            return new PointerManager.ColorShiftComponentSetting{
+                mode = _mode,
+                amp = amplitude,
+                freq = frequency
+            };
         }
     }
 }

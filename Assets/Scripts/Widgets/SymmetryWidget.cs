@@ -385,7 +385,7 @@ namespace TiltBrush
             // This can get called before we've had a chance to set up matrices
             if (matrices.Count < 1)
             {
-                PointerManager.m_Instance.CalculateMirrorMatrices();
+                PointerManager.m_Instance.CalculateMirrors();
                 matrices = PointerManager.m_Instance.CustomMirrorMatrices;
             }
             
