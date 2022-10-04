@@ -1469,7 +1469,7 @@ namespace TiltBrush
 
                 if (m_SymmetryColorShiftEnabled)
                 {
-                    script.SetColor(m_SymmetryPointerColors[i]);
+                    script.SetColor(m_SymmetryPointerColors[i % m_NumActivePointers]);
                 }
 
                 script.CreateNewLine(

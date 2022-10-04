@@ -382,7 +382,6 @@ namespace TiltBrush
             var colors = PointerManager.m_Instance.SymmetryPointerColors;
             for (int i = 0; i < colors.Count; i++)
             {
-                Debug.Log($"{i}: {colors[i]}");
                 var instance = Instantiate(m_ColorPreviewSwatch, m_ColorPreview.transform);
                 var sr = instance.GetComponent<SpriteRenderer>();
                 sr.color = colors[i];
