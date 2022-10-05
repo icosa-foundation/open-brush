@@ -83,7 +83,7 @@ namespace TiltBrush
 
         [NonSerialized] public bool m_SymmetryLockedToController = false;
 
-        [NonSerialized] public bool m_SymmetryColorShiftEnabled;
+        [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
 
         [Serializable] public struct ColorShiftComponentSetting
         {
