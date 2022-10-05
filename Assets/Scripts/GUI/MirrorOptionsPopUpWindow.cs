@@ -460,7 +460,7 @@ namespace TiltBrush
                 float x = (float)i / colors.Count;
                 Transform tr = instance.transform;
                 var xPos = Mathf.Lerp(-.6f, .6f, x);
-                tr.localPosition = new Vector3(xPos + (Mathf.Abs(xPos/2f)), 0, 0);
+                tr.localPosition = new Vector3(xPos, 0, 0);
                 tr.localScale = new Vector3(1.2f/colors.Count, .1f, 1);
 
             }
