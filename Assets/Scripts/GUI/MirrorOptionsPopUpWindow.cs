@@ -20,6 +20,9 @@ namespace TiltBrush
 {
     public class MirrorOptionsPopUpWindow : OptionsPopUpWindow
     {
+        public TextActionButton m_ButtonShowPointControls;
+        public TextActionButton m_ButtonShowWallpaperControls;
+        public TextActionButton m_ButtonShowOptionsControls;
 
         public GameObject m_PointSymmetryControls;
         public GameObject m_WallpaperSymmetryControls;
@@ -32,8 +35,21 @@ namespace TiltBrush
         public AdvancedSlider m_WallpaperScaleSliderY;
         public AdvancedSlider m_WallpaperSkewSliderX;
         public AdvancedSlider m_WallpaperSkewSliderY;
+
+        public TextActionButton m_OptionsButtonHue;
+        public TextActionButton m_OptionsButtonSaturation;
+        public TextActionButton m_OptionsButtonBrightness;
+        public AdvancedSlider m_OptionsSliderAmp;
+        public AdvancedSlider m_OptionsSliderFreq;
+        public TextActionButton m_OptionsButtonSine;
+        public TextActionButton m_OptionsButtonTriangle;
+        public TextActionButton m_OptionsButtonSawtooth;
+        public TextActionButton m_OptionsButtonSquare;
+        public TextActionButton m_OptionsButtonNoise;
+
         public GameObject m_ColorPreview;
         public Transform m_ColorPreviewSwatch;
+
         public ActionToggleButton m_ToggleJitter;
 
         public ActionButton m_ButtonWallpaperRepeats;
@@ -48,8 +64,12 @@ namespace TiltBrush
 
         [NonSerialized] public PointerManager.ColorShiftComponent m_currentSelectedColorComponent;
 
-        private void Awake()
+        public override void Init(GameObject rParent, string sText)
         {
+            base.Init(rParent, sText);
+            // Store mirror state as the long press button misbehaves sometimes
+            m_MirrorState = GetParentButton().IsButtonActive();
+
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
             {
                 HandleShowPointSymmetry();
@@ -58,7 +78,7 @@ namespace TiltBrush
             {
                 HandleShowWallpaperSymmetry();
             }
-            
+
             m_PointSymmetryOrderSlider.m_InitialValue = PointerManager.m_Instance.m_PointSymmetryOrder;
             m_WallpaperScaleSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScale;
             m_WallpaperRepeatXSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryX;
@@ -90,13 +110,6 @@ namespace TiltBrush
                 }
             }
             return close;
-        }
-
-        public override void Init(GameObject rParent, string sText)
-        {
-            base.Init(rParent, sText);
-            // Store mirror state as the long press button misbehaves sometimes
-            m_MirrorState = GetParentButton().IsButtonActive();
         }
 
         public void HandleWallpaperControlsRepeatsButton()
@@ -132,8 +145,32 @@ namespace TiltBrush
             m_ButtonWallpaperSkew.SetButtonSelected(true);
         }
 
+        private void SetCurrentMirrorTypeButtonState(bool state)
+        {
+            GameObject parent;
+            MirrorTypeButton[] btns;
+            MirrorTypeButton currentBtn;
+            switch (PointerManager.m_Instance.m_CustomSymmetryType)
+            {
+                case PointerManager.CustomSymmetryType.Point:
+                    parent = m_PointSymmetryControls;
+                    btns = parent.GetComponentsInChildren<MirrorTypeButton>();
+                    currentBtn = btns.First(b => b.m_PointSymmetryFamily==PointerManager.m_Instance.m_PointSymmetryFamily);
+                    currentBtn.SetButtonSelected(state);
+                    break;
+                case PointerManager.CustomSymmetryType.Wallpaper:
+                    parent = m_WallpaperSymmetryControls;
+                    btns = parent.GetComponentsInChildren<MirrorTypeButton>();
+                    currentBtn = btns.First(b => b.m_WallpaperSymmetryGroup==PointerManager.m_Instance.m_WallpaperSymmetryGroup);
+                    currentBtn.SetButtonSelected(state);
+                    break;
+            }
+
+        }
+
         public void HandleChangeMirrorTypeButton(MirrorTypeButton btn)
         {
+            SetCurrentMirrorTypeButtonState(false);
             PointerManager.m_Instance.m_CustomSymmetryType = btn.m_CustomSymmetryType;
             switch (btn.m_CustomSymmetryType)
             {
@@ -145,6 +182,7 @@ namespace TiltBrush
                     UpdateWallpaperSettingControls();
                     break;
             }
+            SetCurrentMirrorTypeButtonState(true);
             // Regenerate
             PointerManager.m_Instance.CalculateMirrors();
         }
@@ -207,19 +245,19 @@ namespace TiltBrush
             // Regenerate
             PointerManager.m_Instance.CalculateMirrors();
         }
-        
+
         public void HandleChangeWallpaperSymmetryX(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryX = Mathf.FloorToInt(value.z);
             PointerManager.m_Instance.CalculateMirrors();
         }
-        
+
         public void HandleChangeWallpaperSymmetryY(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
             PointerManager.m_Instance.CalculateMirrors();
         }
-        
+
         public void HandleChangeWallpaperSymmetryScale(Vector3 value)
         {
             PointerManager.m_Instance.m_WallpaperSymmetryScale = value.z;
@@ -257,6 +295,9 @@ namespace TiltBrush
             m_WallpaperSymmetryControls.SetActive(false);
             m_OptionsControls.SetActive(false);
             PointerManager.m_Instance.CalculateMirrors();
+            m_ButtonShowPointControls.SetButtonSelected(true);
+            m_ButtonShowWallpaperControls.SetButtonSelected(false);
+            m_ButtonShowOptionsControls.SetButtonSelected(false);
         }
 
         public void HandleShowWallpaperSymmetry()
@@ -266,6 +307,9 @@ namespace TiltBrush
             m_WallpaperSymmetryControls.SetActive(true);
             m_OptionsControls.SetActive(false);
             PointerManager.m_Instance.CalculateMirrors();
+            m_ButtonShowPointControls.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls.SetButtonSelected(true);
+            m_ButtonShowOptionsControls.SetButtonSelected(false);
         }
 
         public void HandleShowOptions()
@@ -275,6 +319,28 @@ namespace TiltBrush
             m_OptionsControls.SetActive(true);
             PointerManager.m_Instance.CalculateMirrors();
             UpdateColorPreview();
+            UpdateOptionsControlsToMatchValues();
+            m_ButtonShowPointControls.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls.SetButtonSelected(false);
+            m_ButtonShowOptionsControls.SetButtonSelected(true);
+        }
+
+        private void UpdateOptionsControlsToMatchValues()
+        {
+            var currentSettings = m_currentSelectedColorComponent switch
+            {
+                PointerManager.ColorShiftComponent.Hue => PointerManager.m_Instance.m_SymmetryColorShiftSettingHue,
+                PointerManager.ColorShiftComponent.Saturation => PointerManager.m_Instance.m_SymmetryColorShiftSettingSaturation,
+                PointerManager.ColorShiftComponent.Brightness => PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            m_OptionsSliderAmp.UpdateValueAbsolute(currentSettings.amp);
+            m_OptionsSliderFreq.UpdateValueAbsolute(currentSettings.freq);
+            m_OptionsButtonSine.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SineWave);
+            m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SquareWave);
+            m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.TriangleWave);
+            m_OptionsButtonSawtooth.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SawtoothWave);
+            m_OptionsButtonNoise.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.Noise);
         }
 
         public void HandleColorComponentButtons(TextActionButton btn)
@@ -291,6 +357,7 @@ namespace TiltBrush
                     m_currentSelectedColorComponent = PointerManager.ColorShiftComponent.Brightness;
                     break;
             }
+            UpdateOptionsControlsToMatchValues();
         }
 
         public void HandleWaveformButtons(TextActionButton btn)
@@ -374,6 +441,7 @@ namespace TiltBrush
             }
             PointerManager.m_Instance.CalculateMirrors();
             UpdateColorPreview();
+            UpdateOptionsControlsToMatchValues();
         }
 
         private void UpdateColorPreview()
@@ -391,7 +459,8 @@ namespace TiltBrush
                 sr.sortingOrder = i;
                 float x = (float)i / colors.Count;
                 Transform tr = instance.transform;
-                tr.localPosition = new Vector3(Mathf.Lerp(-.6f, .6f, x), 0, 0);
+                var xPos = Mathf.Lerp(-.6f, .6f, x);
+                tr.localPosition = new Vector3(xPos + (Mathf.Abs(xPos/2f)), 0, 0);
                 tr.localScale = new Vector3(1.2f/colors.Count, .1f, 1);
 
             }
