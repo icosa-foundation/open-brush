@@ -868,8 +868,8 @@ namespace TiltBrush
 
                 case SymmetryMode.MultiMirror:
                     {
-                        (TrTransform, TrTransform) tr;
-                        TrTransform result;
+                        (TrTransform, TrTransform) trAndFix;
+                        TrTransform tr;
                         {
                             var xfCenter = TrTransform.FromTransform(
                                 m_SymmetryLockedToController ?
@@ -877,10 +877,10 @@ namespace TiltBrush
                             );
 
                             // convert from widget-local coords to world coords
-                            tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
-                            result = tr.Item1.TransformBy(xfCenter);
+                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
+                            tr = trAndFix.Item1.TransformBy(xfCenter);
                         }
-                        return result * xfMain * tr.Item1;
+                        return tr * xfMain * trAndFix.Item1;
                     }
 
                 case SymmetryMode.DebugMultiple:
