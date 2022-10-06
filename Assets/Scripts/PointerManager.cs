@@ -868,7 +868,8 @@ namespace TiltBrush
 
                 case SymmetryMode.MultiMirror:
                     {
-                        TrTransform tr;
+                        (TrTransform, TrTransform) tr;
+                        TrTransform result;
                         {
                             var xfCenter = TrTransform.FromTransform(
                                 m_SymmetryLockedToController ?
@@ -877,9 +878,9 @@ namespace TiltBrush
 
                             // convert from widget-local coords to world coords
                             tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
-                            tr = tr.TransformBy(xfCenter);
+                            result = tr.Item1.TransformBy(xfCenter);
                         }
-                        return tr * xfMain;
+                        return result * xfMain * tr.Item1;
                     }
 
                 case SymmetryMode.DebugMultiple:
@@ -996,9 +997,10 @@ namespace TiltBrush
 
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
-                            tr = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
-                            tr = xfCenter * tr * xfCenter.inverse; // convert from widget-local coords to world coords
-                            var tmp = tr * pointer0; // Work around 2018.3.x Mono parse bug
+                            (TrTransform, TrTransform) trAndFix;
+                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
+                            tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
+                            var tmp = tr * pointer0 * trAndFix.Item2; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;
@@ -1039,45 +1041,17 @@ namespace TiltBrush
             return tr;
         }
 
-        private TrTransform TrFromMatrixWithFixedReflections(Matrix4x4 m)
+        private (TrTransform, TrTransform) TrFromMatrixWithFixedReflections(Matrix4x4 m)
         {
+            // See ReflectPoseKeepHandedness
 
-            return TrFromMatrix(m);
-
-            TrTransform tr;
-            Debug.Log($"scale: {m.lossyScale}");
+            var tr = TrFromMatrix(m);
+            var fixTr = TrTransform.identity;
             if (m.lossyScale.x < 0 || m.lossyScale.y < 0 || m.lossyScale.z < 0)
             {
-                tr = TrTransform.TR(
-                    m.MultiplyPoint3x4(Vector3.one),
-                    m.rotation
-                );
-                tr = new Plane(-tr.right, 0).ReflectPoseKeepHandedness(tr);
+                fixTr = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
             }
-            else
-            {
-                tr = TrFromMatrix(m);
-            }
-
-
-            return tr;
-
-            // Custom symmetry matrices have negative scale which brushscripts don't support
-            if (tr.scale < 0)
-            {
-                tr.scale = Mathf.Abs(tr.scale);
-
-                // tr = new Plane(Vector3.left, 0).ReflectPoseKeepHandedness(tr);
-                // tr = new Plane(Vector3.down, 0).ReflectPoseKeepHandedness(tr);
-
-                // tr = new Plane(Vector3.left, 0).ReflectPoseKeepHandedness(tr);
-                tr = new Plane(Vector3.forward, 0).ReflectPoseKeepHandedness(tr);
-
-                // tr = new Plane(Vector3.down, 0).ReflectPoseKeepHandedness(tr);
-                // tr = new Plane(Vector3.back, 0).ReflectPoseKeepHandedness(tr);
-
-            }
-            return tr;
+            return (tr, fixTr);
         }
 
         /// Called every frame while Activate is disallowed
