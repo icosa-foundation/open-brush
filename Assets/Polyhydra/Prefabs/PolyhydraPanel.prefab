@@ -272,6 +272,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -10455,6 +10456,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_ButtonLabel
+      value: 3. Appearance
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -10918,6 +10924,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 421236}
     m_Modifications:
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_ButtonLabel
+      value: 1. Generate
+      objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
@@ -11471,6 +11482,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 421236}
     m_Modifications:
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_ButtonLabel
+      value: 2. Modify
+      objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size

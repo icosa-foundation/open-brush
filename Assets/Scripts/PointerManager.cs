@@ -88,7 +88,8 @@ namespace TiltBrush
 
         [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
 
-        [Serializable] public struct ColorShiftComponentSetting
+        [Serializable]
+        public struct ColorShiftComponentSetting
         {
             public ColorShiftMode mode;
             public float amp;
@@ -814,6 +815,7 @@ namespace TiltBrush
                 case SymmetryMode.CustomSymmetryMode:
                     vrPoly = PreviewPolyhedron.m_Instance;
                     active = vrPoly.m_PolyMesh.Faces.Count;
+                    break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;

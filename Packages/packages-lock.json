@@ -6,8 +6,8 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.ixxy.unitysymmetry": {
-      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
+    "com.ixxy.polyhydra.core": {
+      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=11#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -15,11 +15,19 @@
       },
       "hash": "34fcc32d206e9099cc4657214f258bb94ec3e894"
     },
+    "com.ixxy.unitysymmetry": {
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "fec33a44c78cccfbeed6f0e22e7c57c3ded34d6e"
+    },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",

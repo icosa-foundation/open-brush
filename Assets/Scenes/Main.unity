@@ -7542,11 +7542,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -10405,73 +10407,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5419288071528628701}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &684558199
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 684558197}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f9dad5dd91d6a14b949354cd5dff4df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ShowDuration: 0.2
-  m_GrabDistance: 0.5
-  m_CollisionRadius: 1.2
-  m_AllowTwoHandGrab: 0
-  m_DestroyOnHide: 0
-  m_AllowHideWithToss: 0
-  m_DisableDrift: 1
-  m_RecordMovements: 1
-  m_AllowSnapping: 1
-  m_SnapDisabledDelay: 0.2
-  m_AllowPinning: 0
-  m_AllowDormancy: 1
-  m_TossDuration: 0
-  m_TintableMeshes:
-  - {fileID: 448780583}
-  - {fileID: 1893595495}
-  - {fileID: 1004451893}
-  - {fileID: 1345649929}
-  - {fileID: 1811102064}
-  - {fileID: 587015864}
-  - {fileID: 1551302373}
-  - {fileID: 819299815}
-  - {fileID: 1751957698}
-  m_SpawnPlacementOffset: {x: 0, y: 0, z: 0}
-  m_IntroAnimSpinAmount: 360
-  m_BoxCollider: {fileID: 0}
-  m_Mesh: {fileID: 1808834035}
-  m_HighlightMeshXfs:
-  - {fileID: 1751957697}
-  m_ValidSnapRotationStickyAngle: 0
-  m_SnapGhostMaterial: {fileID: 0}
-  m_LeftRightMesh: {fileID: 819299815}
-  m_TitleText: {fileID: 1808834036}
-  m_HintText: {fileID: 1311996750}
-  m_Home: {fileID: 94678610}
-  m_GuideBeams:
-  - m_Beam: {fileID: 245270311}
-    m_Direction: 0
-  - m_Beam: {fileID: 148029602}
-    m_Direction: 1
-  - m_Beam: {fileID: 1257171755}
-    m_Direction: 2
-  - m_Beam: {fileID: 773798351}
-    m_Direction: 3
-  - m_Beam: {fileID: 1318324096}
-    m_Direction: 4
-  - m_Beam: {fileID: 1486542533}
-    m_Direction: 5
-  m_GuideBeamLength: 3
-  m_SnapColor: {r: 0.06314879, g: 0.53676474, b: 0.37998155, a: 1}
-  m_SnapOrientationSpeed: 0.2
-  m_SnapAngleXZPlane: 67.5
-  m_SnapXZPlaneStickyAmount: 25
-  m_JumpToUserControllerOffsetDistance: 1.25
-  m_JumpToUserControllerYOffset: 2
 --- !u!1 &694338410
 GameObject:
   m_ObjectHideFlags: 0
@@ -12441,6 +12376,7 @@ MonoBehaviour:
   m_ShowDuration: 0
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -13667,6 +13603,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -27323,7 +27260,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -28161,6 +28099,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 0.35
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 1
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1

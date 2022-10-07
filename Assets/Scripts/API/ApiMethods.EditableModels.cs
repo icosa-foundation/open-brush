@@ -56,9 +56,6 @@ namespace TiltBrush
             return widget;
         }
 
-        {
-        }
-
         private static void _ImportModel(string location, bool editable)
         {
             const string modelsFolder = "Models";
