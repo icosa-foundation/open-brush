@@ -70,7 +70,7 @@ namespace TiltBrush
             }
         }
 
-        protected virtual bool IsButtonActive()
+        public virtual bool IsButtonActive()
         {
             return SketchControlsScript.m_Instance.IsCommandActive(m_Command, m_CommandParam);
         }

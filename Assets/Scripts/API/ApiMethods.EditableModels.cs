@@ -56,10 +56,7 @@ namespace TiltBrush
             return widget;
         }
 
-        [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
-        public static void ImportEditableModel(string location)
         {
-            _ImportModel(location, true);
         }
 
         private static void _ImportModel(string location, bool editable)

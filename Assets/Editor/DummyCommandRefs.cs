@@ -126,7 +126,7 @@ namespace TiltBrush
             Use(GlobalCommands.Null);
             Use(GlobalCommands.SaveModel);
             Use(GlobalCommands.StraightEdge);
-            Use(GlobalCommands.SymmetryFour);
+            Use(GlobalCommands.MultiMirror);
         }
 
         public static void Prefabs_Panels_ExtraPanel()

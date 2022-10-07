@@ -28,6 +28,10 @@ Transform:
   m_LocalRotation: {x: -0.5, y: -0.5, z: 0.5, w: 0.5}
   m_LocalPosition: {x: 0, y: -0.02, z: 0.000012705}
   m_LocalScale: {x: 18.273024, y: 36.546047, z: 36.546047}
+<<<<<<< HEAD
+=======
+  m_ConstrainProportionsScale: 0
+>>>>>>> origin/feature/multi-mirrors
   m_Children: []
   m_Father: {fileID: 2633638204545500139}
   m_RootOrder: 0
@@ -51,10 +55,18 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+<<<<<<< HEAD
+=======
+  m_StaticShadowCaster: 0
+>>>>>>> origin/feature/multi-mirrors
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+<<<<<<< HEAD
+=======
+  m_RayTraceProcedural: 0
+>>>>>>> origin/feature/multi-mirrors
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -79,6 +91,10 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+<<<<<<< HEAD
+=======
+  m_AdditionalVertexStreams: {fileID: 0}
+>>>>>>> origin/feature/multi-mirrors
 --- !u!1 &1120234486363950381
 GameObject:
   m_ObjectHideFlags: 0
@@ -107,6 +123,10 @@ Transform:
   m_LocalRotation: {x: -0.5, y: -0.5, z: 0.5, w: 0.5}
   m_LocalPosition: {x: 0, y: -0.02, z: -0.000079998}
   m_LocalScale: {x: 18.239998, y: 36.479996, z: 36.479996}
+<<<<<<< HEAD
+=======
+  m_ConstrainProportionsScale: 0
+>>>>>>> origin/feature/multi-mirrors
   m_Children: []
   m_Father: {fileID: 2633638204545500139}
   m_RootOrder: 2
@@ -130,10 +150,18 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+<<<<<<< HEAD
+=======
+  m_StaticShadowCaster: 0
+>>>>>>> origin/feature/multi-mirrors
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+<<<<<<< HEAD
+=======
+  m_RayTraceProcedural: 0
+>>>>>>> origin/feature/multi-mirrors
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -158,6 +186,10 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+<<<<<<< HEAD
+=======
+  m_AdditionalVertexStreams: {fileID: 0}
+>>>>>>> origin/feature/multi-mirrors
 --- !u!1 &2630224399012238907
 GameObject:
   m_ObjectHideFlags: 0
@@ -188,10 +220,18 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.39, y: 0.72, z: -0.25}
   m_LocalScale: {x: 0.8, y: 1, z: 1}
+<<<<<<< HEAD
+=======
+  m_ConstrainProportionsScale: 0
+>>>>>>> origin/feature/multi-mirrors
   m_Children:
   - {fileID: 4787677302610872560}
   - {fileID: 4774244057288012162}
   - {fileID: 8624353459391024306}
+<<<<<<< HEAD
+=======
+  - {fileID: 7298080571351510785}
+>>>>>>> origin/feature/multi-mirrors
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -214,10 +254,18 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+<<<<<<< HEAD
+=======
+  m_StaticShadowCaster: 0
+>>>>>>> origin/feature/multi-mirrors
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+<<<<<<< HEAD
+=======
+  m_RayTraceProcedural: 0
+>>>>>>> origin/feature/multi-mirrors
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -242,6 +290,10 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+<<<<<<< HEAD
+=======
+  m_AdditionalVertexStreams: {fileID: 0}
+>>>>>>> origin/feature/multi-mirrors
 --- !u!65 &2624272951161731143
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -264,7 +316,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2630224399012238907}
   m_Enabled: 1
   m_EditorHideFlags: 0
+<<<<<<< HEAD
   m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
+=======
+  m_Script: {fileID: 11500000, guid: 5048fb3b23fb4d30993bded0678f8c43, type: 3}
+>>>>>>> origin/feature/multi-mirrors
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -286,6 +342,13 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls: []
+<<<<<<< HEAD
+=======
+  m_Highlight: {fileID: 7087301103453726921}
+  m_ButtonLabel: 
+  m_ColorSelected: {r: 0, g: 0, b: 0, a: 0}
+  m_ColorDeselected: {r: 0, g: 0, b: 0, a: 0}
+>>>>>>> origin/feature/multi-mirrors
 --- !u!1 &4583691017407991961
 GameObject:
   m_ObjectHideFlags: 0
@@ -315,6 +378,10 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.004}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+<<<<<<< HEAD
+=======
+  m_ConstrainProportionsScale: 0
+>>>>>>> origin/feature/multi-mirrors
   m_Children: []
   m_Father: {fileID: 2633638204545500139}
   m_RootOrder: 1
@@ -335,10 +402,18 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+<<<<<<< HEAD
+=======
+  m_StaticShadowCaster: 0
+>>>>>>> origin/feature/multi-mirrors
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+<<<<<<< HEAD
+=======
+  m_RayTraceProcedural: 0
+>>>>>>> origin/feature/multi-mirrors
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -363,6 +438,10 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+<<<<<<< HEAD
+=======
+  m_AdditionalVertexStreams: {fileID: 0}
+>>>>>>> origin/feature/multi-mirrors
 --- !u!222 &5431139491862965100
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -386,6 +465,10 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
+<<<<<<< HEAD
+=======
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+>>>>>>> origin/feature/multi-mirrors
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -456,9 +539,101 @@ MonoBehaviour:
   m_margin: {x: 7.496979, y: 0, z: 7.302159, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
+<<<<<<< HEAD
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 2766287218697250671}
   m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+=======
+  _SortingLayer: 0
+  _SortingLayerID: 0
+  _SortingOrder: 0
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 2766287218697250671}
+  m_maskType: 0
+--- !u!1 &7087301103453726921
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7298080571351510785}
+  - component: {fileID: 7367914487292193425}
+  - component: {fileID: 3238319857383640696}
+  m_Layer: 16
+  m_Name: Highlight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7298080571351510785
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7087301103453726921}
+  m_LocalRotation: {x: -0.5, y: -0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 0, y: 0.051, z: -0.001}
+  m_LocalScale: {x: 3.622484, y: 36.546047, z: 55.149162}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2633638204545500139}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 90}
+--- !u!33 &7367914487292193425
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7087301103453726921}
+  m_Mesh: {fileID: 4300002, guid: 494f6a456f266384a85d4868be7b55bf, type: 3}
+--- !u!23 &3238319857383640696
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7087301103453726921}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8b96fd39ba2812846a306d90ef3422f0, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+>>>>>>> origin/feature/multi-mirrors

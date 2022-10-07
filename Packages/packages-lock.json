@@ -6,8 +6,8 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=11#upm",
+    "com.ixxy.unitysymmetry": {
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -20,7 +20,6 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
-      "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
