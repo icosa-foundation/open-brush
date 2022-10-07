@@ -61,10 +61,12 @@ namespace TiltBrush
                 var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
                 foreach (var m in matrices)
                 {
-                    tr = PointerManager.m_Instance.TrFromMatrix(m);
+                    var trAndFix = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(m);
+                    tr = trAndFix.Item1;
                     tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
                     var tmp = tr * strokeTransform; // Work around 2018.3.x Mono parse bug
                     tmp *= TrTransform.T(Vector3.one * (Random.value * .00001f)); // Small jitter to prevent z-fighting
+                    tmp *= trAndFix.Item2; // Fix mirroring
                     var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }

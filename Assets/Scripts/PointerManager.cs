@@ -1041,7 +1041,7 @@ namespace TiltBrush
             return tr;
         }
 
-        private (TrTransform, TrTransform) TrFromMatrixWithFixedReflections(Matrix4x4 m)
+        public (TrTransform, TrTransform) TrFromMatrixWithFixedReflections(Matrix4x4 m)
         {
             // See ReflectPoseKeepHandedness
 
