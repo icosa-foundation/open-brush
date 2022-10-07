@@ -78,6 +78,7 @@ namespace TiltBrush
             {
                 HandleShowWallpaperSymmetry();
             }
+            SetCurrentMirrorTypeButtonState(true);
 
             m_PointSymmetryOrderSlider.m_InitialValue = PointerManager.m_Instance.m_PointSymmetryOrder;
             m_WallpaperScaleSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScale;
