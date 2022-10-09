@@ -1,6 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if PICO_SUPPORTED
+using Unity.XR.PXR;
+#endif
+
 
 namespace TiltBrush
 {
@@ -11,7 +15,12 @@ namespace TiltBrush
 #if OCULUS_SUPPORTED
                 var passthrough = gameObject.AddComponent<OVRPassthroughLayer>();
                 passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-#endif // OCULUS_SUPPORTED   
+#elif PICO_SUPPORTED
+                PXR_Plugin.Boundary.UPxr_ShutdownSdkGuardianSystem();
+                PXR_Boundary.EnableSeeThroughManual(true);
+#else
+
+#endif
         }
     }
 }
