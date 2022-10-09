@@ -58,7 +58,7 @@ namespace TiltBrush
             ReleaseTexture();
         }
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, m_Size);
         }

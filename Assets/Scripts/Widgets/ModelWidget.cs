@@ -135,13 +135,17 @@ namespace TiltBrush
             // Set our model to null so its usage count is decremented.
             Model = null;
         }
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             clone.m_previousCanvas = m_previousCanvas;
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
             clone.Model = this.Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
