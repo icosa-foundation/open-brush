@@ -26,6 +26,7 @@ namespace TiltBrush
 
         private TrTransform m_xfOriginal_SS = TrTransform.identity;
         private Bounds? m_SelectionBounds_CS;
+        public Transform m_SnapGhostPrefab;
 
         private InputManager.ControllerName? m_CurrentIntersectionController;
         private InputManager.ControllerName? m_NextIntersectionController;
@@ -55,6 +56,7 @@ namespace TiltBrush
             m_LastIntersectionResult[InputManager.ControllerName.Wand] = -1;
             m_CustomShowHide = true;
             ResetSizeRange();
+            InitSnapGhost(m_SnapGhostPrefab, App.Scene.SelectionCanvas.transform);
         }
 
         override protected void OnHide()
@@ -306,6 +308,12 @@ namespace TiltBrush
             {
                 m_Pin.gameObject.SetActive(true);
                 m_Pin.WobblePin(m_InteractingController);
+            }
+
+            if (m_SnapGhost && m_AllowSnapping)
+            {
+                m_SnapGhost.gameObject.SetActive(true);
+                m_SnapGhost.localScale = m_SelectionBounds_CS.Value.size;
             }
         }
     }
