@@ -7542,13 +7542,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -27260,8 +27258,7 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If
-    you enjoy the app, please consider donating in the settings menu!'
+    If you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -28119,6 +28116,8 @@ MonoBehaviour:
   m_ValidSnapRotationStickyAngle: 90
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_SelectionCanvas: {fileID: 1830711221}
+  m_SnapGhostPrefab: {fileID: 4792723296729267787, guid: 03a74432d0467b24ab801292d738ddeb,
+    type: 3}
 --- !u!4 &1820659017
 Transform:
   m_ObjectHideFlags: 0
