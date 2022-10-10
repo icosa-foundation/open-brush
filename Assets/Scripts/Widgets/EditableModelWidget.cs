@@ -27,7 +27,12 @@ namespace TiltBrush
         public PolyRecipe m_PolyRecipe;
         public PolyMesh m_PolyMesh;
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             EditableModelWidget clone = EditableModelManager.m_Instance.GeneratePolyMesh(
                 m_PolyMesh,
@@ -35,8 +40,8 @@ namespace TiltBrush
                 TrTransform.FromLocalTransform(transform)
             );
             clone.m_previousCanvas = m_previousCanvas;
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
 
             PolyMesh oldPoly = m_PolyMesh;
             PolyMesh newPoly = oldPoly.Duplicate();
@@ -44,7 +49,7 @@ namespace TiltBrush
             clone.m_PolyRecipe = m_PolyRecipe.Clone();
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, m_PolyRecipe.CurrentMaterial);
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(m_Size);
+            clone.SetSignedWidgetSize(size);
             clone.m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
