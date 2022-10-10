@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.meta.xr.sdk.utilities": "44.0.0-preview",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
@@ -67,6 +68,13 @@
         "org.nuget.google",
         "org.nuget.newtonsoft",
         "org.nuget.sharpziplib"
+      ]
+    },
+    {
+      "name": "Meta XR",
+      "url": "https://npm.developer.oculus.com",
+      "scopes": [
+        "com.meta.xr.sdk"
       ]
     }
   ]
