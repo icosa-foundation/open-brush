@@ -997,9 +997,10 @@ namespace TiltBrush
             float y = euler.y;
             euler = new Vector3(round(euler.x), 0, round(euler.z));
             rotation = Quaternion.Euler(euler);
-            rotation *= Quaternion.Euler(0, round(y), 0);
+            rotation = Quaternion.Euler(0, round(y), 0) * rotation;
             return rotation;
         }
+
         public Vector3 SnapToGrid(Vector3 position)
         {
             if (SnappingGridSize == 0) return position;
