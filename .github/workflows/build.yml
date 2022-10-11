@@ -180,32 +180,6 @@ jobs:
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
-      - name: Install Oculus unity package
-        if: matrix.vrsdk == 'Oculus'
-        run: |
-          # version 43.0
-          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=5461031177272989 -O package.tmp
-          mkdir tmp
-          tar -C tmp -xzf package.tmp
-          find tmp -type f | xargs chmod a-x
-          for pn in tmp/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp/$d"
-            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
-            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
-          done
-          mkdir -p Assets/Oculus
-          cp -R tmp/Assets/Oculus/VR Assets/Oculus/
-          cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
-          rm -rf tmp package.tmp
-          ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
-          # HACK to stop Oculus preventing building in gamma color space with OpenXR.
-          sed -i '/linear lighting/d' Assets/Oculus/VR/Editor/OVRGradleGeneration.cs
-
       - name: Install Pimax unity package
         if: matrix.name == 'Windows Pimax'
         run: |
@@ -255,16 +229,6 @@ jobs:
           path: Library
           # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
           key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
-
-      - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2
-        if: matrix.vrsdk == 'Oculus'
-        with:
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          versioning: Custom
-          version: ${{ needs.configuration.outputs.version }}
-          buildMethod: OVRPluginUpdater.BatchmodePluginUpdate  # We created this symlink above
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
