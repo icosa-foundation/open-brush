@@ -13,6 +13,13 @@
       "dependencies": {},
       "hash": "fec33a44c78cccfbeed6f0e22e7c57c3ded34d6e"
     },
+    "com.meta.xr.sdk.utilities": {
+      "version": "44.0.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://npm.developer.oculus.com"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
