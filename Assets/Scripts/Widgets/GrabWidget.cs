@@ -222,7 +222,6 @@ namespace TiltBrush
         {
             get
             {
-                return SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
                 return Time.realtimeSinceStartup - m_SnapEnabledTimeStamp < m_SnapDisabledDelay;
             }
             set
