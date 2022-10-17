@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.meta.xr.sdk.utilities": "44.0.0-preview",
+    "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#fix-pre-process-build",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
