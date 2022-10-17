@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -20,12 +21,21 @@ namespace TiltBrush
 
     public class XYWidget : UIComponent
     {
+        public int m_Param;
         [SerializeField] public GameObject m_Nob;
         [SerializeField] private Renderer m_Mesh;
+        [SerializeField] private TextMeshPro valueText;
+        [SerializeField] public sliderEvent onUpdateValue;
 
         [NonSerialized] public Vector3 m_MeshScale;
         protected Vector2 m_CurrentValue;
         protected bool m_IsAvailable;
+
+        public Vector2 m_InitialValue;
+
+        public Vector2 m_Min = -Vector2.one;
+        public Vector2 m_Max = Vector2.one;
+
 
         private Renderer[] m_TintableMeshes;
 
@@ -38,6 +48,22 @@ namespace TiltBrush
             SetDescriptionVisualsAvailable(m_IsAvailable);
         }
 
+        private void _UpdateValueAbsolute(Vector2 fValue)
+        {
+            valueText.text = FormatValue(fValue);
+            onUpdateValue.Invoke(new Vector3(m_Param, fValue.x, fValue.y));
+            m_CurrentValue = new Vector2(
+                Mathf.InverseLerp(m_Min.x, m_Max.x, fValue.x),
+                Mathf.InverseLerp(m_Min.y, m_Max.y, fValue.y)
+            );
+            SetSliderPositionToReflectValue();
+        }
+
+        private string FormatValue(Vector2 val)
+        {
+            return $"{Mathf.Round(val.x * 10) / 10},{Mathf.Round(val.y * 10) / 10}";
+        }
+
         override protected void Awake()
         {
             base.Awake();
@@ -48,6 +74,7 @@ namespace TiltBrush
             }
             m_TintableMeshes = GetComponentsInChildren<Renderer>();
             SetAvailable(true);
+            ResetToInitialValues();
         }
 
         override protected void OnDescriptionChanged()
@@ -73,9 +100,18 @@ namespace TiltBrush
             }
         }
 
-        virtual public void UpdateValue(Vector2 fValue)
+        float remap(float s, float a1, float a2, float b1, float b2)
         {
-            m_CurrentValue = fValue;
+            return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
+        }
+
+        public void UpdateValue(Vector2 fValue)
+        {
+            var val = new Vector2(
+                remap(fValue.x, 0, 1, m_Min.x, m_Max.x),
+                remap(fValue.y, 0, 1, m_Min.y, m_Max.y)
+            );
+            _UpdateValueAbsolute(val);
         }
 
         public void SetSliderPositionToReflectValue()
@@ -115,6 +151,11 @@ namespace TiltBrush
         public override void ResetState()
         {
             SetDescriptionActive(false);
+        }
+
+        public void ResetToInitialValues()
+        {
+            _UpdateValueAbsolute(m_InitialValue);
         }
 
         protected void PositionSliderNob(Vector3 pos_WS)
