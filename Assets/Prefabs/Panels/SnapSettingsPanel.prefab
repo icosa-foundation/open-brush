@@ -1066,7 +1066,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3150295351698660673}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de26d80afcae4f358d94a33bc0334d85, type: 3}
+  m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1089,12 +1089,12 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114019824221785570}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 1374841876464787670}
-          m_ObjectArgumentAssemblyTypeName: TiltBrush.TransformPanelToggleButton,
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.SnapSettingsPanelToggleButton,
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -1104,7 +1104,7 @@ MonoBehaviour:
   m_InitialToggleState: 1
   m_TextureOn: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
   m_TextureOff: {fileID: 2800000, guid: 957f69e59565cd1469fa095b415fa513, type: 3}
-  m_ButtonType: 8
+  m_ButtonType: 2
 --- !u!1 &3827519074119812410
 GameObject:
   m_ObjectHideFlags: 0
@@ -1503,7 +1503,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4777982187258263275}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de26d80afcae4f358d94a33bc0334d85, type: 3}
+  m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1526,12 +1526,12 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114019824221785570}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 6041313640382098235}
-          m_ObjectArgumentAssemblyTypeName: TiltBrush.TransformPanelToggleButton,
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.SnapSettingsPanelToggleButton,
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -1541,7 +1541,7 @@ MonoBehaviour:
   m_InitialToggleState: 1
   m_TextureOn: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
   m_TextureOff: {fileID: 2800000, guid: 957f69e59565cd1469fa095b415fa513, type: 3}
-  m_ButtonType: 7
+  m_ButtonType: 1
 --- !u!1 &5327481549237470802
 GameObject:
   m_ObjectHideFlags: 0
@@ -1746,7 +1746,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5562389797739007514}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de26d80afcae4f358d94a33bc0334d85, type: 3}
+  m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1769,12 +1769,12 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114019824221785570}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 2557399154964864798}
-          m_ObjectArgumentAssemblyTypeName: TiltBrush.TransformPanelToggleButton,
+          m_ObjectArgumentAssemblyTypeName: TiltBrush.SnapSettingsPanelToggleButton,
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -1784,7 +1784,7 @@ MonoBehaviour:
   m_InitialToggleState: 1
   m_TextureOn: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
   m_TextureOff: {fileID: 2800000, guid: 957f69e59565cd1469fa095b415fa513, type: 3}
-  m_ButtonType: 6
+  m_ButtonType: 0
 --- !u!1 &5905450364201426406
 GameObject:
   m_ObjectHideFlags: 0

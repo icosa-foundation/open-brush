@@ -15,20 +15,28 @@
 
 namespace TiltBrush
 {
+
+    public enum SnapSettingsPanelToggleType
+    {
+        LockSnapTranslateX,
+        LockSnapTranslateY,
+        LockSnapTranslateZ
+    }
+
     public class SnapSettingsPanel : BasePanel
     {
 
-        public void HandleToggle(TransformPanelToggleButton btn)
+        public void HandleToggle(SnapSettingsPanelToggleButton btn)
         {
             switch (btn.m_ButtonType)
             {
-                case TransformPanelToggleType.LockSnapTranslateX:
+                case SnapSettingsPanelToggleType.LockSnapTranslateX:
                     SelectionManager.m_Instance.m_EnableSnapTranslationX = btn.ToggleState;
                     break;
-                case TransformPanelToggleType.LockSnapTranslateY:
+                case SnapSettingsPanelToggleType.LockSnapTranslateY:
                     SelectionManager.m_Instance.m_EnableSnapTranslationY = btn.ToggleState;
                     break;
-                case TransformPanelToggleType.LockSnapTranslateZ:
+                case SnapSettingsPanelToggleType.LockSnapTranslateZ:
                     SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
                     break;
             }
@@ -56,10 +64,14 @@ namespace TiltBrush
             {
                 var tr = widget.LocalTransform;
                 tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                //     new MoveWidgetCommand();
-                // );
-                widget.LocalTransform = tr;
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MoveWidgetCommand(widget, tr, widget.CustomDimension)
+                );
+            }
+
+            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+
             }
         }
     }
