@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.meta.xr.sdk.utilities": "44.0.0-preview",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
@@ -14,10 +15,10 @@
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",
-    "com.unity.xr.core-utils": "2.0.0",
+    "com.unity.xr.core-utils": "2.1.0",
     "com.unity.xr.management": "4.2.1",
     "com.unity.xr.oculus": "3.0.2",
-    "com.unity.xr.openxr": "1.5.1",
+    "com.unity.xr.openxr": "1.5.3",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
     "org.nuget.google.apis.core": "1.57.0",
@@ -67,6 +68,13 @@
         "org.nuget.google",
         "org.nuget.newtonsoft",
         "org.nuget.sharpziplib"
+      ]
+    },
+    {
+      "name": "Meta XR",
+      "url": "https://npm.developer.oculus.com",
+      "scopes": [
+        "com.meta.xr.sdk"
       ]
     }
   ]
