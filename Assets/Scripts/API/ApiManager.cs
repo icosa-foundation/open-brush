@@ -196,6 +196,8 @@ namespace TiltBrush
 
         private EnqueuedApiCommand EnqueueCommand(string commandString)
         {
+            if (string.IsNullOrWhiteSpace(commandString)) return null;
+            if (commandString.StartsWith("//")) return null;
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
             if (commandPair.Length < 1) return null;
             string parameters;
