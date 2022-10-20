@@ -975,10 +975,32 @@ namespace TiltBrush
             );
         }
 
+        public void SetSnappingAngle(string angleAsString)
+        {
+            int requestedIndex = m_AngleSnaps.Select(x=>x.ToString()).ToList().FindIndex(x => x==angleAsString);
+            if (requestedIndex < 0)
+            {
+                Debug.LogWarning($"SetSnappingAngle received an invalid angle of {angleAsString}. Valid values: {string.Join(",", m_AngleSnaps)}");
+                return;
+            }
+            SetSnappingAngle(requestedIndex);
+        }
+
         public void SetSnappingAngle(int snapIndex)
         {
             m_CurrentSnapAngleIndex = snapIndex;
             m_snappingAngle = m_AngleSnaps[snapIndex];
+        }
+
+        public void SetSnappingGridSize(string gridSizeAsString)
+        {
+            int requestedIndex = m_GridSnaps.Select(x=>x.ToString()).ToList().FindIndex(x => x==gridSizeAsString);
+            if (requestedIndex < 0)
+            {
+                Debug.LogWarning($"SetSnappingGridSize received an invalid angle of {gridSizeAsString}. Valid values: {string.Join(",", m_GridSnaps)}");
+                return;
+            }
+            SetSnappingGridSize(requestedIndex);
         }
 
         public void SetSnappingGridSize(int snapIndex)
@@ -1003,6 +1025,7 @@ namespace TiltBrush
         public Vector3 SnapToGrid(Vector3 position)
         {
             float gridSize = SnappingGridSize;
+            if (gridSize == 0) return position;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
@@ -1016,6 +1039,7 @@ namespace TiltBrush
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
             var snapAngle = SnappingAngle;
+            if (snapAngle == 0) return rotation;
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
 
             Vector3 euler = rotation.eulerAngles;
@@ -1032,6 +1056,8 @@ namespace TiltBrush
                 widget.GetType().IsSubclassOf(typeof(StencilWidget))
             )
             .ToList();
+
+
     }
 
 } // namespace TiltBrush
