@@ -13,6 +13,8 @@
 // limitations under the License.
 
 
+using System.Collections.Generic;
+using System.Linq;
 namespace TiltBrush
 {
 
@@ -44,36 +46,14 @@ namespace TiltBrush
 
         public void HandleSnapSelectionToGrid()
         {
-            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
-            {
-                var tr = widget.LocalTransform;
-                tr.translation = FreePaintTool.SnapToGrid(widget.LocalTransform.translation);
-                widget.LocalTransform = tr;
-            }
-            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-                var pos = stroke.m_BatchSubset.m_Bounds.center;
-                var newPos = FreePaintTool.SnapToGrid(pos);
-                stroke.Recreate(TrTransform.T(newPos));
-            }
+            TransformItems.SnapSelectionToGrid();
         }
 
         public void HandleSnapSelectedRotationAngles()
         {
-            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
-            {
-                var tr = widget.LocalTransform;
-                tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new MoveWidgetCommand(widget, tr, widget.CustomDimension)
-                );
-            }
-
-            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-
-            }
+            TransformItems.SnapSelectedRotationAngles();
         }
+
     }
 
 } // namespace TiltBrush
