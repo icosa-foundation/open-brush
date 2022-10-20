@@ -24,9 +24,6 @@ namespace TiltBrush
         LockRotateX,
         LockRotateY,
         LockRotateZ,
-        LockSnapTranslateX,
-        LockSnapTranslateY,
-        LockSnapTranslateZ
     }
 
     public enum TransformPanelActionType
@@ -61,22 +58,22 @@ namespace TiltBrush
         public EditableLabel m_LabelForRotationZ;
 
         public EditableLabel m_LabelForScale;
-        
+
         private BoundsTypes m_AlignBoundsType = BoundsTypes.Center;
         private BoundsTypes m_DistributeBoundsType = BoundsTypes.Center;
-        
+
         private Bounds m_SelectionBounds;
 
         void OnSelectionPoseChanged(TrTransform _, TrTransform __)
         {
             OnSelectionPoseChanged();
         }
-        
+
         void OnSelectionPoseChanged()
         {
-            
+
             var translation = CurrentSelectionPos();
-            
+
             var selectionTr = SelectionManager.m_Instance.SelectionTransform;
             var rotation = selectionTr.rotation.eulerAngles;
             var scale = selectionTr.scale;
@@ -88,7 +85,7 @@ namespace TiltBrush
             m_LabelForRotationZ.SetValue(FormatValue(rotation.z));
             m_LabelForScale.SetValue(FormatValue(scale));
         }
-        
+
         private Vector3 CurrentSelectionPos()
         {
             var selectionTr = SelectionManager.m_Instance.SelectionTransform;
@@ -107,7 +104,7 @@ namespace TiltBrush
             App.Scene.SelectionCanvas.PoseChanged -= OnSelectionPoseChanged;
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
         }
-        
+
         private void OnSelectionChanged()
         {
             m_SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
@@ -173,7 +170,7 @@ namespace TiltBrush
                 case TransformPanelToggleType.LockRotateZ:
                     SelectionManager.m_Instance.m_LockRotationZ = btn.ToggleState;
                     break;
-                
+
                 case TransformPanelToggleType.LockTranslateX:
                     SelectionManager.m_Instance.m_LockTranslationX = btn.ToggleState;
                     break;
@@ -183,16 +180,7 @@ namespace TiltBrush
                 case TransformPanelToggleType.LockTranslateZ:
                     SelectionManager.m_Instance.m_LockTranslationZ = btn.ToggleState;
                     break;
-                
-                case TransformPanelToggleType.LockSnapTranslateX:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationX = btn.ToggleState;
-                    break;
-                case TransformPanelToggleType.LockSnapTranslateY:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationY = btn.ToggleState;
-                    break;
-                case TransformPanelToggleType.LockSnapTranslateZ:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
-                    break;
+
             }
         }
 
@@ -232,9 +220,9 @@ namespace TiltBrush
 
                 var selectionTr = newTr.TransformBy(TrTransform.T(m_SelectionBounds.center));
                 // selectionTr.translation -= m_SelectionBounds.center;
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
-                );
+                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                //     new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
+                // );
             }
             else
             {
@@ -267,34 +255,7 @@ namespace TiltBrush
             }
         }
 
-        public void HandleSnapSelectionToGrid()
-        {
-            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
-            {
-                var tr = widget.LocalTransform;
-                tr.translation = FreePaintTool.SnapToGrid(widget.LocalTransform.translation);
-                widget.LocalTransform = tr;
-            }
-            foreach (var stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-                var pos = stroke.m_BatchSubset.m_Bounds.center;
-                var newPos = FreePaintTool.SnapToGrid(pos);
-                stroke.Recreate(TrTransform.T(newPos));
-            }
-        }
 
-        public void HandleSnapSelectedRotationAngles()
-        {
-            foreach (var widget in SelectionManager.m_Instance.GetValidSelectedWidgets())
-            {
-                var tr = widget.LocalTransform;
-                tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                //     new MoveWidgetCommand();
-                // );
-                widget.LocalTransform = tr;
-            }
-        }
 
         public void HandleAlignStateButton(int state)
         {
