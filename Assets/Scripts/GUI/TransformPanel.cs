@@ -93,8 +93,9 @@ namespace TiltBrush
             return translation;
         }
 
-        void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             App.Scene.SelectionCanvas.PoseChanged += OnSelectionPoseChanged;
             App.Switchboard.SelectionChanged += OnSelectionChanged;
         }
@@ -220,9 +221,9 @@ namespace TiltBrush
 
                 var selectionTr = newTr.TransformBy(TrTransform.T(m_SelectionBounds.center));
                 // selectionTr.translation -= m_SelectionBounds.center;
-                // SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                //     new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
-                // );
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
+                );
             }
             else
             {
