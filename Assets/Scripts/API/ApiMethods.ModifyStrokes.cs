@@ -52,6 +52,34 @@ namespace TiltBrush
             }
         }
 
+        [ApiEndpoint("strokes.translate", "Translates multiple brushstrokes")]
+        public static void TranslateStrokes(int start, int end, Vector3 translation)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, TrTransform.T(translation), Vector3.zero);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("strokes.rotate", "Rotates multiple brushstrokes around the current brush position")]
+        public static void RotateStrokes(int start, int end, float angle)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var axis = ApiManager.Instance.BrushRotation * Vector3.forward;
+            var rot = TrTransform.R(angle, axis);
+            var pivot = ApiManager.Instance.BrushPosition;
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, rot, pivot);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("strokes.scale", "Scales multiple brushstrokes around the current brush position")]
+        public static void ScaleStrokes(int start, int end, float scale)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var pivot = ApiManager.Instance.BrushPosition;
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, TrTransform.S(scale), pivot);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
         [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
         public static void RebrushSelection()
         {
