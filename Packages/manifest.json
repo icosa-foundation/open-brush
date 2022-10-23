@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git?nocache=11#upm",
+    "com.meta.xr.sdk.utilities": "44.0.0-preview",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
@@ -70,13 +71,11 @@
         "org.nuget.sharpziplib"
       ]
     },
-	{
-      "name": "package.openupm.com",
-      "url": "https://package.openupm.com",
+    {
+      "name": "Meta XR",
+      "url": "https://npm.developer.oculus.com",
       "scopes": [
-        "com.ixxy.polyhydra.core",
-        "com.nition.unity-octree",
-        "com.openupm"
+        "com.meta.xr.sdk"
       ]
     }
   ]
