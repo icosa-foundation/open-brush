@@ -15,6 +15,13 @@
       },
       "hash": "34fcc32d206e9099cc4657214f258bb94ec3e894"
     },
+    "com.meta.xr.sdk.utilities": {
+      "version": "44.0.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://npm.developer.oculus.com"
+    },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
       "depth": 1,

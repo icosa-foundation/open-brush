@@ -77,6 +77,15 @@
       "scopes": [
         "com.meta.xr.sdk"
       ]
+    },
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ixxy.polyhydra.core",
+        "com.nition.unity-octree",
+        "com.openupm"
+      ]
     }
   ]
 }
