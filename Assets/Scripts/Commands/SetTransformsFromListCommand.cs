@@ -49,7 +49,7 @@ namespace TiltBrush
                 else
                 {
                     var widget = m_Widgets[i];
-                    widget.LocalTransform = m_FinalTransforms[i];
+                    widget.LocalTransform = widget.Canvas.Pose.inverse * m_FinalTransforms[i];
                 }
             }
         }
