@@ -371,7 +371,9 @@ namespace TiltBrush
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+            var cmd = new CreateWidgetCommand(
+                WidgetManager.m_Instance.ImageWidgetPrefab, tr, null, true
+            );
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var imageWidget = cmd.Widget as ImageWidget;
@@ -526,7 +528,7 @@ namespace TiltBrush
 
             var tr = _CurrentTransform();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr);
+                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr, null, true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
         }
 

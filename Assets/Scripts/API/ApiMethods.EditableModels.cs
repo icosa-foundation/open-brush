@@ -58,7 +58,8 @@ namespace TiltBrush
             var model = new Model(Model.Location.File(relativePath));
             model.LoadModel();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr);
+                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, true
+            );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             ModelWidget widget = createCommand.Widget as ModelWidget;
             if (widget != null)
