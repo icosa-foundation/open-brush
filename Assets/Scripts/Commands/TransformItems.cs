@@ -86,12 +86,10 @@ namespace TiltBrush
 
                 if (i < strokes.Count)
                 {
-                    Debug.Log($"{i} Transforming stroke: {stroke} by {xforms[i]}");
                     stroke.SetParentKeepWorldPosition(strokeLayers[stroke], tempLayer.Pose);
                 }
                 else
                 {
-                    Debug.Log($"{i} Transforming widget: {widget} by {xforms[i].rotation.eulerAngles}");
                     widget.transform.SetParent(widgetLayers[widget].transform, true);
                 }
 
@@ -114,9 +112,9 @@ namespace TiltBrush
             }
             foreach (var widget in widgets)
             {
-                var tr = widget.LocalTransform;
+                var tr = Coords.AsGlobal[widget.transform];
                 tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                xforms.Add(tr);
+                xforms.Add(widget.Canvas.LocalPose.inverse * tr);
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
@@ -136,9 +134,9 @@ namespace TiltBrush
             }
             foreach (var widget in widgets)
             {
-                var tr = widget.LocalTransform;
+                var tr = Coords.AsGlobal[widget.transform];
                 tr.translation = SelectionManager.m_Instance.SnapToGrid(tr.translation);
-                xforms.Add(tr);
+                xforms.Add(widget.Canvas.LocalPose.inverse * tr);
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
