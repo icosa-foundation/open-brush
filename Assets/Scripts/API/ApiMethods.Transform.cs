@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -29,16 +30,45 @@ namespace TiltBrush
             SelectionManager.m_Instance.SetSnappingGridSize(size);
         }
 
-        [ApiEndpoint("snap.selected.angles", "Applies the current snap angle to all selected objects")]
+        [ApiEndpoint("selection.snap.angles", "Applies the current snap angle to all selected objects")]
         public static void SnapSelectedAngles()
         {
             TransformItems.SnapSelectedRotationAngles();
         }
 
-        [ApiEndpoint("snap.selected.positions", "Applies the current snap grid to all selected objects")]
+        [ApiEndpoint("selection.snap.positions", "Applies the current snap grid to all selected objects")]
         public static void SnapSelectedPositions()
         {
             TransformItems.SnapSelectionToGrid();
+        }
+
+        [ApiEndpoint("selection.align", "Aligns all selected objects to the given axis using their minimum, center or maximum points")]
+        public static void AlignSelected(string axis, string alignBy)
+        {
+            axis = axis.ToLower().Trim();
+            int axisIndex = axis switch
+            {
+                "x" => 0,
+                "y" => 1,
+                "z" => 2,
+                _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
+            };
+
+            alignBy = alignBy.ToLower().Trim();
+            BoundsTypes alignBoundsType = alignBy switch
+            {
+                "min" => BoundsTypes.Min,
+                "minimum" => BoundsTypes.Min,
+                "center" => BoundsTypes.Center,
+                "centre" => BoundsTypes.Center,
+                "max" => BoundsTypes.Max,
+                "maximum" => BoundsTypes.Max,
+                _ => throw new ArgumentOutOfRangeException(nameof(alignBy), alignBy, null)
+            };
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new AlignSelectedCommand(axisIndex, alignBoundsType)
+            );
         }
     }
 }
