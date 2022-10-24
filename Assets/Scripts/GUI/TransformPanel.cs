@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -112,45 +113,24 @@ namespace TiltBrush
             OnSelectionPoseChanged();
         }
 
-        // private TrTransform GetActiveTransform()
-        // {
-        //     TrTransform activeTr = TrTransform.identity;
-        //     if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
-        //     {
-        //         m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
-        //     }
-        //
-        //     // Prefer to use selection if it exists
-        //     if (SelectionManager.m_Instance.HasSelection)
-        //     {
-        //         m_LastWidget = null;
-        //         activeTr = SelectionManager.m_Instance.SelectionTransform;
-        //     }
-        //     // if no selection then the panel should control the last widget interacted with
-        //     else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
-        //     {
-        //         activeTr = m_LastWidget.LocalTransform;
-        //     }
-        //     return activeTr;
-        // }
-        //
-        // private void SetActiveTransform(TrTransform tr)
-        // {
-        //     if (SketchControlsScript.m_Instance.CurrentGrabWidget != null)
-        //     {
-        //         m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget;
-        //     }
-        //
-        //     if (SelectionManager.m_Instance.HasSelection)
-        //     {
-        //         m_LastWidget = null;
-        //         SelectionManager.m_Instance.SelectionTransform = tr;
-        //     }
-        //     else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
-        //     {
-        //         m_LastWidget.LocalTransform = tr;
-        //     }
-        // }
+        private TrTransform GetPreferredTransform()
+        {
+            TrTransform activeTr = TrTransform.identity;
+
+            // Prefer the selection if one exists
+            if (SelectionManager.m_Instance.HasSelection)
+            {
+                m_LastWidget = null;
+                activeTr = SelectionManager.m_Instance.SelectionTransform;
+            }
+            // otherwise use the last widget that was interacted with
+            else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
+            {
+                m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget ?? m_LastWidget;
+                activeTr = m_LastWidget.LocalTransform;
+            }
+            return activeTr;
+        }
 
         private string FormatValue(float val)
         {
@@ -181,15 +161,13 @@ namespace TiltBrush
                 case TransformPanelToggleType.LockTranslateZ:
                     SelectionManager.m_Instance.m_LockTranslationZ = btn.ToggleState;
                     break;
-
             }
         }
 
         public void HandleLabelEdited(EditableLabel label)
         {
-            var currentPose = SelectionManager.m_Instance.SelectionTransform;
-            currentPose.translation += m_SelectionBounds.center;
-            var newTr = TrTransform.identity;
+
+            var newTr = GetPreferredTransform();
 
             if (float.TryParse(label.LastTextInput, out float value))
             {
@@ -197,33 +175,41 @@ namespace TiltBrush
                 switch (label.m_LabelTag)
                 {
                     case "TX":
-                        newTr.translation.x = value - currentPose.translation.x;
+                        newTr.translation.x = value;
                         break;
                     case "TY":
-                        newTr.translation.y = value - currentPose.translation.y;
+                        newTr.translation.y = value;
                         break;
                     case "TZ":
-                        newTr.translation.z = value - currentPose.translation.z;
+                        newTr.translation.z = value;
                         break;
                     case "RX":
-                        newTr.rotation.eulerAngles = new Vector3(value, 0, 0) - currentPose.rotation.eulerAngles;
+                        newTr.rotation.eulerAngles = new Vector3(value, 0, 0);
                         break;
                     case "RY":
-                        newTr.rotation.eulerAngles = new Vector3(0, value, 0) - currentPose.rotation.eulerAngles;
+                        newTr.rotation.eulerAngles = new Vector3(0, value, 0);
                         break;
                     case "RZ":
-                        newTr.rotation.eulerAngles = new Vector3(0, 0, value) - currentPose.rotation.eulerAngles;
+                        newTr.rotation.eulerAngles = new Vector3(0, 0, value);
                         break;
                     case "SX":
-                        newTr.scale = value - currentPose.scale;
+                        newTr.scale = value;
                         break;
                 }
 
-                var selectionTr = newTr.TransformBy(TrTransform.T(m_SelectionBounds.center));
-                // selectionTr.translation -= m_SelectionBounds.center;
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new TransformSelectionCommand(selectionTr * SelectionManager.m_Instance.SelectionTransform)
-                );
+                if (SelectionManager.m_Instance.HasSelection)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                        new TransformSelectionCommand(newTr, m_SelectionBounds.center)
+                    );
+                }
+                else
+                {
+                    var pivot = m_LastWidget.LocalTransform.translation;
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                        new TransformItemsCommand(null, new List<GrabWidget>{m_LastWidget}, newTr, pivot)
+                    );
+                }
             }
             else
             {
@@ -255,8 +241,6 @@ namespace TiltBrush
                     break;
             }
         }
-
-
 
         public void HandleAlignStateButton(int state)
         {
