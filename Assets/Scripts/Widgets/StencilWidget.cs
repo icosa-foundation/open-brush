@@ -319,17 +319,8 @@ namespace TiltBrush
 
             foreach (var state in guide.States)
             {
-                StencilWidget stencil;
-                try
-                {
-                    stencil = Instantiate(
+                StencilWidget stencil = Instantiate(
                     WidgetManager.m_Instance.GetStencilPrefab(stencilType));
-                }
-                catch (ArgumentException e)
-                {
-                    Debug.LogException(e);
-                    return;
-                }
 
                 stencil.m_SkipIntroAnim = true;
                 stencil.transform.parent = App.Instance.m_CanvasTransform;

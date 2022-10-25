@@ -48,7 +48,7 @@ static class BuildTiltBrush
     // The vendor name - used for naming android builds - shouldn't have spaces.
     public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
-    public const string kDisplayVendorName = "Icosa Foundation";
+    public const string kDisplayVendorName = "Icosa Gallery";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
@@ -59,7 +59,7 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
+    public static string GuiBuildAndroidApplicationIdentifier => $"com.{kVendorName}.{kGuiBuildExecutableName}";
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
 
@@ -961,10 +961,6 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = GuiBuildAndroidApplicationIdentifier;
-#if OCULUS_SUPPORTED
-            //Can't change Quest identifier
-            new_identifier = "com.Icosa.OpenBrush";
-#endif
             if (!String.IsNullOrEmpty(Description))
             {
                 new_name += " (" + Description + ")";

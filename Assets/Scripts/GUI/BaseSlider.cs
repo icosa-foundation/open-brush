@@ -101,6 +101,7 @@ namespace TiltBrush
         {
             if (IsAvailable())
             {
+                print("SLIDER POS = " + rHitInfo.point);
                 PositionSliderNob(rHitInfo.point);
             }
             SetDescriptionActive(true);
@@ -131,6 +132,19 @@ namespace TiltBrush
                 UpdateValue(fValue);
                 OnPositionSliderNobUpdated();
             }
+        }
+
+        // For @Animation
+        public void setSliderValue(float fValue){
+     
+            float newVal = (fValue - 0.5f)* m_MeshScale.x;
+
+             print("SLIDING ==" + fValue + "  newval==" + newVal);
+            Vector3 vLocalPos = m_Nob.transform.localPosition;
+            m_Nob.transform.localPosition = new Vector3(newVal,vLocalPos.y,vLocalPos.z);
+            // UpdateValue(fValue);
+            
+
         }
 
         virtual protected void OnPositionSliderNobUpdated() { }

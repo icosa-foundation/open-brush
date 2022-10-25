@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using TiltBrush.Animation;
 
 namespace TiltBrush
 {
@@ -36,15 +37,17 @@ namespace TiltBrush
         public delegate void LayerCanvasesUpdateEventHandler();
         public event LayerCanvasesUpdateEventHandler LayerCanvasesUpdate;
 
-        [SerializeField] private CanvasScript m_MainCanvas;
+        [SerializeField] public CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
+
+        public AnimationUI_Manager animationUI_manager;
 
         private bool m_bInitialized;
         private Light[] m_Lights;
         private HashSet<int> m_DeletedLayers;
 
-        private CanvasScript m_ActiveCanvas;
-        private List<CanvasScript> m_LayerCanvases;
+        public CanvasScript m_ActiveCanvas;
+        public List<CanvasScript> m_LayerCanvases;
 
         /// Helper for getting and setting transforms on Transform components.
         /// Transform natively allows you to access parent-relative ("local")
@@ -249,8 +252,39 @@ namespace TiltBrush
             m_LayerCanvases.Add(layer);
 
             App.Scene.LayerCanvasesUpdate?.Invoke();
+
+
+            // Add canvases for other animation frames
+            animationUI_manager.AddLayerRefresh(layer);
+            
             return layer;
         }
+
+        public CanvasScript addCanvas(){
+
+            var go = new GameObject("new");
+            go.transform.parent = transform;
+            Coords.AsLocal[go.transform] = TrTransform.identity;
+            go.transform.hasChanged = false;
+
+
+            HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
+
+            var frame = go.AddComponent<CanvasScript>();
+
+            return frame;
+        
+        }
+        public void destroyCanvas(CanvasScript layer)
+        {
+            if (layer == MainCanvas) return;
+         
+            foreach (Batch b in layer.BatchManager.AllBatches())
+                b.Destroy();
+            Destroy(layer.gameObject);
+
+
+        } 
 
         // Destructive delete - no undo possible
         public void DestroyLayer(CanvasScript layer)
@@ -260,6 +294,9 @@ namespace TiltBrush
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
+
+            // Add canvases for other animation frames
+            animationUI_manager.DestroyLayerRefresh(layer);
         }
 
         public bool IsLayerDeleted(CanvasScript layer)
@@ -299,6 +336,9 @@ namespace TiltBrush
             if (canvas.gameObject.activeSelf) canvas.gameObject.SetActive(false);
             else canvas.gameObject.SetActive(true);
             App.Scene.LayerCanvasesUpdate?.Invoke();
+
+            animationUI_manager.updateLayerVisibilityRefresh(canvas);
+
         }
 
         public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
@@ -346,6 +386,8 @@ namespace TiltBrush
             if (layer == MainCanvas) return;
             m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
+
+            animationUI_manager.MarkLayerAsDeleteRefresh(layer);
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)

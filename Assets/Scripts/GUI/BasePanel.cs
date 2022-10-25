@@ -106,7 +106,9 @@ namespace TiltBrush
             BrushLab,
             Scripts = 6000,
             StencilSettings = 20200,
-            LayersPanel = 15000
+            LayersPanel = 15000,
+
+            AnimationPanel,
         }
 
         private enum FixedTransitionState

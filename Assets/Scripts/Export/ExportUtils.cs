@@ -300,7 +300,7 @@ namespace TiltBrush
         public class SceneStatePayload
         {
             // Metadata.
-            public string generator = "Tilt Brush 23.3.841faedfb compatible (Actually: Open Brush {0}.{1})";
+            public string generator = "Open Brush {0}.{1}";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
 
             // Space Bases.

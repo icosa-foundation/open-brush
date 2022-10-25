@@ -207,11 +207,26 @@ Follow these steps to store the Google API Key and credential data:
 
 ## Enabling native Oculus support
 
-Open Brush targets OpenXR instead of Oculus by default. Follow these steps to enable native Oculus support:
-.
-1.  In the **Standalone** and **Android** tabs of the Player settings, go to **Other Settings** > **Scripting Define Symbols**.
-1. Click the + button to create a new entry.
-1. Add `OCULUS_SUPPORTED` and press **Apply**.
+Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
+version of the application, you are required to
+choose a different name to distinguish it from
+the official version.
+
+Open Brush targets SteamVR instead of Oculus by default. Follow these steps to
+enable native Oculus support:
+
+1.  Enable the Oculus desktop package in the Package Manager.
+1.  Install the
+    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/41.0/).
+
+**Note:** The above link goes to version 41.0. You only need to include the `Platform` and `VR` subdirectories when you import.
+
+1.  If you see a dialog about upgrading the Unity Oculus plugin, click
+    **Accept**.
+1.  In the **Standalone** tab of the Player settings, go to **Other Settings**
+    and define `OCULUS_SUPPORTED` in **Scripting Define Symbols**. Add it to the
+    end of the list and use a semicolon to separate it from the previous define
+    commands.
 
 ### Building your app for Oculus Quest
 
@@ -220,20 +235,17 @@ Follow these steps to build your app for Oculus Quest:
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
-    *   **Open Brush** > **Build** > **Plugin: Oculus**
+    *   **Open Brush** > **Build** > **SDK: OVR**
     *   **Open Brush** > **Build** > **Platform: Android**
-    *   **Open Brush** > **Build** > **Runtime: IL2CPP**
+    *   **Open Brush** > **Build** > **Runtime: Mono**
 1.  Navigate to **Open Brush** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
     `../Builds/OculusMobile_Release_OpenBrush/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
-### Publishing to Oculus stores
+**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
 
-Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
-version of the application, you are required to
-choose a different name to distinguish it from
-the official version.
+### Publishing to Oculus stores
 
 Follow these steps to publish to Oculus stores:
 
@@ -288,10 +300,6 @@ menu command. \
 You may want to have a pared-down version of the intro sketch for the mobile
 version of the app. Stroke simplification is located in the **Settings** menu
 inside Open Brush.
-
-## New Scenes
-
-By default, your app will only build the scenes defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `Assets/Editor/`. Make sure to add your custom scenes to this array if you want to see them in app.
 
 ## Sketchfab support
 

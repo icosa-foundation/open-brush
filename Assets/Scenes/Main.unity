@@ -10635,6 +10635,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.5
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -12849,6 +12850,7 @@ MonoBehaviour:
   m_ShowDuration: 0
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -14081,6 +14083,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -17394,6 +17397,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MainCanvas: {fileID: 1843608206}
   m_SelectionCanvas: {fileID: 1830711221}
+  AnimationPanel: {fileID: 176644, guid: 344b660a2f3b4364b939c9b8311ca1a3, type: 3}
+  m_ActiveCanvas: {fileID: 0}
+  m_LayerCanvases: []
 --- !u!1 &1372392204
 GameObject:
   m_ObjectHideFlags: 0
@@ -28397,14 +28403,6 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 0}
-    m_ModeVr: 0
-    m_ModeVrExperimental: 0
-    m_ModeMono: 0
-    m_ModeQuest: 0
-    m_ModeGvr: 0
-    m_Basic: 0
-    m_Advanced: 0
   - m_PanelPrefab: {fileID: 1000816559363234, guid: fa1eb8dde798ea54e95ddf4744cc180e,
       type: 3}
     m_ModeVr: 0
@@ -28676,6 +28674,14 @@ MonoBehaviour:
     m_Basic: 0
     m_Advanced: 1
   - m_PanelPrefab: {fileID: 176644, guid: d620d9effac3e6c4eaae746d85edf13c, type: 3}
+    m_ModeVr: 1
+    m_ModeVrExperimental: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_ModeGvr: 1
+    m_Basic: 0
+    m_Advanced: 1
+  - m_PanelPrefab: {fileID: 176644, guid: 344b660a2f3b4364b939c9b8311ca1a3, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
     m_ModeMono: 1
@@ -29203,6 +29209,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 0.35
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 1
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1

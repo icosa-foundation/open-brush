@@ -12,7 +12,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Icosa Foundation
+  companyName: Icosa
   productName: Open Brush
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -160,7 +160,7 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
     Android: com.icosa.openbrush
-    Standalone: foundation.icosa.openbrush
+    Standalone: com.icosa.openbrush
     Tizen: com.yourcompany.yourproduct
     WebGL: com.yourcompany.yourproduct
     Windows Store Apps: com.yourcompany.yourproduct
