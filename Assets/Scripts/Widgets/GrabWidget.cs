@@ -1239,7 +1239,7 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid(outXf_GS.translation);
+                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
             }
 
             return outXf_GS;
@@ -1690,7 +1690,7 @@ namespace TiltBrush
 
             if (snapGridSize != 0)
             {
-                m_xfIntroAnimTarget_LS.translation = sm.SnapToGrid(m_xfIntroAnimTarget_LS.translation);
+                m_xfIntroAnimTarget_LS.translation = sm.SnapToGrid_GS(m_xfIntroAnimTarget_LS.translation);
             }
 
             if (snapAngle != 0)
