@@ -1022,7 +1022,23 @@ namespace TiltBrush
             }
         }
 
-        public Vector3 SnapToGrid(Vector3 position)
+        // All transforms are in canvas space
+        public Vector3 SnapToGrid_CS(Vector3 position)
+        {
+            float gridSize = SnappingGridSize;
+            if (gridSize == 0) return position;
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                !m_EnableSnapTranslationX ? round(position.x) : position.x,
+                !m_EnableSnapTranslationY ? round(position.y) : position.y,
+                !m_EnableSnapTranslationZ ? round(position.z) : position.z
+            );
+            return roundedCanvasPos;
+        }
+
+        // Input is in global space, the snapping is done in canvas space
+        // And the result is returned in global space
+        public Vector3 SnapToGrid_GS(Vector3 position)
         {
             float gridSize = SnappingGridSize;
             if (gridSize == 0) return position;
