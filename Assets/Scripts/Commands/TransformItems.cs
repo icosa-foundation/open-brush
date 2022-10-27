@@ -112,9 +112,9 @@ namespace TiltBrush
             }
             foreach (var widget in widgets)
             {
-                var tr = Coords.AsGlobal[widget.transform];
+                var tr = widget.LocalTransform;
                 tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                xforms.Add(widget.Canvas.LocalPose.inverse * tr);
+                xforms.Add(tr);
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
@@ -126,17 +126,17 @@ namespace TiltBrush
             var xforms = new List<TrTransform>();
             var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
+            int i = 0;
             foreach (var stroke in strokes)
             {
-                var pos = stroke.m_BatchSubset.m_Bounds.center;
-                var newPos = FreePaintTool.SnapToGrid(pos);
-                xforms.Add(TrTransform.T(newPos - pos));
+                var snappedPos = SelectionManager.m_Instance.SnapToGrid_CS(stroke.m_BatchSubset.m_Bounds.center);
+                xforms.Add(TrTransform.T(snappedPos));
             }
             foreach (var widget in widgets)
             {
-                var tr = Coords.AsGlobal[widget.transform];
-                tr.translation = SelectionManager.m_Instance.SnapToGrid(tr.translation);
-                xforms.Add(widget.Canvas.LocalPose.inverse * tr);
+                var tr = widget.LocalTransform;
+                tr.translation = SelectionManager.m_Instance.SnapToGrid_CS(tr.translation);
+                xforms.Add(tr);
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
