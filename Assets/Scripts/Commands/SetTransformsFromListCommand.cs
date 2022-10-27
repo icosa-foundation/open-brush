@@ -31,7 +31,7 @@ namespace TiltBrush
             m_FinalTransforms = xforms;
             m_Strokes = strokes ?? new List<Stroke>();
             m_Widgets = widgets ?? new List<GrabWidget>();
-            m_StartingTransforms = Enumerable.Repeat(TrTransform.identity, m_Strokes.Count).ToList();
+            m_StartingTransforms = m_Strokes.Select(s => TrTransform.T(s.m_BatchSubset.m_Bounds.center)).ToList();
             m_StartingTransforms.AddRange(m_Widgets.Select(x => x.LocalTransform).ToList());
         }
 
@@ -44,12 +44,12 @@ namespace TiltBrush
                 if (i < m_Strokes.Count)
                 {
                     var stroke = m_Strokes[i];
-                    stroke.Recreate(m_FinalTransforms[i]);
+                    stroke.RecreateAt(m_FinalTransforms[i]);
                 }
                 else
                 {
                     var widget = m_Widgets[i];
-                    widget.LocalTransform = widget.Canvas.Pose.inverse * m_FinalTransforms[i];
+                    widget.LocalTransform = m_FinalTransforms[i];
                 }
             }
         }
@@ -61,7 +61,7 @@ namespace TiltBrush
                 if (i < m_Strokes.Count)
                 {
                     var stroke = m_Strokes[i];
-                    stroke.Recreate(m_StartingTransforms[i]);
+                    stroke.RecreateAt(m_StartingTransforms[i]);
                 }
                 else
                 {
