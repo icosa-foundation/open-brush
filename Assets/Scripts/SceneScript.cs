@@ -248,6 +248,7 @@ namespace TiltBrush
             // Otherwise GPU intersection filters them out
             HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
 
+
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
 

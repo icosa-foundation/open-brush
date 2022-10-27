@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using TMPro;
+using System.Linq;
 
 namespace TiltBrush.Animation{
     public class AnimationUI_Manager : MonoBehaviour
@@ -43,12 +44,19 @@ namespace TiltBrush.Animation{
             return thisFrame;
         }
 
+        [SerializeField] public GameObject timelineRef;
+        [SerializeField] public GameObject timelineNotch;
+        [SerializeField] public GameObject textRef;
+
         public List<Frame> timeline;
 
         List<BatchPool> tempPool1;
         List<BatchPool> tempPool2;
 
         int batchIndex = 0;
+
+        // Visual size of frame on timeline
+        float frameTimelineSize = 0.2f;
 
 
         // List<CanvasScript> Frames = new List<CanvasScript>();
@@ -145,6 +153,26 @@ namespace TiltBrush.Animation{
             return (-1,-1);
         }
 
+        public void printTimeline(){
+            String timelineString = "";
+            
+             for (int i=0;i<timeline.Count;i++){
+                timelineString += " Time-" + i + " " ;
+
+
+                for (int l=0;l<timeline[i].layers.Count;l++){
+
+                    timelineString += "[Frame " + timeline[i].layers[l].deleted + "] ";
+                }
+
+                timelineString += "\n";
+             }
+             print(timelineString);
+
+
+
+        }
+
         public void updateLayerVisibilityRefresh(CanvasScript canvas){
 
             bool visible = canvas.gameObject.activeSelf;
@@ -155,7 +183,7 @@ namespace TiltBrush.Animation{
 
                 for (int i=0;i<timeline.Count;i++){
 
-              
+          
 
                     frameLayer changingLayer = timeline[i].layers[canvasIndex.Item2];
                     changingLayer.visible = visible;
@@ -191,14 +219,77 @@ namespace TiltBrush.Animation{
             }
         }
 
+
+        public void SquashLayerRefresh(CanvasScript SquashedLayer, CanvasScript DestinationLayer){
+
+            // (int,int) canvasIndex = getCanvasIndex(canvas);
+
+            // print(" DELETING LAYER TRACK " + canvasIndex.Item2);
+
+
+            (int,int) SquashedCoord = getCanvasIndex(SquashedLayer);
+            (int,int) DestinationCoord = getCanvasIndex(DestinationLayer);
+
+            Stroke[] m_OriginalStrokes;
+
+            if (SquashedCoord.Item1 != -1 && DestinationCoord.Item1 != -1){
+
+                for (int i=0;i<timeline.Count;i++){
+
+                    if (i != frameOn){
+     
+                        m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                            .Where(x => x.Canvas == timeline[i].layers[SquashedCoord.Item2].canvas).ToArray();
+                
+                        foreach (var stroke in m_OriginalStrokes){
+
+                            stroke.SetParentKeepWorldPosition(timeline[i].layers[DestinationCoord.Item2].canvas);
+
+                        }
+                    }
+
+                    frameLayer squashingLayer = timeline[i].layers[SquashedCoord.Item2];
+                    squashingLayer.deleted = true;
+             
+                    timeline[i].layers[SquashedCoord.Item2] = squashingLayer;
+
+                    App.Scene.HideLayer( timeline[i].layers[SquashedCoord.Item2].canvas);
+           
+                 
+                } 
+            }
+        }
+
         public void DestroyLayerRefresh(CanvasScript canvasAdding){
 
 
 
         }
 
+
+
+        public void updateTimelineSlider(){
+       
+
+                    print("NEW SCLAE ^^ " + frameTimelineSize*timeline.Count);
+              
+                    // GameObject notchTemp = timelineNotch;
+
+                    // GameObject Clone = Instantiate(timelineNotch, new Vector3(0, 0, 0), Quaternion.identity);
+                    // Clone.SetActive(true);
+
+                    // Clone.transform.SetParent(timelineRef.transform);
+
+                    // print(" CLONE OBJECT " + Clone);
+                    // Debug.Log(Clone);
+            
+                    // timelineRef.GetComponent<TimelineSlider>().setSliderScale( (float)frameTimelineSize*timeline.Count);
+                    timelineRef.GetComponent<TimelineSlider>().setSliderValue( (float)frameOn/timeline.Count);
+        }
+
         private void focusFrame(Frame frame){
 
+   
     
             for (int i=0;i<timeline.Count;i++){
 
@@ -233,8 +324,7 @@ namespace TiltBrush.Animation{
             showFrame(frame);
 
             updateFrameInfo();
-
-            timelineRef.GetComponent<TimelineSlider>().setSliderValue( (float)frameOn/timeline.Count);
+            updateTimelineSlider();
           
         }
   
@@ -242,11 +332,15 @@ namespace TiltBrush.Animation{
             
             Frame addingFrame = newFrame();
 
-            foreach (CanvasScript addingCanvas in App.Scene.LayerCanvases){
+            for (int l =0;l< timeline[0].layers.Count; l++){
+
+         
                 CanvasScript newCanvas = App.Scene.addCanvas();
                 frameLayer addingLayer = newFrameLayer(newCanvas);
+                addingLayer.deleted = timeline[0].layers[l].deleted;
                 addingFrame.layers.Add(addingLayer);
                 print("ADDING LAYER");
+            
             }
   
 
@@ -275,6 +369,10 @@ namespace TiltBrush.Animation{
         }
         public void timelineSlide(float Value){
             frameOn =   (int)(((float)timeline.Count)*Value);
+
+            frameOn = frameOn >= timeline.Count ? timeline.Count - 1 : frameOn;
+            frameOn = frameOn < 0 ? 0 : frameOn;
+            
             print("T SLIDE frameoN- " + frameOn);
             focusFrame( timeline[frameOn]);
         }
@@ -294,9 +392,7 @@ namespace TiltBrush.Animation{
       
         }
 
-        [SerializeField] public GameObject timelineRef;
-
-        [SerializeField] public GameObject textRef;
+    
 
         // Update is called once per frame
         int prevFrameOn = 0;

@@ -56,6 +56,8 @@ namespace TiltBrush
             App.Scene.ActiveCanvas = m_DestinationLayer;
             App.Scene.MarkLayerAsDeleted(m_SquashedLayer);
             if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_DestinationLayer;
+
+            App.Scene.animationUI_manager.SquashLayerRefresh(m_SquashedLayer,m_DestinationLayer);
         }
 
         protected override void OnUndo()
