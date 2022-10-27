@@ -37,7 +37,7 @@ namespace TiltBrush
             m_ValidSelectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
 
             // Get the position in x, y or z of the desired alignment plane
-            float anchorValue = GetAnchorPosition(m_Axis);
+            float anchorValue = GetAnchorPosition();
 
             // Find the transforms needed to move each object to the alignment plane
             m_NewStrokeTransforms = m_SelectedStrokes.Select(s => CalcTransform(s, anchorValue)).ToList();
@@ -72,7 +72,7 @@ namespace TiltBrush
             float offset = m_AlignBoundsType switch
             {
                 BoundsTypes.Min => anchorValue - widget.GetBounds_SelectionCanvasSpace().min[m_Axis],
-                BoundsTypes.Center => anchorValue - widget.GetBounds_SelectionCanvasSpace().center[m_Axis],
+                BoundsTypes.Center => anchorValue - widget.LocalTransform.translation[m_Axis],
                 BoundsTypes.Max => anchorValue - widget.GetBounds_SelectionCanvasSpace().max[m_Axis]
             };
 
@@ -90,7 +90,7 @@ namespace TiltBrush
             for (int i = 0; i < m_SelectedStrokes.Count; i++)
                 m_SelectedStrokes[i].Recreate(m_NewStrokeTransforms[i]);
             for (int i = 0; i < m_ValidSelectedWidgets.Count; i++)
-                m_ValidSelectedWidgets[i].LocalTransform *= m_NewWidgetTransforms[i];
+                m_ValidSelectedWidgets[i].LocalTransform = m_NewWidgetTransforms[i] * m_ValidSelectedWidgets[i].LocalTransform;
         }
 
         protected override void OnUndo()
@@ -99,10 +99,10 @@ namespace TiltBrush
                 m_SelectedStrokes[i].Recreate(m_PreviousStrokeTransforms[i]);
 
             for (int i = 0; i < m_ValidSelectedWidgets.Count; i++)
-                m_ValidSelectedWidgets[i].LocalTransform *= m_PreviousWidgetTransforms[i];
+                m_ValidSelectedWidgets[i].LocalTransform = m_PreviousWidgetTransforms[i] * m_ValidSelectedWidgets[i].LocalTransform;
         }
 
-        private List<float> GetPositionList(int axis)
+        private List<float> GetPositionList()
         {
             var positionList = new List<float>();
 
@@ -110,9 +110,9 @@ namespace TiltBrush
             positionList.AddRange(SelectionManager.m_Instance
                 .SelectedStrokes.Select(s => m_AlignBoundsType switch
                 {
-                    BoundsTypes.Min => s.m_BatchSubset.m_Bounds.min[axis],
-                    BoundsTypes.Center => s.m_BatchSubset.m_Bounds.center[axis],
-                    BoundsTypes.Max => s.m_BatchSubset.m_Bounds.max[axis]
+                    BoundsTypes.Min => s.m_BatchSubset.m_Bounds.min[m_Axis],
+                    BoundsTypes.Center => s.m_BatchSubset.m_Bounds.center[m_Axis],
+                    BoundsTypes.Max => s.m_BatchSubset.m_Bounds.max[m_Axis]
                 }
             ));
 
@@ -121,9 +121,9 @@ namespace TiltBrush
                 m_ValidSelectedWidgets.Select(
                     w => m_AlignBoundsType switch
                         {
-                            BoundsTypes.Min => w.GetBounds_SelectionCanvasSpace().min[axis],
-                            BoundsTypes.Center => w.GetBounds_SelectionCanvasSpace().center[axis],
-                            BoundsTypes.Max => w.GetBounds_SelectionCanvasSpace().max[axis]
+                            BoundsTypes.Min => w.GetBounds_SelectionCanvasSpace().min[m_Axis],
+                            BoundsTypes.Center => w.GetBounds_SelectionCanvasSpace().center[m_Axis],
+                            BoundsTypes.Max => w.GetBounds_SelectionCanvasSpace().max[m_Axis]
                         }
                 )
             );
@@ -131,14 +131,14 @@ namespace TiltBrush
             return positionList;
         }
 
-        private float GetAnchorPosition(int axis)
+        private float GetAnchorPosition()
         {
-            var positions = GetPositionList(axis);
+            var positions = GetPositionList();
             if (positions.Count == 0) return 0;
             return m_AlignBoundsType switch
             {
-                BoundsTypes.Min => positions.Average(),
-                BoundsTypes.Center => positions.Min(),
+                BoundsTypes.Min => positions.Min(),
+                BoundsTypes.Center => positions.Average(),
                 BoundsTypes.Max => positions.Max()
             };
         }
