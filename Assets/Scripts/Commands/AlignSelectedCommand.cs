@@ -35,52 +35,52 @@ namespace TiltBrush
             m_AlignBoundsType = alignBoundsType;
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             m_ValidSelectedWidgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
-            
+
+            // Get the position in x, y or z of the desired alignment plane
             float anchorValue = GetAnchorPosition(m_Axis);
-            
+
+            // Find the transforms needed to move each object to the alignment plane
             m_NewStrokeTransforms = m_SelectedStrokes.Select(s => CalcTransform(s, anchorValue)).ToList();
-            m_PreviousStrokeTransforms = m_NewStrokeTransforms.Select(s => s.inverse).ToList();
-            
-            m_PreviousWidgetTransforms = m_ValidSelectedWidgets.Select(s => s.LocalTransform).ToList();
             m_NewWidgetTransforms = m_ValidSelectedWidgets.Select(w => CalcTransform(w, anchorValue)).ToList();
+
+            m_PreviousStrokeTransforms = m_NewStrokeTransforms.Select(tr => tr.inverse).ToList();
+            m_PreviousWidgetTransforms = m_NewWidgetTransforms.Select(tr => tr.inverse).ToList();
         }
 
         private TrTransform CalcTransform(Stroke stroke, float anchorValue)
         {
-
             // TODO respect groups
 
-            float offset = 0;
-            switch (m_AlignBoundsType)
+            float offset = m_AlignBoundsType switch
             {
-                case BoundsTypes.Min:
-                    offset = anchorValue - stroke.m_BatchSubset.m_Bounds.min[m_Axis];
-                    break;
-                case BoundsTypes.Center:
-                    offset = anchorValue - stroke.m_BatchSubset.m_Bounds.center[m_Axis];
-                    break;
-                case BoundsTypes.Max:
-                    offset = anchorValue - stroke.m_BatchSubset.m_Bounds.max[m_Axis];
-                    break;
-            }
+                BoundsTypes.Min => anchorValue - stroke.m_BatchSubset.m_Bounds.min[m_Axis],
+                BoundsTypes.Center => anchorValue - stroke.m_BatchSubset.m_Bounds.center[m_Axis],
+                BoundsTypes.Max => anchorValue - stroke.m_BatchSubset.m_Bounds.max[m_Axis]
+            };
 
-            var tr = TrTransform.T(new Vector3(
+            return TrTransform.T(new Vector3(
                 m_Axis == 0 ? offset : 0,
                 m_Axis == 1 ? offset : 0,
                 m_Axis == 2 ? offset : 0
             ));
-            return tr;
         }
 
         private TrTransform CalcTransform(GrabWidget widget, float anchorValue)
         {
-            var tr = widget.LocalTransform;
-            tr.translation = new Vector3(
-                m_Axis == 0 ? anchorValue : tr.translation.x,
-                m_Axis == 1 ? anchorValue : tr.translation.y,
-                m_Axis == 2 ? anchorValue : tr.translation.z
-            );
-            return tr;
+            // TODO respect groups
+
+            float offset = m_AlignBoundsType switch
+            {
+                BoundsTypes.Min => anchorValue - widget.GetBounds_SelectionCanvasSpace().min[m_Axis],
+                BoundsTypes.Center => anchorValue - widget.GetBounds_SelectionCanvasSpace().center[m_Axis],
+                BoundsTypes.Max => anchorValue - widget.GetBounds_SelectionCanvasSpace().max[m_Axis]
+            };
+
+            return TrTransform.T(new Vector3(
+                m_Axis == 0 ? offset : 0,
+                m_Axis == 1 ? offset : 0,
+                m_Axis == 2 ? offset : 0
+            ));
         }
         
         public override bool NeedsSave => true;
@@ -88,54 +88,59 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             for (int i = 0; i < m_SelectedStrokes.Count; i++)
-            {
                 m_SelectedStrokes[i].Recreate(m_NewStrokeTransforms[i]);
-            }
-
             for (int i = 0; i < m_ValidSelectedWidgets.Count; i++)
-            {
-                m_ValidSelectedWidgets[i].LocalTransform = m_NewWidgetTransforms[i];
-            }
+                m_ValidSelectedWidgets[i].LocalTransform *= m_NewWidgetTransforms[i];
         }
 
         protected override void OnUndo()
         {
             for (int i = 0; i < m_SelectedStrokes.Count; i++)
-            {
                 m_SelectedStrokes[i].Recreate(m_PreviousStrokeTransforms[i]);
-            }
 
             for (int i = 0; i < m_ValidSelectedWidgets.Count; i++)
-            {
-                m_ValidSelectedWidgets[i].LocalTransform = m_PreviousWidgetTransforms[i];
-            }
+                m_ValidSelectedWidgets[i].LocalTransform *= m_PreviousWidgetTransforms[i];
         }
 
         private List<float> GetPositionList(int axis)
         {
             var positionList = new List<float>();
+
+            // Strokes
             positionList.AddRange(SelectionManager.m_Instance
-                .SelectedStrokes.Select(s =>
+                .SelectedStrokes.Select(s => m_AlignBoundsType switch
                 {
-                    switch (m_AlignBoundsType)
-                    {
-                        case BoundsTypes.Min:
-                            return s.m_BatchSubset.m_Bounds.min[axis];
-                        case BoundsTypes.Max:
-                            return s.m_BatchSubset.m_Bounds.max[axis];
-                        default:
-                            return s.m_BatchSubset.m_Bounds.center[axis];
-                    }
-                }));
-            positionList.AddRange(m_ValidSelectedWidgets.Select(w => w.transform.position[axis]));
+                    BoundsTypes.Min => s.m_BatchSubset.m_Bounds.min[axis],
+                    BoundsTypes.Center => s.m_BatchSubset.m_Bounds.center[axis],
+                    BoundsTypes.Max => s.m_BatchSubset.m_Bounds.max[axis]
+                }
+            ));
+
+            // Widgets
+            positionList.AddRange(
+                m_ValidSelectedWidgets.Select(
+                    w => m_AlignBoundsType switch
+                        {
+                            BoundsTypes.Min => w.GetBounds_SelectionCanvasSpace().min[axis],
+                            BoundsTypes.Center => w.GetBounds_SelectionCanvasSpace().center[axis],
+                            BoundsTypes.Max => w.GetBounds_SelectionCanvasSpace().max[axis]
+                        }
+                )
+            );
+
             return positionList;
         }
 
         private float GetAnchorPosition(int axis)
         {
-            var items = GetPositionList(axis);
-            return items.Count > 0 ? items.Average() : 0;
+            var positions = GetPositionList(axis);
+            if (positions.Count == 0) return 0;
+            return m_AlignBoundsType switch
+            {
+                BoundsTypes.Min => positions.Average(),
+                BoundsTypes.Center => positions.Min(),
+                BoundsTypes.Max => positions.Max()
+            };
         }
-        
     }
 } // namespace TiltBrush
