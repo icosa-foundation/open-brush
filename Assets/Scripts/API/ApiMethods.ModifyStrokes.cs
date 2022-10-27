@@ -52,16 +52,26 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("strokes.translate", "Translates multiple brushstrokes")]
-        public static void TranslateStrokes(int start, int end, Vector3 translation)
+        [ApiEndpoint("strokes.move.to", "Moves several strokes to the given position")]
+        public static void TranslateStrokesTo(int start, int end, Vector3 position)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            foreach (var stroke in strokes)
+            {
+                stroke.RecreateAt(TrTransform.T(position));
+            }
+        }
+
+        [ApiEndpoint("strokes.move.by", "Moves several strokes to the given coordinates")]
+        public static void TranslateStrokesBy(int start, int end, Vector3 translation)
         {
             var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
             TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, TrTransform.T(translation), Vector3.zero);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("strokes.rotate", "Rotates multiple brushstrokes around the current brush position")]
-        public static void RotateStrokes(int start, int end, float angle)
+        [ApiEndpoint("strokes.rotate.by", "Rotates multiple brushstrokes around the current brush position")]
+        public static void RotateStrokesBy(int start, int end, float angle)
         {
             var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
             var axis = ApiManager.Instance.BrushRotation * Vector3.forward;
@@ -71,8 +81,8 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("strokes.scale", "Scales multiple brushstrokes around the current brush position")]
-        public static void ScaleStrokes(int start, int end, float scale)
+        [ApiEndpoint("strokes.scale.by", "Scales multiple brushstrokes around the current brush position")]
+        public static void ScaleStrokesBy(int start, int end, float scale)
         {
             var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
             var pivot = ApiManager.Instance.BrushPosition;
