@@ -48,7 +48,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var widget = m_Widgets[i];
+                    var widget = m_Widgets[i - m_Strokes.Count];
                     widget.LocalTransform = m_FinalTransforms[i];
                 }
             }
@@ -65,7 +65,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var widget = m_Widgets[i];
+                    var widget = m_Widgets[i - m_Strokes.Count];
                     widget.LocalTransform = m_StartingTransforms[i];
                 }
             }
