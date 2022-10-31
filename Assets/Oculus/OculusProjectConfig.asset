@@ -29,3 +29,5 @@ MonoBehaviour:
   experimentalFeaturesEnabled: 0
   insightPassthroughEnabled: 1
   systemSplashScreen: {fileID: 0}
+  ovrPluginMd5Win64: 3f631d8dcae74f1b41cd6725d7393b5d
+  ovrPluginMd5Android: fcab30d7a06db16806d83a6cca6cc959
