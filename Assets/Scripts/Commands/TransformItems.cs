@@ -106,10 +106,11 @@ namespace TiltBrush
             var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
             foreach (var stroke in strokes)
             {
-                var tr = TrTransform.FromTransform(stroke.StrokeTransform);
-                tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                xforms.Add(tr);
+                // Do nothing as there's no intuitive "natural" rotation for brush strokes.
+                // Pass in a translation that will leave the stroke unchanged
+                xforms.Add(TrTransform.T(stroke.m_BatchSubset.m_Bounds.center));
             }
+
             foreach (var widget in widgets)
             {
                 var tr = widget.LocalTransform;
