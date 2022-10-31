@@ -290,8 +290,7 @@ MonoBehaviour:
   m_IntersectionResetBehavior: 2
   m_TimeSliceInMS: 1
   m_PointerForwardOffset: 0
-  PreviewPolyPrefab: {fileID: 8240667959069599074, guid: 4c2638b770f13374f82fe34db29dc2bf,
-    type: 3}
+  snapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
 --- !u!1 &7114703125084794868
 GameObject:
   m_ObjectHideFlags: 0

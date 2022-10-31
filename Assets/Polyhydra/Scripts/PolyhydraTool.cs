@@ -56,6 +56,7 @@ namespace TiltBrush
 
         private Mesh previewMesh;
         private Material previewMaterial;
+        [SerializeField] private Material snapGhostMaterial;
 
         //whether this tool should follow the controller or not
         private bool m_LockToController;
@@ -244,15 +245,15 @@ namespace TiltBrush
 
             Vector3 SnapToGrid(Vector3 v)
             {
-                return SelectionManager.m_Instance.SnapToGrid(v);
+                return SelectionManager.m_Instance.SnapToGrid_CS(v);
             }
 
             var position_CS = SnapToGrid(m_FirstPositionClicked_CS.translation);
-            var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+            var drawnVector_CS = SnapToGrid(rAttachPoint_CS.translation) - position_CS;
             var rotation_CS = SelectionManager.m_Instance.QuantizeAngle(
                 Quaternion.LookRotation(drawnVector_CS, Vector3.up)
             );
-            var scale_CS = SelectionManager.m_Instance.ScalarSnap(drawnVector_CS.magnitude);
+            var scale_CS = drawnVector_CS.magnitude;
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -262,7 +263,20 @@ namespace TiltBrush
                     Vector3.one * scale_CS
                 );
                 Matrix4x4 mat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * mat_CS;
+
                 Graphics.DrawMesh(previewMesh, mat_GS, previewMaterial, 0);
+                if (SelectionManager.m_Instance.SnappingAngle !=0 || SelectionManager.m_Instance.SnappingGridSize != 0)
+                {
+                    var vec = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+                    Matrix4x4 ghostMat_CS = Matrix4x4.TRS(
+                        m_FirstPositionClicked_CS.translation,
+                        Quaternion.LookRotation(vec, Vector3.up),
+                        Vector3.one * vec.magnitude
+                    );
+                    Matrix4x4 ghostMat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * ghostMat_CS;
+
+                    Graphics.DrawMesh(previewMesh, ghostMat_GS, snapGhostMaterial, 0);
+                }
 
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -271,7 +285,7 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                    TrTransform tr = TrTransform.TRS(m_FirstPositionClicked_CS.translation, rotation_CS, scale_CS);
+                    TrTransform tr = TrTransform.TRS(position_CS, rotation_CS, scale_CS);
                     CreatePolyForCurrentMode(poly, tr);
                 }
             }

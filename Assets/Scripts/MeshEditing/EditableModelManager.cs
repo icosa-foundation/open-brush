@@ -175,8 +175,9 @@ namespace TiltBrush.MeshEditing
             UpdateMesh(polyGo, mesh, mat);
 
             // Create the widget
+
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, spawnAtEnd: true);
+                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var widget = createCommand.Widget as EditableModelWidget;
             if (widget != null)

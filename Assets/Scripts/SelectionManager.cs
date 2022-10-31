@@ -1037,6 +1037,7 @@ namespace TiltBrush
 
         // Input is in global space, the snapping is done in canvas space
         // And the result is returned in global space
+        public Vector3 SnapToGrid_GS(Vector3 position)
         {
             float gridSize = SnappingGridSize;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
