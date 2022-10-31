@@ -34,6 +34,7 @@ namespace TiltBrush.Animation{
         }
         public struct Frame {
             public bool visible;
+            public bool deleted;
             public List<frameLayer> layers;
 
         }
@@ -41,12 +42,15 @@ namespace TiltBrush.Animation{
             Frame thisFrame;
             thisFrame.layers = new List<frameLayer>();
             thisFrame.visible = true;
+            thisFrame.deleted = false;
             return thisFrame;
         }
 
         [SerializeField] public GameObject timelineRef;
         [SerializeField] public GameObject timelineNotch;
         [SerializeField] public GameObject textRef;
+
+        [SerializeField] public GameObject deleteFrameButton;
 
         public List<Frame> timeline;
 
@@ -83,8 +87,14 @@ namespace TiltBrush.Animation{
             timeline.Add(originFrame);
 
             App.Scene.animationUI_manager = this;
+
+            focusFrame(originFrame);
            
         }
+        public  void init(){
+           
+        }
+       
 
         private void hideFrame(Frame frameHiding){
             frameHiding.visible = false;
@@ -271,7 +281,7 @@ namespace TiltBrush.Animation{
         public void updateTimelineSlider(){
        
 
-                    print("NEW SCLAE ^^ " + frameTimelineSize*timeline.Count);
+                  
               
                     // GameObject notchTemp = timelineNotch;
 
@@ -285,6 +295,16 @@ namespace TiltBrush.Animation{
             
                     // timelineRef.GetComponent<TimelineSlider>().setSliderScale( (float)frameTimelineSize*timeline.Count);
                     timelineRef.GetComponent<TimelineSlider>().setSliderValue( (float)frameOn/timeline.Count);
+        }
+        public void updateFrameInfo(){
+            textRef.GetComponent<TextMeshPro>().text = (frameOn+1) + ":" + timeline.Count;
+        }
+        public void updateUI(){
+            updateFrameInfo();
+            updateTimelineSlider();
+
+            deleteFrameButton.SetActive(frameOn != 0);
+    
         }
 
         private void focusFrame(Frame frame){
@@ -323,12 +343,42 @@ namespace TiltBrush.Animation{
      
             showFrame(frame);
 
-            updateFrameInfo();
-            updateTimelineSlider();
+            updateUI();
           
         }
-  
-        public void addKeyframe(){
+        public void removeKeyFrame(){
+
+            if (frameOn <= 0) return;
+
+            print("BEFORE REMOVE");
+            printTimeline();
+
+            int previousLayerActive = getCanvasIndex(App.Scene.ActiveCanvas).Item2;
+ 
+
+            for (int l =0;l< timeline[frameOn].layers.Count; l++){
+
+         
+    
+                App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
+            
+            }
+
+            Frame removingFrame = timeline[frameOn];
+            removingFrame.deleted = true;
+
+            timeline.RemoveAt(frameOn);
+
+            frameOn = Math.Clamp(frameOn,0,timeline.Count - 1);
+
+            print("AFTER REMOVE");
+            printTimeline();
+
+            App.Scene.ActiveCanvas = timeline[frameOn].layers[previousLayerActive].canvas;
+            focusFrame(timeline[frameOn]);
+
+        }
+        public void addKeyFrame(){
             
             Frame addingFrame = newFrame();
 
@@ -346,7 +396,7 @@ namespace TiltBrush.Animation{
 
             print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
             ;  
-            timeline.Add(addingFrame);   
+            timeline.Insert(frameOn + 1,addingFrame);
 
             focusFrame(addingFrame);   
             
@@ -357,16 +407,8 @@ namespace TiltBrush.Animation{
         
         }
         
-        public  void init()
-        {
-            // foreach (CanvasScript canvas in App.Scene.LayerCanvases){
-            //     timeline.Add(new CanvasScript());
-            // }
-            
-        }
-        public void updateFrameInfo(){
-            textRef.GetComponent<TextMeshPro>().text = (frameOn+1) + "/" + timeline.Count;
-        }
+      
+      
         public void timelineSlide(float Value){
             frameOn =   (int)(((float)timeline.Count)*Value);
 

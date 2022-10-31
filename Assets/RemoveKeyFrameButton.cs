@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TiltBrush.Animation
 {
-    public class AddKeyframeButton : BaseButton
+    public class RemoveKeyFrameButton : BaseButton
     {
         [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
 
@@ -12,7 +12,7 @@ namespace TiltBrush.Animation
         {
             // m_Action.Invoke();
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
-            uiManager.addKeyFrame();
+            uiManager.removeKeyFrame();
             
         }
     }

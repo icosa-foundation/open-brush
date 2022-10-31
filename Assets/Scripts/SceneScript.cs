@@ -276,9 +276,11 @@ namespace TiltBrush
             return frame;
         
         }
+
+        
         public void destroyCanvas(CanvasScript layer)
         {
-            if (layer == MainCanvas) return;
+       
          
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
