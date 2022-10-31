@@ -26,7 +26,7 @@ namespace TiltBrush
         private IEnumerable<Stroke> m_Strokes;
         private IEnumerable<GrabWidget> m_Widgets;
         private CanvasScript m_Layer;
-        
+
         public TransformItemsCommand(IEnumerable<Stroke> strokes, IEnumerable<GrabWidget> widgets,
                                      TrTransform xf, Vector3 pivot, BaseCommand parent = null) : base(parent)
         {

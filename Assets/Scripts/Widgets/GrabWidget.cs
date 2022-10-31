@@ -1690,14 +1690,13 @@ namespace TiltBrush
 
             if (snapGridSize != 0)
             {
-                m_xfIntroAnimTarget_LS.translation = sm.SnapToGrid_GS(m_xfIntroAnimTarget_LS.translation);
+                m_xfIntroAnimTarget_LS.translation = sm.SnapToGrid_CS(m_xfIntroAnimTarget_LS.translation);
             }
 
             if (snapAngle != 0)
             {
                 m_xfIntroAnimTarget_LS.rotation = sm.QuantizeAngle(m_xfIntroAnimTarget_LS.rotation);
             }
-
         }
 
         virtual protected void UpdateIntroAnimState()

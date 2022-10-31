@@ -21,7 +21,7 @@ namespace TiltBrush
     {
         private TrTransform m_Transform;
         private Vector3 m_Pivot;
-        
+
         public TransformSelectionCommand(TrTransform xf, Vector3 pivot, BaseCommand parent = null) : base(parent)
         {
             m_Transform = xf;

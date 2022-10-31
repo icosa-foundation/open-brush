@@ -25,22 +25,22 @@ namespace TiltBrush
         {
             m_InputField.text += input;
         }
-        
+
         public void HandleCursorPress(int offset)
         {
             // TODO
         }
-        
+
         public void HandleConfirmCancel(bool confirm)
         {
             if (confirm)
             {
                 var popupButton = m_OnClose.Target as PopupButton;
-                var label = popupButton.GetComponentInParent<EditableLabel>(); 
+                var label = popupButton.GetComponentInParent<EditableLabel>();
                 label.LastTextInput = m_InputField.text;
             }
             RequestClose();
         }
-        
+
     }
 } // namespace TiltBrush

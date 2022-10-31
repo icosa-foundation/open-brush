@@ -37,7 +37,7 @@ namespace TiltBrush
         private void GetObjectList()
         {
             m_ObjectList = new List<(float, object)>();
-            
+
             m_ObjectList.AddRange(SelectionManager.m_Instance
                 .SelectedStrokes.Select(s =>
                 {
@@ -54,16 +54,16 @@ namespace TiltBrush
                             return (s.m_BatchSubset.m_Bounds.center[m_Axis], (object)s);
                     }
                 }));
-            
+
             var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
-            m_ObjectList.AddRange(widgets.Select(w=>(w.transform.position[m_Axis], (object)w)));
-            m_ObjectList = m_ObjectList.OrderBy(x=>x.Item1).ToList();
+            m_ObjectList.AddRange(widgets.Select(w => (w.transform.position[m_Axis], (object)w)));
+            m_ObjectList = m_ObjectList.OrderBy(x => x.Item1).ToList();
         }
 
         private void CalcTransforms()
         {
             m_NewTransforms = new List<TrTransform>();
-            
+
             for (int i = 0; i < m_ObjectList.Count; i++)
             {
                 var tuple = m_ObjectList[i];
@@ -118,14 +118,14 @@ namespace TiltBrush
 
             m_PreviousTransforms = m_NewTransforms.Select(t => t.inverse).ToList();
         }
-        
+
         public override bool NeedsSave => true;
 
         protected override void OnRedo()
         {
             ApplyTransforms(m_NewTransforms);
         }
-        
+
         protected override void OnUndo()
         {
             ApplyTransforms(m_PreviousTransforms);

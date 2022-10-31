@@ -25,11 +25,11 @@ namespace TiltBrush
             base.OnStart();
             ForceSelectedOption(m_InitialIndex);
         }
-        
+
         override protected void OnButtonPressed()
         {
             SetSelectedOption((m_CurrentOptionIdx + 1) % NumOptions);
             m_Action.Invoke(m_CurrentOptionIdx);
-        }   
+        }
     }
 }

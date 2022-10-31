@@ -82,7 +82,7 @@ namespace TiltBrush
                 m_Axis == 2 ? offset : 0
             ));
         }
-        
+
         public override bool NeedsSave => true;
 
         protected override void OnRedo()

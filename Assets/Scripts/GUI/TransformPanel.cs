@@ -124,7 +124,7 @@ namespace TiltBrush
                 activeTr = SelectionManager.m_Instance.SelectionTransform;
             }
             // otherwise use the last widget that was interacted with
-            else if (m_LastWidget!=null && m_LastWidget.Canvas!=null)
+            else if (m_LastWidget != null && m_LastWidget.Canvas != null)
             {
                 m_LastWidget = SketchControlsScript.m_Instance.CurrentGrabWidget ?? m_LastWidget;
                 activeTr = m_LastWidget.LocalTransform;
@@ -135,7 +135,7 @@ namespace TiltBrush
         private string FormatValue(float val)
         {
             // 2 digits after the decimal, 5 digits maximum
-            return (Mathf.Round(val*100)/100f).ToString("G5");
+            return (Mathf.Round(val * 100) / 100f).ToString("G5");
         }
 
         public void HandleToggle(TransformPanelToggleButton btn)
@@ -207,7 +207,7 @@ namespace TiltBrush
                 {
                     var pivot = m_LastWidget.LocalTransform.translation;
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                        new TransformItemsCommand(null, new List<GrabWidget>{m_LastWidget}, newTr, pivot)
+                        new TransformItemsCommand(null, new List<GrabWidget> { m_LastWidget }, newTr, pivot)
                     );
                 }
             }
@@ -251,7 +251,7 @@ namespace TiltBrush
         {
             m_DistributeBoundsType = (BoundsTypes)state;
         }
-        
+
         private void Align(int axis)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(

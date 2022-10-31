@@ -26,11 +26,11 @@ namespace TiltBrush
         [SerializeField] protected string m_PopupText = "";
         public SketchControlsScript.GlobalCommands command;
         public UnityEvent m_OnConfirm;
-        
+
         protected override void OnButtonPressed()
         {
             if (!m_Manager) return;
-            
+
             BasePanel panel = m_Manager.GetPanelForPopUps();
             if (panel != null)
             {
@@ -44,7 +44,7 @@ namespace TiltBrush
                 ResetState();
             }
         }
-        
+
         private void HandleConfirm()
         {
             m_OnConfirm.Invoke();

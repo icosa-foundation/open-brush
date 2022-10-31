@@ -23,7 +23,7 @@ public class EditableLabel : MonoBehaviour
     public string m_LabelTag;
     private string m_LastTextInput;
     public GameObject m_ErrorIcon;
-    
+
     public string LastTextInput
     {
         get { return m_LastTextInput; }
@@ -38,12 +38,12 @@ public class EditableLabel : MonoBehaviour
         LastTextInput = value;
         GetComponentInChildren<TextMeshPro>().text = value;
     }
-    
+
     public void HandleEditFinished()
     {
         m_OnEditConfirmed.Invoke(this);
     }
-    
+
     public void SetError(bool hasError)
     {
         m_ErrorIcon.SetActive(hasError);

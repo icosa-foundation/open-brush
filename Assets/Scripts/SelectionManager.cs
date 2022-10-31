@@ -977,7 +977,7 @@ namespace TiltBrush
 
         public void SetSnappingAngle(string angleAsString)
         {
-            int requestedIndex = m_AngleSnaps.Select(x=>x.ToString()).ToList().FindIndex(x => x==angleAsString);
+            int requestedIndex = m_AngleSnaps.Select(x => x.ToString()).ToList().FindIndex(x => x == angleAsString);
             if (requestedIndex < 0)
             {
                 Debug.LogWarning($"SetSnappingAngle received an invalid angle of {angleAsString}. Valid values: {string.Join(",", m_AngleSnaps)}");
@@ -994,7 +994,7 @@ namespace TiltBrush
 
         public void SetSnappingGridSize(string gridSizeAsString)
         {
-            int requestedIndex = m_GridSnaps.Select(x=>x.ToString()).ToList().FindIndex(x => x==gridSizeAsString);
+            int requestedIndex = m_GridSnaps.Select(x => x.ToString()).ToList().FindIndex(x => x == gridSizeAsString);
             if (requestedIndex < 0)
             {
                 Debug.LogWarning($"SetSnappingGridSize received an invalid angle of {gridSizeAsString}. Valid values: {string.Join(",", m_GridSnaps)}");
@@ -1051,7 +1051,7 @@ namespace TiltBrush
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
-        
+
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
             var snapAngle = SnappingAngle;
@@ -1067,7 +1067,7 @@ namespace TiltBrush
         // Controls which widget types should be affected
         // Currently it's "any subclass of MediaWidget or StencilWidget"
         public List<GrabWidget> GetValidSelectedWidgets() => SelectedWidgets
-            .Where(widget => 
+            .Where(widget =>
                 widget.GetType().IsSubclassOf(typeof(MediaWidget)) ||
                 widget.GetType().IsSubclassOf(typeof(StencilWidget))
             )
