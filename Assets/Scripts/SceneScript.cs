@@ -351,12 +351,25 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
+        public void ShowCanvas(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(true);
+            // App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
         public void HideLayer(int canvasIndex) { HideLayer(GetCanvasByLayerIndex(canvasIndex)); }
         public void HideLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
+
+         public void HideCanvas(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(false);
+
+        }
+
 
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {

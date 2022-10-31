@@ -47,10 +47,13 @@ namespace TiltBrush.Animation{
         }
 
         [SerializeField] public GameObject timelineRef;
+        [SerializeField] public GameObject timelineMeshRef;
         [SerializeField] public GameObject timelineNotch;
         [SerializeField] public GameObject textRef;
 
         [SerializeField] public GameObject deleteFrameButton;
+
+
 
         public List<Frame> timeline;
 
@@ -360,8 +363,8 @@ namespace TiltBrush.Animation{
 
          
     
-                App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
-            
+                //App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
+                App.Scene.HideCanvas(timeline[frameOn].layers[l].canvas);
             }
 
             Frame removingFrame = timeline[frameOn];
@@ -388,6 +391,106 @@ namespace TiltBrush.Animation{
                 CanvasScript newCanvas = App.Scene.addCanvas();
                 frameLayer addingLayer = newFrameLayer(newCanvas);
                 addingLayer.deleted = timeline[0].layers[l].deleted;
+                addingFrame.layers.Add(addingLayer);
+                print("ADDING LAYER");
+            
+            }
+  
+
+            print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
+            ;  
+            timeline.Insert(frameOn + 1,addingFrame);
+
+            focusFrame(addingFrame);   
+            
+            print("TIMELINE SIZE -" + timeline.Count);
+
+            
+            float meshLength = timelineRef.GetComponent<TimelineSlider>().m_Mesh.transform.localScale.x;
+
+            GameObject newNotch =  Instantiate(timelineNotch, new Vector3(0,0,0), Quaternion.identity);
+
+            newNotch.transform.SetParent(timelineRef.transform);
+            newNotch.transform.SetLocalPositionAndRotation(new Vector3(-meshLength/2f,0,0),Quaternion.identity);
+            
+       
+            newNotch.SetActive(true);
+
+
+            GameObject endNotch =  Instantiate(timelineNotch, new Vector3(0,0,0), Quaternion.identity);
+
+            endNotch.transform.SetParent(timelineRef.transform);
+            endNotch.transform.SetLocalPositionAndRotation(new Vector3(meshLength/2f,0,0),Quaternion.identity);
+
+            endNotch.SetActive(true);
+
+
+
+
+        
+        }
+
+        
+        public void duplicateKeyFrame(){
+            
+            Frame addingFrame = newFrame();
+            print("DUPLICATE NOW");
+            printTimeline();
+
+            for (int l =0;l< timeline[frameOn].layers.Count; l++){
+
+         
+                CanvasScript newCanvas = App.Scene.addCanvas();
+
+            
+
+                  
+
+                    List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                            .Where(x => x.Canvas 
+                            ==
+                             timeline[frameOn].layers[l].canvas
+                             ).ToList();
+                    
+                    List<Stroke> newStrokes = oldStrokes
+                    .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
+                        stroke, App.Scene.SelectionCanvas, null))
+                    .ToList();
+
+                    foreach (var stroke in newStrokes)
+                        {
+                            switch (stroke.m_Type)
+                            {
+                                case Stroke.Type.BrushStroke:
+                                    {
+                                        BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
+                                        if (brushScript)
+                                        {
+                                            brushScript.HideBrush(false);
+                                        }
+                                    }
+                                    break;
+                                case Stroke.Type.BatchedBrushStroke:
+                                    {
+                                        stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
+                                    }
+                                    break;
+                                default:
+                                    Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
+                                    break;
+                            }
+                            TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+
+                            stroke.SetParentKeepWorldPosition(newCanvas);
+                     }
+
+                
+                 
+          
+
+
+                frameLayer addingLayer = newFrameLayer(newCanvas);
+                addingLayer.deleted = timeline[frameOn].layers[l].deleted;
                 addingFrame.layers.Add(addingLayer);
                 print("ADDING LAYER");
             

@@ -21,7 +21,7 @@ namespace TiltBrush
     public class BaseSlider : UIComponent
     {
         [SerializeField] public GameObject m_Nob;
-        [SerializeField] private Renderer m_Mesh;
+        [SerializeField] public Renderer m_Mesh;
 
         [NonSerialized] public Vector3 m_MeshScale;
         protected float m_CurrentValue;
