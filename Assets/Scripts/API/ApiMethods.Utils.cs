@@ -58,10 +58,7 @@ namespace TiltBrush
 
         private static void _ChangeBrushBearing(float angle, Vector3 axis)
         {
-            Debug.Log($"angle: {axis} angle: {axis}");
-            Debug.Log($"ApiManager.Instance.BrushRotation: {ApiManager.Instance.BrushRotation}");
             ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
-            Debug.Log($"ApiManager.Instance.BrushRotation: {ApiManager.Instance.BrushRotation}");
         }
 
         private static void _ChangeSpectatorBearing(float angle, Vector3 axis)

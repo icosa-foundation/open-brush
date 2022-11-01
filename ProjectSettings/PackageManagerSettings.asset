@@ -51,6 +51,13 @@ MonoBehaviour:
     m_IsDefault: 0
     m_Capabilities: 0
   m_UserSelectedRegistryName: package.openupm.com
+  - m_Id: scoped:Meta XR
+    m_Name: Meta XR
+    m_Url: https://npm.developer.oculus.com
+    m_Scopes:
+    - com.meta.xr.sdk
+    m_IsDefault: 0
+    m_Capabilities: 0
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_Modified: 0
