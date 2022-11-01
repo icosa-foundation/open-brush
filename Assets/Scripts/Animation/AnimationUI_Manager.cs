@@ -12,8 +12,14 @@ namespace TiltBrush.Animation{
 
        
       
-        int fps = 5, frameOn = 0;
-        long start = 0,current = 0 ;
+        int fps = 5;
+        
+        float frameOn = 0f;
+
+        public int getFramOn(){
+            return Math.Clamp((int)frameOn,0,timeline.Count-1) ;
+        }
+        long start = 0,current = 0, time = 0;
 
         bool playing = false;
         
@@ -47,11 +53,19 @@ namespace TiltBrush.Animation{
         }
 
         [SerializeField] public GameObject timelineRef;
-        [SerializeField] public GameObject timelineMeshRef;
-        [SerializeField] public GameObject timelineNotch;
+        [SerializeField] public GameObject timelineSliderPosition;
+        
+        [SerializeField] public GameObject timelineNotchPrefab;
         [SerializeField] public GameObject textRef;
 
         [SerializeField] public GameObject deleteFrameButton;
+
+
+        // Visual size of frame on timeline
+        float sliderFrameSize = 0.12f;
+
+        float timelineOffset = 0.0f;
+        public List<GameObject> timelineNotches;
 
 
 
@@ -62,8 +76,7 @@ namespace TiltBrush.Animation{
 
         int batchIndex = 0;
 
-        // Visual size of frame on timeline
-        float frameTimelineSize = 0.2f;
+
 
 
         // List<CanvasScript> Frames = new List<CanvasScript>();
@@ -71,9 +84,7 @@ namespace TiltBrush.Animation{
          // Start is called before the first frame update
         void Start()
         {
-            tempPool1 = new List<BatchPool>();
-            tempPool2 = new List<BatchPool>();
-
+      
             // nextFrame = App.Scene.addFrame();
 
           
@@ -92,6 +103,10 @@ namespace TiltBrush.Animation{
             App.Scene.animationUI_manager = this;
 
             focusFrame(originFrame);
+
+            timelineNotches = new List<GameObject>();
+
+          
            
         }
         public  void init(){
@@ -280,44 +295,102 @@ namespace TiltBrush.Animation{
         }
 
 
-
-        public void updateTimelineSlider(){
-       
+        public void resetTimelineSlider(){
 
                   
-              
-                    // GameObject notchTemp = timelineNotch;
+            print("RESET TIMELINE");
+            print(timelineNotches);
+      
 
-                    // GameObject Clone = Instantiate(timelineNotch, new Vector3(0, 0, 0), Quaternion.identity);
-                    // Clone.SetActive(true);
+            if (timelineNotches != null){
+                foreach (var notch in timelineNotches){
+                        Destroy(notch);
 
-                    // Clone.transform.SetParent(timelineRef.transform);
-
-                    // print(" CLONE OBJECT " + Clone);
-                    // Debug.Log(Clone);
+                }
+            }
             
-                    // timelineRef.GetComponent<TimelineSlider>().setSliderScale( (float)frameTimelineSize*timeline.Count);
-                    timelineRef.GetComponent<TimelineSlider>().setSliderValue( (float)frameOn/timeline.Count);
+            timelineNotches = new List<GameObject>();
+
+ 
+            for (int f = 0; f < timeline.Count; f++){
+         
+
+                GameObject newNotch =  Instantiate(timelineNotchPrefab);
+
+                newNotch.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + f;
+
+                newNotch.transform.SetParent(timelineRef.transform);
+         
+        
+                newNotch.SetActive(false);
+
+                timelineNotches.Add(newNotch);
+            }
+            updateTimelineSlider();
+
+        }
+
+        public void updateTimelineSlider(){
+
+            float meshLength = timelineRef.GetComponent<TimelineSlider>().m_Mesh.transform.localScale.x;
+            float startX = -meshLength/2f - timelineOffset*meshLength;
+
+              for (int f = 0; f < timelineNotches.Count; f++){
+                     
+                        GameObject notch = timelineNotches[f];
+                        float thisOffset = startX + ((float)(f))*sliderFrameSize*meshLength;
+                        notch.transform.SetLocalPositionAndRotation(new Vector3(thisOffset,0,0),Quaternion.identity);
+
+                        notch.SetActive(thisOffset >= -meshLength*0.5 && thisOffset <=  meshLength*0.5);
+
+            }
+
+                  
+        }
+        public void updateTimelineNob(){
+
+            float newVal =  (float)(frameOn-0.01)*sliderFrameSize - timelineOffset;
+
+
+        
+            if (newVal >= 0.9f){
+                timelineOffset += newVal - 0.9f;
+              
+                 print ("SCROLL RIGHT " +  timelineOffset);
+            }
+            if (newVal <= 0.1f){
+                 timelineOffset += newVal - 0.1f;
+                 print ("SCROLL RIGHT " +  timelineOffset);
+            }
+
+            float max = sliderFrameSize*(float)timeline.Count - 1;
+            timelineOffset = Math.Clamp(timelineOffset,0,  max < 0 ? 0 : max );
+
+            float clampedval = (float)newVal;
+            clampedval = Math.Clamp(clampedval,0,1 );
+
+            timelineRef.GetComponent<TimelineSlider>().setSliderValue(clampedval);
         }
         public void updateFrameInfo(){
-            textRef.GetComponent<TextMeshPro>().text = (frameOn+1) + ":" + timeline.Count;
+            textRef.GetComponent<TextMeshPro>().text = (frameOn.ToString("0.00")) + ":" + timeline.Count;
         }
-        public void updateUI(){
+        public void updateUI(bool timelineInput = false){
             updateFrameInfo();
             updateTimelineSlider();
+            if (!timelineInput) updateTimelineNob();
 
             deleteFrameButton.SetActive(frameOn != 0);
     
         }
 
-        private void focusFrame(Frame frame){
+        private void focusFrame(Frame frame, bool timelineInput = false){
 
    
     
             for (int i=0;i<timeline.Count;i++){
 
                 if (timeline[i].Equals(frame)) {
-                    frameOn = i;
+                    // frameOn = i;
                     continue;
                 }
                 print("HIDING IN FOCUS FRAME");
@@ -346,7 +419,7 @@ namespace TiltBrush.Animation{
      
             showFrame(frame);
 
-            updateUI();
+            updateUI(timelineInput);
           
         }
         public void removeKeyFrame(){
@@ -359,26 +432,28 @@ namespace TiltBrush.Animation{
             int previousLayerActive = getCanvasIndex(App.Scene.ActiveCanvas).Item2;
  
 
-            for (int l =0;l< timeline[frameOn].layers.Count; l++){
+            for (int l =0;l< timeline[getFramOn()].layers.Count; l++){
 
          
     
                 //App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
-                App.Scene.HideCanvas(timeline[frameOn].layers[l].canvas);
+                App.Scene.HideCanvas(timeline[getFramOn()].layers[l].canvas);
             }
 
-            Frame removingFrame = timeline[frameOn];
+            Frame removingFrame = timeline[getFramOn()];
             removingFrame.deleted = true;
 
-            timeline.RemoveAt(frameOn);
+            timeline.RemoveAt(getFramOn());
 
             frameOn = Math.Clamp(frameOn,0,timeline.Count - 1);
 
             print("AFTER REMOVE");
             printTimeline();
 
-            App.Scene.ActiveCanvas = timeline[frameOn].layers[previousLayerActive].canvas;
-            focusFrame(timeline[frameOn]);
+            App.Scene.ActiveCanvas = timeline[getFramOn()].layers[previousLayerActive].canvas;
+            focusFrame(timeline[getFramOn()]);
+
+            resetTimelineSlider();
 
         }
         public void addKeyFrame(){
@@ -399,32 +474,14 @@ namespace TiltBrush.Animation{
 
             print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
             ;  
-            timeline.Insert(frameOn + 1,addingFrame);
+            timeline.Insert(getFramOn() + 1,addingFrame);
 
             focusFrame(addingFrame);   
             
             print("TIMELINE SIZE -" + timeline.Count);
 
-            
-            float meshLength = timelineRef.GetComponent<TimelineSlider>().m_Mesh.transform.localScale.x;
-
-            GameObject newNotch =  Instantiate(timelineNotch, new Vector3(0,0,0), Quaternion.identity);
-
-            newNotch.transform.SetParent(timelineRef.transform);
-            newNotch.transform.SetLocalPositionAndRotation(new Vector3(-meshLength/2f,0,0),Quaternion.identity);
-            
-       
-            newNotch.SetActive(true);
-
-
-            GameObject endNotch =  Instantiate(timelineNotch, new Vector3(0,0,0), Quaternion.identity);
-
-            endNotch.transform.SetParent(timelineRef.transform);
-            endNotch.transform.SetLocalPositionAndRotation(new Vector3(meshLength/2f,0,0),Quaternion.identity);
-
-            endNotch.SetActive(true);
-
-
+      
+            resetTimelineSlider();
 
 
         
@@ -437,7 +494,7 @@ namespace TiltBrush.Animation{
             print("DUPLICATE NOW");
             printTimeline();
 
-            for (int l =0;l< timeline[frameOn].layers.Count; l++){
+            for (int l =0;l< timeline[getFramOn()].layers.Count; l++){
 
          
                 CanvasScript newCanvas = App.Scene.addCanvas();
@@ -449,7 +506,7 @@ namespace TiltBrush.Animation{
                     List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                             .Where(x => x.Canvas 
                             ==
-                             timeline[frameOn].layers[l].canvas
+                             timeline[getFramOn()].layers[l].canvas
                              ).ToList();
                     
                     List<Stroke> newStrokes = oldStrokes
@@ -490,7 +547,7 @@ namespace TiltBrush.Animation{
 
 
                 frameLayer addingLayer = newFrameLayer(newCanvas);
-                addingLayer.deleted = timeline[frameOn].layers[l].deleted;
+                addingLayer.deleted = timeline[getFramOn()].layers[l].deleted;
                 addingFrame.layers.Add(addingLayer);
                 print("ADDING LAYER");
             
@@ -499,13 +556,13 @@ namespace TiltBrush.Animation{
 
             print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
             ;  
-            timeline.Insert(frameOn + 1,addingFrame);
+            timeline.Insert(getFramOn() + 1,addingFrame);
 
             focusFrame(addingFrame);   
             
             print("TIMELINE SIZE -" + timeline.Count);
 
-          
+            resetTimelineSlider();
 
         
         }
@@ -513,13 +570,32 @@ namespace TiltBrush.Animation{
       
       
         public void timelineSlide(float Value){
-            frameOn =   (int)(((float)timeline.Count)*Value);
+           
+            frameOn =  ((float)(Value + timelineOffset) / sliderFrameSize );
 
-            frameOn = frameOn >= timeline.Count ? timeline.Count - 1 : frameOn;
+
+
+            frameOn = frameOn >= timeline.Count ? timeline.Count  : frameOn;
             frameOn = frameOn < 0 ? 0 : frameOn;
             
             print("T SLIDE frameoN- " + frameOn);
-            focusFrame( timeline[frameOn]);
+            focusFrame( timeline[getFramOn()],true);
+
+            // Scrolling the timeline
+            print ("TIMELINE SCROLLING " +  Value);
+            if (Value < 0.1f){
+                timelineOffset -= 0.05f;
+                print ("SCROLL LEFT " +  timelineOffset);
+            }
+            if (Value > 0.9f){
+                timelineOffset += 0.05f;
+                 print ("SCROLL RIGHT " +  timelineOffset);
+            }
+            float max = sliderFrameSize*(float)timeline.Count - 1;
+            timelineOffset = Math.Clamp(timelineOffset,0,  max < 0 ? 0 : max );
+
+
+            updateTimelineSlider();
         }
 
         public void startAnimation(){
@@ -540,30 +616,30 @@ namespace TiltBrush.Animation{
     
 
         // Update is called once per frame
-        int prevFrameOn = 0;
+        float prevFrameOn = 0;
         void Update()
         {
             if (playing){
-                current = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                long offset = (current - start);
-                frameOn = (int)(((float)offset) / (1000f / ((float)fps))) ;
+                time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                current = (time - start);
+                frameOn = (((float)current) / (1000f / ((float)fps))) ;
 
                 frameOn = frameOn % timeline.Count;
 
                 if (frameOn - prevFrameOn > 1){
-                    print("DIFFERENCE " + frameOn + " "  + prevFrameOn +" " + offset + " " + (1000f / ((float)fps)));
+                    print("DIFFERENCE " + frameOn + " "  + prevFrameOn +" " + current + " " + (1000f / ((float)fps)));
                 }
 
                 prevFrameOn = frameOn;
 
-                print("FRAME ON - " + frameOn + " " + offset);
+                print("FRAME ON - " + frameOn + " " + current);
 
               
 
             
 
                 
-                focusFrame( timeline[frameOn]);
+                focusFrame( timeline[getFramOn()]);
            
 
                

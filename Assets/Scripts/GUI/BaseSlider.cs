@@ -134,19 +134,7 @@ namespace TiltBrush
             }
         }
 
-        // For @Animation
-        public void setSliderValue(float fValue){
      
-            float newVal = (fValue - 0.5f)* m_Mesh.transform.localScale.x;
-     
-
-             print("SLIDING ==" + fValue + "  newval==" + newVal + " Mesh scale==" + m_Mesh.transform.localScale.x);
-            Vector3 vLocalPos = m_Nob.transform.localPosition;
-            m_Nob.transform.localPosition = new Vector3(newVal,vLocalPos.y,vLocalPos.z);
-            // UpdateValue(fValue);
-            
-
-        }
         public void setSliderScale(float scaleX){
 
                     m_Mesh.transform.localScale = new Vector3(
