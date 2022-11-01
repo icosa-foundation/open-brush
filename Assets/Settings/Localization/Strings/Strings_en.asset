@@ -1242,7 +1242,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18101557633294336
-    m_Localized: POPUP_COLOROPTIONS_POSITION_SLIDER_DESCRIPTION
+    m_Localized: Position
     m_Metadata:
       m_Items: []
   references:
