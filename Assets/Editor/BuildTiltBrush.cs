@@ -48,7 +48,7 @@ static class BuildTiltBrush
     // The vendor name - used for naming android builds - shouldn't have spaces.
     public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
-    public const string kDisplayVendorName = "Icosa Gallery";
+    public const string kDisplayVendorName = "Icosa Foundation";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
@@ -59,7 +59,7 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"com.{kVendorName}.{kGuiBuildExecutableName}";
+    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
 
@@ -961,6 +961,10 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = GuiBuildAndroidApplicationIdentifier;
+#if OCULUS_SUPPORTED
+            //Can't change Quest identifier
+            new_identifier = "com.Icosa.OpenBrush";
+#endif
             if (!String.IsNullOrEmpty(Description))
             {
                 new_name += " (" + Description + ")";
@@ -1427,8 +1431,10 @@ static class BuildTiltBrush
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
-            // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            // Also set consultUserConfig = false to keep user config from affecting the build outpexperut.
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
+                consultUserConfig: false,
+                forceExperimental: tiltOptions.Experimental);
 
             // Some sanity checks
             {
