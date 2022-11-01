@@ -203,6 +203,9 @@ namespace TiltBrush
             else
             {
                 m_CurrentButtonTexture = rTexture;
+                Debug.Log($"m_ButtonRenderer: {m_ButtonRenderer}");
+                Debug.Log($"material: {m_ButtonRenderer.material}");
+                Debug.Log($"mainTexture: {m_ButtonRenderer.material.mainTexture}");
                 m_ButtonRenderer.material.mainTexture = rTexture;
                 UpdateUVsForAspect(aspect);
             }
