@@ -21,7 +21,7 @@ namespace TiltBrush
     public class BaseSlider : UIComponent
     {
         [SerializeField] public GameObject m_Nob;
-        [SerializeField] public Renderer m_Mesh;
+        [SerializeField] private Renderer m_Mesh;
 
         [NonSerialized] public Vector3 m_MeshScale;
         protected float m_CurrentValue;
@@ -83,7 +83,7 @@ namespace TiltBrush
             if (m_Nob != null)
             {
                 Vector3 vLocalPos = m_Nob.transform.localPosition;
-                vLocalPos.x = (m_CurrentValue - 0.5f) * m_Mesh.transform.localScale.x;
+                vLocalPos.x = (m_CurrentValue - 0.5f) * m_MeshScale.x;
                 m_Nob.transform.localPosition = vLocalPos;
             }
         }
@@ -101,7 +101,6 @@ namespace TiltBrush
         {
             if (IsAvailable())
             {
-                print("SLIDER POS = " + rHitInfo.point);
                 PositionSliderNob(rHitInfo.point);
             }
             SetDescriptionActive(true);
@@ -123,26 +122,15 @@ namespace TiltBrush
             {
                 m_Nob.transform.position = pos_WS;
                 Vector3 vLocalPos = m_Nob.transform.localPosition;
-                float fScaledBounds = 0.5f *  m_Mesh.transform.localScale.x;
+                float fScaledBounds = 0.5f * m_MeshScale.x;
                 vLocalPos.x = Mathf.Clamp(vLocalPos.x, -fScaledBounds, fScaledBounds);
                 vLocalPos.y = 0.0f;
                 vLocalPos.z = 0.0f;
                 m_Nob.transform.localPosition = vLocalPos;
-                float fValue = (vLocalPos.x /  m_Mesh.transform.localScale.x) + 0.5f;
+                float fValue = (vLocalPos.x / m_MeshScale.x) + 0.5f;
                 UpdateValue(fValue);
                 OnPositionSliderNobUpdated();
             }
-        }
-
-     
-        public void setSliderScale(float scaleX){
-
-                    m_Mesh.transform.localScale = new Vector3(
-                        scaleX,
-                        m_Mesh.transform.localScale.y,
-                        m_Mesh.transform.localScale.z
-                    );
-                    // Collider.transform.localScale = new Vector3(scaleX,localScale.y,localScale.z);
         }
 
         virtual protected void OnPositionSliderNobUpdated() { }

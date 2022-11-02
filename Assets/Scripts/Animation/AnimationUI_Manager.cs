@@ -91,6 +91,8 @@ namespace TiltBrush.Animation{
         }
         void Awake(){
 
+            
+
             timeline = new List<Frame>();
 
             Frame originFrame = newFrame();
@@ -332,7 +334,7 @@ namespace TiltBrush.Animation{
 
         public void updateTimelineSlider(){
 
-            float meshLength = timelineRef.GetComponent<TimelineSlider>().m_Mesh.transform.localScale.x;
+            float meshLength = timelineRef.GetComponent<TimelineSlider>().m_MeshScale.x;
             float startX = -meshLength/2f - timelineOffset*meshLength;
 
               for (int f = 0; f < timelineNotches.Count; f++){

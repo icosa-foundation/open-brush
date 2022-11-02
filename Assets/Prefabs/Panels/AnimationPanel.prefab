@@ -426,9 +426,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34883fcb820170641b52b7bbb2d9fad0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_MainCanvas: {fileID: 0}
+  m_SelectionCanvas: {fileID: 0}
   timelineRef: {fileID: 8468915510756884231}
   timelineSliderPosition: {fileID: 340131398826253572}
-  timelineNotchPrefab: {fileID: 4518675632882533363, guid: 7a7d5ae4b979c7b4c86b109067ea20c9,
+  timelineNotchPrefab: {fileID: 4518675632882533363, guid: b8dd6b5000f4ab94e8b449081762a82f,
     type: 3}
   textRef: {fileID: 310324422918683518}
   deleteFrameButton: {fileID: 9154377504119795429}
