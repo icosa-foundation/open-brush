@@ -108,7 +108,7 @@ namespace TiltBrush
             StencilSettings = 20200,
             LayersPanel = 15000,
 
-            AnimationPanel,
+            AnimationPanel = 18000,
         }
 
         private enum FixedTransitionState
