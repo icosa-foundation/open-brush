@@ -341,7 +341,9 @@ namespace TiltBrush.Animation{
                      
                         GameObject notch = timelineNotches[f];
                         float thisOffset = startX + ((float)(f))*sliderFrameSize*meshLength;
-                        notch.transform.SetLocalPositionAndRotation(new Vector3(thisOffset,0,0),Quaternion.identity);
+                           notch.transform.localPosition = new Vector3(thisOffset, 0, 0);
+                        notch.transform.localRotation = Quaternion.identity;
+                 
 
                         notch.SetActive(thisOffset >= -meshLength*0.5 && thisOffset <=  meshLength*0.5);
 
