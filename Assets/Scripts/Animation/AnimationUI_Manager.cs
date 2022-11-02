@@ -155,7 +155,7 @@ namespace TiltBrush.Animation{
                     print("CREATED,"+ created);
 
                 }else{
-                    CanvasScript newCanvas = App.Scene.addCanvas();
+                    CanvasScript newCanvas = App.Scene.AddCanvas();
                     frameLayer addingLayer = newFrameLayer(newCanvas);
                     timeline[i].layers.Add(addingLayer);
                     created ++;
@@ -465,7 +465,7 @@ namespace TiltBrush.Animation{
             for (int l =0;l< timeline[0].layers.Count; l++){
 
          
-                CanvasScript newCanvas = App.Scene.addCanvas();
+                CanvasScript newCanvas = App.Scene.AddCanvas();
                 frameLayer addingLayer = newFrameLayer(newCanvas);
                 addingLayer.deleted = timeline[0].layers[l].deleted;
                 addingFrame.layers.Add(addingLayer);
@@ -499,7 +499,7 @@ namespace TiltBrush.Animation{
             for (int l =0;l< timeline[getFramOn()].layers.Count; l++){
 
          
-                CanvasScript newCanvas = App.Scene.addCanvas();
+                CanvasScript newCanvas = App.Scene.AddCanvas();
 
             
 
