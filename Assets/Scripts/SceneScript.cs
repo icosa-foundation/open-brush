@@ -261,7 +261,7 @@ namespace TiltBrush
             return layer;
         }
 
-        public CanvasScript addCanvas(){
+        public CanvasScript AddCanvas(){
 
             var go = new GameObject("new");
             go.transform.parent = transform;
@@ -278,7 +278,7 @@ namespace TiltBrush
         }
 
         
-        public void destroyCanvas(CanvasScript layer)
+        public void DestroyCanvas(CanvasScript layer)
         {
        
          
