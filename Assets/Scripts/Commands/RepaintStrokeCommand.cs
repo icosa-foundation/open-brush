@@ -32,15 +32,15 @@ namespace TiltBrush
         public RepaintStrokeCommand(
             Stroke stroke, Color newcolor, Guid newGuid, float newSize, BaseCommand parent = null) : base(parent)
         {
-            m_TargetStrokes = new List<Stroke>{stroke};
+            m_TargetStrokes = new List<Stroke> { stroke };
 
-            m_StartColors = new List<Color>{stroke.m_Color};
-            m_StartGuids = new List<Guid>{stroke.m_BrushGuid};
-            m_StartSizes = new List<float>{stroke.m_BrushSize};
+            m_StartColors = new List<Color> { stroke.m_Color };
+            m_StartGuids = new List<Guid> { stroke.m_BrushGuid };
+            m_StartSizes = new List<float> { stroke.m_BrushSize };
 
-            m_EndColors = new List<Color>{newcolor};
-            m_EndGuids = new List<Guid>{newGuid};
-            m_EndSizes = new List<float>{newSize};
+            m_EndColors = new List<Color> { newcolor };
+            m_EndGuids = new List<Guid> { newGuid };
+            m_EndSizes = new List<float> { newSize };
         }
 
         public RepaintStrokeCommand(List<Stroke> strokes, List<Color> newcolors, List<Guid> newGuids, List<float> newSizes, BaseCommand parent = null) : base(parent)

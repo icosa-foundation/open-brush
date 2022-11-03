@@ -633,7 +633,7 @@ namespace TiltBrush
         {
             resultingGuid = rebrush ? desiredGuid : stroke.m_BrushGuid;
             resultingColor = recolor ? desiredColor : stroke.m_Color;
-            resultingSize = resize ? desiredSize: stroke.m_BrushSize;
+            resultingSize = resize ? desiredSize : stroke.m_BrushSize;
 
             // Is Jitter enabled?
             if (jitter)

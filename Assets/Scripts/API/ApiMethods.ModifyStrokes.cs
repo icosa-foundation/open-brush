@@ -44,19 +44,19 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
-        public static void RebrushSelection(bool jitter=false)
+        public static void RebrushSelection(bool jitter = false)
         {
             SketchMemoryScript.m_Instance.RepaintSelected(true, false, false, jitter);
         }
 
         [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
-        public static void RecolorSelection(bool jitter=false)
+        public static void RecolorSelection(bool jitter = false)
         {
             SketchMemoryScript.m_Instance.RepaintSelected(false, true, false, jitter);
         }
 
         [ApiEndpoint("selection.resize", "Changes the brush size the currently selected strokes")]
-        public static void ResizeSelection(bool jitter=false)
+        public static void ResizeSelection(bool jitter = false)
         {
             SketchMemoryScript.m_Instance.RepaintSelected(false, false, true, jitter);
         }
