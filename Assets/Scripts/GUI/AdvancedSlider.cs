@@ -32,8 +32,8 @@ namespace TiltBrush
 
     public class AdvancedSlider : BaseSlider
     {
-        [FormerlySerializedAs("opIndex")] public int m_Param1;
-        [FormerlySerializedAs("paramIndex")] public int m_Param2;
+        public int m_Param1;
+        public int m_Param2;
 
         public float m_safeMin = 0;
         public float m_safeMax = 1;
