@@ -188,7 +188,7 @@ class ReferenceGraph:  # pylint: disable=too-few-public-methods
         prefab_pat = re.compile(
             r"^Assets/Resources/EnvironmentPrefabs/.*prefab|^Assets/Scenes", re.I
         )
-        for n in n2g:
+        for n in n2g:  # pylint: disable=consider-using-dict-items
             if prefab_pat.search(n):
                 self.g.add_edge(n2g["ROOT"], n2g[n])
 

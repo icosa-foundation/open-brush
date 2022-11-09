@@ -22,7 +22,7 @@
     "com.unity.xr.openxr": "1.5.3",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
-    "org.nuget.google.apis.core": "1.57.0",
+    "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
     "org.nuget.sharpziplib": "1.3.1",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
