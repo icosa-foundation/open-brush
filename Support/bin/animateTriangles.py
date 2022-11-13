@@ -21,10 +21,8 @@ worldCenter = Gf.Vec3f(0, 0, 0)
 
 
 def clamp(x, lowerlimit, upperlimit):
-    if x < lowerlimit:
-        x = lowerlimit
-    if x > upperlimit:
-        x = upperlimit
+    x = min(x, upperlimit)
+    x = max(x, lowerlimit)
     return x
 
 
@@ -190,7 +188,7 @@ def animate(
             print(".", end=" ")
             if not ss.Update(dRadius, smoothstep(1.0, float(numFrames), time)):
                 if ss.indicesWritten != ss.indexCount:
-                    raise "Fail"
+                    raise Exception("Fail")
                 remove.append(ss)
 
         # Remove all the completed strokes.
@@ -218,7 +216,7 @@ def animate(
         for ss in activeSubstrokes:
             if not ss.Update(dRadius, 2.0):
                 if ss.indicesWritten != ss.indexCount:
-                    raise "Fail"
+                    raise Exception("Fail")
                 remove.append(ss)
         for ss in remove:
             activeSubstrokes.remove(ss)
@@ -386,13 +384,13 @@ class Stroke:  # pylint: disable=too-many-instance-attributes
         for i, offset in enumerate(self.vertOffsets):
             if vertexIndex >= offset:
                 return (offset, self.vertCounts[i])
-        raise "Vertex not found"
+        raise Exception("Vertex not found")
 
     def GetAdj(self, vertIndex):
         for i, offset in enumerate(self.vertOffsets):
             if vertIndex >= offset:
                 return 3.0 * self.adjs[i]
-        raise "Vertex not found"
+        raise Exception("Vertex not found")
 
     def Save(self, time):
         if not self.dirty:

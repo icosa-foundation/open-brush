@@ -2127,16 +2127,16 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
+        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
         {
             var manifest = m_Manifest;
 #if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                         if (Config.IsExperimental)
                         {
                             // At build time, we don't want the user config to affect the build output.
-                            if (consultUserConfig
+                            if ((consultUserConfig
                                 && m_UserConfig.Flags.ShowDangerousBrushes
-                                && m_ManifestExperimental != null)
+                                && m_ManifestExperimental != null) || forceExperimental)
                             {
                                 manifest = Instantiate(m_Manifest);
                                 manifest.AppendFrom(m_ManifestExperimental);
