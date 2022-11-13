@@ -16,11 +16,11 @@
       "hash": "34fcc32d206e9099cc4657214f258bb94ec3e894"
     },
     "com.meta.xr.sdk.utilities": {
-      "version": "44.0.0-preview",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#fix-pre-process-build",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {},
-      "url": "https://npm.developer.oculus.com"
+      "hash": "b3a4ef1f353c19c5e6c648d825642c150c6e8a2d"
     },
     "com.nition.unity-octree": {
       "version": "0.0.1-preview",
@@ -202,7 +202,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.oculus": {
-      "version": "3.0.2",
+      "version": "3.2.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {

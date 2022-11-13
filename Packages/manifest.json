@@ -2,7 +2,7 @@
   "dependencies": {
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git?nocache=11#upm",
-    "com.meta.xr.sdk.utilities": "44.0.0-preview",
+    "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#fix-pre-process-build",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
@@ -19,7 +19,7 @@
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.core-utils": "2.1.0",
     "com.unity.xr.management": "4.2.1",
-    "com.unity.xr.oculus": "3.0.2",
+    "com.unity.xr.oculus": "3.2.1",
     "com.unity.xr.openxr": "1.5.3",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
