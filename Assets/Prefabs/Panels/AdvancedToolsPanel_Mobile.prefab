@@ -43,8 +43,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.9, y: 2, z: 0.5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1.8656139, y: 1.4291928, z: 0.5}
+  m_Center: {x: 0.22350883, y: -0.010315776, z: 0}
 --- !u!1 &1090342394825570
 GameObject:
   m_ObjectHideFlags: 0
@@ -940,7 +940,7 @@ Transform:
   m_GameObject: {fileID: 1516844228562844}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.4784614, y: 1.9448586, z: 2.4}
+  m_LocalScale: {x: 1.4784614, y: 1.44, z: 2.4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4855477210013390}
@@ -1240,6 +1240,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -2047,7 +2048,7 @@ PrefabInstance:
     - target: {fileID: 6610468352840375919, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.518
+      value: -0.016000003
       objectReference: {fileID: 0}
     - target: {fileID: 6610468352840375919, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
@@ -2118,7 +2119,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.518
+      value: -0.016
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: f18f4d6ac4e4e174a882c97332da8767, type: 3}
       propertyPath: m_LocalPosition.z
