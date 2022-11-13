@@ -1106,7 +1106,6 @@ static class BuildTiltBrush
                     targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
                     break;
                 case XrSdkMode.OpenXR:
-                case XrSdkMode.Monoscopic:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
                 default:
