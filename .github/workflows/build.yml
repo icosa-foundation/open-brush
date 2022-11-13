@@ -142,6 +142,14 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: Monoscopic
             extraoptions: -btb-experimental
+          - name: Linux Monoscopic Experimental
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic
+            extraoptions: -btb-experimental
+          - name: OSX Monoscopic Experimental
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            extraoptions: -btb-experimental
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
@@ -241,6 +249,20 @@ jobs:
         run:
           echo "filename=$BASENAME.exe" >> $GITHUB_ENV
 
+      - name: Set filename (for Linux)
+        if: matrix.targetPlatform == 'StandaloneLinux64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME" >> $GITHUB_ENV
+
+      - name: Set filename (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME.app" >> $GITHUB_ENV
+
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
         env:
@@ -305,6 +327,18 @@ jobs:
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
+
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
+          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
 
       - name: Upload build/
         uses: actions/upload-artifact@v2
