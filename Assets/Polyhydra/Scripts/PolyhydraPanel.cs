@@ -1081,7 +1081,7 @@ namespace TiltBrush
                     break;
                 case GeneratorTypes.Uniform:
                     int subtypeID = Convert.ToInt32(emd.GeneratorParameters["type"]);
-                    var uniformType = Uniform.Uniforms[subtypeID];
+                    var uniformType = Uniform.Uniforms[subtypeID + 1]; // Uniforms are 1-indexed...
                     if (Uniform.Platonic.Contains(uniformType))
                     {
                         m_CurrentMainCategory = PolyhydraMainCategories.Platonic;
