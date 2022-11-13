@@ -23,60 +23,18 @@ namespace TiltBrush
 
         public int CurrentGalleryPage { get; set; }
 
-        enum ButtonType
-        {
-            Recolor,
-            Rebrush,
-            Resize,
-            Jitter,
-        }
-
         void Update()
         {
             m_PreviewPolyAttachPoint.Rotate(0, 0.25f, 0);
-        }
-
-        private void SetRepaintFlags(ButtonType buttonType, bool state)
-        {
-            if (m_repaintTool == null)
+            if (transform.localScale.x < .1f)
             {
-                m_repaintTool = SketchControlsScript.m_Instance.GetComponentInChildren<RepaintTool>();
+                // Hide preview poly
+                m_PreviewPolyAttachPoint.gameObject.SetActive(false);
             }
-            switch (buttonType)
+            else
             {
-                case ButtonType.Recolor:
-                    m_repaintTool.RecolorOn = state;
-                    break;
-                case ButtonType.Rebrush:
-                    m_repaintTool.RebrushOn = state;
-                    break;
-                case ButtonType.Resize:
-                    m_repaintTool.ResizeOn = state;
-                    break;
-                case ButtonType.Jitter:
-                    m_repaintTool.JitterOn = state;
-                    break;
+                m_PreviewPolyAttachPoint.gameObject.SetActive(true);
             }
-        }
-
-        public void RecolorToggled(ToggleButton button)
-        {
-            SetRepaintFlags(ButtonType.Recolor, button.m_IsToggledOn);
-        }
-
-        public void RebrushToggled(ToggleButton button)
-        {
-            SetRepaintFlags(ButtonType.Rebrush, button.m_IsToggledOn);
-        }
-
-        public void ResizeToggled(ToggleButton button)
-        {
-            SetRepaintFlags(ButtonType.Resize, button.m_IsToggledOn);
-        }
-
-        public void JitterToggled(ToggleButton button)
-        {
-            SetRepaintFlags(ButtonType.Jitter, button.m_IsToggledOn);
         }
     }
 
