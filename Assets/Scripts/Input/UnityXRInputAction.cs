@@ -653,7 +653,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
