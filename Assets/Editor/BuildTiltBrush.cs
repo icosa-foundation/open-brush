@@ -625,9 +625,10 @@ static class BuildTiltBrush
     {
         switch (buildTarget)
         {
-            case BuildTarget.StandaloneOSX:
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
+            case BuildTarget.StandaloneLinux64:
+            case BuildTarget.StandaloneOSX:
                 return BuildTargetGroup.Standalone;
             case BuildTarget.Android:
                 return BuildTargetGroup.Android;
