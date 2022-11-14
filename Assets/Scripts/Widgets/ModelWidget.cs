@@ -139,7 +139,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
             clone.Model = this.Model;
