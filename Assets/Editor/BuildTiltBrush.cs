@@ -1027,9 +1027,6 @@ static class BuildTiltBrush
                     //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
                     // }
                     break;
-                case XrSdkMode.Monoscopic:
-                    requiredFeatureStrings.Add("com.unity.openxr.feature.mockruntime");
-                    break;
             }
 
             if (requiredFeatureStrings.Count == 0)
