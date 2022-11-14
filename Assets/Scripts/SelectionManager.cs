@@ -655,6 +655,8 @@ namespace TiltBrush
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
             // Pass in targetCanvas to override this.
 
+            bool isValidDestination(CanvasScript layer) => layer != null && !App.Scene.IsLayerDeleted(layer);
+
             foreach (var stroke in strokes)
             {
                 if (!IsStrokeSelected(stroke))
@@ -662,8 +664,26 @@ namespace TiltBrush
                     Debug.LogWarning("Attempted to deselect stroke that is not selected.");
                     continue;
                 }
-                var canvas = targetCanvas == null ? stroke.m_PreviousCanvas : targetCanvas;
-                stroke.SetParentKeepWorldPosition(canvas, SelectionTransform);
+                CanvasScript destinationCanvas;
+
+                // Deselected strokes are placed on (in order of preference):
+                // 1. Supplied targetCanvas
+                // 2. Their stored m_PreviousCanvas
+                // 3. The active canvas
+                if (isValidDestination(targetCanvas))
+                {
+                    destinationCanvas = targetCanvas;
+                }
+                else if (isValidDestination(stroke.m_PreviousCanvas))
+                {
+                    destinationCanvas = stroke.m_PreviousCanvas;
+                }
+                else
+                {
+                    destinationCanvas = App.Scene.ActiveCanvas;
+                }
+
+                stroke.SetParentKeepWorldPosition(destinationCanvas, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
