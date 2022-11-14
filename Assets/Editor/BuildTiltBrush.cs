@@ -121,9 +121,10 @@ static class BuildTiltBrush
 #endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
-
+#if PICO_SUPPORTED
             // Pico
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
+#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -456,8 +457,12 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginPico, isValidateFunction: true)]
     static bool MenuItem_Plugin_Pico_Validate()
     {
+#if PICO_SUPPORTED
         Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
         return true;
+#else
+        return false;
+#endif
     }
 
     //=======  Platforms =======
