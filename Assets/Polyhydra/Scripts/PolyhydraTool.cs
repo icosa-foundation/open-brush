@@ -77,6 +77,8 @@ namespace TiltBrush
         public FreePaintTool m_FreePaintTool => SketchSurfacePanel.m_Instance.GetToolOfType(ToolType.FreePaintTool) as FreePaintTool;
 
         private HashSet<EditableModelWidget> m_WidgetsModifiedThisClick;
+        private Quaternion m_StencilSnappedRot;
+        private bool m_StencilSnapped;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
@@ -238,6 +240,19 @@ namespace TiltBrush
             {
                 m_WasClicked = true;
                 // Initially click. Store the transform and grab the poly mesh and material.
+                var rAttachPoint_GS = App.Scene.Pose * rAttachPoint_CS;
+                Quaternion rot_GS = Quaternion.identity;
+                var pos_GS = rAttachPoint_GS.translation;
+                var prevPos_GS = pos_GS;
+                WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
+                if (prevPos_GS != pos_GS)
+                {
+                    var pos_CS = App.Scene.Pose.inverse * pos_GS;
+                    var rot_CS = App.Scene.Pose.inverse.rotation * rot_GS;
+                    rAttachPoint_CS.translation = pos_CS;
+                    m_StencilSnappedRot = rot_CS * Quaternion.Euler(90, 0, 0);
+                    m_StencilSnapped = true;
+                }
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 previewMesh = PreviewPolyhedron.m_Instance.GetComponent<MeshFilter>().mesh;
                 previewMaterial = PreviewPolyhedron.m_Instance.GetComponent<MeshRenderer>().material;
@@ -259,7 +274,7 @@ namespace TiltBrush
             {
                 Matrix4x4 mat_CS = Matrix4x4.TRS(
                     position_CS,
-                    rotation_CS,
+                    m_StencilSnapped ? m_StencilSnappedRot : rotation_CS,
                     Vector3.one * scale_CS
                 );
                 Matrix4x4 mat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * mat_CS;
@@ -285,8 +300,13 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var poly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                    TrTransform tr = TrTransform.TRS(position_CS, rotation_CS, scale_CS);
+                    TrTransform tr = TrTransform.TRS(
+                        position_CS,
+                        m_StencilSnapped ? m_StencilSnappedRot : rotation_CS,
+                        scale_CS
+                    );
                     CreatePolyForCurrentMode(poly, tr);
+                    m_StencilSnapped = false;
                 }
             }
         }
