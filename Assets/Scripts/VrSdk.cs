@@ -79,16 +79,11 @@ namespace TiltBrush
         public VrControllers VrControls { get { return m_VrControls; } }
 
         private bool m_HasVrFocus = true;
+
+        //Overlay
+        private GvrOverlay m_Overlay;
         private OverlayMode m_OverlayMode = OverlayMode.None;
-
-        // Oculus Overlay
-#if OCULUS_SUPPORTED
-        private OVROverlay m_OVROverlay;
-#endif // OCULUS_SUPPORTED
-
-        // Fallback Overlay
-        private bool m_MobileOverlayOn;
-        private GvrOverlay m_FallbackOverlay;
+        private bool m_OverlayOn;
 
         private Bounds? m_RoomBoundsAabbCached;
 
@@ -100,8 +95,7 @@ namespace TiltBrush
         private enum OverlayMode
         {
             None,
-            OVR,
-            Fallback
+            Default
         }
 
         // Degrees of Freedom.
@@ -122,8 +116,6 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
-
-        public bool OverlayIsOVR => m_OverlayMode == OverlayMode.OVR;
 
         public bool IsInitializingUnityXR
         {
@@ -185,18 +177,6 @@ namespace TiltBrush
             // ---------------------------------------------------------------------------------------- //
             // OculusVR
             // ---------------------------------------------------------------------------------------- //
-            m_OverlayMode = OverlayMode.OVR;
-            var gobj = new GameObject("Oculus Overlay");
-            gobj.transform.SetParent(m_VrSystem.transform, worldPositionStays: false);
-            m_OVROverlay = gobj.AddComponent<OVROverlay>();
-            m_OVROverlay.isDynamic = true;
-            m_OVROverlay.compositionDepth = 0;
-            m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
-            m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
-            m_OVROverlay.noDepthBufferTesting = true;
-            m_OVROverlay.enabled = false;
-
-
             OVRManager manager = gameObject.AddComponent<OVRManager>();
             manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
             manager.useRecommendedMSAALevel = false;
@@ -222,9 +202,9 @@ namespace TiltBrush
 
             if (m_OverlayMode == OverlayMode.None && m_GvrOverlayPrefab != null)
             {
-                m_OverlayMode = OverlayMode.Fallback;
-                m_FallbackOverlay = Instantiate(m_GvrOverlayPrefab);
-                m_FallbackOverlay.gameObject.SetActive(false);
+                m_OverlayMode = OverlayMode.Default;
+                m_Overlay = Instantiate(m_GvrOverlayPrefab);
+                m_Overlay.gameObject.SetActive(false);
             }
         }
 
@@ -655,32 +635,29 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.OVR:
-                    OverlayEnabled = ratio == 1;
-                    break;
-                case OverlayMode.Fallback:
+                case OverlayMode.Default:
                     if (!OverlayEnabled && ratio > 0.0f)
                     {
                         // Position screen overlay in front of the camera.
-                        m_FallbackOverlay.transform.parent = GetVrCamera().transform;
-                        m_FallbackOverlay.transform.localPosition = Vector3.zero;
-                        m_FallbackOverlay.transform.localRotation = Quaternion.identity;
+                        m_Overlay.transform.parent = GetVrCamera().transform;
+                        m_Overlay.transform.localPosition = Vector3.zero;
+                        m_Overlay.transform.localRotation = Quaternion.identity;
                         float scale = 0.5f * GetVrCamera().farClipPlane / GetVrCamera().transform.lossyScale.z;
-                        m_FallbackOverlay.transform.localScale = Vector3.one * scale;
+                        m_Overlay.transform.localScale = Vector3.one * scale;
 
                         // Reparent the overlay so that it doesn't move with the headset.
-                        m_FallbackOverlay.transform.parent = null;
+                        m_Overlay.transform.parent = null;
 
                         // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_FallbackOverlay.transform.localRotation.eulerAngles;
-                        m_FallbackOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
+                        Vector3 eulerAngles = m_Overlay.transform.localRotation.eulerAngles;
+                        m_Overlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
 
-                        m_FallbackOverlay.gameObject.SetActive(true);
+                        m_Overlay.gameObject.SetActive(true);
                         OverlayEnabled = true;
                     }
                     else if (OverlayEnabled && ratio == 0.0f)
                     {
-                        m_FallbackOverlay.gameObject.SetActive(false);
+                        m_Overlay.gameObject.SetActive(false);
                         OverlayEnabled = false;
                     }
                     break;
@@ -693,14 +670,8 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        return m_OVROverlay.enabled;
-#else
-                        return false;
-#endif // OCULUS_SUPPORTED
-                    case OverlayMode.Fallback:
-                        return m_MobileOverlayOn;
+                    case OverlayMode.Default:
+                        return m_OverlayOn;
                     default:
                         return false;
                 }
@@ -709,13 +680,8 @@ namespace TiltBrush
             {
                 switch (m_OverlayMode)
                 {
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        m_OVROverlay.enabled = value;
-#endif // OCULUS_SUPPORTED
-                        break;
-                    case OverlayMode.Fallback:
-                        m_MobileOverlayOn = value;
+                    case OverlayMode.Default:
+                        m_OverlayOn = value;
                         break;
                 }
             }
@@ -725,10 +691,7 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    m_OVROverlay.textures = new[] { tex };
-#endif // OCULUS_SUPPORTED
+                default:
                     break;
             }
         }
@@ -743,12 +706,7 @@ namespace TiltBrush
 
             switch (m_OverlayMode)
             {
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    vOverlayPosition += (vOverlayDirection * distance / 10);
-                    m_OVROverlay.transform.position = vOverlayPosition;
-                    m_OVROverlay.transform.forward = vOverlayDirection;
-#endif // OCULUS_SUPPORTED
+                default:
                     break;
             }
         }
@@ -769,8 +727,7 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.OVR:
-                    FadeBlack(fadeTime, fadeToCompositor);
+                default:
                     break;
             }
         }
@@ -779,8 +736,7 @@ namespace TiltBrush
         {
             switch (m_OverlayMode)
             {
-                case OverlayMode.OVR:
-                    // :(
+                default:
                     break;
             }
         }
