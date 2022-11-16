@@ -539,6 +539,22 @@ namespace TiltBrush
             return new ExportCanvas(main, mainStrokes.ToList());
         }
 
+        // Same as ExportAllCanvases but pretends all strokes are on the main canvas
+        // Does NOT transform strokes so ensure all canvases have identity transforms
+        public static ExportCanvas ExportAllCanvasesIgnoreLayers()
+        {
+            var allowedBrushGuids = new HashSet<Guid>(
+                BrushCatalog.m_Instance.AllBrushes
+                    .Where(b => b.m_AllowExport)
+                    .Select(b => (Guid)b.m_Guid));
+            var main = App.Scene.MainCanvas;
+            var selection = App.Scene.SelectionCanvas;
+            var mainStrokes = SketchMemoryScript
+                .AllStrokes()
+                .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) && stroke.IsGeometryEnabled);
+            return new ExportCanvas(main, mainStrokes.ToList());
+        }
+
         /// Filters and returns geometry in a convenient format for export.
         public static List<ExportCanvas> ExportAllCanvases()
         {
