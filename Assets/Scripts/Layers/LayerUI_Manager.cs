@@ -95,7 +95,7 @@ namespace TiltBrush.Layers
         public void ClearLayerContents(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
 
         public void AddLayer()
