@@ -1,6 +1,7 @@
 # yamllint disable rule:line-length
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
+
 name: Builds
 
 on:  # yamllint disable-line rule:truthy
