@@ -1739,7 +1739,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 19
+  m_Tool: 18
   m_EatGazeInputOnPress: 1
 --- !u!1 &3065005045680727798
 GameObject:
@@ -2024,6 +2024,11 @@ PrefabInstance:
       propertyPath: m_ToggleOnTexture
       value: 
       objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
+    - target: {fileID: 6495778419652451853, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_ShowOnToolType
+      value: 18
+      objectReference: {fileID: 0}
     - target: {fileID: 6608529110619887157, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
       propertyPath: m_Name
