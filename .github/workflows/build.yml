@@ -228,7 +228,7 @@ jobs:
         with:
           path: Library
           # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.targetPlatform }}_${{ matrix.vrsdk }}_${{ env.UNITY_VERSION }}
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
