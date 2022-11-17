@@ -43,7 +43,7 @@ jobs:
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -59,17 +59,17 @@ jobs:
             PATCH_VERSION="0"
             STAMP=""
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
-            echo "::set-output name=prerelease::false"
-            echo "::set-output name=itchchannelname::release"
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "itchchannelname=release" >> $GITHUB_OUTPUT
 
           else
             echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
-            echo "::set-output name=prerelease::true"
-            echo "::set-output name=itchchannelname::beta"
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "itchchannelname=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
-          echo "::set-output name=version::$VERSION"
-          echo "::set-output name=stamp::$STAMP"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "stamp=$STAMP" >> $GITHUB_OUTPUT
       - name: Calculate Changelog
         id: changelog
         env:
@@ -85,7 +85,7 @@ jobs:
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "::set-output name=changelog::$CHANGELOG"
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
       - name: Set custom app name and package name, if relevant
         id: github
         env:
@@ -96,8 +96,8 @@ jobs:
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=basename::OpenBrush"
-            echo "::set-output name=description::"
+            echo "basename=OpenBrush" >> $GITHUB_OUTPUT
+            echo "description=" >> $GITHUB_OUTPUT
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
@@ -108,9 +108,9 @@ jobs:
             else
               DESCRIPTION="Unknown"
             fi
-            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
+            echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
           fi
   build:
     name: ${{ matrix.name }}
@@ -176,7 +176,7 @@ jobs:
           df -h
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -303,7 +303,7 @@ jobs:
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Upload build/
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
           path: build
@@ -319,37 +319,37 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift Experimental
           path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
@@ -394,7 +394,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -406,12 +406,12 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
@@ -479,7 +479,7 @@ jobs:
           CHANNEL: prerelease-experimental
 
       - name: Save logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -500,7 +500,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -532,25 +532,25 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
@@ -594,12 +594,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
