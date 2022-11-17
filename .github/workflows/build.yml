@@ -375,7 +375,7 @@ jobs:
           rm -rf OpenBrush_Rift_$VERSION
           rm -rf OpenBrush_Rift_Experimental_$VERSION
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: koplo199/action-gh-release@1.0  # softprops/action-gh-release@v1 didn't update to node16 and fix set-output.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
