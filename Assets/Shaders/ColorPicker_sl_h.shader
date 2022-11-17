@@ -21,8 +21,7 @@ Properties {
 
 CGINCLUDE
     #include "Assets/Shaders/Include/ColorSpace.cginc"
-    #include "Assets/Shaders/Include/ColorSpaceConvert.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+  #include "Assets/Shaders/Include/Hdr.cginc"
     float _Slider01;
     fixed4 _Color;
 
@@ -92,7 +91,7 @@ SubShader {
         {
             float3 base_rgb = hue06_to_base_rgb(_Slider01 * 6);
             float2 uv = i.texcoord;
-            return SrgbToLinear(cl_to_rgb(base_rgb, uv.x, uv.y) * _Color);
+            return cl_to_rgb(base_rgb, uv.x, uv.y) * _Color;
         }
 
         ENDCG

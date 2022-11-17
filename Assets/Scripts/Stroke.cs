@@ -88,7 +88,9 @@ namespace TiltBrush
                 }
                 else if (m_Type == Type.BrushStroke)
                 {
-                    return m_Object.GetComponent<BaseBrushScript>().Canvas;
+                    // Null checking is needed because sketches that fail to load
+                    // can create invalid strokes that with no script.
+                    return m_Object?.GetComponent<BaseBrushScript>()?.Canvas;
                 }
                 else
                 {

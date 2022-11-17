@@ -7689,13 +7689,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -10635,6 +10633,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.5
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -12849,6 +12848,7 @@ MonoBehaviour:
   m_ShowDuration: 0
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -14081,6 +14081,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -28650,6 +28651,14 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 1
+  - m_PanelPrefab: {fileID: 176644, guid: a7d344d3f87214b40adfb90fb5ab01f5, type: 3}
+    m_ModeVr: 0
+    m_ModeVrExperimental: 0
+    m_ModeMono: 0
+    m_ModeQuest: 0
+    m_ModeGvr: 0
+    m_Basic: 0
+    m_Advanced: 0
   - m_PanelPrefab: {fileID: 199434, guid: de22d465caf3f20419b98ce5290a7e57, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
@@ -29210,6 +29219,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 0.35
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 1
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
