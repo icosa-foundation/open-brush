@@ -116,7 +116,7 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            transform.parent = App.Instance.m_CanvasTransform;
+            transform.parent = App.ActiveCanvas.transform;
             transform.localScale = Vector3.one;
 
             // Custom pin scalar for models.
