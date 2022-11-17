@@ -399,7 +399,7 @@ jobs:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.1
+        uses: CyberAndrii/setup-steamcmd@v1.1.5
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
