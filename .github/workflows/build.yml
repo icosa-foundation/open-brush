@@ -303,7 +303,7 @@ jobs:
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Upload build/
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
           path: build
@@ -319,37 +319,37 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift Experimental
           path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
@@ -406,12 +406,12 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
@@ -479,7 +479,7 @@ jobs:
           CHANNEL: prerelease-experimental
 
       - name: Save logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -500,7 +500,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -532,25 +532,25 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
@@ -594,12 +594,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
