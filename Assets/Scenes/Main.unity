@@ -7215,8 +7215,6 @@ MonoBehaviour:
   m_DropperConeRenderer: {fileID: 957799543}
   m_DropperRenderer: {fileID: 1372392206}
   m_DropperBrushSelectRadius: 0.1
-  m_EnterSpeed: 16
-  m_OffsetTransform: {fileID: 562640338}
 --- !u!1 &409849876
 GameObject:
   m_ObjectHideFlags: 0
@@ -10664,9 +10662,12 @@ MonoBehaviour:
   m_ValidSnapRotationStickyAngle: 0
   m_SnapGhostMaterial: {fileID: 0}
   m_LeftRightMesh: {fileID: 819299815}
+  m_FrontBackMesh: {fileID: 0}
   m_TitleText: {fileID: 1808834036}
   m_HintText: {fileID: 1311996750}
   m_Home: {fileID: 94678610}
+  m_CustomSymmetryMesh: {fileID: 0}
+  m_CustomSymmetryMaterial: {fileID: 0}
   m_GuideBeams:
   - m_Beam: {fileID: 245270311}
     m_Direction: 0
@@ -10687,6 +10688,8 @@ MonoBehaviour:
   m_SnapXZPlaneStickyAmount: 25
   m_JumpToUserControllerOffsetDistance: 1.25
   m_JumpToUserControllerYOffset: 2
+  m_SymmetryDomainPrefab: {fileID: 0}
+  m_SymmetryDomainParent: {fileID: 0}
 --- !u!114 &684558200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28659,6 +28662,14 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 0
     m_Advanced: 0
+  - m_PanelPrefab: {fileID: 159900, guid: 3b3f1e1277e63dd44987818705e0821b, type: 3}
+    m_ModeVr: 1
+    m_ModeVrExperimental: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_ModeGvr: 1
+    m_Basic: 0
+    m_Advanced: 1
   - m_PanelPrefab: {fileID: 199434, guid: 87deb34c3f9672645984b6032a6c1f8d, type: 3}
     m_ModeVr: 1
     m_ModeVrExperimental: 1
@@ -28752,6 +28763,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ModelWidgetPrefab: {fileID: 11463750, guid: b5359da988546d54b8669e6822c35884,
     type: 3}
+  m_EditableModelWidgetPrefab: {fileID: 0}
   m_WidgetPinPrefab: {fileID: 110786, guid: 5ef4f27d78e2433439e1bbdc1d15c980, type: 3}
   m_ImageWidgetPrefab: {fileID: 11466202, guid: 6d552c9f635cf0f41ae59c1222d8442f,
     type: 3}
@@ -29238,6 +29250,7 @@ MonoBehaviour:
   m_ValidSnapRotationStickyAngle: 90
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_SelectionCanvas: {fileID: 1830711221}
+  m_SnapGhostPrefab: {fileID: 0}
 --- !u!4 &1820659017
 Transform:
   m_ObjectHideFlags: 0
