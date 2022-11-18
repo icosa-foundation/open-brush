@@ -50,8 +50,6 @@ namespace TiltBrush
     //
     public class VrSdk : MonoBehaviour
     {
-        [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
-
         // VR  Data and Prefabs for specific VR systems
         [SerializeField] private GameObject m_VrSystem;
         [SerializeField] private GameObject m_UnityXRUninitializedControlsPrefab;
@@ -80,23 +78,12 @@ namespace TiltBrush
 
         private bool m_HasVrFocus = true;
 
-        //Overlay
-        private GvrOverlay m_Overlay;
-        private OverlayMode m_OverlayMode = OverlayMode.None;
-        private bool m_OverlayOn;
-
         private Bounds? m_RoomBoundsAabbCached;
 
         private Action[] m_OldOnPoseApplied;
 
         private bool m_NeedsToAttachConsoleScript;
         private TrTransform? m_TrackingBackupXf;
-
-        private enum OverlayMode
-        {
-            None,
-            Default
-        }
 
         // Degrees of Freedom.
         public enum DoF
@@ -199,13 +186,6 @@ namespace TiltBrush
                 Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
             }
 #endif // PIMAX_SUPPORTED
-
-            if (m_OverlayMode == OverlayMode.None && m_GvrOverlayPrefab != null)
-            {
-                m_OverlayMode = OverlayMode.Default;
-                m_Overlay = Instantiate(m_GvrOverlayPrefab);
-                m_Overlay.gameObject.SetActive(false);
-            }
         }
 
         void Start()
@@ -624,151 +604,6 @@ namespace TiltBrush
 
                 default:
                     return DoF.None;
-            }
-        }
-
-        // -------------------------------------------------------------------------------------------- //
-        // Overlay Methods
-        // (These should only be accessed via OverlayManager.)
-        // -------------------------------------------------------------------------------------------- //
-        public void SetOverlayAlpha(float ratio)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.Default:
-                    if (!OverlayEnabled && ratio > 0.0f)
-                    {
-                        // Position screen overlay in front of the camera.
-                        m_Overlay.transform.parent = GetVrCamera().transform;
-                        m_Overlay.transform.localPosition = Vector3.zero;
-                        m_Overlay.transform.localRotation = Quaternion.identity;
-                        float scale = 0.5f * GetVrCamera().farClipPlane / GetVrCamera().transform.lossyScale.z;
-                        m_Overlay.transform.localScale = Vector3.one * scale;
-
-                        // Reparent the overlay so that it doesn't move with the headset.
-                        m_Overlay.transform.parent = null;
-
-                        // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_Overlay.transform.localRotation.eulerAngles;
-                        m_Overlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
-
-                        m_Overlay.gameObject.SetActive(true);
-                        OverlayEnabled = true;
-                    }
-                    else if (OverlayEnabled && ratio == 0.0f)
-                    {
-                        m_Overlay.gameObject.SetActive(false);
-                        OverlayEnabled = false;
-                    }
-                    break;
-            }
-        }
-
-        public bool OverlayEnabled
-        {
-            get
-            {
-                switch (m_OverlayMode)
-                {
-                    case OverlayMode.Default:
-                        return m_OverlayOn;
-                    default:
-                        return false;
-                }
-            }
-            set
-            {
-                switch (m_OverlayMode)
-                {
-                    case OverlayMode.Default:
-                        m_OverlayOn = value;
-                        break;
-                }
-            }
-        }
-
-        public void SetOverlayTexture(Texture tex)
-        {
-            switch (m_OverlayMode)
-            {
-                default:
-                    break;
-            }
-        }
-
-        public void PositionOverlay(float distance, float height)
-        {
-            //place overlay in front of the player a distance out
-            Vector3 vOverlayPosition = ViewpointScript.Head.position;
-            Vector3 vOverlayDirection = ViewpointScript.Head.forward;
-            vOverlayDirection.y = 0.0f;
-            vOverlayDirection.Normalize();
-
-            switch (m_OverlayMode)
-            {
-                default:
-                    break;
-            }
-        }
-
-        // Fades to the compositor world (if available) or black.
-        public void FadeToCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: true);
-        }
-
-        // Fades from the compositor world (if available) or black.
-        public void FadeFromCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: false);
-        }
-
-        private void FadeToCompositor(float fadeTime, bool fadeToCompositor)
-        {
-            switch (m_OverlayMode)
-            {
-                default:
-                    break;
-            }
-        }
-
-        public void PauseRendering(bool bPause)
-        {
-            switch (m_OverlayMode)
-            {
-                default:
-                    break;
-            }
-        }
-
-        // Fades to solid black.
-        public void FadeToBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: true);
-        }
-
-        // Fade from solid black.
-        public void FadeFromBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: false);
-        }
-
-        private void FadeBlack(float fadeTime, bool fadeToBlack)
-        {
-
-            // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
-            // to other Open Brush components.
-
-            // Currently ViewpointScript.FadeToColor takes 1/time as a parameter, which we should fix to
-            // make consistent, but for now just convert the incoming parameter.
-            float speed = 1 / Mathf.Max(fadeTime, 0.00001f);
-            if (fadeToBlack)
-            {
-                ViewpointScript.m_Instance.FadeToColor(Color.black, speed);
-            }
-            else
-            {
-                ViewpointScript.m_Instance.FadeToScene(speed);
             }
         }
 
