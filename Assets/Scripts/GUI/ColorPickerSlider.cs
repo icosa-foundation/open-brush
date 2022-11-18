@@ -94,7 +94,7 @@ namespace TiltBrush
         // the color has changed.
         // TODO: make this a no-op when color changes on the slider's axis?
         // Caller is responsible for guaranteeing that "mode+raw" maps to a valid color.
-        public void OnColorChanged(ColorPickerMode mode, Vector3 raw)
+        public void OnColorChanged(ColorPickerMode mode, Vector4 raw)
         {
             ColorPickerUtils.MakeRamp(mode, m_Width, m_Height, m_tempColors, raw);
             m_sliderTex.SetPixels(m_tempColors);

@@ -26,7 +26,7 @@ namespace TiltBrush
         [SerializeField] protected bool m_Hdr;
         protected Color m_CurrentColor;
 
-        public event Action<ColorPickerMode, Vector3> CurrentColorSet;
+        public event Action<ColorPickerMode, Vector4> CurrentColorSet;
 
         public bool IsHdr { get { return m_Hdr; } }
 
@@ -37,7 +37,7 @@ namespace TiltBrush
             {
                 m_CurrentColor = value;
                 var mode = ColorPickerUtils.GetActiveMode(m_Hdr);
-                Vector3 raw = ColorPickerUtils.ColorToRawValue(mode, m_CurrentColor);
+                Vector4 raw = ColorPickerUtils.ColorToRawValue(mode, m_CurrentColor);
                 TriggerCurrentColorSet(mode, raw);
             }
         }
@@ -50,7 +50,7 @@ namespace TiltBrush
             m_CurrentColor = color;
         }
 
-        protected void TriggerCurrentColorSet(ColorPickerMode mode, Vector3 rawColor)
+        protected void TriggerCurrentColorSet(ColorPickerMode mode, Vector4 rawColor)
         {
             if (CurrentColorSet != null)
             {

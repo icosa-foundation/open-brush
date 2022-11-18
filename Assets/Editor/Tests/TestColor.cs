@@ -160,7 +160,7 @@ namespace TiltBrush
 
         private void Single_ColorPickerRoundTripFromColor(ColorPickerMode mode, Color rgb)
         {
-            Vector3 raw = ColorPickerUtils.ColorToRawValue(mode, rgb);
+            Vector4 raw = ColorPickerUtils.ColorToRawValue(mode, rgb);
             Color rgb2;
             bool ok = ColorPickerUtils.RawValueToColor(mode, raw, out rgb2);
             Assert.IsTrue(ok, "Mode {0}: {1} -> {2} -> fail", mode, Repr(rgb), raw);
@@ -184,13 +184,13 @@ namespace TiltBrush
             }
         }
 
-        private void Single_ColorPickerRoundTripFromRawValue(ColorPickerMode mode, Vector3 raw)
+        private void Single_ColorPickerRoundTripFromRawValue(ColorPickerMode mode, Vector4 raw)
         {
             Color rgb;
             bool ok = ColorPickerUtils.RawValueToColor(mode, raw, out rgb);
             if (!ok) { return; }
-            Vector3 raw2 = ColorPickerUtils.ColorToRawValue(mode, rgb);
-            Vector3 diff = raw2 - raw;
+            Vector4 raw2 = ColorPickerUtils.ColorToRawValue(mode, rgb);
+            Vector4 diff = raw2 - raw;
             float EPSILON = 1e-4f;
             if (Mathf.Abs(diff.x) > EPSILON ||
                 Mathf.Abs(diff.y) > EPSILON ||
@@ -252,10 +252,11 @@ namespace TiltBrush
         public void TestPicker_HS_L_Hue(float angle, float hueDegrees)
         {
             float radius = .5f; // - 1e-5f;
-            Vector3 v = new Vector3(
+            Vector4 v = new Vector4(
                 .5f + radius * Mathf.Cos(angle * Mathf.Deg2Rad),
                 .5f + radius * Mathf.Sin(angle * Mathf.Deg2Rad),
-                0.5f);
+                0.5f,
+                1.0f);
             Color rgb;
             bool ok = ColorPickerUtils.RawValueToColor(ColorPickerMode.HS_L_Polar, v, out rgb);
             Assert.IsTrue(ok, "{0}", v);
@@ -267,7 +268,7 @@ namespace TiltBrush
         [TestCase(2f / 3f, 240)]
         public void TestPicker_SV_H_Hue(float z, float hueDegrees)
         {
-            Vector3 v = new Vector3(1, 1, z);
+            Vector4 v = new Vector4(1, 1, z, 1);
             Color rgb;
             bool ok = ColorPickerUtils.RawValueToColor(ColorPickerMode.SV_H_Rect, v, out rgb);
             Assert.IsTrue(ok, "{0}", v);
@@ -279,7 +280,7 @@ namespace TiltBrush
         {
             Color rgb = Color.green;
             float expected = ((HSLColor)rgb).Hue01;
-            Vector3 raw = ColorPickerUtils.ColorToRawValue(ColorPickerMode.SL_H_Triangle, rgb);
+            Vector4 raw = ColorPickerUtils.ColorToRawValue(ColorPickerMode.SL_H_Triangle, rgb);
             Assert.AreEqual(expected, raw.z, 1e-4f);
         }
 
@@ -287,7 +288,7 @@ namespace TiltBrush
         public void TestPicker_HL_S()
         {
             var mode = ColorPickerMode.HL_S_Polar;
-            Vector3 raw = new Vector3(0.75f, 0.5f, 1);
+            Vector4 raw = new Vector4(0.75f, 0.5f, 1, 1);
             Color rgb;
             bool ok = ColorPickerUtils.RawValueToColor(mode, raw, out rgb);
             Assert.IsTrue(ok);

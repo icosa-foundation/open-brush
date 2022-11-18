@@ -157,9 +157,9 @@ namespace TiltBrush
         ///
         /// Note: Behavior is currently undefined if an hdr color is passed in,
         /// but the color picker cannot handle hdr.
-        public static Vector3 ColorToRawValue(ColorPickerMode mode, Color rgb)
+        public static Vector4 ColorToRawValue(ColorPickerMode mode, Color rgba)
         {
-            bool colorIsHdr = (rgb.r > 1 || rgb.g > 1 || rgb.b > 1);
+            bool colorIsHdr = (rgba.r > 1 || rgba.g > 1 || rgba.b > 1);
             // If we do this a lot, maybe add this to ColorPickerInfo.hdr?
             // Or better, refactor this whole mess of code into small mode-specific classes.
             bool pickerSupportsHdr = (mode == ColorPickerMode.HS_LogV_Polar);
@@ -168,8 +168,8 @@ namespace TiltBrush
                 // Shouldn't happen except in experimental
                 Debug.LogErrorFormat("Truncating HDR color to LDR");
                 float h, s, v;
-                Color.RGBToHSV(rgb, out h, out s, out v);
-                rgb = Color.HSVToRGB(h, s, v, hdr: false);
+                Color.RGBToHSV(rgba, out h, out s, out v);
+                rgba = Color.HSVToRGB(h, s, v, hdr: false);
             }
 
             switch (mode)
@@ -177,36 +177,37 @@ namespace TiltBrush
                 case ColorPickerMode.SV_H_Rect:
                     {
                         float h, s, v;
-                        Color.RGBToHSV(rgb, out h, out s, out v);
-                        return new Vector3(s, v, h);
+                        Color.RGBToHSV(rgba, out h, out s, out v);
+                        return new Vector4(s, v, h, rgba.a);
                     }
                 case ColorPickerMode.HS_L_Polar:
                     {
                         // H is angle, S is radius, L is depth
-                        HSLColor color = (HSLColor)rgb;
+                        HSLColor color = (HSLColor)rgba;
                         var angle = color.HueDegrees * Mathf.Deg2Rad;
                         var vector = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * color.s / 2 +
                             new Vector2(0.5f, 0.5f);
-                        return new Vector3(vector.x, vector.y, color.l);
+                        return new Vector4(vector.x, vector.y, color.l, rgba.a);
                     }
                 case ColorPickerMode.HL_S_Polar:
                     {
                         // H is angle, (1-L) is radius, (1-S) is depth
-                        HSLColor color = (HSLColor)rgb;
+                        HSLColor color = (HSLColor)rgba;
                         var angle = color.HueDegrees * Mathf.Deg2Rad;
                         float radius = 1 - color.l;
                         var vector = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius / 2 +
                             new Vector2(0.5f, 0.5f);
-                        return new Vector3(vector.x, vector.y, 1 - color.s);
+                        return new Vector4(vector.x, vector.y, 1 - color.s, rgba.a);
                     }
                 case ColorPickerMode.SL_H_Triangle:
                     {
-                        HSLColor color = (HSLColor)rgb;
-                        Vector3 ret = new Vector3();
+                        HSLColor color = (HSLColor)rgba;
+                        Vector4 ret = new Vector4();
                         ret.y = color.l;
                         ret.z = color.Hue01;
                         float maxChroma = SQRT3 * ((color.l < .5f) ? color.l : (1 - color.l));
                         ret.x = maxChroma * color.s;
+                        ret.w = rgba.a;
                         return ret;
                     }
                 case ColorPickerMode.HS_LogV_Polar:
@@ -217,7 +218,7 @@ namespace TiltBrush
                         float kMinValue = 1e-7f;
 
                         float h, s, v;
-                        Color.RGBToHSV(rgb, out h, out s, out v);
+                        Color.RGBToHSV(rgba, out h, out s, out v);
                         Vector2 cartesian;
                         {
                             float angle = h * (Mathf.PI * 2);
@@ -232,10 +233,10 @@ namespace TiltBrush
                         slider = Mathf.Clamp(slider, kLogVMin, sm_LogVMax);
                         // remap from [min, max] to [0, 1]
                         slider = (slider - kLogVMin) / (sm_LogVMax - kLogVMin);
-                        return new Vector3(cartesian.x, cartesian.y, slider);
+                        return new Vector4(cartesian.x, cartesian.y, slider, rgba.a);
                     }
                 default:
-                    return new Vector3(1, 1, 1);
+                    return new Vector4(1, 1, 1, 1);
             }
         }
 
@@ -243,7 +244,7 @@ namespace TiltBrush
         /// Returns true on success, false on failure.
         /// (e.g. not out of circle bounds on HSL picker)
         /// Prefer this over using RawValueToHSLColor, as this will work properly with HDR
-        public static bool RawValueToColor(ColorPickerMode mode, Vector3 raw, out Color color)
+        public static bool RawValueToColor(ColorPickerMode mode, Vector4 raw, out Color color)
         {
             switch (mode)
             {
@@ -277,7 +278,7 @@ namespace TiltBrush
         /// Failure cases are guaranteed to be identical to the failure cases of RawValueToColor
         /// Only implemented for the subset of pickers that are hsv "native"
         static bool RawValueToHSV(
-            ColorPickerMode mode, Vector3 raw,
+            ColorPickerMode mode, Vector4 raw,
             out float hue01, out float saturation, out float value)
         {
             switch (mode)
@@ -316,7 +317,7 @@ namespace TiltBrush
         /// Failure cases are guaranteed to be identical to the failure cases of RawValueToColor
         /// Use if converting raw -> Color is lossy; otherwise, use RawValueToColor
         /// HDR color pickers might disallow conversion to HSL.
-        static bool RawValueToHSLColor(ColorPickerMode mode, Vector3 raw, out HSLColor color)
+        static bool RawValueToHSLColor(ColorPickerMode mode, Vector4 raw, out HSLColor color)
         {
             const float EPSILON = 1e-5f;
             switch (mode)
@@ -345,7 +346,7 @@ namespace TiltBrush
                         color.HueDegrees = Mathf.Atan2(position.y, position.x) * Mathf.Rad2Deg;
                         color.s = radius;
                         color.l = raw.z;
-                        color.a = 1;
+                        color.a = raw.w;
                         return true;
                     }
 
@@ -419,7 +420,7 @@ namespace TiltBrush
         // Apply brush and geometric constraints to value.x and value.y.
         // Examples of brush constraint: lum >= epsilon
         // Examples of geometric constraint: radius <= 1
-        public static Vector3 ApplyPlanarConstraint(Vector3 value, ColorPickerMode mode,
+        public static Vector4 ApplyPlanarConstraint(Vector4 value, ColorPickerMode mode,
                                                     float luminanceMin, float saturationMax)
         {
             switch (mode)
@@ -535,10 +536,10 @@ namespace TiltBrush
             for (int iy = 0; iy < height; ++iy)
             {
                 hsl.Hue01 = (float)iy / height;
-                Color rgb = (Color)hsl;
+                Color rgba = (Color)hsl;
                 for (int ix = 0; ix < width; ++ix)
                 {
-                    buf[(iy * width) + ix] = rgb;
+                    buf[(iy * width) + ix] = rgba;
                 }
             }
         }
@@ -550,10 +551,10 @@ namespace TiltBrush
             for (int iy = 0; iy < height; ++iy)
             {
                 hsl.l = (float)iy / height;
-                Color rgb = (Color)hsl;
+                Color rgba = (Color)hsl;
                 for (int ix = 0; ix < width; ++ix)
                 {
-                    buf[(iy * width) + ix] = rgb;
+                    buf[(iy * width) + ix] = rgba;
                 }
             }
         }
@@ -565,10 +566,10 @@ namespace TiltBrush
             for (int iy = 0; iy < height; ++iy)
             {
                 hsl.s = 1 - (float)iy / height;
-                Color rgb = (Color)hsl;
+                Color rgba = (Color)hsl;
                 for (int ix = 0; ix < width; ++ix)
                 {
-                    buf[(iy * width) + ix] = rgb;
+                    buf[(iy * width) + ix] = rgba;
                 }
             }
         }
@@ -581,17 +582,17 @@ namespace TiltBrush
             {
                 float logValue = Mathf.Lerp(kLogVMin, sm_LogVMax, (float)iy / height);
                 float value = Mathf.Pow(2, logValue) - MinHDRValue;
-                Color rgb = Color.HSVToRGB(hue01, saturation, value, hdr: true);
-                rgb.a = 1;
+                Color rgba = Color.HSVToRGB(hue01, saturation, value, hdr: true);
+                rgba.a = 1;
                 for (int ix = 0; ix < width; ++ix)
                 {
-                    buf[(iy * width) + ix] = rgb;
+                    buf[(iy * width) + ix] = rgba;
                 }
             }
         }
 
         public static void MakeRamp(ColorPickerMode mode,
-                                    int width, int height, Color[] buf, Vector3? raw = null)
+                                    int width, int height, Color[] buf, Vector4? raw = null)
         {
             switch (mode)
             {

@@ -33,13 +33,13 @@ namespace TiltBrush
         // Locks the selector plane so its height doesn't
         // move along with the slider
         [SerializeField] private bool m_FixedSelectorPlane;
-        private Vector3 m_RawValue;
+        private Vector4 m_RawValue;
 
         public Collider GetCollider() { return m_Collider; }
 
         /// Position within the color volume.
         /// X and Y are color plane, Z is slider axis; all values range [0, 1]
-        public Vector3 RawValue
+        public Vector4 RawValue
         {
             get
             {
@@ -111,12 +111,13 @@ namespace TiltBrush
             RawValue = RawValue; // force update of material param
         }
 
-        public Vector3 GetValueFromHit(RaycastHit hit)
+        public Vector4 GetValueFromHit(RaycastHit hit)
         {
             var localHitPoint = transform.InverseTransformPoint(hit.point);
-            return new Vector3(localHitPoint.x + 0.5f,
+            return new Vector4(localHitPoint.x + 0.5f,
                 localHitPoint.y + 0.5f,
-                RawValue.z);
+                RawValue.z,
+                1.0f);
         }
 
         public void SetTintColor(Color rColor)

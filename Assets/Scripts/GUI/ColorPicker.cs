@@ -172,7 +172,7 @@ namespace TiltBrush
                     // Over color picker, check for input.
                     if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
                     {
-                        Vector3 value = ColorPickerUtils.ApplyPlanarConstraint(
+                        Vector4 value = ColorPickerUtils.ApplyPlanarConstraint(
                             m_ColorPickerSelector.GetValueFromHit(hitInfo),
                             mode, luminanceMin, saturationMax);
                         Color color;
@@ -264,7 +264,7 @@ namespace TiltBrush
 
         void UpdateSelectorSlider(float value)
         {
-            Vector3 newValue = m_ColorPickerSelector.RawValue;
+            Vector4 newValue = m_ColorPickerSelector.RawValue;
             newValue.z = value;
             m_ColorPickerSelector.RawValue = newValue;
         }
@@ -304,7 +304,7 @@ namespace TiltBrush
             m_ColorController.CurrentColor = m_ColorController.CurrentColor;
         }
 
-        void OnCurrentColorSet(ColorPickerMode mode, Vector3 rawColor)
+        void OnCurrentColorSet(ColorPickerMode mode, Vector4 rawColor)
         {
             m_ColorPickerSelector.RawValue = rawColor;
             m_ColorPickerSlider.RawValue = m_ColorPickerSelector.RawValue.z;
