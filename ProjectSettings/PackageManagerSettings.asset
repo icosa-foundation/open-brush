@@ -41,7 +41,6 @@ MonoBehaviour:
     - org.nuget.sharpziplib
     m_IsDefault: 0
     m_Capabilities: 0
-  m_UserSelectedRegistryName: Vive
   - m_Id: scoped:Meta XR
     m_Name: Meta XR
     m_Url: https://npm.developer.oculus.com
@@ -49,10 +48,11 @@ MonoBehaviour:
     - com.meta.xr.sdk
     m_IsDefault: 0
     m_Capabilities: 0
+  m_UserSelectedRegistryName: Meta XR
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_Modified: 0
     m_ErrorMessage: 
-    m_UserModificationsInstanceId: -830
-    m_OriginalInstanceId: -832
+    m_UserModificationsInstanceId: -850
+    m_OriginalInstanceId: -854
   m_LoadAssets: 0
