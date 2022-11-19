@@ -104,11 +104,6 @@ namespace TiltBrush
         [Header("Overwritten by build process")]
         [SerializeField] private PlatformConfig m_PlatformConfig;
 
-        // True for experimental mode.
-        // Cannot be ifdef'd out, because it is modified during the build process.
-        // Public to allow App.cs and BuildTiltBrush.cs to access it; do not use it otherwise.
-        public bool m_IsExperimental;
-
         // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
 
@@ -489,9 +484,9 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-        public static bool IsExperimental
+        public bool IsExperimental
         {
-            get => App.Config.m_IsExperimental;
+            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
 
         void Awake()

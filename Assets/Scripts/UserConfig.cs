@@ -209,7 +209,7 @@ namespace TiltBrush
                 {
                     if (m_IncludeTags == null)
                     {
-                        if (App.Config.m_IsExperimental)
+                        if (App.Config.IsExperimental)
                         {
                             m_IncludeTags = new[] { "default", "experimental" };
                         }
