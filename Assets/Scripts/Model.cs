@@ -447,7 +447,7 @@ namespace TiltBrush
 
         GameObject LoadUsd(List<string> warnings)
         {
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             if (Config.IsExperimental)
             {
                 return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
@@ -553,7 +553,7 @@ namespace TiltBrush
             }
 
             bool allowUsd = false;
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             allowUsd = Config.IsExperimental;
 #endif
 

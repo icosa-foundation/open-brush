@@ -489,12 +489,10 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
         public static bool IsExperimental
         {
             get => App.Config.m_IsExperimental;
         }
-#endif
 
         void Awake()
         {
@@ -532,7 +530,6 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
             if (IsExperimental)
             {
                 foreach (var brush in m_BrushReplacementMap)
@@ -540,7 +537,6 @@ namespace TiltBrush
                     m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
                 }
             }
-#endif
         }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value
