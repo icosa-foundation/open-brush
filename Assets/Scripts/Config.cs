@@ -484,9 +484,15 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-        public bool IsExperimental
+        public static bool IsExperimental
         {
             get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+        }
+
+        // Non-Static version of above
+        public bool GetIsExperimental()
+        {
+            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
 
         void Awake()

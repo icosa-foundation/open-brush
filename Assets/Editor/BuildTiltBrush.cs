@@ -1413,7 +1413,6 @@ static class BuildTiltBrush
             var config = App.Config;
             // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
             //config.m_SdkMode = xrSdk;
-            config.m_IsExperimental = tiltOptions.Experimental;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
