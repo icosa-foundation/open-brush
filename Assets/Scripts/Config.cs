@@ -495,6 +495,11 @@ namespace TiltBrush
             return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
 
+        public void SetIsExperimental(bool active)
+        {
+            PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
+        }
+
         void Awake()
         {
             m_SingletonState = this;
