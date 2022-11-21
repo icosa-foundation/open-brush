@@ -373,6 +373,7 @@ namespace TiltBrush
 
         public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false)
         {
+            SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
             ClearRedo();
