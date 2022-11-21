@@ -2248,8 +2248,8 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 4b10a36cdc00b8c4c8b6a4f6597f6c54, type: 3}
-  m_AtlasTexture: 1
+  m_ButtonTexture: {fileID: 2800000, guid: cdc7d38d9e0b30443961d1cc27195586, type: 3}
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
