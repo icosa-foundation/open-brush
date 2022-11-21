@@ -130,14 +130,6 @@ jobs:
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
-          - name: Windows OpenXR Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            extraoptions: -btb-experimental
-          - name: Windows Rift Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            extraoptions: -btb-experimental
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
@@ -146,11 +138,6 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
-          - name: Oculus Quest Experimental
-            targetPlatform: Android
-            vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
-
 
     steps:
       - name: Free extra space
@@ -324,23 +311,11 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Windows Rift)
         uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
-
-      - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows Rift Experimental
-          path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v3
@@ -348,32 +323,19 @@ jobs:
           name: Oculus Quest
           path: build_oculus_quest
 
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
-
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
-          rm -rf OpenBrush_Desktop_Experimental_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Rift_Experimental_$VERSION
       - name: Publish
         uses: koplo199/action-gh-release@1.0  # softprops/action-gh-release@v1 didn't update to node16 and fix set-output.
         env:
@@ -410,11 +372,6 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
       - name: Upload Regular Build
         run: |
           pip install -U j2cli
@@ -430,21 +387,6 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
-      - name: Upload Experimental Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: beta-experimental
       # Temporary - upload to old prerelease channels
       # TODO: remove at 2.0
       - name: Upload Legacy Regular Build
@@ -462,21 +404,6 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: prerelease
-      - name: Upload Legacy Experimental Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: prerelease-experimental
 
       - name: Save logs
         uses: actions/upload-artifact@v3
@@ -537,51 +464,27 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
-
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
-      - name: Publish Windows Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
-      - name: Publish Quest Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus:
     name: Publish Oculus Release
