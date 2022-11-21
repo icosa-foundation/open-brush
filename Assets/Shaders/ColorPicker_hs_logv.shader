@@ -20,8 +20,7 @@ Properties {
 }
 CGINCLUDE
     #include "Assets/Shaders/Include/ColorSpace.cginc"
-    #include "Assets/Shaders/Include/ColorSpaceConvert.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+  #include "Assets/Shaders/Include/Hdr.cginc"
     float _Slider01;
     fixed4 _Color;
 
@@ -105,7 +104,7 @@ SubShader {
             float saturation = rang.x;
             // Convert from [0, 1] to [_LogVMin, _LogVMax]
             float hdr_value = hslogv_slider01_to_value(_Slider01, _LogVMin, _LogVMax);
-            return SrgbToLinear(float4(sv_to_rgb(base_rgb, saturation, hdr_value), 1) * _Color);
+            return float4(sv_to_rgb(base_rgb, saturation, hdr_value), 1) * _Color;
         }
 
         ENDCG
