@@ -189,10 +189,20 @@ namespace TiltBrush
                     else
                     {
                         InputManager.Brush.Geometry.ShowBrushSizer();
-                        if (m_BimanualTape)
-                            InputManager.Brush.Geometry.TogglePadRevolverHint(m_RevolverActive, enabled: true);
+                        if (PanelManager.m_Instance.AdvancedModeActive())
+                        {
+                            if (m_BimanualTape)
+                                InputManager.Brush.Geometry.TogglePadRevolverHint(m_RevolverActive, enabled: true);
+                            else
+                                InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: true);
+                        }
                         else
-                            InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: true);
+                        {
+                            m_LazyInputActive = false;
+                            m_LazyInputTangentMode = false;
+                            InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: false);
+                        }
+
                     }
                 }
             }
