@@ -165,7 +165,7 @@ namespace TiltBrush
 
             // Set the sketch set var to Liked, then function set to force state.
             m_CurrentSketchSet = SketchSetType.Liked;
-            SetVisibleSketchSet(SketchSetType.Curated);
+            SetVisibleSketchSet(SketchSetType.User);
 
             Action refresh = () =>
             {
