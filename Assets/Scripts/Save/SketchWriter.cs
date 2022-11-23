@@ -157,8 +157,15 @@ namespace TiltBrush
                 {
                     if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-                        // Assume selected strokes belong to the current canvas.
-                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                        {
+                            snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
+                        }
+                        else
+                        {
+                            // Previous canvas has been deleted?
+                            snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        }
                     }
                     else
                     {
