@@ -86,6 +86,7 @@ namespace TiltBrush
             Trash,
             Share,
             Fly,
+            TogglePushPull = 5100,
         }
 
         /// WARNING: do not arbitrarily rename these enum values.

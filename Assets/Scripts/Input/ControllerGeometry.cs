@@ -734,6 +734,32 @@ namespace TiltBrush
             }
         }
 
+        public void ShowSculptToggle(bool SculptOn)
+        {
+            Material toggleSculptMat = Materials.Blank;
+            toggleSculptMat = SculptOn ? Materials.ToggleSelectionOn : Materials.ToggleSelectionOff;
+
+            switch (Style)
+            {
+                case ControllerStyle.Vive:
+                case ControllerStyle.LogitechPen:
+                    Materials.Assign(PadMesh, toggleSculptMat);
+                    break;
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                    Materials.Assign(JoystickPad, SelectPadTouched(Materials.BrushSizerActive, Materials.BrushSizer));
+                    Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, Materials.BrushSizer));
+                    float ratio = GetPadRatio(VrInput.Directional);
+                    JoystickPad.material.SetFloat("_Ratio", ratio);
+                    Materials.Assign(Button01Mesh, toggleSculptMat);
+                    break;
+                case ControllerStyle.Wmr:
+                    Materials.Assign(PadMesh, toggleSculptMat);
+                    ShowBrushSizer();
+                    break;
+            }
+        }
+
         public void ShowPinToggle(bool isPinning)
         {
             Material togglePinMat = Materials.Blank;
