@@ -442,9 +442,7 @@ namespace TiltBrush
             updated.point.m_Orient = ori;
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
-            // Test Color per CP - if we see cyan this line matters
-            updated.point.m_Color = Color.cyan;
-            updated.point.m_Color = Color.HSVToRGB(Mathf.PerlinNoise(pos.x, pos.z), 1, 1);
+            updated.point.m_Color = PointerManager.m_Instance.CalculateJitteredColor(m_Color);
             updated.smoothedPos = pos;
             if (iUpdate < 2)
             {

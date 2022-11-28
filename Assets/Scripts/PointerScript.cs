@@ -554,9 +554,7 @@ namespace TiltBrush
                 return;
             }
 
-            // Test Color per CP - if we see red this line matters
-            var cpColor = Color.red;
-            cpColor = Color.HSVToRGB(Mathf.PerlinNoise(xf_LS.translation.x, xf_LS.translation.z), 1, 1);
+            var cpColor = PointerManager.m_Instance.CalculateJitteredColor(m_CurrentColor);
             bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, cpColor);
 
             // TODO: let brush take care of storing control points, not us
@@ -824,9 +822,8 @@ namespace TiltBrush
             rControlPoint.m_Orient = lastSpawnXf_LS.rotation;
             rControlPoint.m_Pressure = m_CurrentPressure;
             rControlPoint.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
-            // Test Color per CP - if we see magenta this line matters
-            rControlPoint.m_Color = Color.magenta; // new Color(0, 0, 0, 0);
-            rControlPoint.m_Color = Color.HSVToRGB(Mathf.PerlinNoise(lastSpawnXf_LS.translation.x, lastSpawnXf_LS.translation.z), 1, 1);
+            // This is the colour that is saved
+            rControlPoint.m_Color = PointerManager.m_Instance.CalculateJitteredColor(m_CurrentColor);
 
             if (m_ControlPoints.Count == 0 || m_LastControlPointIsKeeper)
             {
