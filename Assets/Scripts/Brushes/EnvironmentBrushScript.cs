@@ -52,7 +52,7 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // This is OK because this isn't a real brush, yet required because these functions are abstract.
         //
-        override protected bool UpdatePositionImpl(Vector3 vPos, Quaternion ori, float fPressure)
+        override protected bool UpdatePositionImpl(Vector3 vPos, Quaternion ori, float fPressure, Color cpColor)
         {
             return true;
         }

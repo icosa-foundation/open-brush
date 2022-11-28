@@ -276,6 +276,7 @@ namespace TiltBrush
                 // Invariant: all of prev's geometry (if any) is correct and up-to-date.
                 // Thus, there is no need to modify anything shared with prev.
                 Knot cur = m_knots[iKnot];
+                var color = CalcColor(m_Color, cur.point);
 
                 if (cur.HasGeometry)
                 {
@@ -288,8 +289,8 @@ namespace TiltBrush
                         float size = PressuredSize(prev.smoothedPressure);
                         float alpha = PressuredOpacity(prev.smoothedPressure);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, m_Color, alpha);
-                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, m_Color, alpha);
+                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, color, alpha);
+                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, BR, halfRight);
@@ -303,8 +304,8 @@ namespace TiltBrush
                         float size = PressuredSize(cur.smoothedPressure);
                         float alpha = PressuredOpacity(cur.smoothedPressure);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, m_Color, alpha);
-                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, m_Color, alpha);
+                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, color, alpha);
+                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRight);
@@ -370,6 +371,7 @@ namespace TiltBrush
                     // Invariant: all of prev's geometry (if any) is correct and up-to-date.
                     // Thus, there is no need to modify anything shared with prev.
                     Knot cur = m_knots[iKnot];
+                    var col = CalcColor(m_Color, cur.point);
                     int iNext = iKnot < m_knots.Count - 1 ? iKnot + 1 : iKnot;
                     Vector3 halfRightNext = m_knots[iNext].nRight * m_sizes[iNext] / 2;
                     Vector3 knotPointNext = m_knots[iNext].point.m_Pos;
@@ -386,8 +388,8 @@ namespace TiltBrush
                         {
                             halfRight = halfRightCur;
                         }
-                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, m_Color, alpha);
-                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, m_Color, alpha);
+                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, col, alpha);
+                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, col, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRightCur);

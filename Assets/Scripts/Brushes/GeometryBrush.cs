@@ -344,7 +344,9 @@ namespace TiltBrush
                 {
                     m_Pos = pos,
                     m_Orient = ori,
-                    m_Pressure = 1
+                    m_Pressure = 1,
+                    // Test Color per CP - if we see yellow this line matters
+                    m_Color = Color.yellow
                 },
                 length = 0,
                 smoothedPos = pos
@@ -429,7 +431,7 @@ namespace TiltBrush
             rMeshScript.Init();
         }
 
-        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color cpColor)
         {
             Debug.Assert(m_knots.Count >= 2);
 
@@ -440,6 +442,9 @@ namespace TiltBrush
             updated.point.m_Orient = ori;
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
+            // Test Color per CP - if we see cyan this line matters
+            updated.point.m_Color = Color.cyan;
+            updated.point.m_Color = Color.HSVToRGB(Mathf.PerlinNoise(pos.x, pos.z), 1, 1);
             updated.smoothedPos = pos;
             if (iUpdate < 2)
             {

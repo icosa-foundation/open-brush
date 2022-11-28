@@ -405,8 +405,9 @@ namespace TiltBrush
 
         void AddRingVerts(ref Knot cur, Vector3 pos, GeometryBasis gb)
         {
-            Color32 c1 = m_Color;
-            Color32 c2 = m_Color;
+            var col = CalcColor(m_Color, cur.point);
+            Color32 c1 = col;
+            Color32 c2 = col;
             if (m_debugShowSurfaceOrientation)
             {
                 c1 = Color.blue;
@@ -590,6 +591,7 @@ namespace TiltBrush
         // information (color) to GeometryPool m_geometry
         void AppendVertSquare(ref Knot k, Vector3 v, Color32 c)
         {
+            c = CalcColor(c, k.point);
             int i = k.iVert + k.nVert++;
             if (i == m_geometry.m_Vertices.Count)
             {

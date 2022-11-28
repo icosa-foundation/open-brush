@@ -83,6 +83,7 @@ namespace TiltBrush
             None = 0,
             Pressure = 1 << 0,  // float, 1.0 is nominal
             Timestamp = 1 << 1, // uint32, milliseconds
+            Color = 1 << 2 // Color
         }
 
         public struct AdjustedMemoryBrushStroke
@@ -229,7 +230,7 @@ namespace TiltBrush
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
-                    (uint)(ControlPointExtension.Pressure | ControlPointExtension.Timestamp);
+                    (uint)(ControlPointExtension.Pressure | ControlPointExtension.Timestamp | ControlPointExtension.Color);
                 writer.UInt32(controlPointExtensionMask);
 
                 // Stroke extension fields, in order of appearance in the mask
@@ -486,7 +487,7 @@ namespace TiltBrush
                     // Slow path: deserialize field-by-field.
                     for (int j = 0; j < nControlPoints; ++j)
                     {
-                        PointerManager.ControlPoint rControlPoint;
+                        PointerManager.ControlPoint rControlPoint = default;
 
                         rControlPoint.m_Pos = reader.Vec3();
                         rControlPoint.m_Orient = reader.Quaternion();
@@ -509,6 +510,9 @@ namespace TiltBrush
                                     break;
                                 case ControlPointExtension.Timestamp:
                                     rControlPoint.m_TimestampMs = reader.UInt32();
+                                    break;
+                                case ControlPointExtension.Color:
+                                    rControlPoint.m_Color = reader.Color();
                                     break;
                                 default:
                                     // skip unknown extension

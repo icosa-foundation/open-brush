@@ -295,20 +295,20 @@ namespace TiltBrush
                         float size = PressuredSize(prev.smoothedPressure) * prev.qFrame.x;
                         Vector3 halfR = cur.nRight * (size / 2);
                         Vector3 halfU = cur.nSurface * ((size / 2) * kCrossSectionAspectRatio);
-                        MySetVert(cur.iVert, BR, prev.point.m_Pos + halfR, cur.nRight);
-                        MySetVert(cur.iVert, BL, prev.point.m_Pos - halfR, -cur.nRight);
-                        MySetVert(cur.iVert, BT, prev.point.m_Pos + halfU, cur.nSurface);
-                        MySetVert(cur.iVert, BB, prev.point.m_Pos - halfU, -cur.nSurface);
+                        MySetVert(cur, BR, prev.point.m_Pos + halfR, cur.nRight);
+                        MySetVert(cur, BL, prev.point.m_Pos - halfR, -cur.nRight);
+                        MySetVert(cur, BT, prev.point.m_Pos + halfU, cur.nSurface);
+                        MySetVert(cur, BB, prev.point.m_Pos - halfU, -cur.nSurface);
                     }
 
                     {
                         float size = PressuredSize(cur.smoothedPressure) * cur.qFrame.x;
                         Vector3 halfR = cur.nRight * (size / 2);
                         Vector3 halfU = cur.nSurface * ((size / 2) * kCrossSectionAspectRatio);
-                        MySetVert(cur.iVert, FR, cur.point.m_Pos + halfR, cur.nRight);
-                        MySetVert(cur.iVert, FL, cur.point.m_Pos - halfR, -cur.nRight);
-                        MySetVert(cur.iVert, FT, cur.point.m_Pos + halfU, cur.nSurface);
-                        MySetVert(cur.iVert, FB, cur.point.m_Pos - halfU, -cur.nSurface);
+                        MySetVert(cur, FR, cur.point.m_Pos + halfR, cur.nRight);
+                        MySetVert(cur, FL, cur.point.m_Pos - halfR, -cur.nRight);
+                        MySetVert(cur, FT, cur.point.m_Pos + halfU, cur.nSurface);
+                        MySetVert(cur, FB, cur.point.m_Pos - halfU, -cur.nSurface);
                     }
                 }
 
@@ -316,12 +316,13 @@ namespace TiltBrush
             }
         }
 
-        void MySetVert(int iVert, int vp, Vector3 v, Vector3 n)
+        void MySetVert(Knot k, int vp, Vector3 v, Vector3 n)
         {
+            var iVert = k.iVert;
             int i = iVert + vp * NS;
             m_geometry.m_Vertices[i] = v;
             m_geometry.m_Normals[i] = n;
-            Color32 c = m_Color;
+            Color32 c = CalcColor(m_Color, k.point);
             c.a = 255;
             m_geometry.m_Colors[i] = c;
             m_geometry.m_Texcoord0.v2[i] = new Vector2(.5f, .5f);

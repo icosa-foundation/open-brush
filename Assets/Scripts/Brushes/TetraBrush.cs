@@ -195,6 +195,7 @@ namespace TiltBrush
                 // Invariant: all of prev's geometry (if any) is correct and up-to-date.
                 // Thus, there is no need to modify anything shared with prev.
                 Knot cur = m_knots[iKnot];
+                var col = CalcColor(m_Color, cur.point);
 
                 cur.iTri = prev.iTri + prev.nTri;
                 cur.iVert = (ushort)(prev.iVert + prev.nVert);
@@ -247,7 +248,7 @@ namespace TiltBrush
                         float uRate = m_Desc.m_TileRate / circumference;
 
                         Vector2 uv = Vector3.zero;
-                        AppendVert(ref cur, cur.smoothedPos, fwd, m_Color, fwd, uv);
+                        AppendVert(ref cur, cur.smoothedPos, fwd, col, fwd, uv);
                     }
 
                     // Tris
@@ -277,6 +278,8 @@ namespace TiltBrush
             float u0, float v0, float v1, float uRate,
             Vector3 up, Vector3 rt, Vector3 fwd)
         {
+            var col = CalcColor(m_Color, k.point);
+
             // Length of diagonal between circle and tip
             float diagonal = ((circleCenter + up * radius) - tip).magnitude;
             float u = u0 + uRate * diagonal;
@@ -289,7 +292,7 @@ namespace TiltBrush
                 float theta = TWOPI * t;
                 Vector3 tan = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
                 Vector2 uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
-                AppendVert(ref k, tip, normal, m_Color, tan, uv);
+                AppendVert(ref k, tip, normal, col, tan, uv);
             }
         }
 
@@ -298,6 +301,8 @@ namespace TiltBrush
             Vector3 up, Vector3 rt, Vector3 fwd,
             float u, float v0, float v1)
         {
+            var col = CalcColor(m_Color, k.point);
+
             // When facing down the tangent, circle verts should go clockwise
             // We'd like the seam to be on the bottom
             up *= radius;
@@ -318,7 +323,7 @@ namespace TiltBrush
                     uv = new Vector2(u, Mathf.Lerp(v0, v1, t));
                 }
                 Vector3 off = -Mathf.Cos(theta) * up + -Mathf.Sin(theta) * rt;
-                AppendVert(ref k, center + off, off.normalized, m_Color, fwd, uv);
+                AppendVert(ref k, center + off, off.normalized, col, fwd, uv);
             }
         }
 

@@ -30,6 +30,7 @@ namespace TiltBrush
         {
             public float m_BirthTime;
             public TrTransform m_xf_LS; // in the local coordinate system of the preview line
+            public Color m_Color;
         }
 
         /// Designates in which space space the parametric brush-size lerp operates.
@@ -458,7 +459,7 @@ namespace TiltBrush
                     // Brush size is: original size * "distance" to front * ratio to ideal length.
                     // "distance" is approximated here by "segment index".
                     m_PreviewLine.UpdatePosition_LS(
-                        m_PreviewControlPoints[i].m_xf_LS, segmentScale01 * lengthScale01);
+                        m_PreviewControlPoints[i].m_xf_LS, segmentScale01 * lengthScale01, m_PreviewControlPoints[i].m_Color);
                 }
             }
         }
@@ -497,7 +498,7 @@ namespace TiltBrush
                     else
                     {
                         m_PreviewLine.DecayBrush();
-                        m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f, m_CurrentColor);
                     }
 
                     // Always update preview brush after each frame
@@ -547,13 +548,16 @@ namespace TiltBrush
                     }
                     m_CurrentLine.UpdatePosition_LS(
                         TrTransform.TRS(m_ControlPoints[i].m_Pos, m_ControlPoints[i].m_Orient, scale),
-                        m_ControlPoints[i].m_Pressure);
+                        m_ControlPoints[i].m_Pressure, m_ControlPoints[i].m_Color);
                 }
                 UpdateLineVisuals();
                 return;
             }
 
-            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure);
+            // Test Color per CP - if we see red this line matters
+            var cpColor = Color.red;
+            cpColor = Color.HSVToRGB(Mathf.PerlinNoise(xf_LS.translation.x, xf_LS.translation.z), 1, 1);
+            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, cpColor);
 
             // TODO: let brush take care of storing control points, not us
             SetControlPoint(xf_LS, isKeeper: bQuadCreated);
@@ -600,7 +604,7 @@ namespace TiltBrush
         {
             float scale = m_CurrentLine.StrokeScale;
             m_CurrentLine.UpdatePosition_LS(
-                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, cp.m_Color);
         }
 
         /// Bulk control point addition
@@ -616,7 +620,7 @@ namespace TiltBrush
             float scale = m_CurrentLine.StrokeScale;
             foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
             {
-                m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, cp.m_Color);
             }
         }
 
@@ -820,6 +824,9 @@ namespace TiltBrush
             rControlPoint.m_Orient = lastSpawnXf_LS.rotation;
             rControlPoint.m_Pressure = m_CurrentPressure;
             rControlPoint.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
+            // Test Color per CP - if we see magenta this line matters
+            rControlPoint.m_Color = Color.magenta; // new Color(0, 0, 0, 0);
+            rControlPoint.m_Color = Color.HSVToRGB(Mathf.PerlinNoise(lastSpawnXf_LS.translation.x, lastSpawnXf_LS.translation.z), 1, 1);
 
             if (m_ControlPoints.Count == 0 || m_LastControlPointIsKeeper)
             {

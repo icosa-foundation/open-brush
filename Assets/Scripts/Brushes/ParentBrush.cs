@@ -346,8 +346,7 @@ namespace TiltBrush
         // BaseBrushScript api
         //
 
-        protected override bool UpdatePositionImpl(
-            Vector3 translation, Quaternion rotation, float pressure)
+        protected override bool UpdatePositionImpl(Vector3 translation, Quaternion rotation, float pressure, Color cpColor)
         {
             TrTransform parentXf = TrTransform.TR(translation, rotation);
 
@@ -375,7 +374,7 @@ namespace TiltBrush
             {
                 PbChild child = m_children[i];
                 var childXf = child.CalculateChildXfFixedScale(m_knots);
-                if (child.m_brush.UpdatePosition_LS(childXf, pressure))
+                if (child.m_brush.UpdatePosition_LS(childXf, pressure, cpColor))
                 {
                     // Need to save off any control point which is applicable to any of our children.
                     // This does mean that if we have a giant tree of children, we might be saving

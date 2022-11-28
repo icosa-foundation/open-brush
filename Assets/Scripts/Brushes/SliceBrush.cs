@@ -217,7 +217,7 @@ namespace TiltBrush
         void AppendVert(ref Knot k, Vector3 pos, Vector3 n,
                         Vector3 tan, float u, float v, float w)
         {
-            Color32 color = m_Color;
+            var color = CalcColor(m_Color, k.point);
             color.a = 255;
             // Vector4 tan4 = tan;
             // tan4.w = 1;

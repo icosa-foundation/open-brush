@@ -449,13 +449,14 @@ namespace TiltBrush
 
         void AppendVert(ref Knot k, Vector3 v, Vector3 n)
         {
+            var col = CalcColor(m_Color, k.point);
             if ((k.iVert + k.nVert != m_geometry.m_Vertices.Count))
             {
                 Debug.Assert(false);
             }
             m_geometry.m_Vertices.Add(v);
             m_geometry.m_Normals.Add(n);
-            m_geometry.m_Colors.Add(m_Color);
+            m_geometry.m_Colors.Add(col);
             k.nVert += 1;
             if (m_bDoubleSided)
             {
@@ -463,7 +464,7 @@ namespace TiltBrush
                 m_geometry.m_Normals.Add(-n);
                 // TODO: backface is a different color for visualization reasons
                 // Probably better to use a non-culling shader instead of doubling the geo.
-                m_geometry.m_Colors.Add(m_Color);
+                m_geometry.m_Colors.Add(col);
                 k.nVert += 1;
             }
         }

@@ -170,9 +170,9 @@ namespace TiltBrush
         /// Bit naughty, but I'm back to overriding UpdatePositionImpl. I think in this case it's
         /// acceptable as it is simply wrapping the call so that we can trap the cursor position to
         /// work out how far the pointer has traveled.
-        protected override bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        protected override bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color cpColor)
         {
-            bool result = base.UpdatePositionImpl(pos, ori, pressure);
+            bool result = base.UpdatePositionImpl(pos, ori, pressure, cpColor);
             if (m_DistancePointerTravelled < 0f)
             {
                 m_DistancePointerTravelled = 0f;
@@ -405,10 +405,12 @@ namespace TiltBrush
             SetTri(triIndex, vertIndex, 0, kBr, kBl, kFl);
             SetTri(triIndex, vertIndex, 1, kBr, kFl, kFr);
 
-            SetVert(vertIndex, kBr, center - upOffset + rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kBl, center - upOffset - rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kFr, center + upOffset + rightOffset, center, m_Color, alpha);
-            SetVert(vertIndex, kFl, center + upOffset - rightOffset, center, m_Color, alpha);
+            var color = CalcColor(m_Color, cur.point);
+
+            SetVert(vertIndex, kBr, center - upOffset + rightOffset, center, color, alpha);
+            SetVert(vertIndex, kBl, center - upOffset - rightOffset, center, color, alpha);
+            SetVert(vertIndex, kFr, center + upOffset + rightOffset, center, color, alpha);
+            SetVert(vertIndex, kFl, center + upOffset - rightOffset, center, color, alpha);
 
             // When a stroke is loaded from a .tilt, m_TimestampMs is _not_ initialized from the
             // timestamp in the Stroke. Therefore we don't have to worry about it being in the future

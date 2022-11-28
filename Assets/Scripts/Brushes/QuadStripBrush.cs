@@ -458,6 +458,7 @@ namespace TiltBrush
             bool bGenerateNew, float opacity01,
             Vector3 vCenter, Vector3 vForward, Vector3 vNormal,
             Vector3 vRight, MasterBrush rMasterBrush,
+            Color cpColor,
             out int earliestChangedQuad)
         {
             // Get the current stroke from the MasterBrush so that quad positions and
@@ -477,7 +478,9 @@ namespace TiltBrush
 
             earliestChangedQuad = m_LeadingQuadIndex;
 
-            Color32 cColor = m_Color;
+
+            Color32 cColor = CalcColor(m_Color, cpColor);
+
             cColor.a = (byte)(opacity01 * 255.0f);
             Color32 cLastColor = (iVertIndex - stride >= 0) ? aColors[iVertIndex - stride + 4] : cColor;
 
@@ -504,7 +507,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    HSLColor hsl = (HSLColor)(Color)m_Color;
+                    HSLColor hsl = (HSLColor)(Color)cColor;
                     hsl.HueDegrees += m_Desc.m_BackfaceHueShift;
                     backColor = (Color32)(Color)hsl;
                     lastBackColor = (iCurrVertIndex - stride >= 0)
@@ -716,8 +719,7 @@ namespace TiltBrush
             mf.mesh.RecalculateBounds();
         }
 
-        override protected bool UpdatePositionImpl(
-            Vector3 vPos, Quaternion ori, float fPressure)
+        override protected bool UpdatePositionImpl(Vector3 vPos, Quaternion ori, float fPressure, Color cpColor)
         {
             UnityEngine.Profiling.Profiler.BeginSample("QuadStripBrush.UpdatePositionImpl");
             var rMasterBrush = m_Geometry;
@@ -819,7 +821,8 @@ namespace TiltBrush
             int earliestQuad;
             AppendLeadingQuad(bGenerateNewQuad, PressuredOpacity(fSmoothedPressure),
                 vQuadCenter, vQuadForward, vSurfaceNormal, vQuadRight,
-                rMasterBrush, out earliestQuad);
+                rMasterBrush, cpColor,
+                out earliestQuad);
             Debug.Assert(m_LeadingQuadIndex == iPrevLeadingIndex + iNumQuadsPer);
 
             UpdateUVs(Mathf.Min(iPrevInitialIndex, earliestQuad), m_LeadingQuadIndex, pressuredSize);

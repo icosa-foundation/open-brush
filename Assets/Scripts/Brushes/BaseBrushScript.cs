@@ -83,6 +83,17 @@ namespace TiltBrush
             return currentLine;
         }
 
+
+        public Color CalcColor(Color c, PointerManager.ControlPoint cp)
+        {
+            return CalcColor(c, cp.m_Color);
+        }
+
+        public Color CalcColor(Color c, Color cpColor)
+        {
+            return Color.Lerp(c, cpColor, cpColor.a);
+        }
+
         // used for batched strokes. not overridable
         public static float GetStrokeCost(BrushDescriptor desc, int verts, float size)
         {
@@ -205,11 +216,11 @@ namespace TiltBrush
 
         /// Returns true if permanent geometry was generated.
         /// Transform should be in the local coordinates of the stroke
-        public bool UpdatePosition_LS(TrTransform xf, float fPressure)
+        public bool UpdatePosition_LS(TrTransform xf, float fPressure, Color cpColor)
         {
             if (IsOutOfVerts()) { return false; }
 
-            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure);
+            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure, cpColor);
             if (ret)
             {
                 m_LastSpawnXf = xf;
@@ -314,9 +325,8 @@ namespace TiltBrush
         protected abstract void InitUndoClone(GameObject clone);
 
         // Return true if a new solid was created.
-        protected abstract bool UpdatePositionImpl(
-            Vector3 vPos, Quaternion ori,
-            float fPressure);
+        protected abstract bool UpdatePositionImpl(Vector3 vPos, Quaternion ori,
+                                                   float fPressure, Color cpColor);
 
         // This function is a sanity check for making sure we don't overrun our allocated vertex buffers
         //  when creating new geometry.  It is used at low levels as a safeguard.

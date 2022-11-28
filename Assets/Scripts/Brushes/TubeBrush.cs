@@ -901,6 +901,9 @@ namespace TiltBrush
         void AppendVert(ref Knot k, Vector3 v, Vector3 n, Color32 c,
                         Vector3 tan, Vector2 uv, float radius)
         {
+
+            c = CalcColor(c, k.point);
+
             int i = k.iVert + k.nVert++;
             Vector3 uv3 = new Vector3(uv.x, uv.y, radius);
             Vector4 tan4 = tan;

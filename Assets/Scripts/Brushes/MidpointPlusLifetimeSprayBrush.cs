@@ -180,22 +180,23 @@ namespace TiltBrush
                                 : (float)App.Instance.SketchTimeToLevelLoadTime(cur.point.m_TimestampMs * .001);
                         Vector4 x;
                         Vector3 tmp;
-                        SetVert(iVertIndex, BR, vCenter - vForwardOffset + vRightOffset, cur.nSurface, m_Color, alpha);
+                        var color = CalcColor(m_Color, cur.point);
+                        SetVert(iVertIndex, BR, vCenter - vForwardOffset + vRightOffset, cur.nSurface, color, alpha);
                         tmp = -vForwardOffset + vRightOffset;
                         x = new Vector4(tmp.x, tmp.y, tmp.z, knotCreationTimeSinceLevelLoad);
                         SetUv1(iVertIndex, BR, x);
 
-                        SetVert(iVertIndex, BL, vCenter - vForwardOffset - vRightOffset, cur.nSurface, m_Color, alpha);
+                        SetVert(iVertIndex, BL, vCenter - vForwardOffset - vRightOffset, cur.nSurface, color, alpha);
                         tmp = -vForwardOffset - vRightOffset;
                         x = new Vector4(tmp.x, tmp.y, tmp.z, knotCreationTimeSinceLevelLoad);
                         SetUv1(iVertIndex, BL, x);
 
-                        SetVert(iVertIndex, FR, vCenter + vForwardOffset + vRightOffset, cur.nSurface, m_Color, alpha);
+                        SetVert(iVertIndex, FR, vCenter + vForwardOffset + vRightOffset, cur.nSurface, color, alpha);
                         tmp = vForwardOffset + vRightOffset;
                         x = new Vector4(tmp.x, tmp.y, tmp.z, knotCreationTimeSinceLevelLoad);
                         SetUv1(iVertIndex, FR, x);
 
-                        SetVert(iVertIndex, FL, vCenter + vForwardOffset - vRightOffset, cur.nSurface, m_Color, alpha);
+                        SetVert(iVertIndex, FL, vCenter + vForwardOffset - vRightOffset, cur.nSurface, color, alpha);
                         tmp = vForwardOffset - vRightOffset;
                         x = new Vector4(tmp.x, tmp.y, tmp.z, knotCreationTimeSinceLevelLoad);
                         SetUv1(iVertIndex, FL, x);
