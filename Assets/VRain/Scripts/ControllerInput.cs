@@ -19,7 +19,7 @@ public class ControllerInput : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        MovePlayer();
     }
 
     void MovePlayer()
@@ -29,6 +29,7 @@ public class ControllerInput : MonoBehaviour
 
         if(OVRInput.Get(OVRInput.Touch.PrimaryThumbstick))
         {
+            Debug.Log("Move");
             Vector2 coord = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
 
             var absX = Mathf.Abs(coord.x);
