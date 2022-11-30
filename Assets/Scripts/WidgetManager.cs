@@ -14,6 +14,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using IsoMesh;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -33,7 +34,8 @@ namespace TiltBrush
         Cylinder,
         InteriorDome,
         Pyramid,
-        Ellipsoid
+        Ellipsoid,
+        SDF
     }
 
     [Serializable]
@@ -117,6 +119,7 @@ namespace TiltBrush
         [SerializeField] float m_GazeMaxAngleFromFacing = 70.0f;
         [SerializeField] private float m_PanelFocusActivationScore;
         [SerializeField] private float m_ModelVertCountScalar = 1.0f;
+        [SerializeField] public SDFGroup m_SDFManager;
 
         [Header("Stencils")]
         [SerializeField] StencilMapKey[] m_StencilMap;
@@ -837,7 +840,7 @@ namespace TiltBrush
 
                 // Using the 0 index of m_StencilContactInfos as a shortcut.
                 m_StencilContactInfos[0].widget = m_ActiveStencil;
-                FindClosestPointOnWidgetSurface(pos, ref m_StencilContactInfos[0]);
+                FindClosestPointOnWidgetSurface(pos, rot, ref m_StencilContactInfos[0]);
 
                 m_ActiveStencil.SetInUse(true);
                 pos = m_StencilContactInfos[0].pos;
@@ -873,7 +876,7 @@ namespace TiltBrush
                     }
                     m_StencilContactInfos[sIndex].widget = sw;
 
-                    FindClosestPointOnWidgetSurface(samplePos, ref m_StencilContactInfos[sIndex]);
+                    FindClosestPointOnWidgetSurface(samplePos, rot, ref m_StencilContactInfos[sIndex]);
 
                     // Find out how far we are from this point and save it as a score.
                     float distToSurfactPoint = (m_StencilContactInfos[sIndex].pos - samplePos).magnitude;
@@ -931,9 +934,16 @@ namespace TiltBrush
             return collider.Raycast(rRay, out rHitInfo, fDist);
         }
 
-        void FindClosestPointOnWidgetSurface(Vector3 pos, ref StencilContactInfo info)
+        void FindClosestPointOnWidgetSurface(Vector3 pos, Quaternion rot, ref StencilContactInfo info)
         {
-            info.widget.FindClosestPointOnSurface(pos, out info.pos, out info.normal);
+            if (info.widget.Type == StencilType.SDF)
+            {
+                info.widget.RaycastToSurface(pos, rot, out info.pos, out info.normal);
+            }
+            else
+            {
+                info.widget.FindClosestPointOnSurface(pos, out info.pos, out info.normal);
+            }
         }
 
         public bool ShouldUpdateCollisions()

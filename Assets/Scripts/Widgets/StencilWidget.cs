@@ -192,6 +192,13 @@ namespace TiltBrush
             surfaceNorm = transform.forward;
         }
 
+        public virtual void RaycastToSurface(Vector3 pos, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            // Not supported except on SDFs
+            surfacePos = Vector3.zero;
+            surfaceNorm = Vector3.zero;
+        }
+
         override public Vector2 GetWidgetSizeRange()
         {
             return new Vector2(m_MinSize_CS, m_MaxSize_CS);

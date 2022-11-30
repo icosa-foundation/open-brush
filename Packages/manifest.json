@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "tw.hoba.isomesh": "https://github.com/shinabebel/IsoMesh.git#upm",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",

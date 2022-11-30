@@ -233,6 +233,13 @@
       "dependencies": {},
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
+    "tw.hoba.isomesh": {
+      "version": "https://github.com/shinabebel/IsoMesh.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "517b7ca1efa8399d31db1c6449a3886e83714ff3"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

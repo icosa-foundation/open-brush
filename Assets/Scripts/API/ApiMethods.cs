@@ -500,6 +500,9 @@ namespace TiltBrush
                 case "ellipsoid":
                     stencilType = StencilType.Ellipsoid;
                     break;
+                case "sdf":
+                    stencilType = StencilType.SDF;
+                    break;
                 default:
                     stencilType = StencilType.Sphere;
                     break;
