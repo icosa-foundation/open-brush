@@ -2,7 +2,7 @@
   "dependencies": {
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=6#upm",
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git?nocache=12#upm",
-    "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#fix-pre-process-build",
+    "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
