@@ -250,7 +250,7 @@ namespace TiltBrush
 
         static void BuildBrushMeshesFromExportCanvas(SceneStatePayload payload)
         {
-            foreach (var exportGroup in ExportUtils.ExportMainCanvas().SplitByGroup())
+            foreach (var exportGroup in ExportAllCanvasesIgnoreLayers().SplitByGroup())
             {
                 payload.groups.Add(BuildGroupPayload(payload, exportGroup));
             }
