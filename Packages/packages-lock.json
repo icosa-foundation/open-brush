@@ -14,11 +14,11 @@
       "hash": "fec33a44c78cccfbeed6f0e22e7c57c3ded34d6e"
     },
     "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#fix-pre-process-build",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "b3a4ef1f353c19c5e6c648d825642c150c6e8a2d"
+      "hash": "ddade3ae0bb20c33cb547973673c7e16df55428a"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -170,7 +170,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.legacyinputhelpers": {
-      "version": "2.1.9",
+      "version": "2.1.10",
       "depth": 1,
       "source": "registry",
       "dependencies": {
