@@ -179,7 +179,7 @@ namespace TiltBrush
         override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             VideoWidget clone = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab) as VideoWidget;
-            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.m_previousCanvas = m_previousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;

@@ -323,7 +323,7 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
     m_Command: 5
-  - m_PopUpPrefab: {fileID: 1758786797962018, guid: e2dd9f64d28858a468b61151cbf090d6,
+  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
       type: 3}
     m_Command: 15
   m_PanelDescription: Experimental

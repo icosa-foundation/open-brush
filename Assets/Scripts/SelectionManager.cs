@@ -720,7 +720,7 @@ namespace TiltBrush
                 Debug.LogWarning("Attempted to select widget that is already selected.");
                 return;
             }
-            widget.m_PreviousCanvas = widget.Canvas;
+            widget.m_previousCanvas = widget.Canvas;
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
@@ -756,9 +756,9 @@ namespace TiltBrush
                 {
                     destinationCanvas = targetCanvas;
                 }
-                else if (IsValidDestination(widget.m_PreviousCanvas))
+                else if (IsValidDestination(widget.m_previousCanvas))
                 {
-                    destinationCanvas = widget.m_PreviousCanvas;
+                    destinationCanvas = widget.m_previousCanvas;
                 }
                 else
                 {

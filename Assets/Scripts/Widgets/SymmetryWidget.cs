@@ -119,20 +119,20 @@ namespace TiltBrush
             {
                 case PointerManager.SymmetryMode.SinglePlane:
                     m_LeftRightMesh.enabled = false;
-                    m_FrontBackMesh.enabled = false;
-                    break;
-                case PointerManager.SymmetryMode.TwoHanded:
-                    m_LeftRightMesh.enabled = false;
-                    m_FrontBackMesh.enabled = true;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
                             (m_GuideBeams[i].m_Direction != BeamDirection.Right));
                     }
                     break;
+                case PointerManager.SymmetryMode.TwoHanded:
                 case PointerManager.SymmetryMode.MultiMirror:
                     m_LeftRightMesh.enabled = false;
                     m_FrontBackMesh.enabled = true;
+                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    {
+                        m_GuideBeams[i].m_BeamRenderer.enabled = false;
+                    }
                     if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
                     {
                     }
