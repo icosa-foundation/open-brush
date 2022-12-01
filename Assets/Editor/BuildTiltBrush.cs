@@ -1012,6 +1012,14 @@ static class BuildTiltBrush
                     //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
                     // }
                     break;
+                case XrSdkMode.Wave:
+                    // Using Wave Native right now.
+                    // if(m_targetGroup == BuildTargetGroup.Android)
+                    // {
+                    //     requiredFeatureStrings.Add("com.unity.openxr.feature.vivefocus3");
+                    //     requiredFeatureStrings.Add("vive.wave.openxr.feature.focus3controller");
+                    // }
+                    break;
             }
 
             if (requiredFeatureStrings.Count == 0)
@@ -1087,6 +1095,9 @@ static class BuildTiltBrush
             {
                 case XrSdkMode.Oculus:
                     targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
+                    break;
+                case XrSdkMode.Wave:
+                    targetXrPluginsRequired = new string [] { "Wave.XR.Loader.WaveXRLoader" };
                     break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };

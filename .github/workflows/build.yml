@@ -150,6 +150,10 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+          - name: Vive Wave Android
+            targetPlatform: Android
+            vrsdk: Wave
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
 
 
     steps:

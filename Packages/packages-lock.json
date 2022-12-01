@@ -6,6 +6,15 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.htc.upm.wave.xrsdk": {
+      "version": "5.0.3-r.5",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.xr.management": "3.0.6"
+      },
+      "url": "https://npm-registry.vive.com"
+    },
     "com.meta.xr.sdk.utilities": {
       "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
       "depth": 0,
