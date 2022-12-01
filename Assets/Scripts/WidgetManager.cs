@@ -938,7 +938,7 @@ namespace TiltBrush
         {
             if (info.widget.Type == StencilType.SDF)
             {
-                info.widget.RaycastToSurface(pos, rot, out info.pos, out info.normal);
+                info.widget.RaycastToNearest(pos, rot, out info.pos, out info.normal);
             }
             else
             {

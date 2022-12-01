@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a1cedc447a7226a48a8af3ea7059ea38
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_ViewDataDictionary: {instanceID: 0}
+  - inspectorTargetSerialized: {instanceID: 0}
+  - m_meshSampleComputeShader: {fileID: 7200000, guid: bbe9cc249dec18f4aa68c4b8659b8dbb,
+      type: 3}
+  - m_tesselationComputeShader: {fileID: 7200000, guid: 010a69ffd26bec64a8c8cf12ef0f29aa,
+      type: 3}
+  - m_mesh: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 64317e58f822f2c4f95d40c176f63c39
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_computeShader: {fileID: 7200000, guid: 0e30fa915af718c4bb87a11c35937eb0, type: 3}
+  - m_group: {instanceID: 0}
+  - m_meshGameObject: {instanceID: 0}
+  - m_meshFilter: {instanceID: 0}
+  - m_meshCollider: {instanceID: 0}
+  - m_proceduralMeshMaterial: {fileID: 2100000, guid: 0de64f367f4df4247a146598773e4aad, type: 2}
+  - m_meshRenderer: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

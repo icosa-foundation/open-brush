@@ -1,0 +1,224 @@
+﻿#pragma kernel CS_Tessellate
+#pragma kernel CS_PreprocessMesh
+
+#include "Common.hlsl"
+
+StructuredBuffer<float3> _InputVertices;
+StructuredBuffer<float3> _InputNormals;
+StructuredBuffer<int> _InputTriangles;
+StructuredBuffer<float2> _InputUVs;
+StructuredBuffer<float4> _InputTangents;
+
+RWStructuredBuffer<float3> _OutputVertices;
+RWStructuredBuffer<float3> _OutputNormals;
+RWStructuredBuffer<int> _OutputTriangles;
+RWStructuredBuffer<float2> _OutputUVs;
+RWStructuredBuffer<float4> _OutputTangents;
+
+int _TriangleCount;
+float _MinimumEdgeLength;
+
+void AddTriangle(float3 a_vert, float3 b_vert, float3 c_vert, float3 a_norm, float3 b_norm, float3 c_norm, float4 a_tan, float4 b_tan, float4 c_tan, float2 a_uv, float2 b_uv, float2 c_uv, int index)
+{
+    _OutputVertices[index] = a_vert;
+    _OutputNormals[index] = a_norm;
+    _OutputTangents[index] = a_tan;
+    _OutputUVs[index] = a_uv;
+    _OutputTriangles[index] = index;
+
+    _OutputVertices[index + 1] = b_vert;
+    _OutputNormals[index + 1] = b_norm;
+    _OutputTangents[index + 1] = b_tan;
+    _OutputUVs[index + 1] = b_uv;
+    _OutputTriangles[index + 1] = index + 1;
+
+    _OutputVertices[index + 2] = c_vert;
+    _OutputNormals[index + 2] = c_norm;
+    _OutputTangents[index + 2] = c_tan;
+    _OutputUVs[index + 2] = c_uv;
+    _OutputTriangles[index + 2] = index + 2;
+}
+
+[numthreads(64, 1, 1)]
+void CS_PreprocessMesh(uint3 id : SV_DispatchThreadID)
+{
+    int triIndex = id.x * 3;
+    
+    if (triIndex >= _TriangleCount)
+        return;
+    
+    int a_index = triIndex + 0;
+    int b_index = triIndex + 1;
+    int c_index = triIndex + 2;
+
+    int a_tri = _InputTriangles[a_index];
+    int b_tri = _InputTriangles[b_index];
+    int c_tri = _InputTriangles[c_index];
+
+    AddTriangle(
+    _InputVertices[a_tri], _InputVertices[b_tri], _InputVertices[c_tri],
+    _InputNormals[a_tri], _InputNormals[b_tri], _InputNormals[c_tri], 
+    _InputTangents[a_tri], _InputTangents[b_tri], _InputTangents[c_tri], 
+    _InputUVs[a_tri], _InputUVs[b_tri], _InputUVs[c_tri],
+    a_index);
+}
+
+[numthreads(64, 1, 1)]
+void CS_Tessellate(uint3 id : SV_DispatchThreadID)
+{
+    int triIndex = id.x * 3;
+    
+    if (triIndex >= _TriangleCount)
+        return;
+    
+    int a_index = triIndex + 0;
+    int b_index = triIndex + 1;
+    int c_index = triIndex + 2;
+
+    int a_tri = _InputTriangles[a_index];
+    int b_tri = _InputTriangles[b_index];
+    int c_tri = _InputTriangles[c_index];
+    
+    float3 original_a_vert = _InputVertices[a_tri];
+    float3 original_b_vert = _InputVertices[b_tri];
+    float3 original_c_vert = _InputVertices[c_tri];
+    
+    float length_AB = distance(original_a_vert, original_b_vert);
+    float length_BC = distance(original_b_vert, original_c_vert);
+    float length_CA = distance(original_c_vert, original_a_vert);
+    
+    float3 original_a_norm = _InputNormals[a_tri];
+    float3 original_b_norm = _InputNormals[b_tri];
+    float3 original_c_norm = _InputNormals[c_tri];
+    
+    float4 original_a_tan = _InputTangents[a_tri];
+    float4 original_b_tan = _InputTangents[b_tri];
+    float4 original_c_tan = _InputTangents[c_tri];
+    
+    float2 original_a_uv = _InputUVs[a_tri];
+    float2 original_b_uv = _InputUVs[b_tri];
+    float2 original_c_uv = _InputUVs[c_tri];
+    
+    float3 midPointAB = (original_a_vert + original_b_vert) * 0.5;
+    float3 midPointBC = (original_b_vert + original_c_vert) * 0.5;
+    float3 midPointCA = (original_c_vert + original_a_vert) * 0.5;
+    
+    float3 midPointAB_norm = normalize(original_a_norm + original_b_norm);
+    float3 midPointBC_norm = normalize(original_b_norm + original_c_norm);
+    float3 midPointCA_norm = normalize(original_c_norm + original_a_norm);
+    
+    float4 midPointAB_tan = float4(normalize(original_a_tan.xyz + original_b_tan.xyz), original_a_tan.w);
+    float4 midPointBC_tan = float4(normalize(original_b_tan.xyz + original_c_tan.xyz), original_b_tan.w);
+    float4 midPointCA_tan = float4(normalize(original_c_tan.xyz + original_a_tan.xyz), original_c_tan.w);
+    
+    float2 midPointAB_uv = (original_a_uv + original_b_uv) * 0.5;
+    float2 midPointBC_uv = (original_b_uv + original_c_uv) * 0.5;
+    float2 midPointCA_uv = (original_c_uv + original_a_uv) * 0.5;
+    
+    float original_a_uv_packed = Pack2In1(original_a_uv, 4096);
+    float original_b_uv_packed = Pack2In1(original_b_uv, 4096);
+    float original_c_uv_packed = Pack2In1(original_c_uv, 4096);
+    float midPointAB_uv_packed = Pack2In1(midPointAB_uv, 4096);
+    float midPointBC_uv_packed = Pack2In1(midPointBC_uv, 4096);
+    float midPointCA_uv_packed = Pack2In1(midPointCA_uv, 4096);
+    
+    original_a_uv = Unpack2In1(original_a_uv_packed, 4096);
+    original_b_uv = Unpack2In1(original_b_uv_packed, 4096);
+    original_c_uv = Unpack2In1(original_c_uv_packed, 4096);
+    midPointAB_uv = Unpack2In1(midPointAB_uv_packed, 4096);
+    midPointBC_uv = Unpack2In1(midPointBC_uv_packed, 4096);
+    midPointCA_uv = Unpack2In1(midPointCA_uv_packed, 4096);
+    
+    // this is where the magic happens
+    midPointAB = length_AB <= _MinimumEdgeLength ? midPointAB : InterpolateSurfacePosition(midPointAB, original_a_vert, original_b_vert, original_c_vert, original_a_norm, original_b_norm, original_c_norm);
+    midPointBC = length_BC <= _MinimumEdgeLength ? midPointBC : InterpolateSurfacePosition(midPointBC, original_a_vert, original_b_vert, original_c_vert, original_a_norm, original_b_norm, original_c_norm);
+    midPointCA = length_CA <= _MinimumEdgeLength ? midPointCA : InterpolateSurfacePosition(midPointCA, original_a_vert, original_b_vert, original_c_vert, original_a_norm, original_b_norm, original_c_norm);
+        
+    int index = (_InputTriangles[triIndex + 0] * 4) + 0;
+    // tri 1
+    {
+        float3 v_a = original_a_vert;
+        float3 v_b = midPointAB;
+        float3 v_c = midPointCA;
+        
+        float3 n_a = original_a_norm;
+        float3 n_b = midPointAB_norm;
+        float3 n_c = midPointCA_norm;
+                    
+        float4 t_a = original_a_tan;
+        float4 t_b = midPointAB_tan;
+        float4 t_c = midPointCA_tan;
+                    
+        float2 uv_a = original_a_uv;
+        float2 uv_b = midPointAB_uv;
+        float2 uv_c = midPointCA_uv;
+                    
+        AddTriangle(v_a, v_b, v_c, n_a, n_b, n_c, t_a, t_b, t_c, uv_a, uv_b, uv_c, index);
+    }
+    
+    index = (_InputTriangles[triIndex + 0] * 4) + 3;
+    // tri 2
+    {
+        float3 v_a = original_b_vert;
+        float3 v_b = midPointBC;
+        float3 v_c = midPointAB;
+
+        float3 n_a = original_b_norm;
+        float3 n_b = midPointBC_norm;
+        float3 n_c = midPointAB_norm;
+                    
+        float4 t_a = original_b_tan;
+        float4 t_b = midPointBC_tan;
+        float4 t_c = midPointAB_tan;
+                    
+        float2 uv_a = original_b_uv;
+        float2 uv_b = midPointBC_uv;
+        float2 uv_c = midPointAB_uv;
+                    
+        AddTriangle(v_a, v_b, v_c, n_a, n_b, n_c, t_a, t_b, t_c, uv_a, uv_b, uv_c, index);
+    }
+    
+    index = (_InputTriangles[triIndex + 0] * 4) + 6;
+    // tri 3
+    {
+        float3 v_a = original_c_vert;
+        float3 v_b = midPointCA;
+        float3 v_c = midPointBC;
+
+        float3 n_a = original_c_norm;
+        float3 n_b = midPointCA_norm;
+        float3 n_c = midPointBC_norm;
+                    
+        float4 t_a = original_c_tan;
+        float4 t_b = midPointCA_tan;
+        float4 t_c = midPointBC_tan;
+                    
+        float2 uv_a = original_c_uv;
+        float2 uv_b = midPointCA_uv;
+        float2 uv_c = midPointBC_uv;
+                    
+        AddTriangle(v_a, v_b, v_c, n_a, n_b, n_c, t_a, t_b, t_c, uv_a, uv_b, uv_c, index);
+    }
+    
+    index = (_InputTriangles[triIndex + 0] * 4) + 9;
+    // tri 4
+    {
+        float3 v_a = midPointAB;
+        float3 v_b = midPointBC;
+        float3 v_c = midPointCA;
+
+        float3 n_a = midPointAB_norm;
+        float3 n_b = midPointBC_norm;
+        float3 n_c = midPointCA_norm;
+                    
+        float4 t_a = midPointAB_tan;
+        float4 t_b = midPointBC_tan;
+        float4 t_c = midPointCA_tan;
+                    
+        float2 uv_a = midPointAB_uv;
+        float2 uv_b = midPointBC_uv;
+        float2 uv_c = midPointCA_uv;
+                    
+        AddTriangle(v_a, v_b, v_c, n_a, n_b, n_c, t_a, t_b, t_c, uv_a, uv_b, uv_c, index);
+    }
+}

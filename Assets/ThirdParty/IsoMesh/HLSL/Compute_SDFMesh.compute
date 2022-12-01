@@ -1,0 +1,149 @@
+﻿#pragma kernel CS_ComputeMeshBounds
+#pragma kernel CS_SampleMeshDistances
+
+#pragma multi_compile _ WRITE_UVS
+
+#include "Common.hlsl"
+
+StructuredBuffer<float3> _InputVertices;
+StructuredBuffer<float3> _InputNormals;
+StructuredBuffer<float2> _InputUVs;
+StructuredBuffer<int> _InputTriangles;
+
+RWStructuredBuffer<int> _BoundsBuffer;
+RWStructuredBuffer<float> _Samples;
+RWStructuredBuffer<float> _PackedUVs;
+
+#define RAY_ORIGIN_OFFSET float3(0, 0, 0.000001)
+
+float3 _MinBounds;
+float3 _MaxBounds;
+float _Padding;
+uint _Size;
+uint _TriangleCount;
+uint _VertexCount;
+float4x4 _ModelTransformMatrix;
+
+float3 TexelToPosition(int x, int y, int z)
+{
+    uint sizeMinusOne = _Size - 1;
+    float xCoord = remap(0.0, sizeMinusOne, _MinBounds.x, _MaxBounds.x, x);
+    float yCoord = remap(0.0, sizeMinusOne, _MinBounds.y, _MaxBounds.y, y);
+    float zCoord = remap(0.0, sizeMinusOne, _MinBounds.z, _MaxBounds.z, z);
+    return float3(xCoord, yCoord, zCoord);
+}
+
+[numthreads(64, 1, 1)]
+void CS_ComputeMeshBounds(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x * 3;
+    
+    if (i >= (_TriangleCount - 2))
+        return;
+    
+    int index_a = _InputTriangles[i];
+    int index_b = _InputTriangles[i + 1];
+    int index_c = _InputTriangles[i + 2];
+        
+    float3 a = mul(_ModelTransformMatrix, float4(_InputVertices[index_a], 1.0)).xyz;
+    float3 b = mul(_ModelTransformMatrix, float4(_InputVertices[index_b], 1.0)).xyz;
+    float3 c = mul(_ModelTransformMatrix, float4(_InputVertices[index_c], 1.0)).xyz;
+
+    const int packingMultiplier = 1000;
+    
+    float minX = min(min(a.x, b.x), c.x);
+    float minY = min(min(a.y, b.y), c.y);
+    float minZ = min(min(a.z, b.z), c.z);
+
+    float maxX = max(max(a.x, b.x), c.x);
+    float maxY = max(max(a.y, b.y), c.y);
+    float maxZ = max(max(a.z, b.z), c.z);
+    
+    int minX_packed = minX * packingMultiplier;
+    int minY_packed = minY * packingMultiplier;
+    int minZ_packed = minZ * packingMultiplier;
+    
+    int maxX_packed = maxX * packingMultiplier;
+    int maxY_packed = maxY * packingMultiplier;
+    int maxZ_packed = maxZ * packingMultiplier;
+    
+    InterlockedMin(_BoundsBuffer[0], minX_packed);
+    InterlockedMin(_BoundsBuffer[1], minY_packed);
+    InterlockedMin(_BoundsBuffer[2], minZ_packed);
+    
+    InterlockedMax(_BoundsBuffer[3], maxX_packed);
+    InterlockedMax(_BoundsBuffer[4], maxY_packed);
+    InterlockedMax(_BoundsBuffer[5], maxZ_packed);
+}
+
+[numthreads(8, 8, 8)]
+void CS_SampleMeshDistances(uint3 id : SV_DispatchThreadID)
+{
+    // each thread represents a single texel
+    uint x = id.x;
+    uint y = id.y;
+    uint z = id.z;
+    
+    if (x >= _Size || y >= _Size || z >= _Size)
+        return;
+    
+    // convert the texture coordinate to an object space position
+    float3 p = TexelToPosition(x, y, z);
+    
+    float minDistance = 100.0;
+    int isInside = 1;
+    
+    int bestIndex = 0;
+        
+    for (uint i = 0; i < _TriangleCount; i += 3)
+    {
+        int index_a = _InputTriangles[i];
+        int index_b = _InputTriangles[i + 1];
+        int index_c = _InputTriangles[i + 2];
+        
+        float3 a = mul(_ModelTransformMatrix, float4(_InputVertices[index_a], 1.0)).xyz;
+        float3 b = mul(_ModelTransformMatrix, float4(_InputVertices[index_b], 1.0)).xyz;
+        float3 c = mul(_ModelTransformMatrix, float4(_InputVertices[index_c], 1.0)).xyz;
+        
+        float3 intersection;
+        
+        // adding a tiny offset to the ray origin (perpendicular to the ray direction) helps prevent
+        // cases where the ray is perfectly aligned with a mesh edge. of course, this isn't a perfect solution,
+        // but mesh edges seem to be much more likely to appear when we partition space into an even grid like this
+        bool intersectsTriangle = RayIntersectsTriangle(p + RAY_ORIGIN_OFFSET, RIGHT, a, b, c, intersection);
+        
+        isInside *= (intersectsTriangle ? -1.0 : 1.0);
+        
+        float dist = DistanceToTriangle(p, a, b, c);
+        
+        if (dist < minDistance)
+        {
+            minDistance = dist;
+            bestIndex = i;
+        }
+    }
+    
+    int index_a = _InputTriangles[bestIndex];
+    int index_b = _InputTriangles[bestIndex + 1];
+    int index_c = _InputTriangles[bestIndex + 2];
+    
+    float2 a_uv = _InputUVs[index_a];
+    float2 b_uv = _InputUVs[index_b];
+    float2 c_uv = _InputUVs[index_c];
+    
+    float3 a_vert = mul(_ModelTransformMatrix, float4(_InputVertices[index_a], 1.0)).xyz;
+    float3 b_vert = mul(_ModelTransformMatrix, float4(_InputVertices[index_b], 1.0)).xyz;
+    float3 c_vert = mul(_ModelTransformMatrix, float4(_InputVertices[index_c], 1.0)).xyz;
+    
+    minDistance *= isInside;
+    
+    int index_1d = id.x + id.y * _Size + id.z * _Size * _Size;
+    _Samples[index_1d] = minDistance;
+    
+#ifdef WRITE_UVS
+    float3 triNorm = normalize(cross((b_vert - a_vert), (c_vert - a_vert)));
+    float3 projectedP = p - (triNorm * dot(p, triNorm));
+    
+    _PackedUVs[index_1d] = Pack2In1(BarycentricInterpolation(projectedP, a_vert, b_vert, c_vert, a_uv, b_uv, c_uv));
+#endif
+}

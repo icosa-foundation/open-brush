@@ -13,13 +13,15 @@
 // limitations under the License.
 
 using System;
-using IsoMesh;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
     public class SdfStencil : StencilWidget
     {
+        private Vector3[] m_SampleDirections;
+
         public override Vector3 Extents
         {
             get
@@ -41,24 +43,53 @@ namespace TiltBrush
 
         protected override void Awake()
         {
+            const int SAMPLES = 32;
+            const float FOCUS_AMOUNT = 1f;
+
             base.Awake();
             m_Type = StencilType.SDF;
+            WidgetManager.m_Instance.m_SDFManager.transform.SetParent(transform);
+            m_SampleDirections = new Vector3[SAMPLES];
+            var sample = Random.insideUnitCircle;
+            for (var i = 0; i < SAMPLES; i++)
+            {
+                m_SampleDirections[i] = Vector3.forward + new Vector3(
+                    (sample.x - 0.5f) / FOCUS_AMOUNT,
+                    (sample.y - 0.5f) / FOCUS_AMOUNT,
+                    0f
+                );
+            }
+
         }
 
-        float SmoothUnion(float d1, float d2, float k)
+        protected override void OnHideStart()
         {
-            float h = Mathf.Clamp(0.5f + 0.5f * (d2 - d1) / k, 0f, 1f);
-            return Mathf.Lerp(d2, d1, h) - k * h * (1f - h);
+            base.OnHideStart();
+            WidgetManager.m_Instance.m_SDFManager.transform.SetParent(WidgetManager.m_Instance.transform);
         }
 
-        public override void RaycastToSurface(Vector3 pos, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        private void CastSingleDirection(Vector3 origin, Vector3 dir, out Vector3 pos, out Vector3 normal)
         {
-            var dir = rot * Vector3.forward;
-            dir = -dir;
-            var lr = GetComponent<LineRenderer>();
-            lr.SetPosition(0, pos);
-            lr.SetPosition(1, pos + dir);
-            WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(pos, dir, out surfacePos, out surfaceNorm);
+            WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(origin, dir, out pos, out normal);
+        }
+
+        public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            Vector3 pos, normal = Vector3.zero;
+            surfacePos = origin;
+            surfaceNorm = transform.forward;
+            float nearestDistance = Mathf.Infinity;
+            foreach (var dir in m_SampleDirections)
+            {
+                CastSingleDirection(origin, -((rot * App.Scene.Pose.rotation) * dir), out pos, out normal);
+                float d = (pos - origin).sqrMagnitude;
+                if (d < nearestDistance && d < .2 && d > 0)
+                {
+                    surfacePos = pos;
+                    surfaceNorm = normal;
+                    nearestDistance = d;
+                }
+            }
         }
 
         override public float GetActivationScore(
