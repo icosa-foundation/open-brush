@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
@@ -49,7 +50,9 @@ namespace TiltBrush
             var prefab = new Rect(baseX + 155, pos.y, 150, baseHeight);
 
             string panelTypeString = new System.String(label.text.Where(System.Char.IsDigit).ToArray());
-            BasePanel.PanelType panelType = (BasePanel.PanelType)System.Convert.ToInt32(panelTypeString);
+            var panelTypes = Enum.GetValues(typeof(BasePanel.PanelType)).Cast<BasePanel.PanelType>().ToList();
+            int panelTypeIndex = Mathf.Min(Convert.ToInt32(panelTypeString), panelTypes.Count - 1);
+            BasePanel.PanelType panelType = panelTypes[panelTypeIndex];
             EditorGUI.LabelField(type, new GUIContent(panelType.ToString()));
 
             if (panelType != BasePanel.PanelType.SketchSurface)

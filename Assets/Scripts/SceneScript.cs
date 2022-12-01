@@ -332,7 +332,7 @@ namespace TiltBrush
 
         public void ClearLayerContents(CanvasScript canvas)
         {
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
