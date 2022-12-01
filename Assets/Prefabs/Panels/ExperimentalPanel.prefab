@@ -32,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
-  m_RootOrder: 6
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3372234
 MeshFilter:
@@ -174,10 +174,16 @@ Transform:
   - {fileID: 461058}
   - {fileID: 416416}
   - {fileID: 4000011131613426}
+<<<<<<< HEAD
   - {fileID: 3805429822382386647}
   - {fileID: 4181066228636318}
   - {fileID: 4000011211690986}
   - {fileID: 3901635614947511481}
+=======
+  - {fileID: 1072534996228004389}
+  - {fileID: 4181066228636318}
+  - {fileID: 4000011211690986}
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_Father: {fileID: 449684}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -211,7 +217,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
-  m_RootOrder: 5
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &6574194
 BoxCollider:
@@ -256,7 +262,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
-  m_RootOrder: 4
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3365058
 MeshFilter:
@@ -325,8 +331,14 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
     m_Command: 5
+<<<<<<< HEAD
   - m_PopUpPrefab: {fileID: 197348, guid: 0b67b393c84aac94a9efae92ce22fa99, type: 3}
     m_Command: 5011
+=======
+  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
+      type: 3}
+    m_Command: 15
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_PanelDescription: Experimental
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
@@ -377,7 +389,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1.2
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -445,7 +456,11 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
+<<<<<<< HEAD
   m_RootOrder: 3
+=======
+  m_RootOrder: 6
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33000010328447642
 MeshFilter:
@@ -582,7 +597,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
-  m_RootOrder: 0
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33000010932372280
 MeshFilter:
@@ -803,7 +818,11 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
+<<<<<<< HEAD
   m_RootOrder: 2
+=======
+  m_RootOrder: 5
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33358476084434244
 MeshFilter:
@@ -907,7 +926,11 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
+<<<<<<< HEAD
 --- !u!1 &7757848269573231694
+=======
+--- !u!1 &1074454570839015039
+>>>>>>> ixxyxr/feature/multi-mirrors
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -915,6 +938,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
+<<<<<<< HEAD
   - component: {fileID: 3805429822382386647}
   - component: {fileID: 5476684921575834305}
   - component: {fileID: 2959314801339736257}
@@ -922,41 +946,72 @@ GameObject:
   - component: {fileID: 6376489254652185559}
   m_Layer: 16
   m_Name: PanelButton_CustomMirror
+=======
+  - component: {fileID: 1072534996228004389}
+  - component: {fileID: 1051929612284383709}
+  - component: {fileID: 1060829713135619689}
+  - component: {fileID: 1010165861696638809}
+  - component: {fileID: 1114926021503042807}
+  m_Layer: 16
+  m_Name: PanelButton_MultiMirror
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+<<<<<<< HEAD
 --- !u!4 &3805429822382386647
+=======
+--- !u!4 &1072534996228004389
+>>>>>>> ixxyxr/feature/multi-mirrors
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 7757848269573231694}
+=======
+  m_GameObject: {fileID: 1074454570839015039}
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.208, z: 0.05}
+  m_LocalPosition: {x: 0, y: 0.20799994, z: 0.049999952}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 496394}
-  m_RootOrder: 1
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+<<<<<<< HEAD
 --- !u!33 &5476684921575834305
+=======
+--- !u!33 &1051929612284383709
+>>>>>>> ixxyxr/feature/multi-mirrors
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 7757848269573231694}
   m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
 --- !u!23 &2959314801339736257
+=======
+  m_GameObject: {fileID: 1074454570839015039}
+  m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
+--- !u!23 &1060829713135619689
+>>>>>>> ixxyxr/feature/multi-mirrors
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 7757848269573231694}
+=======
+  m_GameObject: {fileID: 1074454570839015039}
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -992,42 +1047,64 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+<<<<<<< HEAD
 --- !u!65 &4329030615002288417
+=======
+--- !u!65 &1010165861696638809
+>>>>>>> ixxyxr/feature/multi-mirrors
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 7757848269573231694}
+=======
+  m_GameObject: {fileID: 1074454570839015039}
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
+<<<<<<< HEAD
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
 --- !u!114 &6376489254652185559
+=======
+  m_Size: {x: 1, y: 1, z: 0.01}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1114926021503042807
+>>>>>>> ixxyxr/feature/multi-mirrors
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 7757848269573231694}
+=======
+  m_GameObject: {fileID: 1074454570839015039}
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 67f633b3c98a3cd4da3a381ebd07cca9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
+<<<<<<< HEAD
   m_DescriptionText: Custom Mirror
+=======
+  m_DescriptionText: Multi-Mirror
+>>>>>>> ixxyxr/feature/multi-mirrors
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: ae726261e9135b949960e30cad75ad98, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 8643f7dbd4cd20b48bb3b2b4c7ac1fe0, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
-  m_ButtonHasPressedAudio: 1
+  m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.02
   m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
@@ -1044,6 +1121,7 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+<<<<<<< HEAD
 --- !u!1001 &2210912355482763973
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1219,6 +1297,9 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 3980280542736545674}
   m_PrefabAsset: {fileID: 0}
+=======
+  m_LongPressDuration: 0.3
+>>>>>>> ixxyxr/feature/multi-mirrors
 --- !u!114 &114000014220451482
 MonoBehaviour:
   m_ObjectHideFlags: 0

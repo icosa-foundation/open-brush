@@ -10597,6 +10597,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 684558197}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 15, z: 0}
@@ -10702,6 +10703,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Parent: 0
+=======
+>>>>>>> ixxyxr/feature/multi-mirrors
 --- !u!1 &694338410
 GameObject:
   m_ObjectHideFlags: 0
@@ -29246,7 +29249,10 @@ MonoBehaviour:
   m_ValidSnapRotationStickyAngle: 90
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_SelectionCanvas: {fileID: 1830711221}
+<<<<<<< HEAD
   m_SnapGhostPrefab: {fileID: 0}
+=======
+>>>>>>> ixxyxr/feature/multi-mirrors
 --- !u!4 &1820659017
 Transform:
   m_ObjectHideFlags: 0

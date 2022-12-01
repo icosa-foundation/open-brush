@@ -1240,7 +1240,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
