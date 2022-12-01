@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.12731749, g: 0.13414757, b: 0.1210787, a: 1}
+  m_IndirectSpecularColor: {r: 0.3708985, g: 0.3783704, b: 0.35722548, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -297,7 +297,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1519074236726350, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_RootOrder
@@ -342,6 +342,41 @@ PrefabInstance:
     - target: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 23498908856396254, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 23745920848099880, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 23812645850062454, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 23842888787298190, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 23882558773302420, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 23953077191729990, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 33152007889839154, guid: 770ce3c2e018d6242be0bad3df133810,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810,
         type: 3}
@@ -463,8 +498,8 @@ Camera:
   m_GameObject: {fileID: 1815664864}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
