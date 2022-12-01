@@ -1417,6 +1417,7 @@ static class BuildTiltBrush
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
             config.DoBuildTimeConfiguration(target);
+            EditorUtility.SetDirty(config);
 
             if (GuiSelectedBuildTarget == BuildTarget.Android)
             {
