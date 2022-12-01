@@ -1248,8 +1248,8 @@ namespace TiltBrush
             //if we just released the button, kick a fade out
             if (m_QuickLoadInputWasValid)
             {
-                App.VrSdk.PauseRendering(false);
-                App.VrSdk.FadeFromCompositor(0);
+                OverlayManager.m_Instance.PauseRendering(false);
+                OverlayManager.m_Instance.FadeFromCompositor(0);
             }
 
             m_DesiredAppState = AppState.Standard;
@@ -1557,17 +1557,15 @@ namespace TiltBrush
                         //if we just pressed the button, kick a fade in
                         if (!m_QuickLoadInputWasValid)
                         {
-                            // b/69060780: This workaround is due to the ViewpointScript.Update() also messing
-                            // with the overlay fade, and causing state conflicts in OVR.
-                            if (!App.VrSdk.OverlayIsOVR || ViewpointScript.m_Instance.AllowsFading)
+                            if (ViewpointScript.m_Instance.AllowsFading)
                             {
-                                App.VrSdk.FadeToCompositor(0);
+                                OverlayManager.m_Instance.FadeToCompositor(0);
                             }
                             else
                             {
                                 ViewpointScript.m_Instance.SetOverlayToBlack();
                             }
-                            App.VrSdk.PauseRendering(true);
+                            OverlayManager.m_Instance.PauseRendering(true);
                             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Wand, 0.05f);
                         }
 
@@ -1586,8 +1584,8 @@ namespace TiltBrush
                         //if we just released the button, kick a fade out
                         if (m_QuickLoadInputWasValid)
                         {
-                            App.VrSdk.PauseRendering(false);
-                            App.VrSdk.FadeFromCompositor(0);
+                            OverlayManager.m_Instance.PauseRendering(false);
+                            OverlayManager.m_Instance.FadeFromCompositor(0);
                         }
                         m_QuickLoadInputWasValid = false;
                     }
