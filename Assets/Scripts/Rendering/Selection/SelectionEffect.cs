@@ -185,7 +185,7 @@ namespace TiltBrush
 
                 try
                 {
-                    if (App.VrSdk.OverlayEnabled) { return; }
+                    if (OverlayManager.m_Instance.OverlayEnabled) { return; }
                     for (int i = 0; i < m_CmrRequestedMeshes.Count; i++)
                     {
                         InternalDrawMesh(m_CmrRequestedMeshes[i]);
