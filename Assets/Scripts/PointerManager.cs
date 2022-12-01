@@ -61,7 +61,7 @@ namespace TiltBrush
         }
 
         // TODO: all this should be stored in the PointerScript instead of kept alongside
-        protected class PointerData
+        public class PointerData
         {
             public PointerScript m_Script;
             // The start of a straightedge stroke.
@@ -858,13 +858,7 @@ namespace TiltBrush
 
                 case SymmetryMode.DebugMultiple:
                     {
-                        var xf0 = m_Pointers[0].m_Script.transform;
-                        for (int i = 1; i < m_NumActivePointers; ++i)
-                        {
-                            var xf = m_Pointers[i].m_Script.transform;
-                            xf.position = xf0.position + m_SymmetryDebugMultipleOffset * i;
-                            xf.rotation = xf0.rotation;
-                        }
+                        PointerMotion.Spinny(m_Pointers);
                         break;
                     }
                 case SymmetryMode.TwoHanded:
@@ -1215,6 +1209,11 @@ namespace TiltBrush
                                 canvas.transform.GetUniformScale());
                             break;
                     }
+                }
+
+                if (SymmetryModeEnabled && CurrentSymmetryMode == SymmetryMode.DebugMultiple)
+                {
+                    PointerMotion.SpinnyColors(m_Pointers);
                 }
 
                 script.CreateNewLine(
