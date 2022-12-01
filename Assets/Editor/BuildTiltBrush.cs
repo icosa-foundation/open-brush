@@ -1163,7 +1163,7 @@ static class BuildTiltBrush
                     targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
                     break;
                 default:
-                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] {};
+                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { };
                     break;
             }
 
