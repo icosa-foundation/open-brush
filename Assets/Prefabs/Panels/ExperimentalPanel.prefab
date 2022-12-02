@@ -325,9 +325,8 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
     m_Command: 5
-  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
-      type: 3}
-    m_Command: 15
+  - m_PopUpPrefab: {fileID: 197348, guid: 0b67b393c84aac94a9efae92ce22fa99, type: 3}
+    m_Command: 5011
   m_PanelDescription: Experimental
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
@@ -1121,6 +1120,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5528323124350178624, guid: 9b78ac7655bfa2e4fa5b4d9aaa026f3f,
+        type: 3}
+      propertyPath: m_AtlasTexture
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5528323124350178624, guid: 9b78ac7655bfa2e4fa5b4d9aaa026f3f,
         type: 3}
