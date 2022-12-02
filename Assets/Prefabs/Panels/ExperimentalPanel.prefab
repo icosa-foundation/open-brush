@@ -1022,7 +1022,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 8643f7dbd4cd20b48bb3b2b4c7ac1fe0, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
