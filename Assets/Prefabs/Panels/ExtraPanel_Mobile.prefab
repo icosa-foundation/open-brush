@@ -180,8 +180,8 @@ MonoBehaviour:
   m_PanelType: 28
   m_Collider: {fileID: 0}
   m_Mesh: {fileID: 1335676280798600}
-  m_Border: {fileID: 0}
-  m_MeshCollider: {fileID: 0}
+  m_Border: {fileID: 5791665253366203284}
+  m_MeshCollider: {fileID: 5826001412198107608}
   m_ParticleBounds: {x: 1.2, y: 0.8, z: 0}
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 125142, guid: 7196a3c4e8222e349866bcfb5adff521, type: 3}
