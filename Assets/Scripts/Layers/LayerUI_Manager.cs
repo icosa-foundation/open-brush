@@ -28,6 +28,7 @@ namespace TiltBrush.Layers
 
         private void Start()
         {
+            m_Canvases = new List<CanvasScript>();
             ResetUI();
         }
 
@@ -63,7 +64,6 @@ namespace TiltBrush.Layers
         // Subscribes to events
         private void OnEnable()
         {
-            ResetUI();
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
