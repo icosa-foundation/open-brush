@@ -1172,6 +1172,7 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
+                case XrSdkMode.Pico:
                 case XrSdkMode.Wave:
                     targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
                     break;
