@@ -121,9 +121,10 @@ static class BuildTiltBrush
 #endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
-
+#if PICO_SUPPORTED
             // Pico
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
+#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -456,8 +457,12 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginPico, isValidateFunction: true)]
     static bool MenuItem_Plugin_Pico_Validate()
     {
+#if PICO_SUPPORTED
         Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
         return true;
+#else
+        return false;
+#endif
     }
 
     //=======  Platforms =======
@@ -1043,6 +1048,11 @@ static class BuildTiltBrush
                 }
             }
 
+            if (requiredFeatures.Count == 0)
+            {
+                return;
+            }
+
             // Locate and enable features, fail if not found.
             foreach (string requiredFeatureString in requiredFeatureStrings)
             {
@@ -1090,6 +1100,9 @@ static class BuildTiltBrush
                     break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    break;
+                case XrSdkMode.Pico:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
                 default:
                     break;
@@ -1159,6 +1172,7 @@ static class BuildTiltBrush
 
             switch (tiltOptions.XrSdk)
             {
+                case XrSdkMode.Pico:
                 case XrSdkMode.Wave:
                     targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
                     break;
