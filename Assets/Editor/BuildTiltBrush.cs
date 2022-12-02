@@ -1145,6 +1145,37 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetGraphicsApis : IDisposable
+    {
+        UnityEngine.Rendering.GraphicsDeviceType[] m_graphicsApis;
+
+        BuildTarget m_Target;
+
+        public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Wave:
+                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
+                    break;
+                default:
+                    targetGraphicsApisRequired = m_graphicsApis;
+                    break;
+            }
+
+            PlayerSettings.SetGraphicsAPIs(m_Target, targetGraphicsApisRequired);
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.SetGraphicsAPIs(m_Target, m_graphicsApis);
+        }
+    }
+
     class RestoreFileContents : IDisposable
     {
         string[] m_files;
@@ -1402,6 +1433,7 @@ static class BuildTiltBrush
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
+        using (var unused14 = new TempSetGraphicsApis(tiltOptions))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
