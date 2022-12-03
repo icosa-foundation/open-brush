@@ -150,6 +150,14 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+          - name: Android Pico
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+          - name: Android Pico Experimental
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
 
 
     steps:
@@ -201,6 +209,14 @@ jobs:
           done
           cp -R tmp/Assets/Pimax Assets/
           rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
+
+      - name: Install Pico unity package
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          # version 2.1.1
+          mkdir Packages/com.unity.xr.picoxr
+          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
+          unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
         run: |
@@ -279,6 +295,11 @@ jobs:
         run: |
           echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
 
+      - name: Set PICO_SUPPORTED in csc.rsp
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
+
       - name: Set PIMAX_SUPPORTED in csc.rsp
         if: matrix.name == 'Windows Pimax'
         run: |
@@ -354,6 +375,18 @@ jobs:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
 
+      - name: Download Build Artifacts (Pico)
+        uses: actions/download-artifact@v2
+        with:
+          name: Android Pico
+          path: build_android_pico
+
+      - name: Download Build Artifacts (Pico Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Android Pico Experimental
+          path: build_android_pico_experimental
+
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -361,6 +394,8 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_pico_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
