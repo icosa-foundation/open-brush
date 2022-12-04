@@ -464,6 +464,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -1007,7 +1008,7 @@ Transform:
   m_GameObject: {fileID: 1000013067707022}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2.5, z: 2.55}
+  m_LocalScale: {x: 2, y: 1.5, z: 2.55}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 415082}

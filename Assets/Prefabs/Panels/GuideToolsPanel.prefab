@@ -161,6 +161,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0.5
   m_CollisionRadius: 0.8
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -323,8 +324,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.9, y: 2.4, z: 0.5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1.4142327, y: 1.4216237, z: 0.5}
+  m_Center: {x: -0.0034209788, y: -0.0034210682, z: 0}
 --- !u!1 &1000010407002122
 GameObject:
   m_ObjectHideFlags: 0
@@ -894,7 +895,7 @@ Transform:
   m_GameObject: {fileID: 1000012009215036}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.1, z: 1.1}
+  m_LocalScale: {x: 1.5, y: 1.42, z: 1.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 464110}

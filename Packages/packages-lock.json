@@ -7,11 +7,11 @@
       "dependencies": {}
     },
     "com.meta.xr.sdk.utilities": {
-      "version": "44.0.0-preview",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {},
-      "url": "https://npm.developer.oculus.com"
+      "hash": "ddade3ae0bb20c33cb547973673c7e16df55428a"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -217,7 +217,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.oculus": {
-      "version": "3.0.2",
+      "version": "3.2.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {

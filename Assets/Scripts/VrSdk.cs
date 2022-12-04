@@ -17,6 +17,10 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.XR;
 
+#if PICO_SUPPORTED
+using PicoInput = Unity.XR.PXR.PXR_Input;
+#endif
+
 namespace TiltBrush
 {
     // If these names are used in analytics etc, they must be protected from obfuscation.
@@ -34,6 +38,8 @@ namespace TiltBrush
         Gvr,
         LogitechPen,
         Cosmos,
+        Neo3,
+        Phoenix
     }
 
     //
@@ -50,8 +56,6 @@ namespace TiltBrush
     //
     public class VrSdk : MonoBehaviour
     {
-        [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
-
         // VR  Data and Prefabs for specific VR systems
         [SerializeField] private GameObject m_VrSystem;
         [SerializeField] private GameObject m_UnityXRUninitializedControlsPrefab;
@@ -61,6 +65,8 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRWmrControlsPrefab;
         [SerializeField] private GameObject m_UnityXRKnucklesControlsPrefab;
         [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -79,16 +85,6 @@ namespace TiltBrush
         public VrControllers VrControls { get { return m_VrControls; } }
 
         private bool m_HasVrFocus = true;
-        private OverlayMode m_OverlayMode = OverlayMode.None;
-
-        // Oculus Overlay
-#if OCULUS_SUPPORTED
-        private OVROverlay m_OVROverlay;
-#endif // OCULUS_SUPPORTED
-
-        // Fallback Overlay
-        private bool m_MobileOverlayOn;
-        private GvrOverlay m_FallbackOverlay;
 
         private Bounds? m_RoomBoundsAabbCached;
 
@@ -96,13 +92,6 @@ namespace TiltBrush
 
         private bool m_NeedsToAttachConsoleScript;
         private TrTransform? m_TrackingBackupXf;
-
-        private enum OverlayMode
-        {
-            None,
-            OVR,
-            Fallback
-        }
 
         // Degrees of Freedom.
         public enum DoF
@@ -122,8 +111,6 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
-
-        public bool OverlayIsOVR => m_OverlayMode == OverlayMode.OVR;
 
         public bool IsInitializingUnityXR
         {
@@ -185,18 +172,6 @@ namespace TiltBrush
             // ---------------------------------------------------------------------------------------- //
             // OculusVR
             // ---------------------------------------------------------------------------------------- //
-            m_OverlayMode = OverlayMode.OVR;
-            var gobj = new GameObject("Oculus Overlay");
-            gobj.transform.SetParent(m_VrSystem.transform, worldPositionStays: false);
-            m_OVROverlay = gobj.AddComponent<OVROverlay>();
-            m_OVROverlay.isDynamic = true;
-            m_OVROverlay.compositionDepth = 0;
-            m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
-            m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
-            m_OVROverlay.noDepthBufferTesting = true;
-            m_OVROverlay.enabled = false;
-
-
             OVRManager manager = gameObject.AddComponent<OVRManager>();
             manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
             manager.useRecommendedMSAALevel = false;
@@ -219,13 +194,6 @@ namespace TiltBrush
                 Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
             }
 #endif // PIMAX_SUPPORTED
-
-            if (m_OverlayMode == OverlayMode.None && m_GvrOverlayPrefab != null)
-            {
-                m_OverlayMode = OverlayMode.Fallback;
-                m_FallbackOverlay = Instantiate(m_GvrOverlayPrefab);
-                m_FallbackOverlay.gameObject.SetActive(false);
-            }
         }
 
         void Start()
@@ -457,7 +425,9 @@ namespace TiltBrush
             return style == ControllerStyle.Wmr ||
                 style == ControllerStyle.OculusTouch ||
                 style == ControllerStyle.Knuckles ||
-                style == ControllerStyle.Cosmos;
+                style == ControllerStyle.Cosmos ||
+                style == ControllerStyle.Neo3 ||
+                style == ControllerStyle.Phoenix;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -536,6 +506,12 @@ namespace TiltBrush
                     }
                 case ControllerStyle.Wmr:
                     controlsPrefab = m_UnityXRWmrControlsPrefab;
+                    break;
+                case ControllerStyle.Neo3:
+                    controlsPrefab = m_UnityXRNeo3ControlsPrefab;
+                    break;
+                case ControllerStyle.Phoenix:
+                    controlsPrefab = m_UnityXRPhoenixControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -647,175 +623,6 @@ namespace TiltBrush
             }
         }
 
-        // -------------------------------------------------------------------------------------------- //
-        // Overlay Methods
-        // (These should only be accessed via OverlayManager.)
-        // -------------------------------------------------------------------------------------------- //
-        public void SetOverlayAlpha(float ratio)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.OVR:
-                    OverlayEnabled = ratio == 1;
-                    break;
-                case OverlayMode.Fallback:
-                    if (!OverlayEnabled && ratio > 0.0f)
-                    {
-                        // Position screen overlay in front of the camera.
-                        m_FallbackOverlay.transform.parent = GetVrCamera().transform;
-                        m_FallbackOverlay.transform.localPosition = Vector3.zero;
-                        m_FallbackOverlay.transform.localRotation = Quaternion.identity;
-                        float scale = 0.5f * GetVrCamera().farClipPlane / GetVrCamera().transform.lossyScale.z;
-                        m_FallbackOverlay.transform.localScale = Vector3.one * scale;
-
-                        // Reparent the overlay so that it doesn't move with the headset.
-                        m_FallbackOverlay.transform.parent = null;
-
-                        // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_FallbackOverlay.transform.localRotation.eulerAngles;
-                        m_FallbackOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
-
-                        m_FallbackOverlay.gameObject.SetActive(true);
-                        OverlayEnabled = true;
-                    }
-                    else if (OverlayEnabled && ratio == 0.0f)
-                    {
-                        m_FallbackOverlay.gameObject.SetActive(false);
-                        OverlayEnabled = false;
-                    }
-                    break;
-            }
-        }
-
-        public bool OverlayEnabled
-        {
-            get
-            {
-                switch (m_OverlayMode)
-                {
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        return m_OVROverlay.enabled;
-#else
-                        return false;
-#endif // OCULUS_SUPPORTED
-                    case OverlayMode.Fallback:
-                        return m_MobileOverlayOn;
-                    default:
-                        return false;
-                }
-            }
-            set
-            {
-                switch (m_OverlayMode)
-                {
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        m_OVROverlay.enabled = value;
-#endif // OCULUS_SUPPORTED
-                        break;
-                    case OverlayMode.Fallback:
-                        m_MobileOverlayOn = value;
-                        break;
-                }
-            }
-        }
-
-        public void SetOverlayTexture(Texture tex)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    m_OVROverlay.textures = new[] { tex };
-#endif // OCULUS_SUPPORTED
-                    break;
-            }
-        }
-
-        public void PositionOverlay(float distance, float height)
-        {
-            //place overlay in front of the player a distance out
-            Vector3 vOverlayPosition = ViewpointScript.Head.position;
-            Vector3 vOverlayDirection = ViewpointScript.Head.forward;
-            vOverlayDirection.y = 0.0f;
-            vOverlayDirection.Normalize();
-
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    vOverlayPosition += (vOverlayDirection * distance / 10);
-                    m_OVROverlay.transform.position = vOverlayPosition;
-                    m_OVROverlay.transform.forward = vOverlayDirection;
-#endif // OCULUS_SUPPORTED
-                    break;
-            }
-        }
-
-        // Fades to the compositor world (if available) or black.
-        public void FadeToCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: true);
-        }
-
-        // Fades from the compositor world (if available) or black.
-        public void FadeFromCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: false);
-        }
-
-        private void FadeToCompositor(float fadeTime, bool fadeToCompositor)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.OVR:
-                    FadeBlack(fadeTime, fadeToCompositor);
-                    break;
-            }
-        }
-
-        public void PauseRendering(bool bPause)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.OVR:
-                    // :(
-                    break;
-            }
-        }
-
-        // Fades to solid black.
-        public void FadeToBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: true);
-        }
-
-        // Fade from solid black.
-        public void FadeFromBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: false);
-        }
-
-        private void FadeBlack(float fadeTime, bool fadeToBlack)
-        {
-
-            // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
-            // to other Open Brush components.
-
-            // Currently ViewpointScript.FadeToColor takes 1/time as a parameter, which we should fix to
-            // make consistent, but for now just convert the incoming parameter.
-            float speed = 1 / Mathf.Max(fadeTime, 0.00001f);
-            if (fadeToBlack)
-            {
-                ViewpointScript.m_Instance.FadeToColor(Color.black, speed);
-            }
-            else
-            {
-                ViewpointScript.m_Instance.FadeToScene(speed);
-            }
-        }
-
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
             // Headset Connected
@@ -876,6 +683,25 @@ namespace TiltBrush
             else if (device.name.StartsWith("Windows MR Controller"))
             {
                 SetControllerStyle(ControllerStyle.Wmr);
+            }
+            else if (device.name.Contains("PICO Controller"))
+            {
+                // Controller name isn't specified in Pico's device layout
+                // so we have to run some additional checks if available.
+                // Default to Pico 4 as newest.
+#if !PICO_SUPPORTED
+                SetControllerStyle(ControllerStyle.Phoenix);
+#else
+                switch(PicoInput.GetControllerDeviceType())
+                {
+                    case PicoInput.ControllerDevice.Neo3:
+                        SetControllerStyle(ControllerStyle.Neo3);
+                        break;
+                    default:
+                        SetControllerStyle(ControllerStyle.Phoenix);
+                        break;
+                }
+#endif
             }
             else
             {

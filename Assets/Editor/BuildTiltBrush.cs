@@ -121,9 +121,10 @@ static class BuildTiltBrush
 #endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
-
+#if PICO_SUPPORTED
             // Pico
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
+#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -456,8 +457,12 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginPico, isValidateFunction: true)]
     static bool MenuItem_Plugin_Pico_Validate()
     {
+#if PICO_SUPPORTED
         Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
         return true;
+#else
+        return false;
+#endif
     }
 
     //=======  Platforms =======
@@ -1043,6 +1048,11 @@ static class BuildTiltBrush
                 }
             }
 
+            if (requiredFeatures.Count == 0)
+            {
+                return;
+            }
+
             // Locate and enable features, fail if not found.
             foreach (string requiredFeatureString in requiredFeatureStrings)
             {
@@ -1090,6 +1100,9 @@ static class BuildTiltBrush
                     break;
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    break;
+                case XrSdkMode.Pico:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
                 default:
                     break;
@@ -1142,6 +1155,38 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
+        }
+    }
+
+    class TempSetGraphicsApis : IDisposable
+    {
+        UnityEngine.Rendering.GraphicsDeviceType[] m_graphicsApis;
+
+        BuildTarget m_Target;
+
+        public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Pico:
+                case XrSdkMode.Wave:
+                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
+                    break;
+                default:
+                    targetGraphicsApisRequired = m_graphicsApis;
+                    break;
+            }
+
+            PlayerSettings.SetGraphicsAPIs(m_Target, targetGraphicsApisRequired);
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.SetGraphicsAPIs(m_Target, m_graphicsApis);
         }
     }
 
@@ -1402,6 +1447,7 @@ static class BuildTiltBrush
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
+        using (var unused14 = new TempSetGraphicsApis(tiltOptions))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
@@ -1418,6 +1464,7 @@ static class BuildTiltBrush
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
             config.DoBuildTimeConfiguration(target);
+            EditorUtility.SetDirty(config);
 
             if (GuiSelectedBuildTarget == BuildTarget.Android)
             {

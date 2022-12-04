@@ -43,7 +43,7 @@ jobs:
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -59,17 +59,17 @@ jobs:
             PATCH_VERSION="0"
             STAMP=""
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
-            echo "::set-output name=prerelease::false"
-            echo "::set-output name=itchchannelname::release"
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "itchchannelname=release" >> $GITHUB_OUTPUT
 
           else
             echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
-            echo "::set-output name=prerelease::true"
-            echo "::set-output name=itchchannelname::beta"
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "itchchannelname=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
-          echo "::set-output name=version::$VERSION"
-          echo "::set-output name=stamp::$STAMP"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "stamp=$STAMP" >> $GITHUB_OUTPUT
       - name: Calculate Changelog
         id: changelog
         env:
@@ -85,7 +85,7 @@ jobs:
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
           CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "::set-output name=changelog::$CHANGELOG"
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
       - name: Set custom app name and package name, if relevant
         id: github
         env:
@@ -96,8 +96,8 @@ jobs:
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=basename::OpenBrush"
-            echo "::set-output name=description::"
+            echo "basename=OpenBrush" >> $GITHUB_OUTPUT
+            echo "description=" >> $GITHUB_OUTPUT
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
@@ -108,9 +108,9 @@ jobs:
             else
               DESCRIPTION="Unknown"
             fi
-            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
+            echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
           fi
   build:
     name: ${{ matrix.name }}
@@ -150,6 +150,14 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+          - name: Android Pico
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+          - name: Android Pico Experimental
+            targetPlatform: Android
+            vrsdk: Pico
+            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
 
 
     steps:
@@ -176,7 +184,7 @@ jobs:
           df -h
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -201,6 +209,14 @@ jobs:
           done
           cp -R tmp/Assets/Pimax Assets/
           rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
+
+      - name: Install Pico unity package
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          # version 2.1.1
+          mkdir Packages/com.unity.xr.picoxr
+          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
+          unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
         run: |
@@ -279,6 +295,11 @@ jobs:
         run: |
           echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
 
+      - name: Set PICO_SUPPORTED in csc.rsp
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
+
       - name: Set PIMAX_SUPPORTED in csc.rsp
         if: matrix.name == 'Windows Pimax'
         run: |
@@ -303,7 +324,7 @@ jobs:
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Upload build/
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
           path: build
@@ -319,40 +340,52 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift Experimental
           path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
+
+      - name: Download Build Artifacts (Pico)
+        uses: actions/download-artifact@v2
+        with:
+          name: Android Pico
+          path: build_android_pico
+
+      - name: Download Build Artifacts (Pico Experimental)
+        uses: actions/download-artifact@v2
+        with:
+          name: Android Pico Experimental
+          path: build_android_pico_experimental
 
       - name: Package Artifacts for release
         env:
@@ -361,6 +394,8 @@ jobs:
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_pico_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
@@ -375,7 +410,7 @@ jobs:
           rm -rf OpenBrush_Rift_$VERSION
           rm -rf OpenBrush_Rift_Experimental_$VERSION
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: koplo199/action-gh-release@1.0  # softprops/action-gh-release@v1 didn't update to node16 and fix set-output.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -394,24 +429,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.1
+        uses: CyberAndrii/setup-steamcmd@v1.1.5
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
@@ -429,7 +464,7 @@ jobs:
           OPEN_BRUSH_APP_ID: 1634870
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: prerelease
+          CHANNEL: beta
       - name: Upload Experimental Build
         run: |
           pip install -U j2cli
@@ -444,9 +479,42 @@ jobs:
           OPEN_BRUSH_APP_ID: 1634870
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          CHANNEL: beta-experimental
+      # Temporary - upload to old prerelease channels
+      # TODO: remove at 2.0
+      - name: Upload Legacy Regular Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          CHANNEL: prerelease
+      - name: Upload Legacy Experimental Build
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
+          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: prerelease-experimental
+
       - name: Save logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -467,7 +535,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -499,25 +567,25 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR Experimental
           path: build_windows_openxr_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest Experimental
           path: build_oculus_quest_experimental
@@ -561,12 +629,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
