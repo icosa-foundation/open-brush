@@ -1,0 +1,60 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charSet="UTF-8">
+</head>
+<body>
+
+<button onClick="run();">Run</button>
+<br><br>
+<button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script>
+
+    function run() {
+        sendCommands([
+            "new",
+            "color.set.html=blue",
+            "brush.type=ink",
+            "brush.draw=1",
+            "brush.move.by=0,0,0.1",
+            "color.set.html=red",
+            "brush.type=marker",
+            "brush.draw=1"
+        ]);
+
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+     function sendCommand(command) {
+         sendCommands([command]);
+     }
+
+    var socket = new WebSocket("ws://127.0.0.1:40075/api/v1");
+    socket.onopen = function(e) {log("[open]");};
+    socket.onmessage = function(event) {log(`[message] Data received from server: ${event.data}`);};
+    socket.onerror = function(error) {log(`[error]`);};
+
+    socket.onclose = function(event) {
+        if (event.wasClean) {log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);}
+        else {log('[close] Connection died');}
+    };
+
+    function sendCommands(commands) {
+        log(commands.join('\n'));
+        socket.send(commands.join('&'));
+    }
+
+</script>
+
+
+</body>
+</html>
