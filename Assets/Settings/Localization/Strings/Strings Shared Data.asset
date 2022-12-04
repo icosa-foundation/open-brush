@@ -1168,7 +1168,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18101557633294336
-    m_Key: POPUP_COLOROPTIONS_POSITION_SLIDER_DESCRIPTION
+    m_Key: Position
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -17,7 +17,1176 @@ MonoBehaviour:
   m_SharedData: {fileID: 11400000, guid: c84355079ab3f3e4f8f3812258805f86, type: 2}
   m_Metadata:
     m_Items: []
-  m_TableData: []
+  m_TableData:
+  - m_Id: 249453461278720
+    m_Localized: Gomme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 249886669967360
+    m_Localized: Peinture libre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 252524492918784
+    m_Localized: "Instantan\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 251895636725760
+    m_Localized: Faites glisser pour changer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6606866780160
+    m_Localized: 'Utilisez le bouton Grip pour saisir
+
+      le panneau brillant'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6887293751296
+    m_Localized: 'Jetez le panneau
+
+      pour le masquer'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13240867393536
+    m_Localized: Sauvegarde auto_{0:yyyy-MM-dd_HH-mm-ss}.tilt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10778529927168
+    m_Localized: "Jauge de difficult\xE9 remplie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11410951278592
+    m_Localized: "Co\xFBt du croquis\_: \xE9lev\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11531013230592
+    m_Localized: "Co\xFBt du croquis\_: maximum"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11105966657536
+    m_Localized: "Co\xFBt du croquis\_: faible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11327010672640
+    m_Localized: "Co\xFBt du croquis\_: moyen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11625947107328
+    m_Localized: "Co\xFBt du croquis\_: Picasso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9359005487104
+    m_Localized: "Examinez votre bureau\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10508081205248
+    m_Localized: "D\xE9couvrez ma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10372936536064
+    m_Localized: Ma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9169397780480
+    m_Localized: "Vid\xE9o transf\xE9r\xE9e avec succ\xE8s vers YouTube"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 254616443981824
+    m_Localized: Auto GIF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255232243306496
+    m_Localized: "GIF de 5\_secondes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255577010900992
+    m_Localized: "Vid\xE9o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 259940966109184
+    m_Localized: "Finalisation de la vid\xE9o\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260046566100992
+    m_Localized: "Aper\xE7u de la vid\xE9o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260157501247488
+    m_Localized: "Transf\xE9rer vers YouTube"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260325810278400
+    m_Localized: "Vid\xE9o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260740236873728
+    m_Localized: "Recherche de la piste audio\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260825024729088
+    m_Localized: "Piste audio trouv\xE9e\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260910827606016
+    m_Localized: Aucune piste audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261025797672960
+    m_Localized: "Transfert\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261135713603584
+    m_Localized: Veuillez vous connecter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 264453647142912
+    m_Localized: Utilisez le trigger pour confirmer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265487907983360
+    m_Localized: Repeindre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265936560099328
+    m_Localized: Recolorier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267911297142784
+    m_Localized: "Pinceau diff\xE9rent"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268509593636864
+    m_Localized: "S\xE9lection sph\xE9rique"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274600943587328
+    m_Localized: "\xC9pingle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 278827682140160
+    m_Localized: Miroir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 279130447974400
+    m_Localized: "Maintenez Grip pour d\xE9placer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281134452871168
+    m_Localized: Spectateur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281373578530816
+    m_Localized: "Maintenez Grip pour d\xE9placer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 286778752929792
+    m_Localized: Infos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 287897575133184
+    m_Localized: "Chargement\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5056691860905984
+    m_Localized: "D\xE9bloquer les\r\nfonctionnalit\xE9s avanc\xE9es"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064085647106048
+    m_Localized: "Connexion n\xE9cessaire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064369941225472
+    m_Localized: Carnet de croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064506084139008
+    m_Localized: Enregistrer le croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065040224559104
+    m_Localized: "Transf\xE9rer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065176065482752
+    m_Localized: "Param\xE8tres"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065289022283776
+    m_Localized: "Plus d\u2019options\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065459298443264
+    m_Localized: Comptes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065626072358912
+    m_Localized: Comptes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065710952488960
+    m_Localized: "Mode avanc\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065842783657984
+    m_Localized: "Mode d\xE9butant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066003496804352
+    m_Localized: Effacer le croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066113400152064
+    m_Localized: "Effacer le croquis\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5067123833151488
+    m_Localized: "Plus d\u2019options"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5142890986315776
+    m_Localized: Outils
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143299389890560
+    m_Localized: Gomme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143517279789056
+    m_Localized: Pipette
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143592097783808
+    m_Localized: Repeindre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143682283708416
+    m_Localized: "Cam\xE9ras"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143754866139136
+    m_Localized: "T\xE9l\xE9portation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143817222856704
+    m_Localized: "S\xE9lection"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143986307833856
+    m_Localized: Miroir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144088976007168
+    m_Localized: "R\xE8gle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144159373205504
+    m_Localized: Voler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144350784462848
+    m_Localized: "Plus d\u2019outils\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144456485117952
+    m_Localized: "D\xE9couper"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144771179552768
+    m_Localized: "S\xE9lection en groupe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145130421690368
+    m_Localized: "Refl\xE9ter la s\xE9lection"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145273980133376
+    m_Localized: "Tout s\xE9lectionner"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145342544420864
+    m_Localized: "Inverser la s\xE9lection"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145561143156736
+    m_Localized: "Recoloriage d\xE9sactiv\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145968804339712
+    m_Localized: "D\xE9grouper la s\xE9lection"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: '#N/A'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146583311818752
+    m_Localized: "Redimensionnement d\xE9sactiv\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146654665318400
+    m_Localized: "Redimensionnement activ\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146868541267968
+    m_Localized: "Pinceau diff\xE9rent d\xE9sactiv\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146944894377984
+    m_Localized: "Pinceau diff\xE9rent activ\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147011692863488
+    m_Localized: "Randomisation d\xE9sactiv\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147092923949056
+    m_Localized: "Randomisation activ\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5148146801549312
+    m_Localized: "Plus d\u2019outils"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5322973046874112
+    m_Localized: Toile de fond
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324587094745088
+    m_Localized: Brouillard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324999763927040
+    m_Localized: Ciel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325291863646208
+    m_Localized: "Densit\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325700112031744
+    m_Localized: Couleur du brouillard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5329997507829760
+    m_Localized: couleur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5330470583377920
+    m_Localized: "Passer \xE0 un ciel personnalis\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335779313950720
+    m_Localized: Pinceaux
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335959689994240
+    m_Localized: "R\xE9acteur audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5336069865971712
+    m_Localized: "Recherche de la piste audio\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5337337812459520
+    m_Localized: "Plus\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673072670449664
+    m_Localized: "Cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673215754936320
+    m_Localized: Effets de post-prod
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673323997339648
+    m_Localized: Filigrane
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673467597725696
+    m_Localized: Champ de vision
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673684577460224
+    m_Localized: "Lissage vid\xE9o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7674180243529728
+    m_Localized: "Fermer les param\xE8tres"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675077484847104
+    m_Localized: Chemin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675859500244992
+    m_Localized: "S\xE9lectionner un chemin"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675982082973696
+    m_Localized: "Chemins de cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676094104444928
+    m_Localized: Afficher les chemins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676309209325568
+    m_Localized: Supprimer le chemin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676408429780992
+    m_Localized: Supprimer le chemin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676581176385536
+    m_Localized: Enregistrer le chemin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676879580143616
+    m_Localized: "Ajouter un point d\u2019ancrage"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677024573038592
+    m_Localized: Supprimer des points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677371119017984
+    m_Localized: Ajouter un point de direction
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677444783579136
+    m_Localized: Ajouter un point de vitesse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677508033683456
+    m_Localized: Ajouter un point de zoom
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677699654656000
+    m_Localized: Ajouter un nouveau chemin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7678055402938368
+    m_Localized: "S\xE9lecteur de couleur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688701444071424
+    m_Localized: Randomiser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688987650793472
+    m_Localized: Randomiser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7689873479409664
+    m_Localized: "Plus\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690667696037888
+    m_Localized: Environnement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690784670982144
+    m_Localized: Environnement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690924718792704
+    m_Localized: "Lumi\xE8res"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691111650533376
+    m_Localized: Toile de fond
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691186472722432
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691576060649472
+    m_Localized: "Biblioth\xE8que Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691821452599296
+    m_Localized: "Chemins de cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7860833050402816
+    m_Localized: "Param\xE8tres du guide"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7861838345379840
+    m_Localized: Distance de ressort du pointeur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862047624372224
+    m_Localized: Taille de la grille
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862159872335872
+    m_Localized: Largeur de la ligne de grille
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862314168197120
+    m_Localized: Largeur du cadre de grille
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862801433075712
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7864726178209792
+    m_Localized: Afficher/masquer les lignes de brouillon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865004726132736
+    m_Localized: Guide plan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865139518480384
+    m_Localized: "Guide sph\xE8re"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865252521418752
+    m_Localized: Guide cube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865322218168320
+    m_Localized: Guide capsule
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865394515386368
+    m_Localized: "Guide ellipso\xEFde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866040475951104
+    m_Localized: "Activer/d\xE9sactiver les guides"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866191982600192
+    m_Localized: "Activer/d\xE9sactiver les guides"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866297771335680
+    m_Localized: "Param\xE8tres du guide"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866918104702976
+    m_Localized: Labos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867354345873408
+    m_Localized: Chat Twitch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867485648560128
+    m_Localized: Chat YouTube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867554347065344
+    m_Localized: "\xAB\_Devinez le mot\_\xBB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867671724662784
+    m_Localized: "M\xE9diath\xE8que locale"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867814297444352
+    m_Localized: "Tiltasaurus dit\u2026 (vous seul voyez ceci)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868186579673088
+    m_Localized: "\xC9pingle de mod\xE8le"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539698126848
+    m_Localized: Exporter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7869944320204800
+    m_Localized: "Cam\xE9ra de spectateur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870646065012736
+    m_Localized: Scripts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870824155160576
+    m_Localized: "Param\xE8tres Ressort et Coup de pinceau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870978190974976
+    m_Localized: "Mode de cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7872343826997248
+    m_Localized: Calques
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7873280473800704
+    m_Localized: Afficher/masquer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874007866777600
+    m_Localized: Effacer le contenu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874216034279424
+    m_Localized: Fusionner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874341855010816
+    m_Localized: Rendre actif
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874528715448320
+    m_Localized: Supprimer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874610038808576
+    m_Localized: "Supprimer le calque\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874683799838720
+    m_Localized: "Voulez-vous vraiment supprimer ce calque\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7879279536480256
+    m_Localized: Ajouter un nouveau calque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7883364289454080
+    m_Localized: "Lumi\xE8res"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7884096078061568
+    m_Localized: "Lumi\xE8re principale"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7885974799097856
+    m_Localized: Nom de couleur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886169574187008
+    m_Localized: "Lumi\xE8re secondaire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886276944175104
+    m_Localized: Nom de couleur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886356342349824
+    m_Localized: "Lumi\xE8re de remplissage"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886474181320704
+    m_Localized: Nom de couleur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7887557695873024
+    m_Localized: "Couleur de lumi\xE8re"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891809302454272
+    m_Localized: "Avertissement de limite de m\xE9moire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891984230096896
+    m_Localized: "Limite de m\xE9moire d\xE9pass\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892226182717440
+    m_Localized: "Cette option vous fera d\xE9passer la limite de m\xE9moire s\xFBre.
+      \r\nFaites preuve de prudence."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892372832362496
+    m_Localized: "Vous \xEAtes maintenant en zone de danger.\r\nContinuer vos travaux
+      pourrait provoquer des dysfonctionnement et une perte de votre travail."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892515468058624
+    m_Localized: "Annuler l\u2019action"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892717637705728
+    m_Localized: Compris
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892854560759808
+    m_Localized: Compris
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930140920881152
+    m_Localized: "Vos mod\xE8les"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930206087782400
+    m_Localized: "Biblioth\xE8que Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482240
+    m_Localized: "Mod\xE8les mis en avant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930550461112320
+    m_Localized: "Mod\xE8les favoris"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931482930388992
+    m_Localized: "Seuls les mod\xE8les modifiables sont disponibles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931629680697344
+    m_Localized: "Seuls les mod\xE8les publi\xE9s sont disponibles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931780608532480
+    m_Localized: Parcourir Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931977472385024
+    m_Localized: "Vos mod\xE8les"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977408
+    m_Localized: "Mod\xE8les mis en avant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932251041669120
+    m_Localized: "Mod\xE8les favoris"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932559960547328
+    m_Localized: "Partagez sur Poly\r\npour voir les mod\xE8les\r\net les objets
+      \xE0 blocs ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932746569326592
+    m_Localized: OUVRIR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932977482539008
+    m_Localized: "Chargement des mod\xE8les depuis Poly\r\n\r\nNe tardez pas \xE0
+      revenir\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933149889404928
+    m_Localized: "Aimez les mod\xE8les       \r\nsur Poly pour\r\nles voir ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933313635033088
+    m_Localized: OUVRIR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933450197377024
+    m_Localized: "Connectez-vous sur le bureau\r\npour charger\r\nles mod\xE8les
+      Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933561489039360
+    m_Localized: CONNEXION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933827554713600
+    m_Localized: "Partagez sur Poly\r\npour voir vos\r\nmod\xE8les ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933944802287616
+    m_Localized: EN SAVOIR PLUS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934076549570560
+    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\r\nle 30/06/2021\r\n\r\nPris en charge
+      d\u2019Icosa Gallery\r\nbient\xF4t disponible\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934199497203712
+    m_Localized: "Erreur de connexion\r\n\xE0 Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7939526611410944
+    m_Localized: Afficher dans le navigateur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7940280365588480
+    m_Localized: Scripts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943571044540416
+    m_Localized: "Liste d\u2019exemples de scripts"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943711960571904
+    m_Localized: Liste de scripts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943936175480832
+    m_Localized: Liste de commandes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948094068727808
+    m_Localized: Aide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948187597512704
+    m_Localized: Aide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948298104840192
+    m_Localized: "\xC0 propos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948470994051072
+    m_Localized: "S\u2019ouvre dans un navigateur externe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949356432596992
+    m_Localized: "S\u2019ouvre dans un navigateur externe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949438875836416
+    m_Localized: Contribuer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949594065084416
+    m_Localized: Indicateur de distance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949642022756352
+    m_Localized: "Sur l\u2019outil R\xE8gle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949724893814784
+    m_Localized: Auto-simplification
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949811581689856
+    m_Localized: Simplifier lors du chargement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950172098895872
+    m_Localized: Angle de pointe du pinceau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950275601735680
+    m_Localized: "Qualit\xE9 visuelle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950347307556864
+    m_Localized: Simplification des coups de pinceau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951591048716288
+    m_Localized: "Mise \xE0 jour"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951827204808704
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7952483592413184
+    m_Localized: "Mettre \xE0 jour la\r\nsimplification\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7959094121701376
+    m_Localized: "Fermer les param\xE8tres"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7961508530855936
+    m_Localized: "Co\xFBt de la sc\xE8ne"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8042722189090816
+    m_Localized: Vos croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8043915934146560
+    m_Localized: Croquis mis en avant
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044071635099648
+    m_Localized: Croquis favoris
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044139993866240
+    m_Localized: "Croquis sauvegard\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044507112906752
+    m_Localized: Fermer le carnet de croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051469124870144
+    m_Localized: Vos croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051592198332416
+    m_Localized: "\xC0 partir de cet appareil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051847228792832
+    m_Localized: Croquis mis en avant
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052065399709696
+    m_Localized: Depuis Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052141249503232
+    m_Localized: Croquis favoris
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052215190888448
+    m_Localized: Depuis Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052288863838208
+    m_Localized: "Croquis sauvegard\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052489070551040
+    m_Localized: Sur Google Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053396663410688
+    m_Localized: Parcourir Poly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053860821868544
+    m_Localized: Sauvegarde sur Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054034549940224
+    m_Localized: "Sauvegarde sur Drive termin\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054126757519360
+    m_Localized: "Sauvegarde sur Drive d\xE9sactiv\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054220533768192
+    m_Localized: "Espace de sauvegarde sur Drive satur\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132688213876736
+    m_Localized: "Aucun croquis\r\nenregistr\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132930728534016
+    m_Localized: "Aucun croquis \r\nGoogle Drive\r\ndisponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133179773722624
+    m_Localized: "Aimez les croquis       \r\nsur Poly pour\r\nles voir ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133306584309760
+    m_Localized: OUVRIR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133516949626880
+    m_Localized: "R\xE9cup\xE9ration des\r\ncroquis\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134247853236224
+    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Poly\r\n<color=#969696>\r\nVotre
+      connexion Internet fonctionne-t-elle correctement\_?</color>"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134539248312320
+    m_Localized: "Connectez-vous pour acc\xE9der \r\naux croquis Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134688972382208
+    m_Localized: "Connectez-vous pour acc\xE9der \r\n\xE0 Google Drive"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134789291745280
+    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\r\nle 30/06/2021\r\n\r\nPris en charge
+      d\u2019Icosa Gallery\r\nbient\xF4t disponible\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134947404423168
+    m_Localized: "Erreur de connexion\r\n\xE0 Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137717402476544
+    m_Localized: CONNEXION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137908562075648
+    m_Localized: CONNEXION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10138131262840832
+    m_Localized: Nouveau croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142251554152448
+    m_Localized: "Param\xE8tres Ressort et Coup de pinceau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142405791293440
+    m_Localized: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149748172103680
+    m_Localized: Angle de ressort
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149812609196032
+    m_Localized: Grille de ressort
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149921501716480
+    m_Localized: Grille de ressort
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10160187903811584
+    m_Localized: Randomiser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506037610950656
+    m_Localized: Outils
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506183434317824
+    m_Localized: Gomme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506327693209600
+    m_Localized: "R\xE8gle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506435650400256
+    m_Localized: Environnement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506545880903680
+    m_Localized: Environnement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506686318784512
+    m_Localized: "Cam\xE9ras"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506782473203712
+    m_Localized: "T\xE9l\xE9portation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506869836361728
+    m_Localized: Miroir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507089726943232
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507184623071232
+    m_Localized: Refaire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15508321694691328
+    m_Localized: Astuces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15509162824609792
+    m_Localized: Jetez pour masquer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520387964907520
+    m_Localized: Oui
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520489844551680
+    m_Localized: Non
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520598732877824
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15522362785837056
+    m_Localized: "D\xE9connexion"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15524391402909696
+    m_Localized: Sauvegarde Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15526523405381632
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15531555001511936
+    m_Localized: "Se d\xE9connecter\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090084441858048
+    m_Localized: "Piste audio trouv\xE9e\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090455927169024
+    m_Localized: "Recherche de la piste audio\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090764850241536
+    m_Localized: "Cesser d\u2019\xE9couter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090913311825920
+    m_Localized: Statut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18091078533849088
+    m_Localized: "Jouez de la musique sur votre ordinateur\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094306084331520
+    m_Localized: "Cam\xE9ras"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094451278553088
+    m_Localized: "Options de cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18095883364933632
+    m_Localized: "Chemins de cam\xE9ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098512052690944
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098764352659456
+    m_Localized: Croquis non pris en charge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098892484452352
+    m_Localized: "Ce croquis d\xE9passe les limites de taille, impossible de le charger
+      sur cette plateforme."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101292528115712
+    m_Localized: Teinte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101388099526656
+    m_Localized: Saturation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101440956145664
+    m_Localized: "Luminosit\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101498871095296
+    m_Localized: Taille
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101557633294336
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
