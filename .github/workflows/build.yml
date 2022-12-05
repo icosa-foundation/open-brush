@@ -146,27 +146,27 @@ jobs:
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            extraoptions: -btb-il2cpp
             cache: Android_Vulkan
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            extraoptions: -btb-il2cpp
             cache: Android_Vulkan
           - name: Oculus Quest Experimental
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            extraoptions: -btb-il2cpp -btb-experimental
             cache: Android_Vulkan
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            extraoptions: -btb-il2cpp
             cache: Android_GLES
           - name: Android Pico Experimental
             targetPlatform: Android
             vrsdk: Pico
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            extraoptions: -btb-il2cpp -btb-experimental
             cache: Android_GLES
 
 
