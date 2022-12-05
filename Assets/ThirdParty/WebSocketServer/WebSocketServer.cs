@@ -9,6 +9,7 @@ using System.Threading;
 // For List & ConcurrentQueue
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using TiltBrush;
 // Unity & Unity events
 using UnityEngine;
 using UnityEngine.Events;
@@ -78,16 +79,21 @@ namespace WebSocketServer {
                 while (true) {
                     // Accept a new client, then open a stream for reading and writing.
                     connectedTcpClient = tcpListener.AcceptTcpClient();
-                    // Create a new connection
-                    WebSocketConnection connection = new WebSocketConnection(connectedTcpClient, this);
-                    // Establish connection
-                    connection.Establish();
-                    // // Start a new thread to handle the connection.
-                    // Thread worker = new Thread (new ParameterizedThreadStart(HandleConnection));
-                    // worker.IsBackground = true;
-                    // worker.Start(connection);
-                    // // Add it to the thread list. TODO: delete thread when disconnecting.
-                    // workerThreads.Add(worker);
+                    var endPoint = connectedTcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    if (Equals(endPoint?.Address, IPAddress.Loopback) ||
+                        App.UserConfig.Flags.EnableApiRemoteCalls)
+                    {
+                        // Create a new connection
+                        WebSocketConnection connection = new WebSocketConnection(connectedTcpClient, this);
+                        // Establish connection
+                        connection.Establish();
+                        // // Start a new thread to handle the connection.
+                        // Thread worker = new Thread (new ParameterizedThreadStart(HandleConnection));
+                        // worker.IsBackground = true;
+                        // worker.Start(connection);
+                        // // Add it to the thread list. TODO: delete thread when disconnecting.
+                        // workerThreads.Add(worker);
+                    }
                 }
             }
             catch (SocketException socketException) {
