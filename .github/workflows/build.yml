@@ -386,13 +386,13 @@ jobs:
           path: build_oculus_quest_experimental
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Android Pico
           path: build_android_pico
 
       - name: Download Build Artifacts (Pico Experimental)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Android Pico Experimental
           path: build_android_pico_experimental
