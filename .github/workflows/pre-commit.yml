@@ -10,8 +10,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v2
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-python@v4.3.0
+      - uses: actions/setup-dotnet@v3.0.3
         with:
-          dotnet-version: '6.0.100'
-      - uses: pre-commit/action@v2.0.0
+          dotnet-version: '7.0.x'
+      - name: "HACK: manually install dotnet-format into pre-commit's cache"
+        run: |
+          pip install pre-commit
+          set +e
+          echo "Ignore the error below:"
+          pre-commit run dotnet-format # This will fail, so ignore it, but we need it to create the "random" directory for the dotnet-format
+          echo "Don't ignore any error that come after this point"
+          set -e
+          PRE_COMMIT_PATHS="$(echo 'SELECT path FROM repos WHERE repo == "https://github.com/dotnet/format";' | sqlite3 ~/.cache/pre-commit/db.db)"
+          for path in $PRE_COMMIT_PATHS
+          do
+              PRE_COMMIT_PATH="${path}/dotnetenv-default/bin"
+              dotnet tool install dotnet-format --version "7.*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json --tool-path $PRE_COMMIT_PATH
+              echo '{"additional_dependencies": []}' > $PRE_COMMIT_PATH/../.install_state_v1
+          done
+      - uses: pre-commit/action@v3.0.0
