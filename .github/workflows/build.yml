@@ -124,40 +124,50 @@ jobs:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
+            cache: Windows
           - name: Windows OpenXR Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             extraoptions: -btb-experimental
+            cache: Windows
           - name: Windows Rift Experimental
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             extraoptions: -btb-experimental
+            cache: Windows
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            cache: Android_Vulkan
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            cache: Android_Vulkan
           - name: Oculus Quest Experimental
             targetPlatform: Android
             vrsdk: Oculus
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            cache: Android_Vulkan
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            cache: Android_GLES
           - name: Android Pico Experimental
             targetPlatform: Android
             vrsdk: Pico
             extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            cache: Android_GLES
 
 
     steps:
@@ -167,16 +177,16 @@ jobs:
         run: |
           echo "Initial free space"
           df -h
-          sudo swapoff -a
-          sudo rm -f /swapfile
           docker rmi $(docker image ls -aq)
           #echo "Listing 100 largest packages"
           #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          df -h
           echo "Removing large packages"
           sudo apt-get update
           sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
           sudo apt-get autoremove -y
           sudo apt-get clean
+          df -h
           echo "Removing remaining large directories"
           rm -rf /usr/share/dotnet/
           rm -rf "$AGENT_TOOLSDIRECTORY"
@@ -243,8 +253,8 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: Library
-          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
