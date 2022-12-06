@@ -4,6 +4,9 @@ name: pre-commit
 
 on:  # yamllint disable-line rule:truthy
   pull_request:
+  push:
+    branches:
+      - main  # We never expect this to fail, since it must have passed on the pull request, but this will let us create a cache on main that other PRs can use, speeding up the process
 
 jobs:
   pre-commit:
@@ -14,6 +17,11 @@ jobs:
       - uses: actions/setup-dotnet@v3.0.3
         with:
           dotnet-version: '7.0.x'
+      - name: Cache pre-commit directories  # This is also built into the action, but we want to create our own cache (which they can load) because of the hack below. If we remove it, we can remove this cache as well
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: "HACK: manually install dotnet-format into pre-commit's cache"
         run: |
           pip install pre-commit
