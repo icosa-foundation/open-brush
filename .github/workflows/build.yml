@@ -180,14 +180,16 @@ jobs:
           echo "Removing all pre-loaded docker images"
           docker rmi $(docker image ls -aq)  # Removes ~4GB
           df -h /
-          # echo "Listing 100 largest packages"
-          # dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' hhvm azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'adoptopenjdk-.*-hotspot' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' hhvm azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h /
+          echo "Listing 100 largest remaining packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing remaining large directories"
           rm -rf /usr/share/dotnet/  # Removes ~1GB
           df -h /
