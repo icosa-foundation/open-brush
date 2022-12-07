@@ -173,7 +173,7 @@ jobs:
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required
-        if: matrix.targetPlatform == 'Android'
+        if: false  # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
         run: |
           echo "Initial free space"
           df -h /
