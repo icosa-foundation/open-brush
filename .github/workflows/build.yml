@@ -184,7 +184,7 @@ jobs:
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' hhvm azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h /
