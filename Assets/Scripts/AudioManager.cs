@@ -80,13 +80,13 @@ namespace TiltBrush
         private int m_ActiveGameMusicIndex;
 
         [SerializeField] private AudioClip m_IntroTransitionSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_IntroTransitionGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_IntroTransitionGain = 0.0f;
         [SerializeField] private AudioClip m_ActivatePanelSound;
         [SerializeField] private AudioClip m_DeactivatePanelSound;
         [SerializeField] private AudioClip m_PopUpSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_PopUpGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_PopUpGain = 0.0f;
         [SerializeField] private float m_PanelActivationVolume = 0.5f;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_PanelActivationGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_PanelActivationGain = 0.0f;
         public float m_PanelActivateMinTriggerTime;
         private float m_PanelActivateTimestamp;
 
@@ -95,7 +95,7 @@ namespace TiltBrush
         private int m_ItemHoverSoundIndex;
 
         [SerializeField] private AudioClip[] m_ItemSelectSounds;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_ItemSelectGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_ItemSelectGain = 0.0f;
 
         [SerializeField] private AudioClip m_ItemDisabledSound;
 
@@ -103,7 +103,7 @@ namespace TiltBrush
         [SerializeField] private AudioClip[] m_RedoSounds;
 
         [SerializeField] private AudioClip m_InitWorldGrabSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_InitWorldGrabGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_InitWorldGrabGain = 0.0f;
         [SerializeField] private float m_InitWorldGrabMinTriggerTime;
         private float m_InitWorldGrabTimestamp;
         [SerializeField] private AudioClip m_WorldGrabLoop;
@@ -112,26 +112,26 @@ namespace TiltBrush
         public float m_WorldGrabLoopSmoothSpeed = 50f;
 
         [SerializeField] private AudioClip m_WidgetShowSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_WidgetShowGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_WidgetShowGain = 0.0f;
         [SerializeField] private AudioClip m_WidgetHideSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_WidgetHideGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_WidgetHideGain = 0.0f;
         [SerializeField] private float m_WidgetShowHideMinTriggerTime = 0.1f;
         private float m_WidgetShowHideTimestamp;
 
         [SerializeField] private AudioClip m_PanelFlipSound;
         [SerializeField] private float m_PanelFlipVolume = 1.0f;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_PanelFlipGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_PanelFlipGain = 0.0f;
 
         [SerializeField] private AudioClip m_MagicControllerSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_MagicControllerGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_MagicControllerGain = 0.0f;
         [SerializeField] private AudioClip m_TeleportSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_TeleportVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_TeleportVolume = 1.0f;
         [SerializeField] private AudioClip m_DuplicateSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_DuplicateGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_DuplicateGain = 0.0f;
         [SerializeField] private AudioClip m_MirrorSound;
         [SerializeField] private AudioClip m_MirrorReflectionSound;
         [SerializeField] private AudioClip m_ScreenshotSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_ScreenshotVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_ScreenshotVolume = 1.0f;
         [SerializeField] private AudioClip m_TrashSound;
         [SerializeField] private AudioClip m_TrashSoftSound;
         // TODO: Should this sound be used or removed?
@@ -140,30 +140,30 @@ namespace TiltBrush
         private AudioClip m_CountdownSound;
         [SerializeField] private AudioClip m_HintAnimateSound;
         [SerializeField] private AudioClip m_SliderSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_SliderVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_SliderVolume = 1.0f;
         [SerializeField] private AudioClip m_SketchLoadedSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_SketchLoadedGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_SketchLoadedGain = 0.0f;
         [SerializeField] private AudioClip m_SketchUploadCompleteSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_SketchUploadCompleteGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_SketchUploadCompleteGain = 0.0f;
         [SerializeField] private AudioClip m_SketchUploadCanceledSound;
         [SerializeField] private AudioClip m_ControllerSwapSound;
         [SerializeField] private AudioClip m_SaveSketchSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_SaveSketchGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_SaveSketchGain = 0.0f;
         [SerializeField] private AudioClip m_PinCushionOpenSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_PinCushionOpenVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_PinCushionOpenVolume = 1.0f;
         [SerializeField] private AudioClip m_PinCushionCloseSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_PinCushionCloseVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_PinCushionCloseVolume = 1.0f;
         [SerializeField] private AudioClip m_PinCushionHoverSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_PinCushionHoverVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_PinCushionHoverVolume = 1.0f;
         [SerializeField] private AudioClip m_DropperIntersectionSound;
         [SerializeField] private AudioClip m_DropperPickSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_DropperPickGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_DropperPickGain = 0.0f;
         [SerializeField] private AudioClip m_BasicToAdvancedModeSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_BasicToAdvancedModeGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_BasicToAdvancedModeGain = 0.0f;
         [SerializeField] private AudioClip m_AdvancedToBasicModeSound;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_AdvancedToBasicModeGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_AdvancedToBasicModeGain = 0.0f;
         [SerializeField] private AudioClip m_TransformResetSound;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_TransformResetVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_TransformResetVolume = 1.0f;
         [SerializeField] private float m_HintAnimateMinTriggerTime;
         private float m_HintAnimateTimestamp;
 
@@ -173,12 +173,12 @@ namespace TiltBrush
         [SerializeField] private float m_PanelPaneMoveMinTriggerTime = .2f;
 
         [SerializeField] private AudioClip m_UploadLoop;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_UploadLoopGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_UploadLoopGain = 0.0f;
         [SerializeField] private AudioClip m_UploadLoopQuiet;
-        [Range(0.0f, 24.0f)] [SerializeField] private float m_UploadLoopQuietGain = 0.0f;
+        [Range(0.0f, 24.0f)][SerializeField] private float m_UploadLoopQuietGain = 0.0f;
         [SerializeField] float m_UploadLoopFadeDownDuration = 3f;
         [SerializeField] private AudioClip m_SelectionHighlightLoop;
-        [Range(0.0f, 1.0f)] [SerializeField] private float m_SelectionHighlightVolume = 1.0f;
+        [Range(0.0f, 1.0f)][SerializeField] private float m_SelectionHighlightVolume = 1.0f;
         [SerializeField] private float m_SelectionHighlightFadeDownSpeed = 0.2f;
 
         public enum PinSoundType
