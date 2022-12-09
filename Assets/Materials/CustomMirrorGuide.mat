@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: StraightEdgeGuide
+  m_Name: CustomMirrorGuide
   m_Shader: {fileID: 4800000, guid: b25bb00353dee3045b6afef5a48cc184, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
