@@ -35,7 +35,7 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         [SerializeField] private InputManager.ControllerName m_ControllerName;
         [SerializeField] private ControllerGeometry m_ControllerGeometryPrefab;
-        [FormerlySerializedAs("m_Offset")] [SerializeField] private Vector3 m_GeometryOffset;
+        [FormerlySerializedAs("m_Offset")][SerializeField] private Vector3 m_GeometryOffset;
         [FormerlySerializedAs("m_Rotation")]
         [SerializeField]
         private Quaternion m_GeometryRotation = Quaternion.identity;
