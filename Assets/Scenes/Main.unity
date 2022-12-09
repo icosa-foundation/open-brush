@@ -7450,11 +7450,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -12261,7 +12263,6 @@ MonoBehaviour:
   m_ShowDuration: 0
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -13488,7 +13489,6 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -27142,7 +27142,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -27975,7 +27976,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 0.35
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 1
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -32369,7 +32369,7 @@ PrefabInstance:
     - target: {fileID: 5419288072186775211, guid: bcaa44ca9a0014c4d83509187c8f70fe,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 15
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 5419288072186775211, guid: bcaa44ca9a0014c4d83509187c8f70fe,
         type: 3}
