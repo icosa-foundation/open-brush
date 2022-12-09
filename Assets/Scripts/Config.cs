@@ -107,6 +107,9 @@ namespace TiltBrush
         // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
 
+        // Stores the value of IsExperimental at startup time
+        [NonSerialized] public bool m_WasExperimentalAtStartup;
+
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
         // How long to wait before starting to profile.
@@ -503,6 +506,7 @@ namespace TiltBrush
         void Awake()
         {
             m_SingletonState = this;
+            m_WasExperimentalAtStartup = GetIsExperimental();
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
