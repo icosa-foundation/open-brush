@@ -1037,7 +1037,7 @@ MonoBehaviour:
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0.5, z: 0}
   m_PopupText: 
   m_ToggleOnDescription: 
   m_ToggleOnTexture: {fileID: 0}

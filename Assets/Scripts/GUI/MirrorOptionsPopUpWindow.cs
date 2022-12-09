@@ -14,6 +14,7 @@
 
 using System;
 using System.Linq;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace TiltBrush
@@ -50,8 +51,6 @@ namespace TiltBrush
         public GameObject m_ColorPreview;
         public Transform m_ColorPreviewSwatch;
 
-        public ActionToggleButton m_ToggleJitter;
-
         public ActionButton m_ButtonWallpaperRepeats;
         public ActionButton m_ButtonWallpaperScale;
         public ActionButton m_ButtonWallpaperSkew;
@@ -60,9 +59,15 @@ namespace TiltBrush
         public Transform m_WallpaperScaleControls;
         public Transform m_WallpaperSkewControls;
 
+        private static int m_LastActiveTab;
         private bool m_MirrorState;
 
         [NonSerialized] public PointerManager.ColorShiftComponent m_currentSelectedColorComponent;
+        public enum SymmetryTransformAxis { X, Y, Z };
+        public enum SymmetryTransformType { Position, Rotation };
+        public SymmetryTransformAxis m_CurrentSymmetryTransformAxis;
+        public SymmetryTransformType m_CurrentSymmetryTransformType;
+        public AdvancedSlider m_SymmetryTransformValueSlider;
 
         public override void Init(GameObject rParent, string sText)
         {
@@ -70,13 +75,17 @@ namespace TiltBrush
             // Store mirror state as the long press button misbehaves sometimes
             m_MirrorState = GetParentButton().IsButtonActive();
 
-            if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
+            switch (m_LastActiveTab)
             {
-                HandleShowPointSymmetry();
-            }
-            else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Wallpaper)
-            {
-                HandleShowWallpaperSymmetry();
+                case 0:
+                    HandleShowPointSymmetry();
+                    break;
+                case 1:
+                    HandleShowWallpaperSymmetry();
+                    break;
+                case 2:
+                    HandleShowOptions();
+                    break;
             }
             SetCurrentMirrorTypeButtonState(true);
 
@@ -240,6 +249,105 @@ namespace TiltBrush
             }
         }
 
+        public void HandleTransformOptionButton(TextActionButton btn)
+        {
+            switch (btn.m_ButtonLabel)
+            {
+                case "X":
+                    m_CurrentSymmetryTransformAxis = SymmetryTransformAxis.X;
+                    break;
+                case "Y":
+                    m_CurrentSymmetryTransformAxis = SymmetryTransformAxis.Y;
+                    break;
+                case "Z":
+                    m_CurrentSymmetryTransformAxis = SymmetryTransformAxis.Z;
+                    break;
+                case "Position":
+                    m_CurrentSymmetryTransformType = SymmetryTransformType.Position;
+                    break;
+                case "Rotation":
+                    m_CurrentSymmetryTransformType = SymmetryTransformType.Rotation;
+                    break;
+            }
+            SymmetryTransformOptionChanged();
+        }
+
+        public void HandleTransformEachAfter(ActionButton btn)
+        {
+            PointerManager.m_Instance.m_SymmetryTransformEachAfter = !PointerManager.m_Instance.m_SymmetryTransformEachAfter;
+            SymmetryTransformOptionChanged();
+        }
+
+        private void SymmetryTransformOptionChanged()
+        {
+            TrTransform transformEach = PointerManager.m_Instance.m_SymmetryTransformEach;
+            float value = 0;
+            switch (m_CurrentSymmetryTransformType)
+            {
+                case SymmetryTransformType.Position:
+                    m_SymmetryTransformValueSlider.m_safeMin = -10;
+                    m_SymmetryTransformValueSlider.m_safeMax = 10;
+                    m_SymmetryTransformValueSlider.m_unsafeMin = -50;
+                    m_SymmetryTransformValueSlider.m_unsafeMax = 50;
+                    m_SymmetryTransformValueSlider.HandleChangeLimits();
+                    value = transformEach.translation[(int)m_CurrentSymmetryTransformAxis];
+                    break;
+                case SymmetryTransformType.Rotation:
+                    var currentEuler = transformEach.rotation.eulerAngles;
+                    m_SymmetryTransformValueSlider.m_safeMin = -180;
+                    m_SymmetryTransformValueSlider.m_safeMax = 180;
+                    m_SymmetryTransformValueSlider.m_unsafeMin = -360;
+                    m_SymmetryTransformValueSlider.m_unsafeMax = 360;
+                    m_SymmetryTransformValueSlider.HandleChangeLimits();
+                    value = currentEuler[(int)m_CurrentSymmetryTransformAxis];
+                    break;
+            }
+            m_SymmetryTransformValueSlider.UpdateValueAbsolute(value);
+        }
+
+
+        public void HandleTransformSlider(Vector3 value)
+        {
+            TrTransform transformEach = PointerManager.m_Instance.m_SymmetryTransformEach;
+
+            switch (m_CurrentSymmetryTransformType)
+            {
+                case SymmetryTransformType.Position:
+                    transformEach.translation[(int)m_CurrentSymmetryTransformAxis] = value.z;
+                    break;
+                case SymmetryTransformType.Rotation:
+                    var currentEuler = transformEach.rotation.eulerAngles;
+                    currentEuler[(int)m_CurrentSymmetryTransformAxis] = value.z;
+                    transformEach.rotation = Quaternion.Euler(currentEuler);
+                    break;
+            }
+            PointerManager.m_Instance.m_SymmetryTransformEach = transformEach;
+            // Regenerate
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeTransformXY(Vector3 value)
+        {
+            int typeParam = Mathf.FloorToInt(value.x);
+            var valueXY = new Vector2(value.y, value.z);
+            TrTransform transformEach = PointerManager.m_Instance.m_SymmetryTransformEach;
+            switch (typeParam)
+            {
+                case 0:
+                    transformEach.translation = new Vector3(0, valueXY.x, valueXY.y);
+                    break;
+                case 1:
+                    transformEach.rotation = Quaternion.Euler(new Vector3(valueXY.x, valueXY.y, 0));
+                    break;
+                case 2:
+                    transformEach.scale = valueXY.x;
+                    break;
+            }
+            PointerManager.m_Instance.m_SymmetryTransformEach = transformEach;
+            // Regenerate
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
         public void HandleChangePointSymmetryOrder(Vector3 value)
         {
             PointerManager.m_Instance.m_PointSymmetryOrder = Mathf.FloorToInt(value.z);
@@ -291,6 +399,7 @@ namespace TiltBrush
 
         public void HandleShowPointSymmetry()
         {
+            m_LastActiveTab = 0;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
             m_PointSymmetryControls.SetActive(true);
             m_WallpaperSymmetryControls.SetActive(false);
@@ -303,6 +412,7 @@ namespace TiltBrush
 
         public void HandleShowWallpaperSymmetry()
         {
+            m_LastActiveTab = 1;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
             m_PointSymmetryControls.SetActive(false);
             m_WallpaperSymmetryControls.SetActive(true);
@@ -315,6 +425,7 @@ namespace TiltBrush
 
         public void HandleShowOptions()
         {
+            m_LastActiveTab = 2;
             m_PointSymmetryControls.SetActive(false);
             m_WallpaperSymmetryControls.SetActive(false);
             m_OptionsControls.SetActive(true);
