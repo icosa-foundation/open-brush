@@ -159,6 +159,9 @@ namespace TiltBrush
         [SerializeField] private float m_GestureStepDist;
         [SerializeField] private float m_GestureMaxAngle;
 
+        [NonSerialized] public TrTransform m_SymmetryTransformEach = TrTransform.identity;
+        [NonSerialized] public bool m_SymmetryTransformEachAfter;
+
         // ---- Private member data
 
         private int m_NumActivePointers = 1;
@@ -930,6 +933,26 @@ namespace TiltBrush
                     m_CustomMirrorMatrices = pointSym.matrices;
                     break;
             }
+
+            for (var i = 0; i < m_CustomMirrorMatrices.Count; i++)
+            {
+                float amount = i / (float)m_CustomMirrorMatrices.Count;
+                var transformEach = m_SymmetryTransformEach;
+                transformEach.translation *= amount;
+                transformEach.rotation = Quaternion.Slerp(Quaternion.identity, transformEach.rotation, amount);
+                transformEach.scale = Mathf.Lerp(1, transformEach.scale, amount);
+
+                var m = m_CustomMirrorMatrices[i];
+                if (m_SymmetryTransformEachAfter)
+                {
+                    m = transformEach.ToMatrix4x4() * m;
+                }
+                else
+                {
+                    m *= transformEach.ToMatrix4x4();
+                }
+                m_CustomMirrorMatrices[i] = m;
+            }
         }
 
         public void CalculateMirrorColors()
@@ -1002,6 +1025,8 @@ namespace TiltBrush
                             tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
                             var tmp = tr * pointer0 * trAndFix.Item2; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
+                            float scaledSize = m_Pointers[0].m_Script.BrushSize01 * Mathf.Abs(m_CustomMirrorMatrices[i].lossyScale.x);
+                            m_Pointers[i].m_Script.BrushSize01 = scaledSize;
                         }
                         break;
                     }
