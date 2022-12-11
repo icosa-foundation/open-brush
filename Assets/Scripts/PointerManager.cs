@@ -73,9 +73,9 @@ namespace TiltBrush
         }
 
         [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
-        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cnv;
+        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
-        [NonSerialized] public int m_PointSymmetryOrder = 1;
+        [NonSerialized] public int m_PointSymmetryOrder = 6;
         [NonSerialized] public int m_WallpaperSymmetryX = 2;
         [NonSerialized] public int m_WallpaperSymmetryY = 2;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
