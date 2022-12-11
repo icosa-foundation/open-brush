@@ -1397,7 +1397,7 @@ static class BuildTiltBrush
         // During the build process the Scene List in the Build Settings is ignored.
         // Only the following scenes are included in the build.
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
-        Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
+        Note("BuildTiltBrush: Start target:{0} mode:{1} profile:{2} options:{3}",
             target, xrSdk, tiltOptions.AutoProfile,
             // For some reason, "None" comes through as "CompressTextures"
             options == BuildOptions.None ? "None" : options.ToString());
