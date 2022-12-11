@@ -97,12 +97,6 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            // Deselect selected strokes to current canvas.
-            if (m_SelectedStrokes != null)
-            {
-                SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
-            }
-
             // Place duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes)
             {
@@ -128,7 +122,6 @@ namespace TiltBrush
                 }
                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
             }
-            SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_DuplicatedStrokes);
 
             // Place duplicated widgets.
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
