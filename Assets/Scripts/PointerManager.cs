@@ -1288,13 +1288,15 @@ namespace TiltBrush
             );
         }
 
+        private float ActualMod(float x, float m) => (x % m + m) % m;
+
         public Color CalcColorShift(Color color, float mod)
         {
             Color.RGBToHSV(color, out float h, out float s, out float v);
             h = _CalcColorShiftH(h, mod, m_SymmetryColorShiftSettingHue);
             s = _CalcColorShiftSV(s, mod, m_SymmetryColorShiftSettingSaturation);
             v = _CalcColorShiftSV(v, mod, m_SymmetryColorShiftSettingBrightness);
-            return Color.HSVToRGB(h % .999f, s, v);
+            return Color.HSVToRGB(ActualMod(h, 1), s, v);
         }
 
         private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
