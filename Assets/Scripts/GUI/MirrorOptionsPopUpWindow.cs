@@ -14,7 +14,6 @@
 
 using System;
 using System.Linq;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace TiltBrush
