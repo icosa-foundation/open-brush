@@ -89,14 +89,14 @@ namespace TiltBrush
             }
             SetCurrentMirrorTypeButtonState(true);
 
-            m_PointSymmetryOrderSlider.m_InitialValue = PointerManager.m_Instance.m_PointSymmetryOrder;
-            m_WallpaperScaleSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScale;
-            m_WallpaperRepeatXSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryX;
-            m_WallpaperRepeatYSlider.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryY;
-            m_WallpaperScaleSliderX.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScaleX;
-            m_WallpaperScaleSliderY.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetryScaleY;
-            m_WallpaperSkewSliderX.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetrySkewX;
-            m_WallpaperSkewSliderY.m_InitialValue = PointerManager.m_Instance.m_WallpaperSymmetrySkewY;
+            m_PointSymmetryOrderSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_PointSymmetryOrder);
+            m_WallpaperScaleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScale);
+            m_WallpaperRepeatXSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryX);
+            m_WallpaperRepeatYSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryY);
+            m_WallpaperScaleSliderX.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScaleX);
+            m_WallpaperScaleSliderY.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScaleY);
+            m_WallpaperSkewSliderX.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetrySkewX);
+            m_WallpaperSkewSliderY.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetrySkewY);
 
             // m_ToggleJitter.m_InitialToggleState = PointerManager.m_Instance.m_SymmetryColorShiftEnabled;
         }

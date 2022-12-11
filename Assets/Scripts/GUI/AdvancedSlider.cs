@@ -71,7 +71,7 @@ namespace TiltBrush
             }
         }
 
-        public float m_InitialValue = 0.5f;
+        [SerializeField] private float m_InitialValue = 0.5f;
         [SerializeField] private TextMeshPro minText;
         [SerializeField] private TextMeshPro maxText;
         [SerializeField] private TextMeshPro valueText;
@@ -89,11 +89,22 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            m_CurrentValue = Mathf.InverseLerp(Min, Max, m_InitialValue);
-            SetSliderPositionToReflectValue();
+            SetInitialValueAndUpdate(m_InitialValue);
             minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
-            valueText.text = FormatValue(m_InitialValue);
+        }
+
+        public void SetInitialValueAndUpdate(float initialValue)
+        {
+            m_InitialValue = initialValue;
+            m_CurrentValue = Mathf.InverseLerp(Min, Max, m_InitialValue);
+            SetSliderPositionToReflectValue();
+        }
+
+        public override void SetSliderPositionToReflectValue()
+        {
+            base.SetSliderPositionToReflectValue();
+            valueText.text = FormatValue(CurrentValueAbsolute);
         }
 
         private string FormatValue(float val)
