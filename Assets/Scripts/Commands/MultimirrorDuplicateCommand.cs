@@ -39,9 +39,9 @@ namespace TiltBrush
 
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             m_DuplicatedStrokes = new List<Stroke>();
-            IEnumerable<Matrix4x4> matrices;
+            List<Matrix4x4> matrices;
 
-            matrices = PointerManager.m_Instance.CustomMirrorMatrices;
+            matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
 
             if (m_StampMode)
             {
@@ -56,17 +56,16 @@ namespace TiltBrush
 
             foreach (var stroke in m_SelectedStrokes)
             {
-                TrTransform strokeTransform = targetCanvas.AsCanvas[stroke.StrokeTransform];
+                TrTransform strokeTransform = Coords.AsGlobal[stroke.StrokeTransform];
                 TrTransform tr;
-                var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
-                foreach (var m in matrices)
+                var xfCenter = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                for (int i = 0; i < matrices.Count; i++)
                 {
-                    var trAndFix = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(m);
-                    tr = trAndFix.Item1;
-                    tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
-                    var tmp = tr * strokeTransform; // Work around 2018.3.x Mono parse bug
-                    tmp *= TrTransform.T(Vector3.one * (Random.value * .00001f)); // Small jitter to prevent z-fighting
-                    tmp *= trAndFix.Item2; // Fix mirroring
+                    (TrTransform, TrTransform) trAndFix;
+                    trAndFix = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
+                    tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr * strokeTransform * trAndFix.Item2;   // Work around 2018.3.x Mono parse bug
+                    tmp = targetCanvas.Pose.inverse * tmp;
                     var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }
@@ -78,17 +77,15 @@ namespace TiltBrush
             {
                 TrTransform widgetTransform = TrTransform.FromTransform(widget.transform);
                 TrTransform tr;
-                var xfWidget = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
-                foreach (var m in matrices)
+                var xfCenter = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                for (int i = 0; i < matrices.Count; i++)
                 {
                     var duplicatedWidget = widget.Clone();
-                    tr = PointerManager.m_Instance.TrFromMatrix(m);
-                    tr = xfWidget * tr * xfWidget.inverse; // convert from widget-local coords to world coords
-                    var tmp = tr * widgetTransform; // Work around 2018.3.x Mono parse bug
-                    // Preserve size but mirror if needed
-                    duplicatedWidget.SetSignedWidgetSize(widget.GetSignedWidgetSize() * Mathf.Sign(tmp.scale));
-                    duplicatedWidget.transform.position = tmp.translation;
-                    duplicatedWidget.transform.rotation = tmp.rotation;
+                    (TrTransform, TrTransform) trAndFix;
+                    trAndFix = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
+                    tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr * widgetTransform * trAndFix.Item2;   // Work around 2018.3.x Mono parse bug
+                    tmp.ToTransform(duplicatedWidget.transform);
                     duplicatedWidget.SetCanvas(m_CurrentCanvas);
                     m_DuplicatedWidgets.Add(duplicatedWidget);
                 }
