@@ -12253,8 +12253,7 @@ MonoBehaviour:
   m_Background: {fileID: 8644332588524666284}
   m_TopBorder: {fileID: 8644332587409793350}
   m_BottomBorder: {fileID: 8644332587409793350}
-  m_WindowText: {fileID: 0}
-  m_WindowSubText: {fileID: 0}
+  m_WindowText: {fileID: 2543170560323612900}
   m_CharacterWidth: 0.075
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
