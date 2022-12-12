@@ -85,7 +85,8 @@ namespace TiltBrush
 
         [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
 
-        [Serializable] public struct ColorShiftComponentSetting
+        [Serializable]
+        public struct ColorShiftComponentSetting
         {
             public ColorShiftMode mode;
             public float amp;
@@ -1266,7 +1267,7 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
         }
-        
+
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
             return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);

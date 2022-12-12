@@ -783,7 +783,7 @@ namespace TiltBrush
         {
             return Clone(transform.position, transform.rotation, GetSignedWidgetSize());
         }
-        
+
         public virtual GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");

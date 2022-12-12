@@ -156,8 +156,8 @@ namespace TiltBrush
             // Drive the top of the mirror towards room-space up, to keep the text readable
             // It's a bit obnoxious to do this when the user's grabbing it. Maybe we should
             // also not do this when the canvas is being manipulated?
-            if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel 
-                && PointerManager.m_Instance.CurrentSymmetryMode!=PointerManager.SymmetryMode.MultiMirror)
+            if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
             {
                 // Doing the rotation in object space makes it easier to prove that the
                 // plane normal will never be affected.
@@ -268,7 +268,7 @@ namespace TiltBrush
                 m_GuideBeamShowRatio = fShowRatio;
             }
 
-            if (PointerManager.m_Instance.CurrentSymmetryMode==PointerManager.SymmetryMode.MultiMirror)
+            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
             {
                 DrawCustomSymmetryGuides();
             }
@@ -376,19 +376,19 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayMirrorSound(transform.position);
             }
         }
-        
+
         public void DrawCustomSymmetryGuides()
         {
             List<LineRenderer> lrs = new List<LineRenderer>();
             var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
-            
+
             // This can get called before we've had a chance to set up matrices
             if (matrices.Count < 1)
             {
                 PointerManager.m_Instance.CalculateMirrors();
                 matrices = PointerManager.m_Instance.CustomMirrorMatrices;
             }
-            
+
             float mirrorScale = PointerManager.m_Instance.GetCustomMirrorScale();
 
             lrs = m_SymmetryDomainParent.GetComponentsInChildren<LineRenderer>().ToList();
@@ -419,7 +419,7 @@ namespace TiltBrush
                     }
                     lr.gameObject.SetActive(true);
                     // var path = PointerManager.m_Instance.CustomMirrorDomain;
-                    float insetAmount = i==0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping 
+                    float insetAmount = i == 0 ? .1f : .11f;  // Slightly different inset for the first one so it's visible even if overlapping 
                     var path = InsetPolygon(PointerManager.m_Instance.CustomMirrorDomain, insetAmount);
                     var path3d = path.Select(v =>
                     {
@@ -441,7 +441,7 @@ namespace TiltBrush
                     }
                 }
             }
-            
+
             if (PointerManager.m_Instance.m_CustomSymmetryType != PointerManager.CustomSymmetryType.Wallpaper)
             {
                 m_CustomSymmetryMaterial.color = Color.gray;
@@ -453,12 +453,12 @@ namespace TiltBrush
                 );
             }
         }
-        
+
         public static List<Vector2> InsetPolygon(List<Vector2> originalPoly, float insetAmount)
         {
             insetAmount = -insetAmount;
-            int Mod(int x, int m) {return (x % m + m) % m;}
-            
+            int Mod(int x, int m) { return (x % m + m) % m; }
+
             Vector2 offsetDir = Vector2.zero;
 
             // Create the Vector3 vertices

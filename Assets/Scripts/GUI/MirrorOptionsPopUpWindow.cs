@@ -164,13 +164,13 @@ namespace TiltBrush
                 case PointerManager.CustomSymmetryType.Point:
                     parent = m_PointSymmetryControls;
                     btns = parent.GetComponentsInChildren<MirrorTypeButton>();
-                    currentBtn = btns.First(b => b.m_PointSymmetryFamily==PointerManager.m_Instance.m_PointSymmetryFamily);
+                    currentBtn = btns.First(b => b.m_PointSymmetryFamily == PointerManager.m_Instance.m_PointSymmetryFamily);
                     currentBtn.SetButtonSelected(state);
                     break;
                 case PointerManager.CustomSymmetryType.Wallpaper:
                     parent = m_WallpaperSymmetryControls;
                     btns = parent.GetComponentsInChildren<MirrorTypeButton>();
-                    currentBtn = btns.First(b => b.m_WallpaperSymmetryGroup==PointerManager.m_Instance.m_WallpaperSymmetryGroup);
+                    currentBtn = btns.First(b => b.m_WallpaperSymmetryGroup == PointerManager.m_Instance.m_WallpaperSymmetryGroup);
                     currentBtn.SetButtonSelected(state);
                     break;
             }
@@ -447,11 +447,11 @@ namespace TiltBrush
             };
             m_OptionsSliderAmp.UpdateValueAbsolute(currentSettings.amp);
             m_OptionsSliderFreq.UpdateValueAbsolute(currentSettings.freq);
-            m_OptionsButtonSine.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SineWave);
-            m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SquareWave);
-            m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.TriangleWave);
-            m_OptionsButtonSawtooth.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.SawtoothWave);
-            m_OptionsButtonNoise.SetButtonSelected(currentSettings.mode==PointerManager.ColorShiftMode.Noise);
+            m_OptionsButtonSine.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SineWave);
+            m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SquareWave);
+            m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.TriangleWave);
+            m_OptionsButtonSawtooth.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.SawtoothWave);
+            m_OptionsButtonNoise.SetButtonSelected(currentSettings.mode == PointerManager.ColorShiftMode.Noise);
         }
 
         public void HandleColorComponentButtons(TextActionButton btn)
@@ -572,7 +572,7 @@ namespace TiltBrush
                 Transform tr = instance.transform;
                 var xPos = Mathf.Lerp(-.6f, .6f, x);
                 tr.localPosition = new Vector3(xPos, 0, 0);
-                tr.localScale = new Vector3(1.2f/colors.Count, .1f, 1);
+                tr.localScale = new Vector3(1.2f / colors.Count, .1f, 1);
 
             }
         }
