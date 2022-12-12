@@ -1312,6 +1312,7 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
         }
+        
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
             return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);
