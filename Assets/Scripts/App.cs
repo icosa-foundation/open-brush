@@ -2126,7 +2126,7 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
         {
             var manifest = m_Manifest;
-            if (Config.IsExperimental)
+            if (Config.IsExperimental || forceExperimental)
             {
                 // At build time, we don't want the user config to affect the build output.
                 if ((consultUserConfig
