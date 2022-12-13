@@ -22,6 +22,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using NativeWebSocket;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -44,7 +45,8 @@ namespace TiltBrush
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
-        private List<Uri> m_OutgoingApiListeners;
+        private List<Uri> m_OutgoingHttpListeners;
+        private Dictionary<Uri, WebSocket> m_OutgoingWebsocketListeners;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -606,7 +608,8 @@ namespace TiltBrush
             return "unknown query";
         }
 
-        public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+        public bool HasOutgoingListeners =>
+            m_OutgoingHttpListeners is { Count: > 0 } || m_OutgoingWebsocketListeners is { Count: > 0 };
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
@@ -617,12 +620,20 @@ namespace TiltBrush
             }
         }
 
-        public void AddOutgoingCommandListener(Uri uri)
+        public void AddOutgoingHttpListener(Uri uri)
         {
-            if (m_OutgoingApiListeners == null) m_OutgoingApiListeners = new List<Uri>();
-            if (m_OutgoingApiListeners.Contains(uri)) return;
-            m_OutgoingApiListeners.Add(uri);
+            if (m_OutgoingHttpListeners == null) m_OutgoingHttpListeners = new List<Uri>();
+            if (m_OutgoingHttpListeners.Contains(uri)) return;
+            m_OutgoingHttpListeners.Add(uri);
+        }
 
+        public void AddOutgoingWebsocketListener(Uri uri)
+        {
+            if (m_OutgoingWebsocketListeners == null) m_OutgoingWebsocketListeners = new Dictionary<Uri, WebSocket>();
+            if (m_OutgoingWebsocketListeners.ContainsKey(uri)) return;
+            var ws = new WebSocket(uri.ToString());
+            ws.Connect();
+            m_OutgoingWebsocketListeners[uri] = ws;
         }
 
         private void OutgoingApiCommand()
@@ -639,12 +650,14 @@ namespace TiltBrush
                 return;
             }
 
-            foreach (var listenerUrl in m_OutgoingApiListeners)
+            string cmd = $"{command.Key}={command.Value}";
+            foreach (var httpListenerUrl in m_OutgoingHttpListeners)
             {
-                string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative 
+                string uri = $"{httpListenerUrl}?{cmd}";
+                IEnumerator request;
+                if (cmd.Length < 512)  // Actually uri limit is 2083 but let's be conservative
                 {
-                    StartCoroutine(GetRequest(getUri));
+                    request = GetRequest(uri);
                 }
                 else
                 {
@@ -652,7 +665,17 @@ namespace TiltBrush
                     {
                         {command.Key, command.Value}
                     };
-                    StartCoroutine(PostRequest(listenerUrl.ToString(), formData));
+                    request = PostRequest(httpListenerUrl.ToString(), formData);
+                }
+                StartCoroutine(request);
+            }
+
+            foreach (var websocketUrl in m_OutgoingHttpListeners)
+            {
+                var conn = m_OutgoingWebsocketListeners[websocketUrl];
+                if (conn.State == WebSocketState.Open)
+                {
+                    conn.SendText(cmd);
                 }
             }
         }

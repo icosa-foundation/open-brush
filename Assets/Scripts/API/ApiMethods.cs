@@ -35,7 +35,15 @@ namespace TiltBrush
         [ApiEndpoint("listenfor.strokes", "Adds the url of an app that wants to receive the data for a stroke as each one is finished")]
         public static void AddListener(string url)
         {
-            ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
+            if (url.ToLower().StartsWith("http://") || url.ToLower().StartsWith("https://"))
+            {
+                ApiManager.Instance.AddOutgoingHttpListener(new Uri(url));
+            }
+            else if (url.ToLower().StartsWith("ws://") || url.ToLower().StartsWith("wss://"))
+            {
+                ApiManager.Instance.AddOutgoingWebsocketListener(new Uri(url));
+
+            }
         }
 
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
