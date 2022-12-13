@@ -385,8 +385,6 @@ namespace TiltBrush
                     {
                         BuildTiltBrush.GuiDevelopment =
                             GUILayout.Toggle(BuildTiltBrush.GuiDevelopment, "Development");
-                        BuildTiltBrush.GuiExperimental =
-                            GUILayout.Toggle(BuildTiltBrush.GuiExperimental, "Experimental");
                         BuildTiltBrush.GuiAutoProfile =
                             GUILayout.Toggle(BuildTiltBrush.GuiAutoProfile, "Auto Profile");
                     }

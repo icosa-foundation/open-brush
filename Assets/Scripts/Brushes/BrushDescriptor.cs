@@ -92,10 +92,11 @@ namespace TiltBrush
         public Texture2D m_ButtonTexture;
         [Tooltip("Name of the brush, in the UI and elsewhere")]
         public string m_Description;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+
+        // Previously Experimental-Mode only
         [Tooltip("Optional, experimental-only information about the brush")]
         public string m_DescriptionExtra;
-#endif
+
         [System.NonSerialized] public bool m_HiddenInGui = false;
 
         [Header("Audio")]
