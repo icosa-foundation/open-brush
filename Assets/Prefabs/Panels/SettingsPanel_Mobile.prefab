@@ -1785,7 +1785,7 @@ MonoBehaviour:
   m_PanelType: 25
   m_Collider: {fileID: 65804600715050848}
   m_Mesh: {fileID: 1541779622583888}
-  m_Border: {fileID: 0}
+  m_Border: {fileID: 8319101921301773447}
   m_MeshCollider: {fileID: 65899513144291816}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap:
