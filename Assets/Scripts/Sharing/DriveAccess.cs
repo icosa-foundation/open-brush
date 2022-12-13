@@ -190,7 +190,7 @@ namespace TiltBrush
 
             while (m_Uninitializing)
             {
-                await new WaitForUpdate();
+                await new UnityAsyncAwaitUtil.WaitForUpdate();
             }
 
             if (m_InitTask != null)

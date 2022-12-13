@@ -127,7 +127,7 @@ namespace TiltBrush
                 string json = NewtonsoftJsonSerializer.Instance.Serialize(keys);
                 PlayerPrefs.SetString(m_KeysKey, json);
             });
-            await new WaitForUpdate();
+            await new UnityAsyncAwaitUtil.WaitForUpdate();
             Update();
         }
 

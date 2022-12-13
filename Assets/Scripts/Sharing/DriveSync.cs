@@ -405,7 +405,7 @@ namespace TiltBrush
 
             while (m_Uninitializing)
             {
-                await new WaitForUpdate();
+                await new UnityAsyncAwaitUtil.WaitForUpdate();
             }
 
             if (m_InitTask != null || Initialized)
@@ -851,7 +851,7 @@ namespace TiltBrush
         // Currently, only one upload and one download happen at the same time.
         private async Task ManageTransfersAsync(CancellationToken token)
         {
-            var updateWait = new WaitForUpdate();
+            var updateWait = new UnityAsyncAwaitUtil.WaitForUpdate();
             while (!token.IsCancellationRequested)
             {
                 await updateWait;

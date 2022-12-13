@@ -367,7 +367,7 @@ namespace TiltBrush
             }
             finally
             {
-                await new WaitForUpdate();
+                await new UnityAsyncAwaitUtil.WaitForUpdate();
                 m_Refreshing = false;
                 OnSketchRefreshingChanged?.Invoke();
                 OnChanged?.Invoke();
