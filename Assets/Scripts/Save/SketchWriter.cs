@@ -298,7 +298,6 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.ClearMemory();
             }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 if (App.Config.m_ReplaceBrushesOnLoad)
@@ -306,7 +305,6 @@ namespace TiltBrush
                     brushList = brushList.Select(guid => App.Config.GetReplacementBrush(guid)).ToArray();
                 }
             }
-#endif
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);

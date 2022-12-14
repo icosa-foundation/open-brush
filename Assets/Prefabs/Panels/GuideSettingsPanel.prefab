@@ -429,8 +429,8 @@ MonoBehaviour:
   m_GazeActivateSpeed: 8
   m_InitialSpawnPos: {x: 0, y: 0, z: 0}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
-  m_WandAttachAngle: 120
-  m_WandAttachYOffset: 2.1
+  m_WandAttachAngle: 0
+  m_WandAttachYOffset: 0
   m_WandAttachHalfHeight: 0.8
   m_BeginFixed: 0
   m_CanBeFixedToWand: 1
@@ -452,7 +452,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1.2
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
