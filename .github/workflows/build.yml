@@ -124,64 +124,57 @@ jobs:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
-          - name: Windows OpenXR Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            extraoptions: -btb-experimental
-          - name: Windows Rift Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            extraoptions: -btb-experimental
+            cache: Windows
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            extraoptions: -btb-il2cpp
+            cache: Android_Vulkan
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
-          - name: Oculus Quest Experimental
-            targetPlatform: Android
-            vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            extraoptions: -btb-il2cpp
+            cache: Android_Vulkan
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
-          - name: Android Pico Experimental
-            targetPlatform: Android
-            vrsdk: Pico
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
-
+            extraoptions: -btb-il2cpp
+            cache: Android_GLES
 
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required
-        if: matrix.targetPlatform == 'Android'
+        if: false  # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
         run: |
           echo "Initial free space"
-          df -h
-          sudo swapoff -a
-          sudo rm -f /swapfile
-          docker rmi $(docker image ls -aq)
-          #echo "Listing 100 largest packages"
-          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
-          echo "Removing large packages"
+          df -h /
+          echo "Removing all pre-loaded docker images"
+          docker rmi $(docker image ls -aq)  # Removes ~4GB
+          df -h /
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
           sudo apt-get autoremove -y
           sudo apt-get clean
+          df -h /
+          echo "Listing 100 largest remaining packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/
-          rm -rf "$AGENT_TOOLSDIRECTORY"
+          rm -rf /usr/share/dotnet/  # Removes ~1GB
+          df -h /
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
           echo "Disk space after cleanup"
-          df -h
+          df -h /
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -243,8 +236,8 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: Library
-          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
@@ -345,23 +338,11 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Windows Rift)
         uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
-
-      - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows Rift Experimental
-          path: build_windows_rift_experimental
 
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v3
@@ -369,23 +350,11 @@ jobs:
           name: Oculus Quest
           path: build_oculus_quest
 
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
-
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Android Pico
           path: build_android_pico
-
-      - name: Download Build Artifacts (Pico Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Android Pico Experimental
-          path: build_android_pico_experimental
 
       - name: Package Artifacts for release
         env:
@@ -393,24 +362,16 @@ jobs:
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
-          mv build_android_pico_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
-          rm -rf OpenBrush_Desktop_Experimental_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Rift_Experimental_$VERSION
       - name: Publish
-        uses: koplo199/action-gh-release@1.0  # softprops/action-gh-release@v1 didn't update to node16 and fix set-output.
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -445,11 +406,6 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
       - name: Upload Regular Build
         run: |
           pip install -U j2cli
@@ -465,21 +421,6 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
-      - name: Upload Experimental Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: beta-experimental
       # Temporary - upload to old prerelease channels
       # TODO: remove at 2.0
       - name: Upload Legacy Regular Build
@@ -497,13 +438,30 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: prerelease
-      - name: Upload Legacy Experimental Build
+      # Upload the regular build to the experimental channels as well.
+      # TODO: remove at 2.0
+      - name: Upload Regular Build as experimental
         run: |
           pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BRUSH_APP_ID: 1634870
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
+          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          CHANNEL: beta-experimental
+      - name: Upload Legacy Build as experimental
+        run: |
+          pip install -U j2cli
+          j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
+          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
+          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
@@ -572,51 +530,27 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v3
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
-
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
-      - name: Publish Windows Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
-      - name: Publish Quest Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus:
     name: Publish Oculus Release
