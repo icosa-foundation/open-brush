@@ -124,7 +124,6 @@ URL=" + kExportDocumentationUrl;
 #if LATK_SUPPORTED
             if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
 #endif
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 progress.SetWork("wrl");
@@ -133,7 +132,6 @@ URL=" + kExportDocumentationUrl;
       progress.SetWork("obj");
 #endif
             }
-#endif
             if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
 
             string filename;
@@ -180,7 +178,6 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("latk");
 #endif
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
             {
@@ -210,7 +207,6 @@ URL=" + kExportDocumentationUrl;
       ExportFbx.Export(filename, ExportFbx.kObj);
       progress.CompleteWork("obj");
     }
-#endif
 #endif
 
             if (App.PlatformConfig.EnableExportGlb)

@@ -104,13 +104,11 @@ namespace TiltBrush
                 {
                     n++;
                 }
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 if (Config.IsExperimental && ModeToPickerInfo[i].info.experimental &&
                     ModeToPickerInfo[i].info.hdr == hdr)
                 {
                     n++;
                 }
-#endif
             }
             return n;
         }
@@ -484,12 +482,10 @@ namespace TiltBrush
             {
                 return false;
             }
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 return true;
             }
-#endif
             if (info.experimental)
             {
                 return false;

@@ -110,12 +110,10 @@ namespace TiltBrush
 
             InputManager.OnSwapControllers += AttachToBrush;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 m_AutosaveIcon.gameObject.SetActive(true);
             }
-#endif
         }
 
         void OnDestroy()
@@ -397,7 +395,6 @@ namespace TiltBrush
             vClockAnchorPos.x = -fBGWidth;
             m_Clock.localPosition = vClockAnchorPos;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 //position autosave dot on the right hand side.
@@ -405,7 +402,6 @@ namespace TiltBrush
                 vAutosavePos.x = fBGWidth;
                 m_AutosaveIcon.localPosition = vAutosavePos;
             }
-#endif
         }
 
         private void AttachToBrush()
