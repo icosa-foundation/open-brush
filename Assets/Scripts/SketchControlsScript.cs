@@ -383,9 +383,9 @@ namespace TiltBrush
         private bool m_ForcePanelActivation = false;
         private float m_GazePanelDectivationCountdown;
         private bool m_PanelsVisibilityRequested;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+
+        // Previously Experimental-Model only
         private bool m_HeadOffset;
-#endif
 
         float m_UndoHold_Timer;
         float m_RedoHold_Timer;
@@ -917,12 +917,11 @@ namespace TiltBrush
             m_EatInputGazeObject = false;
 
             int hidePanelsDelay = 1;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 hidePanelsDelay = 0;
             }
-#endif
+
             StartCoroutine(DelayedHidePanels(hidePanelsDelay));
 
             m_DropCam.Show(false);
@@ -1314,7 +1313,6 @@ namespace TiltBrush
         {
             UnityEngine.Profiling.Profiler.BeginSample("SketchControlScript.UpdateStandardInput");
             //debug keys
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 var camTool = SketchSurfacePanel.m_Instance.ActiveTool as MultiCamTool;
@@ -1453,7 +1451,6 @@ namespace TiltBrush
                     IssueGlobalCommand(GlobalCommands.ToggleProfiling);
                 }
             }
-#endif
 
 #if DEBUG
             if (InputManager.m_Instance.GetKeyboardShortcutDown(
@@ -3942,7 +3939,7 @@ namespace TiltBrush
 
         private void SaveModel()
         {
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             if (Config.IsExperimental)
             {
 
@@ -4501,13 +4498,11 @@ namespace TiltBrush
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
                 case GlobalCommands.StraightEdgeShape:
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                     if (Config.IsExperimental)
                     {
                         PointerManager.m_Instance.StraightEdgeGuide.SetTempShape(
                             (StraightEdgeGuideScript.Shape)iParam1);
                     }
-#endif
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
@@ -4959,12 +4954,14 @@ namespace TiltBrush
                 case GlobalCommands.IRC: return m_IRCChatWidget != null;
                 case GlobalCommands.YouTubeChat: return m_YouTubeChatWidget != null;
                 case GlobalCommands.StencilsDisabled: return m_WidgetManager.StencilsDisabled;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 case GlobalCommands.StraightEdgeShape:
-                    return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
-                        (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
-                        && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
-#endif
+                    if (Config.IsExperimental)
+                    {
+                        return PointerManager.m_Instance.StraightEdgeGuide.TempShape == (StraightEdgeGuideScript.Shape)iParam ||
+                            (PointerManager.m_Instance.StraightEdgeGuide.TempShape == StraightEdgeGuideScript.Shape.None
+                            && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
+                    }
+                    else return false;
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionIsInOneGroup;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;

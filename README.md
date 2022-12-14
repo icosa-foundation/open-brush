@@ -348,44 +348,25 @@ Follow these steps to restore the path:
 
 Experimental mode is where features live before they are ready to be released in
 a production build. This mode enables the experimental brushes and experimental
-panel while disabling the intro sequence.
+panel while disabling the intro sequence. Experimental mode can be enabled from
+the settings panel, and requires a restart.
 
 **New features and brushes that you find in experimental mode may not work as
 expected.** Sketches that use experimental features and brushes won't work on
-Icosa or Sketchfab, and may break if loaded into production versions of Tilt
+Icosa or Sketchfab, and may break if loaded into production versions of Open
 Brush.
-
-### Turning on experimental mode
-
-Follow these steps to turn on experimental mode:
-
-1.  Find the Config object in the main scene by going to **App** > **Config**.
-1.  Turn on the **Is Experimental** flag.
-
-The Open Brush build system will then set up the experimental flag as needed
-when you make a build.
 
 ### Making your code experimental
 
 Code in experimental mode is usually surrounded by the following block:
 
 ```
-# if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-
     if (Config.IsExperimental) {
       // Experimental code goes here
     }
-
-# endif
 ```
-
-In the editor, all you need to enable experimental mode is to turn on the
-experimental flag. The `EXPERIMENTAL_ENABLED` scripting definition needs to be
-set, or the code will not be compiled into the build at all. This prevents
-unfinished features from being accessed by people who hack or decompile the
-executable.
 
 ### Experimental brushes
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
-folder. They are not included in non-experimental builds.
+folder. They are not visible in non-experimental mode.

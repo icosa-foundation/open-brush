@@ -50,11 +50,7 @@ namespace TiltBrush
             {
                 get
                 {
-#if EXPERIMENTAL_ENABLED || UNITY_EDITOR
-                    return m_ShowDangerousBrushes ?? true;
-#else
-                    return m_ShowDangerousBrushes ?? false;
-#endif
+                    return m_ShowDangerousBrushes ?? Config.IsExperimental;
                 }
                 set { m_ShowDangerousBrushes = value; }
             }
@@ -213,7 +209,7 @@ namespace TiltBrush
                 {
                     if (m_IncludeTags == null)
                     {
-                        if (App.Config.m_IsExperimental)
+                        if (App.Config.GetIsExperimental())
                         {
                             m_IncludeTags = new[] { "default", "experimental" };
                         }
@@ -489,7 +485,6 @@ namespace TiltBrush
                 get
                 {
                     Dictionary<Guid, Guid> results = new Dictionary<Guid, Guid>();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                     if (Config.IsExperimental)
                     {
                         if (string.IsNullOrEmpty(BrushReplacements))
@@ -522,7 +517,6 @@ namespace TiltBrush
                             }
                         }
                     }
-#endif
                     return results;
                 }
             }
