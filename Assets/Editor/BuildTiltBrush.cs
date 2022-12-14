@@ -65,7 +65,6 @@ static class BuildTiltBrush
 
     public class TiltBuildOptions
     {
-        public bool Experimental;
         public bool AutoProfile;
         public bool Il2Cpp;
         public BuildTarget Target;
@@ -98,7 +97,6 @@ static class BuildTiltBrush
     const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
     const string kMenuPlatformOsx = "Open Brush/Build/Platform: OSX";
     const string kMenuPlatformAndroid = "Open Brush/Build/Platform: Android";
-    const string kMenuExperimental = "Open Brush/Build/Experimental";
     const string kMenuDevelopment = "Open Brush/Build/Development";
     const string kMenuMono = "Open Brush/Build/Runtime: Mono";
     const string kMenuIl2cpp = "Open Brush/Build/Runtime: IL2CPP";
@@ -244,15 +242,6 @@ static class BuildTiltBrush
     }
 
     // Gui setting for "Experimental" checkbox
-    public static bool GuiExperimental
-    {
-        get => EditorPrefs.GetBool(kMenuExperimental, false);
-        set
-        {
-            EditorPrefs.SetBool(kMenuExperimental, value);
-            Menu.SetChecked(kMenuExperimental, value);
-        }
-    }
 
     // Gui setting for "Development" checkbox
     public static bool GuiDevelopment
@@ -297,7 +286,6 @@ static class BuildTiltBrush
     {
         return new TiltBuildOptions
         {
-            Experimental = GuiExperimental,
             AutoProfile = GuiAutoProfile,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
@@ -339,10 +327,9 @@ static class BuildTiltBrush
             sdk += "Mobile";
 
         var directoryName = string.Format(
-            "{0}_{1}_{5}{2}{3}{4}",
+            "{0}_{1}_{4}{2}{3}",
             sdk,
             GuiDevelopment ? "Debug" : "Release",
-            GuiExperimental ? "_Experimental" : "",
             GuiRuntimeIl2cpp ? "_Il2cpp" : "",
             GuiAutoProfile ? "_AutoProfile" : "",
             kGuiBuildExecutableName);
@@ -550,18 +537,7 @@ static class BuildTiltBrush
 
     //=======  Options =======
 
-    [MenuItem(kMenuExperimental, isValidateFunction: false, priority: 400)]
-    static void MenuItem_Experimental()
-    {
-        GuiExperimental = !GuiExperimental;
-    }
 
-    [MenuItem(kMenuExperimental, isValidateFunction: true)]
-    static bool MenuItem_Experimental_Validate()
-    {
-        Menu.SetChecked(kMenuExperimental, GuiExperimental);
-        return true;
-    }
 
     [MenuItem(kMenuDevelopment, isValidateFunction: false, priority: 405)]
     static void MenuItem_Development()
@@ -748,12 +724,7 @@ static class BuildTiltBrush
                 {
                     string mode = args[++i];
                     // TODO: Legacy; remove when our build shortcuts are updated
-                    tiltOptions.Experimental = RemoveSuffix(ref mode, "Experimental");
                     tiltOptions.XrSdk = AsEnum(mode, tiltOptions.XrSdk);
-                }
-                else if (args[i] == "-btb-experimental")
-                {
-                    tiltOptions.Experimental = true;
                 }
                 else if (args[i] == "-btb-description")
                 {
@@ -1426,8 +1397,8 @@ static class BuildTiltBrush
         // During the build process the Scene List in the Build Settings is ignored.
         // Only the following scenes are included in the build.
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
-        Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
-            target, xrSdk, tiltOptions.Experimental, tiltOptions.AutoProfile,
+        Note("BuildTiltBrush: Start target:{0} mode:{1} profile:{2} options:{3}",
+            target, xrSdk, tiltOptions.AutoProfile,
             // For some reason, "None" comes through as "CompressTextures"
             options == BuildOptions.None ? "None" : options.ToString());
 
@@ -1443,7 +1414,6 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
-            tiltOptions.Experimental ? "EXPERIMENTAL_ENABLED" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
@@ -1459,7 +1429,6 @@ static class BuildTiltBrush
             var config = App.Config;
             // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
             //config.m_SdkMode = xrSdk;
-            config.m_IsExperimental = tiltOptions.Experimental;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
@@ -1478,10 +1447,9 @@ static class BuildTiltBrush
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
-            // Also set consultUserConfig = false to keep user config from affecting the build outpexperut.
+            // Also set consultUserConfig = false to keep user config from affecting the build output.
             TiltBrushManifest manifest = App.Instance.GetMergedManifest(
-                consultUserConfig: false,
-                forceExperimental: tiltOptions.Experimental);
+                consultUserConfig: false, forceExperimental: true);
 
             // Some sanity checks
             {
@@ -1980,7 +1948,6 @@ static class BuildTiltBrush
                 args.AppendFormat("-btb-bopt {0} ", value);
             }
         }
-        if (tiltOptions.Experimental) { args.Append("-btb-experimental "); }
         if (tiltOptions.Il2Cpp) { args.Append("-btb-il2cpp "); }
         if (!string.IsNullOrEmpty(stamp)) { args.AppendFormat("-btb-stamp {0} ", stamp); }
         if (tiltOptions.AutoProfile) { args.Append("-btb-autoprofile "); }

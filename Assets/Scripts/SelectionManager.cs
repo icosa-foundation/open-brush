@@ -424,7 +424,6 @@ namespace TiltBrush
         {
             bool showSelection = ShouldShowSelectedStrokes;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 // Strokes of type BrushStroke currently only exist in experimental builds.
@@ -437,7 +436,6 @@ namespace TiltBrush
                     }
                 }
             }
-#endif
             App.Scene.SelectionCanvas.BatchManager.SetVisibility(showSelection);
 
             m_SelectionWidget.gameObject.SetActive(showSelection);
