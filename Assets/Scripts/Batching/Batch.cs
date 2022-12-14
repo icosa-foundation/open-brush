@@ -110,7 +110,6 @@ namespace TiltBrush
             m_Geometry = new GeometryPool();
 
             var rNewMesh = new Mesh();
-            rNewMesh.indexFormat = IndexFormat.UInt32;
             rNewMesh.MarkDynamic();
 
             gameObject.layer = ParentPool.Owner.Canvas.gameObject.layer;
