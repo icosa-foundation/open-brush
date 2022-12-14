@@ -207,7 +207,6 @@ namespace TiltBrush
 
         override protected void OnUpdate()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Debug.isDebugBuild && Config.IsExperimental)
             {
                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
@@ -223,7 +222,6 @@ namespace TiltBrush
                     RefreshRenderers();
                 }
             }
-#endif
 
             //animate the guide beams in and out, relatively to activation
             float fShowRatio = GetShowRatio();
@@ -271,7 +269,6 @@ namespace TiltBrush
                         break;
                     case Mode.SlowFollow:
                         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                             if (Debug.isDebugBuild && Config.IsExperimental)
                             {
                                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
@@ -286,7 +283,6 @@ namespace TiltBrush
                                     m_SlowFollowSmoothing += 0.001f;
                                 }
                             }
-#endif
 
                             transform.position = Vector3.SmoothDamp(transform.position, ViewpointScript.Head.position,
                                 ref m_SlowFollowMoveVel, m_SlowFollowSmoothing, Mathf.Infinity, Time.deltaTime);
