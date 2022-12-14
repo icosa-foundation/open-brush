@@ -139,14 +139,12 @@ namespace TiltBrush
             // since some buttons are in prefabs rather than in the scene.
             bool selfDestruct = m_AddOverlay;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (m_AddOverlay && Config.IsExperimental)
             {
                 GameObject overlay = Instantiate(App.Config.m_LabsButtonOverlayPrefab);
                 overlay.transform.SetParent(transform, false);
                 selfDestruct = false;
             }
-#endif
 
             if (selfDestruct)
             {
