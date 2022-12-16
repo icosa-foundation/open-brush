@@ -17,7 +17,7 @@ PlayerSettings:
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
-  m_ShowUnitySplashScreen: 0
+  m_ShowUnitySplashScreen: 1
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
   m_SplashScreenAnimation: 0
@@ -139,9 +139,7 @@ PlayerSettings:
     Others: 1
   bundleVersion: 2.0.0
   preloadedAssets:
-  - {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d, type: 2}
   - {fileID: 0}
-  - {fileID: 11400000, guid: 71fe6cc6ea2fd8841ab44d5442834cc6, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -151,11 +149,13 @@ PlayerSettings:
     enable360StereoCapture: 0
   isWsaHolographicRemotingEnabled: 0
   enableFrameTimingStats: 0
+  enableOpenGLProfilerGPURecorders: 1
   useHDRDisplay: 0
   D3DHDRBitDepth: 0
   m_ColorGamuts: 00000000
   targetPixelDensity: 30
   resolutionScalingMode: 0
+  resetResolutionOnWindowResize: 0
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
@@ -730,6 +730,7 @@ PlayerSettings:
   ps4videoRecordingFeaturesUsed: 0
   ps4contentSearchFeaturesUsed: 0
   ps4CompatibilityPS5: 0
+  ps4AllowPS5Detection: 0
   ps4GPU800MHz: 1
   ps4attribEyeToEyeDistanceSettingVR: 0
   ps4IncludedModules: []
@@ -755,7 +756,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    Android: TILT_BRUSH
+    Android: TILT_BRUSH;USE_VIVE_OPENXR_ANDROID_1_0_4;VIU_OCULUSVR;VIU_OCULUSVR_1_37_0_OR_NEWER;VIU_OCULUSVR_1_32_0_OR_NEWER;VIU_OCULUSVR_1_35_0_OR_NEWER;VIU_OCULUSVR_1_36_0_OR_NEWER;VIU_OCULUSVR_16_0_OR_NEWER;VIU_OCULUSVR_19_0_OR_NEWER;VIU_OCULUSVR_20_0_OR_NEWER;VIU_XR_GENERAL_SETTINGS;VIU_XR_PACKAGE_METADATA_STORE;VIU_OPENXR_PLUGIN_POSE_CONTROL;VIU_UIS_POSE_CONTROL;VIU_WAVE_XRSDK_3_99_31_OR_NEWER;VIU_WAVE_XRSDK_4_2_90_OR_NEWER;VIU_WAVEVR_HAND_TRACKING;VIU_WAVEVR_CONTROLLER_RENDERMODEL;VIU_WAVEVR_HAND_TRACKING_CHECK;VIU_WAVEVR_TRACKER;VIU_WAVEVR_TRACKER_CHECK;VIU_PLUGIN;VIU_PACKAGE
     Standalone: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
     Windows Store Apps: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
   additionalCompilerArguments: {}

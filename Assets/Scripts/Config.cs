@@ -26,6 +26,7 @@
 // - CON: Cannot reference objects in the scene; only prefabs and other assets
 // - PRO: Changes go into their own .asset; easier to review
 
+using HTC.OpenBrush.StoragePermission;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -547,6 +548,11 @@ namespace TiltBrush
                     m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
                 }
             }
+
+            if (!StoragePermissionManager.instance.HasPermissionToStorage())
+                StoragePermissionManager.instance.RequestStoragePermission();
+
+            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = 1.44f;
         }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value

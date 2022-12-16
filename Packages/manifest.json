@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.htc.upm.vive-input-utility": "1.17.0",
+    "com.htc.upm.wave.native": "5.0.3-r.5",
     "com.htc.upm.wave.xrsdk": "5.0.3-r.5",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",

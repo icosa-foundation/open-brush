@@ -6,6 +6,22 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.htc.upm.vive-input-utility": {
+      "version": "1.17.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://npm-registry.vive.com"
+    },
+    "com.htc.upm.wave.native": {
+      "version": "5.0.3-r.5",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.htc.upm.wave.xrsdk": "5.0.3-r.5"
+      },
+      "url": "https://npm-registry.vive.com"
+    },
     "com.htc.upm.wave.xrsdk": {
       "version": "5.0.3-r.5",
       "depth": 0,

@@ -15,6 +15,8 @@
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.InputSystem;
+using HTC.UnityPlugin.Vive;
+using HTC.UnityPlugin.VRModuleManagement;
 
 namespace TiltBrush
 {
@@ -98,7 +100,7 @@ namespace TiltBrush
 
         public override bool IsTrackedObjectValid
         {
-            get => device.isValid;
+            get => device.isValid || VRModule.GetDeviceState(isBrush ? ViveRoleProperty.New(HandRole.RightHand).GetDeviceIndex() : ViveRoleProperty.New(HandRole.LeftHand).GetDeviceIndex()).isConnected;
             set
             {
 
@@ -112,11 +114,15 @@ namespace TiltBrush
 
         public override Vector2 GetThumbStickValue()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return new Vector2(ViveInput.GetAxis(role, ControllerAxis.JoystickX), ViveInput.GetAxis(role, ControllerAxis.JoystickY));
             return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
         public override Vector2 GetPadValueDelta()
         {
+            return new Vector2(GetScrollXDelta(), GetScrollYDelta());
+
             var action = FindAction("ThumbAxis");
             if (action.inProgress)
             {
@@ -152,44 +158,59 @@ namespace TiltBrush
 
         public override float GetScrollXDelta()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return ViveInput.GetAxis(role, ControllerAxis.JoystickX);
             return GetPadValueDelta().x;
         }
 
         public override float GetScrollYDelta()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return ViveInput.GetAxis(role, ControllerAxis.JoystickY);
             return GetPadValueDelta().y;
         }
 
         public override float GetGripValue()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return ViveInput.GetAxis(role, ControllerAxis.CapSenseGrip);
             return FindAction("GripAxis").ReadValue<float>();
         }
 
         public override float GetTriggerRatio()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return ViveInput.GetAxis(role, ControllerAxis.Trigger);
             return GetTriggerValue();
         }
 
         public override float GetTriggerValue()
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+            return ViveInput.GetAxis(role, ControllerAxis.Trigger);
             return FindAction("TriggerAxis").ReadValue<float>();
         }
 
         private bool MapVrTouch(VrInput input)
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+
             switch (input)
             {
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
+                    return ViveInput.GetPress(role, ControllerButton.AKeyTouch);
                     return FindAction("PrimaryTouch").inProgress;
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
+                    return ViveInput.GetPress(role, ControllerButton.MenuTouch);
                     return FindAction("SecondaryTouch").inProgress;
                 case VrInput.Touchpad:
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
+                    return ViveInput.GetPress(role, ControllerButton.PadTouch);
                     return FindAction("PadTouch").inProgress;
             }
             return false;
@@ -202,24 +223,31 @@ namespace TiltBrush
 
         private bool MapVrInput(VrInput input)
         {
+            var role = isBrush ? HandRole.RightHand : HandRole.LeftHand;
+
             // This logic is inferred from OculusControllerInfo
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
                 case VrInput.Touchpad:
+                    return ViveInput.GetPress(role, ControllerButton.Pad);
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
+                    return ViveInput.GetPress(role, ControllerButton.Trigger);
                     return FindAction("TriggerAxis").IsPressed();
                 case VrInput.Grip:
+                    return ViveInput.GetPress(role, ControllerButton.Grip);
                     return FindAction("GripAxis").IsPressed();
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
+                    return ViveInput.GetPress(role, ControllerButton.AKey);
                     return FindAction("PrimaryButton").IsPressed();
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
+                    return ViveInput.GetPress(role, ControllerButton.Menu);
                     return FindAction("SecondaryButton").IsPressed();
             }
             return false;
