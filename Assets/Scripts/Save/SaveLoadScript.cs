@@ -114,6 +114,7 @@ namespace TiltBrush
         [SerializeField] private int m_AutosaveFileCount;
 
         private string m_SaveDir;
+        private string m_SaveSelectedDir;
         private SceneFileInfo m_LastSceneFile;
         private bool m_LastSceneIsLegacy;
 
@@ -241,6 +242,7 @@ namespace TiltBrush
                 RenderTextureFormat.ARGB32);
 
             m_SaveDir = App.UserSketchPath();
+            m_SaveSelectedDir = App.ModelLibraryPath();
             FileUtils.InitializeDirectoryWithUserError(m_SaveDir);
 
             MarkAsAutosaveDone();
@@ -364,6 +366,16 @@ namespace TiltBrush
             return fileInfo;
         }
 
+        public DiskSceneFileInfo GetNewSaveSelectedFileInfo()
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(GenerateNewUntitledFilename(m_SaveSelectedDir, TILT_SUFFIX));
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
         /// Save a snapshot directly to a location.
         /// The snapshot's AssetId is the source of truth
         public IEnumerator<Timeslice> SaveSnapshot(SceneFileInfo fileInfo, SketchSnapshot snapshot)
@@ -392,12 +404,17 @@ namespace TiltBrush
             return SaveLow(GetNewNameSceneFileInfo(tiltasaurusMode));
         }
 
+        public IEnumerator<Timeslice> SaveSelected()
+        {
+            return SaveLow(GetNewSaveSelectedFileInfo());
+        }
+
         /// In order to for this to work properly:
         /// - m_SaveIconRenderTexture must contain data
         /// - SaveIconTool.LastSaveCameraRigState must be good
         /// SaveIconTool.ProgrammaticCaptureSaveIcon() does both of these things
         private IEnumerator<Timeslice> SaveLow(
-            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null)
+            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
         {
             Debug.Assert(!SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
@@ -417,12 +434,13 @@ namespace TiltBrush
             m_LastSceneFile = info;
             AbortAutosave();
 
-            m_SaveCoroutine = ThreadedSave(info, bNotify, snapshot);
+            m_SaveCoroutine = ThreadedSave(info, selectedOnly, bNotify, snapshot);
             return m_SaveCoroutine;
         }
 
-        private IEnumerator<Timeslice> ThreadedSave(SceneFileInfo fileInfo,
-                                                    bool bNotify = true, SketchSnapshot snapshot = null)
+        private IEnumerator<Timeslice> ThreadedSave(
+            SceneFileInfo fileInfo, bool selectedOnly,
+            bool bNotify = true, SketchSnapshot snapshot = null)
         {
             // Cancel any pending transfers of this file.
             var cancelTask = App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
@@ -432,7 +450,7 @@ namespace TiltBrush
             if (snapshot == null)
             {
                 IEnumerator<Timeslice> timeslicedConstructor;
-                snapshot = CreateSnapshotWithIcons(out timeslicedConstructor);
+                snapshot = CreateSnapshotWithIcons(out timeslicedConstructor, selectedOnly);
                 if (App.CurrentState != App.AppState.Reset)
                 {
                     App.Instance.SetDesiredState(App.AppState.Saving);
@@ -866,7 +884,7 @@ namespace TiltBrush
 
             IEnumerator<Timeslice> timeslicedConstructor;
             SketchSnapshot snapshot = new SketchSnapshot(
-                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor);
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, false);
             while (timeslicedConstructor.MoveNext())
             {
                 yield return timeslicedConstructor.Current;
@@ -980,7 +998,7 @@ namespace TiltBrush
         /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
         public async Task<SketchSnapshot> CreateSnapshotWithIconsAsync()
         {
-            var snapshot = CreateSnapshotWithIcons(out var coroutine);
+            var snapshot = CreateSnapshotWithIcons(out var coroutine, false);
             await coroutine; // finishes off the snapshot
             return snapshot;
         }
@@ -988,11 +1006,11 @@ namespace TiltBrush
         /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
         /// As with the constructor, you must run the coroutine to completion before the snapshot
         /// is usable.
-        public SketchSnapshot CreateSnapshotWithIcons(out IEnumerator<Timeslice> coroutine)
+        public SketchSnapshot CreateSnapshotWithIcons(out IEnumerator<Timeslice> coroutine, bool selectedOnly)
         {
             IEnumerator<Timeslice> timeslicedConstructor;
             SketchSnapshot snapshot = new SketchSnapshot(
-                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor);
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, selectedOnly);
             coroutine = CoroutineUtil.Sequence(
                 timeslicedConstructor,
                 snapshot.CreateSnapshotIcons(m_SaveIconRenderTexture,

@@ -36,6 +36,8 @@ namespace TiltBrush
         private SaveIconCaptureScript m_SaveIconCapture;
         private GroupIdMapping m_GroupIdMapping;
 
+        private bool m_SelectedOnly;
+
         public byte[] Thumbnail
         {
             get { return m_ThumbnailBytes; }
@@ -58,11 +60,12 @@ namespace TiltBrush
         public SketchSnapshot(
             JsonSerializer jsonSerializer,
             SaveIconCaptureScript saveIconCapture,
-            out IEnumerator<Timeslice> timeslicedConstructor)
+            out IEnumerator<Timeslice> timeslicedConstructor, bool selectedOnly)
         {
             m_JsonSerializer = jsonSerializer;
             m_SaveIconCapture = saveIconCapture;
             m_GroupIdMapping = new GroupIdMapping();
+            m_SelectedOnly = selectedOnly;
             timeslicedConstructor = TimeslicedConstructor();
         }
 
@@ -72,7 +75,16 @@ namespace TiltBrush
             stopwatch.Start();
             long maxTicks =
                 (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
-            var strokes = SketchMemoryScript.AllStrokes();
+
+            IEnumerable<Stroke> strokes;
+            if (m_SelectedOnly)
+            {
+                strokes = SelectionManager.m_Instance.SelectedStrokes;
+            }
+            else
+            {
+                strokes = SketchMemoryScript.AllStrokes();
+            }
             int numStrokes = SketchMemoryScript.AllStrokesCount();
             m_Strokes = new List<SketchWriter.AdjustedMemoryBrushStroke>(numStrokes);
             foreach (var strokeSnapshot in SketchWriter.EnumerateAdjustedSnapshots(strokes))

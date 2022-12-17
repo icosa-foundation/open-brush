@@ -148,7 +148,8 @@ namespace TiltBrush
             SymmetryTwoHanded = 6003,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
-            MergeBrushStrokes = 10000
+            MergeBrushStrokes = 10000,
+            SaveSelected = 123 // TODO
         }
 
         public enum ControlsType
@@ -4170,6 +4171,20 @@ namespace TiltBrush
                             GenerateBoundingBoxSaveIcon();
                         }
                         StartCoroutine(SaveLoadScript.m_Instance.SaveNewName());
+                        EatGazeObjectInput();
+                        break;
+                    }
+                case GlobalCommands.SaveSelected:
+                    {
+                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        {
+                            return;
+                        }
+                        if (iParam1 == 1)
+                        {
+                            GenerateBoundingBoxSaveIcon();
+                        }
+                        StartCoroutine(SaveLoadScript.m_Instance.SaveSelected());
                         EatGazeObjectInput();
                         break;
                     }
