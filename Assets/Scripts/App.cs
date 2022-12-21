@@ -188,9 +188,9 @@ namespace TiltBrush
         [SerializeField] GpuIntersector m_GpuIntersector;
 
         public TiltBrushManifest m_Manifest;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+
+        // Previously Experimental-Mode only
         [SerializeField] private TiltBrushManifest m_ManifestExperimental;
-#endif
 
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
@@ -756,7 +756,7 @@ namespace TiltBrush
 
             SwitchState();
 
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             if (Config.IsExperimental && !string.IsNullOrEmpty(Config.m_IntroSketchUsdFilename))
             {
                 var gobject = ImportUsd.ImportWithAnim(Config.m_IntroSketchUsdFilename);
@@ -927,13 +927,11 @@ namespace TiltBrush
                             else if (DemoManager.m_Instance.DemoModeEnabled)
                             {
                                 OnIntroComplete();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                             }
                             else if (Config.IsExperimental)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
-#endif
                             }
                             else
                             {
@@ -2128,28 +2126,25 @@ namespace TiltBrush
         public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
         {
             var manifest = m_Manifest;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                        if (Config.IsExperimental)
-                        {
-                            // At build time, we don't want the user config to affect the build output.
-                            if ((consultUserConfig
-                                && m_UserConfig.Flags.ShowDangerousBrushes
-                                && m_ManifestExperimental != null) || forceExperimental)
-                            {
-                                manifest = Instantiate(m_Manifest);
-                                manifest.AppendFrom(m_ManifestExperimental);
-                            }
-                        }
-#endif
+            if (Config.IsExperimental || forceExperimental)
+            {
+                // At build time, we don't want the user config to affect the build output.
+                if ((consultUserConfig
+                    && m_UserConfig.Flags.ShowDangerousBrushes
+                    && m_ManifestExperimental != null) || forceExperimental)
+                {
+                    manifest = Instantiate(m_Manifest);
+                    manifest.AppendFrom(m_ManifestExperimental);
+                }
+            }
             return manifest;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        // Previously Experimental-Mode only
         public bool IsBrushExperimental(BrushDescriptor brush)
         {
             return m_ManifestExperimental.Brushes.Contains(brush);
         }
-#endif
 
         DateTime GetLinkerTime(Assembly assembly, TimeZoneInfo target = null)
         {
