@@ -4631,6 +4631,13 @@ namespace TiltBrush
                 case GlobalCommands.Duplicate:
                     {
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
+
+                        // TODO - this code has never taken imported models etc into account
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                        {
+                            selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
+                        }
+
                         if (!SketchMemoryScript.m_Instance.MemoryWarningAccepted &&
                             SketchMemoryScript.m_Instance.WillVertCountPutUsOverTheMemoryLimit(selectedVerts))
                         {
