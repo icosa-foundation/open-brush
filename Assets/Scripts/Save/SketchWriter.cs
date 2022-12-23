@@ -44,7 +44,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Valve.Newtonsoft.Json.Utilities;
 using StrokeFlags = TiltBrush.SketchMemoryScript.StrokeFlags;
 using ControlPoint = TiltBrush.PointerManager.ControlPoint;
 
@@ -158,8 +157,15 @@ namespace TiltBrush
                 {
                     if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-                        // Assume selected strokes belong to the current canvas.
-                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                        {
+                            snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
+                        }
+                        else
+                        {
+                            // Previous canvas has been deleted?
+                            snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        }
                     }
                     else
                     {
@@ -295,7 +301,6 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.ClearMemory();
             }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 if (App.Config.m_ReplaceBrushesOnLoad)
@@ -303,7 +308,6 @@ namespace TiltBrush
                     brushList = brushList.Select(guid => App.Config.GetReplacementBrush(guid)).ToArray();
                 }
             }
-#endif
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
@@ -333,7 +337,10 @@ namespace TiltBrush
 
             // stopwatch.Stop();
             // Debug.LogFormat("Reading took {0}", stopwatch.Elapsed);
-            GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+            if (bAdditive)
+            {
+                GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+            }
             return true;
         }
 

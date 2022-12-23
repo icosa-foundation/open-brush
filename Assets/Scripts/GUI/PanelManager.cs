@@ -35,21 +35,16 @@ namespace TiltBrush
         {
             switch (mode)
             {
-                case SdkMode.SteamVR:
-                case SdkMode.Oculus:
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+                case SdkMode.UnityXR:
                     if (Config.IsExperimental)
                     {
                         return m_ModeVrExperimental;
                     }
-#endif
                     if (App.Config.IsMobileHardware)
                     {
                         return m_ModeQuest;
                     }
                     return m_ModeVr;
-                case SdkMode.Gvr:
-                    return m_ModeGvr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
                 default:
@@ -480,7 +475,6 @@ namespace TiltBrush
             m_PanelsCustomized = false;
             m_AdvancedModeRevealActive = false;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 // If we've got a UX exploration prefab, instantiate it here.
@@ -489,7 +483,6 @@ namespace TiltBrush
                     m_UxExploration = Instantiate(m_UxExplorationPrefab);
                 }
             }
-#endif
 
             TintWandPaneVisuals(true);
 
@@ -1112,7 +1105,6 @@ namespace TiltBrush
 
         public void UpdatePanels()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 if (m_UxExploration != null)
@@ -1121,7 +1113,6 @@ namespace TiltBrush
                     return;
                 }
             }
-#endif
 
             UnityEngine.Profiling.Profiler.BeginSample("PanelManager.UpdatePanels");
             // Lock panels to the controller if we've got 6dof controls.
@@ -1683,14 +1674,12 @@ namespace TiltBrush
 
         public void LockUxExplorationToController()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 Transform baseTransform = InputManager.Wand.Geometry.MainAxisAttachPoint;
                 m_UxExploration.transform.position = baseTransform.position;
                 m_UxExploration.transform.rotation = baseTransform.rotation;
             }
-#endif
         }
 
         public void LockPanelsToController()

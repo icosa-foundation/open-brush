@@ -263,7 +263,7 @@ def save_config():
 
 
 def restore_config():
-    global configcopy  # pylint: disable=global-statement
+    global configcopy  # pylint: disable=global-statement,global-variable-not-assigned
     if configcopy:
         upload_config(configcopy)
     else:

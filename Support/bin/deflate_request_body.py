@@ -91,6 +91,6 @@ def quick_print_request(n, prefix="c:/src/tb/Requests"):
 if __name__ == "__main__":
     try:
         quick_print_request(440)
-    except Error as e:
-        for x in e.args:
+    except Error as ex:
+        for x in ex.args:
             print(x)

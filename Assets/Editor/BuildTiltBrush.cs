@@ -21,29 +21,54 @@ using JetBrains.Annotations;
 using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
-#if UNITY_2018_3_OR_NEWER
 using UnityEditor.Build.Reporting;
-#endif
 #if UNITY_EDITOR_OSX && UNITY_IPHONE
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
+using UnityEditor.XR.Management;
 using UnityEngine;
+using UnityEngine.XR;
+using UnityEngine.XR.Management;
 using Environment = System.Environment;
 
+//----------------------------------------------------------------------------------------
+// Notes on build flags which can be added to Player Settings.
+//
+//  - OCULUS_SUPPORTED
+//      - Oculus is an optional target. Define this flag to add Oculus targets.
+//
+//----------------------------------------------------------------------------------------
 // All output from this class is prefixed with "_btb_" to facilitate extracting
 // it from Unity's very noisy and spammy Editor.log file.
 static class BuildTiltBrush
 {
     // Types, consts, enums
 
+    // The vendor name - used for naming android builds - shouldn't have spaces.
+    public const string kVendorName = "Icosa";
+    // The vendor name - used for the company name in builds and fbx output. Can have spaces.
+    public const string kDisplayVendorName = "Icosa Foundation";
+
+    // Executable Base
+    public const string kGuiBuildExecutableName = "OpenBrush";
+    // Windows Executable
+    public const string kGuiBuildWindowsExecutableName = kGuiBuildExecutableName + ".exe";
+    // Linux Executable
+    public const string kGuiBuildLinuxExecutableName = kGuiBuildExecutableName;
+    // OSX Executable
+    public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
+    // Android Application Identifier
+    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
+    // Android Executable
+    public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+
     public class TiltBuildOptions
     {
-        public bool Experimental;
         public bool AutoProfile;
         public bool Il2Cpp;
         public BuildTarget Target;
-        public SdkMode VrSdk;
+        public XrSdkMode XrSdk;
         public string Location;
         public string Stamp;
         public BuildOptions UnityOptions;
@@ -60,40 +85,44 @@ static class BuildTiltBrush
         }
     }
 
-    const string kMenuBackgroundBuild = "Tilt/Build/Background Build";
-    const string kMenuSdkPref = "Tilt/Build/Sdk";
-    const string kMenuSdkMonoscopic = "Tilt/Build/Sdk: Monoscopic";
-    const string kMenuSdkOculus = "Tilt/Build/Sdk: OVR";
-    const string kMenuSdkSteamVr = "Tilt/Build/Sdk: SteamVR";
-    const string kMenuSdkGoogleVr = "Tilt/Build/Sdk: GoogleVR";
-    const string kMenuPlatformPref = "Tilt/Build/Platform";
-    const string kMenuPlatformWindows = "Tilt/Build/Platform: Windows";
-    const string kMenuPlatformLinux = "Tilt/Build/Platform: Linux";
-    const string kMenuPlatformOsx = "Tilt/Build/Platform: OSX";
-    const string kMenuPlatformAndroid = "Tilt/Build/Platform: Android";
-    const string kMenuExperimental = "Tilt/Build/Experimental";
-    const string kMenuDevelopment = "Tilt/Build/Development";
-    const string kMenuMono = "Tilt/Build/Runtime: Mono";
-    const string kMenuIl2cpp = "Tilt/Build/Runtime: IL2CPP";
-    const string kMenuAutoProfile = "Tilt/Build/Auto Profile";
+    const string kMenuBackgroundBuild = "Open Brush/Build/Background Build";
+    const string kMenuPluginPref = "Open Brush/Build/Plugin";
+    const string kMenuPluginMono = "Open Brush/Build/Plugin: Mono";
+    const string kMenuPluginOpenXr = "Open Brush/Build/Plugin: OpenXR";
+    const string kMenuPluginOculus = "Open Brush/Build/Plugin: Oculus";
+    const string kMenuPluginWave = "Open Brush/Build/Plugin: Wave";
+    const string kMenuPluginPico = "Open Brush/Build/Plugin: Pico";
+    const string kMenuPlatformPref = "Open Brush/Build/Platform";
+    const string kMenuPlatformWindows = "Open Brush/Build/Platform: Windows";
+    const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
+    const string kMenuPlatformOsx = "Open Brush/Build/Platform: OSX";
+    const string kMenuPlatformAndroid = "Open Brush/Build/Platform: Android";
+    const string kMenuDevelopment = "Open Brush/Build/Development";
+    const string kMenuMono = "Open Brush/Build/Runtime: Mono";
+    const string kMenuIl2cpp = "Open Brush/Build/Runtime: IL2CPP";
+    const string kMenuAutoProfile = "Open Brush/Build/Auto Profile";
 
     const string kBuildCopyDir = "BuildCopy";
     private static string[] kBuildDirs = { "Assets", "Packages", "ProjectSettings", "Support" };
 
-    private static readonly List<KeyValuePair<SdkMode, BuildTarget>> kValidSdkTargets
-        = new List<KeyValuePair<SdkMode, BuildTarget>>()
+    private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
+        = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.StandaloneOSX),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Monoscopic, BuildTarget.Android),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneWindows64),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneLinux64),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.SteamVR, BuildTarget.StandaloneOSX),
+            // OpenXR
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+
 #if OCULUS_SUPPORTED
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.StandaloneWindows64),
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Oculus, BuildTarget.Android),
+            // Oculus
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.Android),
 #endif // OCULUS_SUPPORTED
-            new KeyValuePair<SdkMode, BuildTarget>(SdkMode.Gvr, BuildTarget.Android),
+            // Wave
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
+#if PICO_SUPPORTED
+            // Pico
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
+#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -120,7 +149,7 @@ static class BuildTiltBrush
     class PostBuildInfo
     {
         public List<CopyRequest> copyRequests;
-        public SdkMode vrSdk;
+        public XrSdkMode xrSdk;
     }
     static PostBuildInfo m_forPostBuild;
 
@@ -133,10 +162,7 @@ static class BuildTiltBrush
 
     public static bool BackgroundBuild
     {
-        get
-        {
-            return EditorPrefs.GetBool(kMenuBackgroundBuild, false);
-        }
+        get => EditorPrefs.GetBool(kMenuBackgroundBuild, false);
         set
         {
             EditorPrefs.SetBool(kMenuBackgroundBuild, value);
@@ -144,40 +170,37 @@ static class BuildTiltBrush
         }
     }
 
+#if UNITY_ANDROID
+#if UNITY_EDITOR_WIN
+    private static readonly string m_adbPath = Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb.exe");
+#else
+    private static readonly string m_adbPath = Path.Combine(UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb");
+#endif
+#else
+    private static readonly string m_adbPath = "ADB_NOT_AVAILABLE_WITHOUT_UNITY_ANDROID";
+#endif
+    public static string AdbPath => m_adbPath;
+
+    private static string m_buildStatus = "-";
+    public static string BuildStatus => m_buildStatus; // info about current status
+
     // Gui setting for "Sdk" radio buttons
-    public static SdkMode GuiSelectedSdk
+    public static XrSdkMode GuiSelectedSdk
     {
         get
         {
-            return AsEnum(EditorPrefs.GetString(kMenuSdkPref, "SteamVR"), SdkMode.SteamVR);
+            return AsEnum(EditorPrefs.GetString(kMenuPluginPref, "OpenXR"), XrSdkMode.OpenXR);
         }
         set
         {
-            EditorPrefs.SetString(kMenuSdkPref, value.ToString());
-            Menu.SetChecked(kMenuSdkMonoscopic, false);
+            EditorPrefs.SetString(kMenuPluginPref, value.ToString());
+            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Mono);
+            Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
-            Menu.SetChecked(kMenuSdkOculus, false);
+            Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
 #endif // OCULUS_SUPPORTED
-            Menu.SetChecked(kMenuSdkSteamVr, false);
-            Menu.SetChecked(kMenuSdkGoogleVr, false);
-
-            switch (value)
-            {
-                case SdkMode.Monoscopic:
-                    Menu.SetChecked(kMenuSdkMonoscopic, true);
-                    break;
-                case SdkMode.Oculus:
-#if OCULUS_SUPPORTED
-                    Menu.SetChecked(kMenuSdkOculus, true);
-#endif // OCULUS_SUPPORTED
-                    break;
-                case SdkMode.SteamVR:
-                    Menu.SetChecked(kMenuSdkSteamVr, true);
-                    break;
-                case SdkMode.Gvr:
-                    Menu.SetChecked(kMenuSdkGoogleVr, true);
-                    break;
-            }
+            Menu.SetChecked(kMenuPluginWave, value == XrSdkMode.Wave);
+            Menu.SetChecked(kMenuPluginPico, value == XrSdkMode.Pico);
 
             if (!BuildTargetSupported(value, GuiSelectedBuildTarget))
             {
@@ -196,26 +219,10 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPlatformPref, value.ToString());
-            Menu.SetChecked(kMenuPlatformWindows, false);
-            Menu.SetChecked(kMenuPlatformLinux, false);
-            Menu.SetChecked(kMenuPlatformOsx, false);
-            Menu.SetChecked(kMenuPlatformAndroid, false);
-
-            switch (value)
-            {
-                case BuildTarget.StandaloneWindows64:
-                    Menu.SetChecked(kMenuPlatformWindows, true);
-                    break;
-                case BuildTarget.StandaloneLinux64:
-                    Menu.SetChecked(kMenuPlatformLinux, true);
-                    break;
-                case BuildTarget.StandaloneOSX:
-                    Menu.SetChecked(kMenuPlatformOsx, true);
-                    break;
-                case BuildTarget.Android:
-                    Menu.SetChecked(kMenuPlatformAndroid, true);
-                    break;
-            }
+            Menu.SetChecked(kMenuPlatformWindows, value == BuildTarget.StandaloneWindows64);
+            Menu.SetChecked(kMenuPlatformLinux, value == BuildTarget.StandaloneLinux64);
+            Menu.SetChecked(kMenuPlatformOsx, value == BuildTarget.StandaloneOSX);
+            Menu.SetChecked(kMenuPlatformAndroid, value == BuildTarget.Android);
         }
     }
 
@@ -224,37 +231,22 @@ static class BuildTiltBrush
         return kValidSdkTargets.Select(x => x.Value).Distinct().ToArray();
     }
 
-    public static SdkMode[] SupportedSdkModes()
+    public static XrSdkMode[] SupportedSdkModes()
     {
         return kValidSdkTargets.Select(x => x.Key).Distinct().ToArray();
     }
 
-    public static bool BuildTargetSupported(SdkMode mode, BuildTarget target)
+    public static bool BuildTargetSupported(XrSdkMode mode, BuildTarget target)
     {
         return kValidSdkTargets.Any(x => x.Key == mode && x.Value == target);
     }
 
     // Gui setting for "Experimental" checkbox
-    public static bool GuiExperimental
-    {
-        get
-        {
-            return EditorPrefs.GetBool(kMenuExperimental, false);
-        }
-        set
-        {
-            EditorPrefs.SetBool(kMenuExperimental, value);
-            Menu.SetChecked(kMenuExperimental, value);
-        }
-    }
 
     // Gui setting for "Development" checkbox
     public static bool GuiDevelopment
     {
-        get
-        {
-            return EditorPrefs.GetBool(kMenuDevelopment, false);
-        }
+        get => EditorPrefs.GetBool(kMenuDevelopment, false);
         set
         {
             EditorPrefs.SetBool(kMenuDevelopment, value);
@@ -265,7 +257,7 @@ static class BuildTiltBrush
     // Gui setting for "Auto Profile" checkbox
     public static bool GuiAutoProfile
     {
-        get { return EditorPrefs.GetBool(kMenuAutoProfile, false); }
+        get => EditorPrefs.GetBool(kMenuAutoProfile, false);
         set
         {
             EditorPrefs.SetBool(kMenuAutoProfile, value);
@@ -275,7 +267,7 @@ static class BuildTiltBrush
 
     public static bool GuiRuntimeIl2cpp
     {
-        get { return EditorPrefs.GetBool(kMenuIl2cpp, false); }
+        get => EditorPrefs.GetBool(kMenuIl2cpp, false);
         set
         {
             EditorPrefs.SetBool(kMenuIl2cpp, value);
@@ -294,22 +286,21 @@ static class BuildTiltBrush
     {
         return new TiltBuildOptions
         {
-            Experimental = GuiExperimental,
             AutoProfile = GuiAutoProfile,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
-            VrSdk = GuiSelectedSdk,
+            XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
             Stamp = "(menuitem)",
             UnityOptions = GuiDevelopment
-                ? (BuildOptions.AllowDebugging | BuildOptions.Development)
+                ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
             Description = "(unity editor)",
         };
     }
 
     // Menu items
-    [MenuItem("Tilt/Build/Do Build... #&b", false, 2)]
+    [MenuItem("Open Brush/Build/Do Build... #&b", false, 2)]
     public static void MenuItem_Build()
     {
         TiltBuildOptions tiltOptions = GetGuiOptions();
@@ -330,39 +321,35 @@ static class BuildTiltBrush
     public static string GetAppPathForGuiBuild()
     {
         BuildTarget buildTarget = GuiSelectedBuildTarget;
+
         string sdk = GuiSelectedSdk.ToString();
-        if (GuiSelectedSdk == SdkMode.Oculus)
-        {
-            sdk = GuiSelectedBuildTarget == BuildTarget.Android
-                ? "OculusMobile"
-                : "Oculus";
-        }
+        if (GuiSelectedBuildTarget == BuildTarget.Android)
+            sdk += "Mobile";
 
         var directoryName = string.Format(
-            "{0}_{1}_{5}{2}{3}{4}_FromGui",
+            "{0}_{1}_{4}{2}{3}",
             sdk,
             GuiDevelopment ? "Debug" : "Release",
-            GuiExperimental ? "_Experimental" : "",
             GuiRuntimeIl2cpp ? "_Il2cpp" : "",
             GuiAutoProfile ? "_AutoProfile" : "",
-            App.kGuiBuildExecutableName);
+            kGuiBuildExecutableName);
         var location = Path.GetDirectoryName(Path.GetDirectoryName(Application.dataPath));
 
         location = Path.Combine(Path.Combine(location, "Builds"), directoryName);
         switch (buildTarget)
         {
             case BuildTarget.Android:
-                location += "/" + App.kGuiBuildAndroidExecutableName;
+                location += "/" + GuiBuildAndroidExecutableName;
                 break;
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
-                location += "/" + App.kGuiBuildWindowsExecutableName;
+                location += "/" + kGuiBuildWindowsExecutableName;
                 break;
             case BuildTarget.StandaloneLinux64:
-                location += "/" + App.kGuiBuildLinuxExecutableName;
+                location += "/" + kGuiBuildLinuxExecutableName;
                 break;
             case BuildTarget.StandaloneOSX:
-                location += "/" + App.kGuiBuildOSXExecutableName;
+                location += "/" + kGuiBuildOsxExecutableName;
                 break;
             default:
                 throw new BuildFailedException("Unsupported BuildTarget: " + buildTarget.ToString());
@@ -392,60 +379,77 @@ static class BuildTiltBrush
 
     //=======  SDKs =======
 
-    [MenuItem(kMenuSdkMonoscopic, isValidateFunction: false, priority: 100)]
-    static void MenuItem_Sdk_Monoscopic()
+    [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
+    static void MenuItem_Plugin_Mono()
     {
-        GuiSelectedSdk = SdkMode.Monoscopic;
+        GuiSelectedSdk = XrSdkMode.Mono;
     }
 
-    [MenuItem(kMenuSdkMonoscopic, isValidateFunction: true)]
-    static bool MenuItem_Sdk_Monoscopic_Validate()
+    [MenuItem(kMenuPluginMono, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Mono_Validate()
     {
-        Menu.SetChecked(kMenuSdkMonoscopic, GuiSelectedSdk == SdkMode.Monoscopic);
+        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Mono);
         return true;
     }
 
-    [MenuItem(kMenuSdkOculus, isValidateFunction: false, priority: 105)]
-    static void MenuItem_Sdk_Oculus()
+    [MenuItem(kMenuPluginOpenXr, isValidateFunction: false, priority: 110)]
+    static void MenuItem_Plugin_OpenXr()
     {
-        GuiSelectedSdk = SdkMode.Oculus;
+        GuiSelectedSdk = XrSdkMode.OpenXR;
     }
 
-    [MenuItem(kMenuSdkOculus, isValidateFunction: true)]
-    static bool MenuItem_Sdk_Oculus_Validate()
+    [MenuItem(kMenuPluginOpenXr, isValidateFunction: true)]
+    static bool MenuItem_Plugin_OpenXr_Validate()
+    {
+        Menu.SetChecked(kMenuPluginOpenXr, GuiSelectedSdk == XrSdkMode.OpenXR);
+        return true;
+    }
+
+    [MenuItem(kMenuPluginOculus, isValidateFunction: false, priority: 105)]
+    static void MenuItem_Plugin_Oculus()
+    {
+        GuiSelectedSdk = XrSdkMode.Oculus;
+    }
+
+    [MenuItem(kMenuPluginOculus, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Oculus_Validate()
     {
 #if OCULUS_SUPPORTED
-        Menu.SetChecked(kMenuSdkOculus, GuiSelectedSdk == SdkMode.Oculus);
+        Menu.SetChecked(kMenuPluginOculus, GuiSelectedSdk == XrSdkMode.Oculus);
         return true;
 #else
         return false;
 #endif
     }
 
-    [MenuItem(kMenuSdkSteamVr, isValidateFunction: false, priority: 110)]
-    static void MenuItem_Sdk_SteamVr()
+    [MenuItem(kMenuPluginWave, isValidateFunction: false, priority: 115)]
+    static void MenuItem_Plugin_Wave()
     {
-        GuiSelectedSdk = SdkMode.SteamVR;
+        GuiSelectedSdk = XrSdkMode.Wave;
     }
 
-    [MenuItem(kMenuSdkSteamVr, isValidateFunction: true)]
-    static bool MenuItem_Sdk_SteamVr_Validate()
+    [MenuItem(kMenuPluginWave, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Wave_Validate()
     {
-        Menu.SetChecked(kMenuSdkSteamVr, GuiSelectedSdk == SdkMode.SteamVR);
+        Menu.SetChecked(kMenuPluginWave, GuiSelectedSdk == XrSdkMode.Wave);
         return true;
     }
 
-    [MenuItem(kMenuSdkGoogleVr, isValidateFunction: false, priority: 115)]
-    static void MenuItem_Sdk_GoogleVr()
+    [MenuItem(kMenuPluginPico, isValidateFunction: false, priority: 125)]
+    static void MenuItem_Plugin_Pico()
     {
-        GuiSelectedSdk = SdkMode.Gvr;
+        GuiSelectedSdk = XrSdkMode.Pico;
     }
 
-    [MenuItem(kMenuSdkGoogleVr, isValidateFunction: true)]
-    static bool MenuItem_Sdk_GoogleVr_Validate()
+    [MenuItem(kMenuPluginPico, isValidateFunction: true)]
+    static bool MenuItem_Plugin_Pico_Validate()
     {
-        Menu.SetChecked(kMenuSdkGoogleVr, GuiSelectedSdk == SdkMode.Gvr);
+#if PICO_SUPPORTED
+        Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
         return true;
+#else
+        return false;
+#endif
     }
 
     //=======  Platforms =======
@@ -464,18 +468,18 @@ static class BuildTiltBrush
         return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneWindows64);
     }
 
-    [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 202)]
-    static void MenuItem_Platform_Linux()
-    {
-        GuiSelectedBuildTarget = BuildTarget.StandaloneLinux64;
-    }
-
-    [MenuItem(kMenuPlatformLinux, isValidateFunction: true)]
-    static bool MenuItem_Platform_Linux_Validate()
-    {
-        Menu.SetChecked(kMenuPlatformLinux, GuiSelectedBuildTarget == BuildTarget.StandaloneLinux64);
-        return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneLinux64);
-    }
+    // [MenuItem(kMenuPlatformLinux, isValidateFunction: false, priority: 202)]
+    // static void MenuItem_Platform_Linux()
+    // {
+    //     GuiSelectedBuildTarget = BuildTarget.StandaloneLinux64;
+    // }
+    //
+    // [MenuItem(kMenuPlatformLinux, isValidateFunction: true)]
+    // static bool MenuItem_Platform_Linux_Validate()
+    // {
+    //     Menu.SetChecked(kMenuPlatformLinux, GuiSelectedBuildTarget == BuildTarget.StandaloneLinux64);
+    //     return BuildTargetSupported(GuiSelectedSdk, BuildTarget.StandaloneLinux64);
+    // }
 
     [MenuItem(kMenuPlatformOsx, isValidateFunction: false, priority: 205)]
     static void MenuItem_Platform_Osx()
@@ -533,18 +537,7 @@ static class BuildTiltBrush
 
     //=======  Options =======
 
-    [MenuItem(kMenuExperimental, isValidateFunction: false, priority: 400)]
-    static void MenuItem_Experimental()
-    {
-        GuiExperimental = !GuiExperimental;
-    }
 
-    [MenuItem(kMenuExperimental, isValidateFunction: true)]
-    static bool MenuItem_Experimental_Validate()
-    {
-        Menu.SetChecked(kMenuExperimental, GuiExperimental);
-        return true;
-    }
 
     [MenuItem(kMenuDevelopment, isValidateFunction: false, priority: 405)]
     static void MenuItem_Development()
@@ -606,14 +599,11 @@ static class BuildTiltBrush
         }
     }
 
-    static public BuildTargetGroup ToGroup(BuildTarget buildTarget)
+    static public BuildTargetGroup TargetToGroup(BuildTarget buildTarget)
     {
         switch (buildTarget)
         {
             case BuildTarget.StandaloneOSX:
-            case BuildTarget.StandaloneLinux:
-            case BuildTarget.StandaloneLinux64:
-            case BuildTarget.StandaloneLinuxUniversal:
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
                 return BuildTargetGroup.Standalone;
@@ -680,7 +670,7 @@ static class BuildTiltBrush
     // Command-line arguments must come directly after "-executeMethod BuildTiltBrush.CommandLine"
     //
     //   -btb-stamp STR      Pushed into App.m_BuildStamp.
-    //   -btb-display DISP   See SdkMode for values. Default: SteamVR.
+    //   -btb-display DISP   See SdkMode for values. Default: UnityXR.
     //   -btb-target TARGET  See UnityEditor.BuildTarget for values. Default: StandaloneWindows.
     //   -btb-bopt   OPT     See UnityEditor.BuildOptions for values. Can pass multiple times.
     //   -btb-out    DIR     Set output location: the name of the desired executable. Required.
@@ -697,14 +687,13 @@ static class BuildTiltBrush
         TiltBuildOptions tiltOptions = new TiltBuildOptions()
         {
             Stamp = "",
-            VrSdk = SdkMode.SteamVR,
+            XrSdk = XrSdkMode.OpenXR,
             UnityOptions = BuildOptions.None,
         };
         string keystoreName = null;
         string keyaliasName = null;
         string keystorePass = Environment.GetEnvironmentVariable("BTB_KEYSTORE_PASS");
         string keyaliasPass = Environment.GetEnvironmentVariable("BTB_KEYALIAS_PASS");
-
 
 #if OCULUS_SUPPORTED
         // Call these once to create the files. Normally (i.e., in a GUI build), they're created with
@@ -735,12 +724,7 @@ static class BuildTiltBrush
                 {
                     string mode = args[++i];
                     // TODO: Legacy; remove when our build shortcuts are updated
-                    tiltOptions.Experimental = RemoveSuffix(ref mode, "Experimental");
-                    tiltOptions.VrSdk = AsEnum(mode, tiltOptions.VrSdk);
-                }
-                else if (args[i] == "-btb-experimental")
-                {
-                    tiltOptions.Experimental = true;
+                    tiltOptions.XrSdk = AsEnum(mode, tiltOptions.XrSdk);
                 }
                 else if (args[i] == "-btb-description")
                 {
@@ -799,6 +783,15 @@ static class BuildTiltBrush
                     // set externally?
                     i++;
                 }
+                else if (args[i] == "-androidTargetSdkVersion")
+                {
+                    // Not supported in Open Brush (added to game-ci in https://github.com/game-ci/unity-builder/pull/298)
+                    // By default, this field has no value, but if set, we need to skip it
+                    if (!args[i + 1].StartsWith("-"))
+                    {
+                        i++;
+                    }
+                }
                 else if (args[i] == "-androidVersionCode")
                 {
                     PlayerSettings.Android.bundleVersionCode = Int32.Parse(args[++i]);
@@ -837,15 +830,14 @@ static class BuildTiltBrush
 
         if (target == null)
         {
-            if (tiltOptions.VrSdk == SdkMode.Gvr)
-            {
-                target = BuildTarget.Android;
-            }
-            else
-            {
-                target = BuildTarget.StandaloneWindows64;
-            }
+            target = BuildTarget.StandaloneWindows64;
         }
+
+        if (target == BuildTarget.Android)
+        {
+            EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Debugging;
+        }
+
         tiltOptions.Target = target.Value;
         using (var unused = new TempSetCommandLineOnlyPlayerSettings(
             keystoreName, keystorePass,
@@ -855,7 +847,6 @@ static class BuildTiltBrush
         }
     }
 
-    // TODO: this will be useful for ENABLE_EXPERIMENTAL as well
     class TempDefineSymbols : System.IDisposable
     {
         string m_prevSymbols;
@@ -864,15 +855,16 @@ static class BuildTiltBrush
         // For convenience, the extra symbols can be "" or null
         public TempDefineSymbols(BuildTarget target, params string[] symbols)
         {
-            m_group = BuildTiltBrush.ToGroup(target);
+            m_group = BuildTiltBrush.TargetToGroup(target);
             m_prevSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(m_group);
             var newSymbols = m_prevSymbols.Split(';') // might be [""]
                 .Concat(symbols.Where(elt => elt != null))
                 .Select(elt => elt.Trim())
                 .Where(elt => elt != "")
                 .ToArray();
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(
-                m_group, string.Join(";", newSymbols));
+            var newDefs = string.Join(";", newSymbols);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(m_group, newDefs);
+            Debug.Log($"Build defines for {m_group.ToString()}: {newDefs}");
         }
 
         public void Dispose()
@@ -888,7 +880,7 @@ static class BuildTiltBrush
 
         public TempSetScriptingBackend(BuildTarget target, bool useIl2cpp)
         {
-            m_group = BuildTiltBrush.ToGroup(target);
+            m_group = BuildTiltBrush.TargetToGroup(target);
             m_prevbackend = PlayerSettings.GetScriptingBackend(m_group);
 
             // Build script assumes there are only 2 possibilities. It's been true so far,
@@ -944,7 +936,11 @@ static class BuildTiltBrush
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
-            string new_identifier = App.kGuiBuildAndroidApplicationIdentifier;
+            string new_identifier = GuiBuildAndroidApplicationIdentifier;
+#if OCULUS_SUPPORTED
+            //Can't change Quest identifier
+            new_identifier = "com.Icosa.OpenBrush";
+#endif
             if (!String.IsNullOrEmpty(Description))
             {
                 new_name += " (" + Description + ")";
@@ -955,7 +951,7 @@ static class BuildTiltBrush
                 PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, new_identifier);
             }
             PlayerSettings.productName = new_name;
-            PlayerSettings.companyName = App.kDisplayVendorName;
+            PlayerSettings.companyName = kVendorName;
         }
 
         public void Dispose()
@@ -969,22 +965,199 @@ static class BuildTiltBrush
         }
     }
 
-    class RestoreVrSdks : IDisposable
+    class TempSetOpenXrFeatureGroup : IDisposable
     {
-        Dictionary<BuildTargetGroup, string[]> m_prev;
-        public RestoreVrSdks()
+        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
+        readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
+        readonly BuildTargetGroup m_targetGroup;
+
+        public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
-            m_prev = new[] { BuildTargetGroup.Standalone, BuildTargetGroup.Android }
-                .ToDictionary(
-                    btg => btg,
-                    btg => PlayerSettings.GetVirtualRealitySDKs(btg));
+            enabledFeatures = new();
+            requiredFeatures = new();
+            List<string> requiredFeatureStrings = new();
+
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Oculus:
+                    // requiredFeatureStrings.Add("com.oculus.openxr.feature.oculusxr");
+                    // if (m_targetGroup == BuildTargetGroup.Android)
+                    // {
+                    //     requiredFeatureStrings.Add("com.unity.openxr.feature.oculusquest");
+                    // }
+                    break;
+            }
+
+            if (requiredFeatureStrings.Count == 0)
+            {
+                return;
+            }
+
+            // Refresh list of features present in project, then iterate and disable all of them.
+            UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
+            var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
+            int featuresCount = UnityEngine.XR.OpenXR.OpenXRSettings.Instance.GetFeatures(featureList);
+            if (featuresCount > 0)
+            {
+                foreach (var feature in featureList)
+                {
+                    if (feature.enabled)
+                    {
+                        enabledFeatures.Add(feature);
+                    }
+                    feature.enabled = false;
+                }
+            }
+
+            foreach (var feature in featureList)
+            {
+                if (feature.enabled)
+                {
+                    throw new BuildFailedException($"Shouldn't be here! {feature.name}");
+                }
+            }
+
+            if (requiredFeatures.Count == 0)
+            {
+                return;
+            }
+
+            // Locate and enable features, fail if not found.
+            foreach (string requiredFeatureString in requiredFeatureStrings)
+            {
+                var requiredFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeatureString);
+                if (requiredFeature == null)
+                {
+                    throw new BuildFailedException($"Could not find required OpenXR Feature {requiredFeatureString}. Is it installed?");
+                }
+                requiredFeatures.Add(requiredFeature);
+                requiredFeature.enabled = true;
+            }
         }
+
         public void Dispose()
         {
-            foreach (var entry in m_prev)
+            foreach (var requiredFeature in requiredFeatures)
             {
-                PlayerSettings.SetVirtualRealitySDKs(entry.Key, entry.Value);
+                if (!enabledFeatures.Contains(requiredFeature))
+                {
+                    requiredFeature.enabled = false;
+                }
             }
+
+            foreach (var enabledFeature in enabledFeatures)
+            {
+                enabledFeature.enabled = true;
+            }
+        }
+    }
+
+    class TempSetXrPlugin : IDisposable
+    {
+        List<XRLoader> m_plugins;
+        BuildTargetGroup m_targetGroup;
+
+        public TempSetXrPlugin(TiltBuildOptions tiltOptions)
+        {
+            m_plugins = new();
+            string[] targetXrPluginsRequired = new string[] { };
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Oculus:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
+                    break;
+                case XrSdkMode.OpenXR:
+                    targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    break;
+                case XrSdkMode.Pico:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
+                    break;
+                default:
+                    break;
+            }
+
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+
+            m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
+            // Remove unwanted loaders
+            foreach (var loader in m_plugins)
+            {
+                // If loader not in required list, remove it.
+                if (!targetXrPluginsRequired.Any(s => s == loader.GetType().FullName))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
+            }
+            // Add any missing loaders.
+            foreach (var loaderName in targetXrPluginsRequired.ToList())
+            {
+                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType().FullName == loaderName))
+                {
+                    if (!UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup))
+                        throw new BuildFailedException($"Could not load XR plugin {loaderName}. Is it installed?");
+                }
+            }
+
+            Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
+            EditorUtility.SetDirty(targetSettings);
+        }
+
+        public void Dispose()
+        {
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            // Remove build loaders.
+            foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
+            {
+                // Remove plugins not in the original list.
+                if (!m_plugins.Any(s => s.GetType() == loader.GetType()))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
+            }
+            // Restore any missing plugins
+            foreach (var loader in m_plugins)
+            {
+                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType() == loader.GetType()))
+                {
+                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                }
+            }
+        }
+    }
+
+    class TempSetGraphicsApis : IDisposable
+    {
+        UnityEngine.Rendering.GraphicsDeviceType[] m_graphicsApis;
+
+        BuildTarget m_Target;
+
+        public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Pico:
+                case XrSdkMode.Wave:
+                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
+                    break;
+                default:
+                    targetGraphicsApisRequired = m_graphicsApis;
+                    break;
+            }
+
+            PlayerSettings.SetGraphicsAPIs(m_Target, targetGraphicsApisRequired);
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.SetGraphicsAPIs(m_Target, m_graphicsApis);
         }
     }
 
@@ -1098,8 +1271,7 @@ static class BuildTiltBrush
     {
         private string m_tempCopy;
 
-        public static TempCopyToStreamingAssets Create(
-            BuildTarget target, IEnumerable<CopyRequest> requests)
+        public static TempCopyToStreamingAssets Create(BuildTarget target, IEnumerable<CopyRequest> requests)
         {
             if (target == BuildTarget.Android)
             {
@@ -1157,7 +1329,7 @@ static class BuildTiltBrush
         }
     }
 
-    // [MenuItem("Tilt/Show Brush Export Textures")]
+    // [MenuItem("Open Brush/Show Brush Export Textures")]
     [UsedImplicitly]
     static void ShowBrushExportTextures()
     {
@@ -1195,7 +1367,7 @@ static class BuildTiltBrush
     static string GetDefaultEditorLogFilename()
     {
 #if UNITY_EDITOR_OSX
-    return "~/Library/Logs/Unity/Editor.log";
+        return "~/Library/Logs/Unity/Editor.log";
 #else
         string localAppData = System.Environment.GetFolderPath(
             System.Environment.SpecialFolder.LocalApplicationData);
@@ -1216,14 +1388,17 @@ static class BuildTiltBrush
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
-        SdkMode vrSdk = tiltOptions.VrSdk;
+        XrSdkMode xrSdk = tiltOptions.XrSdk;
         BuildOptions options = tiltOptions.UnityOptions;
+
+        m_buildStatus = "Started build";
+
         // Add your new scenes in this List for your app.
         // During the build process the Scene List in the Build Settings is ignored.
         // Only the following scenes are included in the build.
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
-        Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
-            target, vrSdk, tiltOptions.Experimental, tiltOptions.AutoProfile,
+        Note("BuildTiltBrush: Start target:{0} mode:{1} profile:{2} options:{3}",
+            target, xrSdk, tiltOptions.AutoProfile,
             // For some reason, "None" comes through as "CompressTextures"
             options == BuildOptions.None ? "None" : options.ToString());
 
@@ -1238,37 +1413,48 @@ static class BuildTiltBrush
             ? StereoRenderingPath.SinglePass : StereoRenderingPath.MultiPass))
         using (var unused3 = new TempDefineSymbols(
             target,
-            tiltOptions.VrSdk == SdkMode.Oculus ? "OCULUS_SUPPORTED" : null,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
-            tiltOptions.Experimental ? "EXPERIMENTAL_ENABLED" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
+        using (var unused14 = new TempSetGraphicsApis(tiltOptions))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
-        using (var unused7 = new RestoreVrSdks())
+        using (var unused7 = new TempSetXrPlugin(tiltOptions))
+        using (var unused13 = new TempSetOpenXrFeatureGroup(tiltOptions))
         using (var unused9 = new RestoreFileContents(
             Path.Combine(Path.GetDirectoryName(Application.dataPath),
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            config.m_SdkMode = vrSdk;
-            config.m_IsExperimental = tiltOptions.Experimental;
+            // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
+            //config.m_SdkMode = xrSdk;
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
-            config.OnValidate();
+            //config.OnValidate(xrSdk, TargetToGroup(target));
             config.DoBuildTimeConfiguration(target);
-            // XXX: This does _not_ do anything in Unity 2017+, because config is a scene object
             EditorUtility.SetDirty(config);
+
+            if (GuiSelectedBuildTarget == BuildTarget.Android)
+            {
+                if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
+                {
+                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                    Debug.Log("Set Android architecture to ARM64.");
+                }
+            }
 
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
+                consultUserConfig: false, forceExperimental: true);
 
             // Some sanity checks
             {
+                m_buildStatus = "Checking integrity";
+
                 var errors = new List<string>();
                 var locallyUniqueIds = new Dictionary<string, BrushDescriptor>();
                 var globallyUniqueIds = new Dictionary<System.Guid, BrushDescriptor>();
@@ -1356,12 +1542,12 @@ static class BuildTiltBrush
                 copyRequests.Add(new CopyRequest(exportRequest.source, exportRequest.destination));
             }
 
-            // This is what we need to do instead of SetDirty(config)
-            // TODO: Switch to using this after testing on-device.
-            // EditorSceneManager.MarkAllScenesDirty();
+            // Save our changes and notify the editor that there have been changes.
+            m_buildStatus = "Saving scene";
             EditorSceneManager.SaveOpenScenes();
 
             // If we're building android, we need to copy Support files into streaming assets
+            m_buildStatus = "Copying platform support files";
             using (var unused8 = TempCopyToStreamingAssets.Create(target, copyRequests))
             {
                 // When the editor log has not been redirected with -logFile, we copy the appropriate part
@@ -1386,18 +1572,26 @@ static class BuildTiltBrush
                 Directory.CreateDirectory(buildDirectory);
                 m_forPostBuild = new PostBuildInfo
                 {
-                    vrSdk = vrSdk,
+                    xrSdk = xrSdk,
                     copyRequests = copyRequests
                 };
 
-                // The return value changed between 2017 and 2018
+                // Some information on what we are building
+                var buildDesc = $"Building player: {target}";
+                if (target == BuildTarget.Android)
+                {
+                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}";
+                }
+                m_buildStatus = buildDesc;
+
+                // Start building
                 var thing = BuildPipeline.BuildPlayer(scenes, location, target, options & BuildOptions.Development);
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))
                 {
-                    string message = string.Format(
-                        "BuildPipeline.BuildPlayer() returned: \"{0}\"", error);
+                    string message = $"BuildPipeline.BuildPlayer() returned: \"{error}\"";
                     Note(message);
+                    m_buildStatus = $"Build player failed: {error}";
                     throw new BuildFailedException(message);
                 }
                 else
@@ -1409,6 +1603,7 @@ static class BuildTiltBrush
                 // Now copy across the tail end of the editor log to Build.log, if required.
                 if (copyBuildLog)
                 {
+                    m_buildStatus = "Copying log";
                     string logPath = Path.Combine(buildDirectory, "Build.log");
                     File.Delete(logPath);
                     using (StreamWriter logWriter = new StreamWriter(logPath))
@@ -1438,9 +1633,33 @@ static class BuildTiltBrush
         // programmatically. Either AssetDatabase.SaveAssets() doesn't also
         // save ProjectSettings.asset; or doing it here isn't late enough.
         // AssetDatabase.SaveAssets();
+
+        m_buildStatus = "Finished";
     }
 
-#if UNITY_2018_3_OR_NEWER
+    // Get XR Plugins for selected build target.
+    public static string GetXrPlugins()
+    {
+        var grp = BuildTiltBrush.TargetToGroup(GuiSelectedBuildTarget);
+
+        XRGeneralSettings settings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(grp);
+        if (settings == null)
+            return "Not using XR";
+
+        var count = settings.Manager.activeLoaders.Count;
+        if (count == 0)
+            return "No XR plugins selected";
+
+        string res = "";
+        for (int i = 0; i < settings.Manager.activeLoaders.Count; ++i)
+        {
+            if (i > 0)
+                res += ", ";
+            res += settings.Manager.activeLoaders[i].name + $" ({settings.Manager.activeLoaders[i].GetType().FullName})";
+        }
+        return res;
+    }
+
     // Returns null if no errors; otherwise a string with what went wrong.
     private static string FormatBuildStep(BuildStep step)
     {
@@ -1468,13 +1687,6 @@ static class BuildTiltBrush
         var steps = report.steps.Select(FormatBuildStep).Where(s => s != null);
         return "Errors:\n" + string.Join("\n", steps.ToArray());
     }
-#else
-    // Returns null if no errors; otherwise a string with what went wrong.
-    private static string FormatBuildReport(string report)
-    {
-        return report;
-    }
-#endif
 
     // Disables the Oculus resolution-setting override for non-Oculus builds.
     // Copies loose-file app data.
@@ -1491,34 +1703,8 @@ static class BuildTiltBrush
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
                 {
+                    // Not used right now
                     looseFilesDest = Path.GetDirectoryName(path);
-
-                    if (info.vrSdk == SdkMode.Oculus)
-                    {
-                        // Oculus will reject submissions that have openvr dlls
-                        string openvrDll = Path.Combine(Path.Combine(dataDir, "Plugins"), "openvr_api.dll");
-                        if (File.Exists(openvrDll))
-                        {
-                            FileUtil.DeleteFileOrDirectory(openvrDll);
-                        }
-                        string openvrDll64 = Path.Combine(Path.Combine(Path.Combine(dataDir, "Plugins"), "x86_64"), "openvr_api.dll");
-                        if (File.Exists(openvrDll64))
-                        {
-                            FileUtil.DeleteFileOrDirectory(openvrDll64);
-                        }
-                    }
-
-                    // b/120917711
-                    {
-                        string audioPluginOculusSpatializer = Path.Combine(
-                            Path.Combine(dataDir, "Plugins"), "AudioPluginOculusSpatializer.dll");
-                        if (File.Exists(audioPluginOculusSpatializer))
-                        {
-                            throw new BuildFailedException(
-                                string.Format(
-                                    "{0} should not be in the build. Either remove it from Assets/; or if it's now needed (and is safe) then remove this logic", audioPluginOculusSpatializer));
-                        }
-                    }
 
                     break;
                 }
@@ -1724,20 +1910,11 @@ static class BuildTiltBrush
 
     private static int s_BackgroundBuildProcessId = 0;
 
-    public static bool DoingBackgroundBuild
-    {
-        get { return s_BackgroundBuildProcessId != 0; }
-    }
+    public static bool DoingBackgroundBuild => s_BackgroundBuildProcessId != 0;
 
     private const string kBackgroundProcessId = "Tilt Brush Background Build Process Id";
 
-    public static string BackgroundBuildLogPath
-    {
-        get
-        {
-            return Path.Combine(kBuildCopyDir, "BackgroundBuild.log");
-        }
-    }
+    public static string BackgroundBuildLogPath => Path.Combine(kBuildCopyDir, "BackgroundBuild.log");
 
     public static void DoBackgroundBuild(TiltBuildOptions tiltOptions, bool interactive)
     {
@@ -1748,7 +1925,7 @@ static class BuildTiltBrush
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
-        SdkMode vrSdk = tiltOptions.VrSdk;
+        XrSdkMode xrSdk = tiltOptions.XrSdk;
         BuildOptions options = tiltOptions.UnityOptions;
         var projectDir = new DirectoryInfo(Application.dataPath).Parent;
         var rootCopyDir = projectDir.CreateSubdirectory(kBuildCopyDir);
@@ -1762,7 +1939,7 @@ static class BuildTiltBrush
         if (!interactive) { args.Append("-batchmode "); }
         args.AppendFormat("-projectpath {0} ", rootCopyDir.FullName);
         args.Append("-executemethod BuildTiltBrush.CommandLine ");
-        args.AppendFormat("-btb-display {0} ", vrSdk);
+        args.AppendFormat("-btb-display {0} ", xrSdk);
         args.AppendFormat("-btb-target {0} ", target);
         foreach (var value in Enum.GetValues(typeof(BuildOptions)))
         {
@@ -1771,7 +1948,6 @@ static class BuildTiltBrush
                 args.AppendFormat("-btb-bopt {0} ", value);
             }
         }
-        if (tiltOptions.Experimental) { args.Append("-btb-experimental "); }
         if (tiltOptions.Il2Cpp) { args.Append("-btb-il2cpp "); }
         if (!string.IsNullOrEmpty(stamp)) { args.AppendFormat("-btb-stamp {0} ", stamp); }
         if (tiltOptions.AutoProfile) { args.Append("-btb-autoprofile "); }
@@ -1860,6 +2036,5 @@ static class BuildTiltBrush
             }
         }
     }
-
 
 }

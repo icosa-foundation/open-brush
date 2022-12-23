@@ -11,6 +11,7 @@
 /Support/TiltBrush.com/
 /TiltBrushProfile*
 /DevOptions.json
+/UserSettings
 
 *.pyc
 .DS_Store
@@ -76,18 +77,30 @@
 /Requests
 
 # TextMesh Pro from Unity
-/Assets/TextMesh\ Pro
+/Assets/TextMesh\ Pro/
 /Assets/TextMesh\ Pro.meta
+/Assets/Samples/
+/Assets/Samples.meta
+/Assets/StreamingAssets/
+/Assets/StreamingAssets.meta
 
 # Google process
 .gitbugtraq
 
 # Oculus Integration
-/Assets/Oculus
+/Assets/Oculus/**
 /Assets/Oculus.meta
+!/Assets/Oculus/OculusProjectConfig.asset*
 
 # In CI, this symlink is created to allow the updater to run. It should never go into source control
 /Assets/Editor/OVRPluginUpdater.cs
+
+# Pimax Integration
+/Assets/Pimax
+/Assets/Pimax.meta
+
+# Pico Integration
+Packages/com.unity.xr.picoxr
 
 # Cache files
 *.cache

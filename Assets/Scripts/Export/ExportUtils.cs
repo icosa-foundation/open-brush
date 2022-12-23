@@ -296,11 +296,11 @@ namespace TiltBrush
                 }
             }
         }
-        /// The current exportable SceneState of Tilt Brush.
+        /// The current exportable SceneState of Open Brush.
         public class SceneStatePayload
         {
             // Metadata.
-            public string generator = "Tilt Brush {0}.{1}";
+            public string generator = "Tilt Brush 23.3.841faedfb compatible (Actually: Open Brush {0}.{1})";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
 
             // Space Bases.
@@ -536,6 +536,22 @@ namespace TiltBrush
                 .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) &&
                     stroke.IsGeometryEnabled &&
                     (stroke.Canvas == main || stroke.Canvas == selection));
+            return new ExportCanvas(main, mainStrokes.ToList());
+        }
+
+        // Same as ExportAllCanvases but pretends all strokes are on the main canvas
+        // Does NOT transform strokes so ensure all canvases have identity transforms
+        public static ExportCanvas ExportAllCanvasesIgnoreLayers()
+        {
+            var allowedBrushGuids = new HashSet<Guid>(
+                BrushCatalog.m_Instance.AllBrushes
+                    .Where(b => b.m_AllowExport)
+                    .Select(b => (Guid)b.m_Guid));
+            var main = App.Scene.MainCanvas;
+            var selection = App.Scene.SelectionCanvas;
+            var mainStrokes = SketchMemoryScript
+                .AllStrokes()
+                .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) && stroke.IsGeometryEnabled);
             return new ExportCanvas(main, mainStrokes.ToList());
         }
 

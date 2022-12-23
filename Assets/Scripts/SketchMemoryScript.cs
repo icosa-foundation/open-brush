@@ -348,6 +348,7 @@ namespace TiltBrush
         public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform)
         {
             Stroke duplicate = new Stroke(srcStroke);
+            duplicate.m_PreviousCanvas = srcStroke.m_PreviousCanvas;
             if (srcStroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {
                 if (transform == null)

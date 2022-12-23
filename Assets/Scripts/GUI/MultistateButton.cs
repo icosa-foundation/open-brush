@@ -237,7 +237,7 @@ namespace TiltBrush
                 m_SideRenderers[i] = renderer;
 
                 Material material = renderer.material;
-                renderer.materials = GetComponent<Renderer>().materials;
+                renderer.material.shader = GetComponent<Renderer>().material.shader;
                 material.mainTexture = option.m_Texture;
                 if (DisplayIcon)
                 {

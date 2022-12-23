@@ -21,7 +21,7 @@ namespace TiltBrush
     public class RefreshPanelDimensions : MonoBehaviour
     {
 
-        [MenuItem("Tilt/Refresh Panel Dimensions")]
+        [MenuItem("Open Brush/Refresh Panel Dimensions")]
 
         // Using a guide object titled, "_Bounds(inactive)", set a variety of bounding values.
         static public void Execute()

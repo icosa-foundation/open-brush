@@ -110,25 +110,15 @@ namespace TiltBrush
 
             InputManager.OnSwapControllers += AttachToBrush;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 m_AutosaveIcon.gameObject.SetActive(true);
             }
-#endif
         }
 
         void OnDestroy()
         {
             InputManager.OnSwapControllers -= AttachToBrush;
-        }
-
-        void Start()
-        {
-            if (App.Config.VrHardware == VrHardware.None)
-            {
-                gameObject.SetActive(false);
-            }
         }
 
         void Update()
@@ -158,8 +148,7 @@ namespace TiltBrush
                 }
 
                 // Resize all particles.
-                ParticleSystem.Particle[] aParticles =
-                    new ParticleSystem.Particle[m_Notification.main.maxParticles];
+                ParticleSystem.Particle[] aParticles = new ParticleSystem.Particle[m_Notification.main.maxParticles];
                 int iNumParticles = m_Notification.GetParticles(aParticles);
                 for (int i = 0; i < iNumParticles; ++i)
                 {
@@ -406,7 +395,6 @@ namespace TiltBrush
             vClockAnchorPos.x = -fBGWidth;
             m_Clock.localPosition = vClockAnchorPos;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 //position autosave dot on the right hand side.
@@ -414,7 +402,6 @@ namespace TiltBrush
                 vAutosavePos.x = fBGWidth;
                 m_AutosaveIcon.localPosition = vAutosavePos;
             }
-#endif
         }
 
         private void AttachToBrush()

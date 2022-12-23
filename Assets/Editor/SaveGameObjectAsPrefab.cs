@@ -86,7 +86,7 @@ namespace TiltBrush
             AssetDatabase.ImportAsset(prefabPath);
         }
 
-        [MenuItem("Tilt/Save Game Object As Prefab")]
+        [MenuItem("Open Brush/Save Game Object As Prefab")]
         public static void SaveGameObjectAsSinglePrefab()
         {
 

@@ -15,10 +15,10 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Valve.VR;
+using UnityEngine.InputSystem;
 using KeyMap = System.Collections.Generic.Dictionary<
     int,
-    UnityEngine.KeyCode[]>;
+    UnityEngine.InputSystem.Key[]>;
 
 namespace TiltBrush
 {
@@ -29,9 +29,6 @@ namespace TiltBrush
     public class InputManager : MonoBehaviour
     {
         const string PLAYER_PREF_WAND_ON_RIGHT = "WandOnRight";
-
-        /// touchpad vector must be at least this magnitude to register as directional press
-        const float kSteamTrackpadButtonSqrMagnitudeThreshold = 0.1f * 0.1f;
 
         // Controller-swap gesture tunables
         const float kSwapDistMeters = 0.04f;
@@ -164,67 +161,67 @@ namespace TiltBrush
         // active.
         private static readonly KeyMap m_KeyMap = new KeyMap
         {
-            { (int)KeyboardShortcut.LockToHead, new[] { KeyCode.LeftShift } },
-            { (int)KeyboardShortcut.PivotRotation, new[] { KeyCode.LeftControl } },
-            { (int)KeyboardShortcut.Scale, new[] { KeyCode.Tab } },
+            { (int)KeyboardShortcut.LockToHead, new[] { Key.LeftShift } },
+            { (int)KeyboardShortcut.PivotRotation, new[] { Key.LeftCtrl } },
+            { (int)KeyboardShortcut.Scale, new[] { Key.Tab } },
 
-            { (int)KeyboardShortcut.RewindTimeline, new[] { KeyCode.Minus } },
-            { (int)KeyboardShortcut.AdvanceTimeline, new[] { KeyCode.Plus } },
-            { (int)KeyboardShortcut.TimelineHome, new[] { KeyCode.Home } },
-            { (int)KeyboardShortcut.TimelineEnd, new[] { KeyCode.End } },
-            { (int)KeyboardShortcut.Reset, new[] { KeyCode.Space } },
-            { (int)KeyboardShortcut.Undo, new[] { KeyCode.Z } },
-            { (int)KeyboardShortcut.Redo, new[] { KeyCode.X } },
-            { (int)KeyboardShortcut.Delete, new[] { KeyCode.Delete } },
-            { (int)KeyboardShortcut.Abort, new[] { KeyCode.Escape } },
+            { (int)KeyboardShortcut.RewindTimeline, new[] { Key.Minus } },
+            { (int)KeyboardShortcut.AdvanceTimeline, new[] { Key.Equals } },
+            { (int)KeyboardShortcut.TimelineHome, new[] { Key.Home } },
+            { (int)KeyboardShortcut.TimelineEnd, new[] { Key.End } },
+            { (int)KeyboardShortcut.Reset, new[] { Key.Space } },
+            { (int)KeyboardShortcut.Undo, new[] { Key.Z } },
+            { (int)KeyboardShortcut.Redo, new[] { Key.X } },
+            { (int)KeyboardShortcut.Delete, new[] { Key.Delete } },
+            { (int)KeyboardShortcut.Abort, new[] { Key.Escape } },
 
-            { (int)KeyboardShortcut.SaveNew, new[] { KeyCode.S } },
-            { (int)KeyboardShortcut.ExportAll, new[] { KeyCode.A } },
-            { (int)KeyboardShortcut.ToggleProfile, new[] { KeyCode.K } },
+            { (int)KeyboardShortcut.SaveNew, new[] { Key.S } },
+            { (int)KeyboardShortcut.ExportAll, new[] { Key.A } },
+            { (int)KeyboardShortcut.ToggleProfile, new[] { Key.K } },
             // Context-dependent
-            { (int)KeyboardShortcut.SwitchCamera, new[] { KeyCode.C } },
-            { (int)KeyboardShortcut.ViewOnly, new[] { KeyCode.H } },
-            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { KeyCode.M } },
-            { (int)KeyboardShortcut.PreviousTool, new[] { KeyCode.LeftArrow } },
-            { (int)KeyboardShortcut.NextTool, new[] { KeyCode.RightArrow } },
-            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { KeyCode.F2 } },
-            { (int)KeyboardShortcut.Export, new[] { KeyCode.E } },
-            { (int)KeyboardShortcut.StoreHeadTransform, new[] { KeyCode.O } }, // Also checks for shift
-            { (int)KeyboardShortcut.RecallHeadTransform, new[] { KeyCode.O } },
-            { (int)KeyboardShortcut.ToggleLightType, new[] { KeyCode.P } },
+            { (int)KeyboardShortcut.SwitchCamera, new[] { Key.C } },
+            { (int)KeyboardShortcut.ViewOnly, new[] { Key.H } },
+            { (int)KeyboardShortcut.ToggleScreenMirroring, new[] { Key.M } },
+            { (int)KeyboardShortcut.PreviousTool, new[] { Key.LeftArrow } },
+            { (int)KeyboardShortcut.NextTool, new[] { Key.RightArrow } },
+            { (int)KeyboardShortcut.CycleSymmetryMode, new[] { Key.F2 } },
+            { (int)KeyboardShortcut.Export, new[] { Key.E } },
+            { (int)KeyboardShortcut.StoreHeadTransform, new[] { Key.O } }, // Also checks for shift
+            { (int)KeyboardShortcut.RecallHeadTransform, new[] { Key.O } },
+            { (int)KeyboardShortcut.ToggleLightType, new[] { Key.P } },
 
-            { (int)KeyboardShortcut.CheckStrokes, new[] { KeyCode.V } },
+            { (int)KeyboardShortcut.CheckStrokes, new[] { Key.V } },
 
-            { (int)KeyboardShortcut.ResetScene, new[] { KeyCode.Return } },
-            { (int)KeyboardShortcut.StraightEdge, new[] { KeyCode.CapsLock } },
+            { (int)KeyboardShortcut.ResetScene, new[] { Key.Enter } },
+            { (int)KeyboardShortcut.StraightEdge, new[] { Key.CapsLock } },
 
-            { (int)KeyboardShortcut.Save, new[] { KeyCode.S } },
-            { (int)KeyboardShortcut.Load, new[] { KeyCode.L } },
+            { (int)KeyboardShortcut.Save, new[] { Key.S } },
+            { (int)KeyboardShortcut.Load, new[] { Key.L } },
 
-            { (int)KeyboardShortcut.Forward, new[] { KeyCode.N } },
-            { (int)KeyboardShortcut.Backward, new[] { KeyCode.M } },
+            { (int)KeyboardShortcut.Forward, new[] { Key.N } },
+            { (int)KeyboardShortcut.Backward, new[] { Key.M } },
 
-            { (int)KeyboardShortcut.PositionMonoCamera, new[] { KeyCode.LeftAlt, KeyCode.RightAlt } },
+            { (int)KeyboardShortcut.PositionMonoCamera, new[] { Key.LeftAlt, Key.RightAlt } },
 
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { KeyCode.Q } },
-            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { KeyCode.W } },
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrWobble, new[] { Key.Q } },
+            { (int)KeyboardShortcut.ToggleHeadStationaryOrFollow, new[] { Key.W } },
 
-            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { KeyCode.E } },
-            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { KeyCode.R } },
+            { (int)KeyboardShortcut.DecreaseSlowFollowSmoothing, new[] { Key.E } },
+            { (int)KeyboardShortcut.IncreaseSlowFollowSmoothing, new[] { Key.R } },
 
-            { (int)KeyboardShortcut.ToggleGVRAudio, new[] { KeyCode.BackQuote } },
+            { (int)KeyboardShortcut.ToggleGVRAudio, new[] { Key.Backquote } },
 
-            { (int)KeyboardShortcut.TossWidget, new[] { KeyCode.Y } },
+            { (int)KeyboardShortcut.TossWidget, new[] { Key.Y } },
         };
 
         // Separate keymap for when demo mode is enabled.
         // Determined by DemoManager.m_Instance.DemoModeEnabled == true
         private static readonly KeyMap m_DemoKeyMap = new KeyMap
         {
-            { (int)KeyboardShortcut.ResetEverything, new KeyCode[] { KeyCode.Delete, KeyCode.Backspace } },
-            { (int)KeyboardShortcut.GotoInitialPosition, new KeyCode[] { KeyCode.P } },
-            { (int)KeyboardShortcut.ExtendDemoTimer, new KeyCode[] { KeyCode.E } },
-            { (int)KeyboardShortcut.InstantUpload, new KeyCode[] { KeyCode.U } },
+            { (int)KeyboardShortcut.ResetEverything, new Key[] { Key.Delete, Key.Backspace } },
+            { (int)KeyboardShortcut.GotoInitialPosition, new Key[] { Key.P } },
+            { (int)KeyboardShortcut.ExtendDemoTimer, new Key[] { Key.E } },
+            { (int)KeyboardShortcut.InstantUpload, new Key[] { Key.U } },
         };
 
         private KeyMap ActiveKeyMap
@@ -263,10 +260,10 @@ namespace TiltBrush
         // Note that m_ControllerInfos is not the source of truth for controllers.  That's located
         // in VrSdk.m_VrControls.  These are potentially out of date for a frame when controllers
         // change.
-        public static ControllerInfo[] Controllers { get { return m_Instance.m_ControllerInfos; } }
-        public static ControllerInfo Wand { get { return Controllers[(int)ControllerName.Wand]; } }
-        public static ControllerInfo Brush { get { return Controllers[(int)ControllerName.Brush]; } }
-        static public event Action OnSwapControllers;
+        public static ControllerInfo[] Controllers { get => m_Instance.m_ControllerInfos; }
+        public static ControllerInfo Wand { get => Controllers[(int)ControllerName.Wand]; }
+        public static ControllerInfo Brush { get => Controllers[(int)ControllerName.Brush]; }
+        public static event Action OnSwapControllers;
 
         //
         // Inspector configurables
@@ -296,7 +293,7 @@ namespace TiltBrush
         // Public properties
         //
 
-        static public void ControllersHaveChanged()
+        public static void ControllersHaveChanged()
         {
             OnSwapControllers();
         }
@@ -305,7 +302,7 @@ namespace TiltBrush
 
         public bool AllowVrControllers
         {
-            get { return m_AllowVrControllers; }
+            get => m_AllowVrControllers;
             set
             {
                 m_AllowVrControllers = value;
@@ -324,10 +321,7 @@ namespace TiltBrush
 
         public bool WandOnRight
         {
-            get
-            {
-                return m_WandOnRight;
-            }
+            get => m_WandOnRight;
 
             set
             {
@@ -400,7 +394,7 @@ namespace TiltBrush
             ShowControllers(false);
         }
 
-        void CreateControllerInfos()
+        public void CreateControllerInfos()
         {
             VrControllers vrControllers = App.VrSdk.VrControls;
             if (vrControllers != null)
@@ -422,44 +416,11 @@ namespace TiltBrush
             }
         }
 
-        bool SetSteamControllerStyle(SteamControllerInfo steamInfo, out string style)
-        {
-            SteamVR steamVR = SteamVR.instance;
-            style = steamVR.GetStringProperty(ETrackedDeviceProperty.Prop_ControllerType_String,
-                (uint)steamInfo.TrackedPose.GetDeviceIndex());
-            if (style == "oculus_touch")
-            {
-                App.VrSdk.SetControllerStyle(ControllerStyle.OculusTouch);
-            }
-            else if (style == "knuckles")
-            {
-                App.VrSdk.SetControllerStyle(ControllerStyle.Knuckles);
-            }
-            else if (style == "vive_controller" || style == "vive_pro")
-            {
-                App.VrSdk.SetControllerStyle(ControllerStyle.Vive);
-            }
-            else if (style == "vive_cosmos_controller")
-            {
-                App.VrSdk.SetControllerStyle(ControllerStyle.OculusTouch);
-            }
-            else if (style == "wmr")
-            {
-                App.VrSdk.SetControllerStyle(ControllerStyle.Wmr);
-            }
-            else
-            {
-                // Not recognized.  This is not necessarily bad.
-                return false;
-            }
-            return true;
-        }
-
         void Start()
         {
-            App.VrSdk.NewControllerPosesApplied += OnControllerPosesApplied;
-            // If we're initializing SteamVR, defer this call until our controller type is determined.
-            if (!App.VrSdk.IsInitializingSteamVr)
+            App.VrSdk.OnNewControllerPosesApplied += OnControllerPosesApplied;
+            // If we're initializing UnityXR, defer this call until our controller type is determined.  XRXR
+            if (!App.VrSdk.IsInitializingUnityXR)
             {
                 WandOnRight = (PlayerPrefs.GetInt(PLAYER_PREF_WAND_ON_RIGHT, 0) != 0);
             }
@@ -475,95 +436,32 @@ namespace TiltBrush
 
         void OnDestroy()
         {
-            App.VrSdk.NewControllerPosesApplied -= OnControllerPosesApplied;
+            App.VrSdk.OnNewControllerPosesApplied -= OnControllerPosesApplied;
         }
 
         void Update()
         {
             // If we're initializing our controllers, continue to look for them.
-            if (App.VrSdk.IsInitializingSteamVr)
+            if (App.VrSdk.IsInitializingUnityXR)
             {
-                if (m_ControllerInfos[0].IsTrackedObjectValid && m_ControllerInfos[1].IsTrackedObjectValid)
-                {
-                    SteamVR steamVR = SteamVR.instance;
-
-                    // Determine controllers from the 0 controller.  If that isn't recognized,
-                    // try the 1 controller.  If *that* isn't recognized, default to Vive.
-                    string controllerStyle0 = "";
-                    SteamControllerInfo steamInfo0 = m_ControllerInfos[0] as SteamControllerInfo;
-                    if (!SetSteamControllerStyle(steamInfo0, out controllerStyle0))
-                    {
-                        string controllerStyle1 = "";
-                        SteamControllerInfo steamInfo1 = m_ControllerInfos[1] as SteamControllerInfo;
-                        if (!SetSteamControllerStyle(steamInfo1, out controllerStyle1))
-                        {
-                            Debug.LogWarningFormat(
-                                "Controller styles {0} and {1} not recognized.  Defaulting to Vive.",
-                                controllerStyle0, controllerStyle1);
-                            App.VrSdk.SetControllerStyle(ControllerStyle.Vive);
-                        }
-                    }
-
-                    // Null out controller infos to start fresh.
-                    for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                    {
-                        m_ControllerInfos[i] = null;
-                    }
-
-                    // Create new one controller infos.
-                    CreateControllerInfos();
-
-                    // Swap geometry if any of our controllers is a logipen.
-                    bool foundLogipen = false;
-                    for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                    {
-                        SteamControllerInfo info = m_ControllerInfos[i] as SteamControllerInfo;
-                        DetectLogitechVrPen pen = info.Behavior.GetComponent<DetectLogitechVrPen>();
-                        if (pen != null)
-                        {
-                            pen.Initialize(info.TrackedPose.GetDeviceIndex());
-                            foundLogipen = foundLogipen || pen.IsPen;
-                        }
-                    }
-
-                    // Initialize handedness.
-                    // The logitech pen stomps handedness because it is a handed controller, so don't
-                    // respect this if we've got a pen.
-                    if (!foundLogipen)
-                    {
-                        WandOnRight = (PlayerPrefs.GetInt(PLAYER_PREF_WAND_ON_RIGHT, 0) != 0);
-                    }
-
-                    // Refresh pointer angle and rendering.
-                    PointerManager.m_Instance.RefreshFreePaintPointerAngle();
-                    PointerManager.m_Instance.RequestPointerRendering(true);
-                }
+                return;
             }
-            else
+
+            // Update controller infos.
+            for (int i = 0; i < m_ControllerInfos.Length; ++i)
             {
-                // Update controller infos.
-                for (int i = 0; i < m_ControllerInfos.Length; ++i)
-                {
-                    m_ControllerInfos[i].Update();
-                }
-
-                //cache touch inputs so we can control their usage
-                m_Touch.m_Valid = (Input.touchCount > 0) && (Input.GetTouch(0).phase == TouchPhase.Began);
-                if (m_Touch.m_Valid)
-                {
-                    m_Touch.m_Pos = Input.GetTouch(0).position;
-                }
-
-                // Update touch locators.
-                // Controller pad touch locator should be active if thumb is on the pad.
-                // For the brush controller, tools can override this, unless we're in the intro tutorial.
-                Brush.Behavior.SetTouchLocatorActive(Brush.GetPadTouch() &&
-                    (SketchSurfacePanel.m_Instance.ActiveTool.ShouldShowTouch() ||
-                    TutorialManager.m_Instance.TutorialActive()));
-                Wand.Behavior.SetTouchLocatorActive(Wand.GetPadTouch());
-                Wand.Behavior.SetTouchLocatorPosition(Wand.GetPadValue());
-                Brush.Behavior.SetTouchLocatorPosition(Brush.GetPadValue());
+                m_ControllerInfos[i].Update();
             }
+
+            // Update touch locators.
+            // Controller pad touch locator should be active if thumb is on the pad.
+            // For the brush controller, tools can override this, unless we're in the intro tutorial.
+            Brush.Behavior.SetTouchLocatorActive(Brush.GetPadTouch() &&
+                (SketchSurfacePanel.m_Instance.ActiveTool.ShouldShowTouch() ||
+                TutorialManager.m_Instance.TutorialActive()));
+            Wand.Behavior.SetTouchLocatorActive(Wand.GetPadTouch());
+            Wand.Behavior.SetTouchLocatorPosition(Wand.GetPadValue());
+            Brush.Behavior.SetTouchLocatorPosition(Brush.GetPadValue());
         }
 
         void LateUpdate()
@@ -583,13 +481,14 @@ namespace TiltBrush
 
                 // Update velocity and acceleration.
                 Vector3 currPosition = info.Transform.position;
+
                 // TODO: should this take velocity straight from the controller?
                 // Might be more accurate
                 Vector3 currVelocity = (currPosition - info.m_Position) / Time.deltaTime;
-                info.m_Acceleration =
-                    (currVelocity - info.m_Velocity) / Time.deltaTime;
+                info.m_Acceleration = (currVelocity - info.m_Velocity) / Time.deltaTime;
                 info.m_Velocity = currVelocity;
                 info.m_Position = currPosition;
+
                 if (info.m_WasTracked != info.IsTrackedObjectValid)
                 {
                     info.ShowController(info.IsTrackedObjectValid && App.Instance.ShowControllers);
@@ -605,15 +504,13 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcut(KeyboardShortcut shortcut)
         {
-            KeyCode[] codes;
-            if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
+            if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
             }
             for (int i = 0; i < codes.Length; ++i)
             {
-                KeyCode code = codes[i];
-                if (Input.GetKey(code))
+                if (Keyboard.current[codes[i]].isPressed)
                 {
                     return true;
                 }
@@ -623,15 +520,13 @@ namespace TiltBrush
 
         public bool GetKeyboardShortcutDown(KeyboardShortcut shortcut)
         {
-            KeyCode[] codes;
-            if (!ActiveKeyMap.TryGetValue((int)shortcut, out codes))
+            if (!ActiveKeyMap.TryGetValue((int)shortcut, out Key[] codes))
             {
                 return false;
             }
             for (int i = 0; i < codes.Length; ++i)
             {
-                KeyCode code = codes[i];
-                if (Input.GetKeyDown(code))
+                if (Keyboard.current[codes[i]].wasPressedThisFrame)
                 {
                     return true;
                 }
@@ -641,7 +536,7 @@ namespace TiltBrush
 
         public bool GetAnyShift()
         {
-            return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            return Keyboard.current[Key.LeftShift].wasPressedThisFrame || Keyboard.current[Key.RightShift].wasPressedThisFrame;
         }
 
         private KeyboardShortcut? MapCommandToKeyboard(SketchCommands rCommand)
@@ -691,7 +586,7 @@ namespace TiltBrush
                 case SketchCommands.Scale:
                     return GetKeyboardShortcut(shortcut.Value) || Brush.GetCommand(rCommand);
                 case SketchCommands.Sensitivity:
-                    return Mathf.Abs(Input.GetAxis("Mouse ScrollWheel")) > m_InputThreshold;
+                    return Mathf.Abs(Mouse.current.scroll.x.ReadValue()) > m_InputThreshold;
                 case SketchCommands.Panic:
                     return GetMouseButton(1) || Wand.GetCommand(rCommand);
                 case SketchCommands.MultiCamSelection:
@@ -838,28 +733,64 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
-            Vector2 mv = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+            if (App.Config.IsMobileHardware)
+            {
+                return Vector2.zero;
+            }
+
+            Vector2 mv = Mouse.current.delta.ReadValue() * 0.125f;
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
         }
 
         public float GetMouseWheel()
         {
-            return Input.GetAxis("Mouse ScrollWheel");
+            if (App.Config.IsMobileHardware)
+            {
+                return 0.0f;
+            }
+
+            return Mouse.current.scroll.x.ReadValue();
         }
 
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
         /// presses when you fiddle with the joystick.
         public bool GetMouseButton(int button)
         {
-            return !App.Config.IsMobileHardware && Input.GetMouseButton(button);
+            if (App.Config.IsMobileHardware)
+            {
+                return false;
+            }
+
+            switch (button)
+            {
+                case 0:
+                    return Mouse.current.leftButton.isPressed;
+                case 1:
+                    return Mouse.current.rightButton.isPressed;
+                default:
+                    return false;
+            }
         }
 
         /// Mouse input is ignored on mobile platform because the Oculus Quest seems to emulate mouse
         /// presses when you fiddle with the joystick.
         public bool GetMouseButtonDown(int button)
         {
-            return !App.Config.IsMobileHardware && Input.GetMouseButtonDown(button);
+            if (App.Config.IsMobileHardware)
+            {
+                return false;
+            }
+
+            switch (button)
+            {
+                case 0:
+                    return Mouse.current.leftButton.wasPressedThisFrame;
+                case 1:
+                    return Mouse.current.rightButton.wasPressedThisFrame;
+                default:
+                    return false;
+            }
         }
 
         public bool IsBrushScrollActive()
@@ -872,7 +803,7 @@ namespace TiltBrush
             // Check mouse first.
             if (!App.Config.IsMobileHardware)
             {
-                float fMouse = Input.GetAxis("Mouse X");
+                float fMouse = Mouse.current.delta.x.ReadValue();
                 if (Mathf.Abs(fMouse) > m_InputThreshold)
                 {
                     return fMouse;
@@ -911,7 +842,7 @@ namespace TiltBrush
 
         public float GetToolSelection()
         {
-            float fScrollWheel = Input.GetAxis("Mouse ScrollWheel");
+            float fScrollWheel = Mouse.current.scroll.x.ReadValue();
             if (Mathf.Abs(fScrollWheel) > m_InputThreshold)
             {
                 return fScrollWheel;

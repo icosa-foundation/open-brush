@@ -64,7 +64,7 @@ namespace TiltBrush
     }
 
     
-        [MenuItem("Tilt/Info/Brush Lister")]
+        [MenuItem("Open Brush/Info/Brush Lister")]
         static void ListBrushes()
         {
             brushList = new StringBuilder();
