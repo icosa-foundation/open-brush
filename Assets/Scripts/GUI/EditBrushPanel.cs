@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Valve.Newtonsoft.Json.Utilities;
+
 namespace TiltBrush
 {
     public class EditBrushPanel : BasePanel
@@ -399,7 +399,7 @@ namespace TiltBrush
             if (tex != null)
             {
                 // TODO - how do we test for equality?
-                int textureIndex = AvailableTextures.IndexOf(x => (x.name == tex.name));
+                var textureIndex = AvailableTextures.IndexOf(tex);
                 pickerButton.TextureIndex = textureIndex;
             }
             else

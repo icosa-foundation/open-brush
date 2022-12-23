@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using TiltBrush;
-using UnityEngine;
 
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
 
 
 namespace TiltBrush

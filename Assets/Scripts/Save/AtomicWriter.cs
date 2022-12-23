@@ -14,11 +14,10 @@
 
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
 
 namespace TiltBrush
 {
