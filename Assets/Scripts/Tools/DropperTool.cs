@@ -284,13 +284,11 @@ namespace TiltBrush
             if (rBrush != null)
             {
                 sBrushDescription = rBrush.m_Description;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                 if (Config.IsExperimental && !string.IsNullOrEmpty(rBrush.m_DescriptionExtra))
                 {
                     sBrushDescription = string.Format(
                         "{0} ({1})", rBrush.m_Description, rBrush.m_DescriptionExtra);
                 }
-#endif
                 m_SelectionColor = rColor;
                 m_SelectionBrush = rBrush;
                 m_SelectionStroke = stroke;

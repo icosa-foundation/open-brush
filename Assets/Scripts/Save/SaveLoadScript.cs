@@ -92,7 +92,7 @@ namespace TiltBrush
         {
 #if UNITY_2018_4_OR_NEWER
             // 2018 doesn't include ANSICodePage any more -- or maybe it's only if we use .net 4.6?
-            ICSharpCode.SharpZipLibUnityPort.Zip.ZipConstants.DefaultCodePage = kAsciiCodePage;
+            ICSharpCode.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
 #else
             // There's an ancient mono bug (that Unity inherits) that prevents builds
             // from including the proper set of code pages, causing runtime errors when
@@ -665,12 +665,10 @@ namespace TiltBrush
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
                         Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                         if (Config.IsExperimental)
                         {
                             Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                         }
-#endif
                     }
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
@@ -685,7 +683,7 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers)
+                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;

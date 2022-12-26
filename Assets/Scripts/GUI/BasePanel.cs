@@ -105,7 +105,9 @@ namespace TiltBrush
             CameraPath,
             BrushLab,
             Scripts = 6000,
-            StencilSettings = 20200
+            SnapSettings = 8000,
+            StencilSettings = 20200,
+            LayersPanel = 15000
         }
 
         private enum FixedTransitionState

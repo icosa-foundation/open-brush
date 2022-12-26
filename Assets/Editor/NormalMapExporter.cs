@@ -20,7 +20,7 @@ namespace TiltBrush
 
     static class NormalMapExporter
     {
-        [MenuItem("Tilt/Export Normal Map...")]
+        [MenuItem("Open Brush/Export Normal Map...")]
         private static void ExportNormalMap()
         {
             var tex = Selection.activeObject as Texture2D;

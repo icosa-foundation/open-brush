@@ -24,7 +24,7 @@ namespace TiltBrush
     /// </summary>
     public abstract class ControllerInfo
     {
-        // The various inputs available on VR controlllers.
+        // The various inputs available on VR controllers.
 
         // The invalid position (0,0) is excluded from all the pad buttons,
         // except for "Any".
@@ -57,16 +57,16 @@ namespace TiltBrush
 
         // The Behavior is always on the root of the object, and its direct child is a ControllerGeometry
         // This value never changes.
-        public BaseControllerBehavior Behavior { get { return m_Behavior; } }
+        public BaseControllerBehavior Behavior => m_Behavior;
 
         // The same as Behavior.Transform; it also never changes.
-        public Transform Transform { get { return m_Transform; } }
+        public Transform Transform => m_Transform;
 
         // The same as Behavior.Geometry. This may change if controllers get swapped.
-        public ControllerGeometry Geometry { get { return Behavior.ControllerGeometry; } }
+        public ControllerGeometry Geometry => Behavior.ControllerGeometry;
 
         // This value never changes.
-        public ControllerTutorialScript Tutorial { get { return m_Tutorial; } }
+        public ControllerTutorialScript Tutorial => m_Tutorial;
 
         /// This indicates whether the underlying tracked object is in a valid state to provide tracking
         /// data.
@@ -74,8 +74,8 @@ namespace TiltBrush
 
         public VrInput? LastHeldInput
         {
-            get { return m_LastHeldInput; }
-            set { m_LastHeldInput = value; }
+            get => m_LastHeldInput;
+            set => m_LastHeldInput = value;
         }
 
         // These are updated when new poses come in
@@ -93,11 +93,10 @@ namespace TiltBrush
 
         private float ButtonTimerThreshold
         {
-            get { return SketchSurfacePanel.m_Instance.ActiveTool.ButtonHoldDuration; }
+            get => SketchSurfacePanel.m_Instance.ActiveTool.ButtonHoldDuration;
         }
 
-        private Dictionary<VrInput, Vector2> m_InputHoldTimers =
-            new Dictionary<VrInput, Vector2>();
+        private Dictionary<VrInput, Vector2> m_InputHoldTimers = new Dictionary<VrInput, Vector2>();
         private VrInput? m_LastHeldInput;
         private readonly Transform m_Transform;
         private readonly BaseControllerBehavior m_Behavior;

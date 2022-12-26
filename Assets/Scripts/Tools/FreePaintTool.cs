@@ -116,10 +116,13 @@ namespace TiltBrush
 
             PositionPointer();
 
-            if (!m_BimanualTape && !m_PaintingActive && m_wandTrigger && !InputManager.Wand.GetControllerGrip() && SketchControlsScript.m_Instance.IsFreepaintToolReady())
+            if (PanelManager.m_Instance.AdvancedModeActive() && !m_BimanualTape && !m_PaintingActive && m_wandTrigger && !InputManager.Wand.GetControllerGrip() && SketchControlsScript.m_Instance.IsFreepaintToolReady())
                 BeginBimanualTape();
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
+
+            // Allow API command to override painting mode
+            m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
 
             if (m_BimanualTape)
             {
@@ -186,10 +189,20 @@ namespace TiltBrush
                     else
                     {
                         InputManager.Brush.Geometry.ShowBrushSizer();
-                        if (m_BimanualTape)
-                            InputManager.Brush.Geometry.TogglePadRevolverHint(m_RevolverActive, enabled: true);
+                        if (PanelManager.m_Instance.AdvancedModeActive())
+                        {
+                            if (m_BimanualTape)
+                                InputManager.Brush.Geometry.TogglePadRevolverHint(m_RevolverActive, enabled: true);
+                            else
+                                InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: true);
+                        }
                         else
-                            InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: true);
+                        {
+                            m_LazyInputActive = false;
+                            m_LazyInputTangentMode = false;
+                            InputManager.Brush.Geometry.TogglePadLazyInputHint(m_LazyInputActive, m_LazyInputTangentMode, enabled: false);
+                        }
+
                     }
                 }
             }

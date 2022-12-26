@@ -11,18 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Valve.VR;
-#if !OCULUS_SUPPORTED
-using OVROverlay = UnityEngine.MonoBehaviour;
-#endif // !OCULUS_SUPPORTED
+using UnityEngine;
+using UnityEngine.XR;
+
+#if PICO_SUPPORTED
+using PicoInput = Unity.XR.PXR.PXR_Input;
+#endif
 
 namespace TiltBrush
 {
-
     // If these names are used in analytics etc, they must be protected from obfuscation.
     // Do not change the names of any of them, unless they've never been released.
     [Serializable]
@@ -30,7 +30,7 @@ namespace TiltBrush
     {
         Unset,
         None,
-        InitializingSteamVR,
+        InitializingUnityXR,   // can change to "initialising" or "discovering"
         Vive,
         Knuckles,
         OculusTouch,
@@ -38,6 +38,8 @@ namespace TiltBrush
         Gvr,
         LogitechPen,
         Cosmos,
+        Neo3,
+        Phoenix
     }
 
     //
@@ -54,21 +56,17 @@ namespace TiltBrush
     //
     public class VrSdk : MonoBehaviour
     {
-        [SerializeField] private float m_AnalogGripBinaryThreshold_Rift;
-        [SerializeField] private SteamVR_Overlay m_SteamVROverlay;
-        [SerializeField] private GvrOverlay m_GvrOverlayPrefab;
-        [SerializeField] private float m_OverlayMaxAlpha = 1.0f;
-        [SerializeField] private float m_OverlayMaxSize = 8;
-
         // VR  Data and Prefabs for specific VR systems
         [SerializeField] private GameObject m_VrSystem;
-        [SerializeField] private GameObject m_SteamUninitializedControlsPrefab;
-        [SerializeField] private GameObject m_SteamViveControlsPrefab;
-        [SerializeField] private GameObject m_SteamRiftControlsPrefab;
-        [SerializeField] private GameObject m_SteamQuestControlsPrefab;
-        [SerializeField] private GameObject m_SteamWmrControlsPrefab;
-        [SerializeField] private GameObject m_SteamKnucklesControlsPrefab;
-        [SerializeField] private GameObject m_SteamCosmoControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRUninitializedControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRViveControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRRiftControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRQuestControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRWmrControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRKnucklesControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRCosmosControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -80,41 +78,20 @@ namespace TiltBrush
         [SerializeField] private Camera m_VrCamera;
 
         // Runtime VR Spawned Controllers
-        // This is the source of truth for controllers.  InputManager.m_ControllerInfos stores
-        // links to some of these components, but may be out of date for a frame when
-        // controllers change.
+        //  - This is the source of truth for controllers.
+        //  - InputManager.m_ControllerInfos stores links to some of these components, but may be
+        //    out of date for a frame when controllers change.
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
 
         private bool m_HasVrFocus = true;
-        private OverlayMode m_OverlayMode;
-
-        // Oculus Overlay
-#if OCULUS_SUPPORTED
-        private OVROverlay m_OVROverlay;
-#endif // OCULUS_SUPPORTED
-
-        // Mobile Overlay
-        private bool m_MobileOverlayOn;
-        private GvrOverlay m_MobileOverlay;
 
         private Bounds? m_RoomBoundsAabbCached;
-
-        // Cached object to avoid interop overhead
-        private Compositor_FrameTiming m_FrameTiming;
 
         private Action[] m_OldOnPoseApplied;
 
         private bool m_NeedsToAttachConsoleScript;
         private TrTransform? m_TrackingBackupXf;
-
-        private enum OverlayMode
-        {
-            None,
-            Steam,
-            OVR,
-            Mobile
-        }
 
         // Degrees of Freedom.
         public enum DoF
@@ -129,25 +106,15 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
 
         // Called when new poses are ready.
-        public event Action NewControllerPosesApplied;
+        public Action OnNewControllerPosesApplied;
 
         // -------------------------------------------------------------------------------------------- //
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
 
-        public float AnalogGripBinaryThreshold_Rift
+        public bool IsInitializingUnityXR
         {
-            get { return m_AnalogGripBinaryThreshold_Rift; }
-        }
-
-        public bool OverlayIsOVR { get { return m_OverlayMode == OverlayMode.OVR; } }
-
-        public bool IsInitializingSteamVr
-        {
-            get
-            {
-                return VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingSteamVR;
-            }
+            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -156,108 +123,29 @@ namespace TiltBrush
 
         void Awake()
         {
-            if (App.Config.IsMobileHardware && m_GvrOverlayPrefab != null)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                m_OverlayMode = OverlayMode.Mobile;
-                m_MobileOverlay = Instantiate(m_GvrOverlayPrefab);
-                m_MobileOverlay.gameObject.SetActive(false);
-            }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR && m_SteamVROverlay != null)
-            {
-                m_OverlayMode = OverlayMode.Steam;
-            }
-#if OCULUS_SUPPORTED
-            else if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
-                m_OverlayMode = OverlayMode.OVR;
-                var gobj = new GameObject("Oculus Overlay");
-                gobj.transform.SetParent(m_VrSystem.transform, worldPositionStays: false);
-                m_OVROverlay = gobj.AddComponent<OVROverlay>();
-                m_OVROverlay.isDynamic = true;
-                m_OVROverlay.compositionDepth = 0;
-                m_OVROverlay.currentOverlayType = OVROverlay.OverlayType.Overlay;
-                m_OVROverlay.currentOverlayShape = OVROverlay.OverlayShape.Quad;
-                m_OVROverlay.noDepthBufferTesting = true;
-                m_OVROverlay.enabled = false;
-            }
-#endif // OCULUS_SUPPORTED
+                InputDevices.deviceConnected += OnUnityXRDeviceConnected;
+                InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
 
-            if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
-#if OCULUS_SUPPORTED
-                // ---------------------------------------------------------------------------------------- //
-                // OculusVR
-                // ---------------------------------------------------------------------------------------- //
-                OVRManager manager = gameObject.AddComponent<OVRManager>();
-                manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
-                manager.useRecommendedMSAALevel = false;
-
-                SetControllerStyle(TiltBrush.ControllerStyle.OculusTouch);
-                // adding components to the VR Camera needed for fading view and getting controller poses.
-                m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
-                m_VrCamera.gameObject.AddComponent<OculusPreCullHook>();
-
-                //Add an OVRCameraRig to the VrSystem for Mixed Reality Capture.
-                var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
-                //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
-                cameraRig.disableEyeAnchorCameras = true;
-#endif // OCULUS_SUPPORTED
-            }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // SteamVR
-                // ---------------------------------------------------------------------------------------- //
-                // SteamVR_Render needs to be instantiated from our version of the prefab before any other
-                // SteamVR objects are instantiated because otherwise, those other objects will instantiate
-                // their own version of SteamVR_Render, which won't have the same connections as our prefab.
-                // Ideally, this instantiation would occur in a place that is guaranteed to happen first but
-                // since we don't have an appropriate place for that now, it's being placed right before the
-                // first call that would otherwise instantiate it.
-                Instantiate(App.Config.m_SteamVrRenderPrefab);
-                if (App.Config.VrHardware == VrHardware.Rift)
+                // TODO:Mike - We need to set a controller style, is it best here or is it best later when controllers register themselves?
+                // Does this entire system need a rethink for the 'modularity' of the XR subsystem?
+                InputDevice tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+                if (!tryGetUnityXRController.isValid)
                 {
-                    SetControllerStyle(TiltBrush.ControllerStyle.OculusTouch);
+                    // Try the right hand instead
+                    tryGetUnityXRController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
                 }
-                else if (App.Config.VrHardware == VrHardware.Wmr)
+
+                if (!tryGetUnityXRController.isValid)
                 {
-                    SetControllerStyle(TiltBrush.ControllerStyle.Wmr);
+                    // Leave for when UnityXR is ready.
+                    SetControllerStyle(ControllerStyle.InitializingUnityXR);
                 }
                 else
                 {
-                    SetControllerStyle(TiltBrush.ControllerStyle.InitializingSteamVR);
+                    SetUnityXRControllerStyle(tryGetUnityXRController);
                 }
-                m_VrCamera.gameObject.AddComponent<SteamVR_Camera>();
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // ---------------------------------------------------------------------------------------- //
-                // GoogleVR
-                // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(TiltBrush.ControllerStyle.Gvr);
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = null;
-
-                // TODO: Why is this offset needed? This should also be in a prefab, not here.
-                var pos = m_VrSystem.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrSystem.gameObject.transform.localPosition = pos;
-
-                pos = m_VrControls.gameObject.transform.localPosition;
-                pos.y += 15f;
-                m_VrControls.gameObject.transform.localPosition = pos;
-
-#if UNITY_EDITOR && false
-      // Instant preview
-      m_VrCamera.gameObject.AddComponent<InstantPreviewHelper>();
-      var ip = m_VrCamera.gameObject.AddComponent<Gvr.Internal.InstantPreview>();
-      ip.OutputResolution = Gvr.Internal.InstantPreview.Resolutions.Big;
-      ip.MultisampleCount = Gvr.Internal.InstantPreview.MultisampleCounts.One;
-      ip.BitRate = Gvr.Internal.InstantPreview.BitRates._16000;
-#endif
-
-                // Custom controls parenting for GVR.
-                m_VrControls.transform.parent = m_VrCamera.transform.parent;
             }
             else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
@@ -265,71 +153,84 @@ namespace TiltBrush
                 // Monoscopic
                 // ---------------------------------------------------------------------------------------- //
                 m_VrCamera.gameObject.AddComponent<MonoCameraControlScript>();
-                SetControllerStyle(TiltBrush.ControllerStyle.None);
-                // Offset for head position, since camera height is set by the VR system.
-                m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+                var xrOrigin = m_VrCamera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+                xrOrigin.CameraFloorOffsetObject.transform.localPosition = new Vector3(0.0f, 1.5f, 0.0f);
+                SetControllerStyle(ControllerStyle.None);
             }
             else
             {
                 // ---------------------------------------------------------------------------------------- //
                 // Non-VR
                 // ---------------------------------------------------------------------------------------- //
-                SetControllerStyle(TiltBrush.ControllerStyle.None);
-                // Offset for head position, since camera height is set by the VR system.
-                m_VrCamera.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+                SetControllerStyle(ControllerStyle.None);
             }
+
             m_VrCamera.gameObject.SetActive(true);
             m_VrSystem.SetActive(m_VrCamera.gameObject.activeSelf);
+
+#if OCULUS_SUPPORTED
+            // ---------------------------------------------------------------------------------------- //
+            // OculusVR
+            // ---------------------------------------------------------------------------------------- //
+            OVRManager manager = gameObject.AddComponent<OVRManager>();
+            manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+            manager.useRecommendedMSAALevel = false;
+            manager.isInsightPassthroughEnabled = true;
+
+            // adding components to the VR Camera needed for fading view and getting controller poses.
+            m_VrCamera.gameObject.AddComponent<OculusCameraFade>();
+
+            //Add an OVRCameraRig to the VrSystem for Mixed Reality Capture.
+            var cameraRig = m_VrSystem.AddComponent<OVRCameraRig>();
+            //Disable the OVRCameraRig's eye cameras, since Open Brush already has its own.
+            cameraRig.disableEyeAnchorCameras = true;
+#endif // OCULUS_SUPPORTED
+
+#if PIMAX_SUPPORTED
+            // Pimax currently requires initialising their Platform SDK.
+            if(ulong.TryParse(App.Config.PimaxSecrets?.ClientId, out var pimaxClientId))
+            {
+                Pimax.Platform.PvrPlatform.init();
+                Pimax.Platform.PvrConnectToDLL.pvr_PlatformInit(pimaxClientId);
+            }
+#endif // PIMAX_SUPPORTED
         }
 
         void Start()
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                if (SteamVR.instance != null)
-                {
-                    SteamVR_Events.InputFocus.Listen(OnInputFocusSteam);
-                    SteamVR_Events.NewPosesApplied.Listen(OnNewPoses);
-                }
-                m_FrameTiming = new Compositor_FrameTiming
-                {
-                    m_nSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(
-                        typeof(Compositor_FrameTiming))
-                };
+                Application.onBeforeRender += OnNewPoses;
             }
-            else if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
+
 #if OCULUS_SUPPORTED
-                OculusHandTrackingManager.NewPosesApplied += OnNewPoses;
-                // We shouldn't call this frequently, hence the local cache and callbacks.
-                OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
-                OVRManager.VrFocusLost += () => { OnInputFocus(false); };
+            // We shouldn't call this frequently, hence the local cache and callbacks.
+            OVRManager.VrFocusAcquired += () => { OnInputFocus(true); };
+            OVRManager.VrFocusLost += () => { OnInputFocus(false); };
 #endif // OCULUS_SUPPORTED
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                var brushGeom = InputManager.Brush.Geometry;
-                GvrControllerInput.OnPostControllerInputUpdated += OnNewPoses;
-            }
 
             if (m_NeedsToAttachConsoleScript && m_VrControls != null)
             {
-                ControllerConsoleScript.m_Instance.AttachToController(
-                    m_VrControls.Brush);
+                ControllerConsoleScript.m_Instance.AttachToController(m_VrControls.Brush);
                 m_NeedsToAttachConsoleScript = false;
+            }
+        }
+
+        void Update()
+        {
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            {
+                OnNewPoses();
             }
         }
 
         void OnDestroy()
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                SteamVR_Events.InputFocus.Remove(OnInputFocusSteam);
-                SteamVR_Events.NewPosesApplied.Remove(OnNewPoses);
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
-                OculusHandTrackingManager.NewPosesApplied -= OnNewPoses;
+                Application.onBeforeRender -= OnNewPoses;
+                InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
+                InputDevices.deviceDisconnected -= OnUnityXRDeviceDisconnected;
             }
         }
 
@@ -339,21 +240,15 @@ namespace TiltBrush
 
         private void OnInputFocus(params object[] args)
         {
-            InputManager.m_Instance.AllowVrControllers = (bool)args[0];
-            m_HasVrFocus = (bool)args[0];
+            bool value = (bool)args[0];
+            App.Log($"VrSdk.OnInputFocus -> {value}");
+            InputManager.m_Instance.AllowVrControllers = value;
+            m_HasVrFocus = value;
         }
 
         private void OnNewPoses()
         {
-            if (NewControllerPosesApplied != null)
-            {
-                NewControllerPosesApplied();
-            }
-        }
-
-        private void OnInputFocusSteam(bool arg)
-        {
-            OnInputFocus(arg);
+            OnNewControllerPosesApplied?.Invoke();
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -372,71 +267,24 @@ namespace TiltBrush
             return m_VrCamera;
         }
 
-        public void SetScreenMirroring(bool enabled)
-        {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                // Get the camera mask if this is the first use of mirroring
-                if (enabled)
-                {
-                    Screen.SetResolution(1920, 1080, false);
-                    SetHmdScalingFactor(1.875f);
-                }
-                else
-                {
-                    Screen.SetResolution(1024, 768, false);
-                    SetHmdScalingFactor(1.0f);
-                }
-            }
-        }
-
         // -------------------------------------------------------------------------------------------- //
         // Profiling / VR Utility Methods
         // -------------------------------------------------------------------------------------------- //
 
-        // Returns a string representing the user's hardware and SDK configuration.
-        public string GetDisplayIdentifier()
-        {
-            return string.Format("{0}; {1}", App.Config.m_SdkMode, App.Config.VrHardware);
-        }
-
         // Returns the time of the most recent number of dropped frames, null on failure.
         public int? GetDroppedFrames()
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                SteamVR vr = SteamVR.instance;
-                if (vr != null)
-                {
-                    if (vr.compositor.GetFrameTiming(ref m_FrameTiming, 0 /* most recent frame */))
-                    {
-                        return (int)m_FrameTiming.m_nNumDroppedFrames;
-                    }
-                }
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
 #if OCULUS_SUPPORTED
-                OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
-                if (perfStats.FrameStatsCount > 0)
-                {
-                    return perfStats.FrameStats[0].AppDroppedFrameCount;
-                }
-                return 0;
-#endif // OCULUS_SUPPORTED
-            }
-
+            // TODO: Currently not supported on Oculus OpenXR backend.
+            // OVRPlugin.AppPerfStats perfStats = OVRPlugin.GetAppPerfStats();
+            // if (perfStats.FrameStatsCount > 0)
+            // {
+            //     return perfStats.FrameStats[0].AppDroppedFrameCount;
+            // }
+            return 0;
+#else // OCULUS_SUPPORTED
             return null;
-        }
-
-        public void ResetPerfStats()
-        {
-            if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
-#if OCULUS_SUPPORTED
-                OVRPlugin.ResetAppPerfStats();
 #endif // OCULUS_SUPPORTED
-            }
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -472,32 +320,31 @@ namespace TiltBrush
         {
             Vector3[] points_RS = null;
 
-            if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
 #if OCULUS_SUPPORTED
                 // N points, clockwise winding (but axis is undocumented), undocumented convexity
                 // In practice, it's clockwise looking along Y-
                 points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
                     .Select(v => UnityFromOculus(v)).ToArray();
+#else // OCULUS_SUPPORTED
+            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            // {
+            //     // TODO - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
+            //     // var chaperone = OpenVR.Chaperone;
+            //     // if (chaperone != null)
+            //     // {
+            //     //     HmdQuad_t rect = new HmdQuad_t();
+            //     //     // 4 points, undocumented winding, undocumented convexity
+            //     //     // Undocumented if it's an AABB
+            //     //     // In practice, seems to always be an axis-aligned clockwise box.
+            //     //     chaperone.GetPlayAreaRect(ref rect);
+            //     //     var steamPoints = new[]
+            //     //     {
+            //     //         rect.vCorners0, rect.vCorners1, rect.vCorners2, rect.vCorners3
+            //     //     };
+            //     //     points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
+            //     // }
+            // }
 #endif // OCULUS_SUPPORTED
-            }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                var chaperone = OpenVR.Chaperone;
-                if (chaperone != null)
-                {
-                    HmdQuad_t rect = new HmdQuad_t();
-                    // 4 points, undocumented winding, undocumented convexity
-                    // Undocumented if it's an AABB
-                    // In practice, seems to always be an axis-aligned clockwise box.
-                    chaperone.GetPlayAreaRect(ref rect);
-                    var steamPoints = new[]
-                    {
-                        rect.vCorners0, rect.vCorners1, rect.vCorners2, rect.vCorners3
-                    };
-                    points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
-                }
-            }
 
             if (points_RS == null)
             {
@@ -531,6 +378,7 @@ namespace TiltBrush
             }
         }
 
+        // Used for debugging.
         static private bool IsClockwiseConvex(Vector3[] points)
         {
             for (int i = 0; i < points.Length; ++i)
@@ -548,11 +396,12 @@ namespace TiltBrush
             return true;
         }
 
-        /// Converts from SteamVR axis conventions and units to Unity
-        static private Vector3 UnityFromSteamVr(HmdVector3_t v)
-        {
-            return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
-        }
+        // TODO:Mike - This function is only used in SteamVR's version of RefreshRoomBoundsCache
+        // /// Converts from SteamVR axis conventions and units to Unity
+        // static private Vector3 UnityFromSteamVr(HmdVector3_t v)
+        // {
+        //     return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
+        // }
 
         /// Converts from Oculus axis conventions and units to Unity
         static private Vector3 UnityFromOculus(Vector3 v)
@@ -576,7 +425,9 @@ namespace TiltBrush
             return style == ControllerStyle.Wmr ||
                 style == ControllerStyle.OculusTouch ||
                 style == ControllerStyle.Knuckles ||
-                style == ControllerStyle.Cosmos;
+                style == ControllerStyle.Cosmos ||
+                style == ControllerStyle.Neo3 ||
+                style == ControllerStyle.Phoenix;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -602,8 +453,8 @@ namespace TiltBrush
             //
             // In practice, the only style transitions we should see are:
             // - None -> correct style                   During VrSdk.Awake()
-            // - None -> InitializingSteamVr             During VrSdk.Awake()
-            //   InitializingSteamVr -> correct style    Many frames after VrSdk.Awake()
+            // - None -> InitializingUnityXr             During VrSdk.Awake()
+            //   InitializingUnityXr -> correct style    Many frames after VrSdk.Awake()
             if (m_VrControls != null)
             {
                 Destroy(m_VrControls.gameObject);
@@ -615,45 +466,55 @@ namespace TiltBrush
             GameObject controlsPrefab;
             switch (style)
             {
-                case ControllerStyle.Vive:
-                    controlsPrefab = m_SteamViveControlsPrefab;
-                    break;
-                case ControllerStyle.Knuckles:
-                    controlsPrefab = m_SteamKnucklesControlsPrefab;
-                    break;
-                case ControllerStyle.Cosmos:
-                    controlsPrefab = m_SteamCosmoControlsPrefab;
-                    break;
-                case ControllerStyle.OculusTouch:
-                    {
-                        // This will probably not work once new headsets are released.
-                        // Maybe something like this instead?
-                        //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
-                        bool isQuestController = (UnityEngine.XR.XRDevice.refreshRate < 81f) ||
-                            (App.Config.VrHardware == VrHardware.Quest);
-                        if (App.Config.m_SdkMode == SdkMode.Oculus)
-                        {
-                            controlsPrefab = isQuestController ? m_OculusQuestControlsPrefab : m_OculusRiftControlsPrefab;
-                        }
-                        else /* Assume SteamVR */
-                        {
-                            controlsPrefab = isQuestController ? m_SteamQuestControlsPrefab : m_SteamRiftControlsPrefab;
-                        }
-                        break;
-                    }
-                case ControllerStyle.Wmr:
-                    controlsPrefab = m_SteamWmrControlsPrefab;
-                    break;
-                case ControllerStyle.Gvr:
-                    controlsPrefab = m_GvrPointerControlsPrefab;
-                    break;
                 case ControllerStyle.None:
                     controlsPrefab = m_NonVrControlsPrefab;
                     m_NeedsToAttachConsoleScript = false;
                     break;
-                case ControllerStyle.InitializingSteamVR:
-                    controlsPrefab = m_SteamUninitializedControlsPrefab;
+                case ControllerStyle.InitializingUnityXR:
+                    controlsPrefab = m_UnityXRUninitializedControlsPrefab;
                     m_NeedsToAttachConsoleScript = false;
+                    break;
+                case ControllerStyle.Vive:
+                    controlsPrefab = m_UnityXRViveControlsPrefab;
+                    break;
+                case ControllerStyle.Knuckles:
+                    controlsPrefab = m_UnityXRKnucklesControlsPrefab;
+                    break;
+                case ControllerStyle.Cosmos:
+                    controlsPrefab = m_UnityXRCosmosControlsPrefab;
+                    break;
+                case ControllerStyle.OculusTouch:
+                    {
+                        // TODO:Mike - comment below is correct, this won't work!
+                        // Need a new way to detect between the different headsets.
+                        // Note that other controllers that match the touch controller profile
+                        // register as OculusTouch, so will fall into the same loop here.
+
+                        // This will probably not work once new headsets are released.
+                        // Maybe something like this instead?
+                        //   isQuest = (UnityEngine.XR.XRDevice.model != "Oculus Rift CV1");
+                        // bool isQuestController = (XRDevice.refreshRate < 81f) ||
+                        //     (App.Config.VrHardware == VrHardware.Quest);
+                        bool isQuestController = App.Config.IsMobileHardware;
+                        controlsPrefab = isQuestController ? m_UnityXRQuestControlsPrefab : m_UnityXRRiftControlsPrefab;
+#if OCULUS_SUPPORTED
+                        // If we're using Oculus' own plugin rather than OpenXR, the controller pose is different.
+                        // Therefore, we need to set a different prefab.
+                        controlsPrefab = isQuestController ? m_OculusQuestControlsPrefab : m_OculusRiftControlsPrefab;
+#endif // OCULUS_SUPPORTED
+                        break;
+                    }
+                case ControllerStyle.Wmr:
+                    controlsPrefab = m_UnityXRWmrControlsPrefab;
+                    break;
+                case ControllerStyle.Neo3:
+                    controlsPrefab = m_UnityXRNeo3ControlsPrefab;
+                    break;
+                case ControllerStyle.Phoenix:
+                    controlsPrefab = m_UnityXRPhoenixControlsPrefab;
+                    break;
+                case ControllerStyle.Gvr:
+                    controlsPrefab = m_GvrPointerControlsPrefab;
                     break;
                 case ControllerStyle.Unset:
                 default:
@@ -662,35 +523,6 @@ namespace TiltBrush
                     break;
             }
 
-#if UNITY_EDITOR
-            // This is _just_ robust enough to be able to switch between the Rift and Touch
-            // controllers. To force (for example) a Wmr controller when using a Touch will
-            // probably require being able to specify an override style as well, because TB
-            // might act funny if we spawn a Wmr prefab with style OculusTouch.
-            // Additionally, the Logitech Pen override happens after this, so there's no way
-            // to override it.
-
-            // Wait for the "real" SetControllerStyle to come through.
-            if (style != ControllerStyle.InitializingSteamVR)
-            {
-                GameObject overridePrefab = null;
-                switch (App.Config.m_SdkMode)
-                {
-                    case SdkMode.Oculus:
-                        overridePrefab = App.Config.m_ControlsPrefabOverrideOvr;
-                        break;
-                    case SdkMode.SteamVR:
-                        overridePrefab = App.Config.m_ControlsPrefabOverrideSteamVr;
-                        break;
-                }
-                if (overridePrefab != null)
-                {
-                    Debug.LogWarning("Overriding Vr controls with {0}", overridePrefab);
-                    controlsPrefab = overridePrefab;
-                }
-            }
-#endif
-
             if (controlsPrefab != null)
             {
                 Debug.Assert(m_VrControls == null);
@@ -698,8 +530,7 @@ namespace TiltBrush
                 m_VrControls = controlsObject.GetComponent<VrControllers>();
                 if (m_VrControls == null)
                 {
-                    throw new InvalidOperationException(
-                        string.Format("Bad prefab for {0} {1}", style, controlsPrefab));
+                    throw new InvalidOperationException($"Bad prefab for {style} {controlsPrefab}");
                 }
                 m_VrControls.transform.parent = m_VrSystem.transform;
             }
@@ -708,8 +539,7 @@ namespace TiltBrush
             {
                 if (m_NeedsToAttachConsoleScript && ControllerConsoleScript.m_Instance)
                 {
-                    ControllerConsoleScript.m_Instance.AttachToController(
-                        m_VrControls.Brush);
+                    ControllerConsoleScript.m_Instance.AttachToController(m_VrControls.Brush);
                     m_NeedsToAttachConsoleScript = false;
                 }
 
@@ -727,18 +557,21 @@ namespace TiltBrush
         // - Info, which encapsulates VR APIs (OVR, SteamVR, GVR, ...)
         public ControllerInfo CreateControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
+            // {
+            //     // TODO:Mike - set to return the default instead.
+            //     return new NonVrControllerInfo(behavior);
+            //     //return new SteamControllerInfo(behavior);
+            // }
+            // else 
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                return new SteamControllerInfo(behavior);
+                return new UnityXRControllerInfo(behavior, isLeftHand);
             }
-            else if (App.Config.m_SdkMode == SdkMode.Oculus)
-            {
-                return new OculusControllerInfo(behavior, isLeftHand);
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
+            /*else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 return new GvrControllerInfo(behavior, isLeftHand);
-            }
+            }*/
             else
             {
                 return new NonVrControllerInfo(behavior);
@@ -753,49 +586,21 @@ namespace TiltBrush
         public bool TrySwapLeftRightTracking()
         {
             bool leftRightSwapped = true;
-            if (App.Config.m_SdkMode == SdkMode.Oculus)
+
+            // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
-                VrControls.GetComponent<OculusHandTrackingManager>().SwapLeftRight();
-            }
-            else if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                // Don't swap controller input sources while we're initializing because it screws up
-                // the actions when the proper controllers are instantiated.
-                // TODO : Figure out why this screws up and fix it.  Note that this is
-                // unnecessary unless we support hot-swapping of controller types.
-                if (!IsInitializingSteamVr)
-                {
-                    BaseControllerBehavior[] behaviors = VrControls.GetBehaviors();
-                    for (int i = 0; i < behaviors.Length; ++i)
-                    {
-                        SteamVR_Behaviour_Pose pose = behaviors[i].GetComponent<SteamVR_Behaviour_Pose>();
-                        switch (pose.inputSource)
-                        {
-                            case SteamVR_Input_Sources.LeftHand:
-                                pose.inputSource = SteamVR_Input_Sources.RightHand;
-                                break;
-                            case SteamVR_Input_Sources.RightHand:
-                                pose.inputSource = SteamVR_Input_Sources.LeftHand;
-                                break;
-                            default:
-                                Debug.LogWarningFormat(
-                                    "Controller is configured as {0}.  Should be LeftHand or RightHand.",
-                                    pose.inputSource);
-                                break;
-                        }
-                    }
-                }
-                else
-                {
-                    // Don't commit to swapping controller styles.
-                    leftRightSwapped = false;
-                }
-            }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                var tmp = InputManager.Controllers[0];
-                InputManager.Controllers[0] = InputManager.Controllers[1];
-                InputManager.Controllers[1] = tmp;
+                UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
+                UnityXRControllerInfo brushInfo = InputManager.Brush as UnityXRControllerInfo;
+                wandInfo.SwapLeftRight();
+                brushInfo.SwapLeftRight();
+
+                var wandPose = InputManager.Wand.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+                var brushPose = InputManager.Brush.Behavior.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+                var tempSource = wandPose.poseSource;
+                var tempType = wandPose.deviceType;
+                wandPose.SetPoseSource(brushPose.deviceType, brushPose.poseSource);
+                brushPose.SetPoseSource(tempType, tempSource);
             }
 
             return leftRightSwapped;
@@ -806,11 +611,8 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.Oculus:
-                case SdkMode.SteamVR:
-                    return DoF.Six;
-
-                case SdkMode.Gvr:
+                case SdkMode.UnityXR:
+                    // @bill - Won't this depend of the device?
                     return DoF.Six;
 
                 case SdkMode.Monoscopic:
@@ -821,208 +623,109 @@ namespace TiltBrush
             }
         }
 
-        // -------------------------------------------------------------------------------------------- //
-        // Overlay Methods
-        // (These should only be accessed via OverlayManager.)
-        // -------------------------------------------------------------------------------------------- //
-        public void SetOverlayAlpha(float ratio)
+        private void OnUnityXRDeviceConnected(InputDevice device)
         {
-            switch (m_OverlayMode)
+            // Headset Connected
+            const InputDeviceCharacteristics kHeadset =
+                InputDeviceCharacteristics.HeadMounted | InputDeviceCharacteristics.TrackedDevice;
+
+            // Left Hand Connected
+            const InputDeviceCharacteristics kLeftHandController =
+                InputDeviceCharacteristics.Left | InputDeviceCharacteristics.HeldInHand;
+
+            // Right Hand Connected
+            const InputDeviceCharacteristics kRightHandController =
+                InputDeviceCharacteristics.Right | InputDeviceCharacteristics.HeldInHand;
+
+            if (!device.isValid)
+                return;
+
+            if ((device.characteristics & kHeadset) == kHeadset)
             {
-                case OverlayMode.Steam:
-                    m_SteamVROverlay.alpha = ratio * m_OverlayMaxAlpha;
-                    OverlayEnabled = ratio > 0.0f;
-                    break;
-                case OverlayMode.OVR:
-                    OverlayEnabled = ratio == 1;
-                    break;
-                case OverlayMode.Mobile:
-                    if (!OverlayEnabled && ratio > 0.0f)
-                    {
-                        // Position screen overlay in front of the camera.
-                        m_MobileOverlay.transform.parent = GetVrCamera().transform;
-                        m_MobileOverlay.transform.localPosition = Vector3.zero;
-                        m_MobileOverlay.transform.localRotation = Quaternion.identity;
-                        float scale = 0.5f * GetVrCamera().farClipPlane / GetVrCamera().transform.lossyScale.z;
-                        m_MobileOverlay.transform.localScale = Vector3.one * scale;
-
-                        // Reparent the overlay so that it doesn't move with the headset.
-                        m_MobileOverlay.transform.parent = null;
-
-                        // Reset the rotation so that it's level and centered on the horizon.
-                        Vector3 eulerAngles = m_MobileOverlay.transform.localRotation.eulerAngles;
-                        m_MobileOverlay.transform.localRotation = Quaternion.Euler(new Vector3(0, eulerAngles.y, 0));
-
-                        m_MobileOverlay.gameObject.SetActive(true);
-                        OverlayEnabled = true;
-                    }
-                    else if (OverlayEnabled && ratio == 0.0f)
-                    {
-                        m_MobileOverlay.gameObject.SetActive(false);
-                        OverlayEnabled = false;
-                    }
-                    break;
+                Debug.Log($"Headset connected: {device.manufacturer}, {device.name}");
+            }
+            else if ((device.characteristics & kLeftHandController) == kLeftHandController)
+            {
+                Debug.Log($"Left Controller: {device.manufacturer}, {device.name}");
+                if (IsInitializingUnityXR)
+                {
+                    UnityXRFinishControllerInit(device);
+                }
+            }
+            else if ((device.characteristics & kRightHandController) == kRightHandController)
+            {
+                Debug.Log($"Right Controller: {device.manufacturer}, {device.name}");
+                if (IsInitializingUnityXR)
+                {
+                    UnityXRFinishControllerInit(device);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Unrecognised device connected: {device.manufacturer}, {device.name}");
             }
         }
 
-        public bool OverlayEnabled
+        private void SetUnityXRControllerStyle(InputDevice device)
         {
-            get
+            if (device.name.Contains("Oculus Touch"))
             {
-                switch (m_OverlayMode)
-                {
-                    case OverlayMode.Steam:
-                        return m_SteamVROverlay.gameObject.activeSelf;
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        return m_OVROverlay.enabled;
+                SetControllerStyle(ControllerStyle.OculusTouch);
+            }
+            else if (device.name.StartsWith("Index Controller OpenXR"))
+            {
+                SetControllerStyle(ControllerStyle.Knuckles);
+            }
+            else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
+            {
+                SetControllerStyle(ControllerStyle.Vive);
+            }
+            else if (device.name.StartsWith("Windows MR Controller"))
+            {
+                SetControllerStyle(ControllerStyle.Wmr);
+            }
+            else if (device.name.Contains("PICO Controller"))
+            {
+                // Controller name isn't specified in Pico's device layout
+                // so we have to run some additional checks if available.
+                // Default to Pico 4 as newest.
+#if !PICO_SUPPORTED
+                SetControllerStyle(ControllerStyle.Phoenix);
 #else
-                        return false;
-#endif // OCULUS_SUPPORTED
-                    case OverlayMode.Mobile:
-                        return m_MobileOverlayOn;
-                    default:
-                        return false;
-                }
-            }
-            set
-            {
-                switch (m_OverlayMode)
+                switch(PicoInput.GetControllerDeviceType())
                 {
-                    case OverlayMode.Steam:
-                        m_SteamVROverlay.gameObject.SetActive(value);
+                    case PicoInput.ControllerDevice.Neo3:
+                        SetControllerStyle(ControllerStyle.Neo3);
                         break;
-                    case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                        m_OVROverlay.enabled = value;
-#endif // OCULUS_SUPPORTED
-                        break;
-                    case OverlayMode.Mobile:
-                        m_MobileOverlayOn = value;
+                    default:
+                        SetControllerStyle(ControllerStyle.Phoenix);
                         break;
                 }
+#endif
+            }
+            else
+            {
+                Debug.LogWarning("Unrecognised controller device name: " + device.name);
             }
         }
 
-        public void SetOverlayTexture(Texture tex)
+        private void UnityXRFinishControllerInit(InputDevice device)
         {
-            switch (m_OverlayMode)
+            SetUnityXRControllerStyle(device);
+            InputManager.m_Instance.CreateControllerInfos();
+            PointerManager.m_Instance.RefreshFreePaintPointerAngle();
+            PointerManager.m_Instance.RequestPointerRendering(true);
+        }
+
+        private void OnUnityXRDeviceDisconnected(InputDevice device)
+        {
+            // Headset Disconnected
+            const InputDeviceCharacteristics kHeadset =
+                InputDeviceCharacteristics.HeadMounted | InputDeviceCharacteristics.TrackedDevice;
+
+            if (device.isValid && (device.characteristics & kHeadset) == kHeadset)
             {
-                case OverlayMode.Steam:
-                    m_SteamVROverlay.texture = tex;
-                    m_SteamVROverlay.UpdateOverlay();
-                    break;
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    m_OVROverlay.textures = new[] { tex };
-#endif // OCULUS_SUPPORTED
-                    break;
-            }
-        }
-
-        public void PositionOverlay(float distance, float height)
-        {
-            //place overlay in front of the player a distance out
-            Vector3 vOverlayPosition = ViewpointScript.Head.position;
-            Vector3 vOverlayDirection = ViewpointScript.Head.forward;
-            vOverlayDirection.y = 0.0f;
-            vOverlayDirection.Normalize();
-
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.Steam:
-                    vOverlayPosition += (vOverlayDirection * distance);
-                    vOverlayPosition.y = height;
-                    m_SteamVROverlay.transform.position = vOverlayPosition;
-                    m_SteamVROverlay.transform.forward = vOverlayDirection;
-                    break;
-                case OverlayMode.OVR:
-#if OCULUS_SUPPORTED
-                    vOverlayPosition += (vOverlayDirection * distance / 10);
-                    m_OVROverlay.transform.position = vOverlayPosition;
-                    m_OVROverlay.transform.forward = vOverlayDirection;
-#endif // OCULUS_SUPPORTED
-                    break;
-            }
-        }
-
-        // Fades to the compositor world (if available) or black.
-        public void FadeToCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: true);
-        }
-
-        // Fades from the compositor world (if available) or black.
-        public void FadeFromCompositor(float fadeTime)
-        {
-            FadeToCompositor(fadeTime, fadeToCompositor: false);
-        }
-
-        private void FadeToCompositor(float fadeTime, bool fadeToCompositor)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.Steam:
-                    SteamVR rVR = SteamVR.instance;
-                    if (rVR != null && rVR.compositor != null)
-                    {
-                        rVR.compositor.FadeGrid(fadeTime, fadeToCompositor);
-                    }
-                    break;
-                case OverlayMode.OVR:
-                    FadeBlack(fadeTime, fadeToCompositor);
-                    break;
-            }
-        }
-
-        public void PauseRendering(bool bPause)
-        {
-            switch (m_OverlayMode)
-            {
-                case OverlayMode.Steam:
-                    SteamVR_Render.pauseRendering = bPause;
-                    break;
-                case OverlayMode.OVR:
-                    // :(
-                    break;
-            }
-        }
-
-        // Fades to solid black.
-        public void FadeToBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: true);
-        }
-
-        // Fade from solid black.
-        public void FadeFromBlack(float fadeTime)
-        {
-            FadeBlack(fadeTime, fadeToBlack: false);
-        }
-
-        private void FadeBlack(float fadeTime, bool fadeToBlack)
-        {
-            switch (App.Config.m_SdkMode)
-            {
-                case SdkMode.SteamVR:
-                    SteamVR_Fade.Start(fadeToBlack ? Color.black : Color.clear, fadeTime);
-                    break;
-                case SdkMode.Oculus:
-                    // TODO: using Viewpoint here is pretty gross, dependencies should not go from VrSdk
-                    // to other Tilt Brush components.
-
-                    // Currently ViewpointScript.FadeToColor takes 1/time as a parameter, which we should fix to
-                    // make consistent, but for now just convert the incoming parameter.
-                    float speed = 1 / Mathf.Max(fadeTime, 0.00001f);
-                    if (fadeToBlack)
-                    {
-                        ViewpointScript.m_Instance.FadeToColor(Color.black, speed);
-                    }
-                    else
-                    {
-                        ViewpointScript.m_Instance.FadeToScene(speed);
-                    }
-                    break;
+                Debug.Log($"Headset disconnected: {device.manufacturer}, {device.name}");
             }
         }
 
@@ -1034,26 +737,13 @@ namespace TiltBrush
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
         {
-            if (App.Config.m_SdkMode == SdkMode.SteamVR && SteamVR.instance == null)
+            switch (App.Config.m_SdkMode)
             {
-                return false;
+                case SdkMode.UnityXR:
+                    return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
+                default:
+                    return true;
             }
-            else if (App.Config.m_SdkMode == SdkMode.Gvr)
-            {
-                // We used to be able to check the GvrViewer state, but this has been moved internal to Unity.
-                // Now just return true and hope for the best.
-                return true;
-            }
-#if OCULUS_SUPPORTED
-            else if (App.Config.m_SdkMode == SdkMode.Oculus && !OVRManager.isHmdPresent)
-            {
-                return false;
-            }
-#endif // OCULUS_SUPPORTED
-            /* else if (App.Config.m_SdkMode == SdkMode.Wmr  && somehow check for Wmr headset ) {
-              return false;
-            } */
-            return true;
         }
 
         // Returns the native frame rate of the HMD (or screen) in frames per second.
@@ -1061,19 +751,15 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.Oculus:
-                    return 90;
-                case SdkMode.SteamVR:
-                    return SteamVR.instance != null ? (int)SteamVR.instance.hmd_DisplayFrequency : 60;
-                case SdkMode.Gvr:
-                    return 75;
+                case SdkMode.UnityXR:
+                    return 60; // 90?
                 case SdkMode.Monoscopic:
                     return 60;
                 case SdkMode.Ods:
                     // TODO: 30 would be correct, buf feels too slow.
                     return 60;
                 default:
-                    throw new NotImplementedException("Unknown VR SDK Mode");
+                    return 60;
             }
         }
 
@@ -1082,10 +768,7 @@ namespace TiltBrush
         {
             switch (App.Config.m_SdkMode)
             {
-                case SdkMode.Oculus:
-                case SdkMode.SteamVR:
-                    return DoF.Six;
-                case SdkMode.Gvr:
+                case SdkMode.UnityXR:
                     return DoF.Six;
                 default:
                     return DoF.None;
@@ -1098,17 +781,6 @@ namespace TiltBrush
             return !m_HasVrFocus;
         }
 
-        // Scales the rendered image that the user sees by \p scale.
-        // Scale is clamped to [0.1, 2].
-        public void SetHmdScalingFactor(float scale)
-        {
-            scale = Mathf.Clamp(scale, 0.1f, 2f);
-            if (App.Config.m_SdkMode == SdkMode.SteamVR)
-            {
-                SteamVR_Camera.sceneResolutionScale = scale;
-            }
-        }
-
         // -------------------------------------------------------------------------------------------- //
         // Tracking Methods
         // -------------------------------------------------------------------------------------------- //
@@ -1118,15 +790,15 @@ namespace TiltBrush
         public void DisablePoseTracking()
         {
             m_TrackingBackupXf = TrTransform.FromTransform(GetVrCamera().transform);
-            if (NewControllerPosesApplied == null)
+            if (OnNewControllerPosesApplied == null)
             {
                 m_OldOnPoseApplied = Array.Empty<Action>();
             }
             else
             {
-                m_OldOnPoseApplied = NewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
+                m_OldOnPoseApplied = OnNewControllerPosesApplied.GetInvocationList().Cast<Action>().ToArray();
             }
-            NewControllerPosesApplied = null;
+            OnNewControllerPosesApplied = null;
         }
 
         /// Restores the pose recieved callbacks that were saved off with DisablePoseTracking. Will merge
@@ -1135,14 +807,14 @@ namespace TiltBrush
         {
             if (m_OldOnPoseApplied != null)
             {
-                if (NewControllerPosesApplied != null)
+                if (OnNewControllerPosesApplied != null)
                 {
-                    var list = m_OldOnPoseApplied.Concat(NewControllerPosesApplied.GetInvocationList())
+                    var list = m_OldOnPoseApplied.Concat(OnNewControllerPosesApplied.GetInvocationList())
                         .Distinct().Cast<Action>();
-                    NewControllerPosesApplied = null;
+                    OnNewControllerPosesApplied = null;
                     foreach (var handler in list)
                     {
-                        NewControllerPosesApplied += handler;
+                        OnNewControllerPosesApplied += handler;
                     }
                 }
             }
@@ -1161,47 +833,37 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Performance Methods
         // -------------------------------------------------------------------------------------------- //
-#if OCULUS_SUPPORTED
         public void SetFixedFoveation(int level)
         {
+#if OCULUS_SUPPORTED
             Debug.Assert(level >= 0 && level <= 3);
-            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware
-                && App.Config.m_SdkMode == SdkMode.Oculus)
+            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
             {
                 OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
             }
+#endif // OCULUS_SUPPORTED
         }
 
         /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
         public float GetGpuUtilization()
         {
-            if (App.Config.m_SdkMode == SdkMode.Oculus && OVRManager.gpuUtilSupported)
+#if OCULUS_SUPPORTED
+            if (OVRManager.gpuUtilSupported)
             {
                 return OVRManager.gpuUtilLevel;
             }
+#endif // OCULUS_SUPPORTED
             return 0;
         }
 
         public void SetGpuClockLevel(int level)
         {
-            if (App.Config.m_SdkMode == SdkMode.Oculus && App.Config.IsMobileHardware)
+#if OCULUS_SUPPORTED
+            if (App.Config.IsMobileHardware)
             {
                 OVRManager.gpuLevel = level;
             }
-        }
-#else // OCULUS_SUPPORTED
-        public void SetFixedFoveation(int level)
-        {
-        }
-
-        public float GetGpuUtilization()
-        {
-            return 0;
-        }
-
-        public void SetGpuClockLevel(int level)
-        {
-        }
 #endif // OCULUS_SUPPORTED
+        }
     }
 }

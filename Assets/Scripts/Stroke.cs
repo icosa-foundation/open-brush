@@ -40,6 +40,8 @@ namespace TiltBrush
         public Type m_Type = Type.NotCreated;
         /// Valid only when type == NotCreated. May be null.
         public CanvasScript m_IntendedCanvas;
+        /// Selected strokes need to remember which canvas they came from
+        public CanvasScript m_PreviousCanvas;
         /// Valid only when type == BrushStroke. Never null; will always have a BaseBrushScript.
         public GameObject m_Object;
         /// Valid only when type == BatchedBrushStroke.
@@ -86,7 +88,9 @@ namespace TiltBrush
                 }
                 else if (m_Type == Type.BrushStroke)
                 {
-                    return m_Object.GetComponent<BaseBrushScript>().Canvas;
+                    // Null checking is needed because sketches that fail to load
+                    // can create invalid strokes that with no script.
+                    return m_Object?.GetComponent<BaseBrushScript>()?.Canvas;
                 }
                 else
                 {

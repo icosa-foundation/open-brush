@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using UnityEngine;
-using Valve.VR;
 
 namespace TiltBrush
 {
@@ -80,28 +79,30 @@ namespace TiltBrush
 
         public static bool IsLogitechPen(uint deviceIndex)
         {
-            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-            uint bufferCapacity = OpenVR.System.GetStringTrackedDeviceProperty(
-                deviceIndex,
-                ETrackedDeviceProperty.Prop_ControllerType_String,
-                null,
-                0,
-                ref error);
-            System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)bufferCapacity);
-            OpenVR.System.GetStringTrackedDeviceProperty(
-                deviceIndex,
-                ETrackedDeviceProperty.Prop_ControllerType_String,
-                buffer,
-                bufferCapacity,
-                ref error);
-            string s = buffer.ToString();
-            if (error == ETrackedPropertyError.TrackedProp_Success)
-            {
-                if (s.StartsWith("logitech_stylus"))
-                {
-                    return true;
-                }
-            }
+            // TODO:Mike The code below shows the process of determining the connected controller is the Logitech stylus, by finding the type of controller.
+
+            // ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+            // uint bufferCapacity = OpenVR.System.GetStringTrackedDeviceProperty(
+            //     deviceIndex,
+            //     ETrackedDeviceProperty.Prop_ControllerType_String,
+            //     null,
+            //     0,
+            //     ref error);
+            // System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)bufferCapacity);
+            // OpenVR.System.GetStringTrackedDeviceProperty(
+            //     deviceIndex,
+            //     ETrackedDeviceProperty.Prop_ControllerType_String,
+            //     buffer,
+            //     bufferCapacity,
+            //     ref error);
+            // string s = buffer.ToString();
+            // if (error == ETrackedPropertyError.TrackedProp_Success)
+            // {
+            //     if (s.StartsWith("logitech_stylus"))
+            //     {
+            //         return true;
+            //     }
+            // }
             return false;
         }
     }

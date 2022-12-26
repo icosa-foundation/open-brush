@@ -166,6 +166,8 @@ namespace TiltBrush
                 videoWidget.PinFromSave();
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
+            videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId));
+
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);
             videoWidget.UpdateScale();
         }
@@ -173,6 +175,7 @@ namespace TiltBrush
         public override GrabWidget Clone()
         {
             VideoWidget clone = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab) as VideoWidget;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;

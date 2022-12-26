@@ -1,4 +1,0 @@
-<linker>
-       <assembly fullname="SteamVR" preserve="all"/>
-       <assembly fullname="SteamVR_Actions" preserve="all"/>
-</linker>

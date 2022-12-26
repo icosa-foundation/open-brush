@@ -447,7 +447,7 @@ namespace TiltBrush
 
         GameObject LoadUsd(List<string> warnings)
         {
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             if (Config.IsExperimental)
             {
                 return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
@@ -455,6 +455,28 @@ namespace TiltBrush
 #endif
             m_LoadError = new LoadError("usd not supported");
             return null;
+        }
+
+        GameObject LoadPly(List<string> warningsOut)
+        {
+
+            try
+            {
+                var reader = new PlyReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+
         }
 
         ///  Load model using FBX SDK.
@@ -531,7 +553,7 @@ namespace TiltBrush
             }
 
             bool allowUsd = false;
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             allowUsd = Config.IsExperimental;
 #endif
 
@@ -661,6 +683,10 @@ namespace TiltBrush
                 else if (ext == ".fbx" || ext == ".obj")
                 {
                     go = LoadFbx(warnings);
+                }
+                else if (ext == ".ply")
+                {
+                    go = LoadPly(warnings);
                 }
                 else
                 {

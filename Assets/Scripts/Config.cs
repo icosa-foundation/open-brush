@@ -34,35 +34,25 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    public enum XrSdkMode
+    {
+        Mono = -1,
+        OpenXR = 0,
+        Oculus,
+        Wave,
+        Pico,
+    }
 
-    // These names are used in our analytics, so they must be protected from obfuscation.
-    // Do not change the names of any of them, unless they've never been released.
+    // The sdk mode indicates which SDK that we're using to drive the display.
+    //  - These names are used in our analytics, so they must be protected from obfuscation.
+    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
         Unset = -1,
-        Oculus = 0,
-        SteamVR,
-        Cardboard_Deprecated,
+        UnityXR,
         Monoscopic,
-        Ods,
-        Gvr,
-    }
-
-    // These names are used in our analytics, so they must be protected from obfuscation.
-    // Do not change the names of any of them, unless they've never been released.
-    // This enum should be "VrHeadsetHardware".  Controller type is not necessarily
-    // implied by headset type.
-    [Serializable]
-    public enum VrHardware
-    {
-        Unset,
-        None,
-        Rift,
-        Vive,
-        Daydream,
-        Wmr,
-        Quest,
+        Ods,    // Video rendering
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -114,13 +104,11 @@ namespace TiltBrush
         [Header("Overwritten by build process")]
         [SerializeField] private PlatformConfig m_PlatformConfig;
 
-        // True for experimental mode.
-        // Cannot be ifdef'd out, because it is modified during the build process.
-        // Public to allow App.cs and BuildTiltBrush.cs to access it; do not use it otherwise.
-        public bool m_IsExperimental;
-
-        // The sdk mode indicates which SDK (OVR, SteamVR, etc.) that we're using to drive the display.
+        // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
+
+        // Stores the value of IsExperimental at startup time
+        [NonSerialized] public bool m_WasExperimentalAtStartup;
 
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
@@ -136,72 +124,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
         public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
         public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
-
-        // This indicates which hardware (Rift or Vive) is being used. This is distinct from which SDK
-        // is being used (Oculus VR, Steam's Open VR, Monoscopic, etc.).
-        public VrHardware VrHardware
-        {
-            // This is set lazily the first time VrHardware is accessed.
-            get
-            {
-                if (m_VrHardware == TiltBrush.VrHardware.Unset)
-                {
-                    if (m_SdkMode == SdkMode.Oculus)
-                    {
-                        if (App.Config.IsMobileHardware)
-                        {
-                            m_VrHardware = VrHardware.Quest;
-                        }
-                        else
-                        {
-                            m_VrHardware = VrHardware.Rift;
-                        }
-                    }
-                    else if (m_SdkMode == SdkMode.SteamVR)
-                    {
-                        // If SteamVR fails for some reason we will discover it here.
-                        try
-                        {
-                            if (Valve.VR.OpenVR.System == null)
-                            {
-                                m_VrHardware = VrHardware.None;
-                                return m_VrHardware;
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            m_VrHardware = VrHardware.None;
-                            return m_VrHardware;
-                        }
-
-                        // GetHwTrackedInSteamVr relies on headset detection, so controllers don't have to be on.
-                        m_VrHardware = GetHwTrackedInSteamVr();
-                    }
-                    else if (m_SdkMode == SdkMode.Gvr)
-                    {
-                        m_VrHardware = TiltBrush.VrHardware.Daydream;
-                    }
-                    else
-                    {
-                        m_VrHardware = VrHardware.None;
-                    }
-                }
-
-                return m_VrHardware;
-            }
-        }
-
-        public String HeadsetModelName
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_HeadsetModelName))
-                {
-                    m_HeadsetModelName = UnityEngine.XR.XRDevice.model;
-                }
-                return m_HeadsetModelName;
-            }
-        }
+        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -224,13 +147,9 @@ namespace TiltBrush
             // Only sadness will ensue if the user tries to set Override.MobileHardware=true
             // but their editor platform is still set to Windows.
 #if UNITY_EDITOR && UNITY_ANDROID
-            get
-            {
-                return Application.platform == RuntimePlatform.Android
-                    || SpoofMobileHardware.MobileHardware;
-            }
+            get => Application.platform == RuntimePlatform.Android || SpoofMobileHardware.MobileHardware;
 #else
-            get { return Application.platform == RuntimePlatform.Android; }
+            get => Application.platform == RuntimePlatform.Android;
 #endif
         }
 
@@ -243,21 +162,11 @@ namespace TiltBrush
         [NonSerialized] public bool m_OdsCollapseIpd = true;
         [NonSerialized] public float m_OdsTurnTableDegrees = 0.0f;
 
-#if UNITY_EDITOR
-        [Header("Editor-only")]
-        // Force use of a particular controller geometry, for testing
-        [Tooltip("Set this to a prefab in Assets/Prefabs/VrSystems/VrControllers/OVR")]
-        public GameObject m_ControlsPrefabOverrideOvr;
-        [Tooltip("Set this to a prefab in Assets/Prefabs/VrSystems/VrControllers/SteamVr")]
-        public GameObject m_ControlsPrefabOverrideSteamVr;
-#endif
-
         [Header("Versioning")]
         public string m_VersionNumber; // eg "17.0b", "18.3"
         public string m_BuildStamp;    // eg "f73783b61", "f73783b61-exp", "(menuitem)"
 
         [Header("Misc")]
-        public GameObject m_SteamVrRenderPrefab;
         public bool m_UseBatchedBrushes;
         // Delete Batch's GeometryPool after about a second.
         public bool m_EnableBatchMemoryOptimization;
@@ -297,9 +206,6 @@ namespace TiltBrush
         [Range(0.001f, 4)]
         public float m_IntroSketchSpeed = 1.0f;
         public bool m_IntroLooped = false;
-
-        [Header("Shader Warmup")]
-        public bool CreateShaderWarmupList;
 
         [Header("Description Prefabs")]
         [SerializeField] GameObject m_ButtonDescriptionOneLinePrefab;
@@ -355,10 +261,7 @@ namespace TiltBrush
 
         public bool OfflineRender
         {
-            get
-            {
-                return !string.IsNullOrEmpty(m_VideoPathToRender) && m_SdkMode != SdkMode.Ods;
-            }
+            get => !string.IsNullOrEmpty(m_VideoPathToRender) && m_SdkMode != SdkMode.Ods;
         }
 
         public PlatformConfig PlatformConfig
@@ -382,12 +285,8 @@ namespace TiltBrush
         // ------------------------------------------------------------
         // Private data
         // ------------------------------------------------------------
-        private VrHardware m_VrHardware = VrHardware.Unset; // This should not be used outside of
-        // VrHardware as it is lazily set inside
-        // VrHardware.
         private Dictionary<Guid, Guid> m_BrushReplacement = null;
         private List<UserConfigChange> m_UserConfigChanges = new List<UserConfigChange>();
-        private string m_HeadsetModelName;
 
         // ------------------------------------------------------------
         // Yucky externals
@@ -405,7 +304,7 @@ namespace TiltBrush
 
         void ParseArgs(string[] args)
         {
-            System.Collections.Generic.List<string> files = new System.Collections.Generic.List<string>();
+            List<string> files = new List<string>();
 
             bool isInBatchMode = false;
 
@@ -588,16 +487,26 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
         public static bool IsExperimental
         {
-            get { return App.Config.m_IsExperimental; }
+            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
-#endif
+
+        // Non-Static version of above
+        public bool GetIsExperimental()
+        {
+            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+        }
+
+        public void SetIsExperimental(bool active)
+        {
+            PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
+        }
 
         void Awake()
         {
             m_SingletonState = this;
+            m_WasExperimentalAtStartup = GetIsExperimental();
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
@@ -631,62 +540,12 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (IsExperimental)
             {
                 foreach (var brush in m_BrushReplacementMap)
                 {
                     m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
                 }
-            }
-#endif
-        }
-
-        private string GetSteamVrDeviceStringProperty(Valve.VR.ETrackedDeviceProperty property)
-        {
-            uint index = 0; // Index 0 is always the headset
-            var system = Valve.VR.OpenVR.System;
-            // If system == null, then somehow, the SteamVR SDK was not properly loaded in.
-            Debug.Assert(system != null, "OpenVR System not found, check \"Virtual Reality Supported\"");
-
-            var error = Valve.VR.ETrackedPropertyError.TrackedProp_Success;
-
-            var capacity = system.GetStringTrackedDeviceProperty(index, property, null, 0, ref error);
-            System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)capacity);
-            system.GetStringTrackedDeviceProperty(index, property, buffer, capacity, ref error);
-            if (error == Valve.VR.ETrackedPropertyError.TrackedProp_Success)
-            {
-                return buffer.ToString();
-            }
-            else
-            {
-                Debug.LogErrorFormat("GetStringTrackedDeviceProperty error {0}", error.ToString());
-                return null;
-            }
-        }
-
-        // Checking what kind of hardware (Rift, Vive, of WMR) is being used in SteamVR.
-        private VrHardware GetHwTrackedInSteamVr()
-        {
-            string manufacturer = GetSteamVrDeviceStringProperty(
-                Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String);
-
-            if (string.IsNullOrEmpty(manufacturer))
-            {
-                OutputWindowScript.Error("Could not determine VR Headset manufacturer.");
-                return VrHardware.Vive;
-            }
-            else if (manufacturer.Contains("Oculus"))
-            {
-                return VrHardware.Rift;
-            }
-            else if (manufacturer.Contains("WindowsMR"))
-            {
-                return VrHardware.Wmr;
-            }
-            else
-            {
-                return VrHardware.Vive;
             }
         }
 
@@ -773,54 +632,6 @@ namespace TiltBrush
         }
 
 #if UNITY_EDITOR
-        public void OnValidate()
-        {
-            // This is now getting run when entering playmode.
-            // Unity doesn't allow VR SDKs to change at runtime.
-            if (UnityEditor.EditorApplication.isPlaying)
-            {
-                return;
-            }
-            bool useVrSdk = m_SdkMode == SdkMode.Oculus
-                || m_SdkMode == SdkMode.SteamVR
-                || m_SdkMode == SdkMode.Gvr;
-
-            // Writing to this sets the scene-dirty flag, so don't do it unless necessary
-            if (UnityEditor.PlayerSettings.virtualRealitySupported != useVrSdk)
-            {
-                UnityEditor.PlayerSettings.virtualRealitySupported = useVrSdk;
-            }
-
-            // This hotswaps vr sdks based on selection.
-            var buildTargetGroups = new List<UnityEditor.BuildTargetGroup>();
-            string[] newDevices;
-            switch (m_SdkMode)
-            {
-                case SdkMode.Gvr:
-                    newDevices = new string[] { "daydream" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Android);
-                    break;
-                case SdkMode.Oculus:
-                    newDevices = new string[] { "Oculus" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Android);
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Standalone);
-                    break;
-                case SdkMode.SteamVR:
-                    newDevices = new string[] { "OpenVR" };
-                    buildTargetGroups.Add(UnityEditor.BuildTargetGroup.Standalone);
-                    break;
-                default:
-                    newDevices = new string[] { "" };
-                    break;
-            }
-
-            foreach (var group in buildTargetGroups)
-            {
-                // TODO use the public api (see BuildTiltBrush)
-                UnityEditorInternal.VR.VREditor.SetVirtualRealitySDKs(group, newDevices);
-            }
-        }
-
         /// Called at build time, just before this Config instance is saved to Main.unity
         public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {
