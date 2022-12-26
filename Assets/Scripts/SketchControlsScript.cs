@@ -4282,16 +4282,6 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
-                    {
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
-                    }
-                    else
-                    {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
-                    }
-                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
-                    break;
                 case GlobalCommands.SymmetryTwoHanded:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
                     {

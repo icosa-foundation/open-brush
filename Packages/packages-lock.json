@@ -205,6 +205,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "moonsharp": {
+      "version": "https://github.com/nothke/moonsharp-unity-upm.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
+    },
     "org.nuget.google.apis": {
       "version": "1.57.0",
       "depth": 0,

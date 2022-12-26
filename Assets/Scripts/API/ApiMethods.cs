@@ -62,7 +62,6 @@ namespace TiltBrush
                 );
                 System.Diagnostics.Process.Start("explorer.exe", "/select," + path);
             }
-            DrawStrokes.MultiPath2dToStrokes(svgPolyline.Polyline, origin, 0.01f, true);
         }
 
         [ApiEndpoint("spectator.move.to", "Moves the spectator camera to the given position")]

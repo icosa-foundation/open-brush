@@ -45,7 +45,7 @@ namespace TiltBrush
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
         private static ApiManager m_Instance;
-        [NonSerialized] public Dictionary<string, ApiEndpoint> endpoints;
+        private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
 
         private bool cameraViewRequested;
