@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
@@ -29,12 +30,9 @@ namespace TiltBrush
             // Same as above but applies to the current selection with maybe some logic based on index within selection
         }
 
-        [NonSerialized] public List<Script> PointerScripts;
-        [NonSerialized] public List<Script> ToolScripts;
-        [NonSerialized] public List<Script> SymmetryScripts;
-        [NonSerialized] public List<string> PointerScriptNames;
-        [NonSerialized] public List<string> ToolScriptNames;
-        [NonSerialized] public List<string> SymmetryScriptNames;
+        [NonSerialized] public SortedDictionary<string, Script> PointerScripts;
+        [NonSerialized] public SortedDictionary<string, Script> ToolScripts;
+        [NonSerialized] public SortedDictionary<string, Script> SymmetryScripts;
         [NonSerialized] public int CurrentPointerScript;
         [NonSerialized] public int CurrentToolScript;
         [NonSerialized] public int CurrentSymmetryScript;
@@ -59,13 +57,13 @@ namespace TiltBrush
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
-            var currentPointerScriptName = PointerScriptNames[CurrentPointerScript];
-            var currentSymmetryScriptName = SymmetryScriptNames[CurrentSymmetryScript];
-            var currentToolScriptName = ToolScriptNames[CurrentToolScript];
+            var currentPointerScriptName = PointerScripts.Keys.ToList()[CurrentPointerScript];
+            var currentSymmetryScriptName = SymmetryScripts.Keys.ToList()[CurrentSymmetryScript];
+            var currentToolScriptName = ToolScripts.Keys.ToList()[CurrentToolScript];
             LoadScript(e.FullPath);
-            CurrentPointerScript = PointerScriptNames.IndexOf(currentPointerScriptName);
-            CurrentSymmetryScript = SymmetryScriptNames.IndexOf(currentSymmetryScriptName);
-            CurrentToolScript = ToolScriptNames.IndexOf(currentToolScriptName);
+            CurrentPointerScript = PointerScripts.Keys.ToList().IndexOf(currentPointerScriptName);
+            CurrentSymmetryScript = SymmetryScripts.Keys.ToList().IndexOf(currentSymmetryScriptName);
+            CurrentToolScript = ToolScripts.Keys.ToList().IndexOf(currentToolScriptName);
         }
 
 
@@ -79,12 +77,9 @@ namespace TiltBrush
 
         public void LoadScripts()
         {
-            PointerScripts = new List<Script>();
-            PointerScriptNames = new List<string>();
-            ToolScripts = new List<Script>();
-            ToolScriptNames = new List<string>();
-            SymmetryScripts = new List<Script>();
-            SymmetryScriptNames = new List<string>();
+            PointerScripts = new SortedDictionary<string, Script>();
+            ToolScripts = new SortedDictionary<string, Script>();
+            SymmetryScripts = new SortedDictionary<string, Script>();
             Directory.CreateDirectory(ScriptsDirectory);
             string[] files = Directory.GetFiles(ScriptsDirectory, LuaFileSearchPattern, SearchOption.AllDirectories);
 
@@ -114,16 +109,13 @@ namespace TiltBrush
                 switch (category)
                 {
                     case ApiCategories.PointerScript:
-                        PointerScripts.Add(script);
-                        PointerScriptNames.Add(scriptName);
+                        PointerScripts[scriptName] = script;
                         break;
                     case ApiCategories.ToolScript:
-                        ToolScripts.Add(script);
-                        ToolScriptNames.Add(scriptName);
+                        ToolScripts[scriptName] = script;
                         break;
                     case ApiCategories.SymmetryScript:
-                        SymmetryScripts.Add(script);
-                        SymmetryScriptNames.Add(scriptName);
+                        SymmetryScripts[scriptName] = script;
                         break;
                 }
             }
@@ -171,14 +163,15 @@ namespace TiltBrush
             Table widgets = script.Globals.Get("Widgets").Table;
         }
 
-        private Script _GetScript(List<Script> scriptList, int scriptIndex)
+        private Script _GetScript(SortedDictionary<string, Script> scriptList, int scriptIndex)
         {
             if (scriptIndex > scriptList.Count - 1) return null;
-            Script script = scriptList[scriptIndex];
+            string scriptName = scriptList.Keys.ToList()[scriptIndex];
+            Script script = scriptList[scriptName];
             return script;
         }
 
-        private DynValue _CallScript(List<Script> scriptList, int scriptIndex)
+        private DynValue _CallScript(SortedDictionary<string, Script> scriptList, int scriptIndex)
         {
             var activeScript = _GetScript(scriptList, scriptIndex);
             activeScript = SetScriptContext(activeScript);
@@ -216,19 +209,19 @@ namespace TiltBrush
                     if (PointerScripts.Count == 0) break;
                     CurrentPointerScript += increment;
                     CurrentPointerScript %= PointerScripts.Count;
-                    scriptName = PointerScriptNames[CurrentPointerScript];
+                    scriptName = PointerScripts.Keys.ToList()[CurrentPointerScript];
                     break;
                 case ApiCategories.SymmetryScript:
                     if (SymmetryScripts.Count == 0) break;
                     CurrentSymmetryScript += increment;
                     CurrentSymmetryScript %= SymmetryScripts.Count;
-                    scriptName = SymmetryScriptNames[CurrentSymmetryScript];
+                    scriptName = SymmetryScripts.Keys.ToList()[CurrentSymmetryScript];
                     break;
                 case ApiCategories.ToolScript:
                     if (ToolScripts.Count == 0) break;
                     CurrentToolScript += increment;
                     CurrentToolScript %= ToolScripts.Count;
-                    scriptName = ToolScriptNames[CurrentToolScript];
+                    scriptName = ToolScripts.Keys.ToList()[CurrentToolScript];
                     break;
             }
             return scriptName;
@@ -244,11 +237,11 @@ namespace TiltBrush
             switch (cat)
             {
                 case ApiCategories.PointerScript:
-                    return PointerScriptNames[index];
+                    return PointerScripts.Keys.ToList()[index];
                 case ApiCategories.SymmetryScript:
-                    return SymmetryScriptNames[index];
+                    return SymmetryScripts.Keys.ToList()[index];
                 case ApiCategories.ToolScript:
-                    return ToolScriptNames[index];
+                    return ToolScripts.Keys.ToList()[index];
                 default:
                     return null;
             }
@@ -259,11 +252,11 @@ namespace TiltBrush
             switch (cat)
             {
                 case ApiCategories.PointerScript:
-                    return PointerScriptNames;
+                    return PointerScripts.Keys.ToList();
                 case ApiCategories.SymmetryScript:
-                    return SymmetryScriptNames;
+                    return SymmetryScripts.Keys.ToList();
                 case ApiCategories.ToolScript:
-                    return ToolScriptNames;
+                    return ToolScripts.Keys.ToList();
                 default:
                     return null;
             }
