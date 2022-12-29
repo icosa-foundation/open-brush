@@ -228,8 +228,9 @@ namespace TiltBrush
                 ApplyLazyInput(ref pos, ref rot);
             }
 
-            Vector3? newPos = LuaManager.Instance.CallCurrentPointerScript(pos);
-            pos = newPos ?? pos;
+            TrTransform? newTr = LuaManager.Instance.CallCurrentPointerScript(TrTransform.TR(pos, rot));
+            pos = newTr?.translation ?? pos;
+            rot = newTr?.rotation ?? rot;
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
