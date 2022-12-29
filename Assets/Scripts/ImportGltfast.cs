@@ -14,7 +14,7 @@ namespace TiltBrush
         {
             var go = new GameObject();
             var gltf = go.AddComponent<GLTFast.GltfAsset>();
-            gltf.url = localPath;
+            gltf.Url = localPath;
             var state = new ImportState(AxisConvention.kGltf2);
             return state;
         }

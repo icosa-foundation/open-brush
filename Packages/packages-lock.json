@@ -1,13 +1,12 @@
 {
   "dependencies": {
     "com.atteneder.gltfast": {
-      "version": "4.8.3",
+      "version": "5.0.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.mathematics": "1.2.6",
         "com.unity.burst": "1.6.6"
       },
