@@ -91,9 +91,34 @@ public static class LuaCustomConverters
             dynVal =>
             {
                 Table table = dynVal.Table;
-                Vector3 position = table.Get("position").ToObject<Vector3>();
-                Vector3 rotation = table.Get("rotation").ToObject<Vector3>();
-                float scale = (float)table.Get("rotation").Number;
+                Vector3 position, rotation;
+                float scale;
+                if (table.Keys.First().String == "x")
+                {
+                    position = table.Get("position").ToObject<Vector3>();
+                    rotation = table.Get("rotation").ToObject<Vector3>();
+                    if (table.Length > 3)
+                    {
+                        scale = (float)table.Get("rotation").Number;
+                    }
+                    else
+                    {
+                        scale = 1f;
+                    }
+                }
+                else
+                {
+                    position = table.Get(1).ToObject<Vector3>();
+                    rotation = table.Get(2).ToObject<Vector3>();
+                    if (table.Length > 3)
+                    {
+                        scale = (float)table.Get(3).Number;
+                    }
+                    else
+                    {
+                        scale = 1f;
+                    }
+                }
 
                 var tr = TrTransform.TRS(
                     position,
