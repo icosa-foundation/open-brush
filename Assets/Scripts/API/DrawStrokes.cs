@@ -38,6 +38,19 @@ namespace TiltBrush
             MultiPositionPathsToStrokes(positions, null, null, origin, scale, brushScale);
         }
 
+        public static void PositionPathsToStroke(List<TrTransform> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
+        {
+            var positions = path.Select(x => x.translation).ToList();
+            var rotations = path.Select(x => x.rotation).ToList();
+            var pressures = path.Select(x => x.scale).ToList();
+            MultiPositionPathsToStrokes(
+                new List<List<Vector3>> { positions },
+                new List<List<Quaternion>> { rotations },
+                new List<List<float>> { pressures },
+                origin, scale, brushScale
+            );
+        }
+
         public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             var positions = new List<List<Vector3>>();
