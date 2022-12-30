@@ -32,8 +32,17 @@ public static class LuaCustomConverters
             dynVal =>
             {
                 Table table = dynVal.Table;
-                float x = (float)((Double)table["x"]);
-                float y = (float)((Double)table["y"]);
+                float x, y;
+                if (table.Keys.First().Type == DataType.String)
+                {
+                    x = (float)table.Get("x").Number;
+                    y = (float)table.Get("y").Number;
+                }
+                else
+                {
+                    x = (float)table.Get(1).Number;
+                    y = (float)table.Get(2).Number;
+                }
                 return new Vector2(x, y);
             }
         );
@@ -41,8 +50,8 @@ public static class LuaCustomConverters
         Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector2>(
             (script, vector) =>
             {
-                DynValue x = DynValue.NewNumber((double)vector.x);
-                DynValue y = DynValue.NewNumber((double)vector.y);
+                DynValue x = DynValue.NewNumber(vector.x);
+                DynValue y = DynValue.NewNumber(vector.y);
                 DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
                 dynVal.Table.Set("x", x);
                 dynVal.Table.Set("y", y);
@@ -57,17 +66,19 @@ public static class LuaCustomConverters
             {
                 Table table = dynVal.Table;
                 float x, y, z;
-                if (table.Keys.First().String == "x")
+                if (table.Keys.First().Type == DataType.String)
                 {
-                    x = (float)(Double)table["x"];
-                    y = (float)(Double)table["y"];
-                    z = (float)(Double)table["z"];
+                    // Named properties
+                    x = (float)table.Get("x").Number;
+                    y = (float)table.Get("y").Number;
+                    z = (float)table.Get("z").Number;
                 }
                 else
                 {
-                    x = (float)(Double)table[1];
-                    y = (float)(Double)table[2];
-                    z = (float)(Double)table[3];
+                    // Indexed properties
+                    x = (float)table.Get(1).Number;
+                    y = (float)table.Get(2).Number;
+                    z = (float)table.Get(3).Number;
                 }
                 return new Vector3(x, y, z);
             }
@@ -93,31 +104,23 @@ public static class LuaCustomConverters
                 Table table = dynVal.Table;
                 Vector3 position, rotation;
                 float scale;
-                if (table.Keys.First().String == "x")
+
+                if (table.Keys.First().Type == DataType.String)
                 {
-                    position = table.Get("position").ToObject<Vector3>();
-                    rotation = table.Get("rotation").ToObject<Vector3>();
-                    if (table.Length > 3)
-                    {
-                        scale = (float)table.Get("rotation").Number;
-                    }
-                    else
-                    {
-                        scale = 1f;
-                    }
+                    // Named properties
+                    var t = table.Get("position");
+                    var r = table.Get("rotation");
+                    var s = table.Get("scale");
+                    position = Equals(t, DynValue.Nil) ? t.ToObject<Vector3>() : Vector3.zero;
+                    rotation = Equals(r, DynValue.Nil) ? r.ToObject<Vector3>() : Vector3.zero;
+                    scale = Equals(s, DynValue.Nil) ? (float)s.Number : 1f;
                 }
                 else
                 {
+                    // Indexed properties
                     position = table.Get(1).ToObject<Vector3>();
-                    rotation = table.Get(2).ToObject<Vector3>();
-                    if (table.Length > 3)
-                    {
-                        scale = (float)table.Get(3).Number;
-                    }
-                    else
-                    {
-                        scale = 1f;
-                    }
+                    rotation = table.Length > 2 ? table.Get(2).ToObject<Vector3>() : Vector3.zero;
+                    scale = table.Length > 3 ? (float)table.Get(3).Number : 1f;
                 }
 
                 var tr = TrTransform.TRS(
