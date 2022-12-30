@@ -139,8 +139,9 @@ namespace TiltBrush
             pointer.Table["rotation"] = rot.eulerAngles;
             pointer.Table["rgb"] = new Vector3(pointerColor.r, pointerColor.g, pointerColor.b);
             pointer.Table["hsv"] = new Vector3(hue, S, V);
-            pointer.Table["size01"] = PointerManager.m_Instance.MainPointer.BrushSize01;
             pointer.Table["size"] = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            pointer.Table["size01"] = PointerManager.m_Instance.MainPointer.BrushSize01;
+            pointer.Table["pressure"] = PointerManager.m_Instance.MainPointer.GetPressure();
             pointer.Table["brush"] = PointerManager.m_Instance.MainPointer.CurrentBrush.m_Description;
             script.Globals.Remove("pointer");
             script.Globals.Set("pointer", pointer);
