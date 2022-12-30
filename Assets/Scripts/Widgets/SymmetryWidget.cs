@@ -116,15 +116,14 @@ namespace TiltBrush
                     }
                     break;
                 case PointerManager.SymmetryMode.FourAroundY:
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    // TODO visualize ScriptedSymmetryMode somehow
                     m_LeftRightMesh.enabled = true;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Up) &&
                             (m_GuideBeams[i].m_Direction != BeamDirection.Down));
                     }
-                    break;
-                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
-                    // TODO visualize the result somehow
                     break;
             }
         }
