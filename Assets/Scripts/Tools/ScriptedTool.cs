@@ -134,11 +134,15 @@ namespace TiltBrush
                     var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
 
-                    // var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
                     var pos = m_FirstPositionClicked_CS.translation;
 
                     List<TrTransform> points = LuaManager.Instance.CallCurrentToolScript();
-                    if (points == null) return;
+                    points = points.Select(tr =>
+                    {
+                        // Orient each point to the controller
+                        tr.translation = rotation_CS * tr.translation;
+                        return tr;
+                    }).ToList();
                     DrawStrokes.PositionPathsToStroke(points, pos, scale_CS, 1f / App.ActiveCanvas.Pose.scale);
                 }
             }

@@ -193,9 +193,9 @@ namespace TiltBrush
             return result?.ToObject<List<TrTransform>>(); //.Select(tr=>tr.TransformBy(App.ActiveCanvas.Pose)).ToList();
         }
 
-        public TrTransform? CallCurrentPointerScript(TrTransform tr_CS)
+        public TrTransform? CallCurrentPointerScript()
         {
-            if (!PointerScriptsEnabled) return tr_CS;
+            if (!PointerScriptsEnabled) return TrTransform.identity;
             DynValue result = _CallScript(PointerScripts, CurrentPointerScript);
             return result?.ToObject<TrTransform>();
         }

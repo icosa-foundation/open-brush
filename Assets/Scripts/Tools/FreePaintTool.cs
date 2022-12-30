@@ -212,9 +212,9 @@ namespace TiltBrush
         {
             // Angle the pointer according to the user-defined pointer angle.
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos = rAttachPoint.position;
+            Vector3 pos = Vector3.zero;
             Quaternion rot = rAttachPoint.rotation * sm_OrientationAdjust;
-
+            Quaternion originalRot = rot;
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
 
@@ -227,10 +227,14 @@ namespace TiltBrush
             {
                 ApplyLazyInput(ref pos, ref rot);
             }
-
-            TrTransform? newTr = LuaManager.Instance.CallCurrentPointerScript(TrTransform.TR(pos, rot));
-            pos = newTr?.translation ?? pos;
-            rot = newTr?.rotation ?? rot;
+            TrTransform? newTr = LuaManager.Instance.CallCurrentPointerScript();
+            pos = newTr?.translation ?? Vector3.zero;
+            pos = originalRot * pos;
+            pos += rAttachPoint.position;
+            if (newTr?.rotation != null)
+            {
+                rot *= newTr.Value.rotation;
+            }
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
