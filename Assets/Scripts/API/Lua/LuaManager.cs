@@ -151,7 +151,7 @@ namespace TiltBrush
 
             DynValue canvas = DynValue.NewTable(new Table(script));
             canvas.Table["scale"] = App.ActiveCanvas.Pose.scale;
-            canvas.Table["strokes"] = SketchMemoryScript.m_Instance.StrokeCount;
+            canvas.Table["strokeCount"] = SketchMemoryScript.m_Instance.StrokeCount;
             script.Globals.Set("canvas", canvas);
 
             return script;
@@ -181,10 +181,10 @@ namespace TiltBrush
             return result;
         }
 
-        public List<Vector3> CallCurrentToolScript()
+        public List<TrTransform> CallCurrentToolScript()
         {
             DynValue result = _CallScript(ToolScripts, CurrentToolScript);
-            return result?.ToObject<List<Vector3>>();
+            return result?.ToObject<List<TrTransform>>();
         }
 
         public List<TrTransform> CallCurrentSymmetryScript()

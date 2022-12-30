@@ -137,12 +137,13 @@ namespace TiltBrush
                     // var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
                     var pos = m_FirstPositionClicked_CS.translation;
 
-                    List<Vector3> points = LuaManager.Instance.CallCurrentToolScript();
+                    List<TrTransform> points = LuaManager.Instance.CallCurrentToolScript();
                     if (points == null) return;
                     DrawStrokes.PositionPathsToStroke(points, pos, scale_CS, 1f / App.ActiveCanvas.Pose.scale);
                 }
             }
         }
+
         private Quaternion QuantizeAngle(Quaternion rotation)
         {
             float round(float val) { return Mathf.Round(val / angleSnappingAngle) * angleSnappingAngle; }
