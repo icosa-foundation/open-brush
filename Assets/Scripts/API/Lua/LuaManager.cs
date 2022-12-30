@@ -190,7 +190,7 @@ namespace TiltBrush
         public List<TrTransform> CallCurrentSymmetryScript()
         {
             DynValue result = _CallScript(SymmetryScripts, CurrentSymmetryScript);
-            return result?.ToObject<List<TrTransform>>(); //.Select(tr=>tr.TransformBy(App.ActiveCanvas.Pose)).ToList();
+            return result?.ToObject<List<TrTransform>>();
         }
 
         public TrTransform? CallCurrentPointerScript()
