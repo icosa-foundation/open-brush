@@ -147,6 +147,7 @@ namespace TiltBrush
             OpenExampleScriptsList = 6002,
             SymmetryTwoHanded = 6003,
             ScriptedSymmetryCommand = 6004,
+            OpenScriptParametersPopup = 6005,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000
@@ -4906,7 +4907,9 @@ namespace TiltBrush
                     // TODO refactor code above to use this method
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
-                case GlobalCommands.Null: break; // Intentionally blank.
+                case GlobalCommands.OpenScriptParametersPopup:
+                case GlobalCommands.Null:
+                    break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;

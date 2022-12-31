@@ -22,7 +22,7 @@ public class ScriptUiNav : MonoBehaviour
 {
 
     private TextMeshPro textMesh;
-    public LuaManager.ApiCategories ApiCategory;
+    public LuaManager.ApiCategory ApiCategory;
     public List<string> names;
 
     public void Start()

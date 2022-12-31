@@ -105,15 +105,16 @@ public static class LuaCustomConverters
                 Vector3 position, rotation;
                 float scale;
 
-                if (table.Keys.First().Type == DataType.String)
+                var firstKey = table.Keys.First();
+                if (firstKey.Type == DataType.String)
                 {
                     // Named properties
                     var t = table.Get("position");
                     var r = table.Get("rotation");
                     var s = table.Get("scale");
-                    position = Equals(t, DynValue.Nil) ? t.ToObject<Vector3>() : Vector3.zero;
-                    rotation = Equals(r, DynValue.Nil) ? r.ToObject<Vector3>() : Vector3.zero;
-                    scale = Equals(s, DynValue.Nil) ? (float)s.Number : 1f;
+                    position = Equals(t, DynValue.Nil) ? Vector3.zero : t.ToObject<Vector3>();
+                    rotation = Equals(r, DynValue.Nil) ? Vector3.zero : r.ToObject<Vector3>();
+                    scale = Equals(s, DynValue.Nil) ? 1f : (float)s.Number;
                 }
                 else
                 {

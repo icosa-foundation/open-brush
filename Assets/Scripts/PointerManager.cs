@@ -117,6 +117,13 @@ namespace TiltBrush
         private LineCreationState m_CurrentLineCreationState;
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
+        public Transform SymmetryWidget
+        {
+            get
+            {
+                return m_SymmetryWidget;
+            }
+        }
 
         /// This array is horrible. It is sort-of a preallocated pool of pointers,
         /// but different ranges are used for different purposes, and the ranges overlap.
@@ -706,6 +713,35 @@ namespace TiltBrush
             UpdateSymmetryPointerTransforms();
         }
 
+        public List<TrTransform> GetScriptedTransforms()
+        {
+            var result = LuaManager.Instance.CallCurrentSymmetryScript();
+            var trs = new List<TrTransform>();
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Quaternion pointerRot = rAttachPoint.rotation * FreePaintTool.sm_OrientationAdjust;
+
+            foreach (var tr in result.Transforms)
+            {
+                var newTr = tr;
+                switch (result.Space)
+                {
+                    case ScriptCoordSpace.Canvas:
+                        break;
+                    case ScriptCoordSpace.Pointer:
+                        newTr.translation = pointerRot * newTr.translation;
+                        newTr.translation += rAttachPoint.position;
+                        break;
+                    case ScriptCoordSpace.Widget:
+                        var widget = PointerManager.m_Instance.SymmetryWidget;
+                        newTr.translation = widget.rotation * newTr.translation;
+                        newTr.translation += widget.position;
+                        break;
+                }
+                trs.Add(newTr);
+            }
+            return trs;
+        }
+
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
             int active = m_NumActivePointers;
@@ -722,7 +758,8 @@ namespace TiltBrush
                     active = 4;
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
-                    active = LuaManager.Instance.CallCurrentSymmetryScript()?.Count ?? 1;
+                    var trs = GetScriptedTransforms();
+                    active = trs.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -806,8 +843,14 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
-                        var transforms = LuaManager.Instance.CallCurrentSymmetryScript();
-                        return transforms != null ? transforms[child] * xfMain : xfMain;
+                        TrTransform scriptedTr;
+                        {
+                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                            scriptedTr = GetScriptedTransforms()[child];
+                            // convert from widget-local coords to world coords
+                            scriptedTr = scriptedTr.TransformBy(xfWidget);
+                        }
+                        return scriptedTr * xfMain;
                     }
 
                 case SymmetryMode.DebugMultiple:
@@ -872,32 +915,18 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
-                        // Transform of pointer 0 in global space
-                        var xf0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-
-                        var transforms = LuaManager.Instance.CallCurrentSymmetryScript();
+                        TrTransform cur = TrTransform.identity;
+                        TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-
-                        if (transforms != null)
+                        var trs = GetScriptedTransforms();
+                        for (int i = 1; i < m_NumActivePointers; ++i)
                         {
-                            int numCopies = transforms.Count;
-
-                            for (int i = 0; i < numCopies; i++)
-                            {
-                                // // Pose of face i, in object space
-                                // TrTransform face_i_OS = new TrTransform(); //asFrame(faces[i]);
-                                // // Active transform from face 0 to face i; acts on object-space things
-                                // TrTransform face_i_from_bestface_OS = face_i_OS; // * m_bestface_OS.inverse;
-                                // // Active transform from face 0 to face i; acts on global-space things
-                                // TrTransform face_i_from_bestface_GS = xfWidget * face_i_from_bestface_OS * xfWidget.inverse;
-                                // // apply face 0->face i transform to pointer 0 to get pointer i
-                                // TrTransform xf_i_GS = face_i_from_bestface_GS * xf0_GS;
-                                // // TODO - how to scale strokes in the plane of each face?
-                                // // var faceScalingFactor = (faces[i].GetBestEdge().Midpoint - faces[i].Centroid).magnitude;
-                                // // var trScale = TrTransform.S(faceScalingFactor);
-                                // // xf_i_GS *= trScale;
-                                transforms[i].ToTransform(m_Pointers[i].m_Script.transform);
-                            }
+                            var tr = trs[i - 1];
+                            // convert from widget-local coords to world coords
+                            tr = xfWidget * tr * xfWidget.inverse;
+                            cur = tr * cur;         // stack another rotation on top
+                            var tmp = (cur * pointer0); // Work around 2018.3.x Mono parse bug
+                            tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;
                     }
@@ -915,7 +944,6 @@ namespace TiltBrush
                     }
                 case SymmetryMode.TwoHanded:
                     {
-                        var xf0 = m_Pointers[0].m_Script.transform;
                         var xf = m_Pointers[1].m_Script.transform;
                         xf.position = InputManager.m_Instance.GetWandControllerAttachPoint().position;
                         xf.rotation = InputManager.m_Instance.GetWandControllerAttachPoint().rotation;

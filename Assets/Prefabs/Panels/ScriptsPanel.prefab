@@ -229,8 +229,8 @@ MonoBehaviour:
   m_MeshCollider: {fileID: 6547610}
   m_ParticleBounds: {x: 1.2, y: 1.2, z: 0}
   m_PanelPopUpMap:
-  - m_PopUpPrefab: {fileID: 167516, guid: e875cff6ab3f37347921daaab5f43b25, type: 3}
-    m_Command: 9
+  - m_PopUpPrefab: {fileID: 197348, guid: 637831851e146a44987a438cafccb5a3, type: 3}
+    m_Command: 6005
   m_PanelDescription: Scripts
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
@@ -256,7 +256,7 @@ MonoBehaviour:
   m_UseGazeRotation: 1
   m_MaxGazeRotation: 20
   m_GazeActivateSpeed: 8
-  m_InitialSpawnPos: {x: 4, y: 12, z: 5}
+  m_InitialSpawnPos: {x: 3, y: 14, z: 3}
   m_InitialSpawnRotEulers: {x: 0, y: 0, z: 0}
   m_WandAttachAngle: 0
   m_WandAttachYOffset: 0
@@ -1397,6 +1397,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_CommandParam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_Name
@@ -1507,6 +1512,11 @@ PrefabInstance:
       propertyPath: ApiCategory
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_CommandParam
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_Name
@@ -1615,6 +1625,11 @@ PrefabInstance:
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: ApiCategory
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_CommandParam
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,

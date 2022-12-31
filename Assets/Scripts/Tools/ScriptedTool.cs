@@ -1,8 +1,4 @@
-﻿
-using System.Collections.Generic;
-using System.Linq;
-using MoonSharp.Interpreter;
-using TMPro;
+﻿using System.Linq;
 using UnityEngine;
 
 
@@ -84,15 +80,6 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            if (InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Undo))
-            {
-                currentSnap++;
-                currentSnap %= angleSnaps.Length;
-                angleSnappingAngle = angleSnaps[currentSnap];
-                GetComponentInChildren<TextMeshPro>().text = angleSnappingAngle.ToString();
-            }
-            bool angleSnap = !(currentSnap == 0);
-
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
@@ -111,12 +98,11 @@ namespace TiltBrush
                 // Snapping needs compensating for the different rotation between global space and canvas space
                 var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
                 rotation_CS *= Quaternion.Euler(-CS_GS_offset);
-                rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
                 rotation_CS *= Quaternion.Euler(CS_GS_offset);
 
                 Matrix4x4 transform_GS = Matrix4x4.TRS(
                     m_FirstPositionClicked_GS,
-                    rotation_CS,
+                    App.Scene.Pose.rotation * rotation_CS,
                     Vector3.one * drawnVector_GS.magnitude
                 );
                 Graphics.DrawMesh(previewMesh, transform_GS, previewMaterial, 0);
@@ -127,17 +113,29 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
-                    var scale_CS = drawnVector_CS.magnitude;
-                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    rotation_CS = angleSnap ? QuantizeAngle(rotation_CS) : rotation_CS;
+                    var scale_CS = drawnVector_CS.magnitude / 2f;
+                    Quaternion rotation_CS = Quaternion.identity;
+                    Vector3 pos = Vector3.zero;
 
-                    var pos = m_FirstPositionClicked_CS.translation;
+                    var result = LuaManager.Instance.CallCurrentToolScript();
 
-                    List<TrTransform> points = LuaManager.Instance.CallCurrentToolScript();
-                    points = points.Select(tr =>
+                    switch (result.Space)
+                    {
+                        case ScriptCoordSpace.Canvas:
+                            break;
+                        case ScriptCoordSpace.Pointer:
+                            rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                            pos = m_FirstPositionClicked_CS.translation;
+                            break;
+                        case ScriptCoordSpace.Widget:
+                            var widget = PointerManager.m_Instance.SymmetryWidget;
+                            rotation_CS = widget.rotation;
+                            pos = widget.position;
+                            break;
+                    }
+
+                    var points = result.Transforms.Select(tr =>
                     {
                         // Orient each point to the controller
                         tr.translation = rotation_CS * tr.translation;
@@ -146,15 +144,6 @@ namespace TiltBrush
                     DrawStrokes.PositionPathsToStroke(points, pos, scale_CS, 1f / App.ActiveCanvas.Pose.scale);
                 }
             }
-        }
-
-        private Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            float round(float val) { return Mathf.Round(val / angleSnappingAngle) * angleSnappingAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

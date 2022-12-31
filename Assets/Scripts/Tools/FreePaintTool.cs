@@ -75,7 +75,7 @@ namespace TiltBrush
             return false;
         }
 
-        static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
+        public static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
         override public void UpdateTool()
         {
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
@@ -214,7 +214,7 @@ namespace TiltBrush
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             Vector3 pos = Vector3.zero;
             Quaternion rot = rAttachPoint.rotation * sm_OrientationAdjust;
-            Quaternion originalRot = rot;
+            Quaternion pointerRot = rot;
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
 
@@ -227,14 +227,23 @@ namespace TiltBrush
             {
                 ApplyLazyInput(ref pos, ref rot);
             }
-            TrTransform? newTr = LuaManager.Instance.CallCurrentPointerScript();
-            pos = newTr?.translation ?? Vector3.zero;
-            pos = originalRot * pos;
-            pos += rAttachPoint.position;
-            if (newTr?.rotation != null)
+            var tr = LuaManager.Instance.CallCurrentPointerScript();
+            pos = tr.Transform.translation;
+            switch (tr.Space)
             {
-                rot *= newTr.Value.rotation;
+                case ScriptCoordSpace.Canvas:
+                    break;
+                case ScriptCoordSpace.Pointer:
+                    pos = pointerRot * pos;
+                    pos += rAttachPoint.position;
+                    break;
+                case ScriptCoordSpace.Widget:
+                    var widget = PointerManager.m_Instance.SymmetryWidget;
+                    pos = widget.rotation * pos;
+                    pos += widget.position;
+                    break;
             }
+            rot *= tr.Transform.rotation;
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
