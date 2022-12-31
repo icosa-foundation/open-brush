@@ -212,7 +212,7 @@ namespace TiltBrush
         {
             // Angle the pointer according to the user-defined pointer angle.
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos = Vector3.zero;
+            Vector3 pos = rAttachPoint.position;
             Quaternion rot = rAttachPoint.rotation * sm_OrientationAdjust;
             Quaternion pointerRot = rot;
             // Modify pointer position and rotation with stencils.
@@ -227,23 +227,30 @@ namespace TiltBrush
             {
                 ApplyLazyInput(ref pos, ref rot);
             }
-            var tr = LuaManager.Instance.CallCurrentPointerScript();
-            pos = tr.Transform.translation;
-            switch (tr.Space)
+
+            if (LuaManager.Instance.PointerScriptsEnabled)
             {
-                case ScriptCoordSpace.Canvas:
-                    break;
-                case ScriptCoordSpace.Pointer:
-                    pos = pointerRot * pos;
-                    pos += rAttachPoint.position;
-                    break;
-                case ScriptCoordSpace.Widget:
-                    var widget = PointerManager.m_Instance.SymmetryWidget;
-                    pos = widget.rotation * pos;
-                    pos += widget.position;
-                    break;
+                var tr = LuaManager.Instance.CallCurrentPointerScript();
+
+                switch (tr.Space)
+                {
+                    case ScriptCoordSpace.Canvas:
+                        pos = tr.Transform.translation;
+                        break;
+                    case ScriptCoordSpace.Pointer:
+                        var oldPos = pos;
+                        pos = tr.Transform.translation;
+                        pos = pointerRot * pos;
+                        pos += oldPos;
+                        break;
+                    case ScriptCoordSpace.Widget:
+                        var widget = PointerManager.m_Instance.SymmetryWidget;
+                        pos = widget.rotation * pos;
+                        pos += widget.position;
+                        break;
+                }
+                rot *= tr.Transform.rotation;
             }
-            rot *= tr.Transform.rotation;
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {

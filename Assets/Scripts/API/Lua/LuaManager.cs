@@ -45,7 +45,7 @@ namespace TiltBrush
         [NonSerialized] public int CurrentToolScript;
         [NonSerialized] public int CurrentSymmetryScript;
 
-        private bool PointerScriptsEnabled;
+        [NonSerialized] public bool PointerScriptsEnabled;
 
         public static LuaManager Instance => m_Instance;
 
@@ -241,7 +241,6 @@ namespace TiltBrush
 
         public ScriptTrTransform CallCurrentPointerScript()
         {
-            if (!PointerScriptsEnabled) return new ScriptTrTransform(TrTransform.identity, ScriptCoordSpace.Pointer);
             DynValue result = _CallScript(ApiCategory.PointerScript, "Main");
             var space = _GetSpace(ApiCategory.PointerScript);
             TrTransform tr = result.ToObject<TrTransform>();
