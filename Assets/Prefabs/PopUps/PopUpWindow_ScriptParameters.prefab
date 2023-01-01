@@ -549,6 +549,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_Param1
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: SliderType
       value: 1
       objectReference: {fileID: 0}
@@ -590,7 +595,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: Slider 5
+      value: Slider 4
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -679,6 +684,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_Param1
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: SliderType
       value: 1
       objectReference: {fileID: 0}
@@ -720,7 +730,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: Slider 2
+      value: Slider 1
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -809,6 +819,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_Param1
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: SliderType
       value: 1
       objectReference: {fileID: 0}
@@ -850,7 +865,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: Slider 4
+      value: Slider 3
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -939,6 +954,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_Param1
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: SliderType
       value: 1
       objectReference: {fileID: 0}
@@ -980,7 +1000,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: Slider 3
+      value: Slider 2
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -1110,7 +1130,7 @@ PrefabInstance:
     - target: {fileID: 4471627121253417836, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Name
-      value: Slider 1
+      value: Slider 0
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}

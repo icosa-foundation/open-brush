@@ -318,16 +318,19 @@ namespace TiltBrush
             return scriptName;
         }
 
-        private void InitScript(ApiCategory cat)
+        private void InitScript(ApiCategory category)
         {
-            _CallScript(cat, "Init");
-            var configs = GetWidgetConfigs(cat);
+            _CallScript(category, "Init");
+            var script = GetCurrentScript(category);
+            script.Globals["Mathf"] = typeof(UnityMathf);
+
+            var configs = GetWidgetConfigs(category);
             foreach (var config in configs.Pairs)
             {
                 if (config.Key.Type != DataType.String) continue;
-                SetScriptParameter(cat, config.Key.String, GetWidgetDefault(config.Value));
+                // Ensure the value is set
+                GetOrSetWidgetCurrentValue(GetCurrentScript(category), config);
             }
-
         }
 
         public void EnablePointerScript(bool enable)
@@ -379,10 +382,21 @@ namespace TiltBrush
             script.Globals.Set(paramName, DynValue.NewNumber(paramValue));
         }
 
-        public float GetWidgetDefault(DynValue config)
+        public float GetOrSetWidgetCurrentValue(Script script, TablePair config)
         {
-            var val = config.Table.Get("default");
-            return val.Equals(DynValue.Nil) ? 0 : (float)val.Number;
+            // Try and get the value from the script
+            var val = script.Globals.Get(config.Key);
+            // If it isn't set...
+            if (val.Equals(DynValue.Nil))
+            {
+                // Get the default from the config entry
+                val = config.Value.Table.Get("default");
+                // Otherwise default to 0
+                val = val.Equals(DynValue.Nil) ? DynValue.NewNumber(0) : val;
+                // Set the value in the script
+                script.Globals.Set(config.Key, val);
+            }
+            return (float)val.Number;
         }
     }
 }

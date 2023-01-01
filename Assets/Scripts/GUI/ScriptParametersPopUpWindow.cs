@@ -31,6 +31,7 @@ namespace TiltBrush
             m_Widgets = GetComponentsInChildren<AdvancedSlider>().ToList();
             m_ApiCategory = (LuaManager.ApiCategory)iCommandParam;
             m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(m_ApiCategory);
+            var script = LuaManager.Instance.GetCurrentScript(m_ApiCategory);
             int index = 0;
             foreach (var widget in m_Widgets)
             {
@@ -42,8 +43,10 @@ namespace TiltBrush
                     widget.name = config.Key.String;
                     widget.SetMin((float)config.Value.Table.Get("min").Number);
                     widget.SetMax((float)config.Value.Table.Get("max").Number);
-                    widget.SetInitialValueAndUpdate(LuaManager.Instance.GetWidgetDefault(config.Value));
                     widget.SetDescriptionText(config.Value.Table.Get("label").String);
+
+                    var val = LuaManager.Instance.GetOrSetWidgetCurrentValue(script, config);
+                    widget.SetInitialValueAndUpdate(val);
                 }
                 else
                 {
