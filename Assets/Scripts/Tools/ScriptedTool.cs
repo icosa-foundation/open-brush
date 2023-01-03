@@ -118,7 +118,7 @@ namespace TiltBrush
                     Quaternion rotation_CS = Quaternion.identity;
                     Vector3 pos = Vector3.zero;
 
-                    var result = LuaManager.Instance.CallCurrentToolScript();
+                    var result = LuaManager.Instance.CallActiveToolScript();
 
                     switch (result.Space)
                     {

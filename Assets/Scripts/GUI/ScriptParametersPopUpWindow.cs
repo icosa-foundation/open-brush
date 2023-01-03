@@ -30,8 +30,8 @@ namespace TiltBrush
         {
             m_Widgets = GetComponentsInChildren<AdvancedSlider>().ToList();
             m_ApiCategory = (LuaManager.ApiCategory)iCommandParam;
-            m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(m_ApiCategory);
-            var script = LuaManager.Instance.GetCurrentScript(m_ApiCategory);
+            var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
+            m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(script);
             int index = 0;
             foreach (var widget in m_Widgets)
             {
@@ -62,8 +62,7 @@ namespace TiltBrush
             if (m_WidgetConfigs == null) return;
             var config = m_WidgetConfigs.Pairs.ToList()[sliderIndex];
             var paramName = config.Key.String;
-            LuaManager.Instance.SetScriptParameter(m_ApiCategory, paramName, sliderValue.z);
+            LuaManager.Instance.SetScriptParameterForActiveScript(m_ApiCategory, paramName, sliderValue.z);
         }
-
     }
 } // namespace TiltBrush

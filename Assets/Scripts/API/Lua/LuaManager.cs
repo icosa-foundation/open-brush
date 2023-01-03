@@ -8,7 +8,6 @@ using MoonSharp.Interpreter.Platforms;
 
 namespace TiltBrush
 {
-
     public enum ScriptCoordSpace
     {
         Pointer,
@@ -20,12 +19,12 @@ namespace TiltBrush
     {
         private FileWatcher m_FileWatcher;
         private static LuaManager m_Instance;
+        private ApiManager apiManager;
+        private static readonly string LuaFileSearchPattern = "*.lua";
+
         private static string DocumentsDirectory => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Open Brush");
         private static string ScriptsDirectory => Path.Combine(DocumentsDirectory, "Scripts");
-
-        private ApiManager apiManager;
-
-        private static readonly string LuaFileSearchPattern = "*.lua";
+        public List<ApiCategory> ApiCategories => Enum.GetValues(typeof(ApiCategory)).Cast<ApiCategory>().ToList();
 
         public enum ApiCategory
         {
@@ -38,17 +37,13 @@ namespace TiltBrush
             // Same as above but applies to the current selection with maybe some logic based on index within selection
         }
 
-        [NonSerialized] public SortedDictionary<string, Script> PointerScripts;
-        [NonSerialized] public SortedDictionary<string, Script> ToolScripts;
-        [NonSerialized] public SortedDictionary<string, Script> SymmetryScripts;
-        [NonSerialized] public int CurrentPointerScript;
-        [NonSerialized] public int CurrentToolScript;
-        [NonSerialized] public int CurrentSymmetryScript;
+        [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
+        [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
 
         [NonSerialized] public bool PointerScriptsEnabled;
+        private List<string> m_ScriptPathsToUpdate;
 
         public static LuaManager Instance => m_Instance;
-
 
         public struct ScriptTrTransform
         {
@@ -90,94 +85,117 @@ namespace TiltBrush
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
-            var currentPointerScriptName = PointerScripts.Keys.ToList()[CurrentPointerScript];
-            var currentSymmetryScriptName = SymmetryScripts.Keys.ToList()[CurrentSymmetryScript];
-            var currentToolScriptName = ToolScripts.Keys.ToList()[CurrentToolScript];
-            LoadScript(e.FullPath);
-            CurrentPointerScript = PointerScripts.Keys.ToList().IndexOf(currentPointerScriptName);
-            CurrentSymmetryScript = SymmetryScripts.Keys.ToList().IndexOf(currentSymmetryScriptName);
-            CurrentToolScript = ToolScripts.Keys.ToList().IndexOf(currentToolScriptName);
+            m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
 
         private void Start()
         {
+            m_ScriptPathsToUpdate = new List<string>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
             LuaCustomConverters.RegisterAll();
             LoadScripts();
         }
 
+        private void Update()
+        {
+            // Consume the queue of scripts that the FileListener reports have changed
+            foreach (var path in m_ScriptPathsToUpdate)
+            {
+                var catMatch = TryGetCategoryFromScriptPath(path);
+                if (catMatch.HasValue)
+                {
+                    var category = catMatch.Value;
+                    var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
+                    LoadScriptFromPath(path);
+                    ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
+                }
+            }
+            m_ScriptPathsToUpdate.Clear();
+        }
+
         public void LoadScripts()
         {
-            PointerScripts = new SortedDictionary<string, Script>();
-            ToolScripts = new SortedDictionary<string, Script>();
-            SymmetryScripts = new SortedDictionary<string, Script>();
+            Scripts = new Dictionary<ApiCategory, SortedDictionary<string, Script>>();
+            ActiveScripts = new Dictionary<ApiCategory, int>();
+            foreach (var category in ApiCategories)
+            {
+                Scripts[category] = new SortedDictionary<string, Script>();
+                ActiveScripts[category] = 0;
+            }
             Directory.CreateDirectory(ScriptsDirectory);
             string[] files = Directory.GetFiles(ScriptsDirectory, LuaFileSearchPattern, SearchOption.AllDirectories);
-
             foreach (string scriptPath in files)
-                LoadScript(scriptPath);
+            {
+                LoadScriptFromPath(scriptPath);
+            }
+        }
+
+        private ApiCategory? TryGetCategoryFromScriptPath(string path)
+        {
+            string scriptFilename = Path.GetFileNameWithoutExtension(path);
+            foreach (ApiCategory category in ApiCategories)
+            {
+                var categoryName = category.ToString();
+                if (scriptFilename.StartsWith(categoryName)) return category;
+            }
+            return null;
         }
 
 
-        private void LoadScript(string path)
+        private void LoadScriptFromPath(string path)
         {
             Script script = new Script();
-
             script.Options.DebugPrint = s => Debug.Log(s);
-
             string scriptFilename = Path.GetFileNameWithoutExtension(path);
-
-            // Execute script
-            Stream fileStream = new FileStream(path, FileMode.Open);
+            Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             script.DoStream(fileStream);
-
-            foreach (ApiCategory category in Enum.GetValues(typeof(ApiCategory)))
+            var catMatch = TryGetCategoryFromScriptPath(path);
+            if (catMatch.HasValue)
             {
-                var categoryName = category.ToString();
-                if (!scriptFilename.StartsWith(categoryName)) continue;
-                string scriptName = scriptFilename.Substring(categoryName.Length + 1);
-
-                switch (category)
-                {
-                    case ApiCategory.PointerScript:
-                        PointerScripts[scriptName] = script;
-                        break;
-                    case ApiCategory.ToolScript:
-                        ToolScripts[scriptName] = script;
-                        break;
-                    case ApiCategory.SymmetryScript:
-                        SymmetryScripts[scriptName] = script;
-                        break;
-                }
-                InitScript(category);
+                var category = catMatch.Value;
+                string scriptName = scriptFilename.Substring(category.ToString().Length + 1);
+                Scripts[category][scriptName] = script;
+                InitScript(script);
             }
-
             fileStream.Close();
         }
 
-        public Script SetScriptContext(Script script)
+        public void SetScriptContext(Script script)
         {
             var pointerColor = PointerManager.m_Instance.PointerColor;
             float hue, S, V;
             Color.RGBToHSV(pointerColor, out hue, out S, out V);
 
-            // Angle the pointer according to the user-defined pointer angle.
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos = rAttachPoint.position;
-            Quaternion rot = rAttachPoint.rotation * Quaternion.Euler(new Vector3(0, 180, 0));
-
             DynValue pointer = DynValue.NewTable(new Table(script));
+            BaseTool activeTool;
+            try
+            {
+                activeTool = SketchSurfacePanel.m_Instance.ActiveTool;
+                pointer.Table["timeSincePressed"] = Time.realtimeSinceStartup - activeTool.TimeBecameActive;
+                pointer.Table["timeSinceReleased"] = Time.realtimeSinceStartup - activeTool.TimeBecameInactive;
+                pointer.Table["isPressed"] = activeTool.IsActive;
+            }
+            catch (NullReferenceException e)
+            {
+                pointer.Table["timeSincePressed"] = 0;
+                pointer.Table["timeSinceReleased"] = 0;
+                pointer.Table["isPressed"] = false;
+            }
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            var attach_CS = App.Scene.ActiveCanvas.AsCanvas[rAttachPoint];
+            var pos = attach_CS.translation;
+            var rot = attach_CS.rotation * Quaternion.Euler(new Vector3(0, 180, 0));
             pointer.Table["position"] = pos;
             pointer.Table["rotation"] = rot.eulerAngles;
+            pointer.Table["direction"] = rot * Vector3.forward;
             pointer.Table["rgb"] = new Vector3(pointerColor.r, pointerColor.g, pointerColor.b);
             pointer.Table["hsv"] = new Vector3(hue, S, V);
             pointer.Table["size"] = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
             pointer.Table["size01"] = PointerManager.m_Instance.MainPointer.BrushSize01;
             pointer.Table["pressure"] = PointerManager.m_Instance.MainPointer.GetPressure();
             pointer.Table["brush"] = PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description;
-            script.Globals.Remove("pointer");
             script.Globals.Set("pointer", pointer);
 
             DynValue app = DynValue.NewTable(new Table(script));
@@ -188,49 +206,18 @@ namespace TiltBrush
             canvas.Table["scale"] = App.ActiveCanvas.Pose.scale;
             canvas.Table["strokeCount"] = SketchMemoryScript.m_Instance.StrokeCount;
             script.Globals.Set("canvas", canvas);
-
-            return script;
         }
 
-        public void SetupScriptWidgets(Script script)
+        public Script GetActiveScript(ApiCategory category)
         {
-            // TODO
-            Table widgets = script.Globals.Get("Widgets").Table;
+            string scriptName = GetScriptNames(category)[ActiveScripts[category]];
+            return Scripts[category][scriptName];
         }
 
-        public Script GetCurrentScript(ApiCategory category)
+        private DynValue _CallScript(Script script, string fnName)
         {
-            SortedDictionary<string, Script> scriptList;
-            int scriptIndex;
-            switch (category)
-            {
-                case ApiCategory.PointerScript:
-                    scriptList = PointerScripts;
-                    scriptIndex = CurrentPointerScript;
-                    break;
-                case ApiCategory.ToolScript:
-                    scriptList = ToolScripts;
-                    scriptIndex = CurrentToolScript;
-                    break;
-                case ApiCategory.SymmetryScript:
-                    scriptList = SymmetryScripts;
-                    scriptIndex = CurrentSymmetryScript;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(category), category, null);
-            }
-            if (scriptIndex > scriptList.Count - 1) return null;
-            string scriptName = scriptList.Keys.ToList()[scriptIndex];
-            Script script = scriptList[scriptName];
-            return script;
-        }
-
-        private DynValue _CallScript(ApiCategory category, string fnName)
-        {
-            var activeScript = GetCurrentScript(category);
-            activeScript = SetScriptContext(activeScript);
-            SetupScriptWidgets(activeScript);
-            Closure activeFunction = activeScript.Globals.Get(fnName).Function;
+            SetScriptContext(script);
+            Closure activeFunction = script.Globals.Get(fnName).Function;
             if (activeFunction != null)
             {
                 DynValue result = activeFunction.Call();
@@ -239,48 +226,46 @@ namespace TiltBrush
             return DynValue.Nil;
         }
 
-        public ScriptTrTransform CallCurrentPointerScript()
+        public ScriptTrTransform CallActivePointerScript()
         {
-            DynValue result = _CallScript(ApiCategory.PointerScript, "Main");
-            var space = _GetSpace(ApiCategory.PointerScript);
+            var script = GetActiveScript(ApiCategory.PointerScript);
+            DynValue result = _CallScript(script, "Main");
+            var space = _GetSpaceForActiveScript(ApiCategory.PointerScript);
             TrTransform tr = result.ToObject<TrTransform>();
             return new ScriptTrTransform(tr, space);
         }
 
-        public ScriptTrTransforms CallCurrentToolScript()
+        public ScriptTrTransforms CallActiveToolScript()
         {
-            DynValue result = _CallScript(ApiCategory.ToolScript, "Main");
-            var space = _GetSpace(ApiCategory.ToolScript);
+            var script = GetActiveScript(ApiCategory.ToolScript);
+            DynValue result = _CallScript(script, "Main");
+            var space = _GetSpaceForActiveScript(ApiCategory.ToolScript);
             return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
         }
 
-        public ScriptTrTransforms CallCurrentSymmetryScript()
+        public ScriptTrTransforms CallActiveSymmetryScript()
         {
-            DynValue result = _CallScript(ApiCategory.SymmetryScript, "Main");
-            var space = _GetSpace(ApiCategory.SymmetryScript);
+            var script = GetActiveScript(ApiCategory.SymmetryScript);
+            DynValue result = _CallScript(script, "Main");
+            var space = _GetSpaceForActiveScript(ApiCategory.SymmetryScript);
             return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
         }
 
-        private ScriptCoordSpace _GetSpace(ApiCategory category)
+        private ScriptCoordSpace _GetSpaceForActiveScript(ApiCategory category)
         {
             // Set defaults here
             ScriptCoordSpace space;
-            switch (category)
+            if (category == ApiCategory.SymmetryScript)
             {
-                case ApiCategory.PointerScript:
-                    space = ScriptCoordSpace.Pointer;
-                    break;
-                case ApiCategory.ToolScript:
-                    space = ScriptCoordSpace.Pointer;
-                    break;
-                case ApiCategory.SymmetryScript:
-                    space = ScriptCoordSpace.Widget;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(category), category, null);
+                space = ScriptCoordSpace.Widget;
+            }
+            else
+            {
+                space = ScriptCoordSpace.Pointer;
             }
 
-            var script = GetCurrentScript(category);
+            // See if the defaults are overridden
+            var script = GetActiveScript(category);
             var settings = script.Globals.Get("Settings");
             var spaceVal = settings?.Table?.Get("space");
             if (spaceVal != null)
@@ -290,47 +275,42 @@ namespace TiltBrush
             return space;
         }
 
-        public string ChangeCurrentScript(ApiCategory cat, int increment)
+        public void ChangeCurrentScript(ApiCategory category, int increment)
         {
-            string scriptName = "";
-            switch (cat)
-            {
-                case ApiCategory.PointerScript:
-                    if (PointerScripts.Count == 0) break;
-                    CurrentPointerScript += increment;
-                    CurrentPointerScript %= PointerScripts.Count;
-                    scriptName = PointerScripts.Keys.ToList()[CurrentPointerScript];
-                    break;
-                case ApiCategory.SymmetryScript:
-                    if (SymmetryScripts.Count == 0) break;
-                    CurrentSymmetryScript += increment;
-                    CurrentSymmetryScript %= SymmetryScripts.Count;
-                    scriptName = SymmetryScripts.Keys.ToList()[CurrentSymmetryScript];
-                    break;
-                case ApiCategory.ToolScript:
-                    if (ToolScripts.Count == 0) break;
-                    CurrentToolScript += increment;
-                    CurrentToolScript %= ToolScripts.Count;
-                    scriptName = ToolScripts.Keys.ToList()[CurrentToolScript];
-                    break;
-            }
-            InitScript(cat);
-            return scriptName;
+            if (Scripts[category].Count == 0) return;
+            ActiveScripts[category] += increment;
+            ActiveScripts[category] %= Scripts[category].Count;
+            var script = GetActiveScript(category);
+            InitScript(script);
         }
 
-        private void InitScript(ApiCategory category)
+        private void InitScript(Script script)
         {
-            _CallScript(category, "Init");
-            var script = GetCurrentScript(category);
             script.Globals["Mathf"] = typeof(UnityMathf);
+            // Redirect "print"
+            script.Options.DebugPrint = s => { Debug.Log(s); };
 
-            var configs = GetWidgetConfigs(category);
+            // var libraries = Resources.LoadAll<TextAsset>("LuaLibraries");
+            // foreach (var library in libraries)
+            // {
+            //     Debug.Log($"Loaded lua library {library.name}");
+            //     script.DoString(library.text);
+            // }
+
+            // UserData.RegisterType<Vector3>();
+            // UserData.RegisterType<Vector2>();
+            // UserData.RegisterType<Vector4>();
+            // UserData.RegisterType<Mathf>();
+            // UserData.RegisterType<Quaternion>();
+
+            var configs = GetWidgetConfigs(script);
             foreach (var config in configs.Pairs)
             {
                 if (config.Key.Type != DataType.String) continue;
                 // Ensure the value is set
-                GetOrSetWidgetCurrentValue(GetCurrentScript(category), config);
+                GetOrSetWidgetCurrentValue(script, config);
             }
+            _CallScript(script, "Init");
         }
 
         public void EnablePointerScript(bool enable)
@@ -338,47 +318,20 @@ namespace TiltBrush
             PointerScriptsEnabled = enable;
         }
 
-        public string GetScriptName(ApiCategory cat, int index)
+        public List<string> GetScriptNames(ApiCategory category)
         {
-            switch (cat)
-            {
-                case ApiCategory.PointerScript:
-                    return PointerScripts.Keys.ToList()[index];
-                case ApiCategory.SymmetryScript:
-                    return SymmetryScripts.Keys.ToList()[index];
-                case ApiCategory.ToolScript:
-                    return ToolScripts.Keys.ToList()[index];
-                default:
-                    return null;
-            }
+            return Scripts[category].Keys.ToList();
         }
 
-        public List<string> GetScriptNames(ApiCategory cat)
+        public Table GetWidgetConfigs(Script script)
         {
-            switch (cat)
-            {
-                case ApiCategory.PointerScript:
-                    return PointerScripts.Keys.ToList();
-                case ApiCategory.SymmetryScript:
-                    return SymmetryScripts.Keys.ToList();
-                case ApiCategory.ToolScript:
-                    return ToolScripts.Keys.ToList();
-                default:
-                    return null;
-            }
-        }
-
-        public Table GetWidgetConfigs(ApiCategory apiCategory)
-        {
-            var script = GetCurrentScript(apiCategory);
             var configs = script.Globals.Get("Widgets");
             return configs.IsNil() ? new Table(script) : configs.Table;
         }
 
-        public void SetScriptParameter(ApiCategory apiCategory, string paramName, float paramValue)
+        public void SetScriptParameterForActiveScript(ApiCategory category, string paramName, float paramValue)
         {
-            var script = GetCurrentScript(apiCategory);
-            script.Globals.Set("n", DynValue.NewNumber(1.2f));
+            var script = GetActiveScript(category);
             script.Globals.Set(paramName, DynValue.NewNumber(paramValue));
         }
 
@@ -397,6 +350,38 @@ namespace TiltBrush
                 script.Globals.Set(config.Key, val);
             }
             return (float)val.Number;
+        }
+
+        public void ApplyPointerScript(Quaternion pointerRot, ref Vector3 pos_GS, ref Quaternion rot_GS)
+        {
+            var scriptTransformOutput = CallActivePointerScript();
+
+            switch (scriptTransformOutput.Space)
+            {
+                case ScriptCoordSpace.Canvas:
+                    var tr_CS = TrTransform.TR(
+                        scriptTransformOutput.Transform.translation,
+                        scriptTransformOutput.Transform.rotation
+                    );
+                    var tr_GS = App.Scene.Pose * tr_CS;
+                    pos_GS = tr_GS.translation;
+                    rot_GS = tr_GS.rotation;
+                    break;
+                case ScriptCoordSpace.Pointer:
+                    var oldPos = pos_GS;
+                    pos_GS = scriptTransformOutput.Transform.translation;
+                    pos_GS = pointerRot * pos_GS;
+                    pos_GS += oldPos;
+                    rot_GS *= scriptTransformOutput.Transform.rotation;
+                    break;
+                case ScriptCoordSpace.Widget:
+                    var widget = PointerManager.m_Instance.SymmetryWidget;
+                    rot_GS = widget.rotation;
+                    pos_GS = rot_GS * pos_GS;
+                    pos_GS += widget.position;
+                    rot_GS *= scriptTransformOutput.Transform.rotation;
+                    break;
+            }
         }
     }
 }

@@ -78,6 +78,8 @@ namespace TiltBrush
         public static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
         override public void UpdateTool()
         {
+            UpdateTimeRecords();
+
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
             // for FreePaintTool.
             m_wandTriggerRatio = InputManager.Wand.GetTriggerRatio();
@@ -212,57 +214,38 @@ namespace TiltBrush
         {
             // Angle the pointer according to the user-defined pointer angle.
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Vector3 pos = rAttachPoint.position;
-            Quaternion rot = rAttachPoint.rotation * sm_OrientationAdjust;
-            Quaternion pointerRot = rot;
+            Vector3 pos_GS = rAttachPoint.position;
+            Quaternion rot_GS = rAttachPoint.rotation * sm_OrientationAdjust;
+            Quaternion pointerRot = rot_GS;
             // Modify pointer position and rotation with stencils.
-            WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot);
+            WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
 
             if (m_BimanualTape)
             {
-                ApplyBimanualTape(ref pos, ref rot);
-                ApplyRevolver(ref pos, ref rot);
+                ApplyBimanualTape(ref pos_GS, ref rot_GS);
+                ApplyRevolver(ref pos_GS, ref rot_GS);
             }
             else
             {
-                ApplyLazyInput(ref pos, ref rot);
+                ApplyLazyInput(ref pos_GS, ref rot_GS);
             }
 
             if (LuaManager.Instance.PointerScriptsEnabled)
             {
-                var tr = LuaManager.Instance.CallCurrentPointerScript();
-
-                switch (tr.Space)
-                {
-                    case ScriptCoordSpace.Canvas:
-                        pos = tr.Transform.translation;
-                        break;
-                    case ScriptCoordSpace.Pointer:
-                        var oldPos = pos;
-                        pos = tr.Transform.translation;
-                        pos = pointerRot * pos;
-                        pos += oldPos;
-                        break;
-                    case ScriptCoordSpace.Widget:
-                        var widget = PointerManager.m_Instance.SymmetryWidget;
-                        pos = widget.rotation * pos;
-                        pos += widget.position;
-                        break;
-                }
-                rot *= tr.Transform.rotation;
+                LuaManager.Instance.ApplyPointerScript(pointerRot, ref pos_GS, ref rot_GS);
             }
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                pos = SnapToGrid(pos);
+                pos_GS = SnapToGrid(pos_GS);
             }
 
             if (PointerManager.m_Instance.positionJitter > 0)
             {
-                pos = PointerManager.m_Instance.GenerateJitteredPosition(pos, PointerManager.m_Instance.positionJitter);
+                pos_GS = PointerManager.m_Instance.GenerateJitteredPosition(pos_GS, PointerManager.m_Instance.positionJitter);
             }
 
-            PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos, rot);
+            PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos_GS, rot_GS);
         }
 
         override public void UpdateSize(float fAdjustAmount)

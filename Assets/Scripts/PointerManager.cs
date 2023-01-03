@@ -715,31 +715,34 @@ namespace TiltBrush
 
         public List<TrTransform> GetScriptedTransforms()
         {
-            var result = LuaManager.Instance.CallCurrentSymmetryScript();
-            var trs = new List<TrTransform>();
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            Quaternion pointerRot = rAttachPoint.rotation * FreePaintTool.sm_OrientationAdjust;
+            var result = LuaManager.Instance.CallActiveSymmetryScript();
+            var trs_CS = new List<TrTransform>();
 
-            foreach (var tr in result.Transforms)
+            foreach (var resultTr in result.Transforms)
             {
-                var newTr = tr;
+                TrTransform newTr_CS = default;
                 switch (result.Space)
                 {
                     case ScriptCoordSpace.Canvas:
+                        newTr_CS = resultTr;
                         break;
                     case ScriptCoordSpace.Pointer:
-                        newTr.translation = pointerRot * newTr.translation;
-                        newTr.translation += rAttachPoint.position;
+                        Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                        newTr_CS.translation = pointerRot_GS * resultTr.translation;
+                        newTr_CS.translation += rAttachPoint_GS.position;
                         break;
                     case ScriptCoordSpace.Widget:
-                        var widget = PointerManager.m_Instance.SymmetryWidget;
-                        newTr.translation = widget.rotation * newTr.translation;
-                        newTr.translation += widget.position;
+                        newTr_CS = resultTr;
+                        var widget_CS = App.Scene.ActiveCanvas.AsCanvas[SymmetryWidget];
+                        newTr_CS *= widget_CS.inverse;
                         break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                trs.Add(newTr);
+                trs_CS.Add(newTr_CS);
             }
-            return trs;
+            return trs_CS;
         }
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
@@ -845,12 +848,15 @@ namespace TiltBrush
                     {
                         TrTransform scriptedTr;
                         {
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
                             scriptedTr = GetScriptedTransforms()[child];
-                            // convert from widget-local coords to world coords
-                            scriptedTr = scriptedTr.TransformBy(xfWidget);
+                            // convert from canvas to world coords
+                            scriptedTr *= App.Scene.Pose.inverse;
                         }
-                        return scriptedTr * xfMain;
+                        if (Random.value > .5f)
+                        {
+                            return scriptedTr * xfMain;
+                        }
+                        return scriptedTr;
                     }
 
                 case SymmetryMode.DebugMultiple:
@@ -915,17 +921,15 @@ namespace TiltBrush
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
-                        TrTransform cur = TrTransform.identity;
-                        TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                        TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var trs = GetScriptedTransforms();
                         for (int i = 1; i < m_NumActivePointers; ++i)
                         {
                             var tr = trs[i - 1];
-                            // convert from widget-local coords to world coords
-                            tr = xfWidget * tr * xfWidget.inverse;
-                            cur = tr * cur;         // stack another rotation on top
-                            var tmp = (cur * pointer0); // Work around 2018.3.x Mono parse bug
+                            // convert from canvas to world coords
+                            // tr *= App.Scene.Pose.inverse;
+                            // Apply the transform to the pointer
+                            var tmp = tr * pointer0_GS; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;

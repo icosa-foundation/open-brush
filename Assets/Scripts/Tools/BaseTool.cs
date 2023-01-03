@@ -68,6 +68,14 @@ namespace TiltBrush
         protected bool m_AllowDrawing;
         protected bool m_ToolHidden;
 
+        // Used by real-time scripts
+        private bool m_IsActive;
+        private float m_TimeBecameActive;
+        private float m_TimeBecameInactive;
+        public bool IsActive => m_IsActive;
+        public float TimeBecameActive => m_TimeBecameActive;
+        public float TimeBecameInactive => m_TimeBecameInactive;
+
         public bool IsEatingInput { get { return m_EatInput; } }
 
         public bool ExitRequested() { return m_RequestExit; }
@@ -146,6 +154,7 @@ namespace TiltBrush
 
         virtual public void UpdateTool()
         {
+            UpdateTimeRecords();
             if (m_EatInput)
             {
                 if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -156,6 +165,21 @@ namespace TiltBrush
             if (m_ExitOnAbortCommand && InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Abort))
             {
                 m_RequestExit = true;
+            }
+        }
+
+        protected void UpdateTimeRecords()
+        {
+            // Store time values for real-time scripts to use
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                m_IsActive = true;
+                m_TimeBecameActive = Time.realtimeSinceStartup;
+            }
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && IsActive)
+            {
+                m_IsActive = false;
+                m_TimeBecameInactive = Time.realtimeSinceStartup;
             }
         }
 

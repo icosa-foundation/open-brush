@@ -23,18 +23,18 @@ public class ScriptUiNav : MonoBehaviour
 
     private TextMeshPro textMesh;
     public LuaManager.ApiCategory ApiCategory;
-    public List<string> names;
 
     public void Start()
     {
         textMesh = GetComponentInChildren<TextMeshPro>();
-        textMesh.text = LuaManager.Instance.GetScriptName(ApiCategory, 0);
-        names = LuaManager.Instance.GetScriptNames(ApiCategory);
+        textMesh.text = LuaManager.Instance.GetScriptNames(ApiCategory)[0];
     }
 
     public void ChangeScript(int increment)
     {
-        var text = LuaManager.Instance.ChangeCurrentScript(ApiCategory, increment);
-        textMesh.text = text;
+        LuaManager.Instance.ChangeCurrentScript(ApiCategory, increment);
+        var index = LuaManager.Instance.ActiveScripts[ApiCategory];
+        var scriptName = LuaManager.Instance.GetScriptNames(ApiCategory)[index];
+        textMesh.text = scriptName;
     }
 }

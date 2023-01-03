@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
 
 namespace TiltBrush
@@ -1072,6 +1073,14 @@ namespace TiltBrush
                             Vector3 vPointerForward = Vector3.zero;
                             m_SketchSurfacePanel.GetReticleTransform(out vPointerPos, out vPointerForward,
                                 (m_ControlsType == ControlsType.ViewingOnly));
+
+                            Quaternion vPointerRot = Quaternion.identity;
+                            if (LuaManager.Instance.PointerScriptsEnabled)
+                            {
+                                LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
+                            }
+                            vPointerForward = vPointerRot * vPointerForward;
+
                             PointerManager.m_Instance.SetMainPointerPosition(vPointerPos);
                             PointerManager.m_Instance.SetMainPointerForward(vPointerForward);
                         }
