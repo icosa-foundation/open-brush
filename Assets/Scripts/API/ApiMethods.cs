@@ -342,7 +342,7 @@ namespace TiltBrush
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
         public static void ImportImage(string location)
         {
-            if (location.StartsWith("http://") || location.StartsWith("https://"));
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
             {
                 location = _DownloadMediaFileFromUrl(location, "Images");
             }
