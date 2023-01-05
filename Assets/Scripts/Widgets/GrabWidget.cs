@@ -68,7 +68,7 @@ namespace TiltBrush
         public float m_GrabDistance;
         public float m_CollisionRadius = 1.2f;
 
-        [NonSerialized] public CanvasScript m_previousCanvas;
+        [NonSerialized] public CanvasScript m_PreviousCanvas;
 
         [SerializeField] private bool m_AllowTwoHandGrab = false;
         [SerializeField] private bool m_DestroyOnHide = false;
@@ -779,7 +779,7 @@ namespace TiltBrush
             }
         }
 
-        public virtual GrabWidget Clone()
+        virtual public GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, GetSignedWidgetSize());
         }
@@ -788,7 +788,7 @@ namespace TiltBrush
         {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
             GrabWidget clone = Instantiate(this);
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             clone.SetSignedWidgetSize(size);

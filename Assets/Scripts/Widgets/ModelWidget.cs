@@ -143,7 +143,7 @@ namespace TiltBrush
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             clone.Model = this.Model;
