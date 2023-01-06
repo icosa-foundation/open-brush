@@ -296,7 +296,7 @@ namespace TiltBrush
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.back, Vector3.up);
         }
 
-        [ApiEndpoint("brush.home", "Resets the brush position and direction")]
+        [ApiEndpoint("brush.home.reset", "Resets the brush position and direction")]
         public static void BrushHome()
         {
             BrushMoveTo(ApiManager.Instance.BrushOrigin);
@@ -425,7 +425,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("model.select", "Selects a widget by index.")]
-        private static void SelectModel(int index)
+        public static void SelectModel(int index)
         {
             SelectWidget(_GetActiveModel(index));
         }
