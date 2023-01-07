@@ -70,9 +70,11 @@ namespace TiltBrush
 
         // Used by real-time scripts
         private bool m_IsActive;
+        private bool m_IsActiveThisFrame;
         private float m_TimeBecameActive;
         private float m_TimeBecameInactive;
         public bool IsActive => m_IsActive;
+        public bool IsActiveThisFrame => m_IsActiveThisFrame;
         public float TimeBecameActive => m_TimeBecameActive;
         public float TimeBecameInactive => m_TimeBecameInactive;
 
@@ -174,12 +176,18 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_IsActive = true;
+                m_IsActiveThisFrame = true;
                 m_TimeBecameActive = Time.realtimeSinceStartup;
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && IsActive)
             {
                 m_IsActive = false;
+                m_IsActiveThisFrame = false;
                 m_TimeBecameInactive = Time.realtimeSinceStartup;
+            }
+            else
+            {
+                m_IsActiveThisFrame = false;
             }
         }
 

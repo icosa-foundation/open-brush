@@ -6,6 +6,10 @@ using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
 
+#if UNITY_EDITOR
+using System.Reflection;
+#endif
+
 namespace TiltBrush
 {
     public enum ScriptCoordSpace
@@ -21,6 +25,11 @@ namespace TiltBrush
         private static LuaManager m_Instance;
         private ApiManager apiManager;
         private static readonly string LuaFileSearchPattern = "*.lua";
+
+#if UNITY_EDITOR
+        // Used when called via MenuItem("Open Brush/API/Generate Lua Autocomplete File")
+        public static List<string> AutoCompleteEntries;
+#endif
 
         private static string DocumentsDirectory => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Open Brush");
         private static string ScriptsDirectory => Path.Combine(DocumentsDirectory, "Scripts");
@@ -149,6 +158,7 @@ namespace TiltBrush
             Script script = new Script();
             script.Options.DebugPrint = s => Debug.Log(s);
             string scriptFilename = Path.GetFileNameWithoutExtension(path);
+            if (scriptFilename.StartsWith("__")) return;
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             script.DoStream(fileStream);
             var catMatch = TryGetCategoryFromScriptPath(path);
@@ -162,50 +172,232 @@ namespace TiltBrush
             fileStream.Close();
         }
 
-        public void SetScriptContext(Script script)
+        public static void SetDynamicScriptContext(Script script)
         {
             var pointerColor = PointerManager.m_Instance.PointerColor;
             float hue, S, V;
             Color.RGBToHSV(pointerColor, out hue, out S, out V);
-
-            DynValue pointer = DynValue.NewTable(new Table(script));
-            BaseTool activeTool;
-            try
-            {
-                activeTool = SketchSurfacePanel.m_Instance.ActiveTool;
-                pointer.Table["timeSincePressed"] = Time.realtimeSinceStartup - activeTool.TimeBecameActive;
-                pointer.Table["timeSinceReleased"] = Time.realtimeSinceStartup - activeTool.TimeBecameInactive;
-                pointer.Table["isPressed"] = activeTool.IsActive;
-            }
-            catch (NullReferenceException e)
-            {
-                pointer.Table["timeSincePressed"] = 0;
-                pointer.Table["timeSinceReleased"] = 0;
-                pointer.Table["isPressed"] = false;
-            }
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             var attach_CS = App.Scene.ActiveCanvas.AsCanvas[rAttachPoint];
             var pos = attach_CS.translation;
             var rot = attach_CS.rotation * Quaternion.Euler(new Vector3(0, 180, 0));
-            pointer.Table["position"] = pos;
-            pointer.Table["rotation"] = rot.eulerAngles;
-            pointer.Table["direction"] = rot * Vector3.forward;
-            pointer.Table["rgb"] = new Vector3(pointerColor.r, pointerColor.g, pointerColor.b);
-            pointer.Table["hsv"] = new Vector3(hue, S, V);
-            pointer.Table["size"] = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
-            pointer.Table["size01"] = PointerManager.m_Instance.MainPointer.BrushSize01;
-            pointer.Table["pressure"] = PointerManager.m_Instance.MainPointer.GetPressure();
-            pointer.Table["brush"] = PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description;
-            script.Globals.Set("pointer", pointer);
 
-            DynValue app = DynValue.NewTable(new Table(script));
-            app.Table["time"] = Time.realtimeSinceStartup;
-            script.Globals.Set("app", app);
+            BaseTool activeTool;
+            try
+            {
+                activeTool = SketchSurfacePanel.m_Instance.ActiveTool;
+                RegisterApiProperty(script, "brush.timeSincePressed", Time.realtimeSinceStartup - activeTool.TimeBecameActive);
+                RegisterApiProperty(script, "brush.timeSinceReleased", Time.realtimeSinceStartup - activeTool.TimeBecameInactive);
+                RegisterApiProperty(script, "brush.isPressed", activeTool.IsActive);
+                RegisterApiProperty(script, "brush.isPressedThisFrame", activeTool.IsActiveThisFrame);
+            }
+            catch (NullReferenceException e)
+            {
+                // Monoscopic mode?
+                RegisterApiProperty(script, "brush.timeSincePressed", 0);
+                RegisterApiProperty(script, "brush.timeSinceReleased", 0);
+                RegisterApiProperty(script, "brush.isPressed", false);
+                RegisterApiProperty(script, "brush.isPressedThisFrame", false);
+            }
 
-            DynValue canvas = DynValue.NewTable(new Table(script));
-            canvas.Table["scale"] = App.ActiveCanvas.Pose.scale;
-            canvas.Table["strokeCount"] = SketchMemoryScript.m_Instance.StrokeCount;
-            script.Globals.Set("canvas", canvas);
+            RegisterApiProperty(script, "brush.position", pos);
+            RegisterApiProperty(script, "brush.rotation", rot.eulerAngles);
+            RegisterApiProperty(script, "brush.direction", rot * Vector3.forward);
+            RegisterApiProperty(script, "brush.size.get", PointerManager.m_Instance.MainPointer.BrushSizeAbsolute);
+            RegisterApiProperty(script, "brush.size01.get", PointerManager.m_Instance.MainPointer.BrushSize01);
+            RegisterApiProperty(script, "brush.pressure", PointerManager.m_Instance.MainPointer.GetPressure());
+            RegisterApiProperty(script, "brush.name", PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description);
+
+            RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
+
+            RegisterApiProperty(script, "canvas.scale", App.ActiveCanvas.Pose.scale);
+            RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);
+        }
+
+        public static void SetStaticScriptContext(Script script)
+        {
+            RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
+            RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
+            RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
+            RegisterApiCommand(script, "draw.polygon", (Action<int, float, float>)ApiMethods.DrawPolygon);
+            RegisterApiCommand(script, "draw.text", (Action<string>)ApiMethods.Text);
+            RegisterApiCommand(script, "draw.svg", (Action<string>)ApiMethods.SvgPath);
+            RegisterApiCommand(script, "brush.type", (Action<string>)ApiMethods.Brush);
+
+            RegisterApiCommand(script, "color.addHsv", (Action<Vector3>)ApiMethods.AddColorHSV);
+            RegisterApiCommand(script, "color.addRgb", (Action<Vector3>)ApiMethods.AddColorRGB);
+            RegisterApiCommand(script, "color.setRgb", (Action<Vector3>)ApiMethods.SetColorRGB);
+            RegisterApiCommand(script, "color.setHsv", (Action<Vector3>)ApiMethods.SetColorHSV);
+            RegisterApiCommand(script, "color.setHtml", (Action<string>)ApiMethods.SetColorHTML);
+
+            RegisterApiCommand(script, "brush.sizeSet", (Action<float>)ApiMethods.BrushSizeSet);
+            RegisterApiCommand(script, "brush.sizeAdd", (Action<float>)ApiMethods.BrushSizeAdd);
+            RegisterApiCommand(script, "draw.camerapath", (Action<int>)ApiMethods.DrawCameraPath);
+
+            RegisterApiCommand(script, "listenfor.strokes", (Action<string>)ApiMethods.AddListener);
+            RegisterApiCommand(script, "showfolder.scripts", (Action)ApiMethods.OpenUserScriptsFolder);
+            RegisterApiCommand(script, "showfolder.exports", (Action)ApiMethods.OpenExportFolder);
+            RegisterApiCommand(script, "spectator.moveTo", (Action<Vector3>)ApiMethods.MoveSpectatorTo);
+            RegisterApiCommand(script, "user.moveTo", (Action<Vector3>)ApiMethods.MoveUserTo);
+            RegisterApiCommand(script, "spectator.moveBy", (Action<Vector3>)ApiMethods.MoveSpectatorBy);
+            RegisterApiCommand(script, "user.moveBy", (Action<Vector3>)ApiMethods.MoveUserBy);
+            RegisterApiCommand(script, "spectator.turnY", (Action<float>)ApiMethods.SpectatorYaw);
+            RegisterApiCommand(script, "spectator.turnX", (Action<float>)ApiMethods.SpectatorPitch);
+            RegisterApiCommand(script, "spectator.turnY", (Action<float>)ApiMethods.SpectatorRoll);
+            RegisterApiCommand(script, "spectator.direction", (Action<Vector3>)ApiMethods.SpectatorDirection);
+            RegisterApiCommand(script, "spectator.lookAt", (Action<Vector3>)ApiMethods.SpectatorLookAt);
+            RegisterApiCommand(script, "spectator.mode", (Action<string>)ApiMethods.SpectatorMode);
+            RegisterApiCommand(script, "spectator.show", (Action<string>)ApiMethods.SpectatorShow);
+            RegisterApiCommand(script, "spectator.hide", (Action<string>)ApiMethods.SpectatorHide);
+
+            // Turtle based drawing isn't currently relevant to the runtime API
+            // RegisterApiCommand(script, "brush.move.to", (Action<Vector3>)ApiMethods.BrushMoveTo);
+            // RegisterApiCommand(script, "brush.move.by", (Action<Vector3>)ApiMethods.BrushMoveBy);
+            // RegisterApiCommand(script, "brush.move", (Action<float>)ApiMethods.BrushMove);
+            // RegisterApiCommand(script, "brush.draw", (Action<float>)ApiMethods.BrushDraw);
+            // RegisterApiCommand(script, "brush.turn.y", (Action<float>)ApiMethods.BrushYaw);
+            // RegisterApiCommand(script, "brush.turn.x", (Action<float>)ApiMethods.BrushPitch);
+            // RegisterApiCommand(script, "brush.turn.z", (Action<float>)ApiMethods.BrushRoll);
+            // RegisterApiCommand(script, "brush.look.at", (Action<Vector3>)ApiMethods.BrushLookAt);
+            // RegisterApiCommand(script, "brush.look.forwards", (Action)ApiMethods.BrushLookForwards);
+            // RegisterApiCommand(script, "brush.look.up", (Action)ApiMethods.BrushLookUp);
+            // RegisterApiCommand(script, "brush.look.down", (Action)ApiMethods.BrushLookDown);
+            // RegisterApiCommand(script, "brush.look.left", (Action)ApiMethods.BrushLookLeft);
+            // RegisterApiCommand(script, "brush.look.right", (Action)ApiMethods.BrushLookRight);
+            // RegisterApiCommand(script, "brush.look.backwards", (Action)ApiMethods.BrushLookBackwards);
+            // RegisterApiCommand(script, "brush.home.reset", (Action)ApiMethods.BrushHome);
+            // RegisterApiCommand(script, "brush.home.set", (Action)ApiMethods.BrushSetHome);
+            // RegisterApiCommand(script, "brush.transform.push", (Action)ApiMethods.BrushTransformPush);
+            // RegisterApiCommand(script, "brush.transform.pop", (Action)ApiMethods.BrushTransformPop);
+            RegisterApiCommand(script, "debug.brush", (Action)ApiMethods.DebugBrush);
+            RegisterApiCommand(script, "image.import", (Action<string>)ApiMethods.ImportImage);
+            RegisterApiCommand(script, "environmentType", (Action<string>)ApiMethods.SetEnvironment);
+            RegisterApiCommand(script, "layer.add", (Action)ApiMethods.AddLayer);
+            RegisterApiCommand(script, "layer.clear", (Action<int>)ApiMethods.ClearLayer);
+            RegisterApiCommand(script, "layer.delete", (Action<int>)ApiMethods.DeleteLayer);
+            RegisterApiCommand(script, "layer.squash", (Action<int, int>)ApiMethods.SquashLayer);
+            RegisterApiCommand(script, "layer.activate", (Action<int>)ApiMethods.ActivateLayer);
+            RegisterApiCommand(script, "layer.show", (Action<int>)ApiMethods.ShowLayer);
+            RegisterApiCommand(script, "layer.hide", (Action<int>)ApiMethods.HideLayer);
+            RegisterApiCommand(script, "layer.toggle", (Action<int>)ApiMethods.ToggleLayer);
+            RegisterApiCommand(script, "model.select", (Action<int>)ApiMethods.SelectModel);
+            RegisterApiCommand(script, "model.position", (Action<int, Vector3>)ApiMethods.PositionModel);
+            RegisterApiCommand(script, "brush.forcepainting", (Action<bool>)ApiMethods.ForcePainting);
+            RegisterApiCommand(script, "image.position", (Action<int, Vector3>)ApiMethods.PositionImage);
+            RegisterApiCommand(script, "guide.add", (Action<string>)ApiMethods.AddGuide);
+
+            RegisterApiCommand(script, "save.overwrite", (Action)ApiMethods.SaveOverwrite);
+            RegisterApiCommand(script, "save.new", (Action)ApiMethods.SaveNew);
+            RegisterApiCommand(script, "export.all", (Action)ApiMethods.ExportAll);
+            RegisterApiCommand(script, "drafting.visible", (Action)ApiMethods.DraftingVisible);
+            RegisterApiCommand(script, "drafting.transparent", (Action)ApiMethods.DraftingTransparent);
+            RegisterApiCommand(script, "drafting.hidden", (Action)ApiMethods.DraftingHidden);
+
+            // TODO Fix name collision with "load"
+            // RegisterApiCommand(script, "load.user", (Action<int>)ApiMethods.LoadUser);
+            // RegisterApiCommand(script, "load.curated", (Action<int>)ApiMethods.LoadCurated);
+            // RegisterApiCommand(script, "load.liked", (Action<int>)ApiMethods.LoadLiked);
+            // RegisterApiCommand(script, "load.drive", (Action<int>)ApiMethods.LoadDrive);
+            // RegisterApiCommand(script, "load.named", (Action<string>)ApiMethods.LoadNamedFile);
+            // And "new"
+            // RegisterApiCommand(script, "new", (Action)ApiMethods.NewSketch);
+
+            RegisterApiCommand(script, "merge.named", (Action<string>)ApiMethods.MergeNamedFile);
+            RegisterApiCommand(script, "symmetry.mirror", (Action)ApiMethods.SymmetryPlane);
+            RegisterApiCommand(script, "symmetry.doublemirror", (Action)ApiMethods.SymmetryFour);
+            RegisterApiCommand(script, "twohandeded.toggle", (Action)ApiMethods.SymmetryTwoHanded);
+            RegisterApiCommand(script, "straightedge.toggle", (Action)ApiMethods.StraightEdge);
+            RegisterApiCommand(script, "autoorient.toggle", (Action)ApiMethods.AutoOrient);
+            RegisterApiCommand(script, "undo", (Action)ApiMethods.Undo);
+            RegisterApiCommand(script, "redo", (Action)ApiMethods.Redo);
+            RegisterApiCommand(script, "panels.reset", (Action)ApiMethods.ResetAllPanels);
+            RegisterApiCommand(script, "sketch.origin", (Action)ApiMethods.SketchOrigin);
+            RegisterApiCommand(script, "viewonly.toggle", (Action)ApiMethods.ViewOnly);
+            RegisterApiCommand(script, "spectator.toggle", (Action)ApiMethods.ToggleSpectator);
+            RegisterApiCommand(script, "spectator.on", (Action)ApiMethods.EnableSpectator);
+            RegisterApiCommand(script, "spectator.off", (Action)ApiMethods.DisableSpectator);
+            RegisterApiCommand(script, "autosimplify.toggle", (Action)ApiMethods.ToggleAutosimplification);
+            RegisterApiCommand(script, "export.current", (Action)ApiMethods.ExportRaw);
+            RegisterApiCommand(script, "showfolder.sketch", (Action<int>)ApiMethods.ShowSketchFolder);
+            RegisterApiCommand(script, "guides.disable", (Action)ApiMethods.StencilsDisable);
+            RegisterApiCommand(script, "disco", (Action)ApiMethods.Disco);
+            RegisterApiCommand(script, "selection.duplicate", (Action)ApiMethods.Duplicate);
+            RegisterApiCommand(script, "selection.group", (Action)ApiMethods.ToggleGroupStrokesAndWidgets);
+            RegisterApiCommand(script, "export.selected", (Action)ApiMethods.SaveModel);
+            RegisterApiCommand(script, "camerapath.render", (Action)ApiMethods.RenderCameraPath);
+            RegisterApiCommand(script, "profiling.toggle", (Action)ApiMethods.ToggleProfiling);
+            RegisterApiCommand(script, "settings.toggle", (Action)ApiMethods.ToggleSettings);
+            RegisterApiCommand(script, "mirror.summon", (Action)ApiMethods.SummonMirror);
+            RegisterApiCommand(script, "selection.invert", (Action)ApiMethods.InvertSelection);
+
+            // Another collision?
+            // RegisterApiCommand(script, "select.all", (Action)ApiMethods.SelectAll);
+
+            RegisterApiCommand(script, "selection.flip", (Action)ApiMethods.FlipSelection);
+            RegisterApiCommand(script, "postprocessing.toggle", (Action)ApiMethods.ToggleCameraPostEffects);
+            RegisterApiCommand(script, "watermark.toggle", (Action)ApiMethods.ToggleWatermark);
+            RegisterApiCommand(script, "camerapath.togglevisuals", (Action)ApiMethods.ToggleCameraPathVisuals);
+            RegisterApiCommand(script, "camerapath.togglepreview", (Action)ApiMethods.ToggleCameraPathPreview);
+            RegisterApiCommand(script, "camerapath.delete", (Action)ApiMethods.DeleteCameraPath);
+            RegisterApiCommand(script, "camerapath.record", (Action)ApiMethods.RecordCameraPath);
+
+            RegisterApiCommand(script, "stroke.delete", (Action<int>)ApiMethods.DeleteStroke);
+            RegisterApiCommand(script, "stroke.select", (Action<int>)ApiMethods.SelectStroke);
+            RegisterApiCommand(script, "strokes.select", (Action<int, int>)ApiMethods.SelectStrokes);
+            RegisterApiCommand(script, "selection.recolor", (Action)ApiMethods.RecolorSelection);
+            RegisterApiCommand(script, "selection.rebrush", (Action)ApiMethods.RebrushSelection);
+            RegisterApiCommand(script, "selection.resize", (Action)ApiMethods.ResizeSelection);
+            RegisterApiCommand(script, "selection.trim", (Action<int>)ApiMethods.TrimSelection);
+            RegisterApiCommand(script, "selection.pointsPerlin", (Action<string, Vector3>)ApiMethods.PerlinNoiseSelection);
+            RegisterApiCommand(script, "stroke.pointsQuantize", (Action<Vector3>)ApiMethods.QuantizeSelection);
+            RegisterApiCommand(script, "stroke.join", (Action)ApiMethods.JoinStroke);
+            RegisterApiCommand(script, "strokes.join", (Action<int, int>)ApiMethods.JoinStrokes);
+            RegisterApiCommand(script, "stroke.add", (Action<int>)ApiMethods.AddPointToStroke);
+        }
+
+        private static void RegisterApiProperty(Script script, string cmd, object action)
+        {
+            _RegisterToApi(script, cmd, action);
+#if UNITY_EDITOR
+            if (Application.isEditor && AutoCompleteEntries!=null)
+            {
+                AutoCompleteEntries.Add($"{cmd} = nil");
+            }
+#endif
+        }
+
+        public static void RegisterApiCommand(Script script, string cmd, object action)
+        {
+            _RegisterToApi(script, cmd, action);
+#if UNITY_EDITOR
+            if (Application.isEditor && AutoCompleteEntries!=null)
+            {
+                var pars = ApiManager.Instance.GetRuntimeCommandInfo(cmd).paramInfo;
+                AutoCompleteEntries.Add($"function {cmd}({pars}) end");
+            }
+#endif
+        }
+
+        public static void _RegisterToApi(Script script, string cmd, object action)
+        {
+            var parts = cmd.Split(".");
+            Table currentTable = script.Globals;
+            for (var index = 0; index < parts.Length; index++)
+            {
+                var part = parts[index];
+                if (index < parts.Length - 1)
+                {
+                    if (Equals(currentTable.Get(part), DynValue.Nil))
+                    {
+                        currentTable.Set(part, DynValue.NewTable(new Table(script)));
+                    }
+                    currentTable = currentTable.Get(part).Table;
+                }
+                else
+                {
+                    currentTable[part] = action;
+                }
+            }
         }
 
         public Script GetActiveScript(ApiCategory category)
@@ -216,7 +408,7 @@ namespace TiltBrush
 
         private DynValue _CallScript(Script script, string fnName)
         {
-            SetScriptContext(script);
+            SetStaticScriptContext(script);
             Closure activeFunction = script.Globals.Get(fnName).Function;
             if (activeFunction != null)
             {
@@ -286,16 +478,18 @@ namespace TiltBrush
 
         private void InitScript(Script script)
         {
-            script.Globals["Mathf"] = typeof(UnityMathf);
             // Redirect "print"
             script.Options.DebugPrint = s => { Debug.Log(s); };
 
+            // // Automatic reg
             // var libraries = Resources.LoadAll<TextAsset>("LuaLibraries");
             // foreach (var library in libraries)
             // {
             //     Debug.Log($"Loaded lua library {library.name}");
             //     script.DoString(library.text);
             // }
+
+            script.Globals["Mathf"] = typeof(UnityMathf);
 
             // UserData.RegisterType<Vector3>();
             // UserData.RegisterType<Vector2>();
@@ -310,6 +504,7 @@ namespace TiltBrush
                 // Ensure the value is set
                 GetOrSetWidgetCurrentValue(script, config);
             }
+            SetStaticScriptContext(script);
             _CallScript(script, "Init");
         }
 

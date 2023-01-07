@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -437,7 +438,20 @@ namespace TiltBrush
             }
             string paramInfo = String.Join(", ", paramInfoText);
             return (paramInfo, endpoints[endpoint].Description);
+        }
 
+        public (string paramInfo, string Description) GetRuntimeCommandInfo(string luaName)
+        {
+            var paramInfoText = new List<string>();
+            // Convert lua name to Http Api name (split camel case parts and add ".")
+            string[] parts = Regex.Split(luaName, @"(?<!^)(?=[A-Z])");
+            string endpoint = string.Join(".", parts).ToLower();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                paramInfoText.Add($"{param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
         }
 
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
