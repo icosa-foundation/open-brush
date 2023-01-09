@@ -39,7 +39,8 @@ namespace TiltBrush
         LogitechPen,
         Cosmos,
         Neo3,
-        Phoenix
+        Phoenix,
+        Focus
     }
 
     //
@@ -427,7 +428,8 @@ namespace TiltBrush
                 style == ControllerStyle.Knuckles ||
                 style == ControllerStyle.Cosmos ||
                 style == ControllerStyle.Neo3 ||
-                style == ControllerStyle.Phoenix;
+                style == ControllerStyle.Phoenix ||
+                style == ControllerStyle.Focus;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -512,6 +514,9 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Phoenix:
                     controlsPrefab = m_UnityXRPhoenixControlsPrefab;
+                    break;
+                case ControllerStyle.Focus:
+                    controlsPrefab = m_UnityXRQuestControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -705,7 +710,7 @@ namespace TiltBrush
             }
             else if (device.name.StartsWith("WVR_CR_"))
             {
-                SetControllerStyle(ControllerStyle.OculusTouch);
+                SetControllerStyle(ControllerStyle.Focus);
             }
             else
             {

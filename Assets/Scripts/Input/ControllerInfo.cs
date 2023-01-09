@@ -14,7 +14,6 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using HTC.UnityPlugin.Vive;
 
 namespace TiltBrush
 {
@@ -359,54 +358,36 @@ namespace TiltBrush
         /// Returns the same value as GetVrInput(VrControllerInput.Trigger)
         public bool IsTrigger()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var trigger = ViveInput.GetPress(role, ControllerButton.Trigger);
-            return trigger;
             return GetVrInput(VrInput.Trigger);
         }
 
         /// Returns the same value as GetVrInputDown(VrControllerInput.Trigger)
         public bool IsTriggerDown()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var triggerDown = ViveInput.GetPressDown(role, ControllerButton.Trigger);
-            return triggerDown;
             return GetVrInputDown(VrInput.Trigger);
         }
 
         /// Returns the same value as GetVrInputDown(VrControllerInput.Trigger)
         public bool IsTriggerUp()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var triggerUp = ViveInput.GetPressUp(role, ControllerButton.Trigger);
-            return triggerUp;
             return GetVrInputUp(VrInput.Trigger);
         }
 
         /// Returns the same value as GetVrInputTouch(VrControllerInput.Touchpad)
         public bool GetPadTouch()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var padTouch = ViveInput.GetPress(role, ControllerButton.PadTouch);
-            return padTouch;
             return GetVrInputTouch(VrInput.Touchpad);
         }
 
         /// Returns the same value as GetVrInputTouch(VrControllerInput.Thumbstick)
         public bool GetThumbStickTouch()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var thumbStickTouch = ViveInput.GetPress(role, ControllerButton.PadTouch);
-            return thumbStickTouch;
             return GetVrInputTouch(VrInput.Thumbstick);
         }
 
         /// Returns the same value as GetVrInput(VrControllerInput.Grip)
         public bool GetControllerGrip()
         {
-            var role = m_Transform.name.Contains("brush") ? HandRole.RightHand : HandRole.LeftHand;
-            var grip = ViveInput.GetPress(role, ControllerButton.Grip);
-            return grip;
             return GetVrInput(VrInput.Grip);
         }
 

@@ -161,11 +161,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""c207a158-9220-4986-a6e9-28227c98dd3c"",
+                    ""path"": ""{RightHand}/{Trigger}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""c70e565b-1c0f-4d60-b284-ccdec2fd856d"",
                     ""path"": ""<XRController>{RightHand}/triggerPressed"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d7a2f878-a96f-4970-9aa9-222dad207472"",
+                    ""path"": ""{RightHand}/{TriggerButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""TriggerButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -194,11 +216,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""a3bc1193-46d3-4cbc-a08e-c4215139fd57"",
+                    ""path"": ""{RightHand}/{Primary2DAxis}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""d172b06b-b295-4491-aabb-d67cdb987182"",
                     ""path"": ""<XRController>{RightHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9cae6baa-c000-4e1a-a1fe-bd5bbba2b801"",
+                    ""path"": ""{RightHand}/{Grip}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -220,7 +264,18 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Vive Focus Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e83b1f4d-e0cb-4b4d-bbd2-31a56495d94e"",
+                    ""path"": ""{RightHand}/{GripButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -238,11 +293,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""4873344c-1ff8-4d59-ac54-6a4c7f2e9f1c"",
+                    ""path"": ""{RightHand}/{PrimaryTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PrimaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""6bd04bcc-1fec-4fa2-9e42-aa42f0219a65"",
                     ""path"": ""<XRController>{RightHand}/secondaryTouched"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""SecondaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6d33eea9-1383-47ae-93a1-6b724ed0f6b6"",
+                    ""path"": ""{RightHand}/{SecondaryTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""SecondaryTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -260,11 +337,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""befb208b-3f1d-440d-aee4-4dd5d81866cf"",
+                    ""path"": ""{RightHand}/{TriggerTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""TriggerTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""59a64469-581c-4de0-8720-ce44496452c6"",
                     ""path"": ""<XRController>{RightHand}/secondaryButton"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5c5e37c9-0056-44f7-9339-5b97a1365963"",
+                    ""path"": ""{RightHand}/{SecondaryButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -281,26 +380,15 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""Pico Fake Touch Stick"",
-                    ""id"": ""947ac4f7-75e5-4adc-90db-67313e74f32e"",
-                    ""path"": ""PicoFakeTouchStick"",
+                    ""name"": """",
+                    ""id"": ""ec9cc573-8c8d-484d-a1dd-236547c363fb"",
+                    ""path"": ""{RightHand}/{PrimaryButton}"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""PadTouch"",
-                    ""isComposite"": true,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": ""axis"",
-                    ""id"": ""028c52b4-043e-4ab9-beb2-759e9d934af4"",
-                    ""path"": ""<PXR_Controller>{RightHand}/thumbstick"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""PadTouch"",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
-                    ""isPartOfComposite"": true
+                    ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
@@ -336,6 +424,39 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
+                    ""name"": ""Pico Fake Touch Stick"",
+                    ""id"": ""947ac4f7-75e5-4adc-90db-67313e74f32e"",
+                    ""path"": ""PicoFakeTouchStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""axis"",
+                    ""id"": ""028c52b4-043e-4ab9-beb2-759e9d934af4"",
+                    ""path"": ""<PXR_Controller>{RightHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a201822c-0081-4773-974f-6da19bf52e18"",
+                    ""path"": ""{RightHand}/{Primary2DAxisTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
                     ""name"": """",
                     ""id"": ""25445e46-6ad3-4aef-b447-f33be3ea01ee"",
                     ""path"": ""<XRController>{RightHand}/thumbstickClicked"",
@@ -353,6 +474,17 @@ namespace TiltBrush
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f872e9db-c003-4052-891d-50f8d6580179"",
+                    ""path"": ""{RightHand}/{Primary2DAxisClick}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""PadButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -397,6 +529,17 @@ namespace TiltBrush
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""403f6434-8aab-4247-9667-184bafb7c153"",
+                    ""path"": ""{RightHand}/{Primary2DAxis}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""PadAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -616,11 +759,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""1148ba1b-1bbe-49d4-a4bd-e07cdf42daae"",
+                    ""path"": ""{LeftHand}/{Trigger}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""0628fcd0-02fd-46a5-908d-be872ee44fc1"",
                     ""path"": ""<XRController>{LeftHand}/triggerPressed"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""136e2ba9-4440-4750-8f4a-58a235c32805"",
+                    ""path"": ""{LeftHand}/{TriggerButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""TriggerButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -649,11 +814,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""a6c0dd63-2527-4fe1-ae2b-d260f73d5e1c"",
+                    ""path"": ""{LeftHand}/{Primary2DAxis}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""e29be70f-1153-420f-926c-927b472a4610"",
                     ""path"": ""<XRController>{LeftHand}/grip"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Vive Focus Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""36a92efb-7eb6-433c-a173-2a1306ef6416"",
+                    ""path"": ""{LeftHand}/{Grip}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""GripAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -664,7 +851,18 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/gripPressed"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller"",
+                    ""groups"": ""HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller;Vive Focus Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9efcac7e-8eca-4ba9-81ca-47b39ebace97"",
+                    ""path"": ""{LeftHand}/{GripButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -682,11 +880,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""5cbebdd9-c87c-452d-bcac-060a355866c3"",
+                    ""path"": ""{LeftHand}/{PrimaryTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PrimaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""81341afd-de4e-480d-955c-6187281e6042"",
                     ""path"": ""<XRController>{LeftHand}/secondaryTouched"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""SecondaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""dbbb9724-ff42-4110-a99c-14e6de154ce1"",
+                    ""path"": ""{LeftHand}/{SecondaryTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""SecondaryTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -704,6 +924,17 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""cd40bd09-6632-4e5f-94a8-ec2ac0c44277"",
+                    ""path"": ""{LeftHand}/{TriggerTouch}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""TriggerTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""7904b06f-c66c-4f23-8f3c-0d7b0048ba88"",
                     ""path"": ""<XRController>{LeftHand}/secondaryButton"",
                     ""interactions"": """",
@@ -715,11 +946,33 @@ namespace TiltBrush
                 },
                 {
                     ""name"": """",
+                    ""id"": ""a61e2d4e-bdb5-484f-bd83-4abd86add8b4"",
+                    ""path"": ""{LeftHand}/{SecondaryButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""7df85a5a-db19-43e1-8a23-10289ec655db"",
                     ""path"": ""<XRController>{LeftHand}/primaryButton"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5d845dde-f3b9-4a16-9b36-94aef717f0f5"",
+                    ""path"": ""{LeftHand}/{PrimaryButton}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -758,6 +1011,17 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
+                    ""name"": ""axis"",
+                    ""id"": ""08719879-9565-438f-97f1-3a8a2539e9f0"",
+                    ""path"": ""<PXR_Controller>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": ""Pico Fake Touch Stick"",
                     ""id"": ""480c435e-a84d-47ad-9a9a-228de2e608a0"",
                     ""path"": ""PicoFakeTouchStick"",
@@ -769,15 +1033,15 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""axis"",
-                    ""id"": ""08719879-9565-438f-97f1-3a8a2539e9f0"",
-                    ""path"": ""<PXR_Controller>{LeftHand}/thumbstick"",
+                    ""name"": """",
+                    ""id"": ""249ca541-ebed-4db2-bc95-587560b8e7c5"",
+                    ""path"": ""{LeftHand}/{Primary2DAxisTouch}"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""PadTouch"",
                     ""isComposite"": false,
-                    ""isPartOfComposite"": true
+                    ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
@@ -841,6 +1105,17 @@ namespace TiltBrush
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a072f326-9063-4301-8255-fb152c3fcac7"",
+                    ""path"": ""{LeftHand}/{Primary2DAxis}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
                     ""action"": ""ThumbAxis"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -932,6 +1207,17 @@ namespace TiltBrush
                     ""action"": ""GripButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b5153385-51b4-4006-9e6c-28e539a5870f"",
+                    ""path"": ""{LeftHand}/{Primary2DAxisClick}"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Vive Focus Controller"",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -987,6 +1273,17 @@ namespace TiltBrush
             ""devices"": [
                 {
                     ""devicePath"": ""<PXR_Controller>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Vive Focus Controller"",
+            ""bindingGroup"": ""Vive Focus Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<VIUSyntheticDeviceLayoutControllerRole>"",
                     ""isOptional"": false,
                     ""isOR"": false
                 }
@@ -1380,6 +1677,15 @@ namespace TiltBrush
             {
                 if (m_PicoControllerSchemeIndex == -1) m_PicoControllerSchemeIndex = asset.FindControlSchemeIndex("Pico Controller");
                 return asset.controlSchemes[m_PicoControllerSchemeIndex];
+            }
+        }
+        private int m_ViveFocusControllerSchemeIndex = -1;
+        public InputControlScheme ViveFocusControllerScheme
+        {
+            get
+            {
+                if (m_ViveFocusControllerSchemeIndex == -1) m_ViveFocusControllerSchemeIndex = asset.FindControlSchemeIndex("Vive Focus Controller");
+                return asset.controlSchemes[m_ViveFocusControllerSchemeIndex];
             }
         }
         public interface IBrushActions
