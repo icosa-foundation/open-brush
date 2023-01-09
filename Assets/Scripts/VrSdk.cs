@@ -668,7 +668,7 @@ namespace TiltBrush
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
-            if (device.name.Contains("Oculus Touch") || device.name.StartsWith("WVR_CR_"))
+            if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
             }
@@ -702,6 +702,10 @@ namespace TiltBrush
                         break;
                 }
 #endif
+            }
+            else if (device.name.StartsWith("WVR_CR_"))
+            {
+                SetControllerStyle(ControllerStyle.OculusTouch);
             }
             else
             {

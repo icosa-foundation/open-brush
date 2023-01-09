@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   preferedStereoRenderingPath: 0
   useDoubleWidth: 0
-  useRenderMask: 0
+  useRenderMask: 1
   enableTimeWarpStabilizedMode: 2
   adaptiveQualityMode: 2
   AQ_SendQualityEvent: 1

@@ -531,7 +531,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -10649,6 +10649,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.5
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -12863,6 +12864,7 @@ MonoBehaviour:
   m_ShowDuration: 0
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -14095,6 +14097,7 @@ MonoBehaviour:
   m_ShowDuration: 0.2
   m_GrabDistance: 0.4
   m_CollisionRadius: 1.2
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -29227,6 +29230,7 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 0.35
+  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 1
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -31641,7 +31645,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -32388,7 +32392,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
