@@ -66,6 +66,7 @@ static class BuildTiltBrush
     public class TiltBuildOptions
     {
         public bool AutoProfile;
+        public bool ForceExperimentalDefault;
         public bool Il2Cpp;
         public BuildTarget Target;
         public XrSdkMode XrSdk;
@@ -101,6 +102,7 @@ static class BuildTiltBrush
     const string kMenuMono = "Open Brush/Build/Runtime: Mono";
     const string kMenuIl2cpp = "Open Brush/Build/Runtime: IL2CPP";
     const string kMenuAutoProfile = "Open Brush/Build/Auto Profile";
+    const string kMenuForceExperimentalDefault = "Open Brush/Build/Force Experimental by Default";
 
     const string kBuildCopyDir = "BuildCopy";
     private static string[] kBuildDirs = { "Assets", "Packages", "ProjectSettings", "Support" };
@@ -265,6 +267,17 @@ static class BuildTiltBrush
         }
     }
 
+    // Gui setting for "Auto Profile" checkbox
+    public static bool GuiForceExperimentalDefault
+    {
+        get => EditorPrefs.GetBool(kMenuForceExperimentalDefault, false);
+        set
+        {
+            EditorPrefs.SetBool(kMenuForceExperimentalDefault, value);
+            Menu.SetChecked(kMenuForceExperimentalDefault, value);
+        }
+    }
+
     public static bool GuiRuntimeIl2cpp
     {
         get => EditorPrefs.GetBool(kMenuIl2cpp, false);
@@ -287,6 +300,7 @@ static class BuildTiltBrush
         return new TiltBuildOptions
         {
             AutoProfile = GuiAutoProfile,
+            ForceExperimentalDefault = GuiForceExperimentalDefault,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
             XrSdk = GuiSelectedSdk,
@@ -573,6 +587,23 @@ static class BuildTiltBrush
         return true;
     }
 
+    [MenuItem(kMenuForceExperimentalDefault, isValidateFunction: false)]
+    static void MenuItem_ForceExperimentalDefault()
+    {
+        GuiForceExperimentalDefault = !GuiForceExperimentalDefault;
+        if (GuiForceExperimentalDefault)
+        {
+            GuiDevelopment = true;
+        }
+    }
+
+    [MenuItem(kMenuForceExperimentalDefault, isValidateFunction: true)]
+    static bool MenuItem_ForceExperimentalDefault_Validate()
+    {
+        Menu.SetChecked(kMenuForceExperimentalDefault, GuiForceExperimentalDefault);
+        return true;
+    }
+
     static T AsEnum<T>(string s, T defaultValue)
     {
         try
@@ -761,6 +792,10 @@ static class BuildTiltBrush
                 else if (args[i] == "--btb-autoprofile")
                 {
                     tiltOptions.AutoProfile = true;
+                }
+                else if (args[i] == "-btb-force-experimental-default")
+                {
+                    tiltOptions.ForceExperimentalDefault = true;
                 }
                 else if (args[i] == "-btb-keystore-name")
                 {
@@ -1414,6 +1449,7 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
+            tiltOptions.ForceExperimentalDefault ? "FORCE_EXPERIMENTAL_DEFAULT" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
@@ -1951,6 +1987,7 @@ static class BuildTiltBrush
         if (tiltOptions.Il2Cpp) { args.Append("-btb-il2cpp "); }
         if (!string.IsNullOrEmpty(stamp)) { args.AppendFormat("-btb-stamp {0} ", stamp); }
         if (tiltOptions.AutoProfile) { args.Append("-btb-autoprofile "); }
+        if (tiltOptions.ForceExperimentalDefault) { args.Append("-btb-force-experimental-default"); }
         args.AppendFormat("-btb-out {0} ", location);
         if (!interactive) { args.Append("-quit "); }
 

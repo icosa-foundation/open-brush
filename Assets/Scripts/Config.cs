@@ -489,7 +489,11 @@ namespace TiltBrush
 
         public static bool IsExperimental
         {
-            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+            get =>
+#if FORCE_EXPERIMENTAL_DEFAULT
+                !PlayerPrefs.HasKey("ExperimentalMode") ||
+#endif
+                (PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1);
         }
 
         // Non-Static version of above
