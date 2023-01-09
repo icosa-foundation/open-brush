@@ -1283,7 +1283,7 @@ namespace TiltBrush
             ""bindingGroup"": ""Vive Focus Controller"",
             ""devices"": [
                 {
-                    ""devicePath"": ""<VIUSyntheticDeviceLayoutControllerRole>"",
+                    ""devicePath"": ""<XRController>"",
                     ""isOptional"": false,
                     ""isOR"": false
                 }
