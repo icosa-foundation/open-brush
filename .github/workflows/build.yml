@@ -125,6 +125,11 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+          - name: Windows Monoscopic
+            targetPlatform: StandaloneWindows64
+            vrsdk: Monoscopic
+            extraoptions: -btb-force-experimental-default
+            cache: Windows
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
