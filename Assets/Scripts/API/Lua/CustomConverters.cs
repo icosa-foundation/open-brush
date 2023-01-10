@@ -182,6 +182,13 @@ public static class LuaCustomConverters
             }
         );
 
+        Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<Color>),
+            dynVal =>
+            {
+                return dynVal.Table.Values.Select(x => x.ToObject<Color>()).ToList();
+            }
+        );
+
     }
 
 }

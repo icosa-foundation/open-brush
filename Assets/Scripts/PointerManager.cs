@@ -15,8 +15,8 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
+using MoonSharp.Interpreter;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -174,7 +174,6 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepthIncrement = 0.0001f;
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
-        private List<TrTransform> m_ScriptedMirrorTransforms;
         private List<Color> m_SymmetryPointerColors;
         private Vector2[] m_CustomMirrorDomain;
 
@@ -400,7 +399,6 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
-            m_ScriptedMirrorTransforms = new List<TrTransform>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -423,8 +421,6 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
             m_StraightEdgeProxyActive = false;
             m_StraightEdgeGesture = new CircleGesture();
-            App.Scene.MainCanvas.PoseChanged += OnActiveCanvasPoseChanged;
-
 
             if (m_SymmetryWidget)
             {
@@ -437,11 +433,6 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
-        }
-
-        private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
-        {
-            CalculateMirrorTransforms();
         }
 
         void Start()
@@ -763,6 +754,14 @@ namespace TiltBrush
                 }
                 trs_CS.Add(newTr_CS);
             }
+
+            var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
+            var luaColors = script.Globals.Get("Colors");
+            if (!Equals(luaColors, DynValue.Nil))
+            {
+                m_SymmetryPointerColors = luaColors.ToObject<List<Color>>();
+            }
+
             return trs_CS;
         }
 
@@ -898,43 +897,9 @@ namespace TiltBrush
             }
         }
 
-        public void CalculateMirrors()
-        {
-            CalculateMirrorTransforms();
-            CalculateMirrorColors();
-            CalculateMirrorPointers();
-        }
-
-        private void CalculateMirrorTransforms()
-        {
-            for (var i = 0; i < m_ScriptedMirrorTransforms.Count; i++)
-            {
-                float amount = i / (float)m_ScriptedMirrorTransforms.Count;
-                var m = m_ScriptedMirrorTransforms[i];
-                m_ScriptedMirrorTransforms[i] = m;
-            }
-            // XXXXXXXXXXXXXXXXX m_SymmetryPointerColors
-        }
 
         public void CalculateMirrorColors()
         {
-        }
-
-        public void CalculateMirrorPointers()
-        {
-            m_NumActivePointers = m_ScriptedMirrorTransforms.Count;
-            for (int i = 1; i < m_Pointers.Length; ++i)
-            {
-                var pointer = m_Pointers[i];
-                bool enabled = i < m_NumActivePointers;
-                pointer.m_UiEnabled = enabled;
-                pointer.m_Script.gameObject.SetActive(enabled);
-                pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
-                if (enabled)
-                {
-                    pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
-                }
-            }
         }
 
         void UpdateSymmetryPointerTransforms()
@@ -1366,6 +1331,11 @@ namespace TiltBrush
                                 canvas.transform.GetUniformScale());
                             break;
                     }
+                }
+
+                if (CurrentSymmetryMode==SymmetryMode.ScriptedSymmetryMode && m_SymmetryPointerColors!=null)
+                {
+                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                 }
 
                 script.CreateNewLine(
