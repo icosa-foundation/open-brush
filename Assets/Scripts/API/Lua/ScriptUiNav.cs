@@ -27,7 +27,8 @@ public class ScriptUiNav : MonoBehaviour
     public void Start()
     {
         textMesh = GetComponentInChildren<TextMeshPro>();
-        textMesh.text = LuaManager.Instance.GetScriptNames(ApiCategory)[0];
+        var names = LuaManager.Instance.GetScriptNames(ApiCategory);
+        if (names.Count > 0) textMesh.text = names[0];
     }
 
     public void ChangeScript(int increment)

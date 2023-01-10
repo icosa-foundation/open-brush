@@ -41,6 +41,12 @@ namespace TiltBrush
                     widget.gameObject.SetActive(true);
                     var config = kvs[index];
                     widget.name = config.Key.String;
+                    widget.SliderType = config.Value.Table.Get("type").String.ToLower() switch
+                    {
+                        "int" => SliderTypes.Int,
+                        "float" => SliderTypes.Float,
+                        _ => widget.SliderType
+                    };
                     widget.SetMin((float)config.Value.Table.Get("min").Number);
                     widget.SetMax((float)config.Value.Table.Get("max").Number);
                     widget.SetDescriptionText(config.Value.Table.Get("label").String);

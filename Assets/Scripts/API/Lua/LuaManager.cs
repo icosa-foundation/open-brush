@@ -215,6 +215,8 @@ namespace TiltBrush
             RegisterApiProperty(script, "brush.pressure", PointerManager.m_Instance.MainPointer.GetPressure());
             RegisterApiProperty(script, "brush.name", PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description);
             RegisterApiProperty(script, "brush.color", PointerManager.m_Instance.PointerColor);
+            RegisterApiProperty(script, "brush.distance", PointerManager.m_Instance.MainPointer.LineLength_CS);
+            RegisterApiProperty(script, "brush.speed", PointerManager.m_Instance.MainPointer.MovementSpeed);
             RegisterApiProperty(script, "brush.lastColorPicked", PointerManager.m_Instance.m_lastChosenColor);
 
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
