@@ -139,6 +139,49 @@ public static class LuaCustomConverters
             }
         );
 
+        // Color
+
+        Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(Color),
+            dynVal =>
+            {
+                Table table = dynVal.Table;
+                float r, g, b, a;
+                if (table.Keys.First().Type == DataType.String)
+                {
+                    // Named properties
+                    r = (float)table.Get("r").Number;
+                    g = (float)table.Get("g").Number;
+                    b = (float)table.Get("b").Number;
+                    a = (float)table.Get("a").Number;
+                }
+                else
+                {
+                    // Indexed properties
+                    r = (float)table.Get(1).Number;
+                    g = (float)table.Get(2).Number;
+                    b = (float)table.Get(3).Number;
+                    a = (float)table.Get(4).Number;
+                }
+                return new Color(r, g, b, a);
+            }
+        );
+
+        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Color>(
+            (script, color) =>
+            {
+                DynValue r = DynValue.NewNumber(color.r);
+                DynValue g = DynValue.NewNumber(color.g);
+                DynValue b = DynValue.NewNumber(color.b);
+                DynValue a = DynValue.NewNumber(color.a);
+                DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
+                dynVal.Table.Set("r", r);
+                dynVal.Table.Set("g", g);
+                dynVal.Table.Set("b", b);
+                dynVal.Table.Set("a", a);
+                return dynVal;
+            }
+        );
+
     }
 
 }
