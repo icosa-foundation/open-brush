@@ -162,7 +162,7 @@ namespace TiltBrush
         private SymmetryMode m_CurrentSymmetryMode;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
-        private Color m_lastChosenColor { get; set; }
+        public Color m_lastChosenColor { get; private set; }
         public Vector3 colorJitter { get; set; }
         public float sizeJitter { get; set; }
         public float positionJitter { get; set; }
@@ -174,6 +174,9 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepthIncrement = 0.0001f;
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
+        private List<TrTransform> m_ScriptedMirrorTransforms;
+        private List<Color> m_SymmetryPointerColors;
+        private Vector2[] m_CustomMirrorDomain;
 
         // ---- events
 
@@ -209,6 +212,7 @@ namespace TiltBrush
             {
                 ChangeAllPointerColorsDirectly(value);
                 m_lastChosenColor = value;
+                CalculateMirrorColors();
                 OnPointerColorChange();
             }
         }
@@ -396,6 +400,7 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
+            m_ScriptedMirrorTransforms = new List<TrTransform>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -418,6 +423,8 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
             m_StraightEdgeProxyActive = false;
             m_StraightEdgeGesture = new CircleGesture();
+            App.Scene.MainCanvas.PoseChanged += OnActiveCanvasPoseChanged;
+
 
             if (m_SymmetryWidget)
             {
@@ -430,6 +437,11 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
+        }
+
+        private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
+        {
+            CalculateMirrorTransforms();
         }
 
         void Start()
@@ -716,6 +728,11 @@ namespace TiltBrush
         public List<TrTransform> GetScriptedTransforms()
         {
             var result = LuaManager.Instance.CallActiveSymmetryScript();
+            if (result.Transforms.Count + 1 != m_NumActivePointers)
+            {
+                ChangeNumActivePointers(result.Transforms.Count + 1);
+            }
+
             var trs_CS = new List<TrTransform>();
 
             foreach (var resultTr in result.Transforms)
@@ -733,9 +750,13 @@ namespace TiltBrush
                         newTr_CS.translation += rAttachPoint_GS.position;
                         break;
                     case ScriptCoordSpace.Widget:
-                        newTr_CS = resultTr;
-                        var widget_CS = App.Scene.ActiveCanvas.AsCanvas[SymmetryWidget];
-                        newTr_CS *= widget_CS.inverse;
+                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                            var tr = resultTr;
+                            var translation = tr.translation;
+                            tr.translation = Vector3.zero;
+                            newTr_CS = tr.TransformBy(xfWidget);
+                            translation = tr.rotation * translation;
+                            newTr_CS.translation += translation;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -762,28 +783,37 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
                     var trs = GetScriptedTransforms();
-                    active = trs.Count;
+                    active = trs.Count + 1;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
             }
-            int maxUserPointers = m_Pointers.Length;
-            if (active > maxUserPointers)
+            if (m_NumActivePointers != active)
             {
-                throw new System.ArgumentException("Not enough pointers for mode");
+                ChangeNumActivePointers(active);
             }
 
             m_CurrentSymmetryMode = mode;
-            m_NumActivePointers = active;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
-            m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
+            m_SymmetryWidgetScript.Show(SymmetryModeEnabled);
             if (recordCommand)
             {
                 SketchMemoryScript.m_Instance.RecordCommand(
                     new SymmetryWidgetVisibleCommand(m_SymmetryWidgetScript));
             }
 
+            App.Switchboard.TriggerMirrorVisibilityChanged();
+        }
+
+        private void ChangeNumActivePointers(int num)
+        {
+            if (num > m_Pointers.Length)
+            {
+                Debug.LogWarning($"Not enough pointers for mode. {num} requested, {m_Pointers.Length} available");
+                num = m_Pointers.Length;
+            }
+            m_NumActivePointers = num;
             for (int i = 1; i < m_Pointers.Length; ++i)
             {
                 var pointer = m_Pointers[i];
@@ -796,8 +826,6 @@ namespace TiltBrush
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
             }
-
-            App.Switchboard.TriggerMirrorVisibilityChanged();
         }
 
         public void ResetSymmetryToHome()
@@ -852,10 +880,6 @@ namespace TiltBrush
                             // convert from canvas to world coords
                             scriptedTr *= App.Scene.Pose.inverse;
                         }
-                        if (Random.value > .5f)
-                        {
-                            return scriptedTr * xfMain;
-                        }
                         return scriptedTr;
                     }
 
@@ -871,6 +895,45 @@ namespace TiltBrush
                     }
                 default:
                     return xfMain;
+            }
+        }
+
+        public void CalculateMirrors()
+        {
+            CalculateMirrorTransforms();
+            CalculateMirrorColors();
+            CalculateMirrorPointers();
+        }
+
+        private void CalculateMirrorTransforms()
+        {
+            for (var i = 0; i < m_ScriptedMirrorTransforms.Count; i++)
+            {
+                float amount = i / (float)m_ScriptedMirrorTransforms.Count;
+                var m = m_ScriptedMirrorTransforms[i];
+                m_ScriptedMirrorTransforms[i] = m;
+            }
+            // XXXXXXXXXXXXXXXXX m_SymmetryPointerColors
+        }
+
+        public void CalculateMirrorColors()
+        {
+        }
+
+        public void CalculateMirrorPointers()
+        {
+            m_NumActivePointers = m_ScriptedMirrorTransforms.Count;
+            for (int i = 1; i < m_Pointers.Length; ++i)
+            {
+                var pointer = m_Pointers[i];
+                bool enabled = i < m_NumActivePointers;
+                pointer.m_UiEnabled = enabled;
+                pointer.m_Script.gameObject.SetActive(enabled);
+                pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
+                if (enabled)
+                {
+                    pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
+                }
             }
         }
 
@@ -923,14 +986,15 @@ namespace TiltBrush
                     {
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var trs = GetScriptedTransforms();
-                        for (int i = 1; i < m_NumActivePointers; ++i)
+                        int pointerIndex = 1;
+                        foreach (var tr in trs)
                         {
-                            var tr = trs[i - 1];
                             // convert from canvas to world coords
                             // tr *= App.Scene.Pose.inverse;
                             // Apply the transform to the pointer
                             var tmp = tr * pointer0_GS; // Work around 2018.3.x Mono parse bug
-                            tmp.ToTransform(m_Pointers[i].m_Script.transform);
+                            tmp.ToTransform(m_Pointers[pointerIndex].m_Script.transform);
+                            pointerIndex++;
                         }
                         break;
                     }
@@ -1143,18 +1207,27 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.RecordingInput;
             WidgetManager.m_Instance.WidgetsDormant = true;
         }
+
         public Color GenerateJitteredColor(float colorLuminanceMin)
         {
-            Color.RGBToHSV(m_lastChosenColor, out var h, out var s, out var v);
-            return ColorPickerUtils.ClampLuminance(
-                Random.ColorHSV(
-                    h - colorJitter.x, h + colorJitter.x,
-                    s - colorJitter.y, s + colorJitter.y,
-                    v - colorJitter.z, v + colorJitter.z
-                ),
-                colorLuminanceMin
+            return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);
+        }
+        public Color GenerateJitteredColor(Color currentColor, float colorLuminanceMin)
+        {
+            return ColorPickerUtils.ClampLuminance(CalculateJitteredColor(currentColor), colorLuminanceMin);
+        }
+
+
+        public Color CalculateJitteredColor(Color currentColor)
+        {
+            Color.RGBToHSV(currentColor, out var h, out var s, out var v);
+            return Random.ColorHSV(
+                h - colorJitter.x, h + colorJitter.x,
+                s - colorJitter.y, s + colorJitter.y,
+                v - colorJitter.z, v + colorJitter.z
             );
         }
+
 
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
         {
@@ -1310,7 +1383,6 @@ namespace TiltBrush
 
             // Update other pointers.
             UpdateSymmetryPointerTransforms();
-
             InitiateLine(false);
         }
 

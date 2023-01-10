@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CircularBuffer;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
@@ -34,6 +35,7 @@ namespace TiltBrush
         private static string DocumentsDirectory => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Open Brush");
         private static string ScriptsDirectory => Path.Combine(DocumentsDirectory, "Scripts");
         public List<ApiCategory> ApiCategories => Enum.GetValues(typeof(ApiCategory)).Cast<ApiCategory>().ToList();
+        private CircularBuffer<TrTransform> m_PointerBuffer;
 
         public enum ApiCategory
         {
@@ -100,6 +102,7 @@ namespace TiltBrush
 
         private void Start()
         {
+            m_PointerBuffer = new CircularBuffer<TrTransform>(512);
             m_ScriptPathsToUpdate = new List<string>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
@@ -122,6 +125,11 @@ namespace TiltBrush
                 }
             }
             m_ScriptPathsToUpdate.Clear();
+
+            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            var attach_CS = App.Scene.ActiveCanvas.AsCanvas[rAttachPoint];
+            attach_CS.rotation *= Quaternion.Euler(new Vector3(0, 180, 0));
+            m_PointerBuffer.PushFront(attach_CS);
         }
 
         public void LoadScripts()
@@ -172,15 +180,14 @@ namespace TiltBrush
             fileStream.Close();
         }
 
-        public static void SetDynamicScriptContext(Script script)
+        public void SetDynamicScriptContext(Script script)
         {
             var pointerColor = PointerManager.m_Instance.PointerColor;
             float hue, S, V;
             Color.RGBToHSV(pointerColor, out hue, out S, out V);
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            var attach_CS = App.Scene.ActiveCanvas.AsCanvas[rAttachPoint];
-            var pos = attach_CS.translation;
-            var rot = attach_CS.rotation * Quaternion.Euler(new Vector3(0, 180, 0));
+            var pointer_CS = m_PointerBuffer.IsEmpty ? TrTransform.identity : m_PointerBuffer.Front();
+            var pos = pointer_CS.translation;
+            var rot = pointer_CS.rotation;
 
             BaseTool activeTool;
             try
@@ -207,6 +214,8 @@ namespace TiltBrush
             RegisterApiProperty(script, "brush.size01.get", PointerManager.m_Instance.MainPointer.BrushSize01);
             RegisterApiProperty(script, "brush.pressure", PointerManager.m_Instance.MainPointer.GetPressure());
             RegisterApiProperty(script, "brush.name", PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description);
+            RegisterApiProperty(script, "brush.color", PointerManager.m_Instance.PointerColor);
+            RegisterApiProperty(script, "brush.lastColorPicked", PointerManager.m_Instance.m_lastChosenColor);
 
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
 
@@ -214,8 +223,10 @@ namespace TiltBrush
             RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);
         }
 
-        public static void SetStaticScriptContext(Script script)
+        public void SetStaticScriptContext(Script script)
         {
+            RegisterApiCommand(script, "brush.pastPosition", (Func<int, Vector3>)GetPastPointerPos);
+            RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastPointerRot);
             RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
             RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
             RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
@@ -355,7 +366,25 @@ namespace TiltBrush
             RegisterApiCommand(script, "stroke.add", (Action<int>)ApiMethods.AddPointToStroke);
         }
 
-        private static void RegisterApiProperty(Script script, string cmd, object action)
+        private Vector3 GetPastPointerPos(int back)
+        {
+            return GetPastPointerTransform(back).translation;
+        }
+
+        private Quaternion GetPastPointerRot(int back)
+        {
+            return GetPastPointerTransform(back).rotation;
+        }
+
+        private TrTransform GetPastPointerTransform(int numberToGoBack)
+        {
+            var size = m_PointerBuffer.Size;
+            numberToGoBack = Mathf.Min(numberToGoBack, size - 1);
+            return m_PointerBuffer[numberToGoBack];
+        }
+
+
+        private void RegisterApiProperty(Script script, string cmd, object action)
         {
             _RegisterToApi(script, cmd, action);
 #if UNITY_EDITOR
@@ -366,7 +395,7 @@ namespace TiltBrush
 #endif
         }
 
-        public static void RegisterApiCommand(Script script, string cmd, object action)
+        public void RegisterApiCommand(Script script, string cmd, object action)
         {
             _RegisterToApi(script, cmd, action);
 #if UNITY_EDITOR
@@ -378,7 +407,7 @@ namespace TiltBrush
 #endif
         }
 
-        public static void _RegisterToApi(Script script, string cmd, object action)
+        public void _RegisterToApi(Script script, string cmd, object action)
         {
             var parts = cmd.Split(".");
             Table currentTable = script.Globals;
@@ -408,7 +437,7 @@ namespace TiltBrush
 
         private DynValue _CallScript(Script script, string fnName)
         {
-            SetStaticScriptContext(script);
+            SetDynamicScriptContext(script);
             Closure activeFunction = script.Globals.Get(fnName).Function;
             if (activeFunction != null)
             {
@@ -423,8 +452,7 @@ namespace TiltBrush
             var script = GetActiveScript(ApiCategory.PointerScript);
             DynValue result = _CallScript(script, "Main");
             var space = _GetSpaceForActiveScript(ApiCategory.PointerScript);
-            TrTransform tr = result.ToObject<TrTransform>();
-            return new ScriptTrTransform(tr, space);
+            return new ScriptTrTransform(result.ToObject<TrTransform>(), space);
         }
 
         public ScriptTrTransforms CallActiveToolScript()
@@ -505,7 +533,7 @@ namespace TiltBrush
                 GetOrSetWidgetCurrentValue(script, config);
             }
             SetStaticScriptContext(script);
-            _CallScript(script, "Init");
+            _CallScript(script, "Start");
         }
 
         public void EnablePointerScript(bool enable)
