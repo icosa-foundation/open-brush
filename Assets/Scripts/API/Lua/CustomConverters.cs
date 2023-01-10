@@ -188,7 +188,5 @@ public static class LuaCustomConverters
                 return dynVal.Table.Values.Select(x => x.ToObject<Color>()).ToList();
             }
         );
-
     }
-
 }
