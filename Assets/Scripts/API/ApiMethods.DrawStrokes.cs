@@ -92,6 +92,22 @@ namespace TiltBrush
         [ApiEndpoint("brush.type", "Changes the brush. brushType can either be the brush name or it's guid. brushes are listed in the /help screen")]
         public static void Brush(string brushType)
         {
+            var brushDescriptor = LookupBrushDescriptor(brushType);
+            if (brushDescriptor != null)
+            {
+                PointerManager.m_Instance.SetBrushForAllPointers(brushDescriptor);
+            }
+            else
+            {
+                Debug.LogError($"No brush found with the name or guid: {brushType}");
+            }
+        }
+
+        // TODO Find a better home for this
+        // Accepts either guid or "Description"
+        public static BrushDescriptor LookupBrushDescriptor(string brushType)
+        {
+            if (brushType == null) return null;
             BrushDescriptor brushDescriptor = null;
             try
             {
@@ -120,15 +136,7 @@ namespace TiltBrush
                     Debug.LogError($"No brush found called: {brushType}");
                 }
             }
-
-            if (brushDescriptor != null)
-            {
-                PointerManager.m_Instance.SetBrushForAllPointers(brushDescriptor);
-            }
-            else
-            {
-                Debug.LogError($"No brush found with the name or guid: {brushType}");
-            }
+            return brushDescriptor;
         }
 
         [ApiEndpoint("color.add.hsv", "Adds the supplied values to the current color. Values are hue, saturation and value")]

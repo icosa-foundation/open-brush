@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using MoonSharp.Interpreter;
 using ControllerName = TiltBrush.InputManager.ControllerName;
@@ -175,6 +176,7 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
         private List<Color> m_SymmetryPointerColors;
+        private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
 
         // ---- events
@@ -755,14 +757,26 @@ namespace TiltBrush
                 trs_CS.Add(newTr_CS);
             }
 
+            return trs_CS;
+        }
+
+        private void SetScriptedBrushesAndColors()
+        {
             var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
+
             var luaColors = script.Globals.Get("Colors");
             if (!Equals(luaColors, DynValue.Nil))
             {
                 m_SymmetryPointerColors = luaColors.ToObject<List<Color>>();
             }
 
-            return trs_CS;
+            var luaBrushes = script.Globals.Get("Brushes");
+            if (!Equals(luaBrushes, DynValue.Nil))
+            {
+                m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(
+                    x => ApiMethods.LookupBrushDescriptor(x.String)
+                ).Where(x=>x!=null).ToList();
+            }
         }
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
@@ -951,6 +965,7 @@ namespace TiltBrush
                     {
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var trs = GetScriptedTransforms();
+                        SetScriptedBrushesAndColors();
                         int pointerIndex = 1;
                         foreach (var tr in trs)
                         {
@@ -1333,9 +1348,17 @@ namespace TiltBrush
                     }
                 }
 
-                if (CurrentSymmetryMode==SymmetryMode.ScriptedSymmetryMode && m_SymmetryPointerColors!=null)
+                if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                 {
-                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
+                    if (m_SymmetryPointerColors!=null)
+                    {
+                        script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
+                    }
+                    Debug.Log($"m_SymmetryPointerBrushes.Count: {m_SymmetryPointerBrushes.Count}");
+                    if (m_SymmetryPointerBrushes!=null && m_SymmetryPointerBrushes.Count > 0)
+                    {
+                        script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);
+                    }
                 }
 
                 script.CreateNewLine(
