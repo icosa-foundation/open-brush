@@ -222,7 +222,7 @@ namespace TiltBrush
         private SymmetryMode m_CurrentSymmetryMode;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
-        private Color m_lastChosenColor { get; set; }
+        public Color m_lastChosenColor { get; private set; }
         public Vector3 colorJitter { get; set; }
         public float sizeJitter { get; set; }
         public float positionJitter { get; set; }
@@ -807,14 +807,12 @@ namespace TiltBrush
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
             }
-            int maxUserPointers = m_Pointers.Length;
-            if (active > maxUserPointers)
+            if (m_NumActivePointers != active)
             {
-                throw new System.ArgumentException("Not enough pointers for mode");
+                ChangeNumActivePointers(active);
             }
 
             m_CurrentSymmetryMode = mode;
-            m_NumActivePointers = active;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
             if (recordCommand)
@@ -823,6 +821,16 @@ namespace TiltBrush
                     new SymmetryWidgetVisibleCommand(m_SymmetryWidgetScript));
             }
 
+        }
+
+        private void ChangeNumActivePointers(int num)
+        {
+            if (num > m_Pointers.Length)
+            {
+                Debug.LogWarning($"Not enough pointers for mode. {num} requested, {m_Pointers.Length} available");
+                num = m_Pointers.Length;
+            }
+            m_NumActivePointers = num;
             for (int i = 1; i < m_Pointers.Length; ++i)
             {
                 var pointer = m_Pointers[i];
@@ -969,6 +977,7 @@ namespace TiltBrush
                 }
             }
         }
+
         public void CalculateMirrorPointers()
         {
             m_NumActivePointers = m_CustomMirrorMatrices.Count;
