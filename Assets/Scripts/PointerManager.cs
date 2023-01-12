@@ -46,6 +46,39 @@ namespace TiltBrush
             TwoHanded,
             ScriptedSymmetryMode = 6000
         }
+        public enum ColorShiftMode
+        {
+            SineWave,
+            SquareWave,
+            SawtoothWave,
+            TriangleWave,
+            Noise
+        }
+
+        public enum ColorShiftComponent
+        {
+            Hue,
+            Saturation,
+            Brightness
+        }
+        [NonSerialized] public bool m_SymmetryColorShiftEnabled = false;
+
+        [Serializable]
+        public struct ColorShiftComponentSetting
+        {
+            public ColorShiftMode mode;
+            public float amp;
+            public float freq;
+        }
+
+        private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
+        {
+            mode = ColorShiftMode.SineWave, amp = 0, freq = 1
+        };
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
+        [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingBrightness = m_defaultColorShiftComponentSetting;
+
 
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
@@ -118,6 +151,7 @@ namespace TiltBrush
         private LineCreationState m_CurrentLineCreationState;
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
+
         public Transform SymmetryWidget
         {
             get
@@ -299,6 +333,9 @@ namespace TiltBrush
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
+        public List<Color> SymmetryPointerColors => m_SymmetryPointerColors.ToList();
+        public List<BrushDescriptor> SymmetryPointerBrushes => m_SymmetryPointerBrushes.ToList();
+
         static public void ClearPlayerPrefs()
         {
             PlayerPrefs.DeleteKey(PLAYER_PREFS_POINTER_ANGLE_OLD);
@@ -439,6 +476,8 @@ namespace TiltBrush
 
         void Start()
         {
+            m_SymmetryPointerColors = new List<Color>();
+            m_SymmetryPointerBrushes = new List<BrushDescriptor>();
             SetSymmetryMode(SymmetryMode.None, false);
             m_PointersHideOnControllerLoss = App.VrSdk.GetControllerDof() == VrSdk.DoF.Six;
 
@@ -720,7 +759,7 @@ namespace TiltBrush
 
         public List<TrTransform> GetScriptedTransforms()
         {
-            var result = LuaManager.Instance.CallActiveSymmetryScript();
+            var result = LuaManager.Instance.CallActiveSymmetryScript("Main");
             if (result.Transforms.Count + 1 != m_NumActivePointers)
             {
                 ChangeNumActivePointers(result.Transforms.Count + 1);
@@ -769,6 +808,10 @@ namespace TiltBrush
             {
                 m_SymmetryPointerColors = luaColors.ToObject<List<Color>>();
             }
+            else
+            {
+                m_SymmetryPointerColors.Clear();
+            }
 
             var luaBrushes = script.Globals.Get("Brushes");
             if (!Equals(luaBrushes, DynValue.Nil))
@@ -776,6 +819,10 @@ namespace TiltBrush
                 m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(
                     x => ApiMethods.LookupBrushDescriptor(x.String)
                 ).Where(x=>x!=null).ToList();
+            }
+            else
+            {
+                m_SymmetryPointerBrushes.Clear();
             }
         }
 
@@ -809,14 +856,13 @@ namespace TiltBrush
 
             m_CurrentSymmetryMode = mode;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
-            m_SymmetryWidgetScript.Show(SymmetryModeEnabled);
+            m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
             if (recordCommand)
             {
                 SketchMemoryScript.m_Instance.RecordCommand(
                     new SymmetryWidgetVisibleCommand(m_SymmetryWidgetScript));
             }
 
-            App.Switchboard.TriggerMirrorVisibilityChanged();
         }
 
         private void ChangeNumActivePointers(int num)
@@ -839,6 +885,8 @@ namespace TiltBrush
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
             }
+
+            App.Switchboard.TriggerMirrorVisibilityChanged();
         }
 
         public void ResetSymmetryToHome()
@@ -914,7 +962,18 @@ namespace TiltBrush
 
         public void CalculateMirrorColors()
         {
+            if (m_SymmetryColorShiftEnabled)
+            {
+                m_SymmetryPointerColors = new List<Color>();
+                for (float i = 0; i < m_NumActivePointers; i++)
+                {
+                    m_SymmetryPointerColors.Add(CalcColorShift(m_lastChosenColor, i / m_NumActivePointers));
+                    // BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(MainPointer.CurrentBrush.m_Guid);
+                    // script.BrushSize01 = GenerateJitteredSize(desc, MainPointer.BrushSize01);
+                }
+            }
         }
+
 
         void UpdateSymmetryPointerTransforms()
         {
@@ -1208,6 +1267,49 @@ namespace TiltBrush
             );
         }
 
+        private float ActualMod(float x, float m) => (x % m + m) % m;
+
+        public Color CalcColorShift(Color color, float mod)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            h = _CalcColorShiftH(h, mod, m_SymmetryColorShiftSettingHue);
+            s = _CalcColorShiftSV(s, mod, m_SymmetryColorShiftSettingSaturation);
+            v = _CalcColorShiftSV(v, mod, m_SymmetryColorShiftSettingBrightness);
+            return Color.HSVToRGB(ActualMod(h, 1), s, v);
+        }
+
+        private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
+        {
+            // Input is 0 to +1, output is -1 to +1
+            return mode switch
+            {
+                ColorShiftMode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
+                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
+                ColorShiftMode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
+                ColorShiftMode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
+                ColorShiftMode.Noise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
+                _ => x
+            };
+        }
+
+        public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
+        {
+            // Expects x to vary from -1 to +1
+            return Mathf.LerpUnclamped(
+                x,
+                x + settings.amp / 2,
+                CalcColorWaveform(mod, settings.mode, settings.freq));
+        }
+
+        public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
+        {
+            // Expects x to vary from -1 to +1
+            return Mathf.LerpUnclamped(
+                x,
+                x + settings.amp / 2,
+                CalcColorWaveform(mod, settings.mode, settings.freq)
+            );
+        }
 
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
         {
@@ -1348,13 +1450,13 @@ namespace TiltBrush
                     }
                 }
 
-                if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                if (m_SymmetryColorShiftEnabled || CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                 {
-                    if (m_SymmetryPointerColors!=null)
+                    if (m_SymmetryPointerColors!=null && m_SymmetryPointerColors.Count > 0)
                     {
                         script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                     }
-                    Debug.Log($"m_SymmetryPointerBrushes.Count: {m_SymmetryPointerBrushes.Count}");
+
                     if (m_SymmetryPointerBrushes!=null && m_SymmetryPointerBrushes.Count > 0)
                     {
                         script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);

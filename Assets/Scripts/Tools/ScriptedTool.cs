@@ -113,37 +113,46 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    var scale_CS = drawnVector_CS.magnitude / 2f;
-                    Quaternion rotation_CS = Quaternion.identity;
-                    Vector3 pos = Vector3.zero;
-
-                    var result = LuaManager.Instance.CallActiveToolScript();
-
-                    switch (result.Space)
-                    {
-                        case ScriptCoordSpace.Canvas:
-                            break;
-                        case ScriptCoordSpace.Pointer:
-                            rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                            pos = m_FirstPositionClicked_CS.translation;
-                            break;
-                        case ScriptCoordSpace.Widget:
-                            var widget = PointerManager.m_Instance.SymmetryWidget;
-                            rotation_CS = widget.rotation;
-                            pos = widget.position;
-                            break;
-                    }
-
-                    var points = result.Transforms.Select(tr =>
-                    {
-                        // Orient each point to the controller
-                        tr.translation = rotation_CS * tr.translation;
-                        return tr;
-                    }).ToList();
-                    DrawStrokes.PositionPathsToStroke(points, pos, scale_CS, 1f / App.ActiveCanvas.Pose.scale);
+                    DoToolScript("Main", m_FirstPositionClicked_CS, rAttachPoint_CS);
                 }
             }
+        }
+
+        private void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
+        {
+            var result = LuaManager.Instance.CallActiveToolScript(fnName);
+            if (result.Transforms == null || result.Transforms.Count == 0) return;
+
+            var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
+            var tr_CS = new TrTransform();
+
+            switch (result.Space)
+            {
+                case ScriptCoordSpace.Canvas:
+                    tr_CS.translation = Vector3.zero;
+                    tr_CS.rotation = Quaternion.identity;
+                    tr_CS.scale = drawnVector_CS.magnitude / 2f;
+                    break;
+                case ScriptCoordSpace.Pointer:
+                    tr_CS.translation = firstTr_CS.translation;
+                    tr_CS.rotation = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                    tr_CS.scale = 1;
+                    break;
+                case ScriptCoordSpace.Widget:
+                    var widget = PointerManager.m_Instance.SymmetryWidget;
+                    tr_CS.translation = widget.position;
+                    tr_CS.rotation = widget.rotation;
+                    tr_CS.scale = 1;
+                    break;
+            }
+
+            var points = result.Transforms.Select(tr =>
+            {
+                // Orient each point to the controller
+                tr.translation = tr_CS.rotation * tr.translation;
+                return tr;
+            }).ToList();
+            DrawStrokes.PositionPathsToStroke(points, tr_CS.translation, tr_CS.scale, 1f / App.ActiveCanvas.Pose.scale);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

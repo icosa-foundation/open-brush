@@ -214,10 +214,19 @@ namespace TiltBrush
             RegisterApiProperty(script, "brush.size01.get", PointerManager.m_Instance.MainPointer.BrushSize01);
             RegisterApiProperty(script, "brush.pressure", PointerManager.m_Instance.MainPointer.GetPressure());
             RegisterApiProperty(script, "brush.name", PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description);
-            RegisterApiProperty(script, "brush.color", PointerManager.m_Instance.PointerColor);
             RegisterApiProperty(script, "brush.distance", PointerManager.m_Instance.MainPointer.LineLength_CS);
             RegisterApiProperty(script, "brush.speed", PointerManager.m_Instance.MainPointer.MovementSpeed);
-            RegisterApiProperty(script, "brush.lastColorPicked", PointerManager.m_Instance.m_lastChosenColor);
+
+            // Colors
+            var currentColor = PointerManager.m_Instance.PointerColor;
+            var lastColor = PointerManager.m_Instance.m_lastChosenColor;
+            RegisterApiProperty(script, "brush.color", currentColor);
+            RegisterApiProperty(script, "brush.lastColorPicked", lastColor);
+            float h, s, v;
+            Color.RGBToHSV(currentColor, out h, out s, out v);
+            RegisterApiProperty(script, "brush.colorHsv", new Vector3(h, s, v));
+            Color.RGBToHSV(lastColor, out h, out s, out v);
+            RegisterApiProperty(script, "brush.lastColorPickedHsv", new Vector3(h, s, v));
 
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
 
@@ -449,26 +458,26 @@ namespace TiltBrush
             return DynValue.Nil;
         }
 
-        public ScriptTrTransform CallActivePointerScript()
+        public ScriptTrTransform CallActivePointerScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.PointerScript);
-            DynValue result = _CallScript(script, "Main");
+            DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.PointerScript);
             return new ScriptTrTransform(result.ToObject<TrTransform>(), space);
         }
 
-        public ScriptTrTransforms CallActiveToolScript()
+        public ScriptTrTransforms CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.ToolScript);
-            DynValue result = _CallScript(script, "Main");
+            DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.ToolScript);
             return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
         }
 
-        public ScriptTrTransforms CallActiveSymmetryScript()
+        public ScriptTrTransforms CallActiveSymmetryScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.SymmetryScript);
-            DynValue result = _CallScript(script, "Main");
+            DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.SymmetryScript);
             return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
         }
@@ -579,7 +588,7 @@ namespace TiltBrush
 
         public void ApplyPointerScript(Quaternion pointerRot, ref Vector3 pos_GS, ref Quaternion rot_GS)
         {
-            var scriptTransformOutput = CallActivePointerScript();
+            var scriptTransformOutput = CallActivePointerScript("Main");
 
             switch (scriptTransformOutput.Space)
             {
