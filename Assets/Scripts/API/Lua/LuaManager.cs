@@ -125,11 +125,6 @@ namespace TiltBrush
                 }
             }
             m_ScriptPathsToUpdate.Clear();
-
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            var attach_CS = App.Scene.ActiveCanvas.AsCanvas[rAttachPoint];
-            attach_CS.rotation *= Quaternion.Euler(new Vector3(0, 180, 0));
-            m_PointerBuffer.PushFront(attach_CS);
         }
 
         public void LoadScripts()
@@ -195,8 +190,8 @@ namespace TiltBrush
                 activeTool = SketchSurfacePanel.m_Instance.ActiveTool;
                 RegisterApiProperty(script, "brush.timeSincePressed", Time.realtimeSinceStartup - activeTool.TimeBecameActive);
                 RegisterApiProperty(script, "brush.timeSinceReleased", Time.realtimeSinceStartup - activeTool.TimeBecameInactive);
-                RegisterApiProperty(script, "brush.isPressed", activeTool.IsActive);
-                RegisterApiProperty(script, "brush.isPressedThisFrame", activeTool.IsActiveThisFrame);
+                RegisterApiProperty(script, "brush.triggerIsPressed", activeTool.IsActive);
+                RegisterApiProperty(script, "brush.triggerIsPressedThisFrame", activeTool.IsActiveThisFrame);
             }
             catch (NullReferenceException e)
             {
@@ -234,13 +229,16 @@ namespace TiltBrush
             RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);
         }
 
+
+
         public void SetStaticScriptContext(Script script)
         {
             RegisterApiCommand(script, "brush.pastPosition", (Func<int, Vector3>)GetPastPointerPos);
             RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastPointerRot);
-            RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
-            RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
-            RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
+            RegisterApiCommand(script, "draw.path", (Action<List<List<float>>>) Drawing.DrawPath);
+            // RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
+            // RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
+            // RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
             RegisterApiCommand(script, "draw.polygon", (Action<int, float, float>)ApiMethods.DrawPolygon);
             RegisterApiCommand(script, "draw.text", (Action<string>)ApiMethods.Text);
             RegisterApiCommand(script, "draw.svg", (Action<string>)ApiMethods.SvgPath);
@@ -588,6 +586,9 @@ namespace TiltBrush
 
         public void ApplyPointerScript(Quaternion pointerRot, ref Vector3 pos_GS, ref Quaternion rot_GS)
         {
+            var attach_CS = App.Scene.ActiveCanvas.Pose * TrTransform.TR(pos_GS, rot_GS);
+            m_PointerBuffer.PushFront(attach_CS);
+
             var scriptTransformOutput = CallActivePointerScript("Main");
 
             switch (scriptTransformOutput.Space)
