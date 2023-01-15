@@ -51,7 +51,7 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
-        [NonSerialized] public Vector3 BrushOrigin = new (0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public Vector3 BrushOrigin = new(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition;
         [NonSerialized] public Quaternion BrushRotation;
