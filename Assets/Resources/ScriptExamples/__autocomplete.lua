@@ -1,6 +1,8 @@
-function draw.paths(jsonString) end
+function brush.pastPosition(back) end
+function brush.pastRotation(back) end
+function wand.pastPosition(back) end
+function wand.pastRotation(back) end
 function draw.path(jsonString) end
-function draw.stroke(jsonString) end
 function draw.polygon(sides, radius, angle) end
 function draw.text(text) end
 function draw.svg(svgPathString) end
@@ -42,6 +44,7 @@ function layer.toggle(layer) end
 function model.select(index) end
 function model.position(index, position) end
 function brush.forcepainting(active) end
+function brush.stoppainting(active) end
 function image.position(index, position) end
 function guide.add(type) end
 function save.overwrite() end
@@ -96,10 +99,15 @@ function stroke.pointsQuantize(grid) end
 function stroke.join() end
 function strokes.join(from, to) end
 function stroke.add(index) end
+tool.startPosition = nil
+tool.endPosition = nil
+tool.vector = nil
 brush.timeSincePressed = nil
 brush.timeSinceReleased = nil
-brush.isPressed = nil
-brush.isPressedThisFrame = nil
+brush.triggerIsPressed = nil
+brush.triggerIsPressedThisFrame = nil
+brush.distanceMoved = nil
+brush.distanceDrawn = nil
 brush.position = nil
 brush.rotation = nil
 brush.direction = nil
@@ -107,6 +115,16 @@ brush.size.get = nil
 brush.size01.get = nil
 brush.pressure = nil
 brush.name = nil
+brush.speed = nil
+wand.position = nil
+wand.rotation = nil
+wand.direction = nil
+wand.pressure = nil
+wand.speed = nil
+brush.color = nil
+brush.lastColorPicked = nil
+brush.colorHsv = nil
+brush.lastColorPickedHsv = nil
 app.time = nil
 canvas.scale = nil
 canvas.strokeCount = nil

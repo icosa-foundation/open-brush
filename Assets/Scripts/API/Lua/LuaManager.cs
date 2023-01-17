@@ -406,6 +406,14 @@ namespace TiltBrush
             RegisterApiCommand(script, "stroke.join", (Action)ApiMethods.JoinStroke);
             RegisterApiCommand(script, "strokes.join", (Action<int, int>)ApiMethods.JoinStrokes);
             RegisterApiCommand(script, "stroke.add", (Action<int>)ApiMethods.AddPointToStroke);
+
+#if UNITY_EDITOR
+            // These are placeholder entries to populate the autocomplete file
+            // Populated for real from other places
+            RegisterApiProperty(script, "tool.startPosition", Vector3.one);
+            RegisterApiProperty(script, "tool.endPosition", Vector3.one);
+            RegisterApiProperty(script, "tool.vector", Vector3.one);
+#endif
         }
 
         private Vector3 GetPastBrushPos(int back)
@@ -432,12 +440,6 @@ namespace TiltBrush
         {
             _RegisterToApi(script, cmd, action);
 #if UNITY_EDITOR
-            // These are placeholder entries to populate the autocomplete file
-            // Populated for real from other places
-            AutoCompleteEntries.Add("tool.startPosition = nil");
-            AutoCompleteEntries.Add("tool.endPosition = nil");
-            AutoCompleteEntries.Add("tool.vector = nil");
-
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
                 AutoCompleteEntries.Add($"{cmd} = nil");

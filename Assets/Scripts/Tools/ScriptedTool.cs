@@ -112,7 +112,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                RegisterApiProperty("tool.startPosition", m_FirstPositionClicked_CS);
+                RegisterApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
                 DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
@@ -151,9 +151,9 @@ namespace TiltBrush
                         case "alignedquad":
                             var aaquadTr = Matrix4x4.TRS(
                                 transform_GS.GetPosition(),
-                                App.Scene.Pose.rotation,
+                                App.Scene.Pose.rotation * Quaternion.Euler(90, 90, 0),
                                 // TODO Scale isn't correct but _CS doesn't seem to work either
-                                drawnVector_GS * 2
+                                new Vector3(drawnVector_GS.z * 2, drawnVector_GS.x * 2, 1)
                             );
                             Graphics.DrawMesh(previewQuad, aaquadTr, previewMaterial, 0);
                             break;
@@ -184,7 +184,7 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    RegisterApiProperty("tool.endPosition", rAttachPoint_CS);
+                    RegisterApiProperty("tool.endPosition", rAttachPoint_CS.translation);
                     RegisterApiProperty("tool.vector", drawnVector_CS);
                     DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
                 }
