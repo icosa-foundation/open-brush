@@ -152,7 +152,17 @@ namespace TiltBrush
                 Scripts[category] = new SortedDictionary<string, Script>();
                 ActiveScripts[category] = 0;
             }
-            Directory.CreateDirectory(ScriptsDirectory);
+            if (!Directory.Exists(ScriptsDirectory))
+            {
+                try
+                {
+                    Directory.CreateDirectory(ScriptsDirectory);
+                }
+                catch (IOException e)
+                {
+                    Debug.LogError($"Failed to create Scripts directory. Please create it manually");
+                }
+            }
             string[] files = Directory.GetFiles(ScriptsDirectory, LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
