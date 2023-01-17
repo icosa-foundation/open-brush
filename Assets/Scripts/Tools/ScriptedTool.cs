@@ -111,6 +111,8 @@ namespace TiltBrush
                 // Initial click. Store the transform
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
+
+                RegisterApiProperty("tool.startPosition", m_FirstPositionClicked_CS);
                 DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
@@ -137,6 +139,24 @@ namespace TiltBrush
 
                     switch (previewTypeVal.String?.ToLower())
                     {
+                        case "alignedbox":
+                            var aabbTr = Matrix4x4.TRS(
+                                transform_GS.GetPosition(),
+                                App.Scene.Pose.rotation,
+                                // TODO Scale isn't correct but _CS doesn't seem to work either
+                                drawnVector_GS * 2
+                            );
+                            Graphics.DrawMesh(previewCube, aabbTr, previewMaterial, 0);
+                            break;
+                        case "alignedquad":
+                            var aaquadTr = Matrix4x4.TRS(
+                                transform_GS.GetPosition(),
+                                App.Scene.Pose.rotation,
+                                // TODO Scale isn't correct but _CS doesn't seem to work either
+                                drawnVector_GS * 2
+                            );
+                            Graphics.DrawMesh(previewQuad, aaquadTr, previewMaterial, 0);
+                            break;
                         case "cube":
                             Graphics.DrawMesh(previewCube, transform_GS, previewMaterial, 0);
                             break;
@@ -163,9 +183,18 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
+                    var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+                    RegisterApiProperty("tool.endPosition", rAttachPoint_CS);
+                    RegisterApiProperty("tool.vector", drawnVector_CS);
                     DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
                 }
             }
+        }
+
+        private void RegisterApiProperty(string key, object value)
+        {
+            var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.ToolScript);
+            LuaManager.Instance.RegisterApiProperty(script, key, value);
         }
 
         private void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)

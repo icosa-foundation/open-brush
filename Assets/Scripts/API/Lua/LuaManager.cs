@@ -428,10 +428,16 @@ namespace TiltBrush
             return m_TransformBuffers.PastWandTr(back).rotation;
         }
 
-        private void RegisterApiProperty(Script script, string cmd, object action)
+        public void RegisterApiProperty(Script script, string cmd, object action)
         {
             _RegisterToApi(script, cmd, action);
 #if UNITY_EDITOR
+            // These are placeholder entries to populate the autocomplete file
+            // Populated for real from other places
+            AutoCompleteEntries.Add("tool.startPosition = nil");
+            AutoCompleteEntries.Add("tool.endPosition = nil");
+            AutoCompleteEntries.Add("tool.vector = nil");
+
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
                 AutoCompleteEntries.Add($"{cmd} = nil");
