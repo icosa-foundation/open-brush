@@ -25,7 +25,7 @@ MonoBehaviour:
   FoveatedRenderingMethod: 0
   LateLatching: 0
   LateLatchingDebug: 0
-  EnableTrackingOriginStageMode: 1
+  EnableTrackingOriginStageMode: 0
   SpaceWarp: 0
   TargetQuest: 1
   TargetQuest2: 1
