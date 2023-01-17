@@ -133,9 +133,9 @@ public class HybridCamera : MonoBehaviour {
 
   public void Awake() {
     CollapseIpd = true;
-    odsRenderer = new OdsSlice();
+    odsRenderer = new OdsStereoCubemap();
     odsRenderer.SetVr180(vr180);
-    rendererType = OdsRendererType.Slice;
+    rendererType = OdsRendererType.StereoCubemap;
     lastRendererType = rendererType;
 
     Debug.Log("Init ODS Mode: " + rendererType.ToString());
