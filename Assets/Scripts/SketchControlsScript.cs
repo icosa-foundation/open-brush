@@ -1075,6 +1075,13 @@ namespace TiltBrush
                                 (m_ControlsType == ControlsType.ViewingOnly));
 
                             Quaternion vPointerRot = Quaternion.identity;
+
+                            LuaManager.Instance.RecordPointerPositions(
+                                vPointerPos, vPointerRot,
+                                vPointerPos, vPointerRot, // No wand transform so use brush
+                                ViewpointScript.Head.position, ViewpointScript.Head.rotation
+                            );
+
                             if (LuaManager.Instance.PointerScriptsEnabled)
                             {
                                 LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
@@ -5019,6 +5026,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             App.Scene.ResetLayers(notify: true);
+            LuaManager.Instance.Init();
 
             // If we've got the camera path tool active, switch back to the default tool.
             // I'm doing this because if we leave the camera path tool active, the camera path

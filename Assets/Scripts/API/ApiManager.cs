@@ -52,11 +52,18 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
+        public enum ForcePaintingMode
+        {
+            None,
+            ForcedOn,
+            ForcedOff
+        }
+
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-        public bool ForcePaintingOn = false;
+        [NonSerialized] public ForcePaintingMode ForcePainting;
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 

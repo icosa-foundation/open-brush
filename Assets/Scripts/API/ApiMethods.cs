@@ -446,10 +446,30 @@ namespace TiltBrush
             _PositionWidget(_GetActiveModel(index), position);
         }
 
-        [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
+        [ApiEndpoint("brush.forcepainting", "Start painting even if the trigger isn't pressed")]
         public static void ForcePainting(bool active)
         {
-            ApiManager.Instance.ForcePaintingOn = active;
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOn;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
+        }
+
+        [ApiEndpoint("brush.stoppainting", "Stop painting even if the trigger is pressed")]
+        public static void StopPainting(bool active)
+        {
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOff;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
         }
 
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]

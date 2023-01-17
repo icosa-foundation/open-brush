@@ -1,6 +1,19 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿// Copyright 2023 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
+using System.Linq;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -23,11 +36,15 @@ namespace TiltBrush
         private TrTransform m_FirstPositionClicked_CS;
         private Vector3 m_FirstPositionClicked_GS;
 
-        public Mesh previewMesh;
+        public Transform m_AttachmentSphere;
+        public Mesh previewCube;
+        public Mesh previewSphere;
+        public Mesh previewQuad;
+        public Mesh previewCapsule;
+        public Mesh previewCylinder;
+
         public Material previewMaterial;
 
-
-        private float[] angleSnaps;
         private int currentSnap;
         private float angleSnappingAngle;
 
@@ -36,7 +53,6 @@ namespace TiltBrush
         {
             base.Init();
             m_toolDirectionIndicator = transform.GetChild(0).gameObject;
-            angleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
         }
 
         //What to do when the tool is enabled or disabled
@@ -46,6 +62,10 @@ namespace TiltBrush
 
             if (bEnable)
             {
+                m_AttachmentSphere.parent = InputManager.Brush.Geometry.ToolAttachPoint;
+                m_AttachmentSphere.gameObject.SetActive(true);
+                m_AttachmentSphere.localPosition = Vector3.zero;
+
                 m_LockToController = m_SketchSurface.IsInFreePaintMode();
                 if (m_LockToController)
                 {
@@ -53,6 +73,11 @@ namespace TiltBrush
                 }
 
                 EatInput();
+            }
+            else
+            {
+                m_AttachmentSphere.parent = transform;
+                m_AttachmentSphere.gameObject.SetActive(false);
             }
 
             // Make sure our UI reticle isn't active.
@@ -83,37 +108,62 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
-                // Initially click. Store the transform and grab the poly mesh and material.
+                // Initial click. Store the transform
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
+                DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
+                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaManager.ApiCategory.ToolScript, "previewType");
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
-                var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
+                if (drawnVector_GS.sqrMagnitude > 0)
+                {
+                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
 
-                // Snapping needs compensating for the different rotation between global space and canvas space
-                var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
-                rotation_CS *= Quaternion.Euler(-CS_GS_offset);
-                rotation_CS *= Quaternion.Euler(CS_GS_offset);
+                    // Snapping needs compensating for the different rotation between global space and canvas space
+                    var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
+                    rotation_CS *= Quaternion.Euler(-CS_GS_offset);
+                    rotation_CS *= Quaternion.Euler(CS_GS_offset);
 
-                Matrix4x4 transform_GS = Matrix4x4.TRS(
-                    m_FirstPositionClicked_GS,
-                    App.Scene.Pose.rotation * rotation_CS,
-                    Vector3.one * drawnVector_GS.magnitude
-                );
-                Graphics.DrawMesh(previewMesh, transform_GS, previewMaterial, 0);
+                    Matrix4x4 transform_GS = TrTransform.TRS(
+                        m_FirstPositionClicked_GS,
+                        App.Scene.Pose.rotation * rotation_CS,
+                        drawnVector_CS.magnitude * 2
+                    ).ToMatrix4x4();
 
+                    switch (previewTypeVal.String?.ToLower())
+                    {
+                        case "cube":
+                            Graphics.DrawMesh(previewCube, transform_GS, previewMaterial, 0);
+                            break;
+                        case "sphere":
+                            Graphics.DrawMesh(previewSphere, transform_GS, previewMaterial, 0);
+                            break;
+                        case "quad":
+                            Graphics.DrawMesh(previewQuad, transform_GS, previewMaterial, 0);
+                            break;
+                        case "capsule":
+                            Graphics.DrawMesh(previewCapsule, transform_GS, previewMaterial, 0);
+                            break;
+                        case "cylinder":
+                            Graphics.DrawMesh(previewCylinder, transform_GS, previewMaterial, 0);
+                            break;
+                        case null:
+                            break;
+                    }
+                }
+                DoToolScript("WhileTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    DoToolScript("Main", m_FirstPositionClicked_CS, rAttachPoint_CS);
+                    DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
                 }
             }
         }
@@ -131,28 +181,30 @@ namespace TiltBrush
                 case ScriptCoordSpace.Canvas:
                     tr_CS.translation = Vector3.zero;
                     tr_CS.rotation = Quaternion.identity;
-                    tr_CS.scale = drawnVector_CS.magnitude / 2f;
+                    tr_CS.scale = 1f;
                     break;
                 case ScriptCoordSpace.Pointer:
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    tr_CS.scale = 1;
+                    tr_CS.scale = drawnVector_CS.magnitude;
+                    result.Transforms = result.Transforms.Select(tr =>
+                    {
+                        // Orient each point to the controller
+                        tr.translation = tr_CS.rotation * tr.translation;
+                        return tr;
+                    }).ToList();
                     break;
                 case ScriptCoordSpace.Widget:
                     var widget = PointerManager.m_Instance.SymmetryWidget;
                     tr_CS.translation = widget.position;
                     tr_CS.rotation = widget.rotation;
-                    tr_CS.scale = 1;
+                    tr_CS.scale = drawnVector_CS.magnitude;
                     break;
             }
 
-            var points = result.Transforms.Select(tr =>
-            {
-                // Orient each point to the controller
-                tr.translation = tr_CS.rotation * tr.translation;
-                return tr;
-            }).ToList();
-            DrawStrokes.PositionPathsToStroke(points, tr_CS.translation, tr_CS.scale, 1f / App.ActiveCanvas.Pose.scale);
+            DrawStrokes.PositionPathsToStroke(
+                result.Transforms, tr_CS.translation, tr_CS.scale, 1f / App.ActiveCanvas.Pose.scale
+            );
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

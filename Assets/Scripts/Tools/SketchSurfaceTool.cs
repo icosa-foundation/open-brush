@@ -58,7 +58,12 @@ namespace TiltBrush
             bEnableLine = bEnableLine && !m_EatInput && m_AllowDrawing && m_SketchSurface.IsSurfaceDrawable();
 
             // Allow API command to override painting mode
-            bEnableLine = bEnableLine || ApiManager.Instance.ForcePaintingOn;
+            bEnableLine = ApiManager.Instance.ForcePainting switch
+            {
+                ApiManager.ForcePaintingMode.ForcedOn => true,
+                ApiManager.ForcePaintingMode.ForcedOff => false,
+                _ => bEnableLine,
+            };
 
             PointerManager.m_Instance.EnableLine(bEnableLine);
             PointerManager.m_Instance.PointerPressure = 1.0f;

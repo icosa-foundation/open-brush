@@ -1,15 +1,24 @@
+// Copyright 2023 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using CircularBuffer;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
-
-#if UNITY_EDITOR
-using System.Reflection;
-#endif
 
 namespace TiltBrush
 {
@@ -35,7 +44,6 @@ namespace TiltBrush
         private static string DocumentsDirectory => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Open Brush");
         private static string ScriptsDirectory => Path.Combine(DocumentsDirectory, "Scripts");
         public List<ApiCategory> ApiCategories => Enum.GetValues(typeof(ApiCategory)).Cast<ApiCategory>().ToList();
-        private CircularBuffer<TrTransform> m_PointerBuffer;
 
         public enum ApiCategory
         {
@@ -54,7 +62,11 @@ namespace TiltBrush
         [NonSerialized] public bool PointerScriptsEnabled;
         private List<string> m_ScriptPathsToUpdate;
 
+        private TransformBuffers m_TransformBuffers;
+        private bool m_TriggerWasPressed;
+
         public static LuaManager Instance => m_Instance;
+
 
         public struct ScriptTrTransform
         {
@@ -99,10 +111,14 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-
         private void Start()
         {
-            m_PointerBuffer = new CircularBuffer<TrTransform>(512);
+            Init();
+        }
+
+        public void Init()
+        {
+            m_TransformBuffers = new TransformBuffers(512);
             m_ScriptPathsToUpdate = new List<string>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
@@ -177,14 +193,20 @@ namespace TiltBrush
 
         public void SetDynamicScriptContext(Script script)
         {
+            var brush_CS = m_TransformBuffers.CurrentBrushTr;
+            var brushPos = brush_CS.translation;
+            var brushRot = brush_CS.rotation;
+
+            var wand_CS = m_TransformBuffers.CurrentWandTr;
+            var wandPos = wand_CS.translation;
+            var wandRot = wand_CS.rotation;
+
+            float h, s, v;
             var pointerColor = PointerManager.m_Instance.PointerColor;
-            float hue, S, V;
-            Color.RGBToHSV(pointerColor, out hue, out S, out V);
-            var pointer_CS = m_PointerBuffer.IsEmpty ? TrTransform.identity : m_PointerBuffer.Front();
-            var pos = pointer_CS.translation;
-            var rot = pointer_CS.rotation;
+            Color.RGBToHSV(pointerColor, out h, out s, out v);
 
             BaseTool activeTool;
+
             try
             {
                 activeTool = SketchSurfacePanel.m_Instance.ActiveTool;
@@ -192,6 +214,8 @@ namespace TiltBrush
                 RegisterApiProperty(script, "brush.timeSinceReleased", Time.realtimeSinceStartup - activeTool.TimeBecameInactive);
                 RegisterApiProperty(script, "brush.triggerIsPressed", activeTool.IsActive);
                 RegisterApiProperty(script, "brush.triggerIsPressedThisFrame", activeTool.IsActiveThisFrame);
+                RegisterApiProperty(script, "brush.distanceMoved", activeTool.DistanceMoved_CS);
+                RegisterApiProperty(script, "brush.distanceDrawn", activeTool.DistanceDrawn_CS);
             }
             catch (NullReferenceException e)
             {
@@ -200,24 +224,30 @@ namespace TiltBrush
                 RegisterApiProperty(script, "brush.timeSinceReleased", 0);
                 RegisterApiProperty(script, "brush.isPressed", false);
                 RegisterApiProperty(script, "brush.isPressedThisFrame", false);
+                RegisterApiProperty(script, "brush.distanceMoved", 0);
+                RegisterApiProperty(script, "brush.distanceDrawn", 0);
             }
 
-            RegisterApiProperty(script, "brush.position", pos);
-            RegisterApiProperty(script, "brush.rotation", rot.eulerAngles);
-            RegisterApiProperty(script, "brush.direction", rot * Vector3.forward);
+            RegisterApiProperty(script, "brush.position", brushPos);
+            RegisterApiProperty(script, "brush.rotation", brushRot.eulerAngles);
+            RegisterApiProperty(script, "brush.direction", brushRot * Vector3.forward);
             RegisterApiProperty(script, "brush.size.get", PointerManager.m_Instance.MainPointer.BrushSizeAbsolute);
             RegisterApiProperty(script, "brush.size01.get", PointerManager.m_Instance.MainPointer.BrushSize01);
             RegisterApiProperty(script, "brush.pressure", PointerManager.m_Instance.MainPointer.GetPressure());
             RegisterApiProperty(script, "brush.name", PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description);
-            RegisterApiProperty(script, "brush.distance", PointerManager.m_Instance.MainPointer.LineLength_CS);
             RegisterApiProperty(script, "brush.speed", PointerManager.m_Instance.MainPointer.MovementSpeed);
+
+            RegisterApiProperty(script, "wand.position", wandPos);
+            RegisterApiProperty(script, "wand.rotation", wandRot.eulerAngles);
+            RegisterApiProperty(script, "wand.direction", wandRot * Vector3.forward);
+            RegisterApiProperty(script, "wand.pressure", InputManager.Wand.GetTriggerValue());
+            RegisterApiProperty(script, "wand.speed", InputManager.Wand.m_Velocity);
 
             // Colors
             var currentColor = PointerManager.m_Instance.PointerColor;
             var lastColor = PointerManager.m_Instance.m_lastChosenColor;
             RegisterApiProperty(script, "brush.color", currentColor);
             RegisterApiProperty(script, "brush.lastColorPicked", lastColor);
-            float h, s, v;
             Color.RGBToHSV(currentColor, out h, out s, out v);
             RegisterApiProperty(script, "brush.colorHsv", new Vector3(h, s, v));
             Color.RGBToHSV(lastColor, out h, out s, out v);
@@ -233,8 +263,10 @@ namespace TiltBrush
 
         public void SetStaticScriptContext(Script script)
         {
-            RegisterApiCommand(script, "brush.pastPosition", (Func<int, Vector3>)GetPastPointerPos);
-            RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastPointerRot);
+            RegisterApiCommand(script, "brush.pastPosition", (Func<int, Vector3>)GetPastBrushPos);
+            RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastBrushRot);
+            RegisterApiCommand(script, "wand.pastPosition", (Func<int, Vector3>)GetPastWandPos);
+            RegisterApiCommand(script, "wand.pastRotation", (Func<int, Quaternion>)GetPastWandRot);
             RegisterApiCommand(script, "draw.path", (Action<List<List<float>>>) Drawing.DrawPath);
             // RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
             // RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
@@ -303,6 +335,7 @@ namespace TiltBrush
             RegisterApiCommand(script, "model.select", (Action<int>)ApiMethods.SelectModel);
             RegisterApiCommand(script, "model.position", (Action<int, Vector3>)ApiMethods.PositionModel);
             RegisterApiCommand(script, "brush.forcepainting", (Action<bool>)ApiMethods.ForcePainting);
+            RegisterApiCommand(script, "brush.stoppainting", (Action<bool>)ApiMethods.StopPainting);
             RegisterApiCommand(script, "image.position", (Action<int, Vector3>)ApiMethods.PositionImage);
             RegisterApiCommand(script, "guide.add", (Action<string>)ApiMethods.AddGuide);
 
@@ -375,23 +408,25 @@ namespace TiltBrush
             RegisterApiCommand(script, "stroke.add", (Action<int>)ApiMethods.AddPointToStroke);
         }
 
-        private Vector3 GetPastPointerPos(int back)
+        private Vector3 GetPastBrushPos(int back)
         {
-            return GetPastPointerTransform(back).translation;
+            return m_TransformBuffers.PastBrushTr(back).translation;
         }
 
-        private Quaternion GetPastPointerRot(int back)
+        private Quaternion GetPastBrushRot(int back)
         {
-            return GetPastPointerTransform(back).rotation;
+            return m_TransformBuffers.PastBrushTr(back).rotation;
         }
 
-        private TrTransform GetPastPointerTransform(int numberToGoBack)
+        private Vector3 GetPastWandPos(int back)
         {
-            var size = m_PointerBuffer.Size;
-            numberToGoBack = Mathf.Min(numberToGoBack, size - 1);
-            return m_PointerBuffer[numberToGoBack];
+            return m_TransformBuffers.PastWandTr(back).translation;
         }
 
+        private Quaternion GetPastWandRot(int back)
+        {
+            return m_TransformBuffers.PastWandTr(back).rotation;
+        }
 
         private void RegisterApiProperty(Script script, string cmd, object action)
         {
@@ -410,8 +445,19 @@ namespace TiltBrush
 #if UNITY_EDITOR
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
-                var pars = ApiManager.Instance.GetRuntimeCommandInfo(cmd).paramInfo;
-                AutoCompleteEntries.Add($"function {cmd}({pars}) end");
+                string paramNames = "";
+                try
+                {
+                    paramNames = ApiManager.Instance.GetRuntimeCommandInfo(cmd).paramInfo;
+                }
+                catch (KeyNotFoundException e)
+                {
+                    // Not a registered API command. Use reflection
+                    Delegate d = action as Delegate;
+                    var paramNameList = d.Method.GetParameters().Select(p => p.Name);
+                    paramNames = string.Join(", ", paramNameList);
+                }
+                AutoCompleteEntries.Add($"function {cmd}({paramNames}) end");
             }
 #endif
         }
@@ -456,28 +502,45 @@ namespace TiltBrush
             return DynValue.Nil;
         }
 
-        public ScriptTrTransform CallActivePointerScript(string fnName)
+        private ScriptTrTransform CallActivePointerScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.PointerScript);
             DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.PointerScript);
-            return new ScriptTrTransform(result.ToObject<TrTransform>(), space);
+            var tr = TrTransform.identity;
+            if (!Equals(result, DynValue.Nil)) tr = result.ToObject<TrTransform>();
+            return new ScriptTrTransform(tr, space);
         }
 
         public ScriptTrTransforms CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.ToolScript);
-            DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.ToolScript);
-            return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
+            var trs = _TrTransformsFromScript(fnName, script);
+            return new ScriptTrTransforms(trs, space);
         }
 
         public ScriptTrTransforms CallActiveSymmetryScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.SymmetryScript);
-            DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(ApiCategory.SymmetryScript);
-            return new ScriptTrTransforms(result.ToObject<List<TrTransform>>(), space);
+            var trs = _TrTransformsFromScript(fnName, script);
+            return new ScriptTrTransforms(trs, space);
+        }
+
+        private List<TrTransform> _TrTransformsFromScript(string fnName, Script script)
+        {
+            DynValue result = _CallScript(script, fnName);
+            var trs = new List<TrTransform>();
+            if (!Equals(result, DynValue.Nil)) trs = result.ToObject<List<TrTransform>>();
+            return trs;
+        }
+
+        public DynValue GetSettingForActiveScript(ApiCategory category, string key)
+        {
+            var script = GetActiveScript(category);
+            var settings = script.Globals.Get("Settings");
+            return settings?.Table?.Get(key);
         }
 
         private ScriptCoordSpace _GetSpaceForActiveScript(ApiCategory category)
@@ -494,21 +557,23 @@ namespace TiltBrush
             }
 
             // See if the defaults are overridden
-            var script = GetActiveScript(category);
-            var settings = script.Globals.Get("Settings");
-            var spaceVal = settings?.Table?.Get("space");
+            var spaceVal = GetSettingForActiveScript(category, "space");
             if (spaceVal != null)
             {
                 Enum.TryParse(spaceVal.String, true, out space);
             }
+
             return space;
         }
 
+
         public void ChangeCurrentScript(ApiCategory category, int increment)
         {
+            int ActualMod(int x, int m) => (x % m + m) % m;
+
             if (Scripts[category].Count == 0) return;
             ActiveScripts[category] += increment;
-            ActiveScripts[category] %= Scripts[category].Count;
+            ActiveScripts[category] = ActualMod(ActiveScripts[category], Scripts[category].Count);
             var script = GetActiveScript(category);
             InitScript(script);
         }
@@ -542,7 +607,7 @@ namespace TiltBrush
                 GetOrSetWidgetCurrentValue(script, config);
             }
             SetStaticScriptContext(script);
-            _CallScript(script, "Start");
+            _CallScript(script, "OnStart");
         }
 
         public void EnablePointerScript(bool enable)
@@ -584,12 +649,41 @@ namespace TiltBrush
             return (float)val.Number;
         }
 
+        public void RecordPointerPositions(
+            Vector3 brushPos_GS, Quaternion brushRot_GS,
+            Vector3 wandPos_GS, Quaternion wandRot_GS,
+            Vector3 headPos_GS, Quaternion headRot_GS)
+        {
+            m_TransformBuffers.AddBrushTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(brushPos_GS, brushRot_GS));
+            m_TransformBuffers.AddWandTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(wandPos_GS, wandRot_GS));
+            m_TransformBuffers.AddHeadTr(App.Scene.ActiveCanvas.Pose.inverse * TrTransform.TR(headPos_GS, headRot_GS));
+        }
+
         public void ApplyPointerScript(Quaternion pointerRot, ref Vector3 pos_GS, ref Quaternion rot_GS)
         {
-            var attach_CS = App.Scene.ActiveCanvas.Pose * TrTransform.TR(pos_GS, rot_GS);
-            m_PointerBuffer.PushFront(attach_CS);
+            ScriptTrTransform scriptTransformOutput = new ScriptTrTransform();
+            bool scriptHasRun = false;
 
-            var scriptTransformOutput = CallActivePointerScript("Main");
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                scriptTransformOutput = CallActivePointerScript("OnTriggerPressed");
+                m_TriggerWasPressed = true;
+                scriptHasRun = true;
+            }
+            else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                scriptTransformOutput = CallActivePointerScript("WhileTriggerPressed");
+                m_TriggerWasPressed = true;
+                scriptHasRun = true;
+            }
+            else if (m_TriggerWasPressed)
+            {
+                scriptTransformOutput = CallActivePointerScript("OnTriggerReleased");
+                m_TriggerWasPressed = false;
+                scriptHasRun = true;
+            }
+
+            if (!scriptHasRun) return;
 
             switch (scriptTransformOutput.Space)
             {

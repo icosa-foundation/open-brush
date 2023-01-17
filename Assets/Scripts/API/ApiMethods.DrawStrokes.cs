@@ -157,13 +157,13 @@ namespace TiltBrush
             App.BrushColor.CurrentColor += new Color(rgb.x, rgb.y, rgb.z);
         }
 
-        [ApiEndpoint("color.set.rgb", "Sets the current color. Values are hue, saturation and value")]
+        [ApiEndpoint("color.set.rgb", "Sets the current color. Values are red, green and blue")]
         public static void SetColorRGB(Vector3 rgb)
         {
             App.BrushColor.CurrentColor = new Color(rgb.x, rgb.y, rgb.z);
         }
 
-        [ApiEndpoint("color.set.hsv", "Sets the current color. Values are red, green and blue")]
+        [ApiEndpoint("color.set.hsv", "Sets the current color. Values are hue, saturation and value")]
         public static void SetColorHSV(Vector3 hsv)
         {
             App.BrushColor.CurrentColor = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -124,7 +125,12 @@ namespace TiltBrush
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
             // Allow API command to override painting mode
-            m_PaintingActive = m_PaintingActive || ApiManager.Instance.ForcePaintingOn;
+            m_PaintingActive = ApiManager.Instance.ForcePainting switch
+            {
+                ApiManager.ForcePaintingMode.ForcedOn => true,
+                ApiManager.ForcePaintingMode.ForcedOff => false,
+                _ => m_PaintingActive,
+            };
 
             if (m_BimanualTape)
             {
@@ -210,12 +216,18 @@ namespace TiltBrush
             }
         }
 
-        void PositionPointer()
+        protected override (Vector3, Quaternion) GetPointerPosition()
         {
-            // Angle the pointer according to the user-defined pointer angle.
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             Vector3 pos_GS = rAttachPoint.position;
             Quaternion rot_GS = rAttachPoint.rotation * sm_OrientationAdjust;
+            return (pos_GS, rot_GS);
+        }
+
+        void PositionPointer()
+        {
+            // Angle the pointer according to the user-defined pointer angle.
+            (Vector3 pos_GS, Quaternion rot_GS) = GetPointerPosition();
             Quaternion pointerRot = rot_GS;
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
@@ -230,11 +242,6 @@ namespace TiltBrush
                 ApplyLazyInput(ref pos_GS, ref rot_GS);
             }
 
-            if (LuaManager.Instance.PointerScriptsEnabled)
-            {
-                LuaManager.Instance.ApplyPointerScript(pointerRot, ref pos_GS, ref rot_GS);
-            }
-
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
                 pos_GS = SnapToGrid(pos_GS);
@@ -243,6 +250,22 @@ namespace TiltBrush
             if (PointerManager.m_Instance.positionJitter > 0)
             {
                 pos_GS = PointerManager.m_Instance.GenerateJitteredPosition(pos_GS, PointerManager.m_Instance.positionJitter);
+            }
+
+            Transform wandTr = InputManager.m_Instance.GetWandControllerAttachPoint();
+            Transform headTr = ViewpointScript.Head;
+
+            // Usually done in UpdateTool but FreePaintTool overrides that and does it here
+            // The reason for this is that we want to store the brush transforms after they've been processed above
+            LuaManager.Instance.RecordPointerPositions(
+                pos_GS, rot_GS,
+                wandTr.position, wandTr.rotation,
+                headTr.position, headTr.rotation
+            );
+
+            if (LuaManager.Instance.PointerScriptsEnabled)
+            {
+                LuaManager.Instance.ApplyPointerScript(pointerRot, ref pos_GS, ref rot_GS);
             }
 
             PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, pos_GS, rot_GS);
