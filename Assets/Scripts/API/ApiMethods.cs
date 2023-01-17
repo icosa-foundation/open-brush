@@ -299,11 +299,10 @@ namespace TiltBrush
         [ApiEndpoint("brush.home.reset", "Resets the brush position and direction")]
         public static void BrushHome()
         {
-            BrushMoveTo(ApiManager.Instance.BrushOrigin);
-            ApiManager.Instance.BrushRotation = ApiManager.Instance.BrushInitialRotation;
+            ApiManager.Instance.ResetBrushTransform();
         }
 
-        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home")]
+        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home. This persists in new sketches")]
         public static void BrushSetHome()
         {
             ApiManager.Instance.BrushOrigin = ApiManager.Instance.BrushPosition;

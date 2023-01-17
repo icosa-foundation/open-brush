@@ -92,6 +92,7 @@ namespace TiltBrush
             PopulateExampleScripts();
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
+            ResetBrushTransform();
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -165,6 +166,13 @@ namespace TiltBrush
 
             App.Instance.StateChanged += RunStartupScript;
 
+        }
+
+        public void ResetBrushTransform()
+        {
+            // Resets the "turtle" transform back to it's original values
+            BrushPosition = BrushOrigin;
+            BrushRotation = BrushInitialRotation;
         }
 
         public void RunStartupScript(App.AppState oldState, App.AppState newState)
