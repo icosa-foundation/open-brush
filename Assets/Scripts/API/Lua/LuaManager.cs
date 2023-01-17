@@ -41,8 +41,6 @@ namespace TiltBrush
         public static List<string> AutoCompleteEntries;
 #endif
 
-        private static string DocumentsDirectory => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Open Brush");
-        private static string ScriptsDirectory => Path.Combine(DocumentsDirectory, "Scripts");
         public List<ApiCategory> ApiCategories => Enum.GetValues(typeof(ApiCategory)).Cast<ApiCategory>().ToList();
 
         public enum ApiCategory
@@ -95,9 +93,9 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            if (Directory.Exists(ScriptsDirectory))
+            if (Directory.Exists(ApiManager.Instance.UserScriptsPath()))
             {
-                m_FileWatcher = new FileWatcher(ScriptsDirectory, "*.lua");
+                m_FileWatcher = new FileWatcher(ApiManager.Instance.UserScriptsPath(), "*.lua");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
                 m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
@@ -152,18 +150,7 @@ namespace TiltBrush
                 Scripts[category] = new SortedDictionary<string, Script>();
                 ActiveScripts[category] = 0;
             }
-            if (!Directory.Exists(ScriptsDirectory))
-            {
-                try
-                {
-                    Directory.CreateDirectory(ScriptsDirectory);
-                }
-                catch (IOException e)
-                {
-                    Debug.LogError($"Failed to create Scripts directory. Please create it manually");
-                }
-            }
-            string[] files = Directory.GetFiles(ScriptsDirectory, LuaFileSearchPattern, SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(ApiManager.Instance.UserScriptsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
