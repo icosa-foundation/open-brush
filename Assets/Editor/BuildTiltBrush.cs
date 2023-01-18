@@ -1072,12 +1072,17 @@ static class BuildTiltBrush
     class TempSetXrPlugin : IDisposable
     {
         List<XRLoader> m_plugins;
+        bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
 
         public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
             m_plugins = new();
             string[] targetXrPluginsRequired = new string[] { };
+
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
             {
@@ -1090,12 +1095,13 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
+                case XrSdkMode.Monoscopic:
+                    targetSettings.InitManagerOnStart = false;
+                    break;
                 default:
                     break;
             }
 
-            m_targetGroup = TargetToGroup(tiltOptions.Target);
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
 
             m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
             // Remove unwanted loaders
@@ -1124,6 +1130,8 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            targetSettings.InitManagerOnStart = m_xrEnabled;
+
             // Remove build loaders.
             foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
             {
@@ -1141,6 +1149,8 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
+
+            EditorUtility.SetDirty(targetSettings);
         }
     }
 
