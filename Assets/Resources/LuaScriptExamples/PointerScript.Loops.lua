@@ -1,5 +1,5 @@
 ﻿Widgets = {
-    speed={label="Speed", type="float", min=0.01, max=20, default=4},
+    speed={label="Speed", type="float", min=0.01, max=20, default=6},
     radius={label="Radius", type="float", min=0.01, max=5, default=.25},
 }
 
