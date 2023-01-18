@@ -123,7 +123,7 @@ namespace TiltBrush
 
         void Awake()
         {
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
@@ -147,7 +147,7 @@ namespace TiltBrush
                     SetUnityXRControllerStyle(tryGetUnityXRController);
                 }
             }
-            else if (Config.m_SdkMode == SdkMode.Monoscopic)
+            else if (App.Config.m_SdkMode == SdkMode.Monoscopic)
             {
                 // ---------------------------------------------------------------------------------------- //
                 // Monoscopic
@@ -198,7 +198,7 @@ namespace TiltBrush
 
         void Start()
         {
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender += OnNewPoses;
             }
@@ -218,7 +218,7 @@ namespace TiltBrush
 
         void Update()
         {
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 OnNewPoses();
             }
@@ -226,7 +226,7 @@ namespace TiltBrush
 
         void OnDestroy()
         {
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender -= OnNewPoses;
                 InputDevices.deviceConnected -= OnUnityXRDeviceConnected;
@@ -326,7 +326,7 @@ namespace TiltBrush
                 points_RS = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
                     .Select(v => UnityFromOculus(v)).ToArray();
 #else // OCULUS_SUPPORTED
-            // if (Config.m_SdkMode == SdkMode.SteamVR)
+            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
             //     // var chaperone = OpenVR.Chaperone;
@@ -557,18 +557,18 @@ namespace TiltBrush
         // - Info, which encapsulates VR APIs (OVR, SteamVR, GVR, ...)
         public ControllerInfo CreateControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
         {
-            // if (Config.m_SdkMode == SdkMode.SteamVR)
+            // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mike - set to return the default instead.
             //     return new NonVrControllerInfo(behavior);
             //     //return new SteamControllerInfo(behavior);
             // }
             // else 
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 return new UnityXRControllerInfo(behavior, isLeftHand);
             }
-            /*else if (Config.m_SdkMode == SdkMode.Gvr)
+            /*else if (App.Config.m_SdkMode == SdkMode.Gvr)
             {
                 return new GvrControllerInfo(behavior, isLeftHand);
             }*/
@@ -588,7 +588,7 @@ namespace TiltBrush
             bool leftRightSwapped = true;
 
             // TODO:Mike - swapping controller hands in. The Oculus specific stuff might actually be better than SteamVR here? See main branch.
-            if (Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 UnityXRControllerInfo wandInfo = InputManager.Wand as UnityXRControllerInfo;
                 UnityXRControllerInfo brushInfo = InputManager.Brush as UnityXRControllerInfo;
@@ -609,7 +609,7 @@ namespace TiltBrush
         // Returns the Degrees of Freedom for the VR system controllers.
         public DoF GetControllerDof()
         {
-            switch (Config.m_SdkMode)
+            switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
                     // @bill - Won't this depend of the device?
@@ -737,7 +737,7 @@ namespace TiltBrush
         // Retruns true if SDK does not have an HMD or if it is correctly initialized.
         public bool IsHmdInitialized()
         {
-            switch (Config.m_SdkMode)
+            switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
                     return UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader != null;
@@ -749,7 +749,7 @@ namespace TiltBrush
         // Returns the native frame rate of the HMD (or screen) in frames per second.
         public int GetHmdTargetFrameRate()
         {
-            switch (Config.m_SdkMode)
+            switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
                     return 60; // 90?
@@ -766,7 +766,7 @@ namespace TiltBrush
         // Returns the Degrees of Freedom for the VR system headset.
         public DoF GetHmdDof()
         {
-            switch (Config.m_SdkMode)
+            switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
                     return DoF.Six;

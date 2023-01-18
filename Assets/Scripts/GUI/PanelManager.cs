@@ -425,7 +425,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                if (!App.Instance.StartupError && m_PanelMap[i].IsValidForSdkMode(Config.m_SdkMode))
+                if (!App.Instance.StartupError && m_PanelMap[i].IsValidForSdkMode(App.Config.m_SdkMode))
                 {
                     // Only create one of our unique panels
                     if (IsPanelUnique(type))
@@ -469,7 +469,7 @@ namespace TiltBrush
                 m_WandPaneVisuals.transform.GetChild(0).GetComponent<Renderer>();
             m_WandPaneVisualsState = PaneVisualsState.Hidden;
 
-            Debug.AssertFormat((Config.m_SdkMode == SdkMode.Ods) || (m_AdminPanel != null),
+            Debug.AssertFormat((App.Config.m_SdkMode == SdkMode.Ods) || (m_AdminPanel != null),
                 "Admin Panel required.");
 
             m_PanelsCustomized = false;

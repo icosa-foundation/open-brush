@@ -1453,7 +1453,7 @@ static class BuildTiltBrush
         {
             var config = App.Config;
             // TODO: can we think of a better way of switching to mono/something else in the future?
-            Config.m_SdkMode = XrTargetToSdk(xrSdk);
+            config.m_SdkMode = XrTargetToSdk(xrSdk);
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
