@@ -229,6 +229,7 @@ namespace TiltBrush
             // Angle the pointer according to the user-defined pointer angle.
             (Vector3 pos_GS, Quaternion rot_GS) = GetPointerPosition();
             Quaternion pointerRot = rot_GS;
+
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
 
@@ -252,15 +253,14 @@ namespace TiltBrush
                 pos_GS = PointerManager.m_Instance.GenerateJitteredPosition(pos_GS, PointerManager.m_Instance.positionJitter);
             }
 
-            Transform wandTr = InputManager.m_Instance.GetWandControllerAttachPoint();
-            Transform headTr = ViewpointScript.Head;
-
             // Usually done in UpdateTool but FreePaintTool overrides that and does it here
             // The reason for this is that we want to store the brush transforms after they've been processed above
+            Transform wandTr_GS = InputManager.m_Instance.GetWandControllerAttachPoint();
+            Transform headTr_GS = ViewpointScript.Head;
             LuaManager.Instance.RecordPointerPositions(
                 pos_GS, rot_GS,
-                wandTr.position, wandTr.rotation,
-                headTr.position, headTr.rotation
+                wandTr_GS.position, wandTr_GS.rotation,
+                headTr_GS.position, headTr_GS.rotation
             );
 
             if (LuaManager.Instance.PointerScriptsEnabled)
