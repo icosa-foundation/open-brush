@@ -84,7 +84,7 @@ namespace TiltBrush
             // Note: this now only works for choosing between VR modes.
             // Switching from VR to non-VR requires tweaking PlayerSettings.virtualRealitySupported,
             // which cannot be done at runtime :-/
-            MaybeLoadEnum(ref config.m_SdkMode, obj["DisplayMode"]);
+            MaybeLoadEnum(ref Config.m_SdkMode, obj["DisplayMode"]);
         }
 
         // Extracts a value type (int, bool, etc) from a JToken.

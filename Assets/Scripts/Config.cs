@@ -105,7 +105,7 @@ namespace TiltBrush
         [SerializeField] private PlatformConfig m_PlatformConfig;
 
         // The sdk mode indicates which SDK that we're using to drive the display.
-        public SdkMode m_SdkMode;
+        public static SdkMode m_SdkMode;
 
         // Stores the value of IsExperimental at startup time
         [NonSerialized] public bool m_WasExperimentalAtStartup;
@@ -489,13 +489,8 @@ namespace TiltBrush
 
         public static bool IsExperimental
         {
-            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
-        }
-
-        // Non-Static version of above
-        public bool GetIsExperimental()
-        {
-            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1 ||
+                m_SdkMode == SdkMode.Monoscopic;
         }
 
         public void SetIsExperimental(bool active)
@@ -506,7 +501,7 @@ namespace TiltBrush
         void Awake()
         {
             m_SingletonState = this;
-            m_WasExperimentalAtStartup = GetIsExperimental();
+            m_WasExperimentalAtStartup = IsExperimental;
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))

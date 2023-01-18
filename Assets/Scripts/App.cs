@@ -488,7 +488,7 @@ namespace TiltBrush
         {
             m_Instance = this;
             Log(GetStartupString());
-            Log($"SdkMode: {App.Config.m_SdkMode}.");
+            Log($"SdkMode: {Config.m_SdkMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
             Physics.autoSimulation = false;

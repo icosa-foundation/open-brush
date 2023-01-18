@@ -25,7 +25,7 @@ namespace TiltBrush
         public override void InitPanel()
         {
             base.InitPanel();
-            m_ToggleExperimentalModeToggle.m_IsToggledOn = App.Config.GetIsExperimental();
+            m_ToggleExperimentalModeToggle.m_IsToggledOn = Config.IsExperimental;
         }
 
         public void HandleToggleExperimentalMode(ToggleButton btn)
