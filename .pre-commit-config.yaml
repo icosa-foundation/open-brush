@@ -22,10 +22,13 @@ repos:
         name: pylint
         files: ^Support/
         language_version: python3
+        additional_dependencies:
+          - typing_extensions
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
+          - --disable=import-error
   - repo: https://github.com/dotnet/format
-    rev: "aec7996c51c76644de6014bbcce9264d402a8db0"
+    rev: "a2c1431dabf2229052cf598f86f31bc3eac5bc7b"  # Main as of 2022-12-05
     hooks:
       - id: dotnet-format
         exclude: ^(Assets/ThirdParty)|(Packages/)

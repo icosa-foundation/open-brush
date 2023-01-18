@@ -7383,7 +7383,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5181164894696378852}
-  m_Text: You're about to exit Tilt Brush
+  m_Text: You're about to exit Open Brush
   m_OffsetZ: 0
   m_CharacterSize: 0.02
   m_LineSpacing: 1
