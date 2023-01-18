@@ -121,7 +121,9 @@ namespace TiltBrush
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
             LuaCustomConverters.RegisterAll();
-            LoadScripts();
+            InitScriptDataStructures();
+            LoadExampleScripts();
+            LoadUserScripts();
         }
 
         private void Update()
@@ -141,7 +143,7 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Clear();
         }
 
-        public void LoadScripts()
+        public void InitScriptDataStructures()
         {
             Scripts = new Dictionary<ApiCategory, SortedDictionary<string, Script>>();
             ActiveScripts = new Dictionary<ApiCategory, int>();
@@ -150,10 +152,49 @@ namespace TiltBrush
                 Scripts[category] = new SortedDictionary<string, Script>();
                 ActiveScripts[category] = 0;
             }
+        }
+
+        public void LoadUserScripts()
+        {
             string[] files = Directory.GetFiles(ApiManager.Instance.UserScriptsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
+            }
+        }
+
+        private void LoadExampleScripts()
+        {
+            var exampleScripts = Resources.LoadAll("LuaScriptExamples", typeof(TextAsset));
+            foreach (var asset in exampleScripts)
+            {
+                var luaFile = (TextAsset)asset;
+                LoadScriptFromString(luaFile.name, luaFile.text);
+            }
+        }
+
+        private void LoadScriptFromString(string filename, string contents)
+        {
+            Script script = new Script();
+            script.Options.DebugPrint = s => Debug.Log(s);
+            if (filename.StartsWith("__")) return;
+            script.DoString(contents);
+            ApiCategory? catMatch = null;
+            foreach (ApiCategory category in ApiCategories)
+            {
+                var categoryName = category.ToString();
+                if (filename.StartsWith(categoryName))
+                {
+                    catMatch = category;
+                    break;
+                };
+            }
+            if (catMatch.HasValue)
+            {
+                var category = catMatch.Value;
+                string scriptName = filename.Substring(category.ToString().Length + 1);
+                Scripts[category][scriptName] = script;
+                InitScript(script);
             }
         }
 

@@ -20,7 +20,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class GenerateLuaAutocomplete : Editor
+    public class LuaAutocompleteGenerator : Editor
     {
         [MenuItem("Open Brush/API/Generate Lua Autocomplete File")]
         static void Generate()
@@ -35,7 +35,7 @@ namespace TiltBrush
             LuaManager.AutoCompleteEntries = new List<string>();
             LuaManager.Instance.SetStaticScriptContext(script);
             LuaManager.Instance.SetDynamicScriptContext(script);
-            string filePath = Path.Combine("Assets/Resources/ScriptExamples", "__autocomplete.lua");
+            string filePath = Path.Combine("Assets/Resources/LuaScriptExamples", "__autocomplete.lua");
             File.WriteAllLines(filePath, LuaManager.AutoCompleteEntries);
             LuaManager.AutoCompleteEntries = null;
         }
