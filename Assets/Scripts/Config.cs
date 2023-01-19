@@ -509,7 +509,7 @@ namespace TiltBrush
             m_WasExperimentalAtStartup = GetIsExperimental();
 
             // Force mono to experimental and quit.
-            if(m_SdkMode == SdkMode.Monoscopic && !m_WasExperimentalAtStartup)
+            if (m_SdkMode == SdkMode.Monoscopic && !m_WasExperimentalAtStartup)
             {
                 SetIsExperimental(true);
                 Application.Quit();
