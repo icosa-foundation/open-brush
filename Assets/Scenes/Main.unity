@@ -16024,11 +16024,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
-      propertyPath: m_NoiseSparkleSpeed
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
-        type: 3}
       propertyPath: m_MobileSelectionParticle
       value: 
       objectReference: {fileID: 2100000, guid: 29611d376e968d64da9ee06ea20020db, type: 2}
@@ -16049,24 +16044,9 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 6845d78e17448d345841a29e57f1c893, type: 2}
     - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
-      propertyPath: m_StrokeSelectionPostEffect
-      value: 
-      objectReference: {fileID: 2100000, guid: 989d64a8e82eeba4cb66d66a87f71242, type: 2}
-    - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
-        type: 3}
-      propertyPath: m_WidgetSelectionPostEffect
-      value: 
-      objectReference: {fileID: 2100000, guid: 6d5dcf68f440aea459178e8e71e1e1c5, type: 2}
-    - target: {fileID: 114000014001565202, guid: dedd7823645ca60468aca5f2ff1b9a7f,
-        type: 3}
       propertyPath: m_MobileSelectionSolidObject
       value: 
       objectReference: {fileID: 2100000, guid: 0dfc862a0e6de274ba2e73ff1c3abd51, type: 2}
-    - target: {fileID: 8383487415960193186, guid: dedd7823645ca60468aca5f2ff1b9a7f,
-        type: 3}
-      propertyPath: mat
-      value: 
-      objectReference: {fileID: 2100000, guid: a05aca4b32b5fd14aa95311556d3df67, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
 --- !u!4 &1226230319 stripped
