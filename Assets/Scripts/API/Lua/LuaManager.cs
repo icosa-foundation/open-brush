@@ -56,7 +56,6 @@ namespace TiltBrush
 
         [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
         [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
-
         [NonSerialized] public bool PointerScriptsEnabled;
         private List<string> m_ScriptPathsToUpdate;
 
@@ -292,6 +291,7 @@ namespace TiltBrush
             RegisterApiProperty(script, "brush.lastColorPickedHsv", new Vector3(h, s, v));
 
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
+            RegisterApiProperty(script, "app.lastSelectedStroke", SelectionManager.m_Instance.LastSelectedStrokeCP);
 
             RegisterApiProperty(script, "canvas.scale", App.ActiveCanvas.Pose.scale);
             RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);

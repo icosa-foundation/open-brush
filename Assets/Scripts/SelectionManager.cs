@@ -27,6 +27,7 @@ namespace TiltBrush
     public class SelectionManager : MonoBehaviour
     {
         public static SelectionManager m_Instance;
+
         private SnapGrid3D m_SnapGridVisualization;
 
         [SerializeField] private SelectionWidget m_SelectionWidget;
@@ -269,6 +270,33 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+
+        // Mainly stored for use in scripts
+        private Stroke m_LastSelectedStroke;
+        private GrabWidget m_LastSelectedWidget;
+
+        public Stroke LastSelectedStroke
+        {
+            get => m_LastSelectedStroke;
+            set
+            {
+                m_LastSelectedStrokeCP = value.m_ControlPoints.Select(cp => TrTransform.TRS(
+                    cp.m_Pos,
+                    cp.m_Orient,
+                    cp.m_Pressure
+                )).ToList();
+                m_LastSelectedStroke = value;
+            }
+        }
+
+        public List<TrTransform> LastSelectedStrokeCP => m_LastSelectedStrokeCP;
+        private List<TrTransform> m_LastSelectedStrokeCP;
+
+        public GrabWidget LastSelectedWidget
+        {
+            get => m_LastSelectedWidget;
+            set => m_LastSelectedWidget = value;
+        }
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)

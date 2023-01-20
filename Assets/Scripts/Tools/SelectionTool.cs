@@ -174,7 +174,11 @@ namespace TiltBrush
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
 
             // Only select from the active layer
-            if (!removeFromSelection && (widget.Canvas != App.Scene.ActiveCanvas)) return true;
+            if (!removeFromSelection && (widget.Canvas != App.Scene.ActiveCanvas))
+            {
+                SelectionManager.m_Instance.LastSelectedWidget = widget;
+                return true;
+            }
 
             if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
             {
@@ -222,7 +226,11 @@ namespace TiltBrush
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
 
             // Only select from the active layer
-            if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas)) return true;
+            if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas))
+            {
+                SelectionManager.m_Instance.LastSelectedStroke = rGroup.m_Stroke;
+                return true;
+            }
 
             if ((removeFromSelection && !isSelected) || (!removeFromSelection && isSelected))
             {
