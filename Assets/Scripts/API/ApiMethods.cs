@@ -299,11 +299,10 @@ namespace TiltBrush
         [ApiEndpoint("brush.home", "Resets the brush position and direction")]
         public static void BrushHome()
         {
-            BrushMoveTo(ApiManager.Instance.BrushOrigin);
-            ApiManager.Instance.BrushRotation = ApiManager.Instance.BrushInitialRotation;
+            ApiManager.Instance.ResetBrushTransform();
         }
 
-        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home")]
+        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home. This persists in new sketches")]
         public static void BrushSetHome()
         {
             ApiManager.Instance.BrushOrigin = ApiManager.Instance.BrushPosition;
@@ -339,9 +338,14 @@ namespace TiltBrush
             return image;
         }
 
-        [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
+        [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
         public static void ImportImage(string location)
         {
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            {
+                location = _DownloadMediaFileFromUrl(location, "Images");
+            }
+
             var image = _LoadReferenceImage(location);
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
@@ -457,9 +461,9 @@ namespace TiltBrush
         // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
         // public static void ImportVideo(string location)
         // {
-        //     if (location.StartsWith("http://") || location.StartsWith("https://"));
+        //     if (location.StartsWith("http://") || location.StartsWith("https://"))
         //     {
-        //         location = DownloadMediaFileFromUrl(location, "Videos");
+        //         location = _DownloadMediaFileFromUrl(location, "Videos");
         //     }
         //     location = DownloadMediaFileFromUrl(location, "Videos");
         //
