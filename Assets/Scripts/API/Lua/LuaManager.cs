@@ -135,8 +135,9 @@ namespace TiltBrush
                 {
                     var category = catMatch.Value;
                     var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
-                    LoadScriptFromPath(path);
+                    var scriptName = LoadScriptFromPath(path);
                     ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
+                    if (activeScriptName==scriptName) InitScript(GetActiveScript(category));
                 }
             }
             m_ScriptPathsToUpdate.Clear();
@@ -193,7 +194,6 @@ namespace TiltBrush
                 var category = catMatch.Value;
                 string scriptName = filename.Substring(category.ToString().Length + 1);
                 Scripts[category][scriptName] = script;
-                InitScript(script);
             }
         }
 
@@ -209,23 +209,24 @@ namespace TiltBrush
         }
 
 
-        private void LoadScriptFromPath(string path)
+        private string LoadScriptFromPath(string path)
         {
             Script script = new Script();
+            string scriptName = null;
             script.Options.DebugPrint = s => Debug.Log(s);
             string scriptFilename = Path.GetFileNameWithoutExtension(path);
-            if (scriptFilename.StartsWith("__")) return;
+            if (scriptFilename.StartsWith("__")) return null;
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             script.DoStream(fileStream);
             var catMatch = TryGetCategoryFromScriptPath(path);
             if (catMatch.HasValue)
             {
                 var category = catMatch.Value;
-                string scriptName = scriptFilename.Substring(category.ToString().Length + 1);
+                scriptName = scriptFilename.Substring(category.ToString().Length + 1);
                 Scripts[category][scriptName] = script;
-                InitScript(script);
             }
             fileStream.Close();
+            return scriptName;
         }
 
         public void SetDynamicScriptContext(Script script)
@@ -291,6 +292,7 @@ namespace TiltBrush
             RegisterApiProperty(script, "brush.lastColorPickedHsv", new Vector3(h, s, v));
 
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
+            RegisterApiProperty(script, "app.frames", Time.frameCount);
             RegisterApiProperty(script, "app.lastSelectedStroke", SelectionManager.m_Instance.LastSelectedStrokeCP);
 
             RegisterApiProperty(script, "canvas.scale", App.ActiveCanvas.Pose.scale);
@@ -306,6 +308,7 @@ namespace TiltBrush
             RegisterApiCommand(script, "wand.pastPosition", (Func<int, Vector3>)GetPastWandPos);
             RegisterApiCommand(script, "wand.pastRotation", (Func<int, Quaternion>)GetPastWandRot);
             RegisterApiCommand(script, "draw.path", (Action<List<List<float>>>) Drawing.DrawPath);
+            RegisterApiProperty(script, "path.fromSvg", (Func<string, List<TrTransform>>)Drawing.PathFromSvg);
             // RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
             // RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
             // RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
@@ -612,19 +615,21 @@ namespace TiltBrush
             return space;
         }
 
-
         public void ChangeCurrentScript(ApiCategory category, int increment)
         {
+
+            var previousScript = GetActiveScript(category);
+            _CallScript(previousScript, "End");
+
             int ActualMod(int x, int m) => (x % m + m) % m;
 
             if (Scripts[category].Count == 0) return;
             ActiveScripts[category] += increment;
             ActiveScripts[category] = ActualMod(ActiveScripts[category], Scripts[category].Count);
-            var script = GetActiveScript(category);
-            InitScript(script);
+            InitScript(GetActiveScript(category));
         }
 
-        private void InitScript(Script script)
+        public void InitScript(Script script)
         {
             // Redirect "print"
             script.Options.DebugPrint = s => { Debug.Log(s); };
@@ -653,12 +658,20 @@ namespace TiltBrush
                 GetOrSetWidgetCurrentValue(script, config);
             }
             SetStaticScriptContext(script);
-            _CallScript(script, "OnStart");
+            _CallScript(script, "Start");
         }
 
         public void EnablePointerScript(bool enable)
         {
             PointerScriptsEnabled = enable;
+            if (enable)
+            {
+                InitScript(GetActiveScript(ApiCategory.PointerScript));
+            }
+            else
+            {
+                CallActivePointerScript("End");
+            }
         }
 
         public List<string> GetScriptNames(ApiCategory category)

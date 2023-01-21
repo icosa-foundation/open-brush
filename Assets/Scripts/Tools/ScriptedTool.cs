@@ -62,6 +62,9 @@ namespace TiltBrush
 
             if (bEnable)
             {
+                var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.ToolScript);
+                LuaManager.Instance.InitScript(script);
+
                 m_AttachmentSphere.parent = InputManager.Brush.Geometry.ToolAttachPoint;
                 m_AttachmentSphere.gameObject.SetActive(true);
                 m_AttachmentSphere.localPosition = Vector3.zero;
@@ -76,6 +79,7 @@ namespace TiltBrush
             }
             else
             {
+                LuaManager.Instance.CallActiveToolScript("End");
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
             }

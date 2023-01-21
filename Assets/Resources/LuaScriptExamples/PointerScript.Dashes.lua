@@ -3,6 +3,10 @@
     threshold={label="Threshold", type="float", min=0, max=1, default=.75},
 }
 
+function Start()
+    brush.stoppainting(false)
+end
+
 function WhileTriggerPressed()
     wave = math.cos(brush.distanceDrawn * freq)
     if wave > threshold then
@@ -14,4 +18,8 @@ function WhileTriggerPressed()
     pos = {0, 0, 0}
     rot = {0, 0, 0}
     return {pos, rot}
+end
+
+function End()
+    brush.stoppainting(false)
 end

@@ -767,9 +767,10 @@ namespace TiltBrush
 
             var trs_CS = new List<TrTransform>();
 
+            int i = 0;
             foreach (var resultTr in result.Transforms)
             {
-                TrTransform newTr_CS = default;
+                TrTransform newTr_CS = TrTransform.identity;
                 switch (result.Space)
                 {
                     case ScriptCoordSpace.Canvas:
@@ -779,7 +780,7 @@ namespace TiltBrush
                         Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
                         Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
                         newTr_CS.translation = pointerRot_GS * resultTr.translation;
-                        newTr_CS.translation += rAttachPoint_GS.position;
+                        // newTr_CS.translation += rAttachPoint_GS.position;
                         break;
                     case ScriptCoordSpace.Widget:
                             var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);

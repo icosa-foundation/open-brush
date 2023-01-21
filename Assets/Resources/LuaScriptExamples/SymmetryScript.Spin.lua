@@ -11,9 +11,9 @@ Widgets = {
 function Main()
     rot = {0, 0, 0}
     transforms = {}
-    for i = 0.0, copies do
-        angle = (brush.distanceDrawn * speed) + ((math.pi * 2.0) / i)
-        pos = {math.sin(angle) * radius, math.cos(angle) * radius, 0}
+    for i = 1.0, copies do
+        angle = (app.time * speed) + ((math.pi * 2.0) * (i/copies))
+        pos = {x=math.sin(angle) * radius, y=math.cos(angle) * radius, z=0}
         table.insert(transforms, {pos, rot})
     end
     return transforms

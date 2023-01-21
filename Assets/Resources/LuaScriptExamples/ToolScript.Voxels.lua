@@ -6,7 +6,7 @@ Widgets = {
     gridSize={label="Grid Size", type="float", min=0.01, max=20, default=2},
 }
 
-function OnStart()
+function Start()
     filledCells = {}
 end
 

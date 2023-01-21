@@ -4313,14 +4313,17 @@ namespace TiltBrush
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
                 case GlobalCommands.ScriptedSymmetryCommand:
+                    var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
                     {
+                        LuaManager.Instance.InitScript(script);
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.ScriptedSymmetryMode);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        LuaManager.Instance.CallActiveSymmetryScript("End");
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);

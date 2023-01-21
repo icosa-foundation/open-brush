@@ -669,6 +669,7 @@ namespace TiltBrush
                 Debug.Assert(!groupStrokes.Contains(stroke));
                 groupStrokes.Add(stroke);
             }
+            if (strokes.Any()) LastSelectedStroke = strokes.Last();
 
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -732,6 +733,7 @@ namespace TiltBrush
             {
                 SelectWidget(widget);
             }
+            if (widgets.Any()) LastSelectedWidget = widgets.Last();
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses

@@ -11,8 +11,8 @@ function Main()
     pointers = {}
     Colors = {}
     theta = 360.0 / copies
-    for i = 1, copies - 1 do
-        table.insert(pointers, {position={0, 0, -i/4.0}, rotation={0, i * theta, 0}})
+    for i = 0, copies - 1 do
+        table.insert(pointers, {position={0, 0, 0}, rotation={0, i * theta, 0}})
         if hueShift > 0 then
             newColor = brush.lastColorPicked;
             table.insert(Colors, color.newColor)
