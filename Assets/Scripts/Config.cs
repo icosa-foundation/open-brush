@@ -36,7 +36,7 @@ namespace TiltBrush
 {
     public enum XrSdkMode
     {
-        Mono = -1,
+        Monoscopic = -1,
         OpenXR = 0,
         Oculus,
         Wave,
@@ -507,6 +507,13 @@ namespace TiltBrush
         {
             m_SingletonState = this;
             m_WasExperimentalAtStartup = GetIsExperimental();
+
+            // Force mono to experimental and quit.
+            if (m_SdkMode == SdkMode.Monoscopic && !m_WasExperimentalAtStartup)
+            {
+                SetIsExperimental(true);
+                Application.Quit();
+            }
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
