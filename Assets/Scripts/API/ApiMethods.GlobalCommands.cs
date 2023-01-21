@@ -74,7 +74,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 2);
         }
 
-        [ApiEndpoint("load.user", "Loads the sketch in the given slot number from the user's sketch folder")]
+        [ApiEndpoint("load.user", "Loads the sketch from the user's sketch folder given an index (0 being most recent)")]
         public static void LoadUser(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
