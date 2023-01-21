@@ -435,5 +435,36 @@ namespace TiltBrush
                 }
             }
         }
+
+        public void Hide(bool hide)
+        {
+            switch (m_Type)
+            {
+                case Type.BrushStroke:
+                    BaseBrushScript rBrushScript =
+                        m_Object.GetComponent<BaseBrushScript>();
+                    if (rBrushScript)
+                    {
+                        rBrushScript.HideBrush(hide);
+                    }
+                    break;
+                case Type.BatchedBrushStroke:
+                    var batch = m_BatchSubset.m_ParentBatch;
+                    if (hide)
+                    {
+                        batch.DisableSubset(m_BatchSubset);
+                    }
+                    else
+                    {
+                        batch.EnableSubset(m_BatchSubset);
+                    }
+                    break;
+                case Type.NotCreated:
+                    Debug.LogError("Unexpected: NotCreated stroke");
+                    break;
+            }
+
+            TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
+        }
     }
 } // namespace TiltBrush
