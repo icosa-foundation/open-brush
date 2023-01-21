@@ -22,6 +22,8 @@ repos:
         name: pylint
         files: ^Support/
         language_version: python3
+        additional_dependencies:
+          - typing_extensions
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
           - --disable=import-error

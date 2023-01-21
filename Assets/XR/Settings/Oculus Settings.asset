@@ -15,14 +15,14 @@ MonoBehaviour:
   m_StereoRenderingModeDesktop: 0
   m_StereoRenderingModeAndroid: 0
   SharedDepthBuffer: 1
-  DepthSubmission: 0
+  DepthSubmission: 1
   DashSupport: 1
   LowOverheadMode: 0
   OptimizeBufferDiscards: 1
-  PhaseSync: 0
-  SymmetricProjection: 1
+  PhaseSync: 1
+  SymmetricProjection: 0
   SubsampledLayout: 0
-  FoveatedRenderingMethod: 1
+  FoveatedRenderingMethod: 0
   LateLatching: 0
   LateLatchingDebug: 0
   EnableTrackingOriginStageMode: 0
