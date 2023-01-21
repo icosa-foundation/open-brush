@@ -97,6 +97,8 @@ public static class LuaCustomConverters
             }
         );
 
+        // TrTransform
+
         Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(TrTransform),
             dynVal =>
             {
@@ -132,12 +134,30 @@ public static class LuaCustomConverters
             }
         );
 
+        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<TrTransform>(
+            (script, tr) =>
+            {
+                DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
+                dynVal.Table.Set("position", DynValue.FromObject(script, tr.translation));
+                dynVal.Table.Set("rotation", DynValue.FromObject(script, tr.rotation.eulerAngles));
+                dynVal.Table.Set("scale", DynValue.FromObject(script, tr.scale));
+                return dynVal;
+            }
+        );
+
+        // List<TrTransform>
+
         Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<TrTransform>),
             dynVal =>
             {
                 return dynVal.Table.Values.Select(x => x.ToObject<TrTransform>()).ToList();
             }
         );
+
+        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<List<TrTransform>>(
+            (script, list) => DynValue.NewTable(script,
+                list.Select(el=>DynValue.FromObject(script, el)).ToArray()
+        ));
 
         // Color
 
