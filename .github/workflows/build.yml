@@ -125,29 +125,49 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
             cache: Windows
+
+          - name: Windows Monoscopic
+            targetPlatform: StandaloneWindows64
+            vrsdk: Monoscopic
+            cache: Windows
+
+          - name: Linux Monoscopic
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic
+            cache: Linux
+
+          - name: MacOS Monoscopic
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
-            extraoptions: -btb-il2cpp
             cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -btb-il2cpp
             cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+
           - name: Android Pico
             targetPlatform: Android
             vrsdk: Pico
-            extraoptions: -btb-il2cpp
             cache: Android_GLES
+            extraoptions: -btb-il2cpp
 
     steps:
       - name: Free extra space
@@ -246,6 +266,20 @@ jobs:
         run:
           echo "filename=$BASENAME.exe" >> $GITHUB_ENV
 
+      - name: Set filename (for Linux)
+        if: matrix.targetPlatform == 'StandaloneLinux64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME" >> $GITHUB_ENV
+
+      - name: Set filename (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME.app" >> $GITHUB_ENV
+
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
         env:
@@ -316,6 +350,18 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
+          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
+
       - name: Upload build/
         uses: actions/upload-artifact@v3
         with:
@@ -344,6 +390,12 @@ jobs:
           name: Windows Rift
           path: build_windows_rift
 
+      - name: Download Build Artifacts (Windows Monoscopic)
+        uses: actions/download-artifact@v3
+        with:
+          name: Windows Monoscopic
+          path: build_windows_mono
+
       - name: Download Build Artifacts (Oculus Quest)
         uses: actions/download-artifact@v3
         with:
@@ -365,11 +417,14 @@ jobs:
           mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_mono/StandaloneWindows64-Monoscopic/ releases/OpenBrush_Mono_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
+          zip -r OpenBrush_Mono_$VERSION.zip OpenBrush_Mono_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
+          rm -rf OpenBrush_Mono_$VERSION
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
