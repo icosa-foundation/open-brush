@@ -1095,7 +1095,7 @@ namespace TiltBrush
             euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
             return Quaternion.Euler(euler);
         }
-		
+
         public float ScalarSnap(float val)
         {
             if (SnappingGridSize == 0) return val;
