@@ -3,6 +3,7 @@ function brush.pastRotation(back) end
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
 function draw.path(jsonString) end
+path.fromSvg = nil
 function draw.polygon(sides, radius, angle) end
 function draw.text(text) end
 function draw.svg(svgPathString) end
@@ -126,5 +127,8 @@ brush.lastColorPicked = nil
 brush.colorHsv = nil
 brush.lastColorPickedHsv = nil
 app.time = nil
+app.frames = nil
+app.lastSelectedStroke = nil
+app.lastStroke = nil
 canvas.scale = nil
 canvas.strokeCount = nil
