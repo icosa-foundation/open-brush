@@ -10465,15 +10465,12 @@ MonoBehaviour:
   m_ActivationAngle_Default: 115
   m_ActivationAngle_LogitechPen: 145
   m_ActivateDelayDuration: 0.15
-<<<<<<< HEAD
-=======
 --- !u!4 &684558198 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5419288072186775211, guid: bcaa44ca9a0014c4d83509187c8f70fe,
     type: 3}
   m_PrefabInstance: {fileID: 5419288071528628701}
   m_PrefabAsset: {fileID: 0}
->>>>>>> ixxyxr/feature/multi-mirrors
 --- !u!1 &694338410
 GameObject:
   m_ObjectHideFlags: 0
