@@ -280,7 +280,7 @@ namespace TiltBrush
                 Matrix4x4 mat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * mat_CS;
 
                 Graphics.DrawMesh(previewMesh, mat_GS, previewMaterial, 0);
-                if (SelectionManager.m_Instance.SnappingAngle !=0 || SelectionManager.m_Instance.SnappingGridSize != 0)
+                if (SelectionManager.m_Instance.SnappingAngle != 0 || SelectionManager.m_Instance.SnappingGridSize != 0)
                 {
                     var vec = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     Matrix4x4 ghostMat_CS = Matrix4x4.TRS(
