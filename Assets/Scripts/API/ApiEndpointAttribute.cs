@@ -32,7 +32,7 @@ namespace TiltBrush
         private string m_Endpoint;
         private string m_Description;
 
-        public ApiEndpoint(string endpoint, string description, string exampleUsage=null)
+        public ApiEndpoint(string endpoint, string description, string exampleUsage = null)
         {
             m_Endpoint = endpoint;
             m_Description = description;
