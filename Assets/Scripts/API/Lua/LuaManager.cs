@@ -213,7 +213,14 @@ namespace TiltBrush
         {
             Script script = new Script();
             string scriptName = null;
-            script.Options.DebugPrint = s => Debug.Log(s);
+
+            // Logging print statements
+            script.Options.DebugPrint = s =>
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(s);
+                Debug.Log(s);
+            };
+
             string scriptFilename = Path.GetFileNameWithoutExtension(path);
             if (scriptFilename.StartsWith("__")) return null;
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
