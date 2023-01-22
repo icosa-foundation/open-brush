@@ -155,7 +155,7 @@ namespace TiltBrush
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             StencilWidget clone = Instantiate(WidgetManager.m_Instance.GetStencilPrefab(this.Type));
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             clone.m_SkipIntroAnim = true;

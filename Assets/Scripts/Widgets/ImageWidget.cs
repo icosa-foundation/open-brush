@@ -66,7 +66,7 @@ namespace TiltBrush
         override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             ImageWidget clone = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
