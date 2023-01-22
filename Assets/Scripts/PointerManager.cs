@@ -865,17 +865,21 @@ namespace TiltBrush
                 {
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
-                if (vrPoly != null && vrPoly.m_PolyMesh != null)
+                if (CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
                 {
-                    if (i < vrPoly.m_PolyMesh.Faces.Count)
+                    var vrPoly = PreviewPolyhedron.m_Instance;
+                    if (vrPoly != null && vrPoly.m_PolyMesh != null)
                     {
-                        var face = vrPoly.m_PolyMesh.Faces[i];
-                        // We could scale brushes by face size?
-                        // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
-                        if (vrPoly)
+                        if (i < vrPoly.m_PolyMesh.Faces.Count)
                         {
-                            var color = vrPoly.GetFaceColorForStrokes(i);
-                            pointer.m_Script.SetColor(color);
+                            var face = vrPoly.m_PolyMesh.Faces[i];
+                            // We could scale brushes by face size?
+                            // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
+                            if (vrPoly)
+                            {
+                                var color = vrPoly.GetFaceColorForStrokes(i);
+                                pointer.m_Script.SetColor(color);
+                            }
                         }
                     }
                 }
