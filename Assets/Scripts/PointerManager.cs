@@ -1363,7 +1363,11 @@ namespace TiltBrush
         {
             // standard mode, just finalize our line and get ready for the next one
             FinalizeLine();
+
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
+
+            // Store last stroke for API usage
+            SelectionManager.m_Instance.LastStroke = SketchMemoryScript.m_Instance.MostRecentStroke;
         }
 
         private void State_ProcessingStraightEdge(bool terminate)

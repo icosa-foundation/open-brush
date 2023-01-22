@@ -273,24 +273,44 @@ namespace TiltBrush
 
         // Mainly stored for use in scripts
         private Stroke m_LastSelectedStroke;
+        private Stroke m_LastStroke;
         private GrabWidget m_LastSelectedWidget;
+        public List<TrTransform> LastSelectedStrokeCP => m_LastSelectedStrokeCP;
+        private List<TrTransform> m_LastSelectedStrokeCP;
+
+        public List<TrTransform> LastStrokeCP => m_LastStrokeCP;
+        private List<TrTransform> m_LastStrokeCP;
+
 
         public Stroke LastSelectedStroke
         {
             get => m_LastSelectedStroke;
             set
             {
-                m_LastSelectedStrokeCP = value.m_ControlPoints.Select(cp => TrTransform.TRS(
-                    cp.m_Pos,
-                    cp.m_Orient,
-                    cp.m_Pressure
-                )).ToList();
                 m_LastSelectedStroke = value;
+                m_LastSelectedStrokeCP = StrokeToCPs(value);
             }
         }
 
-        public List<TrTransform> LastSelectedStrokeCP => m_LastSelectedStrokeCP;
-        private List<TrTransform> m_LastSelectedStrokeCP;
+        public Stroke LastStroke
+        {
+            get => m_LastStroke;
+            set
+            {
+                m_LastStroke = value;
+                m_LastStrokeCP = StrokeToCPs(value);
+            }
+        }
+
+        public List<TrTransform> StrokeToCPs(Stroke stroke)
+        {
+            var origin = stroke.m_ControlPoints[0].m_Pos;
+            return stroke.m_ControlPoints.Select(cp => TrTransform.TRS(
+                cp.m_Pos - origin,
+                cp.m_Orient,
+                cp.m_Pressure
+            )).ToList();
+        }
 
         public GrabWidget LastSelectedWidget
         {

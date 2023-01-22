@@ -208,18 +208,22 @@ namespace TiltBrush
             return null;
         }
 
+        public void LogLuaError(string s)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine(s, true, true);
+            Debug.LogError(s);
+        }
+
+        public void LogLuaMessage(string s)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine(s, false, true);
+            Debug.Log(s);
+        }
 
         private string LoadScriptFromPath(string path)
         {
             Script script = new Script();
             string scriptName = null;
-
-            // Logging print statements
-            script.Options.DebugPrint = s =>
-            {
-                ControllerConsoleScript.m_Instance.AddNewLine(s);
-                Debug.Log(s);
-            };
 
             string scriptFilename = Path.GetFileNameWithoutExtension(path);
             if (scriptFilename.StartsWith("__")) return null;
@@ -230,6 +234,7 @@ namespace TiltBrush
             {
                 var category = catMatch.Value;
                 scriptName = scriptFilename.Substring(category.ToString().Length + 1);
+                script.Globals["ScriptName"] = scriptName;
                 Scripts[category][scriptName] = script;
             }
             fileStream.Close();
@@ -301,6 +306,7 @@ namespace TiltBrush
             RegisterApiProperty(script, "app.time", Time.realtimeSinceStartup);
             RegisterApiProperty(script, "app.frames", Time.frameCount);
             RegisterApiProperty(script, "app.lastSelectedStroke", SelectionManager.m_Instance.LastSelectedStrokeCP);
+            RegisterApiProperty(script, "app.lastStroke", SelectionManager.m_Instance.LastStrokeCP);
 
             RegisterApiProperty(script, "canvas.scale", App.ActiveCanvas.Pose.scale);
             RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);
@@ -550,12 +556,19 @@ namespace TiltBrush
         {
             SetDynamicScriptContext(script);
             Closure activeFunction = script.Globals.Get(fnName).Function;
+            DynValue result = DynValue.Nil;
             if (activeFunction != null)
             {
-                DynValue result = activeFunction.Call();
-                return result;
+                try
+                {
+                    result = activeFunction.Call();
+                }
+                catch (ScriptRuntimeException e)
+                {
+                    LogLuaError(e.Message);
+                }
             }
-            return DynValue.Nil;
+            return result;
         }
 
         private ScriptTrTransform CallActivePointerScript(string fnName)
@@ -639,7 +652,7 @@ namespace TiltBrush
         public void InitScript(Script script)
         {
             // Redirect "print"
-            script.Options.DebugPrint = s => { Debug.Log(s); };
+            script.Options.DebugPrint = LogLuaMessage;
 
             // // Automatic reg
             // var libraries = Resources.LoadAll<TextAsset>("LuaLibraries");
