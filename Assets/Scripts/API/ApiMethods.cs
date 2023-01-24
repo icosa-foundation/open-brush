@@ -446,7 +446,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("brush.forcepainting", "Start painting even if the trigger isn't pressed")]
-        public static void ForcePainting(bool active)
+        public static void ForcePaintingOn(bool active)
         {
             if (active)
             {
@@ -459,7 +459,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("brush.stoppainting", "Stop painting even if the trigger is pressed")]
-        public static void StopPainting(bool active)
+        public static void ForcePaintingOff(bool active)
         {
             if (active)
             {

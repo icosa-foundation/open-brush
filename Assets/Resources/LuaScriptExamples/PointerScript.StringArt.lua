@@ -1,20 +1,27 @@
-﻿function WhileTriggerPressed()
+﻿Widgets = {
+    rate={label="Rate", type="int", min=1, max=10, default=10},
+ }
 
-    if brush.triggerIsPressedThisFrame then
-        initialPos = {
-            brush.position.x,
-            brush.position.y,
-            brush.position.z,
-        }
-    end
+function OnTriggerPressed()
+    initialPos = {
+        brush.position.x,
+        brush.position.y,
+        brush.position.z,
+    }
+    currentPos = initialPos
+end
 
-    if math.random() > .9 and brush.triggerIsPressed then
-        currentPos = {
-            brush.position.x,
-            brush.position.y,
-            brush.position.z,
-        }
-        draw.path({initialPos, currentPos})
+function WhileTriggerPressed()
+    currentPos = {
+        brush.position.x,
+        brush.position.y,
+        brush.position.z,
+    }
+    if app.frames % rate == 0 then
+        draw.path({
+            {initialPos, brush.rotation},
+            {currentPos, brush.rotation},
+        })
     end
 
     --Do nothing to the actual pointer

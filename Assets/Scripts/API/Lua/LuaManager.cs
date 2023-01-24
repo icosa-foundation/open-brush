@@ -208,10 +208,13 @@ namespace TiltBrush
             return null;
         }
 
-        public void LogLuaError(string s)
+        public void LogLuaError(Script script, string fnName, InterpreterException e)
         {
-            ControllerConsoleScript.m_Instance.AddNewLine(s, true, true);
-            Debug.LogError(s);
+            string msg = e.DecoratedMessage;
+            if (string.IsNullOrEmpty(msg)) msg = e.Message;
+            string errorMsg = $"{script.Globals.Get("ScriptName").String}:{fnName}:{msg}";
+            ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
+            Debug.LogError(errorMsg);
         }
 
         public void LogLuaMessage(string s)
@@ -312,19 +315,30 @@ namespace TiltBrush
             RegisterApiProperty(script, "canvas.strokeCount", SketchMemoryScript.m_Instance.StrokeCount);
         }
 
-
-
         public void SetStaticScriptContext(Script script)
         {
+            // Various useful methods
+            RegisterApiCommand(script, "path.fromSvg", (Func<string, List<TrTransform>>)LuaApiMethods.PathFromSvg);
+            RegisterApiCommand(script, "paths.fromSvg", (Func<string, List<List<TrTransform>>>)LuaApiMethods.PathsFromSvg);
             RegisterApiCommand(script, "brush.pastPosition", (Func<int, Vector3>)GetPastBrushPos);
             RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastBrushRot);
             RegisterApiCommand(script, "wand.pastPosition", (Func<int, Vector3>)GetPastWandPos);
             RegisterApiCommand(script, "wand.pastRotation", (Func<int, Quaternion>)GetPastWandRot);
-            RegisterApiCommand(script, "draw.path", (Action<List<List<float>>>) Drawing.DrawPath);
-            RegisterApiProperty(script, "path.fromSvg", (Func<string, List<TrTransform>>)Drawing.PathFromSvg);
+            RegisterApiCommand(script, "path.transform", (Func<List<TrTransform>, TrTransform, List<TrTransform>>)LuaApiMethods.TransformPath);
+            RegisterApiCommand(script, "path.translate", (Func<List<TrTransform>, Vector3, List<TrTransform>>)LuaApiMethods.TranslatePath);
+            RegisterApiCommand(script, "path.rotate", (Func<List<TrTransform>, Quaternion, List<TrTransform>>)LuaApiMethods.RotatePath);
+            RegisterApiCommand(script, "path.scale", (Func<List<TrTransform>, Vector3, List<TrTransform>>)LuaApiMethods.ScalePath);
+            RegisterApiCommand(script, "vector.vectorToRotation", (Func<Vector3, Quaternion>)LuaApiMethods.VectorToRotation);
+            RegisterApiCommand(script, "vector.rotationToVector", (Func<Quaternion, Vector3>)LuaApiMethods.RotationToVector);
+
+            // The Http Api commands for these take strings as input which we don't want
             // RegisterApiCommand(script, "draw.paths", (Action<string>)ApiMethods.DrawPaths);
             // RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
             // RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
+
+            RegisterApiCommand(script, "draw.path", (Action<List<TrTransform>>) LuaApiMethods.DrawPath);
+            RegisterApiCommand(script, "draw.paths", (Action<List<List<TrTransform>>>) LuaApiMethods.DrawPaths);
+
             RegisterApiCommand(script, "draw.polygon", (Action<int, float, float>)ApiMethods.DrawPolygon);
             RegisterApiCommand(script, "draw.text", (Action<string>)ApiMethods.Text);
             RegisterApiCommand(script, "draw.svg", (Action<string>)ApiMethods.SvgPath);
@@ -335,6 +349,7 @@ namespace TiltBrush
             RegisterApiCommand(script, "color.setRgb", (Action<Vector3>)ApiMethods.SetColorRGB);
             RegisterApiCommand(script, "color.setHsv", (Action<Vector3>)ApiMethods.SetColorHSV);
             RegisterApiCommand(script, "color.setHtml", (Action<string>)ApiMethods.SetColorHTML);
+            RegisterApiCommand(script, "color.jitter", (Action)LuaApiMethods.JitterColor);
 
             RegisterApiCommand(script, "brush.sizeSet", (Action<float>)ApiMethods.BrushSizeSet);
             RegisterApiCommand(script, "brush.sizeAdd", (Action<float>)ApiMethods.BrushSizeAdd);
@@ -388,8 +403,8 @@ namespace TiltBrush
             RegisterApiCommand(script, "layer.toggle", (Action<int>)ApiMethods.ToggleLayer);
             RegisterApiCommand(script, "model.select", (Action<int>)ApiMethods.SelectModel);
             RegisterApiCommand(script, "model.position", (Action<int, Vector3>)ApiMethods.PositionModel);
-            RegisterApiCommand(script, "brush.forcepainting", (Action<bool>)ApiMethods.ForcePainting);
-            RegisterApiCommand(script, "brush.stoppainting", (Action<bool>)ApiMethods.StopPainting);
+            RegisterApiCommand(script, "brush.forcePaintingOn", (Action<bool>)ApiMethods.ForcePaintingOn);
+            RegisterApiCommand(script, "brush.forcePaintingOff", (Action<bool>)ApiMethods.ForcePaintingOff);
             RegisterApiCommand(script, "image.position", (Action<int, Vector3>)ApiMethods.PositionImage);
             RegisterApiCommand(script, "guide.add", (Action<string>)ApiMethods.AddGuide);
 
@@ -508,17 +523,9 @@ namespace TiltBrush
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
                 string paramNames = "";
-                try
-                {
-                    paramNames = ApiManager.Instance.GetRuntimeCommandInfo(cmd).paramInfo;
-                }
-                catch (KeyNotFoundException e)
-                {
-                    // Not a registered API command. Use reflection
-                    Delegate d = action as Delegate;
-                    var paramNameList = d.Method.GetParameters().Select(p => p.Name);
-                    paramNames = string.Join(", ", paramNameList);
-                }
+                Delegate d = action as Delegate;
+                var paramNameList = d.Method.GetParameters().Select(p => p.Name);
+                paramNames = string.Join(", ", paramNameList);
                 AutoCompleteEntries.Add($"function {cmd}({paramNames}) end");
             }
 #endif
@@ -563,9 +570,9 @@ namespace TiltBrush
                 {
                     result = activeFunction.Call();
                 }
-                catch (ScriptRuntimeException e)
+                catch (InterpreterException  e)
                 {
-                    LogLuaError(e.Message);
+                    LogLuaError(script, fnName, e);
                 }
             }
             return result;
@@ -601,7 +608,14 @@ namespace TiltBrush
         {
             DynValue result = _CallScript(script, fnName);
             var trs = new List<TrTransform>();
-            if (!Equals(result, DynValue.Nil)) trs = result.ToObject<List<TrTransform>>();
+            try
+            {
+                if (!Equals(result, DynValue.Nil)) trs = result.ToObject<List<TrTransform>>();
+            }
+            catch (InterpreterException  e)
+            {
+                LogLuaError(script, fnName, e);
+            }
             return trs;
         }
 
@@ -639,7 +653,9 @@ namespace TiltBrush
         {
 
             var previousScript = GetActiveScript(category);
-            _CallScript(previousScript, "End");
+            // TODO Only call this if previousScript has been initialized and hasn't already been ended
+            // Checking a method for null does this but only really as a side-effect
+            if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, "End");
 
             int ActualMod(int x, int m) => (x % m + m) % m;
 

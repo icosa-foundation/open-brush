@@ -26,6 +26,15 @@ namespace TiltBrush
             MultiPathsToStrokes(floatPaths, origin, scale, brushScale, rawStroke);
         }
 
+        public static void TrTransformListToStroke(List<TrTransform> trList, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
+        {
+            MultiPositionPathsToStrokes(
+                new List<List<Vector3>>{trList.Select(tr => tr.translation).ToList()},
+                new List<List<Quaternion>>{trList.Select(tr => tr.rotation).ToList()},
+                new List<List<float>>{trList.Select(tr => tr.scale).ToList()},
+                origin, scale, brushScale, rawStroke);
+        }
+
         public static void SinglePath2dToStroke(List<Vector2> polyline2d, Vector3 origin, float scale = 1f)
         {
             var polylines2d = new List<List<Vector2>> { polyline2d };
@@ -47,6 +56,19 @@ namespace TiltBrush
                 new List<List<Vector3>> { positions },
                 new List<List<Quaternion>> { rotations },
                 new List<List<float>> { pressures },
+                origin, scale, brushScale
+            );
+        }
+
+        public static void TrTransformListsToStroke(List<List<TrTransform>> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
+        {
+            var positions = path.Select(x => x.Select(y => y.translation).ToList()).ToList();
+            var rotations = path.Select(x => x.Select(y => y.rotation).ToList()).ToList();
+            var pressures = path.Select(x => x.Select(y => y.scale).ToList()).ToList();
+            MultiPositionPathsToStrokes(
+                positions,
+                rotations,
+                pressures,
                 origin, scale, brushScale
             );
         }

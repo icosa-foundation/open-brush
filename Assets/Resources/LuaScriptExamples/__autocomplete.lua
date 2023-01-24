@@ -1,9 +1,17 @@
+function path.fromSvg(svgPathString) end
+function paths.fromSvg(svgPathString) end
 function brush.pastPosition(back) end
 function brush.pastRotation(back) end
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
-function draw.path(jsonString) end
-path.fromSvg = nil
+function path.transform(path, tr) end
+function path.translate(path, translation) end
+function path.rotate(path, rotation) end
+function path.scale(path, scale) end
+function vector.vectorToRotation(vec) end
+function vector.rotationToVector(rot) end
+function draw.path(path) end
+function draw.paths(paths) end
 function draw.polygon(sides, radius, angle) end
 function draw.text(text) end
 function draw.svg(svgPathString) end
@@ -13,6 +21,7 @@ function color.addRgb(rgb) end
 function color.setRgb(rgb) end
 function color.setHsv(hsv) end
 function color.setHtml(color) end
+function color.jitter() end
 function brush.sizeSet(size) end
 function brush.sizeAdd(amount) end
 function draw.camerapath(index) end
@@ -44,8 +53,8 @@ function layer.hide(layer) end
 function layer.toggle(layer) end
 function model.select(index) end
 function model.position(index, position) end
-function brush.forcepainting(active) end
-function brush.stoppainting(active) end
+function brush.forcePaintingOn(active) end
+function brush.forcePaintingOff(active) end
 function image.position(index, position) end
 function guide.add(type) end
 function save.overwrite() end
