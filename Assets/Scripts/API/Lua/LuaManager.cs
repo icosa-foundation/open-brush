@@ -392,7 +392,7 @@ namespace TiltBrush
             // RegisterApiCommand(script, "brush.transform.pop", (Action)ApiMethods.BrushTransformPop);
             RegisterApiCommand(script, "debug.brush", (Action)ApiMethods.DebugBrush);
             RegisterApiCommand(script, "image.import", (Action<string>)ApiMethods.ImportImage);
-            RegisterApiCommand(script, "environmentType", (Action<string>)ApiMethods.SetEnvironment);
+            RegisterApiCommand(script, "environment.type", (Action<string>)ApiMethods.SetEnvironment);
             RegisterApiCommand(script, "layer.add", (Action)ApiMethods.AddLayer);
             RegisterApiCommand(script, "layer.clear", (Action<int>)ApiMethods.ClearLayer);
             RegisterApiCommand(script, "layer.delete", (Action<int>)ApiMethods.DeleteLayer);
@@ -450,6 +450,8 @@ namespace TiltBrush
             RegisterApiCommand(script, "profiling.toggle", (Action)ApiMethods.ToggleProfiling);
             RegisterApiCommand(script, "settings.toggle", (Action)ApiMethods.ToggleSettings);
             RegisterApiCommand(script, "mirror.summon", (Action)ApiMethods.SummonMirror);
+            RegisterApiCommand(script, "symmetry.setPosition", (Action<Vector3>)ApiMethods.SymmetrySetPosition);
+            RegisterApiCommand(script, "symmetry.setTransform", (Action<Vector3, Vector3>)ApiMethods.SymmetrySetTransform);
             RegisterApiCommand(script, "selection.invert", (Action)ApiMethods.InvertSelection);
 
             // Another collision?
@@ -663,6 +665,10 @@ namespace TiltBrush
             ActiveScripts[category] += increment;
             ActiveScripts[category] = ActualMod(ActiveScripts[category], Scripts[category].Count);
             InitScript(GetActiveScript(category));
+
+            //temp
+            App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+
         }
 
         public void InitScript(Script script)

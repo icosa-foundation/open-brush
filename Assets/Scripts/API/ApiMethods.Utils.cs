@@ -90,12 +90,14 @@ namespace TiltBrush
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
-        private static void _PositionWidget(GrabWidget widget, Vector3 position)
+        private static void _SetWidgetTransform(GrabWidget widget, Vector3 position, Quaternion rotation = default)
         {
+            // App.Scene.Pose *
+            var tr = TrTransform.TR(position, rotation);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(
                     widget,
-                    TrTransform.T(position),
+                    tr,
                     widget.CustomDimension,
                     true
                 )

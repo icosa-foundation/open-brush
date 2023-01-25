@@ -439,10 +439,24 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
-        [ApiEndpoint("model.position", "Move a model to the given coordinates")]
+        [ApiEndpoint("model.set.position", "Move a model to the given coordinates")]
         public static void PositionModel(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveModel(index), position);
+            _SetWidgetTransform(_GetActiveModel(index), position);
+        }
+
+        [ApiEndpoint("symmetry.set.position", "Move the symmetry widget to the given coordinates")]
+        public static void SymmetrySetPosition(Vector3 position)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget.GetComponent<SymmetryWidget>();
+            _SetWidgetTransform(widget, position);
+        }
+
+        [ApiEndpoint("symmetry.set.transform", "Sets the position and rotation of the symmetry widget")]
+        public static void SymmetrySetTransform(Vector3 position, Vector3 rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget.GetComponent<SymmetryWidget>();
+            _SetWidgetTransform(widget, position, Quaternion.Euler(rotation));
         }
 
         [ApiEndpoint("brush.forcepainting", "Start painting even if the trigger isn't pressed")]
@@ -474,7 +488,7 @@ namespace TiltBrush
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
         public static void PositionImage(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveImage(index), position);
+            _SetWidgetTransform(_GetActiveImage(index), position);
         }
 
         // WIP

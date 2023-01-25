@@ -77,6 +77,7 @@ namespace TiltBrush
         }
 
         public static Quaternion sm_OrientationAdjust = Quaternion.Euler(new Vector3(0, 180, 0));
+
         override public void UpdateTool()
         {
             UpdateTimeRecords();

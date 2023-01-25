@@ -188,13 +188,17 @@ namespace TiltBrush
             }
         }
 
-        protected void UpdateTimeRecords()
+        void Update()
         {
-            var pos = InputManager.m_Instance.GetBrushControllerAttachPoint().position;
-            float fPointerMovement_CS = (pos - m_PreviousPosition).magnitude  / Coords.CanvasPose.scale;
-            m_DistanceMoved_CS += fPointerMovement_CS;
-            m_PreviousPosition = pos;
-            
+            // Can't do it in UpdateTool as it happens too late
+            // Symmetry scripts were seeing m_IsActiveThisFrame for two consecutive frames
+            UpdateStateFlags();
+        }
+
+        protected void UpdateStateFlags()
+        {
+            // Used by API
+
             // Store time values for real-time scripts to use
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -202,14 +206,12 @@ namespace TiltBrush
                 m_IsActive = true;
                 m_IsActiveThisFrame = true;
                 m_TimeBecameActive = Time.realtimeSinceStartup;
-                m_DistanceDrawn_CS += fPointerMovement_CS;
             }
             else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 // Every frame while active
                 m_IsActive = true;
                 m_IsActiveThisFrame = false;
-                m_DistanceDrawn_CS += fPointerMovement_CS;
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && IsActive)
             {
@@ -217,6 +219,24 @@ namespace TiltBrush
                 m_IsActive = false;
                 m_IsActiveThisFrame = false;
                 m_TimeBecameInactive = Time.realtimeSinceStartup;
+            }
+        }
+
+        protected void UpdateTimeRecords()
+        {
+            // Used by API
+
+            var pos = InputManager.m_Instance.GetBrushControllerAttachPoint().position;
+            float fPointerMovement_CS = (pos - m_PreviousPosition).magnitude  / Coords.CanvasPose.scale;
+            m_DistanceMoved_CS += fPointerMovement_CS;
+            m_PreviousPosition = pos;
+
+            if (m_IsActive)
+            {
+                m_DistanceDrawn_CS += fPointerMovement_CS;
+            }
+            else
+            {
                 m_DistanceDrawn_CS = 0;
             }
         }
