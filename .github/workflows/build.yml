@@ -544,7 +544,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
-      (contains(github.ref, 'refs/tags/v'))
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
