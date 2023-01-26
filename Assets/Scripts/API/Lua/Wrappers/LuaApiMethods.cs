@@ -81,5 +81,31 @@ namespace TiltBrush
                 PointerManager.m_Instance.MainPointer.CurrentBrush.m_ColorLuminanceMin
             );
         }
+
+        public static Vector3 QuadBezierPoint(Vector3 p0, Vector3 p1, Vector3 p2, float t)
+        {
+            float m = 1 - t;
+            float a = m * m;
+            float b = 2 * m * t;
+            float c = t * t;
+            float x = a * p0.x + b * p1.x + c * p2.x;
+            float y = a * p0.y + b * p1.y + c * p2.y;
+            float z = a * p0.z + b * p1.z + c * p2.z;
+            return new Vector3(x, y, z);
+        }
+
+        public static List<Vector3> QuadBezierCurve(Vector3 p0, Vector3 p1, Vector3 p2, float res)
+        {
+            var points = new List<Vector3>();
+            points.Add(p0);
+            for (var t = res; t < 1; t += res)
+            {
+                points.Add(QuadBezierPoint(p0, p1, p2, t));
+            }
+            points.Add(p2);
+            return points;
+        }
+
+
     }
 }

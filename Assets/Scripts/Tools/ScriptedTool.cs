@@ -102,12 +102,29 @@ namespace TiltBrush
 
             base.UpdateTool();
 
-            Vector3 rAttachPoint_GS = InputManager.Brush.Geometry.ToolAttachPoint.position;
-            TrTransform rAttachPoint_CS = App.Scene.ActiveCanvas.AsCanvas[InputManager.Brush.Geometry.ToolAttachPoint];
+            Vector3 rAttachPoint_GS;
+            TrTransform rAttachPoint_CS;
 
-            Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
-            PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
-            m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
+            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                rAttachPoint_CS = TrTransform.TR(
+                    LuaManager.Instance.GetPastBrushPos(0),
+                    LuaManager.Instance.GetPastBrushRot(0)
+                );
+                rAttachPoint_GS = (App.Scene.Pose.inverse * rAttachPoint_CS).translation;
+                Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
+                m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
+            }
+            else
+            {
+                rAttachPoint_GS = InputManager.Brush.Geometry.ToolAttachPoint.position;
+                rAttachPoint_CS = App.Scene.ActiveCanvas.AsCanvas[InputManager.Brush.Geometry.ToolAttachPoint];
+
+                Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
+                m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
+            }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -218,7 +235,8 @@ namespace TiltBrush
                     break;
                 case ScriptCoordSpace.Pointer:
                     tr_CS.translation = firstTr_CS.translation;
-                    tr_CS.rotation = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                    tr_CS.rotation = drawnVector_CS == Vector3.zero ?
+                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     tr_CS.scale = drawnVector_CS.magnitude;
                     result.Transforms = result.Transforms.Select(tr =>
                     {

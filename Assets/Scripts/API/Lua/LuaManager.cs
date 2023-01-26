@@ -324,6 +324,8 @@ namespace TiltBrush
             RegisterApiCommand(script, "brush.pastRotation", (Func<int, Quaternion>)GetPastBrushRot);
             RegisterApiCommand(script, "wand.pastPosition", (Func<int, Vector3>)GetPastWandPos);
             RegisterApiCommand(script, "wand.pastRotation", (Func<int, Quaternion>)GetPastWandRot);
+            RegisterApiCommand(script, "head.pastPosition", (Func<int, Vector3>)GetPastHeadPos);
+            RegisterApiCommand(script, "head.pastRotation", (Func<int, Quaternion>)GetPastHeadRot);
             RegisterApiCommand(script, "path.transform", (Func<List<TrTransform>, TrTransform, List<TrTransform>>)LuaApiMethods.TransformPath);
             RegisterApiCommand(script, "path.translate", (Func<List<TrTransform>, Vector3, List<TrTransform>>)LuaApiMethods.TranslatePath);
             RegisterApiCommand(script, "path.rotate", (Func<List<TrTransform>, Quaternion, List<TrTransform>>)LuaApiMethods.RotatePath);
@@ -487,24 +489,34 @@ namespace TiltBrush
 #endif
         }
 
-        private Vector3 GetPastBrushPos(int back)
+        public Vector3 GetPastBrushPos(int back)
         {
             return m_TransformBuffers.PastBrushTr(back).translation;
         }
 
-        private Quaternion GetPastBrushRot(int back)
+        public Quaternion GetPastBrushRot(int back)
         {
             return m_TransformBuffers.PastBrushTr(back).rotation;
         }
 
-        private Vector3 GetPastWandPos(int back)
+        public Vector3 GetPastWandPos(int back)
         {
             return m_TransformBuffers.PastWandTr(back).translation;
         }
 
-        private Quaternion GetPastWandRot(int back)
+        public Quaternion GetPastWandRot(int back)
         {
             return m_TransformBuffers.PastWandTr(back).rotation;
+        }
+
+        public Vector3 GetPastHeadPos(int back)
+        {
+            return m_TransformBuffers.PastHeadTr(back).translation;
+        }
+
+        public Quaternion GetPastHeadRot(int back)
+        {
+            return m_TransformBuffers.PastHeadTr(back).rotation;
         }
 
         public void RegisterApiProperty(Script script, string cmd, object action)
@@ -651,25 +663,36 @@ namespace TiltBrush
             return space;
         }
 
+        public void SetActiveScriptByName(ApiCategory category, string scriptName)
+        {
+            int index = GetScriptNames(category).IndexOf(scriptName);
+            if (index != -1)
+            {
+                _SetActiveScript(category, index);
+            }
+        }
+
         public void ChangeCurrentScript(ApiCategory category, int increment)
         {
+            int ActualMod(int x, int m) => (x % m + m) % m;
+            if (Scripts[category].Count == 0) return;
+            ActiveScripts[category] += increment;
+            int index = ActualMod(ActiveScripts[category], Scripts[category].Count);
+            _SetActiveScript(category, index);
+        }
 
+        private void _SetActiveScript(ApiCategory category, int index)
+        {
             var previousScript = GetActiveScript(category);
             // TODO Only call this if previousScript has been initialized and hasn't already been ended
             // Checking a method for null does this but only really as a side-effect
             if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, "End");
-
-            int ActualMod(int x, int m) => (x % m + m) % m;
-
-            if (Scripts[category].Count == 0) return;
-            ActiveScripts[category] += increment;
-            ActiveScripts[category] = ActualMod(ActiveScripts[category], Scripts[category].Count);
+            ActiveScripts[category] = index;
             InitScript(GetActiveScript(category));
-
             //temp
-            App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
-
+            // App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
         }
+
 
         public void InitScript(Script script)
         {

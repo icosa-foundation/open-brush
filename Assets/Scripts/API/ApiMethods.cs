@@ -459,7 +459,7 @@ namespace TiltBrush
             _SetWidgetTransform(widget, position, Quaternion.Euler(rotation));
         }
 
-        [ApiEndpoint("brush.forcepainting", "Start painting even if the trigger isn't pressed")]
+        [ApiEndpoint("brush.force.painting.on", "Start painting even if the trigger isn't pressed")]
         public static void ForcePaintingOn(bool active)
         {
             if (active)
@@ -472,7 +472,7 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("brush.stoppainting", "Stop painting even if the trigger is pressed")]
+        [ApiEndpoint("brush.force.painting.off", "Stop painting even if the trigger is pressed")]
         public static void ForcePaintingOff(bool active)
         {
             if (active)
@@ -489,6 +489,45 @@ namespace TiltBrush
         public static void PositionImage(int index, Vector3 position)
         {
             _SetWidgetTransform(_GetActiveImage(index), position);
+        }
+
+        [ApiEndpoint("scripts.toolscript.activate", "Activate the given tool script")]
+        public static void ActivateToolScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.ToolScript, scriptName);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.ScriptedTool);
+        }
+
+        [ApiEndpoint("scripts.toolscript.deactivate", "Dectivate the tool script")]
+        public static void DectivateToolScript()
+        {
+            SketchSurfacePanel.m_Instance.EnableDefaultTool();
+        }
+
+        [ApiEndpoint("scripts.symmetryscript.activate", "Activate the given symmetry script")]
+        public static void ActivateSymmetryScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.SymmetryScript, scriptName);
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+        }
+
+        [ApiEndpoint("scripts.symmetryscript.deactivate", "Dectivate the symmetry script")]
+        public static void DectivateSymmetryScript()
+        {
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+        }
+
+        [ApiEndpoint("scripts.pointerscript.activate", "Activate the given pointer script")]
+        public static void ActivatePointerScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.PointerScript, scriptName);
+            LuaManager.Instance.PointerScriptsEnabled = true;
+        }
+
+        [ApiEndpoint("scripts.pointerscript.deactivate", "Dectivate the pointer script")]
+        public static void DectivatePointerScript()
+        {
+            LuaManager.Instance.PointerScriptsEnabled = false;
         }
 
         // WIP

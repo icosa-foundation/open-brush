@@ -4,6 +4,8 @@ function brush.pastPosition(back) end
 function brush.pastRotation(back) end
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
+function head.pastPosition(back) end
+function head.pastRotation(back) end
 function path.transform(path, tr) end
 function path.translate(path, translation) end
 function path.rotate(path, rotation) end
@@ -42,7 +44,7 @@ function spectator.show(thing) end
 function spectator.hide(thing) end
 function debug.brush() end
 function image.import(location) end
-function environmentType(name) end
+function environment.type(name) end
 function layer.add() end
 function layer.clear(layer) end
 function layer.delete(layer) end
@@ -89,6 +91,8 @@ function camerapath.render() end
 function profiling.toggle() end
 function settings.toggle() end
 function mirror.summon() end
+function symmetry.setPosition(position) end
+function symmetry.setTransform(position, rotation) end
 function selection.invert() end
 function selection.flip() end
 function postprocessing.toggle() end

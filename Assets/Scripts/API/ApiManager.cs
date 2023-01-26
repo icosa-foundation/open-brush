@@ -556,11 +556,22 @@ namespace TiltBrush
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
                 .Select(x => x.m_Description.Replace(" ", ""))
                 .ToArray();
+
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
             string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
             html = html.Replace("{{commandsJson}}", commandsJson);
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.ToolScript))
+            );
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.SymmetryScript))
+            );
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.PointerScript))
+            );
 
             return html;
         }
