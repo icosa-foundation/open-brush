@@ -338,6 +338,7 @@ jobs:
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile ./pimax-dev-util.exe
           dir
           ./pimax-dev-util.exe login -u $Env:PIMAX_USERNAME  -p $Env:PIMAX_PASSWORD
+          dir
           # pimax-dev-util.exe upload-pc-build -a $Env:PIMAX_APP_ID -d OpenBrush_Pimax_$Env:VERSION.zip
 
   publish_itch:
