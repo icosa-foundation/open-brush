@@ -1960,26 +1960,42 @@ namespace TiltBrush
         public static bool InitModelLibraryPath(string[] defaultModels)
         {
             string modelsDirectory = ModelLibraryPath();
-            if (Directory.Exists(modelsDirectory)) { return true; }
+
+            // TODO:Mike - Re-enable this check in a few versions,
+            // and remove the one in the obj removal loop.
+
+            // if (Directory.Exists(modelsDirectory)) { return true; }
+
             if (!InitDirectoryAtPath(modelsDirectory)) { return false; }
+
+            // Tidy up old obj models and replace with gltfs
+            // We can remove this at some point.
+            var targetDirs = new string[] { "Andy", "Tiltasaurus" };
+            foreach (string target in targetDirs)
+            {
+                var path = Path.Combine(modelsDirectory, target);
+                if (Directory.Exists(path))
+                {
+                    Debug.Log($"Found old model file: \"{path}\", removing.");
+                    Directory.Delete(path, true);
+                }
+                else
+                {
+                    // We've already tidied up the old models, or the user has and understands
+                    // the reference library. Let's not interfere.
+                    return true;
+                }
+            }
+
             foreach (string fileName in defaultModels)
             {
                 string[] path = fileName.Split(
                     new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
                 string newModel = Path.Combine(modelsDirectory, path[1]);
-                if (!Directory.Exists(newModel))
+
+                if (!File.Exists(newModel))
                 {
-                    Directory.CreateDirectory(newModel);
-                }
-                if (Path.GetExtension(fileName) == ".png" ||
-                    Path.GetExtension(fileName) == ".jpeg" ||
-                    Path.GetExtension(fileName) == ".jpg")
-                {
-                    FileUtils.WriteTextureFromResources(fileName, Path.Combine(newModel, path[2]));
-                }
-                else
-                {
-                    FileUtils.WriteTextFromResources(fileName, Path.Combine(newModel, path[2]));
+                    FileUtils.WriteBytesFromResources(fileName, newModel);
                 }
             }
             return true;
