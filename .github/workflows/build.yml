@@ -543,8 +543,7 @@ jobs:
       PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
-      (contains(github.ref, 'refs/tags/v'))
+      github.repository == 'icosa-gallery/open-brush'
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
@@ -555,13 +554,16 @@ jobs:
 
       - name: Publish Pimax Builds
         run: |
+          Set-PSDebug -Trace 1
           New-Item "releases" -Type Directory
           Move-Item -Path build_windows_pimax/StandaloneWindows64-OpenXR/ releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_$env:VERSION.zip
-          Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
+          dir
+          Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile ./pimax-dev-util.exe
+          dir
           pimax-dev-util.exe login -u $env:PIMAX_USERNAME  -p $env:PIMAX_PASSWORD
-          pimax-dev-util.exe upload-pc-build -a $env:PIMAX_APP_ID -d OpenBrush_Pimax_$env:VERSION.zip
+          # pimax-dev-util.exe upload-pc-build -a $env:PIMAX_APP_ID -d OpenBrush_Pimax_$env:VERSION.zip
 
   publish_itch:
     name: Publish Itch.io Release
