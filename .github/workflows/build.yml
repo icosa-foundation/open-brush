@@ -37,7 +37,8 @@ jobs:
       version: ${{ steps.version.outputs.version}}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
+      previousrelease: ${{ steps.releasetags.outputs.previousrelease }}
+      currentrelease: ${{ steps.releasetags.outputs.currentrelease }}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
@@ -70,8 +71,8 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-      - name: Calculate Changelog
-        id: changelog
+      - name: Calculate Release tags for Changelog
+        id: releasetags
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
@@ -81,11 +82,10 @@ jobs:
           else
             PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
-          CHANGELOG=$(git log --pretty=oneline --first-parent $PREV..HEAD)
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+          CUR="$(git rev-parse HEAD)"
+          echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
+          echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
+
       - name: Set custom app name and package name, if relevant
         id: github
         env:
@@ -378,6 +378,40 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3.6.0
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "template": "#{{CHANGELOG}}\n\n## 💬 Uncategorized\n\n#{{UNCATEGORIZED}}\n",
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## Maintenance",
+                    "labels": ["maintenance"]
+                },
+                {
+                    "title": "## 📦 Dependencies",
+                    "labels": ["dependencies"]
+                }
+              ]
+            }
+
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: echo "$CHANGELOG"
+
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v3
         with:
@@ -425,12 +459,13 @@ jobs:
           rm -rf OpenBrush_Desktop_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
           rm -rf OpenBrush_Mono_$VERSION
+
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body: ${{ needs.configuration.outputs.changelog }}
+          body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
