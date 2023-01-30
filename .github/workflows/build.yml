@@ -386,7 +386,6 @@ jobs:
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
           configurationJson: |
             {
-              "template": "#{{CHANGELOG}}\n\n## 💬 Uncategorized\n\n#{{UNCATEGORIZED}}\n",
               "categories": [
                 {
                     "title": "## 🚀 Features",
@@ -397,12 +396,16 @@ jobs:
                     "labels": ["fix", "bugfix"]
                 },
                 {
-                    "title": "## Maintenance",
+                    "title": "## 🛠️ Maintenance",
                     "labels": ["maintenance"]
                 },
                 {
                     "title": "## 📦 Dependencies",
                     "labels": ["dependencies"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
                 }
               ]
             }
