@@ -552,6 +552,37 @@ jobs:
           ./pimax-dev-util.exe login -u $Env:PIMAX_USERNAME  -p $Env:PIMAX_PASSWORD
           ./pimax-dev-util.exe upload-pc-build -a $Env:PIMAX_APP_ID -d OpenBrush_Pimax_${Env:VERSION}.zip
 
+  publish_viveport:
+    name: Publish Viveport Release
+    needs: [configuration, build]
+    runs-on: windows-latest
+    env:
+      VIVEPORT_EMAIL: ${{ secrets.VIVEPORT_EMAIL }}
+      VIVEPORT_PASSWORD: ${{ secrets.VIVEPORT_PASSWORD }}
+      VIVEPORT_APPID: ${{ secrets.VIVEPORT_APPID }}
+      VIVEPORT_ORGID: ${{ secrets.VIVEPORT_ORGID }}
+      VERSION: ${{ needs.configuration.outputs.version}}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v3
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Publish Viveport Builds
+        run: |
+          New-Item "releases" -Type Directory
+          Move-Item -Path build_windows_openxr/StandaloneWindows64-OpenXR/* releases/
+          Set-Location -Path "releases"
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Viveport_${Env:VERSION}.zip
+          Invoke-WebRequest -Uri https://assets-global.viveport.com/static-misc/developer-tool/ViveportUploader.exe -OutFile ViveportUploader.exe
+          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APPID} -orgid ${Env:VIVEPORT_ORGID} -version ${VERSION}
+
   publish_itch:
     name: Publish Itch.io Release
     needs: [configuration, build]
