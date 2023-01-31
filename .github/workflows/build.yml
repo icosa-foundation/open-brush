@@ -533,7 +533,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      contains(github.ref, 'refs/tags/v')
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
@@ -565,7 +565,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      contains(github.ref, 'refs/tags/v')
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
