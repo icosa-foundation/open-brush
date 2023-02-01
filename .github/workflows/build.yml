@@ -76,6 +76,7 @@ jobs:
         id: rawchangelogdata
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if [ "$PRERELEASE" == "true" ]
           then
@@ -87,7 +88,7 @@ jobs:
           echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
           echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
           LAST_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*' --abbrev=0 HEAD^)
-          RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //' -e 's/, origin\/main//')" | tac | sed -e 's/"/\\"/g')
+          RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //')" | sed -e "s/origin\/main/$VERSION/" | tac | sed -e 's/"/\\"/g')
           echo "rawchangelog=${RAW_CHANGELOG//$'\n'/'\n'}" >> $GITHUB_OUTPUT
 
       - name: Echo Changelog (for debugging purposes)
