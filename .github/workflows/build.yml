@@ -37,8 +37,9 @@ jobs:
       version: ${{ steps.version.outputs.version}}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      previousrelease: ${{ steps.releasetags.outputs.previousrelease }}
-      currentrelease: ${{ steps.releasetags.outputs.currentrelease }}
+      previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
+      currentrelease: ${{ steps.rawchangelogdata.outputs.currentrelease }}
+      rawchangelog: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
@@ -71,10 +72,11 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-      - name: Calculate Release tags for Changelog
-        id: releasetags
+      - name: Calculate Release tags for Changelog and raw changelog
+        id: rawchangelogdata
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if [ "$PRERELEASE" == "true" ]
           then
@@ -85,6 +87,15 @@ jobs:
           CUR="$(git rev-parse HEAD)"
           echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
           echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
+          LAST_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*' --abbrev=0 HEAD^)
+          RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //')" | sed -e "s/origin\/main/$VERSION/" | tac | sed -e 's/"/\\"/g')
+          echo "rawchangelog=${RAW_CHANGELOG//$'\n'/'\n'}" >> $GITHUB_OUTPUT
+
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
+        run: |
+          echo "CHANGELOG=$CHANGELOG"
 
       - name: Set custom app name and package name, if relevant
         id: github
@@ -651,6 +662,7 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
           OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
           OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
@@ -671,6 +683,7 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           else
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
-            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
           fi
