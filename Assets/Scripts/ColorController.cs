@@ -15,45 +15,53 @@
 using System;
 using UnityEngine;
 
-namespace TiltBrush {
-// Color Controller is an unfortunate name for this class, as it refers to the MVC "Controller"
-// for storing information about the app state regarding the current color.  It also
-// maintains actions for objects to register with for status change notifications.
-public class ColorController : MonoBehaviour {
-  [SerializeField] protected Color m_DefaultColor;
-  [SerializeField] protected bool m_Hdr;
-  protected Color m_CurrentColor;
+namespace TiltBrush
+{
+    // Color Controller is an unfortunate name for this class, as it refers to the MVC "Controller"
+    // for storing information about the app state regarding the current color.  It also
+    // maintains actions for objects to register with for status change notifications.
+    public class ColorController : MonoBehaviour
+    {
+        [SerializeField] protected Color m_DefaultColor;
+        [SerializeField] protected bool m_Hdr;
+        protected Color m_CurrentColor;
 
-  public event Action<ColorPickerMode, Vector3> CurrentColorSet;
+        public event Action<ColorPickerMode, Vector3> CurrentColorSet;
 
-  public bool IsHdr { get { return m_Hdr; } }
+        public bool IsHdr { get { return m_Hdr; } }
 
-  virtual public Color CurrentColor {
-    get { return m_CurrentColor; }
-    set {
-      m_CurrentColor = value;
-      var mode = ColorPickerUtils.GetActiveMode(m_Hdr);
-      Vector3 raw = ColorPickerUtils.ColorToRawValue(mode, m_CurrentColor);
-      TriggerCurrentColorSet(mode, raw);
+        virtual public Color CurrentColor
+        {
+            get { return m_CurrentColor; }
+            set
+            {
+                m_CurrentColor = value;
+                var mode = ColorPickerUtils.GetActiveMode(m_Hdr);
+                Vector3 raw = ColorPickerUtils.ColorToRawValue(mode, m_CurrentColor);
+                TriggerCurrentColorSet(mode, raw);
+            }
+        }
+
+        // This function is used by the ColorPicker to update our color without notifying those
+        // that have registered with the CurrentColorSet action.  This is to prevent cyclical
+        // behavior when the user is manipulating the ColorPickerSlider or ColorPickerSelector.
+        virtual public void SetCurrentColorSilently(Color color)
+        {
+            m_CurrentColor = color;
+        }
+
+        protected void TriggerCurrentColorSet(ColorPickerMode mode, Vector3 rawColor)
+        {
+            if (CurrentColorSet != null)
+            {
+                CurrentColorSet(mode, rawColor);
+            }
+        }
+
+        public void SetColorToDefault()
+        {
+            CurrentColor = m_DefaultColor;
+        }
     }
-  }
-
-  // This function is used by the ColorPicker to update our color without notifying those
-  // that have registered with the CurrentColorSet action.  This is to prevent cyclical
-  // behavior when the user is manipulating the ColorPickerSlider or ColorPickerSelector.
-  virtual public void SetCurrentColorSilently(Color color) {
-    m_CurrentColor = color;
-  }
-
-  protected void TriggerCurrentColorSet(ColorPickerMode mode, Vector3 rawColor) {
-    if (CurrentColorSet != null) {
-      CurrentColorSet(mode, rawColor);
-    }
-  }
-
-  public void SetColorToDefault() {
-    CurrentColor = m_DefaultColor;
-  }
-}
 
 } // namespace TiltBrush

@@ -1,0 +1,14 @@
+"appbuild"
+{
+    "appid"        "{{ OPEN_BRUSH_APP_ID }}"
+    "Desc"         "{{ VERSION }}"
+    "buildoutput"  "../build_output/{{ CHANNEL }}" // Path for steamcmd logs
+    "contentroot"  "." // This file will be copied into the root of the release
+    "setlive"      "{{ CHANNEL }}"
+    "preview"      "0" // For local testing, set this to 1
+    "local"        "" // Not relevant; this is for a custom CDN
+    "depots"
+    {
+        "{{ OPEN_BRUSH_WINDOWS_DEPOT_ID }}" main_depot.vdf
+    }
+}

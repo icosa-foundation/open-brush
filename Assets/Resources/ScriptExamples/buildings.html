@@ -1,0 +1,167 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset='UTF-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <style>div.container {
+        line-height: 1.6;
+        padding-bottom: 20px;
+    }
+
+    textarea, input, select {
+        margin: 4px;
+    }
+
+    input:not([type=checkbox]) {
+        width: 100px;
+    }</style>
+</head>
+<body>
+<div class="container">
+    <form onsubmit="return false;">
+        <h3>Brush</h3>
+        <Label>Brush type: <select id="brush.type" name="brush.type"></select></Label>
+        <label>Brush size: <input id="brush.size" value=".0005"></label><br>
+        <label>Brush color: <input id="brush.color" value="darkgreen"></label><br>
+
+        <h3>Map</h3>
+        <label>Coordinates: <input id="lng" value="40.798678"><input id="lat" value="-73.966542"></label><br>
+        <label>Zoom: <input id="zoom" value="300"></label><br>
+        <h3>Drawing</h3>
+        <label>Scale: <input id="scale" value="10000"></label><br>
+        <label>Floor Height: <input id="floorHeight" value="3"></label><br>
+        <label>Origin: <input id="xorigin" value="0"><input id="yorigin" value="14"><input id="zorigin" value="4"></label><br>
+        <br>
+        <button onclick='run();'>Run</button>
+        <br>
+        <br><br>
+        <button onclick="sendCommands(['save.new']);">Save Current Scene</button>
+        <button onclick="sendCommands(['export.current']);">Export Current Scene</button>
+        <button onclick="sendCommands(['showfolder.exports']);">Show Exports Folder</button>
+        <br><br>
+        <button onclick="sendCommands(['new']);">Clear Current Scene</button>
+    </form>
+</div>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        if (option.name==="Light") {
+            option.selected = true;
+        }
+        menu.add(option);
+    }
+
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    }
+
+    const interpreterUrl = 'https://lz4.overpass-api.de/api/interpreter?';
+
+    function buildOverpassQL(lat, lon, around = '500') {
+        return '[out:json];(' +
+            ['yes'].map(
+                e => `way["building"="${e}"](around:${around}, ${lat}, ${lon});`
+            ).join('') + '); out body; >; out skel qt;';
+    }
+
+    function toGeoJson(json) {
+
+        const nodeArray = json.elements.reduce((prev, now) => {
+            if (now.type == 'node')
+                prev[now.id] = now;
+            return prev;
+        }, {});
+
+        const createFeature = way => {
+            const getCoordinates = id => [nodeArray[id].lon, nodeArray[id].lat];
+            return {
+                type: 'Feature',
+                properties: {"height": parseFloat(way.tags.height)},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: way.nodes.map(v=>getCoordinates(v)),
+                }
+            }
+        };
+
+        let geoJson = {
+            type: 'FeatureCollection',
+            features: [],
+        };
+
+        json.elements.forEach(el => {
+            if (el.type != 'way') return;
+            var feature = createFeature(el);
+            geoJson.features.push(feature);
+        });
+
+        return geoJson;
+    }
+
+    function run() {
+        var lat = parseFloat(document.getElementById('lat').value);
+        var lng = parseFloat(document.getElementById('lng').value);
+        var zoom = parseFloat(document.getElementById('zoom').value);
+        var xorigin = parseFloat(document.getElementById('xorigin').value);
+        var yorigin = parseFloat(document.getElementById('yorigin').value);
+        var zorigin = parseFloat(document.getElementById('zorigin').value);
+        var scale = parseFloat(document.getElementById('scale').value);
+        var floorHeight = parseFloat(document.getElementById('floorHeight').value);
+
+        sendCommands([
+            'brush.size.set=' + document.getElementById('brush.size').value,
+            'brush.type=' + document.getElementById('brush.type').value,
+            'color.set.html=' + document.getElementById('brush.color').value,
+        ]);
+
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onload = function() {
+            var raw = JSON.parse(this.responseText);
+            var geoJson = toGeoJson(raw);
+            var count = 0;
+            for (var feature of geoJson.features) {
+                var coords = feature.geometry.coordinates;
+                if (coords.length < 3) continue;
+                var c2 = 0;
+                var path = [];
+                for (var h=0; h<feature.properties.height; h+=floorHeight)
+                {
+                    for (var coord of coords) {
+                        path.push('[');
+                        path.push((coord[0] - lat) * scale + xorigin);
+                        path.push(',');
+                        path.push(yorigin + (h/10));  // TODO meter scale?
+                        path.push(',');
+                        path.push((coord[1] - lng) * scale + zorigin);
+                        path.push('],');
+                    }
+                    c2++;
+                    if (c2>100) break;  // Failsafe
+                }
+                var pathString = path.join('');
+                sendCommands([`draw.path=${pathString}`]);
+                count++;
+                if (count>500) break; // Failsafe
+            }
+        };
+        var url = interpreterUrl + `data=${encodeURIComponent(buildOverpassQL(lng, lat, zoom))}`;
+        xmlHttp.open('GET', url);
+        xmlHttp.send();
+    }
+
+
+</script>
+
+</body>
+</html>

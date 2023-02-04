@@ -33,12 +33,13 @@ Material:
         m_Offset: {x: 0, y: 1}
     m_Floats:
     - _Cutoff: 0.5
+    - _FrameWidth: 0.1
+    - _GridLineWidth: 0.01
     - _GridSize: 0.2
-    - _GridWidth: 0.01
     - _InvFade: 1
     - _ModeSwitch: 1
     - _Outline: 0.0002
-    - _Shape: 2
+    - _Shape: 3
     - _UVGridWidth: 0.2
     m_Colors:
     - _BackColor: {r: 0.6838235, g: 0.69908714, b: 1, a: 0.61}

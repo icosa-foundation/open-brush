@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class StencilsVisibilityButton : OptionButton {
-  override protected void Awake() {
-    base.Awake();
-    App.Switchboard.StencilModeChanged += UpdateVisuals;
-  }
+    public class StencilsVisibilityButton : OptionButton
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            App.Switchboard.StencilModeChanged += UpdateVisuals;
+        }
 
-  override protected void OnDestroy() {
-    base.OnDestroy();
-    App.Switchboard.StencilModeChanged -= UpdateVisuals;
-  }
-}
-}  // namespace TiltBrush
+        override protected void OnDestroy()
+        {
+            base.OnDestroy();
+            App.Switchboard.StencilModeChanged -= UpdateVisuals;
+        }
+    }
+} // namespace TiltBrush

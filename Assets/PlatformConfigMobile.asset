@@ -21,7 +21,7 @@ MonoBehaviour:
   UseFileSystemWatcher: 0
   EnableAutosave: 0
   QuickLoadMaxDistancePerFrame: 4
-  IntroSketchPrefab: {fileID: 1843608203, guid: e09adf2a1c6f67746b6db49b5e4e42f7,
+  IntroSketchPrefab: {fileID: 1843608203, guid: ddfd362fa9a8d5840bf47df17d2eba8a,
     type: 3}
   EnablePolyPreload: 0
   AvoidUploadHandlerFile: 0
@@ -29,6 +29,7 @@ MonoBehaviour:
   EnableExportGlb: 1
   EnableExportJson: 0
   EnableExportUsd: 0
+  EnableExportLatk: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
   EnabledMulticamStyles: 000000000100000002000000

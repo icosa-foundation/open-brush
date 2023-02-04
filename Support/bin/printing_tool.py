@@ -19,7 +19,11 @@ import sys
 
 # Add ../Python to sys.path
 sys.path.append(
-  os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Python'))
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Python")
+)
 
-from tbdata.printing import main  # noqa: E402 pylint: disable=import-error,wrong-import-position
+from tbdata.printing import (  # noqa: E402 pylint: disable=import-error,wrong-import-position
+    main,
+)
+
 main()

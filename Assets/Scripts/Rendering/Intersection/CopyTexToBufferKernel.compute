@@ -20,13 +20,13 @@ RWStructuredBuffer<uint> OutputBuffer;
 Texture2D<float4> InputTexture;
 
 [numthreads(4,4,1)]
-void CopyToBuffer (uint3 id : SV_DispatchThreadID)
+void CopyToBuffer(uint3 id : SV_DispatchThreadID)
 {
-  // OutputBuffer is a 1D array of the exact size of InputTexture, which is 2D
-  // The 2D height is required to convert from a 2D index to a 1D index.
-  uint width;
-  uint height;
-  InputTexture.GetDimensions(width, height);
-  uint2 values = UnpackRgba8ToUint16x2(InputTexture[id.xy]);  // BatchId, triangle id
-  OutputBuffer[id.y * height + id.x] = (values.x << 16) | values.y;
+    // OutputBuffer is a 1D array of the exact size of InputTexture, which is 2D
+    // The 2D height is required to convert from a 2D index to a 1D index.
+    uint width;
+    uint height;
+    InputTexture.GetDimensions(width, height);
+    uint2 values = UnpackRgba8ToUint16x2(InputTexture[id.xy]); // BatchId, triangle id
+    OutputBuffer[id.y * height + id.x] = (values.x << 16) | values.y;
 }

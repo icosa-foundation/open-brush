@@ -12,31 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class VideoPositionSlider : BaseSlider {
+namespace TiltBrush
+{
+    public class VideoPositionSlider : BaseSlider
+    {
 
-  private VideoWidget m_VideoWidget;
+        private VideoWidget m_VideoWidget;
 
-  public VideoWidget VideoWidget {
-    get { return m_VideoWidget; }
-    set { m_VideoWidget = value; }
-  }
+        public VideoWidget VideoWidget
+        {
+            get { return m_VideoWidget; }
+            set { m_VideoWidget = value; }
+        }
 
-  public override void UpdateValue(float value) {
-    if (m_VideoWidget == null || m_VideoWidget.VideoController == null) {
-      return;
+        public override void UpdateValue(float value)
+        {
+            if (m_VideoWidget == null || m_VideoWidget.VideoController == null)
+            {
+                return;
+            }
+            m_VideoWidget.VideoController.Position = value;
+        }
+
+        protected virtual void Update()
+        {
+            m_IsAvailable = m_VideoWidget != null && m_VideoWidget.VideoController != null;
+            if (m_IsAvailable)
+            {
+                m_CurrentValue = m_VideoWidget.VideoController.Position;
+            }
+            else
+            {
+                m_CurrentValue = 0;
+            }
+            SetSliderPositionToReflectValue();
+        }
     }
-    m_VideoWidget.VideoController.Position = value;
-  }
-
-  protected virtual void Update() {
-    m_IsAvailable = m_VideoWidget != null && m_VideoWidget.VideoController != null;
-    if (m_IsAvailable) {
-      m_CurrentValue = m_VideoWidget.VideoController.Position;
-    } else {
-      m_CurrentValue = 0;
-    }
-    SetSliderPositionToReflectValue();
-  }
-}
 } // namespace TiltBrush

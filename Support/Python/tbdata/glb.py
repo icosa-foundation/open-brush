@@ -20,219 +20,230 @@ import struct
 
 
 SIZES = {
-  # accessor.type
-  'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4,
-  # accessor.componentType
-  5120: 1, 5121: 1,  # BYTE, UBYTE
-  5122: 2, 5123: 2,  # SHORT, USHORT
-  5124: 4, 5125: 4,  # INT, UINT
-  5126: 4            # FLOAT
+    # accessor.type
+    "SCALAR": 1,
+    "VEC2": 2,
+    "VEC3": 3,
+    "VEC4": 4,
+    # accessor.componentType
+    5120: 1,
+    5121: 1,  # BYTE, UBYTE
+    5122: 2,
+    5123: 2,  # SHORT, USHORT
+    5124: 4,
+    5125: 4,  # INT, UINT
+    5126: 4,  # FLOAT
 }
 
 # struct format characters, for accessor.componentType
 STRUCT_FORMAT = {
-  5120: 'b', 5121: 'B',  # BYTE, UBYTE
-  5122: 'h', 5123: 'H',  # SHORT, USHORT
-  5124: 'i', 5125: 'I',  # INT, UINT
-  5126: 'f'              # FLOAT
+    5120: "b",
+    5121: "B",  # BYTE, UBYTE
+    5122: "h",
+    5123: "H",  # SHORT, USHORT
+    5124: "i",
+    5125: "I",  # INT, UINT
+    5126: "f",  # FLOAT
 }
 
 
 # From itertools docs
 def grouper(n, iterable, fillvalue=None):
-  "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-  args = [iter(iterable)] * n
-  return itertools.zip_longest(fillvalue=fillvalue, *args)
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(fillvalue=fillvalue, *args)
 
 
-class binfile():
-  # Helper for parsing
-  def __init__(self, inf):
-    self.inf = inf
+class binfile:
+    # Helper for parsing
+    def __init__(self, inf):
+        self.inf = inf
 
-  def read(self, n):
-    data = self.inf.read(n)
-    if len(data) < n:
-      raise Exception("Short read %s < %s" % (len(data), n))
-    return data
+    def read(self, n):
+        data = self.inf.read(n)
+        if len(data) < n:
+            raise Exception("Short read %s < %s" % (len(data), n))
+        return data
 
-  def write(self, data):
-    return self.inf.write(data)
+    def write(self, data):
+        return self.inf.write(data)
 
-  def read_length_prefixed(self):
-    n, = self.unpack("<I")
-    return self.read(n)
+    def read_length_prefixed(self):
+        (n,) = self.unpack("<I")
+        return self.read(n)
 
-  def write_length_prefixed(self, data):
-    self.pack("<I", len(data))
-    self.inf.write(data)
+    def write_length_prefixed(self, data):
+        self.pack("<I", len(data))
+        self.inf.write(data)
 
-  def unpack(self, fmt):
-    n = struct.calcsize(fmt)
-    data = self.read(n)
-    return struct.unpack(fmt, data)
+    def unpack(self, fmt):
+        n = struct.calcsize(fmt)
+        data = self.read(n)
+        return struct.unpack(fmt, data)
 
-  def pack(self, fmt, *args):
-    data = struct.pack(fmt, *args)
-    return self.inf.write(data)
+    def pack(self, fmt, *args):
+        data = struct.pack(fmt, *args)
+        return self.inf.write(data)
 
 
-class BaseGltf():
-  """Abstract subclass for classes that parse:
-  - gltf+bin
-  - glb version 1
-  - glb version 2"""
-  # Jeez
-  PLURAL_SUFFIX = {'mesh': 'es'}
+class BaseGltf:
+    """Abstract subclass for classes that parse:
+    - gltf+bin
+    - glb version 1
+    - glb version 2"""
 
-  @staticmethod
-  def create(filename):
-    """Returns a Gltf, Glb1, or Glb2 instance."""
-    bf = binfile(open(filename, 'rb'))
-    first_bytes = bf.read(4)
-    if first_bytes == 'glTF':
-      version, = bf.unpack("I")
-      if version == 1:
-        return Glb1(filename)
-      if version == 2:
-        return Glb2(filename)
-      raise Exception("Bad version %d" % version)
-    if filename.lower().endswith('.gltf') or first_bytes.startswith("{"):
-      return Gltf(filename)
-    raise Exception("Unknown format")
+    # Jeez
+    PLURAL_SUFFIX = {"mesh": "es"}
 
-  def __init__(self, filename):
-    self.filename = filename
-    # subclass will init version, json_chunk, json, and bin_chunk
-    self.json = None
-    self.version = None
-    self.bin_chunk = None
-    self.json_chunk = None
+    @staticmethod
+    def create(filename):
+        """Returns a Gltf, Glb1, or Glb2 instance."""
+        bf = binfile(open(filename, "rb"))
+        first_bytes = bf.read(4)
+        if first_bytes == "glTF":
+            (version,) = bf.unpack("I")
+            if version == 1:
+                return Glb1(filename)
+            if version == 2:
+                return Glb2(filename)
+            raise Exception("Bad version %d" % version)
+        if filename.lower().endswith(".gltf") or first_bytes.startswith("{"):
+            return Gltf(filename)
+        raise Exception("Unknown format")
 
-  def dereference(self):
-    """Converts (some) inter-object references from ints/strings to
-    actual Python references. The Python reference will have a '_' appended.
-    For example, accessor['bufferView_']."""
-    def deref_property(obj, prop, dest_type=None):
-      # Deref obj[prop]
-      dest_type = dest_type or prop  # prop name is usually the obj type
-      lookup_table_name = dest_type + 's'
-      try:
-        idx_or_name = obj[prop]
-      except KeyError:
-        pass
-      else:
-        obj[prop + '_'] = self.json[lookup_table_name][idx_or_name]
+    def __init__(self, filename):
+        self.filename = filename
+        # subclass will init version, json_chunk, json, and bin_chunk
+        self.json = None
+        self.version = None
+        self.bin_chunk = None
+        self.json_chunk = None
 
-    def deref_all(source_type, prop, dest_type=None):
-      # Deref obj[prop] for all objs of type source_type
-      for _, obj in self.iter_objs(source_type):
-        deref_property(obj, prop, dest_type)
+    def dereference(self):
+        """Converts (some) inter-object references from ints/strings to
+        actual Python references. The Python reference will have a '_' appended.
+        For example, accessor['bufferView_']."""
 
-    deref_all('accessor', 'bufferView')
-    deref_all('bufferView', 'buffer')
-    for _, mesh in self.iter_objs('mesh'):
-      for prim in mesh['primitives']:
-        attrs = prim['attributes']
-        for attr_name in list(attrs.keys()):
-          deref_property(attrs, attr_name, 'accessor')
-        deref_property(prim, 'indices', 'accessor')
-        deref_property(prim, 'material')
+        def deref_property(obj, prop, dest_type=None):
+            # Deref obj[prop]
+            dest_type = dest_type or prop  # prop name is usually the obj type
+            lookup_table_name = dest_type + "s"
+            try:
+                idx_or_name = obj[prop]
+            except KeyError:
+                pass
+            else:
+                obj[prop + "_"] = self.json[lookup_table_name][idx_or_name]
 
-  def iter_objs(self, obj_type):
-    """Yields (key, value) tuples.
-    In gltf1 the keys are names; in gltf2 the keys are indices."""
-    if self.version == 1:
-      plural = self.PLURAL_SUFFIX.get(obj_type, 's')
-      return list(self.json[obj_type + plural].items())
-    if self.version == 2:
-      plural = self.PLURAL_SUFFIX.get(obj_type, 's')
-      return enumerate(self.json[obj_type + plural])
-    raise Exception("Unknown gltf version; cannot iterate objects")
+        def deref_all(source_type, prop, dest_type=None):
+            # Deref obj[prop] for all objs of type source_type
+            for _, obj in self.iter_objs(source_type):
+                deref_property(obj, prop, dest_type)
 
-  # backwards-compat
-  def get_json(self):
-    return self.json_chunk
+        deref_all("accessor", "bufferView")
+        deref_all("bufferView", "buffer")
+        for _, mesh in self.iter_objs("mesh"):
+            for prim in mesh["primitives"]:
+                attrs = prim["attributes"]
+                for attr_name in list(attrs.keys()):
+                    deref_property(attrs, attr_name, "accessor")
+                deref_property(prim, "indices", "accessor")
+                deref_property(prim, "material")
 
-  def get_mesh_by_name(self, name):
-    if self.version == 1:
-      return self.json['meshes'][name]
-    for m in self.json['meshes']:
-      if m['name'] == name:
-        return m
-    raise LookupError(name)
+    def iter_objs(self, obj_type):
+        """Yields (key, value) tuples.
+        In gltf1 the keys are names; in gltf2 the keys are indices."""
+        if self.version == 1:
+            plural = self.PLURAL_SUFFIX.get(obj_type, "s")
+            return list(self.json[obj_type + plural].items())
+        if self.version == 2:
+            plural = self.PLURAL_SUFFIX.get(obj_type, "s")
+            return enumerate(self.json[obj_type + plural])
+        raise Exception("Unknown gltf version; cannot iterate objects")
 
-  def get_bufferView_data(self, buffer_view):
-    """Returns a hunk of bytes."""
-    start = buffer_view['byteOffset']
-    end = start + buffer_view['byteLength']
-    return self.bin_chunk[start:end]
+    # backwards-compat
+    def get_json(self):
+        return self.json_chunk
 
-  def get_accessor_data(self, accessor):
-    """Returns accessor data, decoded according to accessor.componentType,
-    and grouped according accessor.type."""
-    componentType = accessor['componentType']
-    start = accessor['byteOffset']
-    count_per_element = SIZES[accessor['type']]  # eg 2 for VEC2
-    # Parse a flat array of (int/float/whatever) and group it after, maybe
-    flat_count = accessor['count'] * count_per_element
-    byte_length = flat_count * SIZES[componentType]
-    bufferview_data = self.get_bufferView_data(accessor['bufferView_'])
-    attr_data = bufferview_data[start: start + byte_length]
-    struct_format = '<' + str(flat_count) + STRUCT_FORMAT[componentType]
-    flat = struct.unpack(struct_format, attr_data)
-    if count_per_element == 1:
-      return flat
-    return list(grouper(count_per_element, flat))
+    def get_mesh_by_name(self, name):
+        if self.version == 1:
+            return self.json["meshes"][name]
+        for m in self.json["meshes"]:
+            if m["name"] == name:
+                return m
+        raise LookupError(name)
+
+    def get_bufferView_data(self, buffer_view):
+        """Returns a hunk of bytes."""
+        start = buffer_view["byteOffset"]
+        end = start + buffer_view["byteLength"]
+        return self.bin_chunk[start:end]
+
+    def get_accessor_data(self, accessor):
+        """Returns accessor data, decoded according to accessor.componentType,
+        and grouped according accessor.type."""
+        componentType = accessor["componentType"]
+        start = accessor["byteOffset"]
+        count_per_element = SIZES[accessor["type"]]  # eg 2 for VEC2
+        # Parse a flat array of (int/float/whatever) and group it after, maybe
+        flat_count = accessor["count"] * count_per_element
+        byte_length = flat_count * SIZES[componentType]
+        bufferview_data = self.get_bufferView_data(accessor["bufferView_"])
+        attr_data = bufferview_data[start : start + byte_length]
+        struct_format = "<" + str(flat_count) + STRUCT_FORMAT[componentType]
+        flat = struct.unpack(struct_format, attr_data)
+        if count_per_element == 1:
+            return flat
+        return list(grouper(count_per_element, flat))
 
 
 class Gltf(BaseGltf):
-  def __init__(self, filename):
-    super().__init__(filename)
-    # Not fully general; just good enough to work for TB .gltf/bin pairs
-    bin_name = os.path.splitext(filename)[0] + '.bin'
-    if not os.path.exists(bin_name):
-      raise Exception('No %s to go with %s' % (bin_name, filename))
-    self.total_len = None  # Only meaningful for glb files
-    self.json_chunk = open(filename, 'rb').read()
-    self.bin_chunk = open(bin_name, 'rb').read()
-    self.json = json.loads(self.json_chunk)
-    version_str = self.json['asset'].get('version', "0")
-    self.version = int(float(version_str))
+    def __init__(self, filename):
+        super().__init__(filename)
+        # Not fully general; just good enough to work for TB .gltf/bin pairs
+        bin_name = os.path.splitext(filename)[0] + ".bin"
+        if not os.path.exists(bin_name):
+            raise Exception("No %s to go with %s" % (bin_name, filename))
+        self.total_len = None  # Only meaningful for glb files
+        self.json_chunk = open(filename, "rb").read()
+        self.bin_chunk = open(bin_name, "rb").read()
+        self.json = json.loads(self.json_chunk)
+        version_str = self.json["asset"].get("version", "0")
+        self.version = int(float(version_str))
 
 
 class Glb1(BaseGltf):
-  def __init__(self, filename):
-    super().__init__(filename)
-    bf = binfile(open(self.filename, 'rb'))
-    assert bf.read(4) == 'glTF'
-    self.version, self.total_len, json_len, json_fmt = bf.unpack("<4I")
-    assert self.version == 1 and json_len % 4 == 0 and json_fmt == 0
-    self.json_chunk = bf.read(json_len)
-    self.bin_chunk = bf.inf.read()
-    self.json = json.loads(self.json_chunk)
+    def __init__(self, filename):
+        super().__init__(filename)
+        bf = binfile(open(self.filename, "rb"))
+        assert bf.read(4) == "glTF"
+        self.version, self.total_len, json_len, json_fmt = bf.unpack("<4I")
+        assert self.version == 1 and json_len % 4 == 0 and json_fmt == 0
+        self.json_chunk = bf.read(json_len)
+        self.bin_chunk = bf.inf.read()
+        self.json = json.loads(self.json_chunk)
 
 
 class Glb2(BaseGltf):
-  def __init__(self, filename):
-    super().__init__()
-    self.filename = filename
-    bf = binfile(open(self.filename, 'rb'))
-    assert bf.read(4) == 'glTF'
-    self.version, self.total_len = bf.unpack("II")
-    assert self.version == 2
-    assert self.total_len == os.stat(self.filename).st_size
-    self.json_chunk = self._read_chunk(bf, 'JSON')
-    self.bin_chunk = self._read_chunk(bf, 'BIN\0')
-    self.json = json.loads(self.json_chunk)
+    def __init__(self, filename):
+        super().__init__()
+        self.filename = filename
+        bf = binfile(open(self.filename, "rb"))
+        assert bf.read(4) == "glTF"
+        self.version, self.total_len = bf.unpack("II")
+        assert self.version == 2
+        assert self.total_len == os.stat(self.filename).st_size
+        self.json_chunk = self._read_chunk(bf, "JSON")
+        self.bin_chunk = self._read_chunk(bf, "BIN\0")
+        self.json = json.loads(self.json_chunk)
 
-  @staticmethod
-  def _read_chunk(bf, expect_tag):
-    length, = bf.unpack("I")
-    tag = bf.read(4)
-    assert tag == expect_tag, tag
-    data = bf.read(length)
-    return data
+    @staticmethod
+    def _read_chunk(bf, expect_tag):
+        (length,) = bf.unpack("I")
+        tag = bf.read(4)
+        assert tag == expect_tag, tag
+        data = bf.read(length)
+        return data
 
 
 #
@@ -242,17 +253,21 @@ class Glb2(BaseGltf):
 # pylint: disable=all
 # flake8: noqa
 def load(version, name):
-  ROOT = os.path.expanduser('~/Documents/Tilt Brush/Exports/Baseline 22.0b4')
-  formatname = 'glb1' if (version == 1) else 'glb'
-  return BaseGltf.create(os.path.join(ROOT, name, formatname, name+'.glb'))
+    ROOT = os.path.expanduser("~/Documents/Tilt Brush/Exports/Baseline 22.0b4")
+    formatname = "glb1" if (version == 1) else "glb"
+    return BaseGltf.create(os.path.join(ROOT, name, formatname, name + ".glb"))
+
 
 def test(version):
-  # It's CelVinyl texcoord 0 that has the NaNs
-  glb = load(version, 'ET_All')
-  glb.dereference()
-  mesh = glb.get_mesh_by_name("mesh_CelVinyl_700f3aa8-9a7c-2384-8b8a-ea028905dd8c_0_i0")
-  bad_accessor = mesh['primitives'][0]['attributes']['TEXCOORD_0_']
-  print(glb.get_accessor_data(bad_accessor)[0:3])
+    # It's CelVinyl texcoord 0 that has the NaNs
+    glb = load(version, "ET_All")
+    glb.dereference()
+    mesh = glb.get_mesh_by_name(
+        "mesh_CelVinyl_700f3aa8-9a7c-2384-8b8a-ea028905dd8c_0_i0"
+    )
+    bad_accessor = mesh["primitives"][0]["attributes"]["TEXCOORD_0_"]
+    print(glb.get_accessor_data(bad_accessor)[0:3])
 
-if __name__ == '__main__':
-  test(2)
+
+if __name__ == "__main__":
+    test(2)

@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-  public class TiltasaurusButton : BaseButton {
-    override protected void OnButtonPressed() {
-      m_Manager.GetComponent<TiltasaurusPopUpWindow>().RefreshWord();
+namespace TiltBrush
+{
+    public class TiltasaurusButton : BaseButton
+    {
+        override protected void OnButtonPressed()
+        {
+            m_Manager.GetComponent<TiltasaurusPopUpWindow>().RefreshWord();
+        }
     }
-  }
-}  // namespace TiltBrush
+} // namespace TiltBrush

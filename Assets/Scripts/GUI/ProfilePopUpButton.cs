@@ -14,20 +14,24 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class ProfilePopUpButton : OptionButton {
-  [SerializeField] private bool m_CommandIgnored = false;
+namespace TiltBrush
+{
+    public class ProfilePopUpButton : OptionButton
+    {
+        [SerializeField] private bool m_CommandIgnored = false;
 
-  override protected void OnButtonPressed() {
-    // For some circumstances on mobile, we want to ignore the command, but still
-    // notify the popup that we were pressed.  Which happens below.
-    if (!m_CommandIgnored) {
-      base.OnButtonPressed();
+        override protected void OnButtonPressed()
+        {
+            // For some circumstances on mobile, we want to ignore the command, but still
+            // notify the popup that we were pressed.  Which happens below.
+            if (!m_CommandIgnored)
+            {
+                base.OnButtonPressed();
+            }
+
+            ProfilePopUpWindow popup = m_Manager.GetComponent<ProfilePopUpWindow>();
+            Debug.Assert(popup != null);
+            popup.OnProfilePopUpButtonPressed(this);
+        }
     }
-
-    ProfilePopUpWindow popup = m_Manager.GetComponent<ProfilePopUpWindow>();
-    Debug.Assert(popup != null);
-    popup.OnProfilePopUpButtonPressed(this);
-  }
-}
 } // namespace TiltBrush

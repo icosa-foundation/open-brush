@@ -15,51 +15,63 @@
 using UnityEngine;
 using TMPro;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class NavButton : BaseButton {
-  public Texture2D m_SelectionTexture;
-  public UIComponent.ComponentMessage m_ButtonType;
-  public int m_GotoPage;
-  private TextMesh m_TextMesh;
-  private Renderer m_TextMeshRenderer;
-  private TextMeshPro m_TextMeshPro;
-  public Color m_InactiveColor;
+    public class NavButton : BaseButton
+    {
+        public Texture2D m_SelectionTexture;
+        public UIComponent.ComponentMessage m_ButtonType;
+        public int m_GotoPage;
+        private TextMesh m_TextMesh;
+        private Renderer m_TextMeshRenderer;
+        private TextMeshPro m_TextMeshPro;
+        public Color m_InactiveColor;
 
-  override protected void OnRegisterComponent() {
-    base.OnRegisterComponent();
-    m_TextMesh = GetComponentInChildren<TextMesh>();
-    if (m_TextMesh) {
-      m_TextMeshRenderer = m_TextMesh.GetComponent<Renderer>();
-    }
-    m_TextMeshPro = GetComponentInChildren<TextMeshPro>();
-  }
+        override protected void OnRegisterComponent()
+        {
+            base.OnRegisterComponent();
+            m_TextMesh = GetComponentInChildren<TextMesh>();
+            if (m_TextMesh)
+            {
+                m_TextMeshRenderer = m_TextMesh.GetComponent<Renderer>();
+            }
+            m_TextMeshPro = GetComponentInChildren<TextMeshPro>();
+        }
 
-  override protected void OnButtonPressed() {
-    if (m_Manager) {
-      m_Manager.SendMessageToComponents(m_ButtonType, m_GotoPage);
-    }
-  }
+        override protected void OnButtonPressed()
+        {
+            if (m_Manager)
+            {
+                m_Manager.SendMessageToComponents(m_ButtonType, m_GotoPage);
+            }
+        }
 
-  override public void SetButtonSelected(bool bSelected) {
-    m_ButtonSelected = bSelected;
-    m_ButtonRenderer.enabled = !bSelected;
-    if (m_TextMeshRenderer) {
-      m_TextMeshRenderer.material.SetColor("_Color", (bSelected ? Color.white : m_InactiveColor));
-    }
-    if (m_TextMeshPro) {
-      m_TextMeshPro.color = (bSelected ? Color.white : m_InactiveColor);
-    }
-  }
+        override public void SetButtonSelected(bool bSelected)
+        {
+            m_ButtonSelected = bSelected;
+            m_ButtonRenderer.enabled = !bSelected;
+            if (m_TextMeshRenderer)
+            {
+                m_TextMeshRenderer.material.SetColor("_Color", (bSelected ? Color.white : m_InactiveColor));
+            }
+            if (m_TextMeshPro)
+            {
+                m_TextMeshPro.color = (bSelected ? Color.white : m_InactiveColor);
+            }
+        }
 
-  public void SetGotoPage(int iPage) {
-    m_GotoPage = iPage;
-    if (m_TextMesh) {
-      m_TextMesh.text = (m_GotoPage + 1).ToString();
+        public void SetGotoPage(int iPage)
+        {
+            m_GotoPage = iPage;
+            if (m_TextMesh)
+            {
+                m_TextMesh.text = (m_GotoPage + 1).ToString();
+            }
+            if (m_TextMeshPro)
+            {
+                m_TextMeshPro.text = (m_GotoPage + 1).ToString();
+            }
+        }
     }
-    if (m_TextMeshPro) {
-      m_TextMeshPro.text = (m_GotoPage + 1).ToString();
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

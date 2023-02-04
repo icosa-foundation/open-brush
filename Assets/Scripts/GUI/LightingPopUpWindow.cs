@@ -16,65 +16,79 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class LightingPopUpWindow : PagingPopUpWindow {
-  private string m_CurrentPresetDesc;
-  private List<TiltBrush.Environment> m_Environments;
+    public class LightingPopUpWindow : PagingPopUpWindow
+    {
+        private string m_CurrentPresetDesc;
+        private List<TiltBrush.Environment> m_Environments;
 
-  protected override int m_DataCount {
-    get { return m_Environments.Count; }
-  }
-
-  protected override void InitIcon(ImageIcon icon) {
-    icon.m_Valid = true;
-  }
-
-  protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int iCatalog) {
-    LightingButton iconButton = icon.m_IconScript as LightingButton;
-    iconButton.SetPreset(m_Environments[iCatalog]);
-    iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].m_Description);
-  }
-
-  override public void Init(GameObject rParent, string sText) {
-    //build list of lighting presets we're going to show
-    m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
-
-    //find the active lighting preset
-    TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
-    if (rCurrentPreset != null) {
-      //find the index of our current preset in the preset list
-      int iPresetIndex = -1;
-      m_CurrentPresetDesc = rCurrentPreset.m_Description;
-      for (int i = 0; i < m_Environments.Count; ++i) {
-        if (m_Environments[i].m_Description == m_CurrentPresetDesc) {
-          iPresetIndex = i;
-          break;
+        protected override int m_DataCount
+        {
+            get { return m_Environments.Count; }
         }
-      }
 
-      if (iPresetIndex != -1) {
-        //set our current page to show the active preset if we have more than one page
-        if (m_Environments.Count > m_IconCountFullPage) {
-          m_RequestedPageIndex = iPresetIndex / m_IconCountNavPage;
+        protected override void InitIcon(ImageIcon icon)
+        {
+            icon.m_Valid = true;
         }
-      }
+
+        protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int iCatalog)
+        {
+            LightingButton iconButton = icon.m_IconScript as LightingButton;
+            iconButton.SetPreset(m_Environments[iCatalog]);
+            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].m_Description);
+        }
+
+        override public void Init(GameObject rParent, string sText)
+        {
+            //build list of lighting presets we're going to show
+            m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
+
+            //find the active lighting preset
+            TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
+            if (rCurrentPreset != null)
+            {
+                //find the index of our current preset in the preset list
+                int iPresetIndex = -1;
+                m_CurrentPresetDesc = rCurrentPreset.m_Description;
+                for (int i = 0; i < m_Environments.Count; ++i)
+                {
+                    if (m_Environments[i].m_Description == m_CurrentPresetDesc)
+                    {
+                        iPresetIndex = i;
+                        break;
+                    }
+                }
+
+                if (iPresetIndex != -1)
+                {
+                    //set our current page to show the active preset if we have more than one page
+                    if (m_Environments.Count > m_IconCountFullPage)
+                    {
+                        m_RequestedPageIndex = iPresetIndex / m_IconCountNavPage;
+                    }
+                }
+            }
+            SceneSettings.m_Instance.FadingToDesiredEnvironment += OnFadingToDesiredEnvironment;
+
+            base.Init(rParent, sText);
+        }
+
+        protected void OnFadingToDesiredEnvironment()
+        {
+            TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
+            if (rCurrentPreset != null)
+            {
+                m_CurrentPresetDesc = rCurrentPreset.m_Description;
+            }
+            RefreshPage();
+        }
+
+        void OnDestroy()
+        {
+            SceneSettings.m_Instance.FadingToDesiredEnvironment -= OnFadingToDesiredEnvironment;
+        }
     }
-    SceneSettings.m_Instance.FadingToDesiredEnvironment += OnFadingToDesiredEnvironment;
-
-    base.Init(rParent, sText);
-  }
-
-  protected void OnFadingToDesiredEnvironment() {
-    TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
-    if (rCurrentPreset != null) {
-      m_CurrentPresetDesc = rCurrentPreset.m_Description;
-    }
-    RefreshPage();
-  }
-
-  void OnDestroy() {
-    SceneSettings.m_Instance.FadingToDesiredEnvironment -= OnFadingToDesiredEnvironment;
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

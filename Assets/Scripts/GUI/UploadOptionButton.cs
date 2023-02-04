@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace TiltBrush {
-public class UploadOptionButton : OptionButton {
-  override protected void Awake() {
-    base.Awake();
-    SetButtonAvailable(false);
-  }
+namespace TiltBrush
+{
+    public class UploadOptionButton : OptionButton
+    {
+        override protected void Awake()
+        {
+            base.Awake();
+            SetButtonAvailable(false);
+        }
 
-  override protected void UpdateAvailability() {
-    bool bWasAvailable = IsAvailable();
-    bool bAvailable = SketchControlsScript.m_Instance.IsCommandAvailable(m_Command, m_CommandParam);
-    if (bWasAvailable != bAvailable) {
-      SetButtonAvailable(bAvailable);
+        override protected void UpdateAvailability()
+        {
+            bool bWasAvailable = IsAvailable();
+            bool bAvailable = SketchControlsScript.m_Instance.IsCommandAvailable(m_Command, m_CommandParam);
+            if (bWasAvailable != bAvailable)
+            {
+                SetButtonAvailable(bAvailable);
+            }
+        }
     }
-  }
-}
 } // namespace TiltBrush

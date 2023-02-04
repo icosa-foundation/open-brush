@@ -13,47 +13,53 @@
 // limitations under the License.
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-[System.Serializable]
-public class VRFlareData {
-  public Transform m_Flare;
-  public float m_DepthFactor;
-  public float m_CrossFactor;
-}
+    [System.Serializable]
+    public class VRFlareData
+    {
+        public Transform m_Flare;
+        public float m_DepthFactor;
+        public float m_CrossFactor;
+    }
 
-public class VRFlare : MonoBehaviour {
+    public class VRFlare : MonoBehaviour
+    {
 
-  [SerializeField]
-  private VRFlareData[] m_Flares;
+        [SerializeField]
+        private VRFlareData[] m_Flares;
 
-  private Transform m_CameraTransform;
+        private Transform m_CameraTransform;
 
-	// Use this for initialization
-	void Start () {
-      m_CameraTransform = App.VrSdk.GetVrCamera().transform;
-	}
+        // Use this for initialization
+        void Start()
+        {
+            m_CameraTransform = App.VrSdk.GetVrCamera().transform;
+        }
 
-	// Update is called once per frame
-	void Update () {
-      Transform camXf = m_CameraTransform;
-      Vector3 headPos = transform.position;
-      Vector3 dirToCamera = headPos - camXf.position;
-      Vector3 cameraForward = camXf.forward;
-      float cameraDot = Vector3.Dot(cameraForward, dirToCamera.normalized);
+        // Update is called once per frame
+        void Update()
+        {
+            Transform camXf = m_CameraTransform;
+            Vector3 headPos = transform.position;
+            Vector3 dirToCamera = headPos - camXf.position;
+            Vector3 cameraForward = camXf.forward;
+            float cameraDot = Vector3.Dot(cameraForward, dirToCamera.normalized);
 
-      // cameraCross is used to shift flares in screenspace
-      Vector3 cameraCross = Vector3.Cross(cameraForward, dirToCamera.normalized);
-      cameraCross = Vector3.Cross(cameraCross, dirToCamera.normalized);
+            // cameraCross is used to shift flares in screenspace
+            Vector3 cameraCross = Vector3.Cross(cameraForward, dirToCamera.normalized);
+            cameraCross = Vector3.Cross(cameraCross, dirToCamera.normalized);
 
-      // Use scene scale to modulate the cross factor, which is the flare displacement.
-      float scale = App.Scene.Pose.scale;
+            // Use scene scale to modulate the cross factor, which is the flare displacement.
+            float scale = App.Scene.Pose.scale;
 
-      for (int i = 0; i < m_Flares.Length; ++i) {
-        m_Flares[i].m_Flare.position = headPos
-                                     - m_Flares[i].m_DepthFactor * dirToCamera
-                                     - m_Flares[i].m_CrossFactor * cameraCross * cameraDot * scale;
-      }
-	}
-}
-}  // namespace TiltBrush
+            for (int i = 0; i < m_Flares.Length; ++i)
+            {
+                m_Flares[i].m_Flare.position = headPos
+                    - m_Flares[i].m_DepthFactor * dirToCamera
+                    - m_Flares[i].m_CrossFactor * cameraCross * cameraDot * scale;
+            }
+        }
+    }
+} // namespace TiltBrush

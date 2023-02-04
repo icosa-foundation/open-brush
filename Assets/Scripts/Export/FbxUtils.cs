@@ -18,38 +18,41 @@ using UnityEngine;
 using Autodesk.Fbx;
 #endif
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
 
-// Extension methods for Fbx math classes
-// Also contains some random things that the USD exporter wants to have access to
-public static class FbxUtils {
-  public const string kRequiredToolkitVersion = "16.0";
+    // Extension methods for Fbx math classes
+    // Also contains some random things that the USD exporter wants to have access to
+    public static class FbxUtils
+    {
+        public const string kRequiredToolkitVersion = "16.0";
 
-  // Move normals into texcoord1, clearing normals and overwriting texcoord1
-  // (which may have data, but it's assumed not to be useful for the export)
-  public static void ApplyFbxTexcoordHack(GeometryPool pool) {
-    var layout = pool.Layout;
-    if (! layout.bFbxExportNormalAsTexcoord1) { return; }
+        // Move normals into texcoord1, clearing normals and overwriting texcoord1
+        // (which may have data, but it's assumed not to be useful for the export)
+        public static void ApplyFbxTexcoordHack(GeometryPool pool)
+        {
+            var layout = pool.Layout;
+            if (!layout.bFbxExportNormalAsTexcoord1) { return; }
 
-    // Fix up the layout
-    layout.bFbxExportNormalAsTexcoord1 = false;
-    // Should uv1Semantic be "Vector"? Or "Unspecified"? This case currently
-    // does not come up, but guard for it when/if it does.
-    Debug.Assert(layout.normalSemantic != GeometryPool.Semantic.Unspecified,
-                 "Ambiguous normalSemantic");
-    layout.texcoord1.semantic = layout.normalSemantic;
-    layout.texcoord1.size = 3;
-    layout.bUseNormals = false;
-    layout.normalSemantic = GeometryPool.Semantic.Unspecified;
-    pool.Layout = layout;
+            // Fix up the layout
+            layout.bFbxExportNormalAsTexcoord1 = false;
+            // Should uv1Semantic be "Vector"? Or "Unspecified"? This case currently
+            // does not come up, but guard for it when/if it does.
+            Debug.Assert(layout.normalSemantic != GeometryPool.Semantic.Unspecified,
+                "Ambiguous normalSemantic");
+            layout.texcoord1.semantic = layout.normalSemantic;
+            layout.texcoord1.size = 3;
+            layout.bUseNormals = false;
+            layout.normalSemantic = GeometryPool.Semantic.Unspecified;
+            pool.Layout = layout;
 
-    // Swap m_Normals <-> m_UvSet1.v3
-    var tmp = pool.m_Normals;
-    pool.m_Normals = pool.m_Texcoord1.v3;
-    pool.m_Texcoord1.v3 = tmp;
-    pool.m_Normals.Clear();
-  }
+            // Swap m_Normals <-> m_UvSet1.v3
+            var tmp = pool.m_Normals;
+            pool.m_Normals = pool.m_Texcoord1.v3;
+            pool.m_Texcoord1.v3 = tmp;
+            pool.m_Normals.Clear();
+        }
 
 #if FBX_SUPPORTED
   // FbxDouble3
@@ -108,6 +111,6 @@ public static class FbxUtils {
     scale = input.GetS().ToUVector3();
   }
 #endif
-}
+    }
 
 } // namespace TiltBrush

@@ -14,7 +14,8 @@
 
 using UnityEditor;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 #if UNITY_ANDROID
 [InitializeOnLoadAttribute]
 public class SetStereoRenderPath {

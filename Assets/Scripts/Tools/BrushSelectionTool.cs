@@ -14,38 +14,46 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-// These tools are used for monoscopic mode only
-public class BrushSelectionTool : BaseSelectionTool {
-  public TextMesh m_SelectionTextExtra;
-  public Color m_SelectionTextExtraColor;
+    // These tools are used for monoscopic mode only
+    public class BrushSelectionTool : BaseSelectionTool
+    {
+        public TextMesh m_SelectionTextExtra;
+        public Color m_SelectionTextExtraColor;
 
-  override public void Init() {
-    base.Init();
-    m_SelectionTextExtra.GetComponent<Renderer>().material.color = m_SelectionTextExtraColor;
-  }
+        override public void Init()
+        {
+            base.Init();
+            m_SelectionTextExtra.GetComponent<Renderer>().material.color = m_SelectionTextExtraColor;
+        }
 
-  override public void SetExtraText(string sExtra) {
-    m_SelectionTextExtra.text = sExtra;
-  }
+        override public void SetExtraText(string sExtra)
+        {
+            m_SelectionTextExtra.text = sExtra;
+        }
 
-  override public void UpdateTool() {
-    base.UpdateTool();
+        override public void UpdateTool()
+        {
+            base.UpdateTool();
 
-    // If our info just became valid, update our selection text
-    if (!m_SelectionInfoQueryWasComplete && m_SelectionInfoQueryComplete) {
-      string sExtraTextDesc = (m_SelectionBrush != null) ? m_SelectionBrush.m_Description : "";
-      SetExtraText(sExtraTextDesc);
+            // If our info just became valid, update our selection text
+            if (!m_SelectionInfoQueryWasComplete && m_SelectionInfoQueryComplete)
+            {
+                string sExtraTextDesc = (m_SelectionBrush != null) ? m_SelectionBrush.m_Description : "";
+                SetExtraText(sExtraTextDesc);
+            }
+
+            // Inputs
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                if (m_SelectionInfoValid)
+                {
+                    PointerManager.m_Instance.SetBrushForAllPointers(m_SelectionBrush);
+                }
+                m_RequestExit = true;
+            }
+        }
     }
-
-    // Inputs
-    if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) {
-      if (m_SelectionInfoValid) {
-        PointerManager.m_Instance.SetBrushForAllPointers(m_SelectionBrush);
-      }
-      m_RequestExit = true;
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

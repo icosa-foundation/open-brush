@@ -14,54 +14,66 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
-public class DownloadPopupWindow : PopUpWindow {
-  private int m_SketchIndex;
-  [SerializeField] private Renderer m_ProgressBar;
+namespace TiltBrush
+{
+    public class DownloadPopupWindow : PopUpWindow
+    {
+        private int m_SketchIndex;
+        [SerializeField] private Renderer m_ProgressBar;
 
-  private GoogleDriveSketchSet.GoogleDriveFileInfo m_SceneFileInfo;
-  private TaskAndCts m_DownloadTask;
+        private GoogleDriveSketchSet.GoogleDriveFileInfo m_SceneFileInfo;
+        private TaskAndCts m_DownloadTask;
 
-  override public void SetPopupCommandParameters(int commandParam, int commandParam2) {
-    if (commandParam2 != (int) SketchSetType.Drive) {
-      return;
+        override public void SetPopupCommandParameters(int commandParam, int commandParam2)
+        {
+            if (commandParam2 != (int)SketchSetType.Drive)
+            {
+                return;
+            }
+            m_SketchIndex = commandParam;
+            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive) as GoogleDriveSketchSet;
+            m_SceneFileInfo =
+                sketchSet.GetSketchSceneFileInfo(commandParam) as GoogleDriveSketchSet.GoogleDriveFileInfo;
+
+            if (m_SceneFileInfo.Available)
+            {
+                return;
+            }
+            m_ProgressBar.material.SetFloat("_Ratio", 0);
+
+            m_DownloadTask = new TaskAndCts();
+            m_DownloadTask.Task = m_SceneFileInfo.DownloadAsync(m_DownloadTask.Token);
+        }
+
+        protected override void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            if (m_SceneFileInfo != null)
+            {
+                m_ProgressBar.material.SetFloat("_Ratio", m_SceneFileInfo.Progress);
+            }
+        }
+
+        protected override void BaseUpdate()
+        {
+            base.BaseUpdate();
+            if (m_SceneFileInfo?.Available ?? false)
+            {
+                if (m_ParentPanel)
+                {
+                    m_ParentPanel.ResolveDelayedButtonCommand(true);
+                }
+            }
+        }
+
+        public override bool RequestClose(bool bForceClose = false)
+        {
+            bool close = base.RequestClose(bForceClose);
+            if (close)
+            {
+                m_DownloadTask.Cts.Cancel();
+            }
+            return close;
+        }
     }
-    m_SketchIndex = commandParam;
-    var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive) as GoogleDriveSketchSet;
-    m_SceneFileInfo =
-        sketchSet.GetSketchSceneFileInfo(commandParam) as GoogleDriveSketchSet.GoogleDriveFileInfo;
-
-    if (m_SceneFileInfo.Available) {
-      return;
-    }
-    m_ProgressBar.material.SetFloat("_Ratio", 0);
-
-    m_DownloadTask = new TaskAndCts();
-    m_DownloadTask.Task = m_SceneFileInfo.DownloadAsync(m_DownloadTask.Token);
-  }
-
-  protected override void UpdateVisuals() {
-    base.UpdateVisuals();
-    if (m_SceneFileInfo != null) {
-      m_ProgressBar.material.SetFloat("_Ratio", m_SceneFileInfo.Progress);
-    }
-  }
-
-  protected override void BaseUpdate() {
-    base.BaseUpdate();
-    if (m_SceneFileInfo?.Available ?? false) {
-      if (m_ParentPanel) {
-        m_ParentPanel.ResolveDelayedButtonCommand(true);
-      }
-    }
-  }
-
-  public override bool RequestClose(bool bForceClose = false) {
-    bool close = base.RequestClose(bForceClose);
-    if (close) {
-      m_DownloadTask.Cts.Cancel();
-    }
-    return close;
-  }
-}
 } // namespace TiltBrush

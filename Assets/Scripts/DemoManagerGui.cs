@@ -15,10 +15,12 @@
 using UnityEngine;
 using TMPro;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class DemoManagerGui : MonoBehaviour {
-  public GameObject m_CountdownTimerUI;
-  public TextMeshProUGUI m_TimeRemainingText;
-}
+    public class DemoManagerGui : MonoBehaviour
+    {
+        public GameObject m_CountdownTimerUI;
+        public TextMeshProUGUI m_TimeRemainingText;
+    }
 } // namespace TiltBrush

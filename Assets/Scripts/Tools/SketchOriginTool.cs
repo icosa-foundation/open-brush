@@ -14,31 +14,40 @@
 
 using UnityEngine;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-public class SketchOriginTool : BaseTool {
-  private Vector3 m_ParentPosition;
+    public class SketchOriginTool : BaseTool
+    {
+        private Vector3 m_ParentPosition;
 
-  override public void EnableTool(bool bEnable) {
-    base.EnableTool(bEnable);
+        override public void EnableTool(bool bEnable)
+        {
+            base.EnableTool(bEnable);
 
-    if (m_Parent != null) {
-      if (bEnable) {
-        m_ParentPosition = m_Parent.position;
-        m_Parent.position = SketchControlsScript.m_Instance.GetSketchOrigin();
-      } else {
-        SketchControlsScript.m_Instance.SetSketchOrigin(m_Parent.position);
-        m_Parent.position = m_ParentPosition;
-      }
+            if (m_Parent != null)
+            {
+                if (bEnable)
+                {
+                    m_ParentPosition = m_Parent.position;
+                    m_Parent.position = SketchControlsScript.m_Instance.GetSketchOrigin();
+                }
+                else
+                {
+                    SketchControlsScript.m_Instance.SetSketchOrigin(m_Parent.position);
+                    m_Parent.position = m_ParentPosition;
+                }
+            }
+        }
+
+        override public void UpdateTool()
+        {
+            base.UpdateTool();
+
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                m_RequestExit = true;
+            }
+        }
     }
-  }
-
-  override public void UpdateTool() {
-    base.UpdateTool();
-
-    if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) {
-      m_RequestExit = true;
-    }
-  }
-}
-}  // namespace TiltBrush
+} // namespace TiltBrush

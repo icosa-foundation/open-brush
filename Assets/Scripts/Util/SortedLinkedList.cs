@@ -14,44 +14,53 @@
 
 using System.Collections.Generic;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-// Linked list with ordered values, allowing duplicates.
-public class SortedLinkedList<T> {
-  private LinkedList<T> m_list;
-  System.Func<T, T, bool> m_lessThan;
+    // Linked list with ordered values, allowing duplicates.
+    public class SortedLinkedList<T>
+    {
+        private LinkedList<T> m_list;
+        System.Func<T, T, bool> m_lessThan;
 
-  public SortedLinkedList(System.Func<T, T, bool> lessThan, IEnumerable<T> orderedInitialValues)  {
-    m_list = new LinkedList<T>(orderedInitialValues);
-    m_lessThan = lessThan;
-  }
+        public SortedLinkedList(System.Func<T, T, bool> lessThan, IEnumerable<T> orderedInitialValues)
+        {
+            m_list = new LinkedList<T>(orderedInitialValues);
+            m_lessThan = lessThan;
+        }
 
-  public int Count { get { return m_list.Count; } }
+        public int Count { get { return m_list.Count; } }
 
-  public LinkedList<T>.Enumerator GetEnumerator() { return m_list.GetEnumerator(); }
+        public LinkedList<T>.Enumerator GetEnumerator() { return m_list.GetEnumerator(); }
 
-  public LinkedListNode<T> First { get { return m_list.First; } }
+        public LinkedListNode<T> First { get { return m_list.First; } }
 
-  public LinkedListNode<T> PopFirst() {
-    var node = m_list.First;
-    m_list.Remove(node);
-    return node;
-  }
+        public LinkedListNode<T> PopFirst()
+        {
+            var node = m_list.First;
+            m_list.Remove(node);
+            return node;
+        }
 
-  /// Insert new node.  In the case of nodes with identical ordering value, the new node
-  /// is placed nearest to the head of the list (First).
-  public void Insert(LinkedListNode<T> newNode) {
-    System.Diagnostics.Debug.Assert(newNode.List == null);
-    var node = m_list.First;
-    while (node != null && m_lessThan(node.Value, newNode.Value)) {
-      node = node.Next;
+        /// Insert new node.  In the case of nodes with identical ordering value, the new node
+        /// is placed nearest to the head of the list (First).
+        public void Insert(LinkedListNode<T> newNode)
+        {
+            System.Diagnostics.Debug.Assert(newNode.List == null);
+            var node = m_list.First;
+            while (node != null && m_lessThan(node.Value, newNode.Value))
+            {
+                node = node.Next;
+            }
+            if (node == null)
+            {
+                m_list.AddLast(newNode);
+            }
+            else
+            {
+                m_list.AddBefore(node, newNode);
+            }
+        }
     }
-    if (node == null) {
-      m_list.AddLast(newNode);
-    } else {
-      m_list.AddBefore(node, newNode);
-    }
-  }
-}
 
 } // namespace TiltBrush

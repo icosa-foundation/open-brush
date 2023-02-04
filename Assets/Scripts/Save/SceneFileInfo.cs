@@ -14,53 +14,56 @@
 
 using System.IO;
 
-namespace TiltBrush {
-public enum FileInfoType {
-  Disk,
-  Cloud,
-  None
-}
+namespace TiltBrush
+{
+    public enum FileInfoType
+    {
+        Disk,
+        Cloud,
+        None
+    }
 
-/// SceneFileInfo is a reference to a tilt file stored somewhere, and accessed via GetReadStream.
-public interface SceneFileInfo {
-  FileInfoType InfoType { get; }
+    /// SceneFileInfo is a reference to a tilt file stored somewhere, and accessed via GetReadStream.
+    public interface SceneFileInfo
+    {
+        FileInfoType InfoType { get; }
 
-  /// User-friendly name for the sketch. NOT AUTOMATICALLY FILESYSTEM-SAFE.
-  string HumanName { get; }
+        /// User-friendly name for the sketch. NOT AUTOMATICALLY FILESYSTEM-SAFE.
+        string HumanName { get; }
 
-  /// Does this refer to a real sketch?
-  /// For disk files, this is true if there's a file name (there may no be file there, though)
-  /// For cloud files, this is always true
-  bool Valid { get; }
+        /// Does this refer to a real sketch?
+        /// For disk files, this is true if there's a file name (there may no be file there, though)
+        /// For cloud files, this is always true
+        bool Valid { get; }
 
-  /// Is this sketch actually loadable right now (it may need to be downloaded)?
-  bool Available { get; }
+        /// Is this sketch actually loadable right now (it may need to be downloaded)?
+        bool Available { get; }
 
-  /// Full path to the sketch (could be a file or a Resource)
-  string FullPath { get; }
+        /// Full path to the sketch (could be a file or a Resource)
+        string FullPath { get; }
 
-  /// Does the thing referred to by FullPath exist?
-  bool Exists { get; }
+        /// Does the thing referred to by FullPath exist?
+        bool Exists { get; }
 
-  /// Can the original scene file be overwritten with an overwrite save?
-  bool ReadOnly { get; }
+        /// Can the original scene file be overwritten with an overwrite save?
+        bool ReadOnly { get; }
 
-  /// Poly asset of this sketch.
-  string AssetId { get; }
+        /// Poly asset of this sketch.
+        string AssetId { get; }
 
-  /// Poly asset id that this is derived from.
-  string SourceId { get; }
+        /// Poly asset id that this is derived from.
+        string SourceId { get; }
 
-  /// Rough triangle count, or null if unknown.
-  /// Likely known only for cloud-based sources like Poly.
-  int? TriangleCount { get; }
+        /// Rough triangle count, or null if unknown.
+        /// Likely known only for cloud-based sources like Poly.
+        int? TriangleCount { get; }
 
-  void Delete();
+        void Delete();
 
-  bool IsHeaderValid();
+        bool IsHeaderValid();
 
-  /// Get a stream for a specific part of the file.  Subfilenames are defined in TiltFile.
-  Stream GetReadStream(string subfileName);
-}
+        /// Get a stream for a specific part of the file.  Subfilenames are defined in TiltFile.
+        Stream GetReadStream(string subfileName);
+    }
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

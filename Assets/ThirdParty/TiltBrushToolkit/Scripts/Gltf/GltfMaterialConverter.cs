@@ -102,6 +102,7 @@ public class GltfMaterialConverter {
   public static IEnumerable LoadTexturesCoroutine(
       GltfRootBase root, IUriLoader loader, List<Texture2D> loaded) {
     foreach (GltfTextureBase gltfTexture in NecessaryTextures(root)) {
+      if (gltfTexture.SourcePtr.uri == null) continue;
       if (IsTiltBrushHostedUri(gltfTexture.SourcePtr.uri)) {
         Debug.LogWarningFormat("Texture {0} uri {1} was considered necessary",
                                gltfTexture.GltfId, gltfTexture.SourcePtr.uri);
@@ -409,7 +410,7 @@ public class GltfMaterialConverter {
   private static IEnumerable ConvertTextureCoroutine(
       GltfTextureBase gltfTexture, IUriLoader loader) {
     if (gltfTexture.unityTexture != null) {
-      throw new InvalidOperationException("Already converted");
+      Debug.LogWarning($"Texture already converted: {gltfTexture.unityTexture.name}");
     }
 
     if (gltfTexture.SourcePtr == null) {

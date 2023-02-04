@@ -1,0 +1,65 @@
+<html><head></head>
+<body>
+<script>
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+    function updateInput(event) {
+        var inputId = event.target.getAttribute('data-inputId');
+        document.getElementById(inputId).value = event.target.value;
+    }
+
+     function sendCommand(command) {
+         sendCommands([command]);
+     }
+
+    function sendCommands(commands) {
+        var xhr = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xhr.open('GET', url, true);
+        log(commands.join('\n'));
+        xhr.onload = () => log('<' + xhr.responseText + '>');
+        xhr.send(null);
+    }
+    
+</script>
+
+<button onclick="sendCommand('new')">New</button>
+<button onclick="sendCommand('brush.move.to=0,13,3')">Home</button>
+<br>
+<button onclick="sendCommand('brush.draw=' + document.getElementById('drawInput').value)">Draw</button>
+<input type="text" value="1" size="4" id="drawInput">
+<input type="range" min="1" max="10" value="1" step="1" id="drawSlider" onchange="updateInput(event)" data-inputId="drawInput">
+<br>
+<button onclick="sendCommand('brush.move=' + document.getElementById('moveInput').value)">Move</button>
+<input type="text" value="1" size="4" id="moveInput">
+<input type="range" min="1" max="10" value="1" step="1" id="moveSlider" onchange="updateInput(event)" data-inputId="moveInput">
+<br>
+<button onclick="sendCommand('brush.turn.x=' + document.getElementById('turnxInput').value)">Turn X</button>
+<input type="text" value="45" size="4" id="turnxInput">
+<input type="range"  min="-180" max="180" value="45" step="15" id="turnxSlider" onchange="updateInput(event)" data-inputId="turnxInput">
+<br>
+<button onclick="sendCommand('brush.turn.y=' + document.getElementById('turnyInput').value)">Turn Y</button>
+<input type="text" value="45" size="4" id="turnyInput">
+<input type="range" min="-180" max="180" value="45" step="15" id="turnySlider" onchange="updateInput(event)" data-inputId="turnyInput">
+<br>
+<button onclick="sendCommand('brush.turn.z=' + document.getElementById('turnzInput').value)">Turn Z</button>
+<input type="text" value="45" size="4" id="turnzInput">
+<input type="range" min="-180" max="180" value="45" step="15" id="turnzSlider" onchange="updateInput(event)" data-inputId="turnzInput">
+<br>
+<button onclick="sendCommand('brush.look.left')">Point Left</button>
+<button onclick="sendCommand('brush.look.right')">Point Right</button>
+<button onclick="sendCommand('brush.look.up')">Point Up</button>
+<button onclick="sendCommand('brush.look.down')">Point Down</button>
+<button onclick="sendCommand('brush.look.forwards')">Point Forwards</button>
+<button onclick="sendCommand('brush.look.backwards')">Point Backwards</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+</body>
+</html>

@@ -14,12 +14,14 @@
 
 using System.Collections.Generic;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-// Useful to ensure that objects are being compared by reference rather than by value.
-public class ReferenceComparer<T> : IEqualityComparer<T> where T : class {
-  public bool Equals(T x, T y) { return ReferenceEquals(x, y); }
-  public int GetHashCode(T obj) { return obj.GetHashCode(); }
-}
+    // Useful to ensure that objects are being compared by reference rather than by value.
+    public class ReferenceComparer<T> : IEqualityComparer<T> where T : class
+    {
+        public bool Equals(T x, T y) { return ReferenceEquals(x, y); }
+        public int GetHashCode(T obj) { return obj.GetHashCode(); }
+    }
 
 } // namespace TiltBrush

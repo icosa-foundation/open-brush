@@ -15,18 +15,21 @@
 using UnityEngine;
 using TMPro;
 
-namespace TiltBrush {
+namespace TiltBrush
+{
 
-// This class is useful for tinting TextMeshPro objects without having to create a new material.
-public class TextMeshProTint : MonoBehaviour {
-  [SerializeField] private Color m_Color;
-  private TextMeshPro m_SiblingText;
+    // This class is useful for tinting TextMeshPro objects without having to create a new material.
+    public class TextMeshProTint : MonoBehaviour
+    {
+        [SerializeField] private Color m_Color;
+        private TextMeshPro m_SiblingText;
 
-  void Awake() {
-    m_SiblingText = GetComponent<TextMeshPro>();
-    Debug.Assert(m_SiblingText != null);
-    m_SiblingText.color = m_Color;
-  }
-}
+        void Awake()
+        {
+            m_SiblingText = GetComponent<TextMeshPro>();
+            Debug.Assert(m_SiblingText != null);
+            m_SiblingText.color = m_Color;
+        }
+    }
 
-}  // namespace TiltBrush
+} // namespace TiltBrush

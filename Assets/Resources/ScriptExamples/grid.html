@@ -1,0 +1,112 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charSet="UTF-8">
+</head>
+<body>
+
+<Label>Brush type: <select id="brush.type" name="brush.type"></select></Label><br>
+<label>Brush size: <input id="brush.size" value=".25"></label><br>
+<label>Brush color: <input id="brush.color" value="Green"></label><br>
+
+<label>Steps: <input id="steps" value="10"></label>
+<label>Scale: <input id="scale" value="1"></label><br>
+<label>Noise X: <input id="noisex" value="4"></label>
+<label>Noise Y: <input id="noisey" value="2.5"></label>
+<label>Noise Z: <input id="noisez" value="4"></label>
+<button id="runButton">Run</button>
+<br><br>
+<button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script>
+
+    var brushes = {{brushesJson}};
+    var menu = document.getElementById("brush.type");
+    for (var brush of brushes) {
+        var option = document.createElement("option");
+        option.text = brush;
+        option.name = brush;
+        if (brush==='FacetedTube') option.selected=true;
+        menu.add(option);
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+
+    function run() {
+
+        sendCommands([
+            'color.set.html=' + document.getElementById("brush.color").value,
+            'brush.size.set=' + document.getElementById("brush.size").value,
+            'brush.type=' + document.getElementById("brush.type").value,
+            'brush.turn.y=90'
+        ]);
+
+        drawLines(false);
+        drawLines(true);
+
+        var noisex = parseFloat(document.getElementById('noisex').value);
+        var noisey = parseFloat(document.getElementById('noisey').value);
+        var noisez = parseFloat(document.getElementById('noisez').value);
+
+        if (noisex>0 && noisey>0 && noisez>0)
+        {
+        sendCommands([
+            "select.all",
+            `selection.points.addnoise=y,${noisex},${noisey},${noisez}`,
+            // 'selection.points.quantize=.001,1.2,.001'  // Battlezone...
+        ]);
+        }
+    }
+
+    function drawLines(flip)
+    {
+        var steps = parseInt(document.getElementById('steps').value);
+        var scale = parseFloat(document.getElementById('scale').value);
+
+        for (var i=0; i<steps; i++) {
+            var line = [];
+            for (var j=0; j<steps; j++) {
+                if (flip) {
+                    var x = i;
+                    var y = j;
+                } else {
+                    var x = j;
+                    var y = i;
+                }
+                line.push(`[${x*scale},0,${y*scale}]`);
+            }
+            sendCommands([
+                `draw.path=${line.join(",")}`
+            ]);
+        }
+
+    }
+
+     function sendCommand(command) {
+         sendCommands([command]);
+     }
+
+    function sendCommands(commands) {
+        var xhr = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xhr.open('GET', url, true);
+        log(commands.join('\n'));
+        xhr.onload = () => log('<' + xhr.responseText + '>');
+        xhr.send(null);
+    }
+
+    var button = document.getElementById('runButton');
+    button.onclick = run;
+</script>
+
+
+</body>
+</html>
