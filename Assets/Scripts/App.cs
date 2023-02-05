@@ -2051,7 +2051,7 @@ namespace TiltBrush
 
         public static string FeaturedSketchesPath()
         {
-            return Path.Combine(UserPath(), "Featured Sketches");
+            return Path.Combine(Application.persistentDataPath, "Featured Sketches");
         }
 
         public static string MediaLibraryPath()
