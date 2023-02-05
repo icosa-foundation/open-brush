@@ -2049,6 +2049,11 @@ namespace TiltBrush
             return true;
         }
 
+        public static string FeaturedSketchesPath()
+        {
+            return Path.Combine(UserPath(), "Featured Sketches");
+        }
+
         public static string MediaLibraryPath()
         {
             return Path.Combine(UserPath(), "Media Library");

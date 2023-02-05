@@ -195,6 +195,8 @@ namespace TiltBrush
         // File watcher thread is producer, main thread is consumer.
         private Queue m_ToAdd;
         private Queue m_ToDelete;
+        private bool m_ReadOnly;
+        private string m_SketchesPath;
 
         public SketchSetType Type
         {
@@ -229,6 +231,20 @@ namespace TiltBrush
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
+            m_ReadOnly = false;
+            m_SketchesPath = App.UserSketchPath();
+        }
+
+        public FileSketchSet(string path)
+        {
+            m_Type = SketchSetType.Curated;
+            m_ReadyForAccess = false;
+            m_RequestedLoads = new Stack<int>();
+            m_Sketches = new List<FileSketch>();
+            m_ToAdd = Queue.Synchronized(new Queue());
+            m_ToDelete = Queue.Synchronized(new Queue());
+            m_ReadOnly = false;
+            m_SketchesPath = path;
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -317,18 +333,17 @@ namespace TiltBrush
 
         public virtual void Init()
         {
-            string sSketchDirectory = App.UserSketchPath();
-            ProcessDirectory(sSketchDirectory);
+            ProcessDirectory(m_SketchesPath);
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
-            try { Directory.CreateDirectory(sSketchDirectory); }
+            try { Directory.CreateDirectory(m_SketchesPath); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
 
-            if (Directory.Exists(sSketchDirectory))
+            if (Directory.Exists(m_SketchesPath) && !m_ReadOnly)
             {
-                m_FileWatcher = new FileWatcher(sSketchDirectory, "*" + SaveLoadScript.TILT_SUFFIX);
+                m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
                 // Note: Renamed event not implemented on OS X, so we rely on Deleted + Created
@@ -410,7 +425,7 @@ namespace TiltBrush
             if (m_ToAdd.Count > 0)
             {
                 string path = (string)m_ToAdd.Dequeue();
-                var fileInfo = new DiskSceneFileInfo(path);
+                var fileInfo = new DiskSceneFileInfo(path, readOnly: m_ReadOnly);
                 if (fileInfo.IsHeaderValid())
                 {
                     AddSketchToSet(fileInfo);
