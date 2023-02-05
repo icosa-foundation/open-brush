@@ -16,6 +16,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 
@@ -73,6 +74,16 @@ namespace TiltBrush
             {
                 m_FileInfo = info;
                 m_bMetadataValid = false;
+
+                if (m_Authors == null || m_Authors.Length == 0)
+                {
+                    if (m_FileInfo.HumanName.Contains(" by "))
+                    {
+                        var sections = m_FileInfo.HumanName.Split(" by ");
+                        m_Authors = new[] { sections.LastOrDefault() };
+                        m_FileInfo.HumanName = string.Join(" by ", sections.SkipLast(1));
+                    }
+                }
             }
 
             public bool IconAndMetadataValid
