@@ -418,7 +418,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -429,7 +429,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -451,7 +451,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -462,7 +462,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{RightHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -846,7 +846,7 @@ namespace TiltBrush
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""Vive Pad Right"",
+                    ""name"": ""Pad Right"",
                     ""id"": ""4870119a-fffc-449f-bb51-3ae912068789"",
                     ""path"": ""VivePadButton(min=0.1,max=1)"",
                     ""interactions"": """",
@@ -862,7 +862,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -873,7 +873,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""SecondaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -895,7 +895,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/trackpadClicked"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
@@ -906,7 +906,7 @@ namespace TiltBrush
                     ""path"": ""<XRController>{LeftHand}/trackpad/x"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": ""HTC Vive Controller"",
+                    ""groups"": ""HTC Vive Controller;WMR Controller"",
                     ""action"": ""PrimaryButton"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
