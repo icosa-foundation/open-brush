@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+
 namespace TiltBrush.Layers
 {
     public class LayerUI_Manager : MonoBehaviour
@@ -26,10 +27,16 @@ namespace TiltBrush.Layers
         public List<GameObject> m_Widgets;
         private List<CanvasScript> m_Canvases;
 
+        public Component animationUI_Manager;
+
         private void Start()
         {
             m_Canvases = new List<CanvasScript>();
             ResetUI();
+
+
+            App.Scene.animationUI_manager.startTimeline();
+
         }
 
         private void ResetUI()
@@ -81,12 +88,32 @@ namespace TiltBrush.Layers
             var layer = GetCanvasFromWidget(widget);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(layer));
         }
+        public void DeleteLayerGeneral(){
+            if ( App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
+       
+        }
 
         public void SquashLayer(GameObject widget)
         {
             var canvas = GetCanvasFromWidget(widget);
             var index = m_Widgets.IndexOf(widget);
+
+            print("SQUASHING ORIG" + index);
+
             var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new SquashLayerCommand(canvas, prevCanvas)
+            );
+        }
+
+          public void SquashLayerGeneral()
+        {
+
+            var canvas = App.Scene.ActiveCanvas;
+            var index = App.Scene.GetLayerNumFromCanvas(App.Scene.ActiveCanvas);
+            print("SQUASHING GENERAL" + index);
+            var prevCanvas = App.Scene.GetCanvasFromLayerNum(Mathf.Max(index -1, 0));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SquashLayerCommand(canvas, prevCanvas)
             );
@@ -96,6 +123,11 @@ namespace TiltBrush.Layers
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+        }
+         public void ClearLayerContentsGeneral()
+        {
+
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(App.Scene.ActiveCanvas.BatchManager));
         }
 
         public void AddLayer()

@@ -56,6 +56,8 @@ namespace TiltBrush.Animation{
         [SerializeField] public GameObject timelineSliderPosition;
         
         [SerializeField] public GameObject timelineNotchPrefab;
+
+        [SerializeField] public GameObject timelineField;
         [SerializeField] public GameObject textRef;
 
         [SerializeField] public GameObject deleteFrameButton;
@@ -66,6 +68,8 @@ namespace TiltBrush.Animation{
 
         float timelineOffset = 0.0f;
         public List<GameObject> timelineNotches;
+
+        public List<GameObject> timelineFrameObjects;
 
 
 
@@ -87,13 +91,17 @@ namespace TiltBrush.Animation{
       
             // nextFrame = App.Scene.addFrame();
 
-          
+            print("START ANIM");
         }
         void Awake(){
 
             
-
-            timeline = new List<Frame>();
+            App.Scene.animationUI_manager = this;
+          
+           
+        }
+        public void startTimeline(){
+               timeline = new List<Frame>();
 
             Frame originFrame = newFrame();
             frameLayer mainLayer = newFrameLayer(App.Scene.m_MainCanvas);
@@ -107,12 +115,13 @@ namespace TiltBrush.Animation{
             focusFrame(originFrame);
 
             timelineNotches = new List<GameObject>();
+            timelineFrameObjects = new List<GameObject>();
 
-          
-           
+            print("START TIMELINE");
         }
         public  void init(){
            
+           print("INIT");
         }
        
 
@@ -341,14 +350,29 @@ namespace TiltBrush.Animation{
                      
                         GameObject notch = timelineNotches[f];
                         float thisOffset = startX + ((float)(f))*sliderFrameSize*meshLength;
+
+                      
                            notch.transform.localPosition = new Vector3(thisOffset, 0, 0);
                         notch.transform.localRotation = Quaternion.identity;
                  
 
                         notch.SetActive(thisOffset >= -meshLength*0.5 && thisOffset <=  meshLength*0.5);
 
+                        if (f==0){
+                            Vector3 newPosition = timelineField.transform.GetChild(f).localPosition;
+                            float width = timelineField.transform.GetChild(f).localScale.x;
+                            newPosition.x = thisOffset + width*0.5f;
+
+                        timelineField.transform.GetChild(f).localPosition = newPosition;
+                        timelineField.transform.GetChild(f).gameObject.SetActive(newPosition.x >= -meshLength*0.5 && newPosition.x <=  meshLength*0.5);
+                        }
+
             }
 
+            foreach (var frameGroup in timelineField.transform){
+
+             
+            }
                   
         }
         public void updateTimelineNob(){
@@ -416,7 +440,12 @@ namespace TiltBrush.Animation{
 
             }
 
+
+
+
             (int,int ) previousActiveCanvas = getCanvasIndex(App.Scene.ActiveCanvas);
+
+            print("PREV CANV INDEX " + previousActiveCanvas.Item1 + " " + previousActiveCanvas.Item2);
  
             App.Scene.ActiveCanvas = frame.layers[previousActiveCanvas.Item2].canvas;
 
@@ -612,6 +641,7 @@ namespace TiltBrush.Animation{
             playing = false;
         }
         public void toggleAnimation(){
+            print("TOGGLING ANIMATION");
             if (playing) { stopAnimation();}
             else startAnimation();
       
@@ -623,6 +653,7 @@ namespace TiltBrush.Animation{
         float prevFrameOn = 0;
         void Update()
         {
+            print("ANIM UPDATE");
             if (playing){
                 time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 current = (time - start);
