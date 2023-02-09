@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -74,6 +75,8 @@ namespace TiltBrush
         private const string kFileMoveContents =
             "All your " + kAppDisplayName + " files have been moved to\n" +
             "/sdcard/" + kAppFolderName + ".\n";
+
+        public static HttpClient HttpClient = new HttpClient();
 
         public enum AppState
         {
