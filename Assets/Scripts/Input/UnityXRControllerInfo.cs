@@ -115,6 +115,16 @@ namespace TiltBrush
             return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
+        public override void Update()
+        {
+            base.Update();
+
+            if (!FindAction("PadTouch").inProgress)
+            {
+                padAxisPrevious = Vector2.zero;
+            }
+        }
+
         public override Vector2 GetPadValueDelta()
         {
             var action = FindAction("ThumbAxis");
@@ -127,26 +137,26 @@ namespace TiltBrush
             else
             {
                 action = FindAction("PadAxis");
-                if (!action.inProgress)
+                if (FindAction("PadTouch").IsPressed())
                 {
-                    padAxisPrevious = Vector2.zero;
-                    return padAxisPrevious;
-                }
+                    Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
+                    Vector2 padAxisCurrent = action.ReadValue<Vector2>();
 
-                Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                Vector2 padAxisCurrent = action.ReadValue<Vector2>();
+                    if (padAxisPrevious == Vector2.zero)
+                    {
+                        padAxisPrevious = padAxisCurrent;
+                    }
 
-                if (padAxisPrevious == Vector2.zero)
-                {
+                    var delta = padAxisCurrent - padAxisPrevious;
                     padAxisPrevious = padAxisCurrent;
+
+                    delta.x = Mathf.Clamp(delta.x, range.x, range.y);
+                    delta.y = Mathf.Clamp(delta.y, range.x, range.y);
+                    return delta * kInputScrollScalar;
                 }
 
-                var delta = padAxisCurrent - padAxisPrevious;
-                padAxisPrevious = padAxisCurrent;
-
-                delta.x = Mathf.Clamp(delta.x, range.x, range.y);
-                delta.y = Mathf.Clamp(delta.y, range.x, range.y);
-                return delta * kInputScrollScalar;
+                //padAxisPrevious = Vector2.zero;
+                return Vector2.zero;
             }
         }
 
