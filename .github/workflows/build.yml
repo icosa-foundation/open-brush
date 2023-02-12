@@ -407,12 +407,12 @@ jobs:
                     "labels": ["fix", "bugfix"]
                 },
                 {
-                    "title": "## 🛠️ Maintenance",
-                    "labels": ["maintenance"]
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
                 },
                 {
-                    "title": "## 📦 Dependencies",
-                    "labels": ["dependencies"]
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
                 },
                 {
                     "title": "## 💬 Uncategorized",
