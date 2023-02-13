@@ -1277,7 +1277,9 @@ namespace TiltBrush
                 && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
                 && m_GrabBrush.grabbingWorld == false
                 && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
-                && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid);
+                && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid)
+                // TODO:Mike - very hacky
+                && SketchSurfacePanel.m_Instance.ActiveTool.m_Type != BaseTool.ToolType.MultiCamTool;
 
             if (m_EatToolScaleInput)
             {
