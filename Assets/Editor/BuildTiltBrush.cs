@@ -108,6 +108,9 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
+            // Mono
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -194,7 +197,7 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Mono);
+            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -382,13 +385,13 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
     static void MenuItem_Plugin_Mono()
     {
-        GuiSelectedSdk = XrSdkMode.Mono;
+        GuiSelectedSdk = XrSdkMode.Monoscopic;
     }
 
     [MenuItem(kMenuPluginMono, isValidateFunction: true)]
     static bool MenuItem_Plugin_Mono_Validate()
     {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Mono);
+        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
         return true;
     }
 
@@ -603,9 +606,10 @@ static class BuildTiltBrush
     {
         switch (buildTarget)
         {
-            case BuildTarget.StandaloneOSX:
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
+            case BuildTarget.StandaloneLinux64:
+            case BuildTarget.StandaloneOSX:
                 return BuildTargetGroup.Standalone;
             case BuildTarget.Android:
                 return BuildTargetGroup.Android;
@@ -613,6 +617,17 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
+        }
+    }
+
+    static public SdkMode XrTargetToSdk(XrSdkMode mode)
+    {
+        switch (mode)
+        {
+            case XrSdkMode.Monoscopic:
+                return SdkMode.Monoscopic;
+            default:
+                return SdkMode.UnityXR;
         }
     }
 
@@ -1057,12 +1072,17 @@ static class BuildTiltBrush
     class TempSetXrPlugin : IDisposable
     {
         List<XRLoader> m_plugins;
+        bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
 
         public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
             m_plugins = new();
             string[] targetXrPluginsRequired = new string[] { };
+
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
             {
@@ -1075,12 +1095,13 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
+                case XrSdkMode.Monoscopic:
+                    targetSettings.InitManagerOnStart = false;
+                    break;
                 default:
                     break;
             }
 
-            m_targetGroup = TargetToGroup(tiltOptions.Target);
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
 
             m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
             // Remove unwanted loaders
@@ -1109,6 +1130,8 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            targetSettings.InitManagerOnStart = m_xrEnabled;
+
             // Remove build loaders.
             foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
             {
@@ -1126,6 +1149,8 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
+
+            EditorUtility.SetDirty(targetSettings);
         }
     }
 
@@ -1427,8 +1452,8 @@ static class BuildTiltBrush
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
-            //config.m_SdkMode = xrSdk;
+            // TODO: can we think of a better way of switching to mono/something else in the future?
+            config.m_SdkMode = XrTargetToSdk(xrSdk);
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));

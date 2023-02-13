@@ -233,23 +233,23 @@ namespace TiltBrush
 #if UNITY_ANDROID
     // TODO:Mike - setting MSAA seems to crash quest when in Vulkan
     
-    // int msaa = QualityControls.m_Instance.MSAALevel;
-    // // MSAA disabled in QualityControls = 0, but render texture wants 1.
-    // if (msaa == 0) {
-    //   msaa = 1;
-    // }
-    // if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8) {
-    //   UnityEngine.Debug.LogWarningFormat("Invalid MSAA {0} != [1,2,4,8]", msaa);
-    //   msaa = 1;
-    // }
+    int msaa = QualityControls.m_Instance.MSAALevel;
+    // MSAA disabled in QualityControls = 0, but render texture wants 1.
+    if (msaa == 0) {
+      msaa = 1;
+    }
+    if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8) {
+      UnityEngine.Debug.LogWarningFormat("Invalid MSAA {0} != [1,2,4,8]", msaa);
+      msaa = 1;
+    }
 
-    // if (msaa != QualitySettings.antiAliasing) {
-    //   QualitySettings.antiAliasing = msaa;
-    // }
-    // GetComponent<Camera>().allowMSAA = msaa > 1;
+    if (msaa != QualitySettings.antiAliasing) {
+      QualitySettings.antiAliasing = msaa;
+    }
+    GetComponent<Camera>().allowMSAA = msaa > 1;
 
-    // // Use a single camera on Android.
-    // return;
+    // Use a single camera on Android.
+    return;
 #else
 
             Camera srcCam = GetComponent<Camera>();
