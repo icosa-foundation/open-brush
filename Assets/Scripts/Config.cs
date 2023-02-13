@@ -36,7 +36,7 @@ namespace TiltBrush
 {
     public enum XrSdkMode
     {
-        Mono = -1,
+        Monoscopic = -1,
         OpenXR = 0,
         Oculus,
         Wave,
@@ -104,13 +104,11 @@ namespace TiltBrush
         [Header("Overwritten by build process")]
         [SerializeField] private PlatformConfig m_PlatformConfig;
 
-        // True for experimental mode.
-        // Cannot be ifdef'd out, because it is modified during the build process.
-        // Public to allow App.cs and BuildTiltBrush.cs to access it; do not use it otherwise.
-        public bool m_IsExperimental;
-
         // The sdk mode indicates which SDK that we're using to drive the display.
         public SdkMode m_SdkMode;
+
+        // Stores the value of IsExperimental at startup time
+        [NonSerialized] public bool m_WasExperimentalAtStartup;
 
         // Whether or not to just do an automatic profile and then exit.
         public bool m_AutoProfile;
@@ -489,16 +487,33 @@ namespace TiltBrush
         // Yucky internals
         // ------------------------------------------------------------
 
-#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
         public static bool IsExperimental
         {
-            get => App.Config.m_IsExperimental;
+            get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
-#endif
+
+        // Non-Static version of above
+        public bool GetIsExperimental()
+        {
+            return PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+        }
+
+        public void SetIsExperimental(bool active)
+        {
+            PlayerPrefs.SetInt("ExperimentalMode", active ? 1 : 0);
+        }
 
         void Awake()
         {
             m_SingletonState = this;
+            m_WasExperimentalAtStartup = GetIsExperimental();
+
+            // Force mono to experimental and quit.
+            if (m_SdkMode == SdkMode.Monoscopic && !m_WasExperimentalAtStartup)
+            {
+                SetIsExperimental(true);
+                Application.Quit();
+            }
 
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(m_FakeCommandLineArgsInEditor))
@@ -532,7 +547,6 @@ namespace TiltBrush
 #endif
 
             m_BrushReplacement = new Dictionary<Guid, Guid>();
-#if UNITY_EDITOR || EXPERIMENTAL_ENABLED
             if (IsExperimental)
             {
                 foreach (var brush in m_BrushReplacementMap)
@@ -540,7 +554,6 @@ namespace TiltBrush
                     m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
                 }
             }
-#endif
         }
 
         /// Parses a setting taken from the command line of the form --Section.Setting value

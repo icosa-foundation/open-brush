@@ -412,7 +412,6 @@ GameObject:
   - component: {fileID: 81000010563896060}
   - component: {fileID: 114000010140527564}
   - component: {fileID: 8383487415960193186}
-  - component: {fileID: 789507119595878881}
   m_Layer: 0
   m_Name: Camera (eye)
   m_TagString: MainCamera
@@ -524,14 +523,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GrabHighlightMaskMaterial: {fileID: 2100000, guid: 02f5897148636384ea5f881820baa576,
     type: 2}
-  m_WidgetSelectionPostEffect: {fileID: 0}
-  m_StrokeSelectionPostEffect: {fileID: 0}
+  m_WidgetSelectionPostEffect: {fileID: 2100000, guid: 6d5dcf68f440aea459178e8e71e1e1c5,
+    type: 2}
+  m_StrokeSelectionPostEffect: {fileID: 2100000, guid: 989d64a8e82eeba4cb66d66a87f71242,
+    type: 2}
   m_BlurWidth: 1
   m_SelectionSaturation: 0.5
   m_SelectionValue: 1
   m_SelectionHueSpeed: 0.5
   m_SelectionHueStereoOffset: 0.2
-  m_NoiseSparkleSpeed: 2
+  m_NoiseSparkleSpeed: 0.5
 --- !u!124 &124000014121364414
 Behaviour:
   m_ObjectHideFlags: 0
@@ -602,64 +603,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fe91f659fccfb74daf6ad7b03d85d07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mat: {fileID: 0}
---- !u!114 &789507119595878881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000013132276250}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TrackingType: 0
-  m_UpdateType: 0
-  m_PositionInput:
-    m_UseReference: 0
-    m_Action:
-      m_Name: Position Input
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: aabebac8-a540-47da-b208-bdf95799653d
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_RotationInput:
-    m_UseReference: 0
-    m_Action:
-      m_Name: Rotation Input
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: f4aac536-6f21-47ae-8019-cab31f7d9ca6
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_PositionAction:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  m_RotationAction:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  m_HasMigratedActions: 1
+  mat: {fileID: 2100000, guid: a05aca4b32b5fd14aa95311556d3df67, type: 2}
 --- !u!1 &1000013151840476
 GameObject:
   m_ObjectHideFlags: 0

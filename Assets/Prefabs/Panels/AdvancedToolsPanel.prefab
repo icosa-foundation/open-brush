@@ -210,16 +210,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143592097783808
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Repaint
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -235,9 +226,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 18
   m_EatGazeInputOnPress: 1
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1200250368217180
 GameObject:
   m_ObjectHideFlags: 0
@@ -271,7 +259,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33252914123167002
 MeshFilter:
@@ -350,16 +338,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143754866139136
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Teleport
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -375,9 +354,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 17
   m_EatGazeInputOnPress: 1
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1232310111846144
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,7 +386,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 11
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33463444720997118
 MeshFilter:
@@ -632,16 +608,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5144088976007168
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Straightedge
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -662,31 +629,10 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1284305836696064
 GameObject:
   m_ObjectHideFlags: 0
@@ -751,16 +697,10 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1887799951535888, guid: cea55265052f18b4ca24670a074de41d,
       type: 3}
     m_Command: 67
-  m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
-  m_LocalizedPanelDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5142890986315776
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
+      type: 3}
+    m_Command: 32
+  m_PanelDescription: Tools
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.25, y: 1, z: 0}
@@ -790,15 +730,12 @@ MonoBehaviour:
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
   m_WandAttachYOffset: 1.2
-  m_WandAttachHalfHeight: 0.8
+  m_WandAttachHalfHeight: 1.2
   m_BeginFixed: 1
   m_CanBeFixedToWand: 1
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
-  references:
-    version: 2
-    RefIds: []
 --- !u!114 &114100749961665868
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -814,7 +751,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 1
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 0
@@ -882,7 +818,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 5
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33988012527450934
 MeshFilter:
@@ -961,16 +897,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143817222856704
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Selection
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -986,9 +913,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 21
   m_EatGazeInputOnPress: 0
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1504670964693764
 GameObject:
   m_ObjectHideFlags: 0
@@ -1019,7 +943,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 12
+  m_RootOrder: 13
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33527498822042428
 MeshFilter:
@@ -1059,7 +983,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 10
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &65439514599846630
 BoxCollider:
@@ -1108,7 +1032,7 @@ Transform:
   m_Children:
   - {fileID: 4099180057378294}
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 13
+  m_RootOrder: 14
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33827995805926138
 MeshFilter:
@@ -1187,16 +1111,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_MORE
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5144350784462848
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: More Tools...
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1217,31 +1132,10 @@ MonoBehaviour:
   m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: More Tools
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5148146801549312
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1622068699690834
 GameObject:
   m_ObjectHideFlags: 0
@@ -1274,12 +1168,13 @@ Transform:
   - {fileID: 4585706398833650}
   - {fileID: 4603240213511680}
   - {fileID: 4082445634174982}
+  - {fileID: 4132450083487116}
   - {fileID: 4887687143526368}
   - {fileID: 4489109818265846}
-  - {fileID: 4132450083487116}
   - {fileID: 4896252300719394}
   - {fileID: 5132072297439473359}
   - {fileID: 5566995999782226336}
+  - {fileID: 2329771398596852252}
   - {fileID: 4487744745540934}
   - {fileID: 4913046734195790}
   - {fileID: 4084186664612276}
@@ -1299,7 +1194,7 @@ GameObject:
   - component: {fileID: 33759398813900666}
   - component: {fileID: 23773859719338524}
   - component: {fileID: 65901329732289008}
-  - component: {fileID: 1174263549636321217}
+  - component: {fileID: 7508262917340115871}
   m_Layer: 16
   m_Name: Button_Camera
   m_TagString: Untagged
@@ -1385,7 +1280,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1174263549636321217
+--- !u!114 &7508262917340115871
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1394,25 +1289,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 1652457776899484}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 0eca91ea617987a4a8b8d03e685fc648, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143682283708416
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Cameras
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 2ca8ffdc765f6a242b6d8fdeb74a566b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: c13105d1ce387374c865c8a7bf9dd4bd, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1422,38 +1308,20 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 37
+  m_Command: 32
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  references:
-    version: 2
-    RefIds: []
+  m_LongPressDuration: 0.3
+  m_Tool: 16
+  m_EatGazeInputOnPress: 1
 --- !u!1 &1684631367195094
 GameObject:
   m_ObjectHideFlags: 0
@@ -1487,7 +1355,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 6
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33199737309214324
 MeshFilter:
@@ -1566,16 +1434,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143986307833856
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Mirror
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1596,32 +1455,11 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_LongPressDuration: 0.3
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1811144486349044
 GameObject:
   m_ObjectHideFlags: 0
@@ -1734,16 +1572,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143517279789056
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Dropper
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1759,9 +1588,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 13
   m_EatGazeInputOnPress: 1
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1872190426090282
 GameObject:
   m_ObjectHideFlags: 0
@@ -1874,16 +1700,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5143299389890560
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Eraser
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1899,9 +1716,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 11
   m_EatGazeInputOnPress: 1
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &1894539054339102
 GameObject:
   m_ObjectHideFlags: 0
@@ -2180,16 +1994,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_FLY
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5144159373205504
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Fly
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -2205,9 +2010,6 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 25
   m_EatGazeInputOnPress: 0
-  references:
-    version: 2
-    RefIds: []
 --- !u!1 &5664627563248376400
 GameObject:
   m_ObjectHideFlags: 0
@@ -2236,7 +2038,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5664627563248376400}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.634, z: 0.05}
+  m_LocalPosition: {x: -0.211, y: -0.634, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2320,16 +2122,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
-  m_LocalizedDescription:
-    m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-    m_TableEntryReference:
-      m_KeyId: 5144456485117952
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_DescriptionText: Snip
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -2345,9 +2138,134 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 11000
   m_EatGazeInputOnPress: 0
-  references:
-    version: 2
-    RefIds: []
+--- !u!1 &7793811069088501246
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2329771398596852252}
+  - component: {fileID: 7554895789558032809}
+  - component: {fileID: 7204587959944424170}
+  - component: {fileID: 5941665742209141829}
+  - component: {fileID: 2272569413313330358}
+  m_Layer: 16
+  m_Name: Button_Join
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2329771398596852252
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793811069088501246}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.211, y: -0.634, z: 0.05}
+  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4067220476156272}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &7554895789558032809
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793811069088501246}
+  m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
+--- !u!23 &7204587959944424170
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793811069088501246}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 40d29de2bdc11f04dbfa25059165916e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &5941665742209141829
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793811069088501246}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 0.01}
+  m_Center: {x: 0, y: 0, z: -0.05}
+--- !u!114 &2272569413313330358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793811069088501246}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DescriptionType: 0
+  m_DescriptionYOffset: 0
+  m_DescriptionText: Join
+  m_DescriptionTextExtra: 
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  m_ButtonTexture: {fileID: 2800000, guid: cdc7d38d9e0b30443961d1cc27195586, type: 3}
+  m_AtlasTexture: 1
+  m_ToggleButton: 1
+  m_LongPressReleaseButton: 0
+  m_ButtonHasPressedAudio: 1
+  m_ZAdjustHover: -0.02
+  m_ZAdjustClick: 0.05
+  m_HoverScale: 1.1
+  m_HoverBoxColliderGrow: 0.2
+  m_AddOverlay: 0
+  m_Tool: 11001
+  m_EatGazeInputOnPress: 0
 --- !u!1001 &4977840335731848577
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2355,6 +2273,26 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4661729169517730}
     m_Modifications:
+    - target: {fileID: 5053456529424186463, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: a4bdb2bf04c6548b58e1a7ee3cc4d556, type: 3}
+    - target: {fileID: 5053456529424186463, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_ToggleOnTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: a4bdb2bf04c6548b58e1a7ee3cc4d556, type: 3}
+    - target: {fileID: 5057020332640527455, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
+    - target: {fileID: 5057020332640527455, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_ToggleOnTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
     - target: {fileID: 6495778419652451853, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
       propertyPath: m_ShowOnToolType
@@ -2439,6 +2377,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SelectionTray
       objectReference: {fileID: 0}
+    - target: {fileID: 1503094713155990, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_RootOrder
       value: 3
@@ -2448,44 +2390,12 @@ PrefabInstance:
       value: -0.244
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.75
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.518
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
