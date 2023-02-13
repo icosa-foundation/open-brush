@@ -336,7 +336,7 @@ MonoBehaviour:
   m_PanelDescription: Layers
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
-  m_PanelDescriptionOffset: {x: 1.65, y: 1.25, z: 0}
+  m_PanelDescriptionOffset: {x: 0.75, y: 1, z: 0}
   m_PanelDescriptionColor: {r: 1, g: 1, b: 1, a: 1}
   m_PanelFlairPrefab: {fileID: 0}
   m_PanelFlairOffset: {x: 0, y: 0, z: 0}
