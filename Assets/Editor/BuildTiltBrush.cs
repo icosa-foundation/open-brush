@@ -48,7 +48,7 @@ static class BuildTiltBrush
     // The vendor name - used for naming android builds - shouldn't have spaces.
     public const string kVendorName = "Icosa";
     // The vendor name - used for the company name in builds and fbx output. Can have spaces.
-    public const string kDisplayVendorName = "Icosa Gallery";
+    public const string kDisplayVendorName = "Icosa Foundation";
 
     // Executable Base
     public const string kGuiBuildExecutableName = "OpenBrush";
@@ -59,13 +59,12 @@ static class BuildTiltBrush
     // OSX Executable
     public const string kGuiBuildOsxExecutableName = kGuiBuildExecutableName + ".app";
     // Android Application Identifier
-    public static string GuiBuildAndroidApplicationIdentifier => $"com.{kVendorName}.{kGuiBuildExecutableName}";
+    public static string GuiBuildAndroidApplicationIdentifier => $"foundation.{kVendorName}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
     public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
 
     public class TiltBuildOptions
     {
-        public bool Experimental;
         public bool AutoProfile;
         public bool Il2Cpp;
         public BuildTarget Target;
@@ -98,7 +97,6 @@ static class BuildTiltBrush
     const string kMenuPlatformLinux = "Open Brush/Build/Platform: Linux";
     const string kMenuPlatformOsx = "Open Brush/Build/Platform: OSX";
     const string kMenuPlatformAndroid = "Open Brush/Build/Platform: Android";
-    const string kMenuExperimental = "Open Brush/Build/Experimental";
     const string kMenuDevelopment = "Open Brush/Build/Development";
     const string kMenuMono = "Open Brush/Build/Runtime: Mono";
     const string kMenuIl2cpp = "Open Brush/Build/Runtime: IL2CPP";
@@ -110,6 +108,9 @@ static class BuildTiltBrush
     private static readonly List<KeyValuePair<XrSdkMode, BuildTarget>> kValidSdkTargets
         = new List<KeyValuePair<XrSdkMode, BuildTarget>>()
         {
+            // Mono
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
@@ -121,9 +122,10 @@ static class BuildTiltBrush
 #endif // OCULUS_SUPPORTED
             // Wave
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Wave, BuildTarget.Android),
-
+#if PICO_SUPPORTED
             // Pico
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Pico, BuildTarget.Android),
+#endif // PICO_SUPPORTED
         };
 
     static readonly List<CopyRequest> kToCopy = new List<CopyRequest>
@@ -195,7 +197,7 @@ static class BuildTiltBrush
         set
         {
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
-            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Mono);
+            Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
 #if OCULUS_SUPPORTED
             Menu.SetChecked(kMenuPluginOculus, value == XrSdkMode.Oculus);
@@ -243,15 +245,6 @@ static class BuildTiltBrush
     }
 
     // Gui setting for "Experimental" checkbox
-    public static bool GuiExperimental
-    {
-        get => EditorPrefs.GetBool(kMenuExperimental, false);
-        set
-        {
-            EditorPrefs.SetBool(kMenuExperimental, value);
-            Menu.SetChecked(kMenuExperimental, value);
-        }
-    }
 
     // Gui setting for "Development" checkbox
     public static bool GuiDevelopment
@@ -296,7 +289,6 @@ static class BuildTiltBrush
     {
         return new TiltBuildOptions
         {
-            Experimental = GuiExperimental,
             AutoProfile = GuiAutoProfile,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
@@ -338,10 +330,9 @@ static class BuildTiltBrush
             sdk += "Mobile";
 
         var directoryName = string.Format(
-            "{0}_{1}_{5}{2}{3}{4}",
+            "{0}_{1}_{4}{2}{3}",
             sdk,
             GuiDevelopment ? "Debug" : "Release",
-            GuiExperimental ? "_Experimental" : "",
             GuiRuntimeIl2cpp ? "_Il2cpp" : "",
             GuiAutoProfile ? "_AutoProfile" : "",
             kGuiBuildExecutableName);
@@ -394,13 +385,13 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginMono, isValidateFunction: false, priority: 100)]
     static void MenuItem_Plugin_Mono()
     {
-        GuiSelectedSdk = XrSdkMode.Mono;
+        GuiSelectedSdk = XrSdkMode.Monoscopic;
     }
 
     [MenuItem(kMenuPluginMono, isValidateFunction: true)]
     static bool MenuItem_Plugin_Mono_Validate()
     {
-        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Mono);
+        Menu.SetChecked(kMenuPluginMono, GuiSelectedSdk == XrSdkMode.Monoscopic);
         return true;
     }
 
@@ -456,8 +447,12 @@ static class BuildTiltBrush
     [MenuItem(kMenuPluginPico, isValidateFunction: true)]
     static bool MenuItem_Plugin_Pico_Validate()
     {
+#if PICO_SUPPORTED
         Menu.SetChecked(kMenuPluginPico, GuiSelectedSdk == XrSdkMode.Pico);
         return true;
+#else
+        return false;
+#endif
     }
 
     //=======  Platforms =======
@@ -545,18 +540,7 @@ static class BuildTiltBrush
 
     //=======  Options =======
 
-    [MenuItem(kMenuExperimental, isValidateFunction: false, priority: 400)]
-    static void MenuItem_Experimental()
-    {
-        GuiExperimental = !GuiExperimental;
-    }
 
-    [MenuItem(kMenuExperimental, isValidateFunction: true)]
-    static bool MenuItem_Experimental_Validate()
-    {
-        Menu.SetChecked(kMenuExperimental, GuiExperimental);
-        return true;
-    }
 
     [MenuItem(kMenuDevelopment, isValidateFunction: false, priority: 405)]
     static void MenuItem_Development()
@@ -622,9 +606,10 @@ static class BuildTiltBrush
     {
         switch (buildTarget)
         {
-            case BuildTarget.StandaloneOSX:
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
+            case BuildTarget.StandaloneLinux64:
+            case BuildTarget.StandaloneOSX:
                 return BuildTargetGroup.Standalone;
             case BuildTarget.Android:
                 return BuildTargetGroup.Android;
@@ -632,6 +617,17 @@ static class BuildTiltBrush
                 return BuildTargetGroup.iOS;
             default:
                 throw new ArgumentException("buildTarget");
+        }
+    }
+
+    static public SdkMode XrTargetToSdk(XrSdkMode mode)
+    {
+        switch (mode)
+        {
+            case XrSdkMode.Monoscopic:
+                return SdkMode.Monoscopic;
+            default:
+                return SdkMode.UnityXR;
         }
     }
 
@@ -743,12 +739,7 @@ static class BuildTiltBrush
                 {
                     string mode = args[++i];
                     // TODO: Legacy; remove when our build shortcuts are updated
-                    tiltOptions.Experimental = RemoveSuffix(ref mode, "Experimental");
                     tiltOptions.XrSdk = AsEnum(mode, tiltOptions.XrSdk);
-                }
-                else if (args[i] == "-btb-experimental")
-                {
-                    tiltOptions.Experimental = true;
                 }
                 else if (args[i] == "-btb-description")
                 {
@@ -961,6 +952,10 @@ static class BuildTiltBrush
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
             string new_identifier = GuiBuildAndroidApplicationIdentifier;
+#if OCULUS_SUPPORTED
+            //Can't change Quest identifier
+            new_identifier = "com.Icosa.OpenBrush";
+#endif
             if (!String.IsNullOrEmpty(Description))
             {
                 new_name += " (" + Description + ")";
@@ -1039,6 +1034,11 @@ static class BuildTiltBrush
                 }
             }
 
+            if (requiredFeatures.Count == 0)
+            {
+                return;
+            }
+
             // Locate and enable features, fail if not found.
             foreach (string requiredFeatureString in requiredFeatureStrings)
             {
@@ -1072,12 +1072,17 @@ static class BuildTiltBrush
     class TempSetXrPlugin : IDisposable
     {
         List<XRLoader> m_plugins;
+        bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
 
         public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
             m_plugins = new();
             string[] targetXrPluginsRequired = new string[] { };
+
+            m_targetGroup = TargetToGroup(tiltOptions.Target);
+            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
             {
@@ -1087,12 +1092,16 @@ static class BuildTiltBrush
                 case XrSdkMode.OpenXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
+                case XrSdkMode.Pico:
+                    targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
+                    break;
+                case XrSdkMode.Monoscopic:
+                    targetSettings.InitManagerOnStart = false;
+                    break;
                 default:
                     break;
             }
 
-            m_targetGroup = TargetToGroup(tiltOptions.Target);
-            var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
 
             m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
             // Remove unwanted loaders
@@ -1121,6 +1130,8 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            targetSettings.InitManagerOnStart = m_xrEnabled;
+
             // Remove build loaders.
             foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
             {
@@ -1138,6 +1149,40 @@ static class BuildTiltBrush
                     UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
                 }
             }
+
+            EditorUtility.SetDirty(targetSettings);
+        }
+    }
+
+    class TempSetGraphicsApis : IDisposable
+    {
+        UnityEngine.Rendering.GraphicsDeviceType[] m_graphicsApis;
+
+        BuildTarget m_Target;
+
+        public TempSetGraphicsApis(TiltBuildOptions tiltOptions)
+        {
+            m_Target = tiltOptions.Target;
+            m_graphicsApis = PlayerSettings.GetGraphicsAPIs(tiltOptions.Target);
+            UnityEngine.Rendering.GraphicsDeviceType[] targetGraphicsApisRequired;
+
+            switch (tiltOptions.XrSdk)
+            {
+                case XrSdkMode.Pico:
+                case XrSdkMode.Wave:
+                    targetGraphicsApisRequired = new UnityEngine.Rendering.GraphicsDeviceType[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 };
+                    break;
+                default:
+                    targetGraphicsApisRequired = m_graphicsApis;
+                    break;
+            }
+
+            PlayerSettings.SetGraphicsAPIs(m_Target, targetGraphicsApisRequired);
+        }
+
+        public void Dispose()
+        {
+            PlayerSettings.SetGraphicsAPIs(m_Target, m_graphicsApis);
         }
     }
 
@@ -1377,8 +1422,8 @@ static class BuildTiltBrush
         // During the build process the Scene List in the Build Settings is ignored.
         // Only the following scenes are included in the build.
         string[] scenes = { "Assets/Scenes/Loading.unity", "Assets/Scenes/Main.unity" };
-        Note("BuildTiltBrush: Start target:{0} mode:{1} exp:{2} profile:{3} options:{4}",
-            target, xrSdk, tiltOptions.Experimental, tiltOptions.AutoProfile,
+        Note("BuildTiltBrush: Start target:{0} mode:{1} profile:{2} options:{3}",
+            target, xrSdk, tiltOptions.AutoProfile,
             // For some reason, "None" comes through as "CompressTextures"
             options == BuildOptions.None ? "None" : options.ToString());
 
@@ -1394,10 +1439,10 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
-            tiltOptions.Experimental ? "EXPERIMENTAL_ENABLED" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
+        using (var unused14 = new TempSetGraphicsApis(tiltOptions))
         using (var unused6 = new TempSetBundleVersion(App.Config.m_VersionNumber, stamp))
         using (var unused10 = new TempSetAppNames(target == BuildTarget.Android, tiltOptions.Description))
         using (var unused7 = new TempSetXrPlugin(tiltOptions))
@@ -1407,13 +1452,13 @@ static class BuildTiltBrush
                 "ProjectSettings/GraphicsSettings.asset")))
         {
             var config = App.Config;
-            // TODO:Mike - I assume we can get rid of this if sdkMode is no longer needed after the switch!
-            //config.m_SdkMode = xrSdk;
-            config.m_IsExperimental = tiltOptions.Experimental;
+            // TODO: can we think of a better way of switching to mono/something else in the future?
+            config.m_SdkMode = XrTargetToSdk(xrSdk);
             config.m_AutoProfile = tiltOptions.AutoProfile;
             config.m_BuildStamp = stamp;
             //config.OnValidate(xrSdk, TargetToGroup(target));
             config.DoBuildTimeConfiguration(target);
+            EditorUtility.SetDirty(config);
 
             if (GuiSelectedBuildTarget == BuildTarget.Android)
             {
@@ -1428,7 +1473,8 @@ static class BuildTiltBrush
             // to be run at build-time (ie when nobody has called Start(), Awake()).
             // TempHookupSingletons() has done just enough initialization to make it happy.
             // Also set consultUserConfig = false to keep user config from affecting the build output.
-            TiltBrushManifest manifest = App.Instance.GetMergedManifest(consultUserConfig: false);
+            TiltBrushManifest manifest = App.Instance.GetMergedManifest(
+                consultUserConfig: false, forceExperimental: true);
 
             // Some sanity checks
             {
@@ -1927,7 +1973,6 @@ static class BuildTiltBrush
                 args.AppendFormat("-btb-bopt {0} ", value);
             }
         }
-        if (tiltOptions.Experimental) { args.Append("-btb-experimental "); }
         if (tiltOptions.Il2Cpp) { args.Append("-btb-il2cpp "); }
         if (!string.IsNullOrEmpty(stamp)) { args.AppendFormat("-btb-stamp {0} ", stamp); }
         if (tiltOptions.AutoProfile) { args.Append("-btb-autoprofile "); }

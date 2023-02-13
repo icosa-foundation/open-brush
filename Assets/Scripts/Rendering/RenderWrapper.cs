@@ -231,6 +231,8 @@ namespace TiltBrush
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
 #if UNITY_ANDROID
+    // TODO:Mike - setting MSAA seems to crash quest when in Vulkan
+    
     int msaa = QualityControls.m_Instance.MSAALevel;
     // MSAA disabled in QualityControls = 0, but render texture wants 1.
     if (msaa == 0) {

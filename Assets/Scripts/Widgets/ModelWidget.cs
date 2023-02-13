@@ -116,7 +116,7 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            transform.parent = App.Instance.m_CanvasTransform;
+            transform.parent = App.ActiveCanvas.transform;
             transform.localScale = Vector3.one;
 
             // Custom pin scalar for models.
@@ -139,6 +139,7 @@ namespace TiltBrush
         override public GrabWidget Clone()
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = transform.position;
             clone.transform.rotation = transform.rotation;
             clone.Model = this.Model;

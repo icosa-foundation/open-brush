@@ -157,8 +157,15 @@ namespace TiltBrush
                 {
                     if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-                        // Assume selected strokes belong to the current canvas.
-                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                        {
+                            snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
+                        }
+                        else
+                        {
+                            // Previous canvas has been deleted?
+                            snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        }
                     }
                     else
                     {
@@ -291,7 +298,6 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.ClearMemory();
             }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 if (App.Config.m_ReplaceBrushesOnLoad)
@@ -299,7 +305,6 @@ namespace TiltBrush
                     brushList = brushList.Select(guid => App.Config.GetReplacementBrush(guid)).ToArray();
                 }
             }
-#endif
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             var strokes = GetStrokes(bufferedStream, brushList, allowFastPath, bAdditive);
@@ -426,10 +431,10 @@ namespace TiltBrush
                                 break;
                             }
                         case StrokeExtension.Layer:
-                            UInt32 layerIndex = 0;
-                            if (!squashLayers)
+                            UInt32 layerIndex = reader.UInt32();
+                            if (squashLayers)
                             {
-                                layerIndex = reader.UInt32();
+                                layerIndex = 0;
                             }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;

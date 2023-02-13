@@ -140,7 +140,7 @@ float4 TbVertToLinear(float4 color) { return SrgbToLinear(color); } // NOTOOLKIT
 // Conversions to and from native colorspace.
 // Note that SrgbToLinear_Large only converts to linear in the 0:1 range
 // because Linear HDR values don't work with the Tilt Brush bloom filter
-#ifndef TBT_GAMMA_TARGET
+#ifdef TBT_LINEAR_TARGET
 float4 SrgbToNative(float4 color) { return SrgbToLinear_Large(color); }
 float4 TbVertToNative(float4 color) { return TbVertToLinear(color); }
 float4 NativeToSrgb(float4 color) { return LinearToSrgb(color); }

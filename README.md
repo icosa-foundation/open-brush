@@ -207,26 +207,11 @@ Follow these steps to store the Google API Key and credential data:
 
 ## Enabling native Oculus support
 
-Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
-version of the application, you are required to
-choose a different name to distinguish it from
-the official version.
-
-Open Brush targets SteamVR instead of Oculus by default. Follow these steps to
-enable native Oculus support:
-
-1.  Enable the Oculus desktop package in the Package Manager.
-1.  Install the
-    [Oculus Unity Integration](https://developer.oculus.com/downloads/package/unity-integration-archive/41.0/).
-
-**Note:** The above link goes to version 41.0. You only need to include the `Platform` and `VR` subdirectories when you import.
-
-1.  If you see a dialog about upgrading the Unity Oculus plugin, click
-    **Accept**.
-1.  In the **Standalone** tab of the Player settings, go to **Other Settings**
-    and define `OCULUS_SUPPORTED` in **Scripting Define Symbols**. Add it to the
-    end of the list and use a semicolon to separate it from the previous define
-    commands.
+Open Brush targets OpenXR instead of Oculus by default. Follow these steps to enable native Oculus support:
+.
+1.  In the **Standalone** and **Android** tabs of the Player settings, go to **Other Settings** > **Scripting Define Symbols**.
+1. Click the + button to create a new entry.
+1. Add `OCULUS_SUPPORTED` and press **Apply**.
 
 ### Building your app for Oculus Quest
 
@@ -235,17 +220,20 @@ Follow these steps to build your app for Oculus Quest:
 1.  Set up your machine for
     [Oculus Quest Development](https://developer.oculus.com/documentation/unity/book-unity-gsg/?device=QUEST).
 1.  Make sure the following are set in Unity:
-    *   **Open Brush** > **Build** > **SDK: OVR**
+    *   **Open Brush** > **Build** > **Plugin: Oculus**
     *   **Open Brush** > **Build** > **Platform: Android**
-    *   **Open Brush** > **Build** > **Runtime: Mono**
+    *   **Open Brush** > **Build** > **Runtime: IL2CPP**
 1.  Navigate to **Open Brush** > **Build** > **Do Build**.
 1.  Find the generated executable. It will most likely be somewhere under
     `../Builds/OculusMobile_Release_OpenBrush/`.
 1.  Run `adb install com.Icosa.OpenBrush.apk`.
 
-**Note:** Add your new scene files' names to the list **scenes** defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `../Assets/Editor/` before building. If you didn't, your app won't be built with those scenes even if they are put on `Scenes In Build` in `Build Settings`.
-
 ### Publishing to Oculus stores
+
+Note: _Tilt Brush_ is a Google trademark. If you intend to publish a cloned
+version of the application, you are required to
+choose a different name to distinguish it from
+the official version.
 
 Follow these steps to publish to Oculus stores:
 
@@ -300,6 +288,10 @@ menu command. \
 You may want to have a pared-down version of the intro sketch for the mobile
 version of the app. Stroke simplification is located in the **Settings** menu
 inside Open Brush.
+
+## New Scenes
+
+By default, your app will only build the scenes defined in the **DoBuild** method (string[] scenes = {...} ) in `BuildTiltBrush.cs` under  `Assets/Editor/`. Make sure to add your custom scenes to this array if you want to see them in app.
 
 ## Sketchfab support
 
@@ -356,44 +348,25 @@ Follow these steps to restore the path:
 
 Experimental mode is where features live before they are ready to be released in
 a production build. This mode enables the experimental brushes and experimental
-panel while disabling the intro sequence.
+panel while disabling the intro sequence. Experimental mode can be enabled from
+the settings panel, and requires a restart.
 
 **New features and brushes that you find in experimental mode may not work as
 expected.** Sketches that use experimental features and brushes won't work on
-Icosa or Sketchfab, and may break if loaded into production versions of Tilt
+Icosa or Sketchfab, and may break if loaded into production versions of Open
 Brush.
-
-### Turning on experimental mode
-
-Follow these steps to turn on experimental mode:
-
-1.  Find the Config object in the main scene by going to **App** > **Config**.
-1.  Turn on the **Is Experimental** flag.
-
-The Open Brush build system will then set up the experimental flag as needed
-when you make a build.
 
 ### Making your code experimental
 
 Code in experimental mode is usually surrounded by the following block:
 
 ```
-# if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-
     if (Config.IsExperimental) {
       // Experimental code goes here
     }
-
-# endif
 ```
-
-In the editor, all you need to enable experimental mode is to turn on the
-experimental flag. The `EXPERIMENTAL_ENABLED` scripting definition needs to be
-set, or the code will not be compiled into the build at all. This prevents
-unfinished features from being accessed by people who hack or decompile the
-executable.
 
 ### Experimental brushes
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
-folder. They are not included in non-experimental builds.
+folder. They are not visible in non-experimental mode.

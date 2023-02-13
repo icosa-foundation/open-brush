@@ -131,10 +131,11 @@ namespace TiltBrush
                     {
                         ActiveCanvasChanged?.Invoke(prev, m_ActiveCanvas);
                         // This will be incredibly irritating, but until we have some other feedback...
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
-                            fPopScalar: 0.5f, false);
+                        // TODO:Mike - replace this popup (console?)
+                        // OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        //     InputManager.ControllerName.Brush,
+                        //     string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
+                        //     fPopScalar: 0.5f, false);
                     }
                 }
             }
@@ -241,6 +242,10 @@ namespace TiltBrush
             Coords.AsLocal[go.transform] = TrTransform.identity;
             go.transform.hasChanged = false;
 
+            // Rather misleadingly the Unity layer "MainCanvas" is actually used for all non-selection canvases
+            // Otherwise GPU intersection filters them out
+            HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
+
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
 
@@ -260,8 +265,14 @@ namespace TiltBrush
 
         public bool IsLayerDeleted(CanvasScript layer)
         {
-            var layerIndex = m_LayerCanvases.IndexOf(layer);
+            var layerIndex = GetIndexOfCanvas(layer) - 1;
             return IsLayerDeleted(layerIndex);
+        }
+
+        public int GetIndexOfCanvas(CanvasScript canvas)
+        {
+            int index = m_LayerCanvases.IndexOf(canvas);
+            return index + 1;
         }
 
         public bool IsLayerDeleted(int layerIndex)
@@ -307,18 +318,22 @@ namespace TiltBrush
 
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
+            // Layers are numbered 0=Main then 1, 2, 3
+            // Subtract one so we can use them as indices into m_LayerCanvases
+            // which only stores extra layers
+            layerIndex -= 1;
             for (int i = m_LayerCanvases.Count; i < layerIndex; i++)
             {
                 AddLayerNow();
             }
 
-            if (layerIndex == 0) return App.Scene.MainCanvas;
-            return m_LayerCanvases[layerIndex - 1];
+            if (layerIndex == -1) return App.Scene.MainCanvas;
+            return m_LayerCanvases[layerIndex];
         }
 
         public void ClearLayerContents(CanvasScript canvas)
         {
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
@@ -330,13 +345,13 @@ namespace TiltBrush
         public void MarkLayerAsDeleted(CanvasScript layer)
         {
             if (layer == MainCanvas) return;
-            m_DeletedLayers.Add(m_LayerCanvases.IndexOf(layer));
+            m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
-            m_DeletedLayers.Remove(m_LayerCanvases.IndexOf(layer));
+            m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 

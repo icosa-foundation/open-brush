@@ -665,12 +665,10 @@ namespace TiltBrush
                     if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                     {
                         Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                         if (Config.IsExperimental)
                         {
                             Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                         }
-#endif
                     }
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
@@ -685,7 +683,7 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers)
+                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;

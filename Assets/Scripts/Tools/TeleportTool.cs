@@ -489,7 +489,7 @@ namespace TiltBrush
                 UpdateTransformsFromControllers();
             }
 
-#if JOGGING_ENABLED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if JOGGING_ENABLED
     if (Config.IsExperimental) {
       // Add jogging motion.
       Vector3 currentHeadPosition = ViewpointScript.Head.position;

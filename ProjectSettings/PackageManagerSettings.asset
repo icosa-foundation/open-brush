@@ -25,14 +25,16 @@ MonoBehaviour:
     m_Scopes: []
     m_IsDefault: 1
     m_Capabilities: 7
-  - m_Id: scoped:Vive
+    m_ConfigSource: 0
+  - m_Id: scoped:project:Vive
     m_Name: Vive
     m_Url: https://npm-registry.vive.com
     m_Scopes:
     - com.htc.upm
     m_IsDefault: 0
     m_Capabilities: 0
-  - m_Id: scoped:Unity NuGet
+    m_ConfigSource: 4
+  - m_Id: scoped:project:Unity NuGet
     m_Name: Unity NuGet
     m_Url: https://unitynuget-registry.azurewebsites.net
     m_Scopes:
@@ -41,11 +43,20 @@ MonoBehaviour:
     - org.nuget.sharpziplib
     m_IsDefault: 0
     m_Capabilities: 0
+    m_ConfigSource: 4
+  - m_Id: scoped:project:Meta XR
+    m_Name: Meta XR
+    m_Url: https://npm.developer.oculus.com
+    m_Scopes:
+    - com.meta.xr.sdk
+    m_IsDefault: 0
+    m_Capabilities: 0
+    m_ConfigSource: 4
   m_UserSelectedRegistryName: Vive
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_Modified: 0
     m_ErrorMessage: 
-    m_UserModificationsInstanceId: -828
+    m_UserModificationsInstanceId: -830
     m_OriginalInstanceId: -832
   m_LoadAssets: 0

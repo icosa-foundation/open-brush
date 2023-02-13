@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2021.3.9f1"
+  UNITY_VERSION: "2021.3.16f1"
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -37,13 +37,15 @@ jobs:
       version: ${{ steps.version.outputs.version}}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
+      previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
+      currentrelease: ${{ steps.rawchangelogdata.outputs.currentrelease }}
+      rawchangelog: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -59,21 +61,22 @@ jobs:
             PATCH_VERSION="0"
             STAMP=""
             echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
-            echo "::set-output name=prerelease::false"
-            echo "::set-output name=itchchannelname::release"
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "itchchannelname=release" >> $GITHUB_OUTPUT
 
           else
             echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
-            echo "::set-output name=prerelease::true"
-            echo "::set-output name=itchchannelname::beta"
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "itchchannelname=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
-          echo "::set-output name=version::$VERSION"
-          echo "::set-output name=stamp::$STAMP"
-      - name: Calculate Changelog
-        id: changelog
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "stamp=$STAMP" >> $GITHUB_OUTPUT
+      - name: Calculate Release tags for Changelog and raw changelog
+        id: rawchangelogdata
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if [ "$PRERELEASE" == "true" ]
           then
@@ -81,11 +84,19 @@ jobs:
           else
             PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
-          CHANGELOG=$(git log --pretty=oneline --first-parent $PREV..HEAD)
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "::set-output name=changelog::$CHANGELOG"
+          CUR="$(git rev-parse HEAD)"
+          echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
+          echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
+          LAST_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*' --abbrev=0 HEAD^)
+          RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //')" | sed -e "s/origin\/main/$VERSION/" | tac)
+          echo "rawchangelog=${RAW_CHANGELOG//$'\n'/'\n'}" >> $GITHUB_OUTPUT
+
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
+        run: |
+          echo "CHANGELOG=$CHANGELOG"
+
       - name: Set custom app name and package name, if relevant
         id: github
         env:
@@ -96,8 +107,8 @@ jobs:
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=basename::OpenBrush"
-            echo "::set-output name=description::"
+            echo "basename=OpenBrush" >> $GITHUB_OUTPUT
+            echo "description=" >> $GITHUB_OUTPUT
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
@@ -108,9 +119,9 @@ jobs:
             else
               DESCRIPTION="Unknown"
             fi
-            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
+            echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
           fi
   build:
     name: ${{ matrix.name }}
@@ -124,85 +135,82 @@ jobs:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
+
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
+            cache: Windows
+
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
             vrsdk: Oculus
-          - name: Windows OpenXR Experimental
+            cache: Windows
+
+          - name: Windows Monoscopic
             targetPlatform: StandaloneWindows64
-            vrsdk: OpenXR
-            extraoptions: -btb-experimental
-          - name: Windows Rift Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            extraoptions: -btb-experimental
+            vrsdk: Monoscopic
+            cache: Windows
+
+          - name: Linux Monoscopic
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic
+            cache: Linux
+
+          - name: MacOS Monoscopic
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+
           - name: Oculus Quest
             targetPlatform: Android
             vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp
-          - name: Oculus Quest Experimental
-            targetPlatform: Android
-            vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-il2cpp -btb-experimental
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
 
+          - name: Android Pico
+            targetPlatform: Android
+            vrsdk: Pico
+            cache: Android_GLES
+            extraoptions: -btb-il2cpp
 
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required
-        if: matrix.targetPlatform == 'Android'
+        if: false  # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
         run: |
           echo "Initial free space"
-          df -h
-          sudo swapoff -a
-          sudo rm -f /swapfile
-          docker rmi $(docker image ls -aq)
-          #echo "Listing 100 largest packages"
-          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
-          echo "Removing large packages"
+          df -h /
+          echo "Removing all pre-loaded docker images"
+          docker rmi $(docker image ls -aq)  # Removes ~4GB
+          df -h /
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing unneeded large packages"
           sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
+          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk powershell google-chrome-stable firefox microsoft-edge-stable 'php.*' 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7.5 GB
           sudo apt-get autoremove -y
           sudo apt-get clean
+          df -h /
+          echo "Listing 100 largest remaining packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/
-          rm -rf "$AGENT_TOOLSDIRECTORY"
+          rm -rf /usr/share/dotnet/  # Removes ~1GB
+          df -h /
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
           echo "Disk space after cleanup"
-          df -h
+          df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
-      - name: Install Oculus unity package
-        if: matrix.vrsdk == 'Oculus'
-        run: |
-          # version 41.0
-          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=5287225527986889 -O package.tmp
-          mkdir tmp
-          tar -C tmp -xzf package.tmp
-          find tmp -type f | xargs chmod a-x
-          for pn in tmp/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp/$d"
-            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
-            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
-          done
-          mkdir -p Assets/Oculus
-          cp -R tmp/Assets/Oculus/VR Assets/Oculus/
-          cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
-          rm -rf tmp package.tmp
-          ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
 
       - name: Install Pimax unity package
         if: matrix.name == 'Windows Pimax'
@@ -225,6 +233,14 @@ jobs:
           done
           cp -R tmp/Assets/Pimax Assets/
           rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
+
+      - name: Install Pico unity package
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          # version 2.1.1
+          mkdir Packages/com.unity.xr.picoxr
+          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
+          unzip package.zip -d Packages/com.unity.xr.picoxr
 
       - name: Install TextMesh Pro package
         run: |
@@ -249,20 +265,12 @@ jobs:
           rm -rf tmp.plugin tmp.package
 
       - uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
           path: Library
-          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library_${{ matrix.targetPlatform }}_${{ env.UNITY_VERSION }}
-
-      - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2
-        if: matrix.vrsdk == 'Oculus'
-        with:
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          versioning: Custom
-          version: ${{ needs.configuration.outputs.version }}
-          buildMethod: OVRPluginUpdater.BatchmodePluginUpdate  # We created this symlink above
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
@@ -270,6 +278,20 @@ jobs:
           BASENAME: ${{ needs.configuration.outputs.basename}}
         run:
           echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+
+      - name: Set filename (for Linux)
+        if: matrix.targetPlatform == 'StandaloneLinux64'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME" >> $GITHUB_ENV
+
+      - name: Set filename (for OSX)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename}}
+        run:
+          echo "filename=$BASENAME.app" >> $GITHUB_ENV
 
       - name: Set filename (for Android)
         if: matrix.targetPlatform == 'Android'
@@ -313,6 +335,11 @@ jobs:
         run: |
           echo -e "\n-define:OCULUS_SUPPORTED" | tee -a Assets/csc.rsp
 
+      - name: Set PICO_SUPPORTED in csc.rsp
+        if: matrix.vrsdk == 'Pico'
+        run: |
+          echo -e "\n-define:PICO_SUPPORTED" | tee -a Assets/csc.rsp
+
       - name: Set PIMAX_SUPPORTED in csc.rsp
         if: matrix.name == 'Windows Pimax'
         run: |
@@ -336,8 +363,20 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
+          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
+          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
+          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
+          rm -rf build/*
+          mv OpenBrush.tgz build/
+
       - name: Upload build/
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}
           path: build
@@ -352,41 +391,72 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3.6.0
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ]
+            }
+
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: echo "$CHANGELOG"
+
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
 
-      - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Windows Monoscopic)
+        uses: actions/download-artifact@v3
         with:
-          name: Windows Rift Experimental
-          path: build_windows_rift_experimental
+          name: Windows Monoscopic
+          path: build_windows_mono
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Pico)
+        uses: actions/download-artifact@v3
         with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
+          name: Android Pico
+          path: build_android_pico
 
       - name: Package Artifacts for release
         env:
@@ -394,26 +464,24 @@ jobs:
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
+          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
+          mv build_windows_mono/StandaloneWindows64-Monoscopic/ releases/OpenBrush_Mono_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
+          zip -r OpenBrush_Mono_$VERSION.zip OpenBrush_Mono_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
-          rm -rf OpenBrush_Desktop_Experimental_$VERSION
           rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Rift_Experimental_$VERSION
+          rm -rf OpenBrush_Mono_$VERSION
+
       - name: Publish
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body: ${{ needs.configuration.outputs.changelog }}
+          body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
@@ -428,28 +496,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.1
+        uses: CyberAndrii/setup-steamcmd@v1.1.5
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
           echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-      - name: Upload Regular Build
+      - name: Upload Build
         run: |
           pip install -U j2cli
           j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
@@ -463,24 +526,9 @@ jobs:
           OPEN_BRUSH_APP_ID: 1634870
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: prerelease
-      - name: Upload Experimental Build
-        run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_openxr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr_experimental/main_depot.vdf
-          j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr_experimental/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr_experimental/app.vdf +quit
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: prerelease-experimental
+          CHANNEL: beta
       - name: Save logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -494,14 +542,15 @@ jobs:
       PIMAX_APP_ID: ${{ secrets.PIMAX_APP_ID }}
       PIMAX_USERNAME: ${{ secrets.PIMAX_USERNAME }}
       PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
+      VERSION: ${{ needs.configuration.outputs.version}}
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-gallery/open-brush' &&
-      (contains(github.ref, 'refs/tags/v'))
+      contains(github.ref, 'refs/tags/v')
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -509,12 +558,43 @@ jobs:
       - name: Publish Pimax Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_pimax/StandaloneWindows64-OpenXR/ releases/
+          Move-Item -Path build_windows_pimax/StandaloneWindows64-OpenXR/* releases/
           Set-Location -Path "releases"
-          Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_$env:VERSION.zip
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
-          pimax-dev-util.exe login -u $env:PIMAX_USERNAME  -p $env:PIMAX_PASSWORD
-          pimax-dev-util.exe upload-pc-build -a $env:PIMAX_APP_ID -d OpenBrush_Pimax_$env:VERSION.zip
+          ./pimax-dev-util.exe login -u $Env:PIMAX_USERNAME  -p $Env:PIMAX_PASSWORD
+          ./pimax-dev-util.exe upload-pc-build -a $Env:PIMAX_APP_ID -d OpenBrush_Pimax_${Env:VERSION}.zip
+
+  publish_viveport:
+    name: Publish Viveport Release
+    needs: [configuration, build]
+    runs-on: windows-latest
+    env:
+      VIVEPORT_EMAIL: ${{ secrets.VIVEPORT_EMAIL }}
+      VIVEPORT_PASSWORD: ${{ secrets.VIVEPORT_PASSWORD }}
+      VIVEPORT_APPID: ${{ secrets.VIVEPORT_APPID }}
+      VIVEPORT_ORGID: ${{ secrets.VIVEPORT_ORGID }}
+      VERSION: ${{ needs.configuration.outputs.version}}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v3
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Publish Viveport Builds
+        run: |
+          New-Item "releases" -Type Directory
+          Move-Item -Path build_windows_openxr/StandaloneWindows64-OpenXR/* releases/
+          Set-Location -Path "releases"
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Viveport_${Env:VERSION}.zip
+          Invoke-WebRequest -Uri https://assets-global.viveport.com/static-misc/developer-tool/ViveportUploader.exe -OutFile ViveportUploader.exe
+          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APPID} -orgid ${Env:VIVEPORT_ORGID} -version ${VERSION}
 
   publish_itch:
     name: Publish Itch.io Release
@@ -533,56 +613,32 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows OpenXR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows OpenXR Experimental
-          path: build_windows_openxr_experimental
-
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
-
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
 
       - name: Package Artifacts for release
         run: |
           mkdir releases
           mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_openxr_experimental/StandaloneWindows64-OpenXR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
       - name: Publish Windows
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
-      - name: Publish Windows Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
         uses: josephbmanley/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
-      - name: Publish Quest Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
 
   publish_oculus:
     name: Publish Oculus Release
@@ -595,12 +651,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Windows Rift
           path: build_windows_rift
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: Oculus Quest
           path: build_oculus_quest
@@ -608,6 +664,7 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
           OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
           OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
@@ -628,6 +685,7 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           else
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
-            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
           fi

@@ -213,7 +213,7 @@ namespace TiltBrush
             /// The default vertexLimit is the maximum size allowed by Unity.
             /// If a single stroke exceeds the vertex limit, the stroke will be ignored.
             /// TODO: dangerous! vertexLimit should be a soft limit, with a hard limit of 65k
-            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit = 2147483645)
+            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit = 65534)
             {
                 var layout = BrushCatalog.m_Instance.GetBrush(m_desc.m_Guid).VertexLayout;
                 var pool = new GeometryPool();
@@ -300,7 +300,7 @@ namespace TiltBrush
         public class SceneStatePayload
         {
             // Metadata.
-            public string generator = "Open Brush {0}.{1}";
+            public string generator = "Tilt Brush 23.3.841faedfb compatible (Actually: Open Brush {0}.{1})";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
 
             // Space Bases.
@@ -536,6 +536,22 @@ namespace TiltBrush
                 .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) &&
                     stroke.IsGeometryEnabled &&
                     (stroke.Canvas == main || stroke.Canvas == selection));
+            return new ExportCanvas(main, mainStrokes.ToList());
+        }
+
+        // Same as ExportAllCanvases but pretends all strokes are on the main canvas
+        // Does NOT transform strokes so ensure all canvases have identity transforms
+        public static ExportCanvas ExportAllCanvasesIgnoreLayers()
+        {
+            var allowedBrushGuids = new HashSet<Guid>(
+                BrushCatalog.m_Instance.AllBrushes
+                    .Where(b => b.m_AllowExport)
+                    .Select(b => (Guid)b.m_Guid));
+            var main = App.Scene.MainCanvas;
+            var selection = App.Scene.SelectionCanvas;
+            var mainStrokes = SketchMemoryScript
+                .AllStrokes()
+                .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) && stroke.IsGeometryEnabled);
             return new ExportCanvas(main, mainStrokes.ToList());
         }
 

@@ -188,9 +188,9 @@ namespace TiltBrush
         [SerializeField] GpuIntersector m_GpuIntersector;
 
         public TiltBrushManifest m_Manifest;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+
+        // Previously Experimental-Mode only
         [SerializeField] private TiltBrushManifest m_ManifestExperimental;
-#endif
 
         [SerializeField] private SelectionEffect m_SelectionEffect;
 
@@ -756,7 +756,7 @@ namespace TiltBrush
 
             SwitchState();
 
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
             if (Config.IsExperimental && !string.IsNullOrEmpty(Config.m_IntroSketchUsdFilename))
             {
                 var gobject = ImportUsd.ImportWithAnim(Config.m_IntroSketchUsdFilename);
@@ -927,13 +927,11 @@ namespace TiltBrush
                             else if (DemoManager.m_Instance.DemoModeEnabled)
                             {
                                 OnIntroComplete();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
                             }
                             else if (Config.IsExperimental)
                             {
                                 OnIntroComplete();
                                 PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
-#endif
                             }
                             else
                             {
@@ -1248,8 +1246,8 @@ namespace TiltBrush
             //if we just released the button, kick a fade out
             if (m_QuickLoadInputWasValid)
             {
-                App.VrSdk.PauseRendering(false);
-                App.VrSdk.FadeFromCompositor(0);
+                OverlayManager.m_Instance.PauseRendering(false);
+                OverlayManager.m_Instance.FadeFromCompositor(0);
             }
 
             m_DesiredAppState = AppState.Standard;
@@ -1557,17 +1555,15 @@ namespace TiltBrush
                         //if we just pressed the button, kick a fade in
                         if (!m_QuickLoadInputWasValid)
                         {
-                            // b/69060780: This workaround is due to the ViewpointScript.Update() also messing
-                            // with the overlay fade, and causing state conflicts in OVR.
-                            if (!App.VrSdk.OverlayIsOVR || ViewpointScript.m_Instance.AllowsFading)
+                            if (ViewpointScript.m_Instance.AllowsFading)
                             {
-                                App.VrSdk.FadeToCompositor(0);
+                                OverlayManager.m_Instance.FadeToCompositor(0);
                             }
                             else
                             {
                                 ViewpointScript.m_Instance.SetOverlayToBlack();
                             }
-                            App.VrSdk.PauseRendering(true);
+                            OverlayManager.m_Instance.PauseRendering(true);
                             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Wand, 0.05f);
                         }
 
@@ -1586,8 +1582,8 @@ namespace TiltBrush
                         //if we just released the button, kick a fade out
                         if (m_QuickLoadInputWasValid)
                         {
-                            App.VrSdk.PauseRendering(false);
-                            App.VrSdk.FadeFromCompositor(0);
+                            OverlayManager.m_Instance.PauseRendering(false);
+                            OverlayManager.m_Instance.FadeFromCompositor(0);
                         }
                         m_QuickLoadInputWasValid = false;
                     }
@@ -1964,26 +1960,42 @@ namespace TiltBrush
         public static bool InitModelLibraryPath(string[] defaultModels)
         {
             string modelsDirectory = ModelLibraryPath();
-            if (Directory.Exists(modelsDirectory)) { return true; }
+
+            // TODO:Mike - Re-enable this check in a few versions,
+            // and remove the one in the obj removal loop.
+
+            // if (Directory.Exists(modelsDirectory)) { return true; }
+
             if (!InitDirectoryAtPath(modelsDirectory)) { return false; }
+
+            // Tidy up old obj models and replace with gltfs
+            // We can remove this at some point.
+            var targetDirs = new string[] { "Andy", "Tiltasaurus" };
+            foreach (string target in targetDirs)
+            {
+                var path = Path.Combine(modelsDirectory, target);
+                if (Directory.Exists(path))
+                {
+                    Debug.Log($"Found old model file: \"{path}\", removing.");
+                    Directory.Delete(path, true);
+                }
+                else
+                {
+                    // We've already tidied up the old models, or the user has and understands
+                    // the reference library. Let's not interfere.
+                    return true;
+                }
+            }
+
             foreach (string fileName in defaultModels)
             {
                 string[] path = fileName.Split(
                     new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
                 string newModel = Path.Combine(modelsDirectory, path[1]);
-                if (!Directory.Exists(newModel))
+
+                if (!File.Exists(newModel))
                 {
-                    Directory.CreateDirectory(newModel);
-                }
-                if (Path.GetExtension(fileName) == ".png" ||
-                    Path.GetExtension(fileName) == ".jpeg" ||
-                    Path.GetExtension(fileName) == ".jpg")
-                {
-                    FileUtils.WriteTextureFromResources(fileName, Path.Combine(newModel, path[2]));
-                }
-                else
-                {
-                    FileUtils.WriteTextFromResources(fileName, Path.Combine(newModel, path[2]));
+                    FileUtils.WriteBytesFromResources(fileName, newModel);
                 }
             }
             return true;
@@ -2035,6 +2047,11 @@ namespace TiltBrush
             }
 
             return true;
+        }
+
+        public static string FeaturedSketchesPath()
+        {
+            return Path.Combine(Application.persistentDataPath, "Featured Sketches");
         }
 
         public static string MediaLibraryPath()
@@ -2127,31 +2144,28 @@ namespace TiltBrush
             }
         }
 
-        public TiltBrushManifest GetMergedManifest(bool consultUserConfig)
+        public TiltBrushManifest GetMergedManifest(bool consultUserConfig, bool forceExperimental = false)
         {
             var manifest = m_Manifest;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                        if (Config.IsExperimental)
-                        {
-                            // At build time, we don't want the user config to affect the build output.
-                            if (consultUserConfig
-                                && m_UserConfig.Flags.ShowDangerousBrushes
-                                && m_ManifestExperimental != null)
-                            {
-                                manifest = Instantiate(m_Manifest);
-                                manifest.AppendFrom(m_ManifestExperimental);
-                            }
-                        }
-#endif
+            if (Config.IsExperimental || forceExperimental)
+            {
+                // At build time, we don't want the user config to affect the build output.
+                if ((consultUserConfig
+                    && m_UserConfig.Flags.ShowDangerousBrushes
+                    && m_ManifestExperimental != null) || forceExperimental)
+                {
+                    manifest = Instantiate(m_Manifest);
+                    manifest.AppendFrom(m_ManifestExperimental);
+                }
+            }
             return manifest;
         }
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        // Previously Experimental-Mode only
         public bool IsBrushExperimental(BrushDescriptor brush)
         {
             return m_ManifestExperimental.Brushes.Contains(brush);
         }
-#endif
 
         DateTime GetLinkerTime(Assembly assembly, TimeZoneInfo target = null)
         {

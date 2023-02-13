@@ -26,6 +26,7 @@ namespace TiltBrush
             public bool pinned;
             public bool tinted;
             public uint groupId;
+            public int layerId;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -106,6 +107,7 @@ namespace TiltBrush
                 newEntry.xf = widget.GetSaveTransform();
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -122,11 +124,13 @@ namespace TiltBrush
                 val.PinStates = new bool[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
+                    val.LayerIds[i] = ordered[i].layerId;
                 }
                 models.Add(val);
             }
@@ -149,6 +153,7 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas)
                 };
                 if (widget.VideoController != null)
                 {
@@ -221,6 +226,7 @@ namespace TiltBrush
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
                 imagesByFileName[fileName].Add(newEntry);
             }
 
@@ -241,12 +247,14 @@ namespace TiltBrush
                 val.TintStates = new bool[ordered.Length];
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
                     val.TintStates[i] = ordered[i].tinted;
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
+                    val.LayerIds[i] = ordered[i].layerId;
                 }
                 imageIndex.Add(val);
             }
