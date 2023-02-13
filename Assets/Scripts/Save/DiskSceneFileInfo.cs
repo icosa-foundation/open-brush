@@ -54,6 +54,7 @@ namespace TiltBrush
         public string HumanName
         {
             get { return m_humanName; }
+            set { m_humanName = value; }
         }
 
         public bool HumanNameValid
