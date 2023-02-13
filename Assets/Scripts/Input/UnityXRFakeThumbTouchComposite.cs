@@ -9,7 +9,7 @@ using UnityEditor;
 #endif
 
 [DisplayStringFormat("{axis}")]
-public class PicoFakeTouchStickComposite : InputBindingComposite<float>
+public class UnityXRFakeThumbTouchComposite : InputBindingComposite<float>
 {
     [InputControl(layout = "Vector2")]
     public int axis;
@@ -17,7 +17,7 @@ public class PicoFakeTouchStickComposite : InputBindingComposite<float>
     public override float ReadValue(ref InputBindingCompositeContext context)
     {
         var axisInput = context.ReadValue<Vector2, Vector2MagnitudeComparer>(axis);
-        return axisInput.magnitude > 0.01f ? 1 : 0;
+        return axisInput.magnitude > 0.25f ? 1 : 0;
     }
 
     public override float EvaluateMagnitude(ref InputBindingCompositeContext context)
@@ -25,9 +25,9 @@ public class PicoFakeTouchStickComposite : InputBindingComposite<float>
         return ReadValue(ref context);
     }
 
-    static PicoFakeTouchStickComposite()
+    static UnityXRFakeThumbTouchComposite()
     {
-        InputSystem.RegisterBindingComposite<PicoFakeTouchStickComposite>("PicoFakeTouchStick");
+        InputSystem.RegisterBindingComposite<UnityXRFakeThumbTouchComposite>("FakeThumbTouch");
     }
 
     [RuntimeInitializeOnLoadMethod]

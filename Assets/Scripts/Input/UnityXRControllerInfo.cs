@@ -189,6 +189,11 @@ namespace TiltBrush
         {
             switch (input)
             {
+                case VrInput.Directional:
+                case VrInput.Thumbstick:
+                    return FindAction("ThumbTouch").inProgress;
+                case VrInput.Touchpad:
+                    return FindAction("PadTouch").inProgress;
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
@@ -197,10 +202,8 @@ namespace TiltBrush
                 case VrInput.Button03:
                 case VrInput.Button05:
                     return FindAction("SecondaryTouch").inProgress;
-                case VrInput.Touchpad:
-                case VrInput.Directional:
-                case VrInput.Thumbstick:
-                    return FindAction("PadTouch").inProgress;
+
+
             }
             return false;
         }
@@ -217,6 +220,7 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
+                    return FindAction("ThumbButton").IsPressed();
                 case VrInput.Touchpad:
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
@@ -249,6 +253,8 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
+                    selectedAction = "ThumbButton";
+                    break;
                 case VrInput.Touchpad:
                     selectedAction = "PadButton";
                     break;
