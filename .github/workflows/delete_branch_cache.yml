@@ -17,8 +17,11 @@ jobs:
         run: |
           gh extension install actions/gh-actions-cache
 
+          set -x
           REPO=${{ github.repository }}
-          BRANCH=${{ github.ref }}
+          # The github.ref should be refs/pull/XXX/merge, but for some reason, it was set to 'main' in an actual run. Debugging this would be a ginormous pain, since it can apparently only be properly done on an actual merge/close (when I tried testing it locally with a close, it *did* work!), and so we'll just set this manually and ignore it for now. Accidentally deleting the caches on main is unacceptable.
+          # BRANCH=${{ github.ref }}
+          BRANCH=${PR_TARGET_NAME}
 
           echo "Fetching list of cache key"
           cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
@@ -34,3 +37,4 @@ jobs:
         env:
           # Note that this can only run on branches from the repo; otherwise, we don't have write permissions so we can't delete the caches
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TARGET_NAME: ${{ format('refs/pull/{0}/merge', github.event.number) }}
