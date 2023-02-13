@@ -259,7 +259,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33252914123167002
 MeshFilter:
@@ -697,6 +697,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1887799951535888, guid: cea55265052f18b4ca24670a074de41d,
       type: 3}
     m_Command: 67
+  - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
+      type: 3}
+    m_Command: 32
   m_PanelDescription: Tools
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
@@ -727,7 +730,7 @@ MonoBehaviour:
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
   m_WandAttachYOffset: 1.2
-  m_WandAttachHalfHeight: 0.8
+  m_WandAttachHalfHeight: 1.2
   m_BeginFixed: 1
   m_CanBeFixedToWand: 1
   m_CanBeDetachedFromWand: 1
@@ -815,7 +818,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 5
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33988012527450934
 MeshFilter:
@@ -1165,9 +1168,9 @@ Transform:
   - {fileID: 4585706398833650}
   - {fileID: 4603240213511680}
   - {fileID: 4082445634174982}
+  - {fileID: 4132450083487116}
   - {fileID: 4887687143526368}
   - {fileID: 4489109818265846}
-  - {fileID: 4132450083487116}
   - {fileID: 4896252300719394}
   - {fileID: 5132072297439473359}
   - {fileID: 5566995999782226336}
@@ -1191,7 +1194,7 @@ GameObject:
   - component: {fileID: 33759398813900666}
   - component: {fileID: 23773859719338524}
   - component: {fileID: 65901329732289008}
-  - component: {fileID: 1174263549636321217}
+  - component: {fileID: 7508262917340115871}
   m_Layer: 16
   m_Name: Button_Camera
   m_TagString: Untagged
@@ -1277,7 +1280,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1174263549636321217
+--- !u!114 &7508262917340115871
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1286,7 +1289,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1652457776899484}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 0eca91ea617987a4a8b8d03e685fc648, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -1295,7 +1298,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 2ca8ffdc765f6a242b6d8fdeb74a566b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: c13105d1ce387374c865c8a7bf9dd4bd, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -1305,7 +1308,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 37
+  m_Command: 32
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
@@ -1316,6 +1319,9 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  m_LongPressDuration: 0.3
+  m_Tool: 16
+  m_EatGazeInputOnPress: 1
 --- !u!1 &1684631367195094
 GameObject:
   m_ObjectHideFlags: 0
@@ -1349,7 +1355,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
-  m_RootOrder: 6
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33199737309214324
 MeshFilter:
@@ -2032,7 +2038,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5664627563248376400}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.22999954, y: -0.634, z: 0.05}
+  m_LocalPosition: {x: -0.211, y: -0.634, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2160,7 +2166,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7793811069088501246}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.192, y: -0.634, z: 0.05}
+  m_LocalPosition: {x: 0.211, y: -0.634, z: 0.05}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []

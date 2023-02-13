@@ -165,7 +165,7 @@ namespace TiltBrush
             OnDriveSetHasSketchesChanged();
 
             // Set the sketch set var to Liked, then function set to force state.
-            m_CurrentSketchSet = SketchSetType.Liked;
+            m_CurrentSketchSet = SketchSetType.Curated;
             SetVisibleSketchSet(SketchSetType.User);
 
             Action refresh = () =>
@@ -323,14 +323,12 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection
-                && (m_CurrentSketchSet == SketchSetType.Curated
-                || m_CurrentSketchSet == SketchSetType.Liked);
+            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+
+            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
             m_NoPolyConnectionMessage.SetActive(polyDown);
 
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available
-                && (m_CurrentSketchSet == SketchSetType.Curated
-                || m_CurrentSketchSet == SketchSetType.Liked);
+            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
             m_OutOfDateMessage.SetActive(outOfDate);
 
             bool notSupported = false;
@@ -378,8 +376,7 @@ namespace TiltBrush
 
             // Show Contacting Server if we're talking to Poly.
             m_ContactingServerMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Curated ||
-                m_CurrentSketchSet == SketchSetType.Liked ||
+                (requiresPoly ||
                 m_CurrentSketchSet == SketchSetType.Drive) &&
                 (m_SketchSet.NumSketches <= 0) &&
                 (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
