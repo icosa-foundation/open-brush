@@ -10045,12 +10045,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DefaultModels:
-  - DefaultModels/Andy/Andy.obj
-  - DefaultModels/Andy/Andy.mtl
-  - DefaultModels/Andy/Andy.jpg
-  - DefaultModels/Tiltasaurus/Tiltasaurus.obj
-  - DefaultModels/Tiltasaurus/Tiltasaurus.mtl
-  - DefaultModels/Tiltasaurus/Tiltasaurus.jpg
+  - DefaultModels/Andy.glb
+  - DefaultModels/Tiltasaurus.glb
   m_ObjLoaderStandardMaterial: {fileID: 2100000, guid: 33cc179da6d3a704496d940766650951,
     type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270,
