@@ -199,7 +199,7 @@ namespace TiltBrush
             {
                 // Is this brush excluded?
                 bool? excluded = excludeTags?.Intersect(brush.m_Tags).Any();
-                if (excluded == true || includeTags == null)
+                if (excluded == true || includeTags == null || brush.m_Tags.Contains("broken"))
                 {
                     return false;
                 }

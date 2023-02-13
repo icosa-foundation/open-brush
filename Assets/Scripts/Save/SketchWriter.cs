@@ -431,10 +431,10 @@ namespace TiltBrush
                                 break;
                             }
                         case StrokeExtension.Layer:
-                            UInt32 layerIndex = 0;
-                            if (!squashLayers)
+                            UInt32 layerIndex = reader.UInt32();
+                            if (squashLayers)
                             {
-                                layerIndex = reader.UInt32();
+                                layerIndex = 0;
                             }
                             var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
                             stroke.m_IntendedCanvas = canvas;
