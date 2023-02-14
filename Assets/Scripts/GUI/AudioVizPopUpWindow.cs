@@ -25,7 +25,7 @@ namespace TiltBrush
         [SerializeField] private float m_AudioFoundDuration;
 
         [SerializeField] private LocalizedString m_AudioFoundText;
-        [SerializeField] private TMP_Text m_StatusText;
+        [SerializeField] private TextMeshPro m_StatusText;
         [SerializeField] private int m_MaxStatusLength;
         [SerializeField] private Renderer m_HintText;
         [SerializeField] private float m_AudioSearchHintDelay = 2.0f;

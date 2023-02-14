@@ -33,7 +33,7 @@ namespace TiltBrush
         [SerializeField] protected GameObject m_Background;
         [SerializeField] protected GameObject m_TopBorder;
         [SerializeField] protected GameObject m_BottomBorder;
-        [SerializeField] protected TMP_Text m_WindowText;
+        [SerializeField] protected TextMeshPro m_WindowText;
         [SerializeField] protected float m_CharacterWidth = 0.175f;
         [SerializeField] protected float m_SubtitleCharacterWidth = 0.05625f;
         [SerializeField] protected float m_ButtonWidth = 0.5f;

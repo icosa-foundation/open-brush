@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
-
+using TMPro;
 namespace TiltBrush
 {
 
@@ -22,7 +22,7 @@ namespace TiltBrush
         [SerializeField] private Transform m_BG;
         [SerializeField] private GameObject m_RightCap;
         [SerializeField] private Renderer[] m_TintVisuals;
-        [SerializeField] private TextMesh[] m_Text;
+        [SerializeField] private TextMeshPro[] m_Text;
         [SerializeField] private Color m_UnavailableColor;
         [Tooltip("Position the origin of the description on the right edge " +
             "of UI component rather than at it's center.")]
@@ -47,11 +47,11 @@ namespace TiltBrush
                     continue;
                 }
                 string s = strings[i];
-                TextMesh textMesh = m_Text[i];
+                TextMeshPro textMesh = m_Text[i];
                 textMesh.text = s;
                 fTextWidth = Mathf.Max(fTextWidth,
                     TextMeasureScript.m_Instance.GetTextWidth(
-                        textMesh.characterSize, textMesh.fontSize, textMesh.font, ("  " + s)));
+                        textMesh.fontSize, textMesh.font, ("  " + s)));
             }
 
             if (m_PlaceOnRightEdge)

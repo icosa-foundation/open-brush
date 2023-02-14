@@ -28,9 +28,9 @@ namespace TiltBrush
 
     public class PolyPanel : ModalPanel
     {
-        [SerializeField] private TMP_Text m_PanelText;
-        [SerializeField] private TMP_Text m_PanelTextSubtitle;
-        [SerializeField] private TMP_Text m_PanelTextUserSubtitle;
+        [SerializeField] private TextMeshPro m_PanelText;
+        [SerializeField] private TextMeshPro m_PanelTextSubtitle;
+        [SerializeField] private TextMeshPro m_PanelTextUserSubtitle;
         [SerializeField] private LocalizedString m_PanelTextStandard;
         public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedString(); } }
         [SerializeField] private LocalizedString m_PanelTextFeatured;

@@ -1134,7 +1134,6 @@ MonoBehaviour:
   m_ShowDuration: 0.25
   m_GrabDistance: 0
   m_CollisionRadius: 2
-  m_previousCanvas: {fileID: 0}
   m_AllowTwoHandGrab: 0
   m_DestroyOnHide: 0
   m_AllowHideWithToss: 1
@@ -1147,7 +1146,7 @@ MonoBehaviour:
   m_TossDuration: 0.25
   m_TintableMeshes:
   - {fileID: 2306138}
-  - {fileID: 0}
+  - {fileID: 9191488767203880766}
   m_SpawnPlacementOffset: {x: 4.5, y: 0, z: 3}
   m_IntroAnimSpinAmount: 360
   m_BoxCollider: {fileID: 6587326}

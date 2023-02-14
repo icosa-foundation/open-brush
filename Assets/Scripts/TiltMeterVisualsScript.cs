@@ -22,7 +22,7 @@ namespace TiltBrush
     {
         [SerializeField] private Transform m_MeterBarTransform;
         [SerializeField] private Renderer m_MeterBGRenderer;
-        [SerializeField] private TMP_Text m_CurrentPerformanceLevel;
+        [SerializeField] private TextMeshPro m_CurrentPerformanceLevel;
         [SerializeField] private float m_UpdateInterval = 1.0f;
         private float m_UpdateTimer;
 

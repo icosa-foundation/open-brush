@@ -22,7 +22,7 @@ namespace TiltBrush
     {
         void Start()
         {
-            TMP_Text rTest = GetComponent<TMP_Text>();
+            TextMeshPro rTest = GetComponent<TextMeshPro>();
             if (rTest)
             {
                 rTest.text = $"{App.kAppDisplayName} v{App.Config.m_VersionNumber}";
