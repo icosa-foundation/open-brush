@@ -15,12 +15,580 @@ MonoBehaviour:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
+  - m_Id: 5065710952488960
+    m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5056691860905984
+    m_Key: ADMIN_PANEL_ADVANCED_PROMO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065842783657984
+    m_Key: ADMIN_PANEL_BEGINNER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065289022283776
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5067123833151488
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066003496804352
+    m_Key: ADMIN_PANEL_NEW_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066113400152064
+    m_Key: ADMIN_PANEL_NEW_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065459298443264
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGGEDIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065626072358912
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064506084139008
+    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065176065482752
+    m_Key: ADMIN_PANEL_SETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065040224559104
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064085647106048
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_LOGGED_OUT_EXTRA_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064369941225472
+    m_Key: ADMIN_PANEL_SKETCHBOOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143682283708416
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143517279789056
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143299389890560
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144159373205504
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_FLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143986307833856
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144350784462848
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5148146801549312
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143592097783808
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143817222856704
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144456485117952
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144088976007168
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143754866139136
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5142890986315776
+    m_Key: ADVANCEDTOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147011692863488
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147092923949056
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146868541267968
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146944894377984
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145561143156736
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146583311818752
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146654665318400
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145130421690368
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_FLIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144771179552768
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_GROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145342544420864
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_INVERT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145273980133376
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145968804339712
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_UNGROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5322973046874112
+    m_Key: BACKDROP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324587094745088
+    m_Key: BACKDROP_PANEL_FOG_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325700112031744
+    m_Key: BACKDROP_PANEL_FOGCOLOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325291863646208
+    m_Key: BACKDROP_PANEL_FOGDENSITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5329997507829760
+    m_Key: BACKDROP_PANEL_SKYBOX_COLOR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324999763927040
+    m_Key: BACKDROP_PANEL_SKYBOX_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5330470583377920
+    m_Key: BACKDROP_PANEL_UNLOCKSKBOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335959689994240
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5336069865971712
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335779313950720
+    m_Key: BRUSH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5337337812459520
+    m_Key: BRUSH_PANEL_MORE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7674180243529728
+    m_Key: CAMERA_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673072670449664
+    m_Key: CAMERA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673467597725696
+    m_Key: CAMERA_PANEL_FOV_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673215754936320
+    m_Key: CAMERA_PANEL_POSTEFFECTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673684577460224
+    m_Key: CAMERA_PANEL_SMOOTHCAM_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673323997339648
+    m_Key: CAMERA_PANEL_WATERMARK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677508033683456
+    m_Key: CAMERAPATH_PANEL_ADDFOVKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677699654656000
+    m_Key: CAMERAPATH_PANEL_ADDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676879580143616
+    m_Key: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677371119017984
+    m_Key: CAMERAPATH_PANEL_ADDROTATIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677444783579136
+    m_Key: CAMERAPATH_PANEL_ADDSPEEDKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677024573038592
+    m_Key: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676309209325568
+    m_Key: CAMERAPATH_PANEL_DELETEPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675077484847104
+    m_Key: CAMERAPATH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676581176385536
+    m_Key: CAMERAPATH_PANEL_RECORDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675859500244992
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675982082973696
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676094104444928
+    m_Key: CAMERAPATH_PANEL_TOGGLEVISIBILITY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676408429780992
+    m_Key: CAMERPATH_PANEL_DELETEPATH_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7678055402938368
+    m_Key: COLORPICKER_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688701444071424
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688987650793472
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 286778752929792
+    m_Key: CONTROLLER_CONSOLE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281134452871168
+    m_Key: DROPCAM_WIDGET_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281373578530816
+    m_Key: DROPCAM_WIDGET_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 264453647142912
+    m_Key: DROPPER_TOOL_BRUSH_CONFIRM
+    m_Metadata:
+      m_Items: []
   - m_Id: 249453461278720
     m_Key: ERASER_TOOL_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 7691111650533376
+    m_Key: EXTRA_PANEL_BACKDROP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691821452599296
+    m_Key: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7689873479409664
+    m_Key: EXTRA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690667696037888
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690784670982144
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691186472722432
+    m_Key: EXTRA_PANEL_GUIDES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690924718792704
+    m_Key: EXTRA_PANEL_LIGHTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691576060649472
+    m_Key: LABS_PANEL_POLY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 249886669967360
     m_Key: FREEPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7860833050402816
+    m_Key: GUIDESETTINGS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862314168197120
+    m_Key: GUIDESETTINGS_PANEL_FRAMEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862047624372224
+    m_Key: GUIDESETTINGS_PANEL_GRIDSIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862159872335872
+    m_Key: GUIDESETTINGS_PANEL_LINEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7861838345379840
+    m_Key: GUIDESETTINGS_PANEL_SNAPDISTANCE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865322218168320
+    m_Key: GUIDETOOLS_PANEL_CAPSULEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865252521418752
+    m_Key: GUIDETOOLS_PANEL_CUBEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862801433075712
+    m_Key: GUIDETOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7864726178209792
+    m_Key: GUIDETOOLS_PANEL_DRAFTING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865394515386368
+    m_Key: GUIDETOOLS_PANEL_ELLIPSOIDGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866297771335680
+    m_Key: GUIDETOOLS_PANEL_GUIDESETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865004726132736
+    m_Key: GUIDETOOLS_PANEL_PLANEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865139518480384
+    m_Key: GUIDETOOLS_PANEL_SPHEREGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866040475951104
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866191982600192
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870978190974976
+    m_Key: LABS_PANEL_CAMERAMODE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866918104702976
+    m_Key: LABS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539698126848
+    m_Key: LABS_PANEL_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867671724662784
+    m_Key: EXTRA_PANEL_LOCALMEDIA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868186579673088
+    m_Key: LABS_PANEL_MODELPIN_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870646065012736
+    m_Key: LABS_PANEL_SCRIPTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870824155160576
+    m_Key: LABS_PANEL_SNAP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7869944320204800
+    m_Key: LABS_PANEL_SPECTATOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867554347065344
+    m_Key: LABS_PANEL_TILTASAURUS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867814297444352
+    m_Key: LABS_PANEL_TILTASAURUS_PANEL_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867354345873408
+    m_Key: LABS_PANEL_TWITCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867485648560128
+    m_Key: LABS_PANEL_YOUTUBE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874341855010816
+    m_Key: LAYERS_PANEL_ACTIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7879279536480256
+    m_Key: LAYERS_PANEL_ADDLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874007866777600
+    m_Key: LAYERS_PANEL_CLEAR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874528715448320
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874610038808576
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874683799838720
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_TOGGLE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7872343826997248
+    m_Key: LAYERS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7873280473800704
+    m_Key: LAYERS_PANEL_SHOWHIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874216034279424
+    m_Key: LAYERS_PANEL_SQUASH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7887557695873024
+    m_Key: LIGHTS_PANEL_COLOR_LABEL_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7883364289454080
+    m_Key: LIGHTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886356342349824
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886474181320704
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7884096078061568
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7885974799097856
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886169574187008
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886276944175104
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 287897575133184
+    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892854560759808
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892372832362496
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891984230096896
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892226182717440
+    m_Key: MEMORYWARNING_PANEL_WARNING_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891809302454272
+    m_Key: MEMORYWARNING_PANEL_WARNING_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892515468058624
+    m_Key: MEMORYWARNING_PANEL_WARNINGBACK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892717637705728
+    m_Key: MEMORYWARNING_PANEL_WARNINGOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260825024729088
+    m_Key: MULTICAM_TOOL_AUDIO_FOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260740236873728
+    m_Key: MULTICAM_TOOL_AUDIO_LOOKING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260910827606016
+    m_Key: MULTICAM_TOOL_AUDIO_NONE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261135713603584
+    m_Key: MULTICAM_TOOL_AUTH_NEEDED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 254616443981824
+    m_Key: MULTICAM_TOOL_AUTOGIF_TEXT
     m_Metadata:
       m_Items: []
   - m_Id: 252524492918784
@@ -31,6 +599,218 @@ MonoBehaviour:
     m_Key: MULTICAM_TOOL_SWIPE_HINT_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 255232243306496
+    m_Key: MULTICAM_TOOL_TIMEGIF_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261025797672960
+    m_Key: MULTICAM_TOOL_UPLOADING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260046566100992
+    m_Key: MULTICAM_TOOL_VIDEO_PLAYBACK_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260157501247488
+    m_Key: MULTICAM_TOOL_VIDEO_PREVIEW_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260325810278400
+    m_Key: MULTICAM_TOOL_VIDEO_READY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 259940966109184
+    m_Key: MULTICAM_TOOL_VIDEO_SAVING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255577010900992
+    m_Key: MULTICAM_TOOL_VIDEO_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274600943587328
+    m_Key: PIN_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931780608532480
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7939526611410944
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934199497203712
+    m_Key: POLY_PANEL_CONNECTIONERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930206087782400
+    m_Key: POLY_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977408
+    m_Key: POLY_PANEL_FEATUREDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932977482539008
+    m_Key: POLY_PANEL_INTERNETERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932251041669120
+    m_Key: POLY_PANEL_LIKEDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933944802287616
+    m_Key: POLY_PANEL_NOAUTHORED_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933827554713600
+    m_Key: POLY_PANEL_NOAUTHORED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933313635033088
+    m_Key: POLY_PANEL_NOLIKES_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933149889404928
+    m_Key: POLY_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933561489039360
+    m_Key: POLY_PANEL_NOLOGIN_SIGNIN_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933450197377024
+    m_Key: POLY_PANEL_NOLOGIN_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932746569326592
+    m_Key: POLY_PANEL_NOOBJECTS_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932559960547328
+    m_Key: POLY_PANEL_NOOBJECTS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934076549570560
+    m_Key: POLY_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931482930388992
+    m_Key: POLY_PANEL_SUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482240
+    m_Key: POLY_PANEL_TITLE_FEATURED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930550461112320
+    m_Key: POLY_PANEL_TITLE_LIKED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930140920881152
+    m_Key: POLY_PANEL_TITLE_STANDARD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931977472385024
+    m_Key: POLY_PANEL_USERMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931629680697344
+    m_Key: POLY_PANEL_USERSUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15526523405381632
+    m_Key: POPUP_ACCOUNTS_CANCEL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15524391402909696
+    m_Key: POPUP_ACCOUNTS_DRIVELINK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15522362785837056
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15531555001511936
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_CONFIRM_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090084441858048
+    m_Key: POPUP_AUDIOVIZ_AUDIOFOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090764850241536
+    m_Key: POPUP_AUDIOVIZ_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18091078533849088
+    m_Key: POPUP_AUDIOVIZ_HINT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090455927169024
+    m_Key: POPUP_AUDIOVIZ_LOOKAUDIO_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090913311825920
+    m_Key: POPUP_AUDIOVIZ_STATUS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094451278553088
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAOPTIONS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094306084331520
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18095883364933632
+    m_Key: POPUP_CAMERAPATHS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098892484452352
+    m_Key: POPUP_CANTLOADSKETCH_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098764352659456
+    m_Key: POPUP_CANTLOADSKETCH_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098512052690944
+    m_Key: POPUP_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101292528115712
+    m_Key: POPUP_COLOROPTIONS_HUE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101388099526656
+    m_Key: POPUP_COLOROPTIONS_SAT_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101498871095296
+    m_Key: POPUP_COLOROPTIONS_SIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101440956145664
+    m_Key: POPUP_COLOROPTIONS_VAL_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520387964907520
+    m_Key: POPUP_CONFIRM_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520489844551680
+    m_Key: POPUP_DECLINE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520598732877824
+    m_Key: POPUP_OK_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101557633294336
+    m_Key: Position
+    m_Metadata:
+      m_Items: []
   - m_Id: 6606866780160
     m_Key: PROMOMANAGER_GRAB_PANEL_HINT_TEXT
     m_Metadata:
@@ -39,8 +819,268 @@ MonoBehaviour:
     m_Key: PROMOMANAGER_TOSS_PANEL_HINT_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 267911297142784
+    m_Key: REBRUSH_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265936560099328
+    m_Key: RECOLOR_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265487907983360
+    m_Key: REPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 13240867393536
     m_Key: SAVELOAD_AUTOSAVE_FILENAME_PATTERN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943936175480832
+    m_Key: SCRIPTS_PANEL_COMMANDLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7940280365588480
+    m_Key: SCRIPTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943571044540416
+    m_Key: SCRIPTS_PANEL_EXAMPLES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943711960571904
+    m_Key: SCRIPTS_PANEL_SCRIPTSLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268509593636864
+    m_Key: SELECTION_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948298104840192
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948470994051072
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949724893814784
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949811581689856
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7959094121701376
+    m_Key: SETTINGS_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949438875836416
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949356432596992
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948094068727808
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948187597512704
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950172098895872
+    m_Key: SETTINGS_PANEL_POINTERANGLE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950275601735680
+    m_Key: SETTINGS_PANEL_QUALITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949594065084416
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949642022756352
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7961508530855936
+    m_Key: SETTINGS_PANEL_SCENECOST_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950347307556864
+    m_Key: SETTINGS_PANEL_SIMPLIFICATION_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951591048716288
+    m_Key: SETTINGS_PANEL_SIMPLIFYACCEPT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951827204808704
+    m_Key: SETTINGS_PANEL_SIMPLIFYDECLINE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7952483592413184
+    m_Key: SETTINGS_PANEL_UPDATE_SIMPLIFICATION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044507112906752
+    m_Key: SKETCHBOOK_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133516949626880
+    m_Key: SKETCHBOOK_PANEL_CONTACTSERVER_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052288863838208
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052489070551040
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044139993866240
+    m_Key: SKETCHBOOK_PANEL_DRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054126757519360
+    m_Key: SKETCHBOOK_PANEL_DRIVEDISABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054034549940224
+    m_Key: SKETCHBOOK_PANEL_DRIVEENABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054220533768192
+    m_Key: SKETCHBOOK_PANEL_DRIVEFULL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053860821868544
+    m_Key: SKETCHBOOK_PANEL_DRIVESYNCING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052141249503232
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052215190888448
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044071635099648
+    m_Key: SKETCHBOOK_PANEL_LIKED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051469124870144
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051592198332416
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10138131262840832
+    m_Key: SKETCHBOOK_PANEL_NEWSKETCH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132930728534016
+    m_Key: SKETCHBOOK_PANEL_NODRIVESKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133306584309760
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133179773722624
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137908562075648
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134688972382208
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137717402476544
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134539248312320
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134947404423168
+    m_Key: SKETCHBOOK_PANEL_NOPOLYCONNECTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132688213876736
+    m_Key: SKETCHBOOK_PANEL_NOSKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053396663410688
+    m_Key: SKETCHBOOK_PANEL_ONLINEGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134789291745280
+    m_Key: SKETCHBOOK_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051847228792832
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052065399709696
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8043915934146560
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134247853236224
+    m_Key: SKETCHBOOK_PANEL_SHOWCASEERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8042722189090816
+    m_Key: SKETCHBOOK_PANEL_STANDARD_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149748172103680
+    m_Key: SNAP_PANEL_ANGLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142251554152448
+    m_Key: SNAP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149812609196032
+    m_Key: SNAP_PANEL_GRID_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10160187903811584
+    m_Key: SNAP_PANEL_JITTER_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142405791293440
+    m_Key: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149921501716480
+    m_Key: SNAP_PANEL_SNAPGRID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 278827682140160
+    m_Key: SYMMETRY_WIDGET_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 279130447974400
+    m_Key: SYMMETRY_WIDGET_HINT
     m_Metadata:
       m_Items: []
   - m_Id: 10778529927168
@@ -67,6 +1107,54 @@ MonoBehaviour:
     m_Key: TILTMETER_SKETCH_COST_PICASSO
     m_Metadata:
       m_Items: []
+  - m_Id: 15506686318784512
+    m_Key: TOOLS_PANEL_CAMERA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506037610950656
+    m_Key: TOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506435650400256
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506545880903680
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506183434317824
+    m_Key: TOOLS_PANEL_ERASER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506869836361728
+    m_Key: TOOLS_PANEL_MIRROR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507184623071232
+    m_Key: TOOLS_PANEL_REDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506327693209600
+    m_Key: TOOLS_PANEL_STRAIGHTEDGE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506782473203712
+    m_Key: TOOLS_PANEL_TELEPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507089726943232
+    m_Key: TOOLS_PANEL_UNDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15508321694691328
+    m_Key: TUTORIAL_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15509162824609792
+    m_Key: TUTORIAL_PANEL_DISMISS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 9359005487104
     m_Key: YOUTUBE_AUTHORIZE_MESSAGE
     m_Metadata:
@@ -83,1092 +1171,32 @@ MonoBehaviour:
     m_Key: YOUTUBE_UPLOAD_SUCCESSFUL
     m_Metadata:
       m_Items: []
-  - m_Id: 254616443981824
-    m_Key: MULTICAM_TOOL_AUTOGIF_TEXT
+  - m_Id: 68763796961820672
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_JOIN
     m_Metadata:
       m_Items: []
-  - m_Id: 255232243306496
-    m_Key: MULTICAM_TOOL_TIMEGIF_TEXT
+  - m_Id: 68764809030598656
+    m_Key: EXTRA_PANEL_LAYERS_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
-  - m_Id: 255577010900992
-    m_Key: MULTICAM_TOOL_VIDEO_TEXT
+  - m_Id: 68768010396041216
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_DESCRIPTION
     m_Metadata:
       m_Items: []
-  - m_Id: 259940966109184
-    m_Key: MULTICAM_TOOL_VIDEO_SAVING_TEXT
+  - m_Id: 68768580896882688
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_POPUP
     m_Metadata:
       m_Items: []
-  - m_Id: 260046566100992
-    m_Key: MULTICAM_TOOL_VIDEO_PLAYBACK_TEXT
+  - m_Id: 68773633749745664
+    m_Key: SETTINGS_PANELMOBILE_ABOUT_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
-  - m_Id: 260157501247488
-    m_Key: MULTICAM_TOOL_VIDEO_PREVIEW_TEXT
+  - m_Id: 68773760459669504
+    m_Key: SETTINGS_PANELMOBILE_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
-  - m_Id: 260325810278400
-    m_Key: MULTICAM_TOOL_VIDEO_READY_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 260740236873728
-    m_Key: MULTICAM_TOOL_AUDIO_LOOKING_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 260825024729088
-    m_Key: MULTICAM_TOOL_AUDIO_FOUND_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 260910827606016
-    m_Key: MULTICAM_TOOL_AUDIO_NONE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 261025797672960
-    m_Key: MULTICAM_TOOL_UPLOADING_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 261135713603584
-    m_Key: MULTICAM_TOOL_AUTH_NEEDED_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 264453647142912
-    m_Key: DROPPER_TOOL_BRUSH_CONFIRM
-    m_Metadata:
-      m_Items: []
-  - m_Id: 265487907983360
-    m_Key: REPAINT_TOOL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 265936560099328
-    m_Key: RECOLOR_TOOL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 267911297142784
-    m_Key: REBRUSH_TOOL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 268509593636864
-    m_Key: SELECTION_TOOL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 274600943587328
-    m_Key: PIN_TOOL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 278827682140160
-    m_Key: SYMMETRY_WIDGET_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 279130447974400
-    m_Key: SYMMETRY_WIDGET_HINT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 281134452871168
-    m_Key: DROPCAM_WIDGET_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 281373578530816
-    m_Key: DROPCAM_WIDGET_HINT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 286778752929792
-    m_Key: CONTROLLER_CONSOLE_TITLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 287897575133184
-    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5056691860905984
-    m_Key: ADMIN_PANEL_ADVANCED_PROMO
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5064085647106048
-    m_Key: ADMIN_PANEL_SHARE_BUTTON_LOGGED_OUT_EXTRA_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5064369941225472
-    m_Key: ADMIN_PANEL_SKETCHBOOK_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5064506084139008
-    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065040224559104
-    m_Key: ADMIN_PANEL_SHARE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065176065482752
-    m_Key: ADMIN_PANEL_SETTINGS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065289022283776
-    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065459298443264
-    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGGEDIN
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065626072358912
-    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGIN
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065710952488960
-    m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5065842783657984
-    m_Key: ADMIN_PANEL_BEGINNER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5066003496804352
-    m_Key: ADMIN_PANEL_NEW_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5066113400152064
-    m_Key: ADMIN_PANEL_NEW_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5067123833151488
-    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5142890986315776
-    m_Key: ADVANCEDTOOLS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143299389890560
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143517279789056
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143592097783808
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143682283708416
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143754866139136
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143817222856704
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5143986307833856
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5144088976007168
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5144159373205504
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_FLY
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5144350784462848
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5144456485117952
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5144771179552768
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_GROUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5145130421690368
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_FLIP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5145273980133376
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5145342544420864
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_INVERT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5145561143156736
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5145968804339712
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_UNGROUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146220882010112
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR_TOGGLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146583311818752
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146654665318400
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE_TOGGLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146868541267968
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146944894377984
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH_TOGGLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5147011692863488
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5147092923949056
-    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER_TOGGLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5148146801549312
-    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5322973046874112
-    m_Key: BACKDROP_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5324587094745088
-    m_Key: BACKDROP_PANEL_FOG_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5324999763927040
-    m_Key: BACKDROP_PANEL_SKYBOX_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5325291863646208
-    m_Key: BACKDROP_PANEL_FOGDENSITY_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5325700112031744
-    m_Key: BACKDROP_PANEL_FOGCOLOR_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5329997507829760
-    m_Key: BACKDROP_PANEL_SKYBOX_COLOR_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5330470583377920
-    m_Key: BACKDROP_PANEL_UNLOCKSKBOX_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5335779313950720
-    m_Key: BRUSH_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5335959689994240
-    m_Key: BRUSH_PANEL_AUDIOREACTOR_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5336069865971712
-    m_Key: BRUSH_PANEL_AUDIOREACTOR_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5337337812459520
-    m_Key: BRUSH_PANEL_MORE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7673072670449664
-    m_Key: CAMERA_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7673215754936320
-    m_Key: CAMERA_PANEL_POSTEFFECTS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7673323997339648
-    m_Key: CAMERA_PANEL_WATERMARK_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7673467597725696
-    m_Key: CAMERA_PANEL_FOV_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7673684577460224
-    m_Key: CAMERA_PANEL_SMOOTHCAM_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7674180243529728
-    m_Key: CAMERA_PANEL_CLOSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7675077484847104
-    m_Key: CAMERAPATH_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7675859500244992
-    m_Key: CAMERAPATH_PANEL_SELECTPATH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7675982082973696
-    m_Key: CAMERAPATH_PANEL_SELECTPATH_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7676094104444928
-    m_Key: CAMERAPATH_PANEL_TOGGLEVISIBILITY_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7676309209325568
-    m_Key: CAMERAPATH_PANEL_DELETEPATH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7676408429780992
-    m_Key: CAMERPATH_PANEL_DELETEPATH_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7676581176385536
-    m_Key: CAMERAPATH_PANEL_RECORDPATH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7676879580143616
-    m_Key: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7677024573038592
-    m_Key: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7677371119017984
-    m_Key: CAMERAPATH_PANEL_ADDROTATIONKNOT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7677444783579136
-    m_Key: CAMERAPATH_PANEL_ADDSPEEDKNOT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7677508033683456
-    m_Key: CAMERAPATH_PANEL_ADDFOVKNOT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7677699654656000
-    m_Key: CAMERAPATH_PANEL_ADDPATH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7678055402938368
-    m_Key: COLORPICKER_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7688701444071424
-    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7688987650793472
-    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7689873479409664
-    m_Key: EXTRA_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7690667696037888
-    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7690784670982144
-    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7690924718792704
-    m_Key: EXTRA_PANEL_LIGHTS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7691111650533376
-    m_Key: EXTRA_PANEL_BACKDROP_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7691186472722432
-    m_Key: EXTRA_PANEL_GUIDES_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7691576060649472
-    m_Key: EXTRA_PANEL_POLY_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7691821452599296
-    m_Key: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7860833050402816
-    m_Key: GUIDESETTINGS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7861838345379840
-    m_Key: GUIDESETTINGS_PANEL_SNAPDISTANCE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7862047624372224
-    m_Key: GUIDESETTINGS_PANEL_GRIDSIZE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7862159872335872
-    m_Key: GUIDESETTINGS_PANEL_LINEWIDTH_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7862314168197120
-    m_Key: GUIDESETTINGS_PANEL_FRAMEWIDTH_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7862801433075712
-    m_Key: GUIDETOOLS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7864726178209792
-    m_Key: GUIDETOOLS_PANEL_DRAFTING_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7865004726132736
-    m_Key: GUIDETOOLS_PANEL_PLANEGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7865139518480384
-    m_Key: GUIDETOOLS_PANEL_SPHEREGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7865252521418752
-    m_Key: GUIDETOOLS_PANEL_CUBEGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7865322218168320
-    m_Key: GUIDETOOLS_PANEL_CAPSULEGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7865394515386368
-    m_Key: GUIDETOOLS_PANEL_ELLIPSOIDGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7866040475951104
-    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7866191982600192
-    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7866297771335680
-    m_Key: GUIDETOOLS_PANEL_GUIDESETTINGS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7866918104702976
-    m_Key: LABS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7867354345873408
-    m_Key: LABS_PANEL_TWITCH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7867485648560128
-    m_Key: LABS_PANEL_YOUTUBE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7867554347065344
-    m_Key: LABS_PANEL_TILTASAURUS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7867671724662784
-    m_Key: LABS_PANEL_LOCALMEDIA_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7867814297444352
-    m_Key: LABS_PANEL_TILTASAURUS_PANEL_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7868186579673088
-    m_Key: LABS_PANEL_MODELPIN_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7868539698126848
-    m_Key: LABS_PANEL_EXPORT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7869944320204800
-    m_Key: LABS_PANEL_SPECTATOR_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7870646065012736
-    m_Key: LABS_PANEL_SCRIPTS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7870824155160576
-    m_Key: LABS_PANEL_SNAP_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7870978190974976
-    m_Key: LABS_PANEL_CAMERAMODE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7872343826997248
-    m_Key: LAYERS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7873280473800704
-    m_Key: LAYERS_PANEL_SHOWHIDE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874007866777600
-    m_Key: LAYERS_PANEL_CLEAR_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874216034279424
-    m_Key: LAYERS_PANEL_SQUASH_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874341855010816
-    m_Key: LAYERS_PANEL_ACTIVE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874528715448320
-    m_Key: LAYERS_PANEL_DELETE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874610038808576
-    m_Key: LAYERS_PANEL_DELETE_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7874683799838720
-    m_Key: LAYERS_PANEL_DELETE_BUTTON_TOGGLE_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7879279536480256
-    m_Key: LAYERS_PANEL_ADDLAYER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7883364289454080
-    m_Key: LIGHTS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7884096078061568
-    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7885974799097856
-    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7886169574187008
-    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7886276944175104
-    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7886356342349824
-    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7886474181320704
-    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7887557695873024
-    m_Key: LIGHTS_PANEL_COLOR_LABEL_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7891809302454272
-    m_Key: MEMORYWARNING_PANEL_WARNING_TITLE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7891984230096896
-    m_Key: MEMORYWARNING_PANEL_EXCEEDED_TITLE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7892226182717440
-    m_Key: MEMORYWARNING_PANEL_WARNING_DESCRIPTION_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7892372832362496
-    m_Key: MEMORYWARNING_PANEL_EXCEEDED_DESCRIPTION_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7892515468058624
-    m_Key: MEMORYWARNING_PANEL_WARNINGBACK_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7892717637705728
-    m_Key: MEMORYWARNING_PANEL_WARNINGOK_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7892854560759808
-    m_Key: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7930140920881152
-    m_Key: POLY_PANEL_TITLE_STANDARD
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7930206087782400
-    m_Key: POLY_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7930412489482240
-    m_Key: POLY_PANEL_TITLE_FEATURED
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7930550461112320
-    m_Key: POLY_PANEL_TITLE_LIKED
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7931482930388992
-    m_Key: POLY_PANEL_SUBTITLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7931629680697344
-    m_Key: POLY_PANEL_USERSUBTITLE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7931780608532480
-    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7931977472385024
-    m_Key: POLY_PANEL_USERMODELS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7932160536977408
-    m_Key: POLY_PANEL_FEATUREDMODELS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7932251041669120
-    m_Key: POLY_PANEL_LIKEDMODELS_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7932559960547328
-    m_Key: POLY_PANEL_NOOBJECTS_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7932746569326592
-    m_Key: POLY_PANEL_NOOBJECTS_OK_BUTTON
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7932977482539008
-    m_Key: POLY_PANEL_INTERNETERROR_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933149889404928
-    m_Key: POLY_PANEL_NOLIKES_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933313635033088
-    m_Key: POLY_PANEL_NOLIKES_OK_BUTTON
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933450197377024
-    m_Key: POLY_PANEL_NOLOGIN_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933561489039360
-    m_Key: POLY_PANEL_NOLOGIN_SIGNIN_BUTTON
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933827554713600
-    m_Key: POLY_PANEL_NOAUTHORED_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7933944802287616
-    m_Key: POLY_PANEL_NOAUTHORED_OK_BUTTON
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7934076549570560
-    m_Key: POLY_PANEL_OUTOFDATE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7934199497203712
-    m_Key: POLY_PANEL_CONNECTIONERROR_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7939526611410944
-    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7940280365588480
-    m_Key: SCRIPTS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7943571044540416
-    m_Key: SCRIPTS_PANEL_EXAMPLES_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7943711960571904
-    m_Key: SCRIPTS_PANEL_SCRIPTSLIST_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7943936175480832
-    m_Key: SCRIPTS_PANEL_COMMANDLIST_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7948094068727808
-    m_Key: SETTINGS_PANEL_HELP_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7948187597512704
-    m_Key: SETTINGS_PANEL_HELP_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7948298104840192
-    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7948470994051072
-    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949356432596992
-    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949438875836416
-    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949594065084416
-    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949642022756352
-    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949724893814784
-    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7949811581689856
-    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7950172098895872
-    m_Key: SETTINGS_PANEL_POINTERANGLE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7950275601735680
-    m_Key: SETTINGS_PANEL_QUALITY_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7950347307556864
-    m_Key: SETTINGS_PANEL_SIMPLIFICATION_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7951591048716288
-    m_Key: SETTINGS_PANEL_SIMPLIFYACCEPT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7951827204808704
-    m_Key: SETTINGS_PANEL_SIMPLIFYDECLINE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7952483592413184
-    m_Key: SETTINGS_PANEL_UPDATE_SIMPLIFICATION_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7959094121701376
-    m_Key: SETTINGS_PANEL_CLOSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7961508530855936
-    m_Key: SETTINGS_PANEL_SCENECOST_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8042722189090816
-    m_Key: SKETCHBOOK_PANEL_STANDARD_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8043915934146560
-    m_Key: SKETCHBOOK_PANEL_SHOWCASE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8044071635099648
-    m_Key: SKETCHBOOK_PANEL_LIKED_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8044139993866240
-    m_Key: SKETCHBOOK_PANEL_DRIVE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8044507112906752
-    m_Key: SKETCHBOOK_PANEL_CLOSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8051469124870144
-    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8051592198332416
-    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8051847228792832
-    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8052065399709696
-    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8052141249503232
-    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8052215190888448
-    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8052288863838208
-    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8052489070551040
-    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION_EXTRA
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8053396663410688
-    m_Key: SKETCHBOOK_PANEL_ONLINEGALLERY_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8053860821868544
-    m_Key: SKETCHBOOK_PANEL_DRIVESYNCING_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8054034549940224
-    m_Key: SKETCHBOOK_PANEL_DRIVEENABLED_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8054126757519360
-    m_Key: SKETCHBOOK_PANEL_DRIVEDISABLED_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8054220533768192
-    m_Key: SKETCHBOOK_PANEL_DRIVEFULL_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10132688213876736
-    m_Key: SKETCHBOOK_PANEL_NOSKETCHES_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10132930728534016
-    m_Key: SKETCHBOOK_PANEL_NODRIVESKETCHES_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10133179773722624
-    m_Key: SKETCHBOOK_PANEL_NOLIKES_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10133306584309760
-    m_Key: SKETCHBOOK_PANEL_NOLIKES_BUTTON_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10133516949626880
-    m_Key: SKETCHBOOK_PANEL_CONTACTSERVER_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10134247853236224
-    m_Key: SKETCHBOOK_PANEL_SHOWCASEERROR_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10134539248312320
-    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10134688972382208
-    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10134789291745280
-    m_Key: SKETCHBOOK_PANEL_OUTOFDATE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10134947404423168
-    m_Key: SKETCHBOOK_PANEL_NOPOLYCONNECTION_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10137717402476544
-    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_BUTTON_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10137908562075648
-    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_BUTTON_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10138131262840832
-    m_Key: SKETCHBOOK_PANEL_NEWSKETCH_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10142251554152448
-    m_Key: SNAP_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10142405791293440
-    m_Key: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10149748172103680
-    m_Key: SNAP_PANEL_ANGLE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10149812609196032
-    m_Key: SNAP_PANEL_GRID_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10149921501716480
-    m_Key: SNAP_PANEL_SNAPGRID_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 10160187903811584
-    m_Key: SNAP_PANEL_JITTER_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506037610950656
-    m_Key: TOOLS_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506183434317824
-    m_Key: TOOLS_PANEL_ERASER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506327693209600
-    m_Key: TOOLS_PANEL_STRAIGHTEDGE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506435650400256
-    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506545880903680
-    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_POPUP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506686318784512
-    m_Key: TOOLS_PANEL_CAMERA_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506782473203712
-    m_Key: TOOLS_PANEL_TELEPORT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15506869836361728
-    m_Key: TOOLS_PANEL_MIRROR_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15507089726943232
-    m_Key: TOOLS_PANEL_UNDO_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15507184623071232
-    m_Key: TOOLS_PANEL_REDO_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15508321694691328
-    m_Key: TUTORIAL_PANEL_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15509162824609792
-    m_Key: TUTORIAL_PANEL_DISMISS_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15520387964907520
-    m_Key: POPUP_CONFIRM_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15520489844551680
-    m_Key: POPUP_DECLINE_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15520598732877824
-    m_Key: POPUP_OK_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15522362785837056
-    m_Key: POPUP_ACCOUNTS_SIGNOUT_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15524391402909696
-    m_Key: POPUP_ACCOUNTS_DRIVELINK_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15526523405381632
-    m_Key: POPUP_ACCOUNTS_CANCEL_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 15531555001511936
-    m_Key: POPUP_ACCOUNTS_SIGNOUT_CONFIRM_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18090084441858048
-    m_Key: POPUP_AUDIOVIZ_AUDIOFOUND_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18090455927169024
-    m_Key: POPUP_AUDIOVIZ_LOOKAUDIO_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18090764850241536
-    m_Key: POPUP_AUDIOVIZ_CLOSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18090913311825920
-    m_Key: POPUP_AUDIOVIZ_STATUS_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18091078533849088
-    m_Key: POPUP_AUDIOVIZ_HINT_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18094306084331520
-    m_Key: POPUP_CAMERAOPTIONS_CAMERAS_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18094451278553088
-    m_Key: POPUP_CAMERAOPTIONS_CAMERAOPTIONS_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18095883364933632
-    m_Key: POPUP_CAMERAPATHS_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18098512052690944
-    m_Key: POPUP_CLOSE_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18098764352659456
-    m_Key: POPUP_CANTLOADSKETCH_TITLE_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18098892484452352
-    m_Key: POPUP_CANTLOADSKETCH_DESCRIPTION_TEXT
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18101292528115712
-    m_Key: POPUP_COLOROPTIONS_HUE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18101388099526656
-    m_Key: POPUP_COLOROPTIONS_SAT_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18101440956145664
-    m_Key: POPUP_COLOROPTIONS_VAL_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18101498871095296
-    m_Key: POPUP_COLOROPTIONS_SIZE_SLIDER_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18101557633294336
-    m_Key: Position
+  - m_Id: 68774380566544384
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_TEXT
     m_Metadata:
       m_Items: []
   m_Metadata:
