@@ -32,10 +32,7 @@ namespace TiltBrush.Layers
         private void Start()
         {
             ResetUI();
-
-
             App.Scene.animationUI_manager.startTimeline();
-
         }
 
         private void ResetUI()
