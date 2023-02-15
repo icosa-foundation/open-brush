@@ -73,7 +73,7 @@ namespace WebSocketServer {
         private void ListenForTcpConnection () { 		
             try {
                 // Create listener on <address>:<port>.
-                tcpListener = new TcpListener(IPAddress.Parse(address), port);
+                tcpListener = new TcpListener(port);
                 tcpListener.Start();
                 Debug.Log("WebSocket server is listening for incoming connections.");
                 while (true) {
