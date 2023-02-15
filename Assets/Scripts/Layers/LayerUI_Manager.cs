@@ -31,7 +31,6 @@ namespace TiltBrush.Layers
 
         private void Start()
         {
-            m_Canvases = new List<CanvasScript>();
             ResetUI();
 
 
@@ -71,6 +70,7 @@ namespace TiltBrush.Layers
         // Subscribes to events
         private void OnEnable()
         {
+            ResetUI();
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
@@ -122,7 +122,7 @@ namespace TiltBrush.Layers
         public void ClearLayerContents(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
          public void ClearLayerContentsGeneral()
         {
