@@ -699,7 +699,7 @@ Transform:
   m_Children:
   - {fileID: 4150781899338378}
   m_Father: {fileID: 4723356810989372}
-  m_RootOrder: 11
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33625199182556418
 MeshFilter:
