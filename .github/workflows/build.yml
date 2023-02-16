@@ -53,25 +53,47 @@ jobs:
       - name: Calculate version and stamp
         id: version
         run: |
+          # General note: for pull requests, we query github.event.pull_request.head.sha rather than the default sha, which is a merge commit of the target branch into the head. For pushes or tag commits, there's no additional commits made by the CI, so we can use the default, current, reference
+
+          # Get the first two numbers from the last tag, including a tag on the current commit (to handle the case of a formal build)
           MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
-          STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
-          if [ $PATCH_VERSION == $MAJOR_MINOR ]
+
+          # How many commits have been made since the last tag of the form vX.Y.
+          #
+          # We used to use this version, however, it couldn't handle these two cases at the same time:
+          #                    (v2.1)
+          #                       |
+          #             /-c2..c4..c5-\
+          #            /              \
+          #   c...c0..c1....c3.........m6..c7....c10.c11.....m13...c14 <- [main]
+          #       ^                         \               /
+          #    (v2.0)                        \-c8..c9..c12-/
+          # If we use --first-parent, it wouldn't find a tag that was not a first parent, and so it'll think we're now in 2.0.8, though it skips the commits on the branches. If we did not use --first-parent, it gets the proper tag (v2.1), but counts each commit in the feature branch, and gives 2.1.10. While we almost always squash, if we ever do have an explicit merge commit, we don't want to count the commits on the feature branch. In this case, we actually want to get 2.1.7 (commits c3, m6, c7, c10, c11, m13, and c14).
+          ######## OLD CODE ########
+          # # If the value is not equal to zero, git describe will give us a version in the form vX.Y-Z-gAAAAAAA, where Z is the count. If the current commit has a vX.Y tag, it'll just return that, so the 'cut' does nothing. We test for this below
+          # PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
+          ######## END OLD CODE ########
+
+          # Instead, we'll find the last tag, wherever it is, and then count the --first-parent commits "since" then (i.e., not included; they might be historically behind it)
+          CLOSEST_TAG=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD)
+          PATCH_VERSION=$(git log ${CLOSEST_TAG}.. --oneline --first-parent | wc -l)
+
+          if [ $PATCH_VERSION == "0" ]
           then
-            PATCH_VERSION="0"
             STAMP=""
-            echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
 
           else
-            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
+            # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
+            STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
         env:
@@ -483,6 +505,7 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
+          target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
 
