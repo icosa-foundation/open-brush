@@ -122,9 +122,16 @@ namespace TiltBrush.Layers
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
 
+        public void ClearLayerContentsGeneral()
+        {
+            CanvasScript canvas = App.Scene.ActiveCanvas;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
+        }
+
         public void AddLayer()
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
+            App.Scene.animationUI_manager.resetTimeline();
         }
 
         public void ToggleVisibility(GameObject widget)

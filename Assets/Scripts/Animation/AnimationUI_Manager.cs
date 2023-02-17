@@ -56,6 +56,7 @@ namespace TiltBrush.Animation{
         [SerializeField] public GameObject timelineSliderPosition;
         
         [SerializeField] public GameObject timelineNotchPrefab;
+        [SerializeField] public GameObject timelineFramePrefab;
 
         [SerializeField] public GameObject timelineField;
         [SerializeField] public GameObject textRef;
@@ -116,6 +117,8 @@ namespace TiltBrush.Animation{
 
             timelineNotches = new List<GameObject>();
             timelineFrameObjects = new List<GameObject>();
+
+            resetTimeline();
 
             print("START TIMELINE");
         }
@@ -306,7 +309,7 @@ namespace TiltBrush.Animation{
         }
 
 
-        public void resetTimelineSlider(){
+        public void resetTimeline(){
 
                   
             print("RESET TIMELINE");
@@ -319,8 +322,18 @@ namespace TiltBrush.Animation{
 
                 }
             }
+            if (timelineFrameObjects != null){
+                foreach (var frame in timelineFrameObjects){
+                        Destroy(frame);
+
+                }
+            }
+            // foreach (Transform thisObj in timelineField.transform){
+            //     GameObject.Destroy(thisObj.gameObject);
+            // }
             
             timelineNotches = new List<GameObject>();
+            timelineFrameObjects = new List<GameObject>();
 
  
             for (int f = 0; f < timeline.Count; f++){
@@ -336,6 +349,29 @@ namespace TiltBrush.Animation{
                 newNotch.SetActive(false);
 
                 timelineNotches.Add(newNotch);
+
+
+                GameObject newFrame =  Instantiate(timelineFramePrefab);
+                newFrame.transform.SetParent(timelineField.transform);
+                timelineFrameObjects.Add(newFrame);
+
+                newFrame.name = "FrameContainer_" + f.ToString();
+
+
+                GameObject frameWrapper = newFrame.transform.GetChild(0).gameObject;
+
+                for(int i = 0; i < frameWrapper.transform.childCount; i++)
+                {
+                    if (i < timeline[f].layers.Count){
+                        frameWrapper.transform.GetChild(i).gameObject.SetActive(true);
+                    }
+                    else{
+                         frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
+                    }
+             
+                }
+ 
+
             }
             updateTimelineSlider();
 
@@ -345,26 +381,37 @@ namespace TiltBrush.Animation{
 
             float meshLength = timelineRef.GetComponent<TimelineSlider>().m_MeshScale.x;
             float startX = -meshLength/2f - timelineOffset*meshLength;
+         
 
-              for (int f = 0; f < timelineNotches.Count; f++){
+              for (int f = 0; f < timeline.Count; f++){
+
+                        float thisOffset = ((float)(f))*sliderFrameSize*meshLength;
                      
+                        float notchOffset = startX + ((float)(f))*sliderFrameSize*meshLength;
+                        if(timelineNotches.ElementAtOrDefault(f) != null)
+                        {
+                        // logic
+                        
                         GameObject notch = timelineNotches[f];
-                        float thisOffset = startX + ((float)(f))*sliderFrameSize*meshLength;
+                 
 
                       
-                           notch.transform.localPosition = new Vector3(thisOffset, 0, 0);
+                           notch.transform.localPosition = new Vector3(notchOffset, 0, 0);
                         notch.transform.localRotation = Quaternion.identity;
                  
 
-                        notch.SetActive(thisOffset >= -meshLength*0.5 && thisOffset <=  meshLength*0.5);
+                        notch.SetActive(notchOffset >= -meshLength*0.5 && notchOffset <=  meshLength*0.5);
+                        }
 
-                        if (f==0){
-                            Vector3 newPosition = timelineField.transform.GetChild(f).localPosition;
-                            float width = timelineField.transform.GetChild(f).localScale.x;
-                            newPosition.x = thisOffset + width*0.5f;
+                        if (timelineFrameObjects.ElementAtOrDefault(f) != null){
+                            Vector3 newPosition = timelineFrameObjects[f].transform.localPosition ;
+                            float width = timelineFrameObjects[f].transform.GetChild(0).localScale.x;
+                          
+                            newPosition.x = thisOffset - timelineOffset*meshLength - width*0.5f;
 
-                        timelineField.transform.GetChild(f).localPosition = newPosition;
-                        timelineField.transform.GetChild(f).gameObject.SetActive(newPosition.x >= -meshLength*0.5 && newPosition.x <=  meshLength*0.5);
+                        timelineFrameObjects[f].transform.localPosition = new Vector3(newPosition.x, 0, 0);;
+                        timelineFrameObjects[f].transform.localRotation = Quaternion.identity;
+                        timelineFrameObjects[f].SetActive(newPosition.x >= -0.1 && newPosition.x <=  meshLength - width);
                         }
 
             }
@@ -486,7 +533,7 @@ namespace TiltBrush.Animation{
             App.Scene.ActiveCanvas = timeline[getFramOn()].layers[previousLayerActive].canvas;
             focusFrame(timeline[getFramOn()]);
 
-            resetTimelineSlider();
+            resetTimeline();
 
         }
         public void addKeyFrame(){
@@ -514,7 +561,7 @@ namespace TiltBrush.Animation{
             print("TIMELINE SIZE -" + timeline.Count);
 
       
-            resetTimelineSlider();
+            resetTimeline();
 
 
         
@@ -595,7 +642,7 @@ namespace TiltBrush.Animation{
             
             print("TIMELINE SIZE -" + timeline.Count);
 
-            resetTimelineSlider();
+            resetTimeline();
 
         
         }
