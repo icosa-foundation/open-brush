@@ -328,9 +328,9 @@ namespace TiltBrush.Animation{
 
                 }
             }
-            // foreach (Transform thisObj in timelineField.transform){
-            //     GameObject.Destroy(thisObj.gameObject);
-            // }
+            foreach (Transform thisObj in timelineField.transform){
+                GameObject.Destroy(thisObj.gameObject);
+            }
             
             timelineNotches = new List<GameObject>();
             timelineFrameObjects = new List<GameObject>();
