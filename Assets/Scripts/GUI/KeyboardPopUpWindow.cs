@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -26,6 +27,22 @@ namespace TiltBrush
         {
             m_KeyboardUI = GetComponentInChildren<KeyboardUI>();
             m_KeyboardUI.KeyPressed += KeyPressed;
+        }
+
+        override public void SetPopupCommandParameters(int commandParam, int commandParam2)
+        {
+            if (commandParam2 != (int)SketchSetType.User)
+            {
+                return;
+            }
+            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User) as FileSketchSet;
+            var sceneFileInfo = sketchSet.GetSketchSceneFileInfo(commandParam);
+            var currentName = Path.GetFileName(sceneFileInfo.FullPath);
+            if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            {
+                currentName = currentName.Substring(0, currentName.Length - SaveLoadScript.TILT_SUFFIX.Length);
+            }
+            m_KeyboardUI.AddConsoleContent(currentName);
         }
 
         private void OnDestroy()
