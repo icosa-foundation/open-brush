@@ -19,5 +19,33 @@ namespace TiltBrush
 {
     public class KeyboardPopUpWindow : OptionsPopUpWindow
     {
+        private KeyboardUI m_KeyboardUI;
+        [NonSerialized] public static string m_LastInput;
+
+        void Awake()
+        {
+            m_KeyboardUI = GetComponentInChildren<KeyboardUI>();
+            m_KeyboardUI.KeyPressed += KeyPressed;
+        }
+
+        private void OnDestroy()
+        {
+            m_KeyboardUI.KeyPressed -= KeyPressed;
+        }
+
+        private void KeyPressed(object sender, KeyboardKeyEventArgs e)
+        {
+            switch (e.Key.KeyType)
+            {
+                case KeyboardKeyType.Enter:
+                    m_LastInput = m_KeyboardUI.ConsoleContent;
+                    if (m_ParentPanel)
+                    {
+                        m_ParentPanel.ResolveDelayedButtonCommand(true);
+                    }
+                    RequestClose(bForceClose: true);
+                    break;
+            }
+        }
     }
 } // namespace TiltBrush
