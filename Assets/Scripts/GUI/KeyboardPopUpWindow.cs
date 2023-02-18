@@ -14,7 +14,6 @@
 
 using System;
 using System.IO;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -52,6 +51,7 @@ namespace TiltBrush
 
         private void KeyPressed(object sender, KeyboardKeyEventArgs e)
         {
+            object foo = sender;
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:

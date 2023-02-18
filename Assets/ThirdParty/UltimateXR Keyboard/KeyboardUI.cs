@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace TiltBrush
@@ -27,6 +28,8 @@ namespace TiltBrush
         [SerializeField] private bool       _lineDisplayUsesCursor    = true;
         [SerializeField] private GameObject _capsLockEnabledObject;
         [SerializeField] private bool       _capsLockEnabled;
+        [SerializeField] private GameObject _shiftEnabledObject;
+        [SerializeField] private GameObject _controlEnabledObject;
         [SerializeField] private bool       _previewCaps;
         [SerializeField] private GameObject _passwordPreviewRootObject;
         [SerializeField] private GameObject _passwordPreviewEnabledObject;
@@ -63,12 +66,12 @@ namespace TiltBrush
         /// <summary>
         ///     Gets whether a shift key is being pressed.
         /// </summary>
-        public bool ShiftEnabled => _shiftEnabled > 0;
+        public bool ShiftEnabled => _shiftEnabled;
 
         /// <summary>
         ///     Gets whether a Control key is pressed.
         /// </summary>
-        public bool ControlEnabled => _controlEnabled > 0;
+        public bool ControlEnabled => _controlEnabled;
 
         /// <summary>
         ///     Gets the current console text content including the cursor.
@@ -295,6 +298,16 @@ namespace TiltBrush
                 _capsLockEnabledObject.SetActive(_capsLockEnabled);
             }
 
+            if (_shiftEnabledObject != null)
+            {
+                _shiftEnabledObject.SetActive(_shiftEnabled);
+            }
+
+            if (_controlEnabledObject != null)
+            {
+                _controlEnabledObject.SetActive(_controlEnabled);
+            }
+
             if (_passwordPreviewRootObject != null)
             {
                 _passwordPreviewRootObject.SetActive(IsPassword);
@@ -334,21 +347,21 @@ namespace TiltBrush
                     {
                         if (!string.IsNullOrEmpty(key.ForceLabel))
                         {
-                            ConsoleContent += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled > 0, AltGrEnabled);
-                            CurrentLine    += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled > 0, AltGrEnabled);
+                            ConsoleContent += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled, AltGrEnabled);
+                            CurrentLine    += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled, AltGrEnabled);
                         }
                         else
                         {
                             if (char.IsLetter(key.SingleLayoutValue))
                             {
-                                char newCar = _capsLockEnabled || _shiftEnabled > 0 ? char.ToUpper(key.SingleLayoutValue) : char.ToLower(key.SingleLayoutValue);
+                                char newCar = _capsLockEnabled || _shiftEnabled ? char.ToUpper(key.SingleLayoutValue) : char.ToLower(key.SingleLayoutValue);
 
                                 ConsoleContent += newCar;
                                 CurrentLine    += newCar;
                             }
                             else
                             {
-                                char newCar = key.GetSingleLayoutValueNoForceLabel(_shiftEnabled > 0 || _capsLockEnabled, AltGrEnabled);
+                                char newCar = key.GetSingleLayoutValueNoForceLabel(_shiftEnabled || _capsLockEnabled, AltGrEnabled);
                                 ConsoleContent += newCar;
                                 CurrentLine    += newCar;
                             }
@@ -356,7 +369,7 @@ namespace TiltBrush
                     }
                     else if (key.KeyLayoutType == KeyboardKeyLayoutType.MultipleChar)
                     {
-                        if (_shiftEnabled > 0)
+                        if (_shiftEnabled)
                         {
                             ConsoleContent += key.MultipleLayoutValueTopLeft;
                             CurrentLine    += key.MultipleLayoutValueTopLeft;
@@ -387,7 +400,7 @@ namespace TiltBrush
             }
             else if (key.KeyType == KeyboardKeyType.Shift)
             {
-                _shiftEnabled++;
+                _shiftEnabled = !_shiftEnabled;
 
                 if (_previewCaps)
                 {
@@ -405,7 +418,7 @@ namespace TiltBrush
             }
             else if (key.KeyType == KeyboardKeyType.Control)
             {
-                _controlEnabled++;
+                _controlEnabled = !_controlEnabled;
             }
             else if (key.KeyType == KeyboardKeyType.Alt)
             {
@@ -479,14 +492,12 @@ namespace TiltBrush
             }
             else if (key.KeyType == KeyboardKeyType.Shift)
             {
-                _shiftEnabled--;
             }
             else if (key.KeyType == KeyboardKeyType.CapsLock)
             {
             }
             else if (key.KeyType == KeyboardKeyType.Control)
             {
-                _controlEnabled--;
             }
             else if (key.KeyType == KeyboardKeyType.Alt)
             {
@@ -603,8 +614,8 @@ namespace TiltBrush
         private string _currentLine;
 
         private int _currentLineCount;
-        private int _shiftEnabled;
-        private int _controlEnabled;
+        private bool _shiftEnabled;
+        private bool _controlEnabled;
 
         private KeyboardKeyUI _keyToggleSymbols;
 
