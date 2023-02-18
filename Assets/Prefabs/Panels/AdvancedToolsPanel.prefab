@@ -734,7 +734,7 @@ MonoBehaviour:
   m_BorderMeshAdvWidth: 0.01
   m_PanelSensitivity: 0.1
   m_ClampToBounds: 1
-  m_ReticleBounds: {x: 1.35, y: 1.9, z: 0}
+  m_ReticleBounds: {x: 2, y: 1.9, z: 0}
   m_BorderSphereHighlightRadius: 2.5
   m_PositioningSpheresBounds: {x: 1, y: 1}
   m_PositioningSphereRadius: 0.4
