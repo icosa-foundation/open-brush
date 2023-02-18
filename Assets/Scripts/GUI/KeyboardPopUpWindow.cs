@@ -20,7 +20,10 @@ namespace TiltBrush
     public class KeyboardPopUpWindow : OptionsPopUpWindow
     {
         private KeyboardUI m_KeyboardUI;
+        private const string m_validFilenameCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-";
         [NonSerialized] public static string m_LastInput;
+
+        public bool m_SanitizeFilename;
 
         void Awake()
         {
@@ -51,7 +54,6 @@ namespace TiltBrush
 
         private void KeyPressed(object sender, KeyboardKeyEventArgs e)
         {
-            object foo = sender;
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
@@ -62,6 +64,11 @@ namespace TiltBrush
                     }
                     RequestClose(bForceClose: true);
                     break;
+            }
+
+            if (m_SanitizeFilename)
+            {
+                m_KeyboardUI.SantizeFilename();
             }
         }
     }

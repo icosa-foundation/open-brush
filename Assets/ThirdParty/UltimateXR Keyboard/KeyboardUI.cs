@@ -112,6 +112,13 @@ namespace TiltBrush
         /// </summary>
         public string ConsoleContent { get; private set; }
 
+        public void SantizeFilename()
+        {
+            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+            ConsoleContent = System.Text.RegularExpressions.Regex.Replace(ConsoleContent, invalidRegStr, "");
+        }
+
         /// <summary>
         ///     Gets the current console line without the cursor.
         /// </summary>

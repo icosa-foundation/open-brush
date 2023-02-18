@@ -450,6 +450,7 @@ MonoBehaviour:
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
   m_ColorTransitionDuration: 0
+  m_SanitizeFilename: 1
 --- !u!65 &8580401944159525890
 BoxCollider:
   m_ObjectHideFlags: 0
