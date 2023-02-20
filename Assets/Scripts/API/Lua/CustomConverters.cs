@@ -97,6 +97,45 @@ public static class LuaCustomConverters
             }
         );
 
+        // Quaternion
+
+        Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(Quaternion),
+            dynVal =>
+            {
+                Table table = dynVal.Table;
+                float x, y, z;
+                if (table.Keys.First().Type == DataType.String)
+                {
+                    // Named properties
+                    x = (float)table.Get("x").Number;
+                    y = (float)table.Get("y").Number;
+                    z = (float)table.Get("z").Number;
+                }
+                else
+                {
+                    // Indexed properties
+                    x = (float)table.Get(1).Number;
+                    y = (float)table.Get(2).Number;
+                    z = (float)table.Get(3).Number;
+                }
+                return Quaternion.Euler(x, y, z);
+            }
+        );
+
+        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Quaternion>(
+            (script, quaternion) =>
+            {
+                DynValue x = DynValue.NewNumber(quaternion.eulerAngles.x);
+                DynValue y = DynValue.NewNumber(quaternion.eulerAngles.y);
+                DynValue z = DynValue.NewNumber(quaternion.eulerAngles.z);
+                DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
+                dynVal.Table.Set("x", x);
+                dynVal.Table.Set("y", y);
+                dynVal.Table.Set("z", z);
+                return dynVal;
+            }
+        );
+
         // TrTransform
 
         Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(TrTransform),
