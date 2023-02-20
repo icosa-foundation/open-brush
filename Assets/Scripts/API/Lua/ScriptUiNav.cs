@@ -24,7 +24,12 @@ public class ScriptUiNav : MonoBehaviour
     private TextMeshPro textMesh;
     public LuaManager.ApiCategory ApiCategory;
 
-    public void Start()
+    void Start()
+    {
+        Init();
+    }
+
+    public void Init()
     {
         textMesh = GetComponentInChildren<TextMeshPro>();
         var names = LuaManager.Instance.GetScriptNames(ApiCategory);

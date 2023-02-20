@@ -34,8 +34,8 @@ namespace TiltBrush
             Script script = new Script();
             LuaManager.AutoCompleteEntries = new List<string>();
             LuaManager.Instance.SetStaticScriptContext(script);
-            LuaManager.Instance.SetDynamicScriptContext(script);
             string filePath = Path.Combine("Assets/Resources/LuaScriptExamples", "__autocomplete.lua");
+            LuaManager.Instance.RegisterApiClasses(script);
             File.WriteAllLines(filePath, LuaManager.AutoCompleteEntries);
             LuaManager.AutoCompleteEntries = null;
         }

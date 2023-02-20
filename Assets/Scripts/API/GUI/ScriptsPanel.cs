@@ -19,6 +19,21 @@ namespace TiltBrush
 {
     public class ScriptsPanel : BasePanel
     {
+
+        public override void InitPanel()
+        {
+            base.InitPanel();
+            InitScriptUiNav();
+        }
+
+        public void InitScriptUiNav()
+        {
+            foreach (var nav in GetComponentsInChildren<ScriptUiNav>())
+            {
+                nav.Init();
+            }
+        }
+
         public void TogglePointerScript(ToggleButton btn)
         {
             LuaManager.Instance.EnablePointerScript(btn.m_IsToggledOn);

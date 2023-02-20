@@ -772,6 +772,11 @@ namespace TiltBrush
         {
             get { return GetComponent<IconTextureAtlas>(); }
         }
+        public bool AutoOrientAfterRotation
+        {
+            get => m_AutoOrientAfterRotation;
+            set => m_AutoOrientAfterRotation = value;
+        }
 
         void DismissPopupOnCurrentGazeObject(bool force)
         {
@@ -892,7 +897,7 @@ namespace TiltBrush
             m_UndoHold_Timer = m_UndoRedoHold_DurationBeforeStart;
             m_RedoHold_Timer = m_UndoRedoHold_DurationBeforeStart;
 
-            m_AutoOrientAfterRotation = true;
+            AutoOrientAfterRotation = true;
             m_RotationCursor.gameObject.SetActive(false);
 
             ResetGrabbedPose();
@@ -3391,7 +3396,7 @@ namespace TiltBrush
                 m_SurfaceRight = m_SketchSurface.transform.right;
                 m_SurfaceUp = m_SketchSurface.transform.up;
 
-                if (!m_RotationRollActive && m_AutoOrientAfterRotation && m_SketchSurfacePanel.IsSketchSurfaceToolActive())
+                if (!m_RotationRollActive && AutoOrientAfterRotation && m_SketchSurfacePanel.IsSketchSurfaceToolActive())
                 {
                     //get possible auto rotations
                     Quaternion qQuatUp = OrientSketchSurfaceToUp();
@@ -4342,8 +4347,8 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.AutoOrient:
-                    m_AutoOrientAfterRotation = !m_AutoOrientAfterRotation;
-                    if (m_AutoOrientAfterRotation)
+                    AutoOrientAfterRotation = !AutoOrientAfterRotation;
+                    if (AutoOrientAfterRotation)
                     {
                         ControllerConsoleScript.m_Instance.AddNewLine("Auto-Orient On");
                     }
@@ -4370,13 +4375,7 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.ViewOnly:
                     m_ViewOnly = !m_ViewOnly;
-                    RequestPanelsVisibility(!m_ViewOnly);
-                    PointerManager.m_Instance.RequestPointerRendering(!m_ViewOnly);
-                    // TODO - decide if this is a permanent change
-                    // With this line, you can't set a tool such as fly or teleport
-                    // and switch to View Only mode as the mode change disables all tools
-                    //m_SketchSurface.SetActive(!m_ViewOnly);
-                    m_Decor.SetActive(!m_ViewOnly);
+                    ViewOnly(m_ViewOnly);
                     break;
                 case GlobalCommands.SaveGallery:
                     m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.SaveIconTool);
@@ -4936,6 +4935,16 @@ namespace TiltBrush
                     break;
             }
         }
+        public void ViewOnly(bool active)
+        {
+            RequestPanelsVisibility(!active);
+            PointerManager.m_Instance.RequestPointerRendering(!active);
+            // TODO - decide if this is a permanent change
+            // With this line, you can't set a tool such as fly or teleport
+            // and switch to View Only mode as the mode change disables all tools
+            //m_SketchSurface.SetActive(!m_ViewOnly);
+            m_Decor.SetActive(!active);
+        }
 
         private void LoadNamed(string path, bool quickload, bool additive)
         {
@@ -4979,7 +4988,7 @@ namespace TiltBrush
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode;
-                case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
+                case GlobalCommands.AutoOrient: return AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
                 case GlobalCommands.Music: return VisualizerManager.m_Instance.VisualsRequested;
@@ -5030,8 +5039,10 @@ namespace TiltBrush
             SaveLoadScript.m_Instance.ResetLastFilename();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
+            PointerManager.m_Instance.FinalizeLine(false, true);
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
+            ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
             LuaManager.Instance.Init();
 
             // If we've got the camera path tool active, switch back to the default tool.

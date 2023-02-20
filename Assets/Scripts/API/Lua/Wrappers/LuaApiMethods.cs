@@ -107,5 +107,67 @@ namespace TiltBrush
         }
 
 
+        public static void StraightEdge(bool active)
+        {
+            PointerManager.m_Instance.StraightEdgeModeEnabled = active;
+        }
+
+        public static void AutoOrient(bool active)
+        {
+            SketchControlsScript.m_Instance.AutoOrientAfterRotation = active;
+        }
+
+        public static void ViewOnly(bool active)
+        {
+            SketchControlsScript.m_Instance.ViewOnly(active);
+        }
+
+        public static void AutoSimplify(bool active)
+        {
+            QualityControls.AutosimplifyEnabled = active;
+        }
+
+        public static void Disco(bool active)
+        {
+            LightsControlScript.m_Instance.DiscoMode = active;
+        }
+
+        public static void Profiling(bool active, bool deep = false)
+        {
+            if (active)
+            {
+                var mode = deep ? ProfilingManager.Mode.Deep : ProfilingManager.Mode.Standard;
+                ProfilingManager.Instance.StartProfiling(mode);
+            }
+            else
+            {
+                ProfilingManager.Instance.StopProfiling();
+            }
+        }
+
+        public static void PostProcessing(bool active)
+        {
+            CameraConfig.PostEffects = active;
+        }
+
+        public static void Watermark(bool active)
+        {
+            CameraConfig.Watermark = active;
+        }
+
+
+        public static void Save(bool overwrite)
+        {
+            if (overwrite)
+            {
+                var rEnum = SketchControlsScript.GlobalCommands.SaveNew;
+                SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+            }
+            else
+            {
+                var rEnum = SketchControlsScript.GlobalCommands.Save;
+                SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1);
+            }
+        }
     }
 }

@@ -1491,7 +1491,7 @@ namespace TiltBrush
         }
 
         // Detach and record lines for all active pointers.
-        void FinalizeLine(bool isContinue = false, bool discard = false)
+        public void FinalizeLine(bool isContinue = false, bool discard = false)
         {
             PointerScript groupStart = null;
             uint groupStartTime = 0;
