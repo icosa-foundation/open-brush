@@ -442,7 +442,8 @@ jobs:
                     "title": "## 💬 Uncategorized",
                     "labels": []
                 }
-              ]
+              ],
+              "pr_template": "- #{{TITLE}} (PR ##{{NUMBER}} by @#{{AUTHOR}})"
             }
 
       - name: Echo Changelog (for debugging purposes)
