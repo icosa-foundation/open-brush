@@ -428,7 +428,7 @@ namespace TiltBrush
             App.Scene.ToggleLayerVisibility(layer);
         }
 
-        [ApiEndpoint("model.select", "Selects a widget by index.")]
+        [ApiEndpoint("model.select", "Selects a 3d model by index.")]
         public static void SelectModel(int index)
         {
             SelectWidget(_GetActiveModel(index));
@@ -439,7 +439,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
-        [ApiEndpoint("model.set.position", "Move a model to the given coordinates")]
+        [ApiEndpoint("model.set.position", "Move a 3d model to the given coordinates")]
         public static void PositionModel(int index, Vector3 position)
         {
             _SetWidgetTransform(_GetActiveModel(index), position);
@@ -483,6 +483,12 @@ namespace TiltBrush
             {
                 ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
             }
+        }
+
+        [ApiEndpoint("image.select", "Selects an image by index.")]
+        public static void SelectImage(int index)
+        {
+            SelectWidget(_GetActiveImage(index));
         }
 
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
