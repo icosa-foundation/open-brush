@@ -16,7 +16,7 @@ namespace TiltBrush.Animation{
         
         float frameOn = 0f;
 
-        public int getFramOn(){
+        public int getFrameOn(){
             return Math.Clamp((int)frameOn,0,timeline.Count-1) ;
         }
         long start = 0,current = 0, time = 0;
@@ -351,8 +351,11 @@ namespace TiltBrush.Animation{
                 timelineNotches.Add(newNotch);
 
 
-                GameObject newFrame =  Instantiate(timelineFramePrefab);
-                newFrame.transform.SetParent(timelineField.transform);
+                GameObject newFrame =  Instantiate(timelineFramePrefab,timelineField.transform,false);
+
+
+
+                // newFrame.transform.SetParent(timelineField.transform);
                 timelineFrameObjects.Add(newFrame);
 
                 newFrame.name = "FrameContainer_" + f.ToString();
@@ -416,11 +419,19 @@ namespace TiltBrush.Animation{
 
             }
 
-            foreach (var frameGroup in timelineField.transform){
-
-             
-            }
                   
+        }
+
+        public void selectTimelineFrame(int layerNum,int frameNum){
+
+
+            print("SELECT TIMELINE FRAME " + layerNum + " " + frameNum);
+            App.Scene.ActiveCanvas = timeline[frameNum].layers[layerNum].canvas;
+            frameOn = frameNum;
+            focusFrame(timeline[frameNum]);
+
+            resetTimeline();
+            updateTimelineNob();
         }
         public void updateTimelineNob(){
 
@@ -512,26 +523,26 @@ namespace TiltBrush.Animation{
             int previousLayerActive = getCanvasIndex(App.Scene.ActiveCanvas).Item2;
  
 
-            for (int l =0;l< timeline[getFramOn()].layers.Count; l++){
+            for (int l =0;l< timeline[getFrameOn()].layers.Count; l++){
 
          
     
                 //App.Scene.destroyCanvas(timeline[frameOn].layers[l].canvas);
-                App.Scene.HideCanvas(timeline[getFramOn()].layers[l].canvas);
+                App.Scene.HideCanvas(timeline[getFrameOn()].layers[l].canvas);
             }
 
-            Frame removingFrame = timeline[getFramOn()];
+            Frame removingFrame = timeline[getFrameOn()];
             removingFrame.deleted = true;
 
-            timeline.RemoveAt(getFramOn());
+            timeline.RemoveAt(getFrameOn());
 
             frameOn = Math.Clamp(frameOn,0,timeline.Count - 1);
 
             print("AFTER REMOVE");
             printTimeline();
 
-            App.Scene.ActiveCanvas = timeline[getFramOn()].layers[previousLayerActive].canvas;
-            focusFrame(timeline[getFramOn()]);
+            App.Scene.ActiveCanvas = timeline[getFrameOn()].layers[previousLayerActive].canvas;
+            focusFrame(timeline[getFrameOn()]);
 
             resetTimeline();
 
@@ -554,7 +565,7 @@ namespace TiltBrush.Animation{
 
             print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
             ;  
-            timeline.Insert(getFramOn() + 1,addingFrame);
+            timeline.Insert(getFrameOn() + 1,addingFrame);
 
             focusFrame(addingFrame);   
             
@@ -574,7 +585,7 @@ namespace TiltBrush.Animation{
             print("DUPLICATE NOW");
             printTimeline();
 
-            for (int l =0;l< timeline[getFramOn()].layers.Count; l++){
+            for (int l =0;l< timeline[getFrameOn()].layers.Count; l++){
 
          
                 CanvasScript newCanvas = App.Scene.AddCanvas();
@@ -586,7 +597,7 @@ namespace TiltBrush.Animation{
                     List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                             .Where(x => x.Canvas 
                             ==
-                             timeline[getFramOn()].layers[l].canvas
+                             timeline[getFrameOn()].layers[l].canvas
                              ).ToList();
                     
                     List<Stroke> newStrokes = oldStrokes
@@ -627,7 +638,7 @@ namespace TiltBrush.Animation{
 
 
                 frameLayer addingLayer = newFrameLayer(newCanvas);
-                addingLayer.deleted = timeline[getFramOn()].layers[l].deleted;
+                addingLayer.deleted = timeline[getFrameOn()].layers[l].deleted;
                 addingFrame.layers.Add(addingLayer);
                 print("ADDING LAYER");
             
@@ -636,7 +647,7 @@ namespace TiltBrush.Animation{
 
             print("ADDING FRAME NUM LAYERS -" + addingFrame.layers.Count);
             ;  
-            timeline.Insert(getFramOn() + 1,addingFrame);
+            timeline.Insert(getFrameOn() + 1,addingFrame);
 
             focusFrame(addingFrame);   
             
@@ -659,7 +670,7 @@ namespace TiltBrush.Animation{
             frameOn = frameOn < 0 ? 0 : frameOn;
             
             print("T SLIDE frameoN- " + frameOn);
-            focusFrame( timeline[getFramOn()],true);
+            focusFrame( timeline[getFrameOn()],true);
 
             // Scrolling the timeline
             print ("TIMELINE SCROLLING " +  Value);
@@ -721,7 +732,7 @@ namespace TiltBrush.Animation{
             
 
                 
-                focusFrame( timeline[getFramOn()]);
+                focusFrame( timeline[getFrameOn()]);
            
 
                

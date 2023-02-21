@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TiltBrush.Layers
+namespace TiltBrush.Animation
 {
 public class FrameButton : BaseButton
 {
@@ -11,8 +11,16 @@ public class FrameButton : BaseButton
         {
             base.OnButtonPressed();
             print("PRESSED");
-            print(transform.name + " " +transform.parent.parent.name );
-            // GetComponentInParent<LayerUI_Manager>().ToggleVisibility(transform.parent.gameObject);
+            print(transform.GetSiblingIndex() + " " +transform.parent.parent.GetSiblingIndex() );
+        
+             App.Scene.animationUI_manager.selectTimelineFrame(
+                transform.GetSiblingIndex(),transform.parent.parent.GetSiblingIndex()
+
+             );
+         
+            
     }
+
+
 }
 }
