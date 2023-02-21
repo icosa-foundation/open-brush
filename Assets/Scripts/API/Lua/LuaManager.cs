@@ -245,6 +245,7 @@ namespace TiltBrush
                 scriptName = scriptFilename.Substring(category.ToString().Length + 1);
                 script.Globals["ScriptName"] = scriptName;
                 Scripts[category][scriptName] = script;
+                InitScriptOnce(script);
             }
             fileStream.Close();
             return scriptName;
@@ -291,9 +292,9 @@ namespace TiltBrush
 
             RegisterApiCommand(script, "spectator.moveTo", (Action<Vector3>)ApiMethods.MoveSpectatorTo);
             RegisterApiCommand(script, "spectator.moveBy", (Action<Vector3>)ApiMethods.MoveSpectatorBy);
-            RegisterApiCommand(script, "spectator.turnY", (Action<float>)ApiMethods.SpectatorYaw);
+            RegisterApiCommand(script, "spectator.turn", (Action<float>)ApiMethods.SpectatorYaw);
             RegisterApiCommand(script, "spectator.turnX", (Action<float>)ApiMethods.SpectatorPitch);
-            RegisterApiCommand(script, "spectator.turnY", (Action<float>)ApiMethods.SpectatorRoll);
+            RegisterApiCommand(script, "spectator.turnZ", (Action<float>)ApiMethods.SpectatorRoll);
             RegisterApiCommand(script, "spectator.direction", (Action<Vector3>)ApiMethods.SpectatorDirection);
             RegisterApiCommand(script, "spectator.lookAt", (Action<Vector3>)ApiMethods.SpectatorLookAt);
             RegisterApiCommand(script, "spectator.mode", (Action<string>)ApiMethods.SpectatorMode);
@@ -356,26 +357,26 @@ namespace TiltBrush
             // RegisterApiCommand(script, "open.drive", (Action<int>)ApiMethods.LoadDrive);
             // RegisterApiCommand(script, "sketch.exportSelected", (Action)ApiMethods.SaveModel);
 
-            RegisterApiCommand(script, "app.undo", (Action)ApiMethods.Undo);
-            RegisterApiCommand(script, "app.redo", (Action)ApiMethods.Redo);
-            RegisterApiCommand(script, "app.addListener", (Action<string>)ApiMethods.AddListener);
-            RegisterApiCommand(script, "app.resetPanels", (Action)ApiMethods.ResetAllPanels);
-            RegisterApiCommand(script, "app.showScriptsFolder", (Action)ApiMethods.OpenUserScriptsFolder);
-            RegisterApiCommand(script, "app.showExportFolder", (Action)ApiMethods.OpenExportFolder);
-            RegisterApiCommand(script, "app.showSketchesFolder", (Action<int>)ApiMethods.ShowSketchFolder);
-            RegisterApiCommand(script, "app.StraightEdge", (Action<bool>)LuaApiMethods.StraightEdge);
-            RegisterApiCommand(script, "app.AutoOrient", (Action<bool>)LuaApiMethods.AutoOrient);
-            RegisterApiCommand(script, "app.ViewOnly", (Action<bool>)LuaApiMethods.ViewOnly);
-            RegisterApiCommand(script, "app.AutoSimplify", (Action<bool>)LuaApiMethods.AutoSimplify);
-            RegisterApiCommand(script, "app.Disco", (Action<bool>)LuaApiMethods.Disco);
-            RegisterApiCommand(script, "app.Profiling", (Action<bool, bool>)LuaApiMethods.Profiling);
-            RegisterApiCommand(script, "app.PostProcessing", (Action<bool>)LuaApiMethods.PostProcessing);
-            RegisterApiCommand(script, "app.Watermark", (Action<bool>)LuaApiMethods.Watermark);
+            RegisterApiCommand(script, "application.undo", (Action)ApiMethods.Undo);
+            RegisterApiCommand(script, "application.redo", (Action)ApiMethods.Redo);
+            RegisterApiCommand(script, "application.addListener", (Action<string>)ApiMethods.AddListener);
+            RegisterApiCommand(script, "application.resetPanels", (Action)ApiMethods.ResetAllPanels);
+            RegisterApiCommand(script, "application.showScriptsFolder", (Action)ApiMethods.OpenUserScriptsFolder);
+            RegisterApiCommand(script, "application.showExportFolder", (Action)ApiMethods.OpenExportFolder);
+            RegisterApiCommand(script, "application.showSketchesFolder", (Action<int>)ApiMethods.ShowSketchFolder);
+            RegisterApiCommand(script, "application.StraightEdge", (Action<bool>)LuaApiMethods.StraightEdge);
+            RegisterApiCommand(script, "application.AutoOrient", (Action<bool>)LuaApiMethods.AutoOrient);
+            RegisterApiCommand(script, "application.ViewOnly", (Action<bool>)LuaApiMethods.ViewOnly);
+            RegisterApiCommand(script, "application.AutoSimplify", (Action<bool>)LuaApiMethods.AutoSimplify);
+            RegisterApiCommand(script, "application.Disco", (Action<bool>)LuaApiMethods.Disco);
+            RegisterApiCommand(script, "application.Profiling", (Action<bool, bool>)LuaApiMethods.Profiling);
+            RegisterApiCommand(script, "application.PostProcessing", (Action<bool>)LuaApiMethods.PostProcessing);
+            RegisterApiCommand(script, "application.Watermark", (Action<bool>)LuaApiMethods.Watermark);
             // TODO Unified API for tools and panels
-            // RegisterApiCommand(script, "app.SettingsPanel", (Action<bool>)LuaApiMethods.SettingsPanel);
-            // RegisterApiCommand(script, "app.SketchOrigin", (Action<bool>)LuaApiMethods.SketchOrigin);
+            // RegisterApiCommand(script, "application.SettingsPanel", (Action<bool>)LuaApiMethods.SettingsPanel);
+            // RegisterApiCommand(script, "application.SketchOrigin", (Action<bool>)LuaApiMethods.SketchOrigin);
 
-            RegisterApiCommand(script, "app.setEnvironment", (Action<string>)ApiMethods.SetEnvironment);
+            RegisterApiCommand(script, "application.setEnvironment", (Action<string>)ApiMethods.SetEnvironment);
 
             RegisterApiCommand(script, "guides.add", (Action<string>)ApiMethods.AddGuide);
             RegisterApiCommand(script, "guides.disable", (Action)ApiMethods.StencilsDisable);
@@ -387,24 +388,24 @@ namespace TiltBrush
             // RegisterApiCommand(script, "draw.path", (Action<string>)ApiMethods.DrawPath);
             // RegisterApiCommand(script, "draw.stroke", (Action<string>)ApiMethods.DrawStroke);
 
-            RegisterApiCommand(script, "turtle.move.to", (Action<Vector3>)ApiMethods.BrushMoveTo);
-            RegisterApiCommand(script, "turtle.move.by", (Action<Vector3>)ApiMethods.BrushMoveBy);
+            RegisterApiCommand(script, "turtle.moveTo", (Action<Vector3>)ApiMethods.BrushMoveTo);
+            RegisterApiCommand(script, "turtle.moveBy", (Action<Vector3>)ApiMethods.BrushMoveBy);
             RegisterApiCommand(script, "turtle.move", (Action<float>)ApiMethods.BrushMove);
             RegisterApiCommand(script, "turtle.draw", (Action<float>)ApiMethods.BrushDraw);
-            RegisterApiCommand(script, "turtle.turn.y", (Action<float>)ApiMethods.BrushYaw);
-            RegisterApiCommand(script, "turtle.turn.x", (Action<float>)ApiMethods.BrushPitch);
-            RegisterApiCommand(script, "turtle.turn.z", (Action<float>)ApiMethods.BrushRoll);
-            RegisterApiCommand(script, "turtle.look.at", (Action<Vector3>)ApiMethods.BrushLookAt);
-            RegisterApiCommand(script, "turtle.look.forwards", (Action)ApiMethods.BrushLookForwards);
-            RegisterApiCommand(script, "turtle.look.up", (Action)ApiMethods.BrushLookUp);
-            RegisterApiCommand(script, "turtle.look.down", (Action)ApiMethods.BrushLookDown);
-            RegisterApiCommand(script, "turtle.look.left", (Action)ApiMethods.BrushLookLeft);
-            RegisterApiCommand(script, "turtle.look.right", (Action)ApiMethods.BrushLookRight);
-            RegisterApiCommand(script, "turtle.look.backwards", (Action)ApiMethods.BrushLookBackwards);
-            RegisterApiCommand(script, "turtle.home.reset", (Action)ApiMethods.BrushHome);
-            RegisterApiCommand(script, "turtle.home.set", (Action)ApiMethods.BrushSetHome);
-            RegisterApiCommand(script, "turtle.transform.push", (Action)ApiMethods.BrushTransformPush);
-            RegisterApiCommand(script, "turtle.transform.pop", (Action)ApiMethods.BrushTransformPop);
+            RegisterApiCommand(script, "turtle.turnY", (Action<float>)ApiMethods.BrushYaw);
+            RegisterApiCommand(script, "turtle.turnX", (Action<float>)ApiMethods.BrushPitch);
+            RegisterApiCommand(script, "turtle.turnZ", (Action<float>)ApiMethods.BrushRoll);
+            RegisterApiCommand(script, "turtle.lookAt", (Action<Vector3>)ApiMethods.BrushLookAt);
+            RegisterApiCommand(script, "turtle.lookForwards", (Action)ApiMethods.BrushLookForwards);
+            RegisterApiCommand(script, "turtle.lookUp", (Action)ApiMethods.BrushLookUp);
+            RegisterApiCommand(script, "turtle.lookDown", (Action)ApiMethods.BrushLookDown);
+            RegisterApiCommand(script, "turtle.lookLeft", (Action)ApiMethods.BrushLookLeft);
+            RegisterApiCommand(script, "turtle.lookRight", (Action)ApiMethods.BrushLookRight);
+            RegisterApiCommand(script, "turtle.lookBackwards", (Action)ApiMethods.BrushLookBackwards);
+            RegisterApiCommand(script, "turtle.homeReset", (Action)ApiMethods.BrushHome);
+            RegisterApiCommand(script, "turtle.homeSet", (Action)ApiMethods.BrushSetHome);
+            RegisterApiCommand(script, "turtle.transformPush", (Action)ApiMethods.BrushTransformPush);
+            RegisterApiCommand(script, "turtle.transformPop", (Action)ApiMethods.BrushTransformPop);
 
             // Another collision?
             // RegisterApiCommand(script, "select.all", (Action)ApiMethods.SelectAll);
@@ -499,22 +500,26 @@ namespace TiltBrush
         public void _RegisterToApi(Script script, string cmd, object action)
         {
             var parts = cmd.Split(".");
-            Table currentTable = script.Globals;
-            for (var index = 0; index < parts.Length; index++)
+            var tbl = script.Globals.Get(parts[0]);
+            if (Equals(tbl, DynValue.Nil))
             {
-                var part = parts[index];
-                if (index < parts.Length - 1)
-                {
-                    if (Equals(currentTable.Get(part), DynValue.Nil))
-                    {
-                        currentTable.Set(part, DynValue.NewTable(new Table(script)));
-                    }
-                    currentTable = currentTable.Get(part).Table;
-                }
-                else
-                {
-                    currentTable[part] = action;
-                }
+                script.Globals.Set(parts[0], DynValue.NewTable(new Table(script)));
+                tbl = script.Globals.Get(parts[0]);
+            }
+            else if (tbl.Type!=DataType.Table)
+            {
+                Debug.LogError($"Probably a namespace clash with {cmd}. {parts[0]} is type {script.Globals.Get(parts[0]).Type}");
+                return;
+            }
+            var entry = tbl.Table.Get(parts[1]);
+            if (Equals(entry, DynValue.Nil))
+            {
+                tbl.Table[parts[1]] = action;
+            }
+            else
+            {
+                Debug.LogError($"Redefined {cmd}. {parts[1]} is already defined as {entry.Type}");
+                return;
             }
         }
 
@@ -626,8 +631,7 @@ namespace TiltBrush
         {
             int ActualMod(int x, int m) => (x % m + m) % m;
             if (Scripts[category].Count == 0) return;
-            ActiveScripts[category] += increment;
-            int index = ActualMod(ActiveScripts[category], Scripts[category].Count);
+            int index = ActualMod(ActiveScripts[category] + increment, Scripts[category].Count);
             _SetActiveScript(category, index);
         }
 
@@ -643,27 +647,15 @@ namespace TiltBrush
             // App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
         }
 
+        public void InitScriptOnce(Script script)
+        {
+            script.Options.DebugPrint = LogLuaMessage;
+            RegisterApiClasses(script);
+            SetStaticScriptContext(script);
+        }
 
         public void InitScript(Script script)
         {
-            // Redirect "print"
-            script.Options.DebugPrint = LogLuaMessage;
-
-            // // Automatic reg
-            // var libraries = Resources.LoadAll<TextAsset>("LuaLibraries");
-            // foreach (var library in libraries)
-            // {
-            //     Debug.Log($"Loaded lua library {library.name}");
-            //     script.DoString(library.text);
-            // }
-
-            RegisterApiClasses(script);
-
-            // UserData.RegisterType<Vector2>();
-            // UserData.RegisterType<Vector4>();
-            // UserData.RegisterType<Mathf>();
-            // UserData.RegisterType<Quaternion>();
-
             var configs = GetWidgetConfigs(script);
             foreach (var config in configs.Pairs)
             {
@@ -671,7 +663,6 @@ namespace TiltBrush
                 // Ensure the value is set
                 GetOrSetWidgetCurrentValue(script, config);
             }
-            SetStaticScriptContext(script);
             _CallScript(script, "Start");
         }
 
