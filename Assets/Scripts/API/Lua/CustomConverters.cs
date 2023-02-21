@@ -211,7 +211,7 @@ public static class LuaCustomConverters
                     r = (float)table.Get("r").Number;
                     g = (float)table.Get("g").Number;
                     b = (float)table.Get("b").Number;
-                    a = (float)table.Get("a").Number;
+                    a = Equals(table.Get("a"), DynValue.Nil) ? 1 : (float)table.Get("a").Number;
                 }
                 else
                 {
@@ -219,7 +219,7 @@ public static class LuaCustomConverters
                     r = (float)table.Get(1).Number;
                     g = (float)table.Get(2).Number;
                     b = (float)table.Get(3).Number;
-                    a = (float)table.Get(4).Number;
+                    a = Equals(table.Get(4), DynValue.Nil) ? 1 : (float)table.Get(4).Number;
                 }
                 return new Color(r, g, b, a);
             }
