@@ -1079,19 +1079,22 @@ namespace TiltBrush
                             m_SketchSurfacePanel.GetReticleTransform(out vPointerPos, out vPointerForward,
                                 (m_ControlsType == ControlsType.ViewingOnly));
 
-                            // Quaternion vPointerRot = Quaternion.identity;
-                            //
-                            // LuaManager.Instance.RecordPointerPositions(
-                            //     vPointerPos, vPointerRot,
-                            //     vPointerPos, vPointerRot, // No wand transform so use brush
-                            //     ViewpointScript.Head.position, ViewpointScript.Head.rotation
-                            // );
-                            //
-                            // if (LuaManager.Instance.PointerScriptsEnabled)
-                            // {
-                            //     LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
-                            // }
-                            // vPointerForward = vPointerRot * vPointerForward;
+                            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+                            {
+                                Quaternion vPointerRot = Quaternion.identity;
+
+                                LuaManager.Instance.RecordPointerPositions(
+                                    vPointerPos, vPointerRot,
+                                    vPointerPos, vPointerRot, // No wand transform so use brush
+                                    ViewpointScript.Head.position, ViewpointScript.Head.rotation
+                                );
+
+                                if (LuaManager.Instance.PointerScriptsEnabled)
+                                {
+                                    LuaManager.Instance.ApplyPointerScript(Quaternion.identity, ref vPointerPos, ref vPointerRot);
+                                }
+                                vPointerForward = vPointerRot * vPointerForward;
+                            }
 
                             PointerManager.m_Instance.SetMainPointerPosition(vPointerPos);
                             PointerManager.m_Instance.SetMainPointerForward(vPointerForward);
