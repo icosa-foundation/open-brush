@@ -174,7 +174,7 @@ namespace TiltBrush
             // When the pointer manager is processing our line, don't stomp its position.
             if (!PointerManager.m_Instance.IsMainPointerProcessingLine())
             {
-                PositionPointer();
+                // PositionPointer();
             }
         }
 

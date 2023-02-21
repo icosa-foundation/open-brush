@@ -216,13 +216,13 @@ namespace TiltBrush
             }
         }
 
-        void Update()
-        {
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
-            {
-                OnNewPoses();
-            }
-        }
+        // void Update()
+        // {
+        //     if (App.Config.m_SdkMode == SdkMode.UnityXR)
+        //     {
+        //         OnNewPoses();
+        //     }
+        // }
 
         void OnDestroy()
         {
