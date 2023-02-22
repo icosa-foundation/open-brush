@@ -25,7 +25,7 @@ namespace TiltBrush
         public async Task<RemoteSketch[]> FetchSketchPageAsync(int page)
         {
             Debug.Log($"Fetching rss stream {m_Uri.AbsoluteUri}");
-            await using var stream = await App.HttpClient.GetStreamAsync(m_Uri).ConfigureAwait(false);
+            var stream = await App.HttpClient.GetStreamAsync(m_Uri).ConfigureAwait(false);
             Debug.Log("Got stream");
             using var xmlReader = XmlReader.Create(stream);
             Debug.Log("Loading feed");
