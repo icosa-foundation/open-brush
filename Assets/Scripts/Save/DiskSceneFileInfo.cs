@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using Newtonsoft.Json;
 #if USE_DOTNETZIP
@@ -238,7 +239,7 @@ namespace TiltBrush
         /// Returns a readable stream to a pre-existing subfile,
         /// or null if the subfile does not exist,
         /// or null if the file format is invalid.
-        public Stream GetReadStream(string subfileName)
+        public async Task<Stream> GetReadStreamAsync(string subfileName)
         {
             if (!Valid)
             {

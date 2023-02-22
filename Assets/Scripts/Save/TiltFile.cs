@@ -14,7 +14,9 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using UnityEngine;
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
@@ -258,11 +260,19 @@ namespace TiltBrush
             }
         }
 
-        private string m_Fullpath;
+        private readonly string m_Fullpath;
+        private readonly Uri m_Uri;
 
         public TiltFile(string fullpath)
         {
-            m_Fullpath = fullpath;
+            m_Fullpath = fullpath ?? throw new InvalidDataException("TiltFile path cannot be null.");
+            m_Uri = null;
+        }
+
+        public TiltFile(Uri uri)
+        {
+            m_Uri = uri ?? throw new InvalidDataException("TiltFile URI cannot be null.");
+            m_Fullpath = null;
         }
 
         private static TiltZipHeader ReadTiltZipHeader(Stream s)
@@ -281,83 +291,47 @@ namespace TiltBrush
         /// Returns a readable stream to a pre-existing subfile,
         /// or null if the subfile does not exist,
         /// or null if the file format is invalid.
-        public Stream GetReadStream(string subfileName)
+        public async Task<Stream> GetReadStreamAsync(string subfileName)
         {
-            if (File.Exists(m_Fullpath))
+            Stream stream;
+            if (m_Fullpath != null)
             {
-                // It takes a long time to figure out a file isn't a .zip, so it's worth the
-                // price of a quick check up-front
-                if (!IsHeaderValid())
+                // If we have been initialized with a filename, it could point to a .tilt file
+                // or a directory - if it's a directory we just hand a stream to the subfile back.
+                if (Directory.Exists(m_Fullpath) && IsDirectoryHeaderValid(m_Fullpath))
                 {
-                    return null;
-                }
-                try
-                {
-                    return new ZipSubfileReader(m_Fullpath, subfileName);
-                }
-                catch (ZipLibrary.ZipException e)
-                {
-                    Debug.LogFormat("{0}", e);
-                    return null;
-                }
-                catch (FileNotFoundException)
-                {
-                    return null;
-                }
-            }
-
-            string fullPath = Path.Combine(m_Fullpath, subfileName);
-            try
-            {
-                return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
-            }
-            catch (FileNotFoundException)
-            {
-                return null;
-            }
-        }
-
-        public bool IsHeaderValid()
-        {
-            if (File.Exists(m_Fullpath))
-            {
-                try
-                {
-                    using (var stream = new FileStream(m_Fullpath, FileMode.Open, FileAccess.Read))
+                    string fullPath = Path.Combine(m_Fullpath, subfileName);
+                    try
                     {
-                        var header = ReadTiltZipHeader(stream);
-                        if (header.sentinel != TILT_SENTINEL || header.headerVersion != HEADER_VERSION)
-                        {
-                            Debug.LogFormat("Bad .tilt sentinel or header: {0}", m_Fullpath);
-                            return false;
-                        }
-                        if (header.headerSize < HEADER_SIZE)
-                        {
-                            Debug.LogFormat("Unexpected header length: {0}", m_Fullpath);
-                            return false;
-                        }
-                        stream.Seek(header.headerSize - HEADER_SIZE, SeekOrigin.Current);
-                        if ((new BinaryReader(stream)).ReadUInt32() != PKZIP_SENTINEL)
-                        {
-                            Debug.LogFormat("Zip sentinel not found: {0}", m_Fullpath);
-                            return false;
-                        }
-                        return true;
+                        return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        return null;
                     }
                 }
-                catch (UnauthorizedAccessException)
+                else
                 {
-                    Debug.LogFormat("File does not have read permissions: {0}", m_Fullpath);
-                    return false;
-                }
-                catch (IOException)
-                {
-                    // Might be a temporary thing (eg sharing violation); being conservative for now
-                    return false;
+                    stream = File.OpenRead(m_Fullpath);
                 }
             }
+            else
+            {
+                stream = await App.HttpClient.GetStreamAsync(m_Uri);
+            }
 
-            if (Directory.Exists(m_Fullpath))
+            if (stream != null)
+            {
+                ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
+                var zipEntry = archive.GetEntry(subfileName);
+                return zipEntry?.Open();
+            }
+            return null;
+        }
+
+        public bool IsDirectoryHeaderValid(string path)
+        {
+            if (Directory.Exists(path))
             {
                 // Directories don't have a header but we can do some roughly-equivalent
                 // sanity-checking
@@ -368,6 +342,57 @@ namespace TiltBrush
             return false;
         }
 
+        public bool IsHeaderValid()
+        {
+            if (m_Fullpath != null)
+            {
+                if (File.Exists(m_Fullpath))
+                {
+                    return IsHeaderValid(File.OpenRead(m_Fullpath));
+                }
+                return IsDirectoryHeaderValid(m_Fullpath);
+            }
+            else
+            {
+                // TODO: Fix this!
+                return true;
+            }
+        }
+
+        public bool IsHeaderValid(Stream stream)
+        {
+            try
+            {
+                var header = ReadTiltZipHeader(stream);
+                if (header.sentinel != TILT_SENTINEL || header.headerVersion != HEADER_VERSION)
+                {
+                    Debug.LogFormat("Bad .tilt sentinel or header: {0}", m_Fullpath);
+                    return false;
+                }
+                if (header.headerSize < HEADER_SIZE)
+                {
+                    Debug.LogFormat("Unexpected header length: {0}", m_Fullpath);
+                    return false;
+                }
+                stream.Seek(header.headerSize - HEADER_SIZE, SeekOrigin.Current);
+                if ((new BinaryReader(stream)).ReadUInt32() != PKZIP_SENTINEL)
+                {
+                    Debug.LogFormat("Zip sentinel not found: {0}", m_Fullpath);
+                    return false;
+                }
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Debug.LogFormat("File does not have read permissions: {0}", m_Fullpath);
+                return false;
+            }
+            catch (IOException)
+            {
+                // Might be a temporary thing (eg sharing violation); being conservative for now
+                return false;
+            }
+        }
     }
 
 } // namespace TiltBrush

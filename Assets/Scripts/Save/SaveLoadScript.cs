@@ -517,14 +517,14 @@ namespace TiltBrush
 
         static public Stream GetMetadataReadStream(SceneFileInfo fileInfo)
         {
-            var stream = fileInfo.GetReadStream(TiltFile.FN_METADATA);
+            var stream = fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA).Result;
             if (stream != null)
             {
                 return stream;
             }
             else
             {
-                return fileInfo.GetReadStream(TiltFile.FN_METADATA_LEGACY);
+                return fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA_LEGACY).Result;
             }
         }
 
@@ -695,7 +695,7 @@ namespace TiltBrush
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch
-                using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
+                using (var stream = fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH).Result)
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;

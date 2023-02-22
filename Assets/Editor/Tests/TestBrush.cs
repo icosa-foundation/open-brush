@@ -121,7 +121,7 @@ namespace TiltBrush
                 metadata = serializer.Deserialize<SketchMetadata>(jsonReader);
             }
 
-            using (var stream = file.GetReadStream(TiltFile.FN_SKETCH))
+            using (var stream = file.GetReadStreamAsync(TiltFile.FN_SKETCH).Result)
             {
                 var bufferedStream = new BufferedStream(stream, 4096);
                 return SketchWriter.GetStrokes(

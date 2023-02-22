@@ -30,7 +30,7 @@ namespace TiltBrush
         /// Synchronously read thumbnail. Returns null on error.
         public static byte[] ReadThumbnail(SceneFileInfo fileinfo)
         {
-            using (Stream s = fileinfo.GetReadStream(TiltFile.FN_THUMBNAIL))
+            using (Stream s = fileinfo.GetReadStreamAsync(TiltFile.FN_THUMBNAIL).Result)
             {
                 if (s == null) { return null; }
                 byte[] buffer = new byte[32 * 1024];

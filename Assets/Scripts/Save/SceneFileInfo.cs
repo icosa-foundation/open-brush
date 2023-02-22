@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.IO;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -23,7 +24,7 @@ namespace TiltBrush
         None
     }
 
-    /// SceneFileInfo is a reference to a tilt file stored somewhere, and accessed via GetReadStream.
+    /// SceneFileInfo is a reference to a tilt file stored somewhere, and accessed via GetReadStreamAsync.
     public interface SceneFileInfo
     {
         FileInfoType InfoType { get; }
@@ -63,7 +64,7 @@ namespace TiltBrush
         bool IsHeaderValid();
 
         /// Get a stream for a specific part of the file.  Subfilenames are defined in TiltFile.
-        Stream GetReadStream(string subfileName);
+        Task<Stream> GetReadStreamAsync(string subfileName);
     }
 
 } // namespace TiltBrush

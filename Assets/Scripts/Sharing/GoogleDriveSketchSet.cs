@@ -119,9 +119,9 @@ namespace TiltBrush
                 return true; // TODO
             }
 
-            public Stream GetReadStream(string subfileName)
+            public Task<Stream> GetReadStreamAsync(string subfileName)
             {
-                return m_TiltFile.GetReadStream(subfileName);
+                return m_TiltFile.GetReadStreamAsync(subfileName);
             }
 
             public IEnumerator LoadThumbnail()

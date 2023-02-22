@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace TiltBrush
@@ -902,9 +903,10 @@ namespace TiltBrush
         // Not part of the interface
         public int? TriangleCount => m_GltfTriangleCount;
 
-        public Stream GetReadStream(string subfileName)
+        public Task<Stream> GetReadStreamAsync(string subfileName)
         {
-            return m_DownloadedFile.GetReadStream(subfileName);
+            return m_DownloadedFile.GetReadStreamAsync(subfileName);
+
         }
 
         // Not part of the interface

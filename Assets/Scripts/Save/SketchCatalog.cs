@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace TiltBrush
         Curated,
         Liked,
         Drive,
+        Async,
     }
 
     // SketchCatalog.Awake must come after App.Awake
@@ -63,7 +65,8 @@ namespace TiltBrush
             m_Sets = new SketchSet[]
             {
                 new FileSketchSet(),
-                new FileSketchSet(App.FeaturedSketchesPath()),
+                //new FileSketchSet(App.FeaturedSketchesPath()),
+                new AsyncWrapperSketchSet(new RssSketchSetAsync(new Uri("https://heavenly-upbeat-scorpion.glitch.me/sketches.rss"))),
                 new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
