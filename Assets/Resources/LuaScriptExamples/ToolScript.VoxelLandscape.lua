@@ -36,7 +36,7 @@ function WhileTriggerPressed()
 end
 
 function Quantize(val, size)
-    return Mathf.Round(val / size) * size
+    return unityMathf.round(val / size) * size
 end
 
 function Cube(cell, bottom, top, gridSize)

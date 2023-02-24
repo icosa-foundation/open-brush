@@ -207,6 +207,28 @@ namespace TiltBrush
             ApiManager.Instance.BrushPosition = position;
         }
 
+        [ApiEndpoint("brush.move.to.hand", "Moves the brush to the given hand (l or r")]
+        public static void BrushMoveToHand(string hand, bool alsoRotate=false)
+        {
+            Transform tr;
+            if (hand.ToLower().StartsWith("l"))
+            {
+                tr = InputManager.Wand.Transform;
+
+            }
+            else
+            {
+                tr = PointerManager.m_Instance.MainPointer.transform;
+            }
+
+            ApiManager.Instance.BrushPosition = tr.position;
+
+            if (alsoRotate)
+            {
+                ApiManager.Instance.BrushRotation = tr.rotation;
+            }
+        }
+
         [ApiEndpoint("brush.move.by", "Moves the brush by the given amount")]
         public static void BrushMoveBy(Vector3 offset)
         {

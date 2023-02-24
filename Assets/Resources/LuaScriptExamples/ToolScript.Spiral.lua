@@ -13,7 +13,7 @@ function OnTriggerReleased()
     for i = 0, 1, 1/totalSteps do
         angle = math.pi * 2 * turns * i
         pos = {math.cos(angle) * i, math.sin(angle) * i, -(i * 2) + 1}
-        rot = {0, angle * Mathf.Rad2Deg, 0}
+        rot = {0, angle * unityMathf.rad2Deg, 0}
         table.insert(points, {pos, rot})
     end
     return points

@@ -5,9 +5,9 @@
 }
 
 function WhileTriggerPressed()
-    noiseX = -0.5 + Mathf.PerlinNoise(frequency * brush.position.x - 100, frequency * brush.position.z)
-    noiseY = -0.5 + Mathf.PerlinNoise(frequency * brush.position.x, frequency * brush.position.z)
-    noiseZ = -0.5 + Mathf.PerlinNoise(frequency * brush.position.x + 100, frequency * brush.position.z)
+    noiseX = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x - 100, frequency * brush.position.z)
+    noiseY = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x, frequency * brush.position.z)
+    noiseZ = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x + 100, frequency * brush.position.z)
     return {
         position = {noiseX * positionAmount, noiseY * positionAmount, noiseZ * positionAmount},
         rotation =  {noiseX * rotationAmount, noiseY * rotationAmount, noiseZ * rotationAmount}

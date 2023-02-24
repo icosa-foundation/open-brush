@@ -220,7 +220,7 @@ namespace TiltBrush
             if (string.IsNullOrEmpty(msg)) msg = e.Message;
             string errorMsg = $"{script.Globals.Get("ScriptName").String}:{fnName}:{msg}";
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
-            Debug.LogError(errorMsg);
+            Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
 
         public void LogLuaMessage(string s)
@@ -265,7 +265,7 @@ namespace TiltBrush
             RegisterApiCommand(script, "draw.polygon", (Action<int, float, float>)ApiMethods.DrawPolygon);
             RegisterApiCommand(script, "draw.text", (Action<string>)ApiMethods.Text);
             RegisterApiCommand(script, "draw.svg", (Action<string>)ApiMethods.SvgPath);
-            RegisterApiCommand(script, "draw.camerapath", (Action<int>)ApiMethods.DrawCameraPath);
+            RegisterApiCommand(script, "draw.cameraPath", (Action<int>)ApiMethods.DrawCameraPath);
 
             RegisterApiCommand(script, "strokes.delete", (Action<int>)ApiMethods.DeleteStroke);
             RegisterApiCommand(script, "strokes.select", (Action<int>)ApiMethods.SelectStroke);
@@ -326,15 +326,15 @@ namespace TiltBrush
             RegisterApiCommand(script, "drafting.hidden", (Action)ApiMethods.DraftingHidden);
 
             RegisterApiCommand(script, "symmetry.mirror", (Action)ApiMethods.SymmetryPlane);
-            RegisterApiCommand(script, "symmetry.doublemirror", (Action)ApiMethods.SymmetryFour);
-            RegisterApiCommand(script, "symmetry.twohandeded", (Action)ApiMethods.SymmetryTwoHanded);
+            RegisterApiCommand(script, "symmetry.doubleMirror", (Action)ApiMethods.SymmetryFour);
+            RegisterApiCommand(script, "symmetry.twoHandeded", (Action)ApiMethods.SymmetryTwoHanded);
             RegisterApiCommand(script, "symmetry.setPosition", (Action<Vector3>)ApiMethods.SymmetrySetPosition);
             RegisterApiCommand(script, "symmetry.setTransform", (Action<Vector3, Vector3>)ApiMethods.SymmetrySetTransform);
-            RegisterApiCommand(script, "symmetry.summonwidget", (Action)ApiMethods.SummonMirror);
+            RegisterApiCommand(script, "symmetry.summonWidget", (Action)ApiMethods.SummonMirror);
 
             RegisterApiCommand(script, "camerapath.render", (Action)ApiMethods.RenderCameraPath);
-            RegisterApiCommand(script, "camerapath.togglevisuals", (Action)ApiMethods.ToggleCameraPathVisuals);
-            RegisterApiCommand(script, "camerapath.togglepreview", (Action)ApiMethods.ToggleCameraPathPreview);
+            RegisterApiCommand(script, "camerapath.toggleVisuals", (Action)ApiMethods.ToggleCameraPathVisuals);
+            RegisterApiCommand(script, "camerapath.togglePreview", (Action)ApiMethods.ToggleCameraPathPreview);
             RegisterApiCommand(script, "camerapath.delete", (Action)ApiMethods.DeleteCameraPath);
             RegisterApiCommand(script, "camerapath.record", (Action)ApiMethods.RecordCameraPath);
 
@@ -356,27 +356,6 @@ namespace TiltBrush
             // RegisterApiCommand(script, "open.liked", (Action<int>)ApiMethods.LoadLiked);
             // RegisterApiCommand(script, "open.drive", (Action<int>)ApiMethods.LoadDrive);
             // RegisterApiCommand(script, "sketch.exportSelected", (Action)ApiMethods.SaveModel);
-
-            RegisterApiCommand(script, "application.undo", (Action)ApiMethods.Undo);
-            RegisterApiCommand(script, "application.redo", (Action)ApiMethods.Redo);
-            RegisterApiCommand(script, "application.addListener", (Action<string>)ApiMethods.AddListener);
-            RegisterApiCommand(script, "application.resetPanels", (Action)ApiMethods.ResetAllPanels);
-            RegisterApiCommand(script, "application.showScriptsFolder", (Action)ApiMethods.OpenUserScriptsFolder);
-            RegisterApiCommand(script, "application.showExportFolder", (Action)ApiMethods.OpenExportFolder);
-            RegisterApiCommand(script, "application.showSketchesFolder", (Action<int>)ApiMethods.ShowSketchFolder);
-            RegisterApiCommand(script, "application.StraightEdge", (Action<bool>)LuaApiMethods.StraightEdge);
-            RegisterApiCommand(script, "application.AutoOrient", (Action<bool>)LuaApiMethods.AutoOrient);
-            RegisterApiCommand(script, "application.ViewOnly", (Action<bool>)LuaApiMethods.ViewOnly);
-            RegisterApiCommand(script, "application.AutoSimplify", (Action<bool>)LuaApiMethods.AutoSimplify);
-            RegisterApiCommand(script, "application.Disco", (Action<bool>)LuaApiMethods.Disco);
-            RegisterApiCommand(script, "application.Profiling", (Action<bool, bool>)LuaApiMethods.Profiling);
-            RegisterApiCommand(script, "application.PostProcessing", (Action<bool>)LuaApiMethods.PostProcessing);
-            RegisterApiCommand(script, "application.Watermark", (Action<bool>)LuaApiMethods.Watermark);
-            // TODO Unified API for tools and panels
-            // RegisterApiCommand(script, "application.SettingsPanel", (Action<bool>)LuaApiMethods.SettingsPanel);
-            // RegisterApiCommand(script, "application.SketchOrigin", (Action<bool>)LuaApiMethods.SketchOrigin);
-
-            RegisterApiCommand(script, "application.setEnvironment", (Action<string>)ApiMethods.SetEnvironment);
 
             RegisterApiCommand(script, "guides.add", (Action<string>)ApiMethods.AddGuide);
             RegisterApiCommand(script, "guides.disable", (Action)ApiMethods.StencilsDisable);
@@ -471,7 +450,12 @@ namespace TiltBrush
                 {
                     AutoCompleteEntries.Add($"{prefix}.{prop.Name} = nil");
                 }
-                foreach (var prop in t.GetMethods())
+                foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
+                    .Where(x =>
+                        x.Name.ToString() != "Equals" &&
+                        x.Name.ToString() != "GetHashCode" &&
+                        x.Name.ToString() != "GetType" &&
+                        x.Name.ToString() != "ToString"))
                 {
                     string paramNames = "";
                     var paramNameList = prop.GetParameters().Select(p => p.Name);
@@ -668,12 +652,17 @@ namespace TiltBrush
 
         public void RegisterApiClasses(Script script)
         {
-            RegisterApiClass(script, "Mathf", typeof(MathfApiWrapper));
-            RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
-            RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
-            RegisterApiClass(script, "wand", typeof(WandApiWrapper));
+            // RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
+            RegisterApiClass(script, "unityMathf", typeof(MathfApiWrapper));
+            RegisterApiClass(script, "unityQuaternion", typeof(QuaternionApiWrapper));
+            // RegisterApiClass(script, "unityVector2", typeof(Vector2ApiWrapper));
+            RegisterApiClass(script, "unityVector3", typeof(Vector3ApiWrapper));
+
             RegisterApiClass(script, "app", typeof(AppApiWrapper));
+            RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "canvas", typeof(CanvasApiWrapper));
+            RegisterApiClass(script, "wand", typeof(WandApiWrapper));
+            RegisterApiClass(script, "widget", typeof(WidgetApiWrapper));
         }
 
         public void EnablePointerScript(bool enable)

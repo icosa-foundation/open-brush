@@ -20,5 +20,5 @@ function WhileTriggerPressed()
 end
 
 function GetHeight(x, y)
-    return Mathf.PerlinNoise(x * scale, y * scale) * height + offset;
+    return unityMathf.perlinNoise(x * scale, y * scale) * height + offset;
 end

@@ -13,9 +13,9 @@ function WhileTriggerPressed()
     pos = brush.position
     oldpos = brush.pastPosition(delay)
     pos = {
-        Mathf.LerpUnclamped(oldpos.x, pos.x, mix),
-        Mathf.LerpUnclamped(oldpos.y, pos.y, mix),
-        Mathf.LerpUnclamped(oldpos.z, pos.z, mix),
+        unityMathf.lerpUnclamped(oldpos.x, pos.x, mix),
+        unityMathf.lerpUnclamped(oldpos.y, pos.y, mix),
+        unityMathf.lerpUnclamped(oldpos.z, pos.z, mix),
     }
     rot = brush.rotation
     return {pos, rot}

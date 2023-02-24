@@ -29,3 +29,6 @@ function Main()
 
     return pointers
 end
+function End()
+    brush.forcePaintingOff(false)
+end

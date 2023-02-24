@@ -68,6 +68,12 @@ namespace TiltBrush
             }
         }
 
+        public void Spin(Vector3 velocity)
+        {
+            AngularVelocity_GS = velocity;
+            m_IsSpinningFreely = true;
+        }
+
         public override Vector3 CustomDimension
         {
             get { return m_AngularVelocity_LS; }

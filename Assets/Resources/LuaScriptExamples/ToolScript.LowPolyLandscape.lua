@@ -34,7 +34,7 @@ function WhileTriggerPressed()
 end
 
 function Quantize(val, size)
-    return Mathf.Round(val / size) * size
+    return unityMathf.round(val / size) * size
 end
 
 function Patch(cell, gridSize)
@@ -58,5 +58,5 @@ function Patch(cell, gridSize)
 end
 
 function GetHeight(x, y)
-    return Mathf.PerlinNoise(x * scale, y * scale) * height + offset;
+    return unityMathf.perlinNoise(x * scale, y * scale) * height + offset;
 end
