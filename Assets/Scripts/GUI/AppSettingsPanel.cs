@@ -28,9 +28,37 @@ namespace TiltBrush
             m_ToggleExperimentalModeToggle.m_IsToggledOn = App.Config.GetIsExperimental();
         }
 
+        public void HandleToggleHandedness(ToggleButton btn)
+        {
+            InputManager.m_Instance.WandOnRight = !btn.m_IsToggledOn;
+        }
+
+        public void HandleResetFirstUse()
+        {
+            if (!PanelManager.m_Instance.AdvancedModeActive())
+            {
+                // Switch back to beginner mode
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.AdvancedPanelsToggle
+                );
+            }
+            App.Config.SetIsExperimental(false);
+            PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
+            RestartNotification();
+        }
+
         public void HandleToggleExperimentalMode(ToggleButton btn)
         {
             App.Config.SetIsExperimental(btn.m_IsToggledOn);
+            RestartNotification();
+        }
+
+        private void RestartNotification()
+        {
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                $"Please restart Open Brush",
+                fPopScalar: 0.5f, false);
         }
     }
 } // namespace TiltBrush
