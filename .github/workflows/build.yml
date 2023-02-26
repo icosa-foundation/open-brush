@@ -518,9 +518,7 @@ jobs:
     needs: [configuration, build]
     runs-on: ubuntu-latest
     if:
-      github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      github.event_name == 'pull_request'
     steps:
       - name: "Build Changelog"
         id: changelog
