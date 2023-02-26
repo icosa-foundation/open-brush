@@ -550,7 +550,7 @@ jobs:
                     "labels": []
                 }
               ],
-              "pr_template": "- #{{TITLE}} (PR #{{URL}} by @#{{AUTHOR}})\n    - ${{BODY}}\n",
+              "pr_template": "- #{{TITLE}} (PR #{{URL}} by @#{{AUTHOR}})\n    - #{{BODY}}\n",
               "template": "# Changelog from #{{FROM_TAG}} to #{{TO_TAG}}\n\nFull release details: #{{RELEASE_DIFF}}\n\n",
             }
 
