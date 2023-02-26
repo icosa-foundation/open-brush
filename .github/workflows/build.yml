@@ -558,19 +558,20 @@ jobs:
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: |
-          mkdir -p alternate-and-experimental-builds/automatic-release-notes/
-          echo "$CHANGELOG" | tee alternate-and-experimental-builds/automatic-release-notes/automatic-changelog.md
+          mkdir -p changelog/
+          echo "$CHANGELOG" | tee changelog/automatic-changelog.md
 
       - name: Publish release notes
         uses: cpina/github-action-push-to-another-repository@composite-1.5.1
         env:
           SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         with:
-          source-directory: 'alternate-and-experimental-builds/automatic-release-notes/'
+          source-directory: 'changelog/'
+          target-directory: 'alternate-and-experimental-builds/automatic-release-notes/'
           destination-github-username: 'icosa-gallery'
           destination-repository-name: 'open-brush-docs'
           user-email: automatic-release@icosa
-          target-branch: main
+          target-branch: master
 
   publish_steam:
     name: Publish Steam Release
