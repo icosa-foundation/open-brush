@@ -28,7 +28,7 @@ namespace TiltBrush
         static int ICON_LOAD_PER_FRAME = 3;
 
         /// Synchronously read thumbnail. Returns null on error.
-        public static byte[] ReadThumbnail(SceneFileInfo fileinfo)
+        public static byte[] ReadThumbnailAsync(SceneFileInfo fileinfo)
         {
             using (Stream s = fileinfo.GetReadStreamAsync(TiltFile.FN_THUMBNAIL).Result)
             {
@@ -93,7 +93,7 @@ namespace TiltBrush
 
             private IEnumerable RequestLoadIconAndMetadataCoroutineThreaded()
             {
-                var thumbFuture = new Future<byte[]>(() => ReadThumbnail(m_FileInfo));
+                var thumbFuture = new Future<byte[]>(() => ReadThumbnailAsync(m_FileInfo));
                 byte[] data;
                 while (!thumbFuture.TryGetResult(out data)) { yield return null; }
 
@@ -114,15 +114,15 @@ namespace TiltBrush
                 }
                 if (m_Authors == null)
                 {
-                    var metadataFuture = new Future<SketchMetadata>(() => m_FileInfo.ReadMetadata());
+                    var metadataTask = m_FileInfo.ReadMetadataAsync();
                     SketchMetadata metadata;
-                    while (!metadataFuture.TryGetResult(out metadata))
+                    while (!metadataTask.IsCompleted)
                     {
                         yield return null;
                     }
-                    if (metadata != null)
+                    if (metadataTask.IsCompletedSuccessfully)
                     {
-                        m_Authors = metadata.Authors;
+                        m_Authors = metadataTask.Result.Authors;
                     }
                     else
                     {

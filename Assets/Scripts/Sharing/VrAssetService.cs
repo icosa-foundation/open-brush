@@ -739,7 +739,7 @@ namespace TiltBrush
             byte[] thumbnail = SaveLoadScript.m_Instance.GetLastThumbnailBytes();
             if (thumbnail == null)
             {
-                thumbnail = FileSketchSet.ReadThumbnail(fileInfo) ?? new byte[0];
+                thumbnail = FileSketchSet.ReadThumbnailAsync(fileInfo) ?? new byte[0];
             }
 
             return thumbnail;

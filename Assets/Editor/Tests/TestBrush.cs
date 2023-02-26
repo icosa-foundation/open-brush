@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEditor;
@@ -64,13 +65,13 @@ namespace TiltBrush
         }
 
         [OneTimeSetUp]
-        public void RunBeforeAnyTests()
+        public async Task RunBeforeAnyTests()
         {
             m_container = new GameObject("Singletons for TestBrush");
             Coords.AsLocal[m_container.transform] = TrTransform.identity;
 
             var path = Path.Combine(Application.dataPath, "../Support/Sketches/PerfTest/Simple.tilt");
-            m_testStrokes = GetStrokesFromTilt(path);
+            m_testStrokes = await GetStrokesFromTiltAsync(path);
 
             if (DevOptions.I == null)
             {
@@ -103,13 +104,13 @@ namespace TiltBrush
         }
 
         /// Returns strokes read from the passed .tilt file
-        public static List<Stroke> GetStrokesFromTilt(string path)
+        public static async Task<List<Stroke>> GetStrokesFromTiltAsync(string path)
         {
             var file = new DiskSceneFileInfo(path, readOnly: true);
             SketchMetadata metadata;
             using (var jsonReader = new JsonTextReader(
                 new StreamReader(
-                    SaveLoadScript.GetMetadataReadStream(file))))
+                    await SaveLoadScript.GetMetadataReadStreamAsync(file))))
             {
                 // TODO: should cache this?
                 var serializer = new JsonSerializer();
@@ -121,7 +122,7 @@ namespace TiltBrush
                 metadata = serializer.Deserialize<SketchMetadata>(jsonReader);
             }
 
-            using (var stream = file.GetReadStreamAsync(TiltFile.FN_SKETCH).Result)
+            using (var stream = await file.GetReadStreamAsync(TiltFile.FN_SKETCH))
             {
                 var bufferedStream = new BufferedStream(stream, 4096);
                 return SketchWriter.GetStrokes(

@@ -17,6 +17,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
@@ -4078,11 +4079,16 @@ namespace TiltBrush
             m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
         }
 
-        private void MergeBrushStrokes(SceneFileInfo fileInfo)
+        private IEnumerator MergeBrushStrokes(SceneFileInfo fileInfo)
         {
             m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            var loadTask = SaveLoadScript.m_Instance.LoadAsync(fileInfo, true);
+            while (!loadTask.IsCompleted)
+            {
+                yield return null;
+            }
+            if (loadTask.Result)
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
@@ -4096,16 +4102,16 @@ namespace TiltBrush
             }
         }
 
-        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        private IEnumerator LoadSketchCoroutine(SceneFileInfo fileInfo, bool quickload, bool additive)
         {
-            LightsControlScript.m_Instance.DiscoMode = false;
-            m_WidgetManager.FollowingPath = false;
-            m_WidgetManager.CameraPathsVisible = false;
-            m_WidgetManager.DestroyAllWidgets();
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
-            ResetGrabbedPose(everything: true);
-            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
+            var previousState = App.CurrentState;
+            App.Instance.SetDesiredState(quickload ? App.AppState.QuickLoad : App.AppState.Loading);
+            var loadTask = SaveLoadScript.m_Instance.LoadAsync(fileInfo, additive);
+            while (!loadTask.IsCompleted)
+            {
+                yield return null;
+            }
+            if (loadTask.IsCompletedSuccessfully && loadTask.Result)
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -4115,10 +4121,26 @@ namespace TiltBrush
                 // when the app is in the standard mode. That was there to prevent the controller color
                 // from flickering while in the intro mode.
                 App.Instance.ExitIntroSketch();
-                App.Instance.SetDesiredState(quickload ? App.AppState.QuickLoad : App.AppState.Loading);
+            }
+            else
+            {
+                App.Instance.SetDesiredState(previousState);
             }
             QualityControls.m_Instance.ResetAutoQuality();
             m_WidgetManager.ValidateCurrentCameraPath();
+        }
+
+        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        {
+            LightsControlScript.m_Instance.DiscoMode = false;
+            m_WidgetManager.FollowingPath = false;
+            m_WidgetManager.CameraPathsVisible = false;
+            m_WidgetManager.DestroyAllWidgets();
+            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            ResetGrabbedPose(everything: true);
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+
+            StartCoroutine(LoadSketchCoroutine(fileInfo, quickload, additive));
         }
 
         public void IssueGlobalCommand(GlobalCommands rEnum, int iParam1 = -1,
@@ -4224,7 +4246,7 @@ namespace TiltBrush
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
-                            MergeBrushStrokes(rInfo);
+                            StartCoroutine(MergeBrushStrokes(rInfo));
                             if (m_ControlsType != ControlsType.ViewingOnly)
                             {
                                 EatGazeObjectInput();
@@ -4908,7 +4930,7 @@ namespace TiltBrush
         private void LoadNamed(string path, bool quickload, bool additive)
         {
             var fileInfo = new DiskSceneFileInfo(path);
-            fileInfo.ReadMetadata();
+            fileInfo.ReadMetadataAsync();
             if (SaveLoadScript.m_Instance.LastMetadataError != null)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine(

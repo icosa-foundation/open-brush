@@ -305,10 +305,10 @@ namespace TiltBrush
             return m_TiltFile.IsHeaderValid();
         }
 
-        public SketchMetadata ReadMetadata()
+        public async Task<SketchMetadata> ReadMetadataAsync()
         {
             SketchMetadata metadata = null;
-            var stream = SaveLoadScript.GetMetadataReadStream(this);
+            var stream = await SaveLoadScript.GetMetadataReadStreamAsync(this);
             if (stream != null)
             {
                 using (var jsonReader = new JsonTextReader(new StreamReader(stream)))

@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using UnityEngine;
 using Newtonsoft.Json;
 #if USD_SUPPORTED
@@ -282,6 +283,8 @@ namespace TiltBrush
         private DriveAccess m_DriveAccess;
         private DriveSync m_DriveSync;
         private GoogleUserSettings m_GoogleUserSettings;
+
+        private Task<(bool success, TrTransform head, TrTransform scene)> m_OdsTransformTask;
 
         // ------------------------------------------------------------
         // Properties
@@ -824,12 +827,11 @@ namespace TiltBrush
                 && ((m_CurrentAppState == AppState.Loading && !Config.m_QuickLoad)
                 || m_CurrentAppState == AppState.Standard))
             {
-                try
-                {
-                    OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
+                bool needsSecondary = Config.m_SketchFiles.Length > 1;
 
-                    // Load the secondary transform, if a second sketch was specified.
-                    if (Config.m_SketchFiles.Length > 1)
+                if (needsSecondary && (m_OdsTransformTask == null || !m_OdsTransformTask.IsCompleted))
+                {
+                    if (m_OdsTransformTask == null)
                     {
                         string sketch = Config.m_SketchFiles[1];
                         // Assume relative paths are relative to the sketches directory.
@@ -837,54 +839,59 @@ namespace TiltBrush
                         {
                             sketch = System.IO.Path.Combine(App.UserSketchPath(), sketch);
                         }
-                        var head = TrTransform.identity;
-                        var scene = TrTransform.identity;
-                        if (SaveLoadScript.m_Instance.LoadTransformsForOds(new DiskSceneFileInfo(sketch),
-                            ref head,
-                            ref scene))
-                        {
-                            OdsHeadSecondary = head;
-                            OdsSceneSecondary = scene;
-                        }
-                        else
-                        {
-                            Debug.LogErrorFormat("Failed to load secondary sketch for ODS: {0}", sketch);
-                        }
+                        m_OdsTransformTask = SaveLoadScript.m_Instance.LoadTransformsForOds(new DiskSceneFileInfo(sketch));
                     }
-
-                    if (driver.OutputBasename == null || driver.OutputBasename == "")
+                }
+                else
+                {
+                    if (m_OdsTransformTask.IsCompletedSuccessfully && m_OdsTransformTask.Result.success)
                     {
-                        driver.OutputBasename =
-                            FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.SceneFile.HumanName);
+                        OdsHeadSecondary = m_OdsTransformTask.Result.head;
+                        OdsSceneSecondary = m_OdsTransformTask.Result.scene;
+                        m_OdsTransformTask = null;
+                    }
+                    else
+                    {
+                        Debug.LogErrorFormat("Failed to load secondary sketch for ODS: {0}", Config.m_SketchFiles[1]);
+                    }
+                    try
+                    {
+                        OdsDriver driver = m_OdsPivot.GetComponent<OdsDriver>();
+
                         if (driver.OutputBasename == null || driver.OutputBasename == "")
                         {
-                            if (Config.m_SketchFiles.Length > 0)
+                            driver.OutputBasename =
+                                FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.SceneFile.HumanName);
+                            if (driver.OutputBasename == null || driver.OutputBasename == "")
                             {
-                                driver.OutputBasename = System.IO.Path.GetFileNameWithoutExtension(
-                                    Config.m_SketchFiles[0]);
-                            }
-                            else
-                            {
-                                driver.OutputBasename = "Untitled";
+                                if (Config.m_SketchFiles.Length > 0)
+                                {
+                                    driver.OutputBasename = System.IO.Path.GetFileNameWithoutExtension(
+                                        Config.m_SketchFiles[0]);
+                                }
+                                else
+                                {
+                                    driver.OutputBasename = "Untitled";
+                                }
                             }
                         }
-                    }
 
-                    if (driver.OutputFolder == null || driver.OutputFolder == "")
+                        if (driver.OutputFolder == null || driver.OutputFolder == "")
+                        {
+                            driver.OutputFolder = App.VrVideosPath();
+                            FileUtils.InitializeDirectoryWithUserError(driver.OutputFolder);
+                        }
+
+                        InputManager.m_Instance.EnablePoseTracking(false);
+
+                        driver.BeginRender();
+                    }
+                    catch (System.Exception ex)
                     {
-                        driver.OutputFolder = App.VrVideosPath();
-                        FileUtils.InitializeDirectoryWithUserError(driver.OutputFolder);
+                        Debug.LogException(ex);
+                        Application.Quit();
+                        Debug.Break();
                     }
-
-                    InputManager.m_Instance.EnablePoseTracking(false);
-
-                    driver.BeginRender();
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogException(ex);
-                    Application.Quit();
-                    Debug.Break();
                 }
             }
 

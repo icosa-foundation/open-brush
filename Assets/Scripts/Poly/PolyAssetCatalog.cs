@@ -19,6 +19,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
@@ -642,20 +643,21 @@ namespace TiltBrush
         /// coroutine for each found asset.
         private IEnumerator<Null> PrecacheModelsCoroutine(SceneFileInfo sceneFileInfo, string reason)
         {
-            var getIdsFuture = new Future<List<string>>(() => GetModelIds(sceneFileInfo));
-            List<string> ids;
+            var getIdsTask = GetModelIds(sceneFileInfo);
+
             while (true)
             {
-                try
+                if (getIdsTask.IsCompleted)
                 {
-                    if (getIdsFuture.TryGetResult(out ids)) { break; }
-                }
-                catch (FutureFailed e)
-                {
-                    throw new Exception($"While reading {sceneFileInfo}", e);
+                    if (!getIdsTask.IsCompletedSuccessfully)
+                    {
+                        throw new Exception($"While reading {sceneFileInfo}", getIdsTask.Exception);
+                    }
+                    break;
                 }
                 yield return null;
             }
+            var ids = getIdsTask.Result;
 
             if (ids == null) { yield break; }
             List<IEnumerator<Null>> precacheCoroutines = new List<IEnumerator<Null>>();
@@ -686,12 +688,12 @@ namespace TiltBrush
         /// Returns all non-null asset ids from the passed sketch's metadata.
         /// null return value means "empty list".
         /// Raises exception on error.
-        private static List<string> GetModelIds(SceneFileInfo sceneFileInfo)
+        private static async Task<List<string>> GetModelIds(SceneFileInfo sceneFileInfo)
         {
             // Json deserializing is in a separate method that doesn't access Unity objects so that it
             // can be called on a thread. The json deserializing can be pretty slow and can cause
             // frame drops if performed on the main thread.
-            Stream metadata = SaveLoadScript.GetMetadataReadStream(sceneFileInfo);
+            Stream metadata = await SaveLoadScript.GetMetadataReadStreamAsync(sceneFileInfo);
             if (metadata == null)
             {
                 if (sceneFileInfo.Exists)

@@ -515,37 +515,35 @@ namespace TiltBrush
             }
         }
 
-        static public Stream GetMetadataReadStream(SceneFileInfo fileInfo)
+        static public async Task<Stream> GetMetadataReadStreamAsync(SceneFileInfo fileInfo)
         {
-            var stream = fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA).Result;
+            var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA);
             if (stream != null)
             {
                 return stream;
             }
             else
             {
-                return fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA_LEGACY).Result;
+                return await fileInfo.GetReadStreamAsync(TiltFile.FN_METADATA_LEGACY);
             }
         }
 
         // Loads the head and scene trandsforms into the secondary ODS
-        public bool LoadTransformsForOds(SceneFileInfo fileInfo,
-                                         ref TrTransform head,
-                                         ref TrTransform scene)
+        public async Task<(bool success, TrTransform head, TrTransform scene)> LoadTransformsForOds(SceneFileInfo fileInfo)
         {
             if (!fileInfo.IsHeaderValid())
             {
                 OutputWindowScript.m_Instance.AddNewLine(
                     "Could not load transform: {0}", fileInfo.HumanName);
-                return false;
+                return (false, TrTransform.identity, TrTransform.identity);
             }
 
             m_LastSceneIsLegacy = false;
-            Stream metadata = GetMetadataReadStream(fileInfo);
+            Stream metadata = await GetMetadataReadStreamAsync(fileInfo);
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
-                return false;
+                return (false, TrTransform.identity, TrTransform.identity);
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
             {
@@ -562,15 +560,12 @@ namespace TiltBrush
                         OutputWindowScript.m_Instance.AddNewLine(
                             $"Lacking a capability to load {fileInfo.HumanName}. " +
                             $"Upgrade {App.kAppDisplayName}?");
-                        return false;
+                        return (false, TrTransform.identity, TrTransform.identity);
                     }
                 }
 
-                scene = jsonData.SceneTransformInRoomSpace;
-                head = jsonData.ThumbnailCameraTransformInRoomSpace;
+                return (true, jsonData.ThumbnailCameraTransformInRoomSpace, jsonData.SceneTransformInRoomSpace);
             }
-
-            return true;
         }
 
         /// Follows the "force-superseded by" chain until the end is reached, then returns that brush
@@ -592,7 +587,7 @@ namespace TiltBrush
         /// We never noticed before because the duplicate geometry draws on top of itself.
         /// It begins to be noticeable now that loading goes into the active canvas,
         /// which may not be the canvas of the original strokes.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive = false)
+        public async Task<bool> LoadAsync(SceneFileInfo fileInfo, bool bAdditive = false)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
@@ -603,7 +598,7 @@ namespace TiltBrush
             }
 
             m_LastSceneIsLegacy = false;
-            Stream metadata = GetMetadataReadStream(fileInfo);
+            Stream metadata = await GetMetadataReadStreamAsync(fileInfo);
             if (metadata == null)
             {
                 OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
@@ -695,7 +690,7 @@ namespace TiltBrush
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
                 // Load sketch
-                using (var stream = fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH).Result)
+                using (var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
