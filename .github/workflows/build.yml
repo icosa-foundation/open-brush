@@ -514,7 +514,7 @@ jobs:
           files: releases/*
 
   publish_gitbook:
-    name: Publish beta release notes to open-brush-docs
+    name: Publish changelog from last major build to open-brush-docs
     needs: [configuration, build]
     runs-on: ubuntu-latest
     if:
