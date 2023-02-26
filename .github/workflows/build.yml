@@ -550,8 +550,8 @@ jobs:
                     "labels": []
                 }
               ],
-              "template": "# Changelog from #{{FROM_TAG}} to #{{TO_TAG}}\n\nFull release details: #{{RELEASE_DIFF}}\n\n#{{CHANGELOG}}\n\n",
-              "pr_template": "- #{{TITLE}} (PR #{{URL}} by @#{{AUTHOR}})\n"
+              "template": "# Changelog since #{{FROM_TAG}}\n\n[Full release details](#{{RELEASE_DIFF}})\n\n#{{CHANGELOG}}\n\n",
+              "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
             }
 
       - name: Create Changelog file
