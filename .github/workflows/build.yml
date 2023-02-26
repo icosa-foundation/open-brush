@@ -551,14 +551,14 @@ jobs:
                 }
               ],
               "pr_template": "- #{{TITLE}} (PR #{{URL}} by @#{{AUTHOR}})\n    - #{{BODY}}\n",
-              "template": "# Changelog from #{{FROM_TAG}} to #{{TO_TAG}}\n\nFull release details: #{{RELEASE_DIFF}}\n\n",
+              "template": "# Changelog from #{{FROM_TAG}} to #{{TO_TAG}}\n\nFull release details: #{{RELEASE_DIFF}}\n\n"
             }
 
       - name: Create Changelog file
         env:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: |
-          mkdir alternate-and-experimental-builds/automatic-release-notes/
+          mkdir -p alternate-and-experimental-builds/automatic-release-notes/
           echo "$CHANGELOG" | tee alternate-and-experimental-builds/automatic-release-notes/automatic-changelog.md
 
       - name: Publish release notes
