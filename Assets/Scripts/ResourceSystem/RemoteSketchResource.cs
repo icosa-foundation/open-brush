@@ -25,14 +25,17 @@ namespace TiltBrush
 #pragma warning disable 1998
         public async Task InitAsync()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return;
         }
         public async Task<bool> LoadPreviewAsync()
         {
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
+            return false;
         }
         public async Task<Stream> GetStreamAsync()
         {
+            return await App.HttpClient.GetStreamAsync(Uri);
             throw new NotImplementedException();
         }
 #pragma warning restore 1998

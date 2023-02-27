@@ -4124,6 +4124,7 @@ namespace TiltBrush
             }
             else
             {
+                Debug.LogException((loadTask.Exception));
                 App.Instance.SetDesiredState(previousState);
             }
             QualityControls.m_Instance.ResetAutoQuality();

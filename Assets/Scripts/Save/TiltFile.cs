@@ -318,13 +318,37 @@ namespace TiltBrush
             else
             {
                 stream = await App.HttpClient.GetStreamAsync(m_Uri);
+
+                ReadTiltZipHeader(stream);
+
+                string tempFilename;
+                if (!stream.CanSeek)
+                {
+                    // Cache to a file
+                    tempFilename = Path.GetTempFileName();
+                    using (var fileStream = File.Create(tempFilename))
+                    {
+                        await stream.CopyToAsync(fileStream);
+                        fileStream.Close();
+                    }
+                    //Debug.Log($"Copied {m_Uri} to {tempFilename}.");
+                    stream.Close();
+                    stream = File.Open(tempFilename, FileMode.Open);
+                }
             }
 
             if (stream != null)
             {
-                ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-                var zipEntry = archive.GetEntry(subfileName);
-                return zipEntry?.Open();
+                try
+                {
+                    ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
+                    var zipEntry = archive.GetEntry(subfileName);
+                    return zipEntry?.Open();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             return null;
         }

@@ -8,25 +8,27 @@ using FluxJpeg.Core;
 using UnityEngine;
 namespace TiltBrush
 {
-    public class AsyncWrapperSketchSet : SketchSet
+    public class ResourceCollectionSketchSet : SketchSet
     {
-        private ISketchSetAsync m_Async;
+        private IResourceCollection m_Collection;
         private Task m_Init;
         private Task m_LoadingIcons;
         private Task m_Refreshing;
-        private List<RemoteSketch[]> m_SketchPages;
+        private List<RemoteSketch> m_Sketches;
         private Dictionary<int, Texture2D> m_CachedIcons;
         private int m_LookAhead = 40;
         private bool m_FeedExhausted;
         private ConcurrentQueue<int> m_IconsToLoad;
+        private IAsyncEnumerator<IResource> m_ResourceEnumerator;
 
-        public AsyncWrapperSketchSet(ISketchSetAsync async)
+        public ResourceCollectionSketchSet(IResourceCollection collection)
         {
-            m_SketchPages = new List<RemoteSketch[]>();
+            m_Sketches = new List<RemoteSketch>();
             m_IconsToLoad = new ConcurrentQueue<int>();
-            m_Async = async;
+            m_Collection = collection;
+            m_ResourceEnumerator = m_Collection.Contents().GetAsyncEnumerator();
         }
-        public SketchSetType Type => SketchSetType.Async;
+        public SketchSetType Type => SketchSetType.Curated;
 
         public bool IsReadyForAccess => m_Init is { IsCompleted: true };
 
@@ -34,11 +36,11 @@ namespace TiltBrush
 
         public bool RequestedIconsAreLoaded => m_LoadingIcons is { IsCompleted: true };
 
-        public int NumSketches => m_SketchPages.Sum(x => x.Length);
+        public int NumSketches => m_Sketches.Count;
 
         public void Init()
         {
-            m_Init = m_Async.InitAsync();
+            m_Init = m_Collection.InitAsync();
             InitAsync();
         }
 
@@ -71,7 +73,7 @@ namespace TiltBrush
             var loadingTasks = new List<Task>();
             while (m_IconsToLoad.TryDequeue(out int index))
             {
-                var sketch = GetSketchAtIndex(index);
+                var sketch = m_Sketches[index];
                 if (sketch.Icon == null)
                 {
                     loadingTasks.Add(LoadSketchIcon(sketch));
@@ -86,14 +88,26 @@ namespace TiltBrush
         private async Task LoadSketchIcon(RemoteSketch remoteSketch)
         {
             var url = remoteSketch.SceneFileInfo.FullPath;
-            var tilt = new TiltFile(url);
+            var tilt = new TiltFile(new Uri(url));
             using (var thumbStream = await tilt.GetReadStreamAsync(TiltFile.FN_THUMBNAIL))
             {
-                Texture2D icon = new Texture2D(2, 2);
-                var memStream = new MemoryStream();
-                await thumbStream.CopyToAsync(memStream);
-                icon.LoadImage(memStream.ToArray());
-                remoteSketch.Icon = icon;
+                if (thumbStream == null)
+                {
+                    Debug.LogError($"Could not open {TiltFile.FN_THUMBNAIL} stream from {url}.");
+                    return;
+                }
+                try
+                {
+                    Texture2D icon = new Texture2D(2, 2);
+                    var memStream = new MemoryStream();
+                    await thumbStream.CopyToAsync(memStream);
+                    icon.LoadImage(memStream.ToArray());
+                    remoteSketch.Icon = icon;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
 
@@ -109,50 +123,38 @@ namespace TiltBrush
         private async Task FetchSketchesToAtLeastAsync(int index)
         {
             int totalIndex = index + m_LookAhead;
-            while (!m_FeedExhausted && totalIndex > NumSketches)
+            while (await m_ResourceEnumerator.MoveNextAsync() && totalIndex > NumSketches)
             {
-                var newPage = await m_Async.FetchSketchPageAsync(m_SketchPages.Count);
-                if (newPage.Length == 0)
+                var resource = m_ResourceEnumerator.Current;
+                var fileInfo = new ResourceFileInfo(resource);
+                var sketch = new RemoteSketch
                 {
-                    m_FeedExhausted = true;
-                    return;
-                }
-                m_SketchPages.Add(newPage);
+                    SceneFileInfo = fileInfo,
+                    Authors = resource.Authors.Select(x => x.Name).ToArray(),
+                };
+                m_Sketches.Add(sketch);
+
             }
         }
 
         public bool GetSketchIcon(int index, out Texture2D icon, out string[] authors, out string description)
         {
             FetchSketchesToAtLeast(index);
-            var sketch = GetSketchAtIndex(index);
+            var sketch = m_Sketches[index];
             icon = sketch.Icon;
             authors = sketch.Authors;
             description = "DESCRIPTION NOT IMPLEMENTED";
             return icon != null;
         }
 
-        private RemoteSketch GetSketchAtIndex(int index)
-        {
-            for (int page = 0; page < m_SketchPages.Count; page++)
-            {
-                int pageLength = m_SketchPages[page].Length;
-                if (index < pageLength)
-                {
-                    return m_SketchPages[page][index];
-                }
-                index -= pageLength;
-            }
-            return null;
-        }
-
         public SceneFileInfo GetSketchSceneFileInfo(int index)
         {
-            return GetSketchAtIndex(index).SceneFileInfo;
+            return m_Sketches[index].SceneFileInfo;
         }
 
         public string GetSketchName(int index)
         {
-            return GetSketchAtIndex(index).SceneFileInfo.HumanName;
+            return m_Sketches[index].SceneFileInfo.HumanName;
         }
 
         public void DeleteSketch(int index)

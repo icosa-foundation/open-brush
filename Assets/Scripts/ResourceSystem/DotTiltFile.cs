@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -23,6 +24,8 @@ namespace TiltBrush
         public static ushort HEADER_SIZE = (ushort)Marshal.SizeOf<TiltZipHeader>();
 
         private IResource m_Resource;
+
+        public IResource Resource => m_Resource;
 
         public DotTiltFile(IResource resource)
         {
@@ -67,10 +70,26 @@ namespace TiltBrush
         public async Task<Stream> GetSubFileAsync(string filename)
         {
             var stream = await m_Resource.GetStreamAsync();
+            string tempFilename;
+            if (!stream.CanSeek)
+            {
+                // Cache to a file
+                tempFilename = Path.GetTempFileName();
+                using (var fileStream = File.Create(tempFilename))
+                {
+                    await stream.CopyToAsync(fileStream);
+                    fileStream.Close();
+                }
+                //Debug.Log($"Copied {m_Resource.Uri} to {tempFilename}.");
+                stream.Close();
+                stream = File.Open(tempFilename, FileMode.Open);
+            }
+
             if (!ReadAndVerifyTiltHeader(stream))
             {
                 return null;
             }
+
             var subStream = new SubStream(stream);
             var archive = new ZipArchive(subStream, ZipArchiveMode.Read);
             var entry = archive.GetEntry(filename);
