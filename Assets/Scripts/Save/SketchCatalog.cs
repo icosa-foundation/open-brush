@@ -62,14 +62,16 @@ namespace TiltBrush
 
             InitFeaturedSketchesPath();
 
-            var icosaCollection = new IcosaSketchCollection(App.HttpClient);
+            //var icosaCollection = new IcosaSketchCollection(App.HttpClient);
+            var rssCollection = new RssSketchCollection(App.HttpClient, new Uri("https://timaidley.github.io/open-brush-feed/sketches.rss"));
 
             m_Sets = new SketchSet[]
             {
                 new FileSketchSet(),
                 //new FileSketchSet(App.FeaturedSketchesPath()),
                 //new AsyncWrapperSketchSet(new RssSketchSetAsync(new Uri("https://heavenly-upbeat-scorpion.glitch.me/sketches.rss"))),
-                new ResourceCollectionSketchSet(icosaCollection),
+                //new ResourceCollectionSketchSet(icosaCollection),
+                new ResourceCollectionSketchSet(rssCollection),
                 new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };

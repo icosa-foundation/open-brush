@@ -53,7 +53,7 @@ namespace TiltBrush
 
         public bool IsSketchIndexValid(int index)
         {
-            return index < NumSketches;
+            return index < NumSketches && index >= 0;
         }
 
         public void RequestOnlyLoadedMetadata(List<int> requests)
