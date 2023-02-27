@@ -26,7 +26,7 @@ namespace TiltBrush
             m_Sketches = new List<ResourceSketch>();
             m_IconsToLoad = new ConcurrentQueue<int>();
             m_Collection = collection;
-            m_ResourceEnumerator = m_Collection.Contents().GetAsyncEnumerator();
+            m_ResourceEnumerator = m_Collection.ContentsAsync().GetAsyncEnumerator();
         }
         public SketchSetType Type => SketchSetType.Curated;
 

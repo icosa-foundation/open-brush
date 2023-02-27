@@ -25,7 +25,7 @@ namespace TiltBrush
         {
             var collection = new IcosaSketchCollection(m_HttpClient);
             await collection.InitAsync();
-            var enumerator = collection.Contents().GetAsyncEnumerator();
+            var enumerator = collection.ContentsAsync().GetAsyncEnumerator();
             for (int i = 0; i < 10; ++i)
             {
                 Assert.IsTrue(await enumerator.MoveNextAsync());

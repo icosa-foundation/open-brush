@@ -46,7 +46,7 @@ namespace TiltBrush
             Uri = new Uri($"file://{m_Dir.FullName}");
         }
 
-        public async IAsyncEnumerable<IResource> Contents()
+        public async IAsyncEnumerable<IResource> ContentsAsync()
         {
             foreach (var dirInfo in m_Dir.EnumerateDirectories())
             {

@@ -34,7 +34,7 @@ namespace TiltBrush
             Assert.AreEqual(collection.Uri, new Uri($"file://{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet"));
             Assert.AreEqual(collection.Name, "Test");
             var contents = new List<IResource>();
-            await foreach (var resource in collection.Contents())
+            await foreach (var resource in collection.ContentsAsync())
             {
                 contents.Add(resource);
             }
@@ -45,7 +45,7 @@ namespace TiltBrush
             await subdir.InitAsync();
 
             contents = new List<IResource>();
-            await foreach (var resource in subdir.Contents())
+            await foreach (var resource in subdir.ContentsAsync())
             {
                 contents.Add(resource);
             }

@@ -4,6 +4,6 @@ namespace TiltBrush
 {
     public interface IResourceCollection : IResource
     {
-        IAsyncEnumerable<IResource> Contents();
+        IAsyncEnumerable<IResource> ContentsAsync();
     }
 }

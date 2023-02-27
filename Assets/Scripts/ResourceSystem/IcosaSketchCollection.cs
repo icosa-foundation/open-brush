@@ -33,7 +33,7 @@ namespace TiltBrush
         public string ownerurl;
     }
 
-    public class IcosaSketchCollection : IResource, IResourceCollection
+    public class IcosaSketchCollection : IResourceCollection
     {
         private string m_User;
         private HttpClient m_httpClient;
@@ -114,7 +114,7 @@ namespace TiltBrush
 #pragma warning restore 1998
 
 
-        public async IAsyncEnumerable<IResource> Contents()
+        public async IAsyncEnumerable<IResource> ContentsAsync()
         {
             if (m_User == null)
             {
