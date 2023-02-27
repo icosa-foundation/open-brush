@@ -35,14 +35,8 @@ namespace TiltBrush
 
         public void HandleResetFirstUse()
         {
-            if (!PanelManager.m_Instance.AdvancedModeActive())
-            {
-                // Switch back to beginner mode
-                SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.AdvancedPanelsToggle
-                );
-            }
             App.Config.SetIsExperimental(false);
+            PlayerPrefs.SetInt(PanelManager.kPlayerPrefAdvancedMode, 0);
             PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
             RestartNotification();
         }
