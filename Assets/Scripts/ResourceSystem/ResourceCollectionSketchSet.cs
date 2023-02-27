@@ -14,7 +14,7 @@ namespace TiltBrush
         private Task m_Init;
         private Task m_LoadingIcons;
         private Task m_Refreshing;
-        private List<RemoteSketch> m_Sketches;
+        private List<ResourceSketch> m_Sketches;
         private Dictionary<int, Texture2D> m_CachedIcons;
         private int m_LookAhead = 40;
         private bool m_FeedExhausted;
@@ -23,7 +23,7 @@ namespace TiltBrush
 
         public ResourceCollectionSketchSet(IResourceCollection collection)
         {
-            m_Sketches = new List<RemoteSketch>();
+            m_Sketches = new List<ResourceSketch>();
             m_IconsToLoad = new ConcurrentQueue<int>();
             m_Collection = collection;
             m_ResourceEnumerator = m_Collection.Contents().GetAsyncEnumerator();
@@ -85,11 +85,11 @@ namespace TiltBrush
             }
         }
 
-        private async Task LoadSketchIcon(RemoteSketch remoteSketch)
+        private async Task LoadSketchIcon(ResourceSketch resourceSketch)
         {
-            var url = remoteSketch.SceneFileInfo.FullPath;
-            var tilt = new TiltFile(new Uri(url));
-            using (var thumbStream = await tilt.GetReadStreamAsync(TiltFile.FN_THUMBNAIL))
+            var url = resourceSketch.SceneFileInfo.FullPath;
+            var tilt = new DotTiltFile(resourceSketch.ResourceFileInfo.Resource);
+            using (var thumbStream = await tilt.GetSubFileAsync(TiltFile.FN_THUMBNAIL))
             {
                 if (thumbStream == null)
                 {
@@ -102,7 +102,7 @@ namespace TiltBrush
                     var memStream = new MemoryStream();
                     await thumbStream.CopyToAsync(memStream);
                     icon.LoadImage(memStream.ToArray());
-                    remoteSketch.Icon = icon;
+                    resourceSketch.Icon = icon;
                 }
                 catch (Exception e)
                 {
@@ -127,13 +127,8 @@ namespace TiltBrush
             {
                 var resource = m_ResourceEnumerator.Current;
                 var fileInfo = new ResourceFileInfo(resource);
-                var sketch = new RemoteSketch
-                {
-                    SceneFileInfo = fileInfo,
-                    Authors = resource.Authors.Select(x => x.Name).ToArray(),
-                };
+                var sketch = new ResourceSketch(fileInfo);
                 m_Sketches.Add(sketch);
-
             }
         }
 

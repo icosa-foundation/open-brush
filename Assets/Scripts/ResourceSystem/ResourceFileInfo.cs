@@ -13,6 +13,7 @@ namespace TiltBrush
             m_Resource = resource;
             m_TiltFile = new DotTiltFile(m_Resource);
         }
+        public IResource Resource => m_Resource;
         public FileInfoType InfoType => FileInfoType.Cloud; // TODO: this should probably do something sensible here
         public string HumanName => m_Resource.Name;
         public bool Valid => true; // TODO: Not sure if this should always be true
