@@ -4891,7 +4891,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: fdf0850ea5e9e3a47bda7cd136e45b37, type: 3}
-  m_AtlasTexture: 0
+  m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
@@ -4908,7 +4908,7 @@ MonoBehaviour:
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
   m_ToggleOnDescription: Turn Experimental Mode Off
-  m_ToggleOnTexture: {fileID: 2800000, guid: b4e7989ae2441d9479a80cbc49bfb747, type: 3}
+  m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_IsToggledOn: 0
@@ -5044,7 +5044,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6a0f5802d408e984bbd72168015e36cd, type: 3}
-  m_AtlasTexture: 0
+  m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
@@ -5322,7 +5322,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6db34cedd950a2746be9bddd14752ec9, type: 3}
-  m_AtlasTexture: 0
+  m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
