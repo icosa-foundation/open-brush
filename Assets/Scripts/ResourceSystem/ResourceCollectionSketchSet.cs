@@ -87,6 +87,13 @@ namespace TiltBrush
 
         private async Task LoadSketchIcon(ResourceSketch resourceSketch)
         {
+            var thumbnail = await resourceSketch.ResourceFileInfo.Resource.LoadPreviewAsync();
+            if (thumbnail != null)
+            {
+                resourceSketch.Icon = thumbnail;
+                return;
+            }
+
             var url = resourceSketch.SceneFileInfo.FullPath;
             var tilt = new DotTiltFile(resourceSketch.ResourceFileInfo.Resource);
             using (var thumbStream = await tilt.GetSubFileAsync(TiltFile.FN_THUMBNAIL))
@@ -98,11 +105,11 @@ namespace TiltBrush
                 }
                 try
                 {
-                    Texture2D icon = new Texture2D(2, 2);
+                    thumbnail = new Texture2D(2, 2);
                     var memStream = new MemoryStream();
                     await thumbStream.CopyToAsync(memStream);
-                    icon.LoadImage(memStream.ToArray());
-                    resourceSketch.Icon = icon;
+                    thumbnail.LoadImage(memStream.ToArray());
+                    resourceSketch.Icon = thumbnail;
                 }
                 catch (Exception e)
                 {

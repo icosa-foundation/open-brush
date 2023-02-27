@@ -20,7 +20,7 @@ namespace TiltBrush
 
         public Uri Uri { get; }
 
-        public Texture2D PreviewImage { get; }
+        public Uri PreviewUri { get; }
 
         public string Description { get; }
 
@@ -34,9 +34,10 @@ namespace TiltBrush
             return;
         }
 
-        public async Task<bool> LoadPreviewAsync()
+        public async Task<Texture2D> LoadPreviewAsync()
         {
-            return false;
+            throw new NotImplementedException();
+            return null;
         }
         public async Task<Stream> GetStreamAsync()
         {

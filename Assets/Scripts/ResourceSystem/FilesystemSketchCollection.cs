@@ -20,7 +20,7 @@ namespace TiltBrush
 
         public Uri Uri { get; private set; }
 
-        public Texture2D PreviewImage { get; }
+        public Uri PreviewUri { get; }
 
         public string Description { get; }
 
@@ -29,10 +29,11 @@ namespace TiltBrush
         public ResourceLicense License { get; }
 
 #pragma warning disable 1998
-        public async Task<bool> LoadPreviewAsync()
+        public async Task<Texture2D> LoadPreviewAsync()
         {
             // TODO: Perhaps to something clever with having a thumbnail in a .meta subdir?
-            return false; // false means no preview created.
+            throw new NotImplementedException();
+            return null;
         }
 
         public async Task InitAsync()

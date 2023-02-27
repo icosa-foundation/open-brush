@@ -6,11 +6,12 @@ namespace TiltBrush
 {
     public class RemoteSketchResource : IResource
     {
-        public RemoteSketchResource(string name, Uri uri, Texture2D previewImage = null, string description = null, Author[] authors = null, ResourceLicense license = null)
+
+        public RemoteSketchResource(string name, Uri uri, Uri previewUri = null, string description = null, Author[] authors = null, ResourceLicense license = null)
         {
             Name = name;
             Uri = uri;
-            PreviewImage = previewImage;
+            PreviewUri = previewUri;
             Description = description;
             Authors = authors;
             License = license;
@@ -18,7 +19,7 @@ namespace TiltBrush
 
         public string Name { get; }
         public Uri Uri { get; }
-        public Texture2D PreviewImage { get; }
+        public Uri PreviewUri { get; }
         public string Description { get; }
         public Author[] Authors { get; }
         public ResourceLicense License { get; }
@@ -28,16 +29,29 @@ namespace TiltBrush
             //throw new NotImplementedException();
             return;
         }
-        public async Task<bool> LoadPreviewAsync()
+#pragma warning restore 1998
+
+        public async Task<Texture2D> LoadPreviewAsync()
         {
-            // throw new NotImplementedException();
-            return false;
+            if (PreviewUri == null)
+            {
+                return null;
+            }
+            var httpStream = await App.HttpClient.GetStreamAsync(PreviewUri);
+            var memoryStream = new MemoryStream();
+            await httpStream.CopyToAsync(memoryStream);
+            httpStream.Close();
+            var texture = new Texture2D(2, 2);
+            if (!texture.LoadImage(memoryStream.ToArray()))
+            {
+                return null;
+            }
+            return texture;
         }
+
         public async Task<Stream> GetStreamAsync()
         {
             return await App.HttpClient.GetStreamAsync(Uri);
-            throw new NotImplementedException();
         }
-#pragma warning restore 1998
     }
 }

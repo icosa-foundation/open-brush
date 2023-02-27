@@ -56,7 +56,7 @@ namespace TiltBrush
 
         public string Name { get; private set; }
         public Uri Uri { get; }
-        public Texture2D PreviewImage { get; }
+        public Uri PreviewUri { get; }
         public string Description { get; }
         public Author[] Authors { get; }
         public ResourceLicense License { get; }
@@ -66,9 +66,10 @@ namespace TiltBrush
         {
             return;
         }
-        public async Task<bool> LoadPreviewAsync()
+        public async Task<Texture2D> LoadPreviewAsync()
         {
-            return false;
+            throw new NotImplementedException();
+            return null;
         }
 
         private async IAsyncEnumerable<IResource> ReadPage(Stream stream)
@@ -97,6 +98,7 @@ namespace TiltBrush
                     var remoteSketch = new RemoteSketchResource(
                         name: sketch.name,
                         uri: new Uri(tiltFormat.url),
+                        previewUri: sketch.thumbnail == null ? null : new Uri(sketch.thumbnail),
                         description: sketch.description,
                         authors: authors
                     );
