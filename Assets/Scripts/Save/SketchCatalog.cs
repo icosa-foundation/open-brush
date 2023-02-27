@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -57,13 +58,38 @@ namespace TiltBrush
 
             int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
 
+            InitFeaturedSketchesPath();
+
             m_Sets = new SketchSet[]
             {
                 new FileSketchSet(),
-                new PolySketchSet(this, SketchSetType.Curated, maxTriangles),
+                new FileSketchSet(App.FeaturedSketchesPath()),
                 new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
+        }
+
+        public static bool InitFeaturedSketchesPath()
+        {
+            string featuredPath = App.FeaturedSketchesPath();
+            if (!App.InitDirectoryAtPath(featuredPath)) { return false; }
+
+            TextAsset[] textAssets =
+                Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
+            foreach (var asset in textAssets)
+            {
+                if (asset.name.EndsWith(".tilt"))
+                {
+                    string filePath = Path.Combine(App.FeaturedSketchesPath(), asset.name);
+                    if (!File.Exists(filePath))
+                    {
+                        File.WriteAllBytes(filePath, asset.bytes);
+                    }
+                }
+                Resources.UnloadAsset(asset);
+            }
+
+            return true;
         }
 
         void Start()
