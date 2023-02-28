@@ -1850,6 +1850,7 @@ MonoBehaviour:
   m_PromoBorders:
   - {fileID: 0}
   m_ToggleExperimentalModeToggle: {fileID: 6926684204091440275}
+  m_ToggleWandOnRight: {fileID: 8868888553406399460}
 --- !u!114 &114891467858407700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3234,7 +3235,7 @@ GameObject:
   - component: {fileID: 5286037605656813228}
   - component: {fileID: 8868888553406399460}
   m_Layer: 16
-  m_Name: PanelButton_SwapControllers
+  m_Name: PanelButton_ToggleWandOnRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3336,7 +3337,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 6db34cedd950a2746be9bddd14752ec9, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: cb0dc83d6dc99e546a652f8f414a9eba, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -3354,7 +3355,7 @@ MonoBehaviour:
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
   m_ToggleOnDescription: Swap brush to Right Hand
-  m_ToggleOnTexture: {fileID: 2800000, guid: cb0dc83d6dc99e546a652f8f414a9eba, type: 3}
+  m_ToggleOnTexture: {fileID: 2800000, guid: 6db34cedd950a2746be9bddd14752ec9, type: 3}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_IsToggledOn: 0

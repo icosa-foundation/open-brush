@@ -14,6 +14,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -21,16 +22,18 @@ namespace TiltBrush
     public class AppSettingsPanel : BasePanel
     {
         public ToggleButton m_ToggleExperimentalModeToggle;
+        public ToggleButton m_ToggleWandOnRight;
 
         public override void InitPanel()
         {
             base.InitPanel();
             m_ToggleExperimentalModeToggle.m_IsToggledOn = App.Config.GetIsExperimental();
+            m_ToggleWandOnRight.m_IsToggledOn = InputManager.m_Instance.WandOnRight;
         }
 
         public void HandleToggleHandedness(ToggleButton btn)
         {
-            InputManager.m_Instance.WandOnRight = !btn.m_IsToggledOn;
+            InputManager.m_Instance.WandOnRight = btn.m_IsToggledOn;
         }
 
         public void HandleResetFirstUse()
