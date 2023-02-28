@@ -73,7 +73,7 @@ namespace TiltBrush
         private bool m_AllIconTexturesAssigned;
         private bool m_AllSketchesAreAvailable;
         private SketchSetType m_CurrentSketchSet;
-        private SketchSet m_SketchSet;
+        private ISketchSet m_SketchSet;
         private OptionButton m_NewSketchButtonScript;
         private OptionButton m_PaintButtonScript;
         private List<BaseButton> m_IconScriptsOnFirstPage;

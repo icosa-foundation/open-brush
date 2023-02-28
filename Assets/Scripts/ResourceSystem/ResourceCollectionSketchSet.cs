@@ -8,7 +8,7 @@ using FluxJpeg.Core;
 using UnityEngine;
 namespace TiltBrush
 {
-    public class ResourceCollectionSketchSet : SketchSet
+    public class ResourceCollectionSketchSet : ISketchSet
     {
         private IResourceCollection m_Collection;
         private Task m_Init;

@@ -26,14 +26,14 @@ namespace TiltBrush
 {
 
     // TODO: Specify tag for which sketches to query (curated, liked etc.)
-    public class PolySketchSet : SketchSet
+    public class PolySketchSet : ISketchSet
     {
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
 
         // Downloading is handled by PolySketchSet which will set the local paths
 
-        private class PolySketch : Sketch
+        private class PolySketch : ISketch
         {
             // This value holds the count of sketches that were downloaded by the sketch set
             // before this one.  It's used during our sort to retain order from Poly, while

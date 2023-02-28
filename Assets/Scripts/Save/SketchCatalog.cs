@@ -38,9 +38,9 @@ namespace TiltBrush
         // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
-        private SketchSet[] m_Sets;
+        private ISketchSet[] m_Sets;
 
-        public SketchSet GetSet(SketchSetType eType)
+        public ISketchSet GetSet(SketchSetType eType)
         {
             return m_Sets[(int)eType];
         }
@@ -65,7 +65,7 @@ namespace TiltBrush
             //var icosaCollection = new IcosaSketchCollection(App.HttpClient);
             var rssCollection = new RssSketchCollection(App.HttpClient, new Uri("https://timaidley.github.io/open-brush-feed/sketches.rss"));
 
-            m_Sets = new SketchSet[]
+            m_Sets = new ISketchSet[]
             {
                 new FileSketchSet(),
                 //new FileSketchSet(App.FeaturedSketchesPath()),
@@ -102,7 +102,7 @@ namespace TiltBrush
 
         void Start()
         {
-            foreach (SketchSet s in m_Sets)
+            foreach (ISketchSet s in m_Sets)
             {
                 s.Init();
             }
@@ -110,7 +110,7 @@ namespace TiltBrush
 
         void Update()
         {
-            foreach (SketchSet s in m_Sets)
+            foreach (ISketchSet s in m_Sets)
             {
                 s.Update();
             }

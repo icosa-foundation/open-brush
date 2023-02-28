@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 
 namespace TiltBrush
 {
-    public class ResourceSketch : Sketch
+    public class ResourceSketch : ISketch
     {
         private ResourceFileInfo m_FileInfo;
         public ResourceSketch(ResourceFileInfo fileInfo)

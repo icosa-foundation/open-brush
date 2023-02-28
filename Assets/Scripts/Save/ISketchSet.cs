@@ -20,7 +20,7 @@ namespace TiltBrush
 {
 
     // Not actually useful as only used internally in SketchSets.
-    public interface Sketch
+    public interface ISketch
     {
         SceneFileInfo SceneFileInfo { get; }
         string[] Authors { get; }
@@ -31,7 +31,7 @@ namespace TiltBrush
     /// A collection of sketches from some source (user's local folder, showcase, cloud).
     /// Name, icon and author are available here, and sketches are accessed by getting the
     /// SceneFileInfo.
-    public interface SketchSet
+    public interface ISketchSet
     {
         SketchSetType Type { get; }
 

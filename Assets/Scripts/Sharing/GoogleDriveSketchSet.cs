@@ -28,7 +28,7 @@ namespace TiltBrush
 {
     /// A sketchset made up of the sketches stored on Google drive, excepting the ones that are copies
     /// of the sketches on the local device.
-    public class GoogleDriveSketchSet : SketchSet
+    public class GoogleDriveSketchSet : ISketchSet
     {
 
         public class GoogleDriveFileInfo : SceneFileInfo

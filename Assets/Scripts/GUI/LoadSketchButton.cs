@@ -38,7 +38,7 @@ namespace TiltBrush
         private float m_DynamicUvTransitionSpeed = 12.0f;
         private float m_DynamicUvTransitionValue;
         private int m_SketchIndex;
-        private SketchSet m_SketchSet;
+        private ISketchSet m_SketchSet;
         private UIComponentManager m_UIComponentManager;
 
         public int SketchIndex
@@ -51,7 +51,7 @@ namespace TiltBrush
             }
         }
 
-        public SketchSet SketchSet
+        public ISketchSet SketchSet
         {
             get { return m_SketchSet; }
             set

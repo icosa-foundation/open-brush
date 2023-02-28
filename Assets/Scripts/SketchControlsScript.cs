@@ -3866,7 +3866,7 @@ namespace TiltBrush
         // This coroutine must be run to completion or disposed.
         IEnumerator<Null> LoadAndExportAll()
         {
-            SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
+            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
             for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
@@ -4243,7 +4243,7 @@ namespace TiltBrush
                         // TODO Refactor with Load below
                         var index = iParam1;
                         var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4259,7 +4259,7 @@ namespace TiltBrush
                     {
                         var index = iParam1;
                         var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4468,7 +4468,7 @@ namespace TiltBrush
                     {
                         var index = iParam1;
                         var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         EatGazeObjectInput();
                         //launch external window and tell the user we did so
@@ -4536,7 +4536,7 @@ namespace TiltBrush
                 case GlobalCommands.DeleteSketch:
                     {
                         var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         sketchSet.DeleteSketch(iParam1);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
@@ -4761,7 +4761,7 @@ namespace TiltBrush
                             if (sketchBook != null)
                             {
                                 // Get triangle count from cloud scene file info.
-                                SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                                ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                                 SceneFileInfo sfi = sketchSet.GetSketchSceneFileInfo(index);
                                 int tris = sfi.TriangleCount ?? -1;
 

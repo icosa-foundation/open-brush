@@ -23,7 +23,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class FileSketchSet : SketchSet
+    public class FileSketchSet : ISketchSet
     {
         static int ICON_LOAD_PER_FRAME = 3;
 
@@ -47,7 +47,7 @@ namespace TiltBrush
             }
         }
 
-        private class FileSketch : Sketch, IComparable<FileSketch>
+        private class FileSketch : ISketch, IComparable<FileSketch>
         {
             private DiskSceneFileInfo m_FileInfo;
             private Texture2D m_Icon;
