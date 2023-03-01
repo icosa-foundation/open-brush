@@ -42,7 +42,7 @@ namespace TiltBrush
         public static float perlinNoise(float x, float y) => Mathf.PerlinNoise(x, y);
         public static float pingPong(float t, float length) => Mathf.PingPong(t, length);
         public static float pow(float f, float p) => Mathf.Pow(f, p);
-        public static float repeat(float t, float length) => Mathf.Repeat(t, length);
+        public static float repeater(float t, float length) => Mathf.Repeat(t, length); // Can't use "repeat" as it conflicts with keyword
         public static float round(float f) => Mathf.Round(f);
         public static float sign(float f) => Mathf.Sign(f);
         public static float sin(float f) => Mathf.Sin(f);

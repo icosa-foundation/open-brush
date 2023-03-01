@@ -265,8 +265,7 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
         }
 
-        // TODO Why no "enabled" counterpart?
-        [ApiEndpoint("guides.disable", "Disables all guides")]
+        [ApiEndpoint("guides.disable", "Toggles guides on and off")]
         public static void StencilsDisable()
         {
             var rEnum = SketchControlsScript.GlobalCommands.StencilsDisabled;

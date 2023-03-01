@@ -1492,5 +1492,8 @@ namespace TiltBrush
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
 
+        public List<TypedWidgetData<StencilWidget>> ActiveStencilWidgets =>
+            m_StencilWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+
     }
 }

@@ -1095,9 +1095,7 @@ namespace TiltBrush
                                 }
                                 vPointerForward = vPointerRot * vPointerForward;
                             }
-
-                            PointerManager.m_Instance.SetMainPointerPosition(vPointerPos);
-                            PointerManager.m_Instance.SetMainPointerForward(vPointerForward);
+                            PointerManager.m_Instance.SetMainPointerPositionAndForward(vPointerPos, vPointerForward);
                         }
 
                         m_SketchSurfacePanel.AllowDrawing(m_InputStateConfigs[(int)m_CurrentInputState].m_AllowDrawing);

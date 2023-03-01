@@ -470,15 +470,26 @@ namespace TiltBrush
         [ApiEndpoint("symmetry.set.position", "Move the symmetry widget to the given coordinates")]
         public static void SymmetrySetPosition(Vector3 position)
         {
-            var widget = PointerManager.m_Instance.SymmetryWidget.GetComponent<SymmetryWidget>();
+            var widget = PointerManager.m_Instance.SymmetryWidget;
             _SetWidgetTransform(widget, position);
+        }
+
+        [ApiEndpoint("symmetry.set.rotation", "Sets the symmetry widget rotation")]
+        public static void SymmetrySetRotation(Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, widget.transform.position, rotation);
         }
 
         [ApiEndpoint("symmetry.set.transform", "Sets the position and rotation of the symmetry widget")]
         public static void SymmetrySetTransform(Vector3 position, Vector3 rotation)
         {
-            var widget = PointerManager.m_Instance.SymmetryWidget.GetComponent<SymmetryWidget>();
-            _SetWidgetTransform(widget, position, Quaternion.Euler(rotation));
+            SymmetrySetTransform(position, Quaternion.Euler(rotation));
+        }
+        public static void SymmetrySetTransform(Vector3 position, Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, position, rotation);
         }
 
         [ApiEndpoint("brush.force.painting.on", "Start painting even if the trigger isn't pressed")]
@@ -599,7 +610,7 @@ namespace TiltBrush
                 case "sphere":
                     stencilType = StencilType.Sphere;
                     break;
-                case "capsure":
+                case "capsule":
                     stencilType = StencilType.Capsule;
                     break;
                 case "cone":
@@ -619,7 +630,24 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
         }
 
+        [ApiEndpoint("guide.select", "Selects a guide by index.")]
+        public static void SelectGuide(int index)
+        {
+            SelectWidget(_GetActiveStencil(index));
+        }
 
+        [ApiEndpoint("guide.position", "Move a guide to the given coordinates")]
+        public static void PositionGuide(int index, Vector3 position)
+        {
+            _SetWidgetTransform(_GetActiveStencil(index), position);
+        }
 
+        [ApiEndpoint("guide.scale", "Sets the (non-uniform) scale of a guide")]
+        public static void ScaleGuide(int index, Vector3 scale)
+        {
+            var stencil = _GetActiveStencil(index);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(stencil, stencil.LocalTransform, scale));
+        }
     }
 }

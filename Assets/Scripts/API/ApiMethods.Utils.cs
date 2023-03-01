@@ -92,7 +92,6 @@ namespace TiltBrush
 
         private static void _SetWidgetTransform(GrabWidget widget, Vector3 position, Quaternion rotation = default)
         {
-            // App.Scene.Pose *
             var tr = TrTransform.TR(position, rotation);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(
@@ -140,6 +139,12 @@ namespace TiltBrush
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveModelWidgets);
             return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
+        }
+
+        private static StencilWidget _GetActiveStencil(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveStencilWidgets);
+            return WidgetManager.m_Instance.ActiveStencilWidgets[index].WidgetScript;
         }
 
         private static CameraPathWidget _GetActiveCameraPath(int index)

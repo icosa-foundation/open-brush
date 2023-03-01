@@ -246,7 +246,7 @@ namespace TiltBrush
                     }).ToList();
                     break;
                 case ScriptCoordSpace.Widget:
-                    var widget = PointerManager.m_Instance.SymmetryWidget;
+                    var widget = PointerManager.m_Instance.SymmetryWidget.transform;
                     tr_CS.translation = widget.position;
                     tr_CS.rotation = widget.rotation;
                     tr_CS.scale = drawnVector_CS.magnitude;

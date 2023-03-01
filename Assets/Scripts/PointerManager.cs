@@ -152,13 +152,7 @@ namespace TiltBrush
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
 
-        public Transform SymmetryWidget
-        {
-            get
-            {
-                return m_SymmetryWidget;
-            }
-        }
+        public SymmetryWidget SymmetryWidget => m_SymmetryWidget.GetComponent<SymmetryWidget>();
 
         /// This array is horrible. It is sort-of a preallocated pool of pointers,
         /// but different ranges are used for different purposes, and the ranges overlap.
@@ -751,10 +745,10 @@ namespace TiltBrush
             UpdateSymmetryPointerTransforms();
         }
 
-        public void SetMainPointerForward(Vector3 vForward)
+        public void SetMainPointerPositionAndForward(Vector3 vPos, Vector3 vForward)
         {
+            m_MainPointerData.m_Script.transform.position = vPos;
             m_MainPointerData.m_Script.transform.forward = vForward;
-            UpdateSymmetryPointerTransforms();
         }
 
         public List<TrTransform> GetScriptedTransforms()
