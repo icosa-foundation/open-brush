@@ -88,7 +88,7 @@ namespace TiltBrush.Layers
         public void DeleteLayerGeneral(){
             if ( App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
-       
+            App.Scene.animationUI_manager.resetTimeline();
         }
 
         public void SquashLayer(GameObject widget)

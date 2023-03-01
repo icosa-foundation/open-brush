@@ -4,13 +4,12 @@ using UnityEngine;
 
 namespace TiltBrush.Animation
 {
-    public class Playbutton : BaseButton
+    public class Playbutton : TiltBrush.Layers.ToggleButton
     {
-        [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
-
         protected override void OnButtonPressed()
         {
-            // m_Action.Invoke();
+
+            base.OnButtonPressed();
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
             uiManager.toggleAnimation();
             

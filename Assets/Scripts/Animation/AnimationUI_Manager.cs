@@ -365,8 +365,17 @@ namespace TiltBrush.Animation{
 
                 for(int i = 0; i < frameWrapper.transform.childCount; i++)
                 {
-                    if (i < timeline[f].layers.Count){
+                    if (i < timeline[f].layers.Count && !timeline[f].layers[i].deleted){
                         frameWrapper.transform.GetChild(i).gameObject.SetActive(true);
+
+                        print("NUM BATCH POOLS: " + timeline[f].layers[i].canvas.BatchManager.GetNumBatchPools());
+
+                        bool filled = timeline[f].layers[i].canvas.BatchManager.GetNumBatchPools() > 0;
+
+                        frameWrapper.transform.GetChild(i).GetChild(0).gameObject.SetActive(filled);
+                        frameWrapper.transform.GetChild(i).GetChild(1).gameObject.SetActive(!filled);
+
+              
                     }
                     else{
                          frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
@@ -505,7 +514,9 @@ namespace TiltBrush.Animation{
 
             print("PREV CANV INDEX " + previousActiveCanvas.Item1 + " " + previousActiveCanvas.Item2);
  
-            App.Scene.ActiveCanvas = frame.layers[previousActiveCanvas.Item2].canvas;
+            if (previousActiveCanvas.Item2 != -1){
+                App.Scene.ActiveCanvas = frame.layers[previousActiveCanvas.Item2].canvas;
+            }
 
      
             showFrame(frame);
@@ -709,8 +720,28 @@ namespace TiltBrush.Animation{
 
         // Update is called once per frame
         float prevFrameOn = 0;
+
+        int previousCanvasBatches = 0;
+        CanvasScript lastCanvas = null;
         void Update()
         {
+
+            print("UPDATE TIMELINE: ");
+            printTimeline();
+            if (lastCanvas != App.Scene.ActiveCanvas){
+                previousCanvasBatches = 0;
+            }
+            lastCanvas = App.Scene.ActiveCanvas;
+
+            int currentBatchPools = App.Scene.ActiveCanvas.BatchManager.GetNumBatchPools();
+            
+            if (currentBatchPools != 0 && previousCanvasBatches != currentBatchPools ){
+
+
+                resetTimeline();
+                previousCanvasBatches = currentBatchPools;
+
+            }
             print("ANIM UPDATE");
             if (playing){
                 time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
