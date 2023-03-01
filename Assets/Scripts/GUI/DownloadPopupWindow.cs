@@ -26,12 +26,12 @@ namespace TiltBrush
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
         {
-            if (commandParam2 != (int)SketchSetType.Drive)
+            var sketchSet = SketchCatalog.m_Instance.GetSet(commandParam2);
+            if (sketchSet.SketchSetType != GoogleDriveSketchSet.TypeName)
             {
                 return;
             }
             m_SketchIndex = commandParam;
-            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive) as GoogleDriveSketchSet;
             m_SceneFileInfo =
                 sketchSet.GetSketchSceneFileInfo(commandParam) as GoogleDriveSketchSet.GoogleDriveFileInfo;
 

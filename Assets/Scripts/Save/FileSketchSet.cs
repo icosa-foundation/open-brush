@@ -196,7 +196,6 @@ namespace TiltBrush
             }
         }
 
-        protected SketchSetType m_Type;
         protected bool m_ReadyForAccess;
         private List<FileSketch> m_Sketches;
         private Stack<int> m_RequestedLoads;
@@ -209,10 +208,11 @@ namespace TiltBrush
         private bool m_ReadOnly;
         private string m_SketchesPath;
 
-        public SketchSetType Type
-        {
-            get { return m_Type; }
-        }
+        public const string TypeName = "LocalFolder";
+
+        public string SketchSetType => TypeName;
+
+        public string SketchSetInstance => $"{m_SketchesPath}?readonly={m_ReadOnly}";
 
         public bool IsReadyForAccess
         {
@@ -236,7 +236,6 @@ namespace TiltBrush
 
         public FileSketchSet()
         {
-            m_Type = SketchSetType.User;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
@@ -248,7 +247,6 @@ namespace TiltBrush
 
         public FileSketchSet(string path)
         {
-            m_Type = SketchSetType.Curated;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
@@ -333,7 +331,7 @@ namespace TiltBrush
             m_FileWatcher.NotifyDelete(m_Sketches[toDelete].SceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
-            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            var driveSet = SketchCatalog.m_Instance.GetFirstSetOrDefault(GoogleDriveSketchSet.TypeName);
             if (driveSet != null)
             {
                 driveSet.NotifySketchChanged(m_Sketches[toDelete].SceneFileInfo.FullPath);

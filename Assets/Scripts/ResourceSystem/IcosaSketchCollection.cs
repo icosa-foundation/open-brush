@@ -54,6 +54,9 @@ namespace TiltBrush
             m_httpClient = httpClient;
         }
 
+        public string CollectionType => "Icosa";
+        public string CollectionInstance => m_User ?? "";
+
         public string Name { get; private set; }
         public Uri Uri { get; }
         public Uri PreviewUri { get; }

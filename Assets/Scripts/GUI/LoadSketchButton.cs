@@ -86,10 +86,10 @@ namespace TiltBrush
 
         void RefreshDetails()
         {
-            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.Type);
+            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.SketchSetId);
 
             m_SizeOk = true;
-            if (m_SketchSet.Type == SketchSetType.Liked)
+            if (m_SketchSet.SketchSetType == PolySketchSet.TypeName && m_SketchSet.SketchSetInstance == "Liked")
             {
                 if (m_SketchSet.IsSketchIndexValid(m_SketchIndex))
                 {
@@ -151,7 +151,7 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
             if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.Type != SketchSetType.Drive)
+                m_SketchSet.SketchSetType != GoogleDriveSketchSet.TypeName)
             {
                 return;
             }
@@ -160,7 +160,7 @@ namespace TiltBrush
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, (int)m_SketchSet.Type);
+                m_SketchIndex, SketchCatalog.m_Instance.GetSetIndex(m_SketchSet));
             ResetState();
         }
 
@@ -196,7 +196,7 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.Type == SketchSetType.User);
+            m_MenuButton.gameObject.SetActive(m_SketchSet.SketchSetType == FileSketchSet.TypeName);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);

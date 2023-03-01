@@ -970,7 +970,7 @@ namespace TiltBrush
             }
             if (Path.GetExtension(path) == ".tilt")
             {
-                var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+                var driveSet = SketchCatalog.m_Instance.GetFirstSetOrDefault(GoogleDriveSketchSet.TypeName);
                 if (item.FileId == null)
                 {
                     driveSet.NotifySketchCreated(path);

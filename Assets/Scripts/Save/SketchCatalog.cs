@@ -13,21 +13,13 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
-
-    public enum SketchSetType
-    {
-        User,
-        Curated,
-        Liked,
-        Drive,
-        Async,
-    }
-
     // SketchCatalog.Awake must come after App.Awake
     public class SketchCatalog : MonoBehaviour
     {
@@ -40,9 +32,48 @@ namespace TiltBrush
 
         private ISketchSet[] m_Sets;
 
-        public ISketchSet GetSet(SketchSetType eType)
+        public ISketchSet GetSet(int i)
         {
-            return m_Sets[(int)eType];
+            return m_Sets[i];
+        }
+
+        public ISketchSet GetSet(string type, string instance)
+        {
+            return m_Sets.FirstOrDefault(x => x.SketchSetType == type && x.SketchSetInstance == instance);
+        }
+
+        public ISketchSet GetFirstSetOrDefault(string type)
+        {
+            return m_Sets.FirstOrDefault(x => x.SketchSetType == type);
+        }
+
+        public ISketchSet GetSetById(string id)
+        {
+            return m_Sets.FirstOrDefault(x => x.SketchSetId == id);
+        }
+
+        public int GetSetIndexById(string id)
+        {
+            for (int i = 0; i < m_Sets.Length; i++)
+            {
+                if (m_Sets[i].SketchSetId == id)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public int GetSetIndex(ISketchSet sketchSet)
+        {
+            for (int i = 0; i < m_Sets.Length; i++)
+            {
+                if (m_Sets[i] == sketchSet)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         void Awake()
@@ -72,7 +103,7 @@ namespace TiltBrush
                 //new AsyncWrapperSketchSet(new RssSketchSetAsync(new Uri("https://heavenly-upbeat-scorpion.glitch.me/sketches.rss"))),
                 //new ResourceCollectionSketchSet(icosaCollection),
                 new ResourceCollectionSketchSet(rssCollection),
-                new PolySketchSet(this, SketchSetType.Liked, maxTriangles, needsLogin: true),
+                new PolySketchSet(this, PolySketchSet.SketchType.Liked, maxTriangles, needsLogin: true),
                 new GoogleDriveSketchSet(),
             };
         }
@@ -118,12 +149,16 @@ namespace TiltBrush
 
         public void NotifyUserFileCreated(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchCreated(fullpath);
+            // TODO: This won't work with more tha one filesketchset.
+            var userSketches = GetFirstSetOrDefault(FileSketchSet.TypeName);
+            userSketches.NotifySketchCreated(fullpath);
         }
 
         public void NotifyUserFileChanged(string fullpath)
         {
-            m_Sets[(int)SketchSetType.User].NotifySketchChanged(fullpath);
+            // TODO: This won't work with more tha one filesketchset.
+            var userSketches = GetFirstSetOrDefault(FileSketchSet.TypeName);
+            userSketches.NotifySketchChanged(fullpath);
         }
     }
 

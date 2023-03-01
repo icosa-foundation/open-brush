@@ -179,7 +179,10 @@ namespace TiltBrush
         private Coroutine m_ThumbnailLoadingCoroutine;
         private bool m_Changed;
 
-        public SketchSetType Type => SketchSetType.Drive;
+        public const string TypeName = "GoogleDrive";
+        public string SketchSetType => TypeName;
+        public string SketchSetInstance => "";
+
 
         public bool IsReadyForAccess => m_Sketches != null;
 

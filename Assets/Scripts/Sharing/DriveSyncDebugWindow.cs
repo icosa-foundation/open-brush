@@ -83,7 +83,7 @@ namespace TiltBrush
                 EditorGUILayout.Toggle("DriveSync.Initializing", App.DriveSync.Initializing);
                 EditorGUILayout.Toggle("DriveSync.Initialized", App.DriveSync.Initialized);
                 EditorGUILayout.Toggle("DriveSync.Syncing", App.DriveSync.Syncing);
-                var sketchset = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+                var sketchset = SketchCatalog.m_Instance.GetFirstSetOrDefault(GoogleDriveSketchSet.TypeName);
                 if (sketchset != null)
                 {
                     EditorGUILayout.Toggle("SketchSet.IsReadyForAccess", sketchset.IsReadyForAccess);

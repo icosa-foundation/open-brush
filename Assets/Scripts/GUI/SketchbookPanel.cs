@@ -72,7 +72,7 @@ namespace TiltBrush
 
         private bool m_AllIconTexturesAssigned;
         private bool m_AllSketchesAreAvailable;
-        private SketchSetType m_CurrentSketchSet;
+        //private string m_CurrentSketchSet;
         private ISketchSet m_SketchSet;
         private OptionButton m_NewSketchButtonScript;
         private OptionButton m_PaintButtonScript;
@@ -114,11 +114,13 @@ namespace TiltBrush
         public override bool IsInButtonMode(ModeButton button)
         {
             GalleryButton galleryButton = button as GalleryButton;
+            int index = SketchCatalog.m_Instance.GetSetIndex(m_SketchSet);
+            // TODO: There's gotta be a better way of doing this!
             return galleryButton &&
-                ((galleryButton.m_ButtonType == GalleryButton.Type.Liked && m_CurrentSketchSet == SketchSetType.Liked) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Local && m_CurrentSketchSet == SketchSetType.User) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Showcase && m_CurrentSketchSet == SketchSetType.Curated) ||
-                (galleryButton.m_ButtonType == GalleryButton.Type.Drive && m_CurrentSketchSet == SketchSetType.Drive));
+                ((galleryButton.m_ButtonType == GalleryButton.Type.Liked && index == 2) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Local && index == 0) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Showcase && index == 1) ||
+                (galleryButton.m_ButtonType == GalleryButton.Type.Drive && index == 3));
         }
 
         override public void InitPanel()
@@ -160,12 +162,15 @@ namespace TiltBrush
             m_NotLoggedInMessage.SetActive(false);
             m_NotLoggedInDriveMessage.SetActive(false);
 
+            m_SketchSet = SketchCatalog.m_Instance.GetSet(2); // Poly sketches
+
+
             // Dynamically position the gallery buttons.
             OnDriveSetHasSketchesChanged();
 
             // Set the sketch set var to Liked, then function set to force state.
-            m_CurrentSketchSet = SketchSetType.Liked;
-            SetVisibleSketchSet(SketchSetType.User);
+            SetVisibleSketchSet(SketchCatalog.m_Instance.GetSet(0));
+            RefreshPage();
 
             Action refresh = () =>
             {
@@ -178,9 +183,11 @@ namespace TiltBrush
                     RefreshPage();
                 }
             };
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Liked).OnSketchRefreshingChanged += refresh;
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Curated).OnSketchRefreshingChanged += refresh;
-            SketchCatalog.m_Instance.GetSet(SketchSetType.Drive).OnSketchRefreshingChanged += refresh;
+
+            // TODO: We probably should just do a refresh when we enter a sketchset
+            SketchCatalog.m_Instance.GetSet(1).OnSketchRefreshingChanged += refresh;
+            SketchCatalog.m_Instance.GetSet(2).OnSketchRefreshingChanged += refresh;
+            SketchCatalog.m_Instance.GetSet(3).OnSketchRefreshingChanged += refresh;
             App.GoogleIdentity.OnLogout += refresh;
         }
 
@@ -201,9 +208,9 @@ namespace TiltBrush
             }
         }
 
-        void SetVisibleSketchSet(SketchSetType type)
+        void SetVisibleSketchSet(ISketchSet newSketchSet)
         {
-            if (m_CurrentSketchSet != type)
+            if (newSketchSet != m_SketchSet)
             {
                 // Clean up our old sketch set.
                 if (m_SketchSet != null)
@@ -212,7 +219,7 @@ namespace TiltBrush
                 }
 
                 // Cache new set.
-                m_SketchSet = SketchCatalog.m_Instance.GetSet(type);
+                m_SketchSet = newSketchSet;
                 m_SketchSet.OnChanged += OnSketchSetDirty;
                 m_SketchSet.RequestRefresh();
 
@@ -227,12 +234,12 @@ namespace TiltBrush
 
                 ComputeNumPages();
                 ResetPageIndex();
-                m_CurrentSketchSet = type;
                 RefreshPage();
 
-                switch (m_CurrentSketchSet)
+
+                switch (newSketchSet.SketchSetType)
                 {
-                    case SketchSetType.User:
+                    case FileSketchSet.TypeName:
                         if (m_PanelText)
                         {
                             m_PanelText.text = m_PanelTextStandard;
@@ -242,7 +249,7 @@ namespace TiltBrush
                             m_PanelTextPro.text = m_PanelTextStandard;
                         }
                         break;
-                    case SketchSetType.Curated:
+                    case ResourceCollectionSketchSet.TypeName:
                         if (m_PanelText)
                         {
                             m_PanelText.text = m_PanelTextShowcase;
@@ -252,7 +259,7 @@ namespace TiltBrush
                             m_PanelTextPro.text = m_PanelTextShowcase;
                         }
                         break;
-                    case SketchSetType.Liked:
+                    case PolySketchSet.TypeName:
                         if (m_PanelText)
                         {
                             m_PanelText.text = m_PanelTextLiked;
@@ -262,7 +269,7 @@ namespace TiltBrush
                             m_PanelTextPro.text = m_PanelTextLiked;
                         }
                         break;
-                    case SketchSetType.Drive:
+                    case GoogleDriveSketchSet.TypeName:
                         if (m_PanelText)
                         {
                             m_PanelText.text = m_PanelTextDrive;
@@ -322,7 +329,7 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = m_CurrentSketchSet == SketchSetType.Liked;
+            bool requiresPoly = m_SketchSet.SketchSetType == PolySketchSet.TypeName;
 
             bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
             m_NoPolyConnectionMessage.SetActive(polyDown);
@@ -344,37 +351,35 @@ namespace TiltBrush
             bool refreshIcons = m_SketchSet.NumSketches > 0;
 
             // Show no sketches if we don't have sketches.
-            m_NoSketchesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.User) && (m_SketchSet.NumSketches <= 0));
-            m_NoDriveSketchesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Drive) && (m_SketchSet.NumSketches <= 0));
+            bool isUser = m_SketchSet.SketchSetType == FileSketchSet.TypeName;
+            bool isLiked = m_SketchSet.SketchSetType == PolySketchSet.TypeName;
+            bool isCurated = m_SketchSet.SketchSetType == ResourceCollectionSketchSet.TypeName;
+            bool isDrive = m_SketchSet.SketchSetType == GoogleDriveSketchSet.TypeName;
+            m_NoSketchesMessage.SetActive(isUser && (m_SketchSet.NumSketches <= 0));
+            m_NoDriveSketchesMessage.SetActive(isDrive && (m_SketchSet.NumSketches <= 0));
 
             // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn &&
-                (m_CurrentSketchSet == SketchSetType.Liked ||
-                m_CurrentSketchSet == SketchSetType.Drive);
+            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn && (isLiked || isDrive);
             refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && m_CurrentSketchSet == SketchSetType.Liked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn &&
-                m_CurrentSketchSet == SketchSetType.Drive);
+            m_NotLoggedInMessage.SetActive(showNotLoggedIn && isLiked);
+            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn && isDrive);
 
             // Show no likes text & gallery button if we don't have liked sketches.
             m_NoLikesMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Liked) &&
+                isLiked &&
                 (m_SketchSet.NumSketches <= 0) &&
                 !m_SketchSet.IsActivelyRefreshingSketches &&
                 App.GoogleIdentity.LoggedIn);
 
             // Show Contacting Server if we're talking to Poly.
             m_ContactingServerMessage.SetActive(
-                (requiresPoly ||
-                m_CurrentSketchSet == SketchSetType.Drive) &&
+                (requiresPoly || isDrive) &&
                 (m_SketchSet.NumSketches <= 0) &&
                 (m_SketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
 
             // Show Showcase error if we're in Showcase and don't have sketches.
             m_NoShowcaseMessage.SetActive(
-                (m_CurrentSketchSet == SketchSetType.Curated) &&
+                isCurated &&
                 (m_SketchSet.NumSketches <= 0) &&
                 !m_SketchSet.IsActivelyRefreshingSketches);
 
@@ -462,9 +467,9 @@ namespace TiltBrush
                 icon.UpdateUvOffsetAndScale(offset, m_SketchIconUvScale);
             }
 
-            switch (m_CurrentSketchSet)
+            switch (m_SketchSet.SketchSetType)
             {
-                case SketchSetType.Curated:
+                case ResourceCollectionSketchSet.TypeName:
                     m_LoadingGallery.SetActive(m_SketchSet.IsActivelyRefreshingSketches);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
@@ -472,7 +477,7 @@ namespace TiltBrush
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case SketchSetType.Liked:
+                case PolySketchSet.TypeName:
                     m_LoadingGallery.SetActive(false);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
@@ -480,9 +485,9 @@ namespace TiltBrush
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case SketchSetType.User:
-                case SketchSetType.Drive:
-                    bool sketchSetRefreshing = m_CurrentSketchSet == SketchSetType.Drive &&
+                case FileSketchSet.TypeName:
+                case GoogleDriveSketchSet.TypeName:
+                    bool sketchSetRefreshing = m_SketchSet.SketchSetType == GoogleDriveSketchSet.TypeName &&
                         m_SketchSet.IsActivelyRefreshingSketches;
                     bool driveSyncing = App.DriveSync.Syncing;
                     bool syncEnabled = App.DriveSync.SyncEnabled;
@@ -499,7 +504,7 @@ namespace TiltBrush
 
             // Check to see if whether "drive set has sketches" has changed.
             bool driveSetHasSketches =
-                SketchCatalog.m_Instance.GetSet(SketchSetType.Drive).NumSketches != 0;
+                SketchCatalog.m_Instance.GetFirstSetOrDefault(GoogleDriveSketchSet.TypeName).NumSketches != 0;
             if (m_DriveSetHasSketches != driveSetHasSketches)
             {
                 m_DriveSetHasSketches = driveSetHasSketches;
@@ -524,7 +529,7 @@ namespace TiltBrush
                 m_GalleryButtons[m_ElementNumberGalleryButtonDrive].gameObject.SetActive(false);
                 galleryButtonN = galleryButtonAvailable - 1;
 
-                if (m_CurrentSketchSet == SketchSetType.Drive)
+                if (m_SketchSet.SketchSetType == GoogleDriveSketchSet.TypeName)
                 {
                     // We were on the Drive tab but it's gone away so switch to the local tab by simulating
                     // the user pressing the local tab button.
@@ -755,6 +760,7 @@ namespace TiltBrush
         // Works specifically with GalleryButtons.
         public void ButtonPressed(GalleryButton.Type rType, BaseButton button = null)
         {
+            // TODO: Just do this whole damn thing differently.
             switch (rType)
             {
                 case GalleryButton.Type.Exit:
@@ -762,16 +768,16 @@ namespace TiltBrush
                     PointerManager.m_Instance.EatLineEnabledInput();
                     break;
                 case GalleryButton.Type.Showcase:
-                    SetVisibleSketchSet(SketchSetType.Curated);
+                    SetVisibleSketchSet(SketchCatalog.m_Instance.GetSet(1));
                     break;
                 case GalleryButton.Type.Local:
-                    SetVisibleSketchSet(SketchSetType.User);
+                    SetVisibleSketchSet(SketchCatalog.m_Instance.GetSet(0));
                     break;
                 case GalleryButton.Type.Liked:
-                    SetVisibleSketchSet(SketchSetType.Liked);
+                    SetVisibleSketchSet(SketchCatalog.m_Instance.GetSet(2));
                     break;
                 case GalleryButton.Type.Drive:
-                    SetVisibleSketchSet(SketchSetType.Drive);
+                    SetVisibleSketchSet(SketchCatalog.m_Instance.GetSet(3));
                     if (!m_ReadOnlyShown)
                     {
                         CreatePopUp(SketchControlsScript.GlobalCommands.ReadOnlyNotice,

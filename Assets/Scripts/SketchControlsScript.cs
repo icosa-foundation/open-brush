@@ -3866,8 +3866,8 @@ namespace TiltBrush
         // This coroutine must be run to completion or disposed.
         IEnumerator<Null> LoadAndExportAll()
         {
-            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
-            for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
+            ISketchSet sketchSet = SketchCatalog.m_Instance.GetFirstSetOrDefault(FileSketchSet.TypeName);
+            for (int i = 0; i < sketchSet.NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
                 using (var coroutine = LoadAndExport(rInfo.FullPath))
@@ -4242,8 +4242,9 @@ namespace TiltBrush
                     {
                         // TODO Refactor with Load below
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = sParam != null
+                            ? SketchCatalog.m_Instance.GetSetById(sParam)
+                            : SketchCatalog.m_Instance.GetSet(iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4258,8 +4259,9 @@ namespace TiltBrush
                 case GlobalCommands.Load:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = sParam != null
+                            ? SketchCatalog.m_Instance.GetSetById(sParam)
+                            : SketchCatalog.m_Instance.GetSet(iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4467,8 +4469,9 @@ namespace TiltBrush
                 case GlobalCommands.ShowSketchFolder:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
-                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = sParam != null
+                            ? SketchCatalog.m_Instance.GetSetById(sParam)
+                            : SketchCatalog.m_Instance.GetSet(iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         EatGazeObjectInput();
                         //launch external window and tell the user we did so
@@ -4535,8 +4538,9 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
-                        var sketchSetType = (SketchSetType)iParam2;
-                        ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        ISketchSet sketchSet = sParam != null
+                            ? SketchCatalog.m_Instance.GetSetById(sParam)
+                            : SketchCatalog.m_Instance.GetSet(iParam2);
                         sketchSet.DeleteSketch(iParam1);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
@@ -4751,7 +4755,6 @@ namespace TiltBrush
                 case GlobalCommands.LoadConfirmComplex:
                     {
                         var index = iParam1;
-                        var sketchSetType = (SketchSetType)iParam2;
                         bool loadSketch = true;
 
                         // If the sketchbook is active, we may want to show a popup instead of load.
@@ -4761,7 +4764,9 @@ namespace TiltBrush
                             if (sketchBook != null)
                             {
                                 // Get triangle count from cloud scene file info.
-                                ISketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                                ISketchSet sketchSet = sParam != null
+                                    ? SketchCatalog.m_Instance.GetSetById(sParam)
+                                    : SketchCatalog.m_Instance.GetSet(iParam2);
                                 SceneFileInfo sfi = sketchSet.GetSketchSceneFileInfo(index);
                                 int tris = sfi.TriangleCount ?? -1;
 
@@ -4803,14 +4808,16 @@ namespace TiltBrush
                 case GlobalCommands.LoadWaitOnDownload:
                     {
                         bool download = false;
-                        if (iParam2 == (int)SketchSetType.Drive)
+                        ISketchSet sketchSet = sParam != null
+                            ? SketchCatalog.m_Instance.GetSetById(sParam)
+                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        if (sketchSet.SketchSetType == GoogleDriveSketchSet.TypeName)
                         {
                             BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
-                            var googleSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
                             if (sketchBook != null
-                                && googleSketchSet != null
-                                && googleSketchSet.IsSketchIndexValid(iParam1)
-                                && !googleSketchSet.GetSketchSceneFileInfo(iParam1).Available)
+                                && sketchSet != null
+                                && sketchSet.IsSketchIndexValid(iParam1)
+                                && !sketchSet.GetSketchSceneFileInfo(iParam1).Available)
                             {
                                 sketchBook.CreatePopUp(GlobalCommands.LoadConfirmComplex, iParam1, iParam2, null);
                                 download = true;

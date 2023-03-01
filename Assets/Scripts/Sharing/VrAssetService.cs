@@ -759,13 +759,13 @@ namespace TiltBrush
             return new AssetGetter(uri, assetId, type, reason);
         }
 
-        public AssetLister ListAssets(SketchSetType type)
+        public AssetLister ListAssets(PolySketchSet.SketchType type)
         {
             string filter = null;
             string errorMessage = null;
             switch (type)
             {
-                case SketchSetType.Liked:
+                case PolySketchSet.SketchType.Liked:
                     if (!App.GoogleIdentity.LoggedIn)
                     {
                         return null;
@@ -773,7 +773,7 @@ namespace TiltBrush
                     filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kPolyApiKey}";
                     errorMessage = "Failed to access your liked sketches.";
                     break;
-                case SketchSetType.Curated:
+                case PolySketchSet.SketchType.Curated:
                     if (string.IsNullOrEmpty(kPolyApiKey))
                     {
                         return null;

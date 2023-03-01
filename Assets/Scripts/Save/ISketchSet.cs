@@ -33,7 +33,21 @@ namespace TiltBrush
     /// SceneFileInfo.
     public interface ISketchSet
     {
-        SketchSetType Type { get; }
+        // Each Sketch Set should have a type - e.g. 'Poly', 'Icosa', 'LocalFolder', 'Rss', 
+        // which should be the same for all instances of that type.
+        string SketchSetType { get; }
+        // Each Sketch Set should have an instance, that is enough to create a sketch set with.
+        // This could be something like an URL or a path, or a type.
+        string SketchSetInstance { get; }
+
+        string SketchSetId => $"{SketchSetType}:{SketchSetInstance}";
+        (string type, string instance) TypeAndInstanceFromId(string id)
+        {
+            int colonPos = id.IndexOf(":");
+            string type = id.Substring(0, colonPos);
+            string instance = id.Substring(colonPos + 1);
+            return (type, instance);
+        }
 
         /// True if the sketch set can be accessed, but does not imply that all the data (like icons, etc)
         /// have been read yet.

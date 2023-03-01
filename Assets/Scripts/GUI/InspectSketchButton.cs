@@ -18,19 +18,20 @@ namespace TiltBrush
     public class InspectSketchButton : BaseButton
     {
         private int m_SketchIndex;
-        private SketchSetType m_SketchSetType;
+        private string m_SketchSetId;
 
-        public void SetSketchDetails(int index, SketchSetType type)
+        public void SetSketchDetails(int index, string type)
         {
             m_SketchIndex = index;
-            m_SketchSetType = type;
+            m_SketchSetId = type;
         }
 
         override protected void OnButtonPressed()
         {
             BasePanel panel = m_Manager.GetPanelForPopUps();
+            int index = SketchCatalog.m_Instance.GetSetIndexById(m_SketchSetId);
             panel.CreatePopUp(SketchControlsScript.GlobalCommands.SketchbookMenu,
-                m_SketchIndex, (int)m_SketchSetType);
+                m_SketchIndex, index);
 
             // Position popup next to button.
             panel.PositionPopUp(transform.position);

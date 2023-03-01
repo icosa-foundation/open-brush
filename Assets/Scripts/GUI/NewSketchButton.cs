@@ -49,7 +49,7 @@ namespace TiltBrush
 
             // Change the shown sketchset by simulating a press on the corresponding gallery button.
             SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
-            if (SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches == 0)
+            if (SketchCatalog.m_Instance.GetFirstSetOrDefault(FileSketchSet.TypeName).NumSketches == 0)
             {
                 panel.ButtonPressed(GalleryButton.Type.Showcase);
             }

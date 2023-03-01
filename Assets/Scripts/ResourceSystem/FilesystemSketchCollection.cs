@@ -16,6 +16,9 @@ namespace TiltBrush
             Name = name;
         }
 
+        public string CollectionType => "LocalFolderCollection";
+        public string CollectionInstance => m_Path;
+
         public string Name { get; private set; }
 
         public Uri Uri { get; private set; }

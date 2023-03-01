@@ -21,6 +21,9 @@ namespace TiltBrush
             m_HttpClient = httpClient;
         }
 
+        public string CollectionType => "Rss";
+        public string CollectionInstance => m_Uri.OriginalString;
+
         public string Name => "RSS Feed";
         public Uri Uri { get; }
         public Uri PreviewUri { get; }
