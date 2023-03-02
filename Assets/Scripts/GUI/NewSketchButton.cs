@@ -47,16 +47,8 @@ namespace TiltBrush
             App.Instance.ExitIntroSketch();
             PromoManager.m_Instance.RequestAdvancedPanelsPromo();
 
-            // Change the shown sketchset by simulating a press on the corresponding gallery button.
-            SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();
-            if (SketchCatalog.m_Instance.GetFirstSetOrDefault(FileSketchSet.TypeName).NumSketches == 0)
-            {
-                panel.ButtonPressed(GalleryButton.Type.Showcase);
-            }
-            else
-            {
-                panel.ButtonPressed(GalleryButton.Type.Local);
-            }
+            // Question: Why did this used to press on the showcase if there was nothing in the local fileset?
+            SketchbookPanel.Instance.ButtonPressed(GalleryButton.Type.Local);
         }
     }
 } // namespace TiltBrush

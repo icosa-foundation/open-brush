@@ -49,6 +49,11 @@ namespace TiltBrush
             return (type, instance);
         }
 
+        void DoTheThing()
+        {
+            Debug.Log("The Thing");
+        }
+
         /// True if the sketch set can be accessed, but does not imply that all the data (like icons, etc)
         /// have been read yet.
         bool IsReadyForAccess { get; }

@@ -158,9 +158,10 @@ namespace TiltBrush
 
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
+            // TODO: SketchSet needs to know its own id?
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, SketchCatalog.m_Instance.GetSetIndex(m_SketchSet));
+                m_SketchIndex, SketchbookPanel.Instance.SelectedSketchStack);
             ResetState();
         }
 

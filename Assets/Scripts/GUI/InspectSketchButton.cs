@@ -29,9 +29,8 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
             BasePanel panel = m_Manager.GetPanelForPopUps();
-            int index = SketchCatalog.m_Instance.GetSetIndexById(m_SketchSetId);
             panel.CreatePopUp(SketchControlsScript.GlobalCommands.SketchbookMenu,
-                m_SketchIndex, index);
+                m_SketchIndex, SketchbookPanel.Instance.SelectedSketchStack);
 
             // Position popup next to button.
             panel.PositionPopUp(transform.position);

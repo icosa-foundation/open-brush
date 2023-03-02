@@ -16,6 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -30,50 +32,81 @@ namespace TiltBrush
         // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
-        private ISketchSet[] m_Sets;
+        private Dictionary<string, ISketchSet> m_Sets = new Dictionary<string, ISketchSet>();
+        private Dictionary<string, Func<Dictionary<string, string>, ISketchSet>> m_CollectionCreators;
 
-        public ISketchSet GetSet(int i)
-        {
-            return m_Sets[i];
-        }
 
-        public ISketchSet GetSet(string type, string instance)
+        private void SetupResourceCollectionCreators()
         {
-            return m_Sets.FirstOrDefault(x => x.SketchSetType == type && x.SketchSetInstance == instance);
-        }
+            m_CollectionCreators = new Dictionary<string, Func<Dictionary<string, string>, ISketchSet>>();
 
-        public ISketchSet GetFirstSetOrDefault(string type)
-        {
-            return m_Sets.FirstOrDefault(x => x.SketchSetType == type);
-        }
-
-        public ISketchSet GetSetById(string id)
-        {
-            return m_Sets.FirstOrDefault(x => x.SketchSetId == id);
-        }
-
-        public int GetSetIndexById(string id)
-        {
-            for (int i = 0; i < m_Sets.Length; i++)
+            int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
+            m_CollectionCreators[FileSketchSet.TypeName] = (Dictionary<string, string> _) =>
+                new FileSketchSet();
+            m_CollectionCreators[PolySketchSet.TypeName] = (Dictionary<string, string> _) =>
+                new PolySketchSet(this, PolySketchSet.SketchType.Liked, maxTriangles, needsLogin: true);
+            m_CollectionCreators[GoogleDriveSketchSet.TypeName] = (Dictionary<string, string> _) =>
+                new GoogleDriveSketchSet();
+            m_CollectionCreators["Resource-Rss"] = (Dictionary<string, string> options) =>
+                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["uri"])));
+            m_CollectionCreators["Resource-Path"] = (Dictionary<string, string> options) =>
+                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["path"])));
+            m_CollectionCreators["Resource-Icosa"] = (Dictionary<string, string> options) =>
             {
-                if (m_Sets[i].SketchSetId == id)
+                string user = null;
+                options.TryGetValue("user", out user);
+                return new ResourceCollectionSketchSet(new IcosaSketchCollection(App.HttpClient, user));
+            };
+        }
+
+        public static string CreateId(string id, Dictionary<string, string> options)
+        {
+            var sb = new StringBuilder();
+            sb.Append(id);
+
+            if (options != null)
+            {
+                string add = "?";
+                foreach (var pair in options)
                 {
-                    return i;
+                    sb.Append(add);
+                    add = "&";
+                    sb.Append(pair.Key);
+                    sb.Append("=");
+                    sb.Append(pair.Value);
                 }
             }
-            return -1;
+            return sb.ToString();
         }
 
-        public int GetSetIndex(ISketchSet sketchSet)
+        public static (string type, Dictionary<string, string> options) DecodeId(string id)
         {
-            for (int i = 0; i < m_Sets.Length; i++)
+            int firstSplit = id.IndexOf("?");
+            if (firstSplit < 0)
             {
-                if (m_Sets[i] == sketchSet)
-                {
-                    return i;
-                }
+                return (id, null);
             }
-            return -1;
+            var type = id.Substring(0, firstSplit);
+            var options = new Dictionary<string, string>(
+                id.Substring(firstSplit + 1)
+                    .Split("&")
+                    .Select(x => x.Split("="))
+                        .Select(x => new KeyValuePair<string, string>(x[0], x[1])));
+            return (type, options);
+        }
+
+        public ISketchSet GetSketchSet(string type, Dictionary<string, string> options)
+        {
+            string id = CreateId(type, options);
+            ISketchSet sketchSet = null;
+            if (m_Sets.TryGetValue(id, out sketchSet))
+            {
+                return sketchSet;
+            }
+            sketchSet = m_CollectionCreators[type].Invoke(options);
+            sketchSet.Init();
+            m_Sets[id] = sketchSet;
+            return sketchSet;
         }
 
         void Awake()
@@ -89,23 +122,9 @@ namespace TiltBrush
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
 
-            int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-
             InitFeaturedSketchesPath();
 
-            //var icosaCollection = new IcosaSketchCollection(App.HttpClient);
-            var rssCollection = new RssSketchCollection(App.HttpClient, new Uri("https://timaidley.github.io/open-brush-feed/sketches.rss"));
-
-            m_Sets = new ISketchSet[]
-            {
-                new FileSketchSet(),
-                //new FileSketchSet(App.FeaturedSketchesPath()),
-                //new AsyncWrapperSketchSet(new RssSketchSetAsync(new Uri("https://heavenly-upbeat-scorpion.glitch.me/sketches.rss"))),
-                //new ResourceCollectionSketchSet(icosaCollection),
-                new ResourceCollectionSketchSet(rssCollection),
-                new PolySketchSet(this, PolySketchSet.SketchType.Liked, maxTriangles, needsLogin: true),
-                new GoogleDriveSketchSet(),
-            };
+            SetupResourceCollectionCreators();
         }
 
         public static bool InitFeaturedSketchesPath()
@@ -131,17 +150,9 @@ namespace TiltBrush
             return true;
         }
 
-        void Start()
-        {
-            foreach (ISketchSet s in m_Sets)
-            {
-                s.Init();
-            }
-        }
-
         void Update()
         {
-            foreach (ISketchSet s in m_Sets)
+            foreach (ISketchSet s in m_Sets.Values)
             {
                 s.Update();
             }
@@ -150,14 +161,14 @@ namespace TiltBrush
         public void NotifyUserFileCreated(string fullpath)
         {
             // TODO: This won't work with more tha one filesketchset.
-            var userSketches = GetFirstSetOrDefault(FileSketchSet.TypeName);
+            var userSketches = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
             userSketches.NotifySketchCreated(fullpath);
         }
 
         public void NotifyUserFileChanged(string fullpath)
         {
             // TODO: This won't work with more tha one filesketchset.
-            var userSketches = GetFirstSetOrDefault(FileSketchSet.TypeName);
+            var userSketches = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local);
             userSketches.NotifySketchChanged(fullpath);
         }
     }

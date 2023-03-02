@@ -3866,7 +3866,8 @@ namespace TiltBrush
         // This coroutine must be run to completion or disposed.
         IEnumerator<Null> LoadAndExportAll()
         {
-            ISketchSet sketchSet = SketchCatalog.m_Instance.GetFirstSetOrDefault(FileSketchSet.TypeName);
+            // Currently just gets the user sketch set
+            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSketchSet(FileSketchSet.TypeName, null);
             for (int i = 0; i < sketchSet.NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
@@ -4242,9 +4243,7 @@ namespace TiltBrush
                     {
                         // TODO Refactor with Load below
                         var index = iParam1;
-                        ISketchSet sketchSet = sParam != null
-                            ? SketchCatalog.m_Instance.GetSetById(sParam)
-                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4259,9 +4258,7 @@ namespace TiltBrush
                 case GlobalCommands.Load:
                     {
                         var index = iParam1;
-                        ISketchSet sketchSet = sParam != null
-                            ? SketchCatalog.m_Instance.GetSetById(sParam)
-                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         if (rInfo != null)
                         {
@@ -4469,9 +4466,7 @@ namespace TiltBrush
                 case GlobalCommands.ShowSketchFolder:
                     {
                         var index = iParam1;
-                        ISketchSet sketchSet = sParam != null
-                            ? SketchCatalog.m_Instance.GetSetById(sParam)
-                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
                         EatGazeObjectInput();
                         //launch external window and tell the user we did so
@@ -4538,9 +4533,7 @@ namespace TiltBrush
                     break;
                 case GlobalCommands.DeleteSketch:
                     {
-                        ISketchSet sketchSet = sParam != null
-                            ? SketchCatalog.m_Instance.GetSetById(sParam)
-                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         sketchSet.DeleteSketch(iParam1);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
@@ -4764,9 +4757,7 @@ namespace TiltBrush
                             if (sketchBook != null)
                             {
                                 // Get triangle count from cloud scene file info.
-                                ISketchSet sketchSet = sParam != null
-                                    ? SketchCatalog.m_Instance.GetSetById(sParam)
-                                    : SketchCatalog.m_Instance.GetSet(iParam2);
+                                ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                                 SceneFileInfo sfi = sketchSet.GetSketchSceneFileInfo(index);
                                 int tris = sfi.TriangleCount ?? -1;
 
@@ -4808,9 +4799,7 @@ namespace TiltBrush
                 case GlobalCommands.LoadWaitOnDownload:
                     {
                         bool download = false;
-                        ISketchSet sketchSet = sParam != null
-                            ? SketchCatalog.m_Instance.GetSetById(sParam)
-                            : SketchCatalog.m_Instance.GetSet(iParam2);
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         if (sketchSet.SketchSetType == GoogleDriveSketchSet.TypeName)
                         {
                             BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
