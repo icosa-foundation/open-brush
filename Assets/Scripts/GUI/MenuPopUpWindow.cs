@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
 namespace TiltBrush
 {
 
@@ -23,7 +24,14 @@ namespace TiltBrush
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
             {
-                button.SetCommandParameters(iCommandParam, iCommandParam2);
+                if (iCommandParam == 0)
+                {
+                    button.SetButtonAvailable(false);
+                }
+                else
+                {
+                    button.SetCommandParameters(iCommandParam, iCommandParam2);
+                }
             }
         }
     }
