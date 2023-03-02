@@ -33,6 +33,8 @@ namespace TiltBrush
         public string SketchSetType => m_Collection.CollectionType;
         public string SketchSetInstance => m_Collection.CollectionInstance;
 
+        public string Title => m_Collection.Name;
+
         public bool IsReadyForAccess => m_Init is { IsCompleted: true };
 
         public bool IsActivelyRefreshingSketches => m_Refreshing is { IsCompleted: false };

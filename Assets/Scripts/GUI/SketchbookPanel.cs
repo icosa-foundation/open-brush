@@ -54,7 +54,6 @@ namespace TiltBrush
         [SerializeField] private GameObject m_ContactingServerMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
-        [SerializeField] private Renderer m_OnlineGalleryButtonRenderer;
         [SerializeField] private GameObject[] m_IconsOnFirstPage;
         [SerializeField] private GameObject[] m_IconsOnNormalPage;
         [SerializeField] private GameObject m_CloseButton;
@@ -192,10 +191,16 @@ namespace TiltBrush
                 {"uri",  "https://timaidley.github.io/open-brush-feed/sketches.rss" }
             };
 
+            var fileOptions = new Dictionary<string, string>
+            {
+                {"path", App.UserPath() },
+                {"name", "Your Sketches"}
+            };
+
             // Fetch the root stacks
             m_SetStacks = new Stack<ISketchSet>[]
             {
-                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(FileSketchSet.TypeName, null)}),
+                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet("Resource-Path", fileOptions)}),
                 new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet("Resource-Rss", rssOptions)}),
                 new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(PolySketchSet.TypeName, null)}),
                 new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.TypeName, null)}),
@@ -276,48 +281,13 @@ namespace TiltBrush
                 ResetPageIndex();
                 RefreshPage();
 
-                switch (newSketchSet.SketchSetType)
+                if (m_PanelText)
                 {
-                    case FileSketchSet.TypeName:
-                        if (m_PanelText)
-                        {
-                            m_PanelText.text = m_PanelTextStandard;
-                        }
-                        if (m_PanelTextPro)
-                        {
-                            m_PanelTextPro.text = m_PanelTextStandard;
-                        }
-                        break;
-                    case ResourceCollectionSketchSet.TypeName:
-                        if (m_PanelText)
-                        {
-                            m_PanelText.text = m_PanelTextShowcase;
-                        }
-                        if (m_PanelTextPro)
-                        {
-                            m_PanelTextPro.text = m_PanelTextShowcase;
-                        }
-                        break;
-                    case PolySketchSet.TypeName:
-                        if (m_PanelText)
-                        {
-                            m_PanelText.text = m_PanelTextLiked;
-                        }
-                        if (m_PanelTextPro)
-                        {
-                            m_PanelTextPro.text = m_PanelTextLiked;
-                        }
-                        break;
-                    case GoogleDriveSketchSet.TypeName:
-                        if (m_PanelText)
-                        {
-                            m_PanelText.text = m_PanelTextDrive;
-                        }
-                        if (m_PanelTextPro)
-                        {
-                            m_PanelTextPro.text = m_PanelTextDrive;
-                        }
-                        break;
+                    m_PanelText.text = CurrentSketchSet.Title;
+                }
+                if (m_PanelTextPro)
+                {
+                    m_PanelTextPro.text = CurrentSketchSet.Title;
                 }
             }
         }
@@ -733,7 +703,6 @@ namespace TiltBrush
             // If we're not active, hide all our preview panels
             if (!m_GazeActive)
             {
-                m_OnlineGalleryButtonRenderer.material.SetFloat("_Grayscale", 1);
                 m_ProfileButtonRenderer.material.SetFloat("_Grayscale", 1);
 
                 for (int i = 0; i < m_IconScriptsOnFirstPage.Count; ++i)
@@ -755,7 +724,6 @@ namespace TiltBrush
             }
             else if (m_CurrentState == PanelState.Available)
             {
-                m_OnlineGalleryButtonRenderer.material.SetFloat("_Grayscale", 0);
                 m_ProfileButtonRenderer.material.SetFloat("_Grayscale", 0);
                 CurrentSketchSet.RequestRefresh();
             }

@@ -14,6 +14,8 @@ namespace TiltBrush
     {
         private Uri m_Uri;
         private HttpClient m_HttpClient;
+        private List<RemoteSketchResource> m_Items;
+        private string m_Title;
 
         public RssSketchCollection(HttpClient httpClient, Uri uri)
         {
@@ -24,7 +26,7 @@ namespace TiltBrush
         public string CollectionType => "Rss";
         public string CollectionInstance => m_Uri.OriginalString;
 
-        public string Name => "RSS Feed";
+        public string Name => m_Title;
         public Uri Uri { get; }
         public Uri PreviewUri { get; }
         public string Description { get; }
@@ -33,7 +35,26 @@ namespace TiltBrush
         public async Task InitAsync()
         {
             // might as well do all the work when getting the page
-            return;
+            SyndicationFeed feed;
+            try
+            {
+                var stream = await m_HttpClient.GetStreamAsync(m_Uri);
+                using var xmlReader = XmlReader.Create(stream);
+                feed = SyndicationFeed.Load(xmlReader);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                return;
+            }
+            m_Title = feed.Title.Text;
+            m_Items = feed.Items.Select(item => new RemoteSketchResource(
+                name: item.Title.Text,
+                uri: item.Links[0].Uri,
+                previewUri: null,
+                description: item.Summary.Text,
+                authors: item.Authors.Select(x => new TiltBrush.Author { Name = x.Name, Url = x.Uri, Email = x.Email }).ToArray()
+            )).ToList();
         }
         public async Task<Texture2D> LoadPreviewAsync()
         {

@@ -182,6 +182,7 @@ namespace TiltBrush
         public const string TypeName = "GoogleDrive";
         public string SketchSetType => TypeName;
         public string SketchSetInstance => "";
+        public string Title => "Google Drive Backup";
 
 
         public bool IsReadyForAccess => m_Sketches != null;

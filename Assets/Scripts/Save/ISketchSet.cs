@@ -40,6 +40,8 @@ namespace TiltBrush
         // This could be something like an URL or a path, or a type.
         string SketchSetInstance { get; }
 
+        string Title { get; }
+
         string SketchSetId => $"{SketchSetType}:{SketchSetInstance}";
         (string type, string instance) TypeAndInstanceFromId(string id)
         {

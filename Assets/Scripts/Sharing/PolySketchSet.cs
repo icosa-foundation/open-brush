@@ -120,6 +120,8 @@ namespace TiltBrush
         public string SketchSetType => TypeName;
         public string SketchSetInstance => m_Type == SketchType.Curated ? "Curated" : "Liked";
 
+        public string Title => "Poly";
+
         public VrAssetService VrAssetService
         {
             set { m_AssetService = value; }

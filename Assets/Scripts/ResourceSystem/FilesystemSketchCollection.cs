@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 namespace TiltBrush
 {
-    public class FilesystemSketchCollection : IResource, IResourceCollection
+    public class FilesystemSketchCollection : IResourceCollection
     {
         private string m_Path;
         private DirectoryInfo m_Dir;

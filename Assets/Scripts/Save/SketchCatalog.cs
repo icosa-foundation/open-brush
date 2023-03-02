@@ -50,7 +50,7 @@ namespace TiltBrush
             m_CollectionCreators["Resource-Rss"] = (Dictionary<string, string> options) =>
                 new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["uri"])));
             m_CollectionCreators["Resource-Path"] = (Dictionary<string, string> options) =>
-                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["path"])));
+                new ResourceCollectionSketchSet(new FilesystemSketchCollection(options["path"], options?["name"] ?? ""));
             m_CollectionCreators["Resource-Icosa"] = (Dictionary<string, string> options) =>
             {
                 string user = null;

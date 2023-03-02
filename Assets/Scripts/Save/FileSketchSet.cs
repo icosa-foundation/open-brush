@@ -214,6 +214,8 @@ namespace TiltBrush
 
         public string SketchSetInstance => $"{m_SketchesPath}?readonly={m_ReadOnly}";
 
+        public string Title => "Your Sketches";
+
         public bool IsReadyForAccess
         {
             get { return m_ReadyForAccess; }
