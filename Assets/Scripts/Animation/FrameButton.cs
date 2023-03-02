@@ -6,19 +6,27 @@ namespace TiltBrush.Animation
 {
 public class FrameButton : BaseButton
 {
-    public int Layer = 0;
+    public int Layer = -1;
+    public int Frame = -1;
      protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            print("PRESSED");
-            print(transform.GetSiblingIndex() + " " +transform.parent.parent.GetSiblingIndex() );
+            print("BUTTON PRESSED");
+            print(Layer + " " +Frame );
         
-             App.Scene.animationUI_manager.selectTimelineFrame(
-                transform.GetSiblingIndex(),transform.parent.parent.GetSiblingIndex()
+            App.Scene.animationUI_manager.printTimeline();
+            App.Scene.animationUI_manager.selectTimelineFrame(
+                Layer,Frame
 
              );
          
             
+    }
+    public void setButtonCoordinate(int updatedLayer, int updatedFrame){
+
+        Layer = updatedLayer;
+        Frame = updatedFrame;
+
     }
 
 

@@ -363,24 +363,33 @@ namespace TiltBrush.Animation{
 
                 GameObject frameWrapper = newFrame.transform.GetChild(0).gameObject;
 
+                int numDeleted = 0;
+
                 for(int i = 0; i < frameWrapper.transform.childCount; i++)
                 {
-                    if (i < timeline[f].layers.Count && !timeline[f].layers[i].deleted){
-                        frameWrapper.transform.GetChild(i).gameObject.SetActive(true);
+                    frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
+                }
+                for(int i = 0; i < timeline[f].layers.Count; i++)
+                {
+                    numDeleted += timeline[f].layers[i].deleted ? 1 : 0;
+                    
+                    int layerOn = i - numDeleted;
+
+                    if (layerOn < timeline[f].layers.Count && !timeline[f].layers[i].deleted){
+                        var frameButton =  frameWrapper.transform.GetChild(layerOn);
+                        frameButton.gameObject.SetActive(true);
+                        frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i,f);
 
                         print("NUM BATCH POOLS: " + timeline[f].layers[i].canvas.BatchManager.GetNumBatchPools());
 
                         bool filled = timeline[f].layers[i].canvas.BatchManager.GetNumBatchPools() > 0;
 
-                        frameWrapper.transform.GetChild(i).GetChild(0).gameObject.SetActive(filled);
-                        frameWrapper.transform.GetChild(i).GetChild(1).gameObject.SetActive(!filled);
+                        frameButton.GetChild(0).gameObject.SetActive(filled);
+                        frameButton.GetChild(1).gameObject.SetActive(!filled);
 
               
                     }
-                    else{
-                         frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
-                    }
-             
+              
                 }
  
 
