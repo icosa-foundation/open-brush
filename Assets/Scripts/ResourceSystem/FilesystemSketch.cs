@@ -36,7 +36,7 @@ namespace TiltBrush
 
         public async Task<Texture2D> LoadPreviewAsync()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
             return null;
         }
         public async Task<Stream> GetStreamAsync()

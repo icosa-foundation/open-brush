@@ -193,7 +193,7 @@ namespace TiltBrush
 
             var fileOptions = new Dictionary<string, string>
             {
-                {"path", App.UserPath() },
+                {"path", App.UserSketchPath() },
                 {"name", "Your Sketches"}
             };
 

@@ -10,6 +10,7 @@ namespace TiltBrush
     public class ResourceSketch : ISketch
     {
         private ResourceFileInfo m_FileInfo;
+        private static readonly string[] emptyStringArray = new string[] { };
         public ResourceSketch(ResourceFileInfo fileInfo)
         {
             m_FileInfo = fileInfo;
@@ -27,7 +28,7 @@ namespace TiltBrush
 
         public string[] Authors
         {
-            get => m_FileInfo.Resource.Authors.Select(x => x.Name).ToArray();
+            get => m_FileInfo.Resource.Authors?.Select(x => x.Name).ToArray() ?? emptyStringArray;
             set
             {
                 throw new NotSupportedException("ResourceSketch does not support setting authors.");

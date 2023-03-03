@@ -99,13 +99,12 @@ namespace TiltBrush
                 return;
             }
 
-            var url = resourceSketch.SceneFileInfo.FullPath;
             var tilt = new DotTiltFile(resourceSketch.ResourceFileInfo.Resource);
             using (var thumbStream = await tilt.GetSubFileAsync(TiltFile.FN_THUMBNAIL))
             {
                 if (thumbStream == null)
                 {
-                    Debug.LogError($"Could not open {TiltFile.FN_THUMBNAIL} stream from {url}.");
+                    Debug.LogError($"Could not open {TiltFile.FN_THUMBNAIL} stream for {resourceSketch.ResourceFileInfo.Resource.Uri}.");
                     return;
                 }
                 try

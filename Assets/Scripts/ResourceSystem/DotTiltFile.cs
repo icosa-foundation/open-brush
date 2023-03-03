@@ -70,6 +70,10 @@ namespace TiltBrush
         public async Task<Stream> GetSubFileAsync(string filename)
         {
             var stream = await m_Resource.GetStreamAsync();
+            if (stream == null)
+            {
+                return null;
+            }
             string tempFilename;
             if (!stream.CanSeek)
             {

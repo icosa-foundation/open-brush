@@ -35,7 +35,7 @@ namespace TiltBrush
         public async Task<Texture2D> LoadPreviewAsync()
         {
             // TODO: Perhaps to something clever with having a thumbnail in a .meta subdir?
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
             return null;
         }
 
@@ -68,6 +68,7 @@ namespace TiltBrush
 
         public async Task<Stream> GetStreamAsync()
         {
+            return null;
             throw new NotImplementedException();
         }
 #pragma warning restore 1998
