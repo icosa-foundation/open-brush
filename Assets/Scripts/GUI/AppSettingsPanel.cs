@@ -22,18 +22,16 @@ namespace TiltBrush
     public class AppSettingsPanel : BasePanel
     {
         public ToggleButton m_ToggleExperimentalModeToggle;
-        public ToggleButton m_ToggleWandOnRight;
 
         public override void InitPanel()
         {
             base.InitPanel();
             m_ToggleExperimentalModeToggle.IsToggledOn = App.Config.GetIsExperimental();
-            m_ToggleWandOnRight.IsToggledOn = InputManager.m_Instance.WandOnRight;
         }
 
         public void HandleToggleHandedness(ToggleButton btn)
         {
-            InputManager.m_Instance.WandOnRight = btn.IsToggledOn;
+            InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
         }
 
         public void HandleResetFirstUse()

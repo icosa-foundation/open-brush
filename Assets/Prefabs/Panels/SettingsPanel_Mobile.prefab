@@ -1850,7 +1850,7 @@ MonoBehaviour:
   m_PromoBorders:
   - {fileID: 0}
   m_ToggleExperimentalModeToggle: {fileID: 6926684204091440275}
-  m_ToggleWandOnRight: {fileID: 8868888553406399460}
+  m_ToggleWandOnRight: {fileID: 0}
 --- !u!114 &114891467858407700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3122,7 +3122,6 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  m_IsToggledOn: 0
   m_OnToggle:
     m_PersistentCalls:
       m_Calls:
@@ -3235,7 +3234,7 @@ GameObject:
   - component: {fileID: 5286037605656813228}
   - component: {fileID: 8868888553406399460}
   m_Layer: 16
-  m_Name: PanelButton_ToggleWandOnRight
+  m_Name: PanelButton_SwapHands
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3328,12 +3327,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7515419606022867582}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d24b89fbd7e49a59e0c07ded4dd0713, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Swap brush to Left Hand
+  m_DescriptionText: Swap Hands
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -3354,26 +3353,10 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_ToggleOnDescription: Swap brush to Right Hand
-  m_ToggleOnTexture: {fileID: 2800000, guid: 6db34cedd950a2746be9bddd14752ec9, type: 3}
+  m_ToggleOnDescription: 
+  m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
-  m_IsToggledOn: 0
-  m_OnToggle:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 114959514012329902}
-        m_TargetAssemblyTypeName: TiltBrush.AppSettingsPanel, Assembly-CSharp
-        m_MethodName: HandleToggleHandedness
-        m_Mode: 2
-        m_Arguments:
-          m_ObjectArgument: {fileID: 8868888553406399460}
-          m_ObjectArgumentAssemblyTypeName: TiltBrush.ToggleButton, Assembly-CSharp
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!1 &8259126867977118062
 GameObject:
   m_ObjectHideFlags: 0
