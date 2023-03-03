@@ -31,7 +31,7 @@ namespace TiltBrush
 
         public void HandleToggleHandedness(ToggleButton btn)
         {
-            InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
+            SketchControlsScript.DoSwapControls();
         }
 
         public void HandleResetFirstUse()
