@@ -12,24 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
-using UnityEngine.Serialization;
-
 namespace TiltBrush
 {
 
     public class AppSettingsPanel : BasePanel
     {
-        public ToggleButton m_ToggleExperimentalModeToggle;
 
-        public override void InitPanel()
-        {
-            base.InitPanel();
-            m_ToggleExperimentalModeToggle.IsToggledOn = App.Config.GetIsExperimental();
-        }
-
-        public void HandleToggleHandedness(ToggleButton btn)
+        public void HandleToggleHandedness()
         {
             SketchControlsScript.DoSwapControls();
         }

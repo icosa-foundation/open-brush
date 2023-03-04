@@ -1849,8 +1849,6 @@ MonoBehaviour:
   m_PopUpGazeDuration: 0.2
   m_PromoBorders:
   - {fileID: 0}
-  m_ToggleExperimentalModeToggle: {fileID: 6926684204091440275}
-  m_ToggleWandOnRight: {fileID: 0}
 --- !u!114 &114891467858407700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3327,7 +3325,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7515419606022867582}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -3338,7 +3336,7 @@ MonoBehaviour:
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: cb0dc83d6dc99e546a652f8f414a9eba, type: 3}
   m_AtlasTexture: 1
-  m_ToggleButton: 1
+  m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.02
@@ -3346,17 +3344,21 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 0
-  m_CommandParam: -1
-  m_CommandParam2: -1
-  m_RequiresPopup: 0
-  m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
-  m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 0
-  m_LinkedUIObject: {fileID: 0}
+  m_Action:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 114959514012329902}
+        m_TargetAssemblyTypeName: TiltBrush.AppSettingsPanel, Assembly-CSharp
+        m_MethodName: HandleToggleHandedness
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8259126867977118062
 GameObject:
   m_ObjectHideFlags: 0
