@@ -527,7 +527,6 @@ MonoBehaviour:
   m_ContactingServerMessage: {fileID: 1000011835935838}
   m_OutOfDateMessage: {fileID: 1000012586849750}
   m_NoPolyConnectionMessage: {fileID: 4374687820491222719}
-  m_OnlineGalleryButtonRenderer: {fileID: 0}
   m_IconsOnFirstPage:
   - {fileID: 142432}
   - {fileID: 167238}
@@ -564,6 +563,7 @@ MonoBehaviour:
   m_DriveFullIcon: {fileID: 894190226255371916}
   m_SketchIconUvScale: {x: 0.7, y: 0.7}
   m_ReadOnlyPopupOffset: {x: 0.2, y: 0, z: 0}
+  m_FolderIcon: {fileID: 2800000, guid: ee2622d6ec17a3640a40234981c65bff, type: 3}
 --- !u!114 &114513666115880546
 MonoBehaviour:
   m_ObjectHideFlags: 0

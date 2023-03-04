@@ -33,33 +33,33 @@ namespace TiltBrush
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
         private Dictionary<string, ISketchSet> m_Sets = new Dictionary<string, ISketchSet>();
-        private Dictionary<string, Func<Dictionary<string, string>, ISketchSet>> m_CollectionCreators;
+        private Dictionary<string, Func<Dictionary<string, object>, ISketchSet>> m_CollectionCreators;
 
 
         private void SetupResourceCollectionCreators()
         {
-            m_CollectionCreators = new Dictionary<string, Func<Dictionary<string, string>, ISketchSet>>();
+            m_CollectionCreators = new Dictionary<string, Func<Dictionary<string, object>, ISketchSet>>();
 
             int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-            m_CollectionCreators[FileSketchSet.TypeName] = (Dictionary<string, string> _) =>
+            m_CollectionCreators[FileSketchSet.TypeName] = (Dictionary<string, object> _) =>
                 new FileSketchSet();
-            m_CollectionCreators[PolySketchSet.TypeName] = (Dictionary<string, string> _) =>
+            m_CollectionCreators[PolySketchSet.TypeName] = (Dictionary<string, object> _) =>
                 new PolySketchSet(this, PolySketchSet.SketchType.Liked, maxTriangles, needsLogin: true);
-            m_CollectionCreators[GoogleDriveSketchSet.TypeName] = (Dictionary<string, string> _) =>
+            m_CollectionCreators[GoogleDriveSketchSet.TypeName] = (Dictionary<string, object> _) =>
                 new GoogleDriveSketchSet();
-            m_CollectionCreators["Resource-Rss"] = (Dictionary<string, string> options) =>
-                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["uri"])));
-            m_CollectionCreators["Resource-Path"] = (Dictionary<string, string> options) =>
-                new ResourceCollectionSketchSet(new FilesystemSketchCollection(options["path"], options?["name"] ?? ""));
-            m_CollectionCreators["Resource-Icosa"] = (Dictionary<string, string> options) =>
+            m_CollectionCreators["Resource-Rss"] = (Dictionary<string, object> options) =>
+                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["uri"] as string)));
+            m_CollectionCreators["Resource-Path"] = (Dictionary<string, object> options) =>
+                new ResourceCollectionSketchSet(new FilesystemSketchCollection(options["path"] as string, (options?["name"] ?? "") as string, options?["icon"] as Texture2D));
+            m_CollectionCreators["Resource-Icosa"] = (Dictionary<string, object> options) =>
             {
-                string user = null;
+                object user = null;
                 options.TryGetValue("user", out user);
-                return new ResourceCollectionSketchSet(new IcosaSketchCollection(App.HttpClient, user));
+                return new ResourceCollectionSketchSet(new IcosaSketchCollection(App.HttpClient, user as string));
             };
         }
 
-        public static string CreateId(string id, Dictionary<string, string> options)
+        public static string CreateId(string id, Dictionary<string, object> options)
         {
             var sb = new StringBuilder();
             sb.Append(id);
@@ -95,7 +95,7 @@ namespace TiltBrush
             return (type, options);
         }
 
-        public ISketchSet GetSketchSet(string type, Dictionary<string, string> options)
+        public ISketchSet GetSketchSet(string type, Dictionary<string, object> options)
         {
             string id = CreateId(type, options);
             ISketchSet sketchSet = null;
@@ -108,6 +108,7 @@ namespace TiltBrush
             m_Sets[id] = sketchSet;
             return sketchSet;
         }
+
 
         void Awake()
         {

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -74,6 +75,8 @@ namespace TiltBrush
         [SerializeField] private Vector2 m_SketchIconUvScale = new Vector2(0.7f, 0.7f);
         [SerializeField] private Vector3 m_ReadOnlyPopupOffset;
 
+        [FormerlySerializedAs("m_FolderTexture")][SerializeField] private Texture2D m_FolderIcon;
+
         private float m_ImageAspect;
         private Vector2 m_HalfInvUvScale;
 
@@ -95,7 +98,7 @@ namespace TiltBrush
         public float ImageAspect { get { return m_ImageAspect; } }
 
         public int SelectedSketchStack => m_SelectedStack;
-        public ISketchSet CurrentSketchSet => m_SetStacks?[m_SelectedStack]?.Peek() ?? null;
+        public ISketchSet CurrentSketchSet { get; private set; }
 
         override public void SetInIntroMode(bool inIntro)
         {
@@ -186,15 +189,16 @@ namespace TiltBrush
             m_NotLoggedInMessage.SetActive(false);
             m_NotLoggedInDriveMessage.SetActive(false);
 
-            var rssOptions = new Dictionary<string, string>
+            var rssOptions = new Dictionary<string, object>
             {
                 {"uri",  "https://timaidley.github.io/open-brush-feed/sketches.rss" }
             };
 
-            var fileOptions = new Dictionary<string, string>
+            var fileOptions = new Dictionary<string, object>
             {
                 {"path", App.UserSketchPath() },
-                {"name", "Your Sketches"}
+                {"name", "Your Sketches"},
+                {"icon", m_FolderIcon},
             };
 
             // Fetch the root stacks
@@ -206,6 +210,7 @@ namespace TiltBrush
                 new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.TypeName, null)}),
             };
             m_SelectedStack = (int)RootSet.Backup;
+            CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
 
             // Dynamically position the gallery buttons.
             OnDriveSetHasSketchesChanged();
@@ -251,6 +256,15 @@ namespace TiltBrush
             }
         }
 
+        public void PushSketchSet(int stack, ISketchSet sketchSet)
+        {
+            m_SetStacks[stack].Push(sketchSet);
+            if (stack == m_SelectedStack)
+            {
+                SetVisibleSketchSet((RootSet)m_SelectedStack);
+            }
+        }
+
         void SetVisibleSketchSet(RootSet stack)
         {
             int stackIndex = (int)stack;
@@ -265,6 +279,7 @@ namespace TiltBrush
 
                 // Cache new set.
                 m_SelectedStack = stackIndex;
+                CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
                 CurrentSketchSet.OnChanged += OnSketchSetDirty;
                 CurrentSketchSet.RequestRefresh();
 

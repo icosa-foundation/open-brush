@@ -9,11 +9,13 @@ namespace TiltBrush
     {
         private string m_Path;
         private DirectoryInfo m_Dir;
+        private Texture2D m_Icon;
 
-        public FilesystemSketchCollection(string path, string name)
+        public FilesystemSketchCollection(string path, string name, Texture2D icon = null)
         {
             m_Path = path;
             Name = name;
+            m_Icon = icon;
         }
 
         public string CollectionType => "LocalFolderCollection";
@@ -34,9 +36,7 @@ namespace TiltBrush
 #pragma warning disable 1998
         public async Task<Texture2D> LoadPreviewAsync()
         {
-            // TODO: Perhaps to something clever with having a thumbnail in a .meta subdir?
-            //throw new NotImplementedException();
-            return null;
+            return m_Icon;
         }
 
         public async Task InitAsync()
@@ -57,7 +57,7 @@ namespace TiltBrush
                 {
                     continue;
                 }
-                yield return new FilesystemSketchCollection(dirInfo.FullName, dirInfo.Name);
+                yield return new FilesystemSketchCollection(dirInfo.FullName, dirInfo.Name, m_Icon);
             }
 
             foreach (var fileInfo in m_Dir.EnumerateFiles("*.tilt"))

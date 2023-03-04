@@ -156,6 +156,16 @@ namespace TiltBrush
                 return;
             }
 
+            var sketch = m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex);
+            if (sketch is ResourceFileInfo resourceFileInfo)
+            {
+                if (resourceFileInfo.Resource is IResourceCollection collection)
+                {
+                    var sketchSet = new ResourceCollectionSketchSet(collection);
+                    SketchbookPanel.Instance.PushSketchSet(SketchbookPanel.Instance.SelectedSketchStack, sketchSet);
+                }
+            }
+
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
             // TODO: SketchSet needs to know its own id?
