@@ -89,6 +89,12 @@ namespace TiltBrush
                 return m_strokes.GroupBy(stroke => stroke.m_BrushGuid)
                     .Select(g => new ExportBrush(g));
             }
+
+            public IEnumerable<ExportBrush> SplitByBrushAndLayer()
+            {
+                return m_strokes.GroupBy(stroke => (stroke.m_BrushGuid, stroke.Canvas))
+                    .Select(g => new ExportBrush(g));
+            }
         }
 
         /// A brush guid and some strokes
@@ -101,6 +107,12 @@ namespace TiltBrush
             public ExportBrush(IGrouping<Guid, Stroke> group)
             {
                 m_desc = BrushCatalog.m_Instance.GetBrush(group.Key);
+                m_strokes = group.ToList();
+            }
+
+            public ExportBrush(IGrouping<(Guid, CanvasScript), Stroke> group)
+            {
+                m_desc = BrushCatalog.m_Instance.GetBrush(group.Key.Item1);
                 m_strokes = group.ToList();
             }
 

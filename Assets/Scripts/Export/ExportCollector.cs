@@ -265,7 +265,7 @@ namespace TiltBrush
 
             // Flattens the two-level (brush, batch) iteration to a single list of meshes
             // with heterogeneous materials.
-            foreach (ExportUtils.ExportBrush brush in exportGroup.SplitByBrush())
+            foreach (ExportUtils.ExportBrush brush in exportGroup.SplitByBrushAndLayer())
             {
                 var desc = brush.m_desc;
                 foreach (var (batch, batchIndex) in brush.ToGeometryBatches().WithIndex())
@@ -273,8 +273,9 @@ namespace TiltBrush
                     GeometryPool geometry = batch.pool;
                     List<Stroke> strokes = batch.strokes;
 
-                    string legacyUniqueName = $"{desc.m_DurableName}_{desc.m_Guid}_{group.id}_i{batchIndex}";
-                    string friendlyGeometryName = $"brush_{desc.m_DurableName}_g{group.id}_b{batchIndex}";
+                    string layerName = strokes[0].Canvas.gameObject.name;
+                    string legacyUniqueName = $"{layerName}_{desc.m_DurableName}_{desc.m_Guid}_{group.id}_i{batchIndex}";
+                    string friendlyGeometryName = $"{layerName}_brush_{desc.m_DurableName}_g{group.id}_b{batchIndex}";
 
                     UnityEngine.Profiling.Profiler.BeginSample("ConvertToMetersAndChangeBasis");
                     ExportUtils.ConvertUnitsAndChangeBasis(geometry, payload);
@@ -341,7 +342,8 @@ namespace TiltBrush
         static ImageQuadPayload BuildImageQuadPayload(
             SceneStatePayload payload, ImageWidget widget, DynamicExportableMaterial material, int id)
         {
-            string nodeName = $"image_{widget.GetExportName()}_{id}";
+            string layerName = widget.Canvas.gameObject.name;
+            string nodeName = $"{layerName}_image_{widget.GetExportName()}_{id}";
 
             // The child has no T or R but has some non-uniform S that we need to preserve.
             // I'm going to do this by baking it into the GeometryPool
@@ -380,7 +382,7 @@ namespace TiltBrush
             {
                 // because Count always increments, this is guaranteed unique even if two different images
                 // have the same export name
-                legacyUniqueName = $"refimage_i{payload.imageQuads.Count}",
+                legacyUniqueName = $"{layerName}_refimage_i{payload.imageQuads.Count}",
                 // We could (but don't) share the same aspect-ratio'd-quad for all instances of a refimage.
                 // Since the mesh is unique to the node, it can have the same name as the node.
                 geometryName = nodeName,
@@ -433,6 +435,7 @@ namespace TiltBrush
 
                 foreach ((ModelWidget widget, int widgetIndex) in group.WithIndex())
                 {
+                    string layerName = widget.gameObject.name;
                     Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
                     // Acts like our AsScene[], AsCanvas[] accessors
                     var AsWidget = new TransformExtensions.RelativeAccessor(widget.transform);
@@ -468,8 +471,8 @@ namespace TiltBrush
                                 exportableMaterial = prefabSubMesh.exportableMaterial,
                                 geometryName = prefabSubMesh.name,
                                 // Unique to instance
-                                legacyUniqueName = $"{prefabSubMesh.name}_i{objId}",
-                                nodeName = $"{prefabSubMesh.name}_{widgetIndex}",
+                                legacyUniqueName = $"{layerName}_{prefabSubMesh.name}_i{objId}",
+                                nodeName = $"{layerName}_{prefabSubMesh.name}_{widgetIndex}",
                                 parentXform = widgetXform,
                                 localXform = localXform,
                                 modelId = widgetIndex,
