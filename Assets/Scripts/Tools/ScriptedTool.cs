@@ -228,11 +228,7 @@ namespace TiltBrush
 
             switch (result.Space)
             {
-                case ScriptCoordSpace.Canvas:
-                    tr_CS.translation = Vector3.zero;
-                    tr_CS.rotation = Quaternion.identity;
-                    tr_CS.scale = 1f;
-                    break;
+                case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
@@ -245,11 +241,10 @@ namespace TiltBrush
                         return tr;
                     }).ToList();
                     break;
-                case ScriptCoordSpace.Widget:
-                    var widget = PointerManager.m_Instance.SymmetryWidget.transform;
-                    tr_CS.translation = widget.position;
-                    tr_CS.rotation = widget.rotation;
-                    tr_CS.scale = drawnVector_CS.magnitude;
+                case ScriptCoordSpace.Canvas:
+                    tr_CS.translation = Vector3.zero;
+                    tr_CS.rotation = Quaternion.identity;
+                    tr_CS.scale = 1f;
                     break;
             }
 

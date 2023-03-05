@@ -1,8 +1,4 @@
-﻿Settings = {
-    space="widget"
-}
-
-Widgets = {
+﻿Widgets = {
     copies={label="Number of copies", type="int", min=0, max=36, default=4},
 }
 

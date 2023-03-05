@@ -1,6 +1,4 @@
-﻿Settings = {
-    space="pointer"
-}
+﻿Settings = {space="pointer"}
 
 Widgets = {
     copies={label="Copies", type="int", min=1, max=8, default=2},

@@ -12,3 +12,4 @@ function OnTriggerReleased()
     end
     return points
 end
+

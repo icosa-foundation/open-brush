@@ -754,9 +754,9 @@ namespace TiltBrush
         public List<TrTransform> GetScriptedTransforms()
         {
             var result = LuaManager.Instance.CallActiveSymmetryScript("Main");
-            if (result.Transforms.Count + 1 != m_NumActivePointers)
+            if (result.Transforms.Count != m_NumActivePointers)
             {
-                ChangeNumActivePointers(result.Transforms.Count + 1);
+                ChangeNumActivePointers(result.Transforms.Count);
             }
 
             var trs_CS = new List<TrTransform>();
@@ -767,6 +767,15 @@ namespace TiltBrush
                 TrTransform newTr_CS = TrTransform.identity;
                 switch (result.Space)
                 {
+                    case ScriptCoordSpace.Default:
+                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+                        var tr = resultTr;
+                        var translation = tr.translation;
+                        tr.translation = Vector3.zero;
+                        newTr_CS = tr.TransformBy(xfWidget);
+                        translation = tr.rotation * translation;
+                        newTr_CS.translation += translation;
+                        break;
                     case ScriptCoordSpace.Canvas:
                         newTr_CS = resultTr;
                         break;
@@ -774,19 +783,7 @@ namespace TiltBrush
                         Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
                         Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
                         newTr_CS.translation = pointerRot_GS * resultTr.translation;
-                        // newTr_CS.translation += rAttachPoint_GS.position;
                         break;
-                    case ScriptCoordSpace.Widget:
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            var tr = resultTr;
-                            var translation = tr.translation;
-                            tr.translation = Vector3.zero;
-                            newTr_CS = tr.TransformBy(xfWidget);
-                            translation = tr.rotation * translation;
-                            newTr_CS.translation += translation;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
                 }
                 trs_CS.Add(newTr_CS);
             }
@@ -838,7 +835,7 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
                     var trs = GetScriptedTransforms();
-                    active = trs.Count + 1;
+                    active = trs.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
@@ -902,7 +899,8 @@ namespace TiltBrush
             int child = pointer.ChildIndex;
             // "active pointers" is the number of pointers the symmetry widget is using,
             // including the main pointer.
-            if (child == 0 || child >= m_NumActivePointers)
+            // ScriptedSymmetryMode controls ALL pointers including the pointer 0
+            if (child == 0 || m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 return xfMain;
             }
@@ -1020,7 +1018,7 @@ namespace TiltBrush
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var trs = GetScriptedTransforms();
                         SetScriptedBrushesAndColors();
-                        int pointerIndex = 1;
+                        int pointerIndex = 0;
                         foreach (var tr in trs)
                         {
                             // convert from canvas to world coords

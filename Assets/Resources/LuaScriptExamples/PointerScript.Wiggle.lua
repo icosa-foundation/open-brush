@@ -7,5 +7,5 @@ function WhileTriggerPressed()
         (-0.5 + math.random()) * amount / 5.0,
         (-0.5 + math.random()) * amount / 5.0,
         (-0.5 + math.random()) * amount / 5.0
-        }};
+    }};
 end

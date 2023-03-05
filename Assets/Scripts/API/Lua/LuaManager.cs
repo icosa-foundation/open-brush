@@ -28,9 +28,9 @@ namespace TiltBrush
 {
     public enum ScriptCoordSpace
     {
+        Default,
         Pointer,
         Canvas,
-        Widget,
     }
 
     public class LuaManager : MonoBehaviour
@@ -381,6 +381,18 @@ namespace TiltBrush
                     LogLuaError(script, fnName, e);
                 }
             }
+
+            // A bit hacky but always reset ForcePainting modes when calling "End".
+            // (even if there is no "End" function defined)
+            // It was proving fairly complex to reliably enforce this in the scripts themselves
+            // It was hard to debug when it went wrong and it breaks the app in a confusing way.
+            // So just do it here to be certain...
+            if (fnName == "End")
+            {
+                ApiMethods.ForcePaintingOn(false);
+                ApiMethods.ForcePaintingOff(false);
+            }
+
             return result;
         }
 
@@ -434,24 +446,12 @@ namespace TiltBrush
 
         private ScriptCoordSpace _GetSpaceForActiveScript(ApiCategory category)
         {
-            // Set defaults here
-            ScriptCoordSpace space;
-            if (category == ApiCategory.SymmetryScript)
-            {
-                space = ScriptCoordSpace.Widget;
-            }
-            else
-            {
-                space = ScriptCoordSpace.Pointer;
-            }
-
-            // See if the defaults are overridden
+            ScriptCoordSpace space = ScriptCoordSpace.Default;
             var spaceVal = GetSettingForActiveScript(category, "space");
             if (spaceVal != null)
             {
                 Enum.TryParse(spaceVal.String, true, out space);
             }
-
             return space;
         }
 
@@ -623,6 +623,14 @@ namespace TiltBrush
 
             switch (scriptTransformOutput.Space)
             {
+                case ScriptCoordSpace.Default:
+                case ScriptCoordSpace.Pointer:
+                    var oldPos = pos_GS;
+                    pos_GS = scriptTransformOutput.Transform.translation;
+                    pos_GS = pointerRot * pos_GS;
+                    pos_GS += oldPos;
+                    rot_GS *= scriptTransformOutput.Transform.rotation;
+                    break;
                 case ScriptCoordSpace.Canvas:
                     var tr_CS = TrTransform.TR(
                         scriptTransformOutput.Transform.translation,
@@ -631,20 +639,6 @@ namespace TiltBrush
                     var tr_GS = App.Scene.Pose * tr_CS;
                     pos_GS = tr_GS.translation;
                     rot_GS = tr_GS.rotation;
-                    break;
-                case ScriptCoordSpace.Pointer:
-                    var oldPos = pos_GS;
-                    pos_GS = scriptTransformOutput.Transform.translation;
-                    pos_GS = pointerRot * pos_GS;
-                    pos_GS += oldPos;
-                    rot_GS *= scriptTransformOutput.Transform.rotation;
-                    break;
-                case ScriptCoordSpace.Widget:
-                    var widget = PointerManager.m_Instance.SymmetryWidget.transform;
-                    rot_GS = widget.rotation;
-                    pos_GS = rot_GS * pos_GS;
-                    pos_GS += widget.position;
-                    rot_GS *= scriptTransformOutput.Transform.rotation;
                     break;
             }
         }
