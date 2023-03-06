@@ -143,12 +143,14 @@ function camerapath.toggleVisuals() end
 function camerapath.togglePreview() end
 function camerapath.delete() end
 function camerapath.record() end
-function color.addHsv(color) end
+function color.addHsv(hsv) end
 function color.addRgb(color) end
 function color.setRgb(color) end
-function color.setHsv(color) end
+function color.setHsv(hsv) end
 function color.setHtml(color) end
 function color.jitter() end
+function color.HsvToRgb(h, s, v) end
+function color.RgbToHsv(rgb) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, radius, angle) end

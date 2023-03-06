@@ -133,7 +133,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                RegisterApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
+                SetApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
                 DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
@@ -205,17 +205,17 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    RegisterApiProperty("tool.endPosition", rAttachPoint_CS.translation);
-                    RegisterApiProperty("tool.vector", drawnVector_CS);
+                    SetApiProperty("tool.endPosition", rAttachPoint_CS.translation);
+                    SetApiProperty("tool.vector", drawnVector_CS);
                     DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
                 }
             }
         }
 
-        private void RegisterApiProperty(string key, object value)
+        private void SetApiProperty(string key, object value)
         {
             var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.ToolScript);
-            LuaManager.Instance.RegisterApiProperty(script, key, value);
+            LuaManager.Instance.SetApiProperty(script, key, value);
         }
 
         private void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)

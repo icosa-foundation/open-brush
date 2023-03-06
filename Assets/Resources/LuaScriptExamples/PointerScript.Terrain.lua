@@ -9,6 +9,10 @@ Widgets = {
 }
 
 function WhileTriggerPressed()
+
+    -- Don't allow painting immediately otherwise you get stray lines
+    brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
+
     return {
         position = {
             brush.position.x,

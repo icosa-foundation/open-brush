@@ -281,6 +281,19 @@ namespace TiltBrush
             return m_TransformBuffers.PastHeadTr(back).rotation;
         }
 
+        // Skips most error checking. Use for repeated redefinition.
+        public void SetApiProperty(Script script, string cmd, object action)
+        {
+            var parts = cmd.Split(".");
+            var tbl = script.Globals.Get(parts[0]);
+            if (Equals(tbl, DynValue.Nil))
+            {
+                script.Globals.Set(parts[0], DynValue.NewTable(new Table(script)));
+                tbl = script.Globals.Get(parts[0]);
+            }
+            tbl.Table[parts[1]] = action;
+        }
+
         public void RegisterApiProperty(Script script, string cmd, object action)
         {
             _RegisterToApi(script, cmd, action);
@@ -334,7 +347,7 @@ namespace TiltBrush
 #endif
         }
 
-        public void _RegisterToApi(Script script, string cmd, object action)
+        public void _RegisterToApi(Script script, string cmd, object action, bool allowRedefine=false)
         {
             var parts = cmd.Split(".");
             var tbl = script.Globals.Get(parts[0]);
@@ -349,7 +362,7 @@ namespace TiltBrush
                 return;
             }
             var entry = tbl.Table.Get(parts[1]);
-            if (Equals(entry, DynValue.Nil))
+            if (Equals(entry, DynValue.Nil) || allowRedefine)
             {
                 tbl.Table[parts[1]] = action;
             }

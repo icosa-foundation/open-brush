@@ -9,11 +9,7 @@ function Main()
     end
 
     -- Don't allow painting immediately otherwise you get stray lines
-    if brush.triggerIsPressed and brush.timeSincePressed > .05 then
-        brush.forcePaintingOff(false)
-    else
-        brush.forcePaintingOff(true)
-    end
+    brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
 
     pointers = {}
     Colors = {}

@@ -9,14 +9,18 @@ Widgets = {
 }
 
 function WhileTriggerPressed()
+
+    -- Don't allow painting immediately otherwise you get stray lines
+    brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
+
     mix = (math.sin(app.time * freq) + 1) * amp
     pos = brush.position
+    rot = brush.rotation
     oldpos = brush.pastPosition(delay)
     pos = {
         unityMathf.lerpUnclamped(oldpos.x, pos.x, mix),
         unityMathf.lerpUnclamped(oldpos.y, pos.y, mix),
         unityMathf.lerpUnclamped(oldpos.z, pos.z, mix),
     }
-    rot = brush.rotation
     return {pos, rot}
 end
