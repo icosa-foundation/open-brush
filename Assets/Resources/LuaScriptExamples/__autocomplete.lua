@@ -169,12 +169,17 @@ function headset.pastRotation(count) end
 function image.import(location) end
 function image.select(index) end
 function image.moveTo(index, position) end
-layer.active = nil
-function layer.transform(index) end
-function layer.position(index) end
-function layer.rotation(index) end
-function layer.moveTo(index, position) end
-function layer.moveBy(index, distance) end
+function image.getTransform(index) end
+function image.getPosition(index) end
+function image.getRotation(index) end
+function image.setPosition(index, position) end
+function image.setRotation(index, rotation) end
+layer.getActive = nil
+function layer.getTransform(index) end
+function layer.getPosition(index) end
+function layer.setPosition(index, position) end
+function layer.getRotation(index) end
+function layer.setRotation(index, rotation) end
 function layer.add() end
 function layer.clear(index) end
 function layer.delete(index) end
@@ -183,11 +188,12 @@ function layer.activate(index) end
 function layer.show(index) end
 function layer.hide(index) end
 function layer.toggle(index) end
-function layer._MoveTo(index, pos) end
-function layer._MoveBy(index, distance) end
-function layer._TransformLayer(index, tr) end
 function model.select(index) end
-function model.moveTo(index, position) end
+function model.getTransform(index) end
+function model.getPosition(index) end
+function model.getRotation(index) end
+function model.setPosition(index, position) end
+function model.setRotation(index, rotation) end
 function path.fromSvg(svg) end
 function path.fromSvgMultiple(svg) end
 function path.transform(path, transform) end
@@ -207,8 +213,8 @@ function sketch.open(name) end
 function sketch.save(overwrite) end
 function sketch.export() end
 function sketch.newSketch() end
-function spectator.moveTo(position) end
-function spectator.moveBy(distance) end
+spectator.position = nil
+spectator.rotation = nil
 function spectator.turn(angle) end
 function spectator.turnX(angle) end
 function spectator.turnZ(angle) end
@@ -259,8 +265,8 @@ function turtle.homeReset() end
 function turtle.homeSet() end
 function turtle.transformPush() end
 function turtle.transformPop() end
-function user.moveTo(position) end
-function user.moveBy(distance) end
+user.position = nil
+user.rotation = nil
 wand.position = nil
 wand.rotation = nil
 wand.direction = nil
@@ -268,3 +274,8 @@ wand.pressure = nil
 wand.speed = nil
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
+function waveform.sine(time, frequency) end
+function waveform.triangle(time, frequency) end
+function waveform.sawtooth(time, frequency) end
+function waveform.square(time, frequency) end
+function waveform.noise(time, frequency) end

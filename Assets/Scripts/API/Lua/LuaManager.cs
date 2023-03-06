@@ -529,6 +529,7 @@ namespace TiltBrush
             RegisterApiClass(script, "turtle", typeof(TurtleApiWrapper));
             RegisterApiClass(script, "user", typeof(UserApiWrapper));
             RegisterApiClass(script, "wand", typeof(WandApiWrapper));
+            RegisterApiClass(script, "waveform", typeof(WaveformApiWrapper));
         }
 
         public void EnablePointerScript(bool enable)

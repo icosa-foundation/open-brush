@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -100,8 +101,6 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SpectatorApiWrapper
     {
-        public static void moveTo(Vector3 position) => ApiMethods.MoveSpectatorTo(position);
-        public static void moveBy(Vector3 distance) => ApiMethods.MoveSpectatorBy(distance);
         public static void turn(float angle) => ApiMethods.SpectatorYaw(angle);
         public static void turnX(float angle) => ApiMethods.SpectatorPitch(angle);
         public static void turnZ(float angle) => ApiMethods.SpectatorRoll(angle);
@@ -113,6 +112,16 @@ namespace TiltBrush
         public static void toggle() => ApiMethods.ToggleSpectator();
         public static void on() => ApiMethods.EnableSpectator();
         public static void off() => ApiMethods.DisableSpectator();
+        public static Vector3 position
+        {
+            get => SketchControlsScript.m_Instance.GetDropCampWidget().transform.position;
+            set => SketchControlsScript.m_Instance.GetDropCampWidget().transform.position = value;
+        }
+        public static Quaternion rotation
+        {
+            get => SketchControlsScript.m_Instance.GetDropCampWidget().transform.rotation;
+            set => SketchControlsScript.m_Instance.GetDropCampWidget().transform.rotation = value;
+        }
     }
 
     [MoonSharpUserData]
@@ -182,30 +191,72 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class ColorApiWrapper
     {
-        public static void addHsv(Vector3 color) => ApiMethods.AddColorHSV(color);
+        public static void addHsv(Vector3 hsv) => ApiMethods.AddColorHSV(hsv);
         public static void addRgb(Vector3 color) => ApiMethods.AddColorRGB(color);
         public static void setRgb(Vector3 color) => ApiMethods.SetColorRGB(color);
-        public static void setHsv(Vector3 color) => ApiMethods.SetColorHSV(color);
+        public static void setHsv(Vector3 hsv) => ApiMethods.SetColorHSV(hsv);
         public static void setHtml(string color) => ApiMethods.SetColorHTML(color);
         public static void jitter() => LuaApiMethods.JitterColor();
+        public static Color HsvToRgb(float h, float s, float v) => Color.HSVToRGB(
+            Mathf.Clamp01(h),
+            Mathf.Clamp01(s),
+            Mathf.Clamp01(v)
+        );
+        public static Vector3 RgbToHsv(Color rgb)
+        {
+            Color.RGBToHSV(rgb, out float h, out float s, out float v);
+            return new Vector3(h, s, v);
+        }
     }
 
     [MoonSharpUserData]
     public static class UserApiWrapper
     {
-        public static void moveTo(Vector3 position) => ApiMethods.MoveUserTo(position);
-        public static void moveBy(Vector3 distance) => ApiMethods.MoveUserBy(distance);
+        public static Vector3 position
+        {
+            get => App.Scene.Pose.translation;
+            set
+            {
+                TrTransform pose = App.Scene.Pose;
+                pose.translation = value;
+                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+                App.Scene.Pose = pose;
+            }
+        }
+        public static Quaternion rotation
+        {
+            get => App.Scene.Pose.rotation;
+            set
+            {
+                TrTransform pose = App.Scene.Pose;
+                pose.rotation = value;
+                float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+                pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
+                App.Scene.Pose = pose;
+            }
+        }
     }
 
     [MoonSharpUserData]
     public static class LayerApiWrapper
     {
-        public static int active => App.Scene.LayerCanvases.ToList().IndexOf(App.Scene.ActiveCanvas);
-        public static TrTransform transform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
-        public static Vector3 position(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
-        public static Quaternion rotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
-        public static void moveTo(int index, Vector3 position) =>  _MoveTo(index, position);
-        public static void moveBy(int index, Vector3 distance) => _MoveBy(index, distance);
+        public static int getActive => App.Scene.LayerCanvases.ToList().IndexOf(App.Scene.ActiveCanvas);
+        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
+        public static void setPosition(int index, Vector3 position)
+        {
+            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
+            tr.translation = position;
+            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+        }
+        public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
+        public static void setRotation(int index, Quaternion rotation)
+        {
+            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
+            tr.rotation = rotation;
+            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+        }
         public static void add() => ApiMethods.AddLayer();
         public static void clear(int index) => ApiMethods.ClearLayer(index);
         public static void delete(int index) => ApiMethods.DeleteLayer(index);
@@ -214,26 +265,6 @@ namespace TiltBrush
         public static void show(int index) => ApiMethods.ShowLayer(index);
         public static void hide(int index) => ApiMethods.HideLayer(index);
         public static void toggle(int index) => ApiMethods.ToggleLayer(index);
-
-        public static void _MoveTo(int index, Vector3 pos)
-        {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
-            var tr = layer.Pose;
-            tr.translation = pos;
-            layer.Pose = tr;
-        }
-        public static void _MoveBy(int index, Vector3 distance)
-        {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
-            var tr = layer.Pose;
-            tr.translation += distance;
-            layer.Pose = tr;
-        }
-        public static void _TransformLayer(int index, TrTransform tr)
-        {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
-            layer.Pose = tr;
-        }
     }
 
     [MoonSharpUserData]
@@ -242,6 +273,11 @@ namespace TiltBrush
         public static void import(string location) => ApiMethods.ImportImage(location);
         public static void select(int index) => ApiMethods.SelectImage(index);
         public static void moveTo(int index, Vector3 position) => ApiMethods.PositionImage(index, position);
+        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
+        public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
+        public static void setPosition(int index, Vector3 position) => Utils._Transform(ItemType.Image, index, TrTransform.T(position));
+        public static void setRotation(int index, Quaternion rotation) => Utils._Transform(ItemType.Image, index, TrTransform.R(rotation));
     }
 
     [MoonSharpUserData]
@@ -249,7 +285,11 @@ namespace TiltBrush
     {
         // public static void import() => ApiMethods.ImportModel();
         public static void select(int index) => ApiMethods.SelectModel(index);
-        public static void moveTo(int index, Vector3 position) => ApiMethods.PositionModel(index, position);
+        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static Vector3 getPosition(int index) => WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript.transform.position;
+        public static Vector3 getRotation(int index) => WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript.transform.position;
+        public static void setPosition(int index, Vector3 position) => Utils._Transform(ItemType.Model, index, TrTransform.T(position));
+        public static void setRotation(int index, Quaternion rotation) => Utils._Transform(ItemType.Model, index, TrTransform.R(rotation));
     }
 
     [MoonSharpUserData]
@@ -335,5 +375,85 @@ namespace TiltBrush
         public static void homeSet() => ApiMethods.BrushSetHome();
         public static void transformPush() => ApiMethods.BrushTransformPush();
         public static void transformPop() => ApiMethods.BrushTransformPop();
+    }
+
+    [MoonSharpUserData]
+    public static class WaveformApiWrapper
+    {
+        public static float sine(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SineWave, frequency);
+        public static float triangle(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.TriangleWave, frequency);
+        public static float sawtooth(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SawtoothWave, frequency);
+        public static float square(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SquareWave, frequency);
+        public static float noise(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.Noise, frequency);
+    }
+
+    enum ItemType
+    {
+
+        Image,
+        Model,
+        Video,
+        CameraPath,
+        Stencil
+    }
+
+    static class Utils
+    {
+        private static int _NegativeIndexing<T>(int index, IEnumerable<T> enumerable)
+        {
+            // Python style: negative numbers count from the end
+            int count = enumerable.Count();
+            if (index < 0) index = count - Mathf.Abs(index);
+            return index;
+        }
+
+        public static void _Transform(ItemType type, int index, TrTransform tr)
+        {
+            void _Action(GrabWidget widget)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MoveWidgetCommand(
+                        widget,
+                        tr,
+                        widget.CustomDimension,
+                        true
+                    )
+                );
+            }
+
+            switch(type)
+            {
+                case ItemType.Image:
+                {
+                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                    break;
+                }
+                case ItemType.Model:
+                {
+                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                    break;
+                }
+                case ItemType.Video:
+                {
+                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                    break;
+                }
+                case ItemType.CameraPath:
+                {
+                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                    break;
+                }
+                case ItemType.Stencil:
+                {
+                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                    break;
+                }
+            }
+        }
     }
 }

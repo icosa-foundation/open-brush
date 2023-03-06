@@ -46,7 +46,7 @@ namespace TiltBrush
             TwoHanded,
             ScriptedSymmetryMode = 6000
         }
-        public enum ColorShiftMode
+        public enum Waveform
         {
             SineWave,
             SquareWave,
@@ -66,14 +66,14 @@ namespace TiltBrush
         [Serializable]
         public struct ColorShiftComponentSetting
         {
-            public ColorShiftMode mode;
+            public Waveform mode;
             public float amp;
             public float freq;
         }
 
         private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
         {
-            mode = ColorShiftMode.SineWave, amp = 0, freq = 1
+            mode = Waveform.SineWave, amp = 0, freq = 1
         };
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
@@ -820,6 +820,11 @@ namespace TiltBrush
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
+            if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                LuaManager.Instance.CallActiveSymmetryScript("End");
+            }
+
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -834,6 +839,8 @@ namespace TiltBrush
                     active = 4;
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
+                    var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
+                    LuaManager.Instance.InitScript(script);
                     var trs = GetScriptedTransforms();
                     active = trs.Count;
                     break;
@@ -1271,17 +1278,17 @@ namespace TiltBrush
             return Color.HSVToRGB(ActualMod(h, 1), s, v);
         }
 
-        private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
+        public static float CalcWaveform(float t, Waveform mode, float freq)
         {
-            // Input is 0 to +1, output is -1 to +1
+            // Input t is 0 to +1, output is -1 to +1
             return mode switch
             {
-                ColorShiftMode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
-                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
-                ColorShiftMode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
-                ColorShiftMode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
-                ColorShiftMode.Noise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
-                _ => x
+                Waveform.SineWave => Mathf.Cos(t * freq * Mathf.PI * 2f),
+                Waveform.TriangleWave => Mathf.Abs((t * freq * 4) % 4 - 2) - 1,
+                Waveform.SawtoothWave => (t * freq % 1 - 0.5f) * 2f,
+                Waveform.SquareWave => (t * freq) % 1 < 0.5f ? -1 : 1,
+                Waveform.Noise => (Mathf.PerlinNoise(t * freq * 2, 0) * 3f) - 1.5f,
+                _ => t
             };
         }
 
@@ -1291,7 +1298,7 @@ namespace TiltBrush
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq));
+                CalcWaveform(mod, settings.mode, settings.freq));
         }
 
         public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
@@ -1300,7 +1307,7 @@ namespace TiltBrush
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq)
+                CalcWaveform(mod, settings.mode, settings.freq)
             );
         }
 
