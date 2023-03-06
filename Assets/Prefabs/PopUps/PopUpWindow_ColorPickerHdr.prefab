@@ -44,6 +44,7 @@ GameObject:
   - component: {fileID: 4851292574059401020}
   - component: {fileID: 5127241914910453876}
   - component: {fileID: 7977566021512385538}
+  - component: {fileID: 7566205472110740491}
   m_Layer: 16
   m_Name: TextLine
   m_TagString: Untagged
@@ -64,7 +65,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011237366108}
-  m_RootOrder: 2
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -205,6 +206,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 5127241914910453876}
   m_maskType: 0
+--- !u!114 &7566205472110740491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000012171123432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3215294302546034832
+  references:
+    version: 2
+    RefIds:
+    - rid: 3215294302546034832
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 7977566021512385538}
+        m_TrackedProperties:
+          items:
+          - rid: 3215294302546034833
+        m_UpdateType: 0
+    - rid: 3215294302546034833
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 7678055402938368
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1000012622467470
 GameObject:
   m_ObjectHideFlags: 0
@@ -320,9 +361,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 4851292574059401020}
   - {fileID: 4550141595541734}
   - {fileID: 4205977646950784}
-  - {fileID: 4851292574059401020}
   - {fileID: 4000012144519462}
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -961,7 +1002,7 @@ Transform:
   - {fileID: 4233228040489258}
   - {fileID: 4988962262173222}
   m_Father: {fileID: 4000011237366108}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114799925818167146
 MonoBehaviour:
@@ -1209,7 +1250,7 @@ Transform:
   - {fileID: 4292900136394544}
   - {fileID: 4063434668537328}
   m_Father: {fileID: 4000011237366108}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114395655995076728
 MonoBehaviour:

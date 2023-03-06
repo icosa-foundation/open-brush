@@ -1278,6 +1278,418 @@ MonoBehaviour:
       for Experimental Mode'
     m_Metadata:
       m_Items: []
+  - m_Id: 76036335840321536
+    m_Localized: Sketch Downloading...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Localized: 'Search not implemented,
+
+      but I like your enthusiasm.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Localized: GOT IT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Localized: Take Off Headset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Localized: Sign in on desktop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Localized: Save and Upload Sketch?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Localized: Uploading...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Localized: Nothing to Upload
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Localized: Success!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Localized: Finish publishing on desktop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Localized: Oh no!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Localized: Looks like something went wrong
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Localized: Non-Remixable Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Localized: 'Non-remixable sketches can''t
+
+      be uploaded to Poly'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Localized: Connection Error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Localized: 'There was an error connecting
+
+      to the Poly server. Try again
+      later.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Localized: Please wait...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Localized: Media Library Content
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Localized: 'Media Library content
+
+      will not be uploaded
+
+      with the
+      rest of your sketch.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Localized: UPLOAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Localized: CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Localized: Media Library Videos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Localized: 'Media Library videos
+
+      will not be uploaded
+
+      with the
+      rest of your sketch.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Localized: 'This sketch contains
+
+      nothing to upload.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Localized: Out of date
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Localized: 'Update Tilt Brush to share
+
+      sketches to Poly and Sketchfab'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Localized: Sign-In Required to Upload
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Localized: 'Signing in requires exiting Tilt Brush.
+
+      We suggest saving
+      your work
+
+      before proceeding.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Localized: Save and Login
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Localized: Login
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Localized: Exit Open Brush to finish publishing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Localized: Free Image Memory?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Localized: 'This will unload unused images
+
+      to free up memory.
+
+      Images
+      will not be deleted.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Localized: Proceed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Localized: 'Draw:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Localized: Refresh
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Localized: Clear Sketch and Reload Word
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Localized: Merge Brush Strokes (Experimental)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Localized: Delete Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Localized: Reveal on desktop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Localized: Save Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Localized: Overwrite last save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Localized: Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Localized: Save New
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Localized: Create a new savefile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Localized: 'These sketches are
+
+      <b>Read-Only</b>'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Localized: Tips 'N Tricks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Localized: Labs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Localized: Reset Panels
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Localized: Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Localized: Summon Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Localized: Release Notes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Localized: View in browser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Localized: Help Center
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Localized: Terms of Service
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Localized: Privacy Policy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Localized: Save your sketch?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Localized: "You're about to exit \nOpen Brush"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Localized: Google Drive Backup
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Localized: BETA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Localized: Backup Complete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Localized: Backing Up... 888%
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Localized: View on Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Localized: Disable Backup
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Localized: Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Localized: Snapshots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Localized: Media Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Localized: Exports
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Localized: Videos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Localized: Google Drive Backup Disabled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Localized: 'Enabling Google Drive backup keeps
+
+      your work saved to the
+      cloud.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Localized: ENABLE DRIVE BACKUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Localized: Google Drive Backup Full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Localized: 'Remove items from Google Drive
+
+      to free up storage space.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Localized: MANAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Localized: DISABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Localized: Load Sketch?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Localized: Unsaved changes will be lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Localized: Load Complex Sketch?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Localized: This sketch is beyond size limitations and may cause a poor experience
+      or crash.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Localized: Load Anyway
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Localized: Sketch may run slowly.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Localized: Accounts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Localized: Take Off Headset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Localized: Share with Google
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Localized: 'Sign in to a Google account to access
+
+      Drive and YouTube
+      support.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Localized: Share to Sketchfab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Localized: 'Sign in to a Sketchfab account to allow
+
+      uploading to Sketchfab.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

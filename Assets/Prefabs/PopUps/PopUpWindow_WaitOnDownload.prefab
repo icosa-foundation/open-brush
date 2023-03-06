@@ -338,6 +338,7 @@ GameObject:
   - component: {fileID: 1303087713880685669}
   - component: {fileID: 935376019039511012}
   - component: {fileID: 3103714016931209703}
+  - component: {fileID: 1669313391398290635}
   m_Layer: 16
   m_Name: TextLine
   m_TagString: Untagged
@@ -499,6 +500,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 935376019039511012}
   m_maskType: 0
+--- !u!114 &1669313391398290635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 93142460100512683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3215294302546034690
+  references:
+    version: 2
+    RefIds:
+    - rid: 3215294302546034690
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 3103714016931209703}
+        m_TrackedProperties:
+          items:
+          - rid: 3215294302546034691
+        m_UpdateType: 0
+    - rid: 3215294302546034691
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 76036335840321536
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &2037384203393693809
 GameObject:
   m_ObjectHideFlags: 0
@@ -611,12 +652,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Cancel
+  m_DescriptionText: BUTTON_CANCEL
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76039048963612672
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3090461820264739139}
   - component: {fileID: 8873804753173389528}
   - component: {fileID: 7021897052484729902}
+  - component: {fileID: 4873916362196836360}
   m_Layer: 16
   m_Name: TextLine
   m_TagString: Untagged
@@ -172,6 +173,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 8873804753173389528}
   m_maskType: 0
+--- !u!114 &4873916362196836360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000011940617588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3215294302546034768
+  references:
+    version: 2
+    RefIds:
+    - rid: 3215294302546034768
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 7021897052484729902}
+        m_TrackedProperties:
+          items:
+          - rid: 3215294302546034769
+        m_UpdateType: 0
+    - rid: 3215294302546034769
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 76115339591081984
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1000012632495268
 GameObject:
   m_ObjectHideFlags: 0
@@ -380,22 +421,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Save
+  m_DescriptionText: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_OVERWRITE
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76115842710429696
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: Overwrite last save
+  m_DescriptionTextExtra: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_OVERWRITE
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76115745704566784
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -556,22 +597,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Save New
+  m_DescriptionText: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_NEW
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76115933538082816
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: Create a new savefile
+  m_DescriptionTextExtra: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_NEW
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76115996574277632
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

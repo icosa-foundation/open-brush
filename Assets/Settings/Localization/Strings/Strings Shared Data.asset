@@ -168,7 +168,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5145273980133376
-    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECT
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECTALL
     m_Metadata:
       m_Items: []
   - m_Id: 5145968804339712
@@ -676,7 +676,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
-    m_Key: POLY_PANEL_NOLOGIN_SIGNIN_BUTTON
+    m_Key: BUTTON_SIGNIN
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
@@ -744,11 +744,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18091078533849088
-    m_Key: POPUP_AUDIOVIZ_HINT_TEXT
+    m_Key: POPUP_AUDIOVIZ_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 18090455927169024
-    m_Key: POPUP_AUDIOVIZ_LOOKAUDIO_TEXT
+    m_Key: POPUP_AUDIOVIZ_TITLE
     m_Metadata:
       m_Items: []
   - m_Id: 18090913311825920
@@ -1197,6 +1197,374 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 68774380566544384
     m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036335840321536
+    m_Key: POPUP_WAITONDOWNLOAD_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Key: POPUP_YOUTUBESEARCH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Key: BUTTON_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Key: BUTTON_CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Key: POPUP_UPLOAD_LOGINDESKTOP_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Key: POPUP_UPLOAD_LOGINDESKTOP_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Key: POPUP_UPLOAD_CONFIRMUPLOAD_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Key: POPUP_UPLOAD_UPLOADING_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Key: POPUP_UPLOAD_COMPLETE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Key: POPUP_UPLOAD_COMPLETE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Key: POPUP_UPLOAD_FAILED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Key: POPUP_UPLOAD_FAILED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Key: POPUP_UPLOAD_SHARINGDISABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Key: POPUP_UPLOAD_SHARINGDISABLED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Key: POPUP_UPLOAD_CONNECTIONERR_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Key: POPUP_UPLOAD_CONNECTIONERR_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Key: BUTTON_OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Key: POPUP_UPLOAD_WAIT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Key: POPUP_UPLOAD_EMBEDPOLY_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Key: POPUP_UPLOAD_EMBEDPOLY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Key: POPUP_UPLOAD_BUTTON_UPLOAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Key: POPUP_UPLOAD_BUTTON_CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Key: POPUP_UPLOAD_EMBEDSKETCHFAB_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Key: POPUP_UPLOAD_EMBEDSKETCHFAB_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Key: POPUP_UPLOAD_NOTHING_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Key: POPUP_UPLOAD_NOTHING_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Key: POPUP_UPLOAD_OUTDATED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Key: POPUP_UPLOAD_OUTDATED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Key: POPUP_UPLOAD_MOBILELOGIN_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Key: POPUP_UPLOAD_MOBILELOGIN_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Key: POPUP_UPLOAD_BUTTON_SAVELOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Key: POPUP_UPLOAD_BUTTON_LOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Key: POPUP_UPLOAD_COMPLETEMOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Key: POPUP_UNLOADIMAGES_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Key: POPUP_UNLOADIMAGES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Key: BUTTON_PROCEED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Key: POPUP_TILTASAURUS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Key: POPUP_TILTASAURUS_BUTTON_DESCRIPTION_REFRESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Key: POPUP_TILTASAURUS_BUTTON_DESCRIPTION_EXTRA_REFRESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Key: BUTTON_CLOSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_MERGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_TRASH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_REVEAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Key: POPUP_SAVEOPTIONS_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_OVERWRITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_OVERWRITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_NEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_NEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Key: POPUP_READONLY_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_TUTORIAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_LABS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_RESET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Key: POPUP_MIRROROPTIONS_BUTTON_DESCRIPTION_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Key: POPUP_MIRROROPTIONS_BUTTON_DESCRIPTION_SUMMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_RELEASENOTES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_EXTRA_BROWSER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_HELPCENTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_TOS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_PRIVACY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Key: POPUP_EXIT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Key: POPUP_EXIT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Key: POPUP_GDRIVE_ENABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Key: POPUP_GDRIVE_BETATAG
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Key: POPUP_GRDRIVE_ENABLED_STATUSCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Key: POPUP_GRDRIVE_ENABLED_STATUSPROGRESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Key: POPUP_GRDRIVE_ENABLED_VIEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Key: POPUP_GRDRIVE_ENABLED_DISABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_SNAPSHOTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_MEDIALIB
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_EXPORTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_VIDEOS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Key: POPUP_GDRIVE_DISABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Key: POPUP_GDRIVE_DISABLED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Key: POPUP_GDRIVE_DISABLED_BUTTON_ENABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Key: POPUP_GDRIVE_FULL_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Key: POPUP_GDRIVE_FULL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Key: POPUP_GDRIVE_FULL_BUTTON_MANAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Key: POPUP_GDRIVE_FULL_BUTTON_DISABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Key: POPUP_CONFIRMLOAD_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Key: POPUP_CONFIRMLOAD_TITLECOMPLEX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTIONCOMPLEX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTIONCOMPLEX_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Key: POPUP_CONFIRMLOAD_BUTTON_DESCRIPTION_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Key: POPUP_ACCOUNTS_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Key: POPUP_ACCOUNTS_REMOVEHEADSET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Key: POPUP_ACCOUNTS_GOOGLEINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Key: POPUP_ACCOUNTS_GOOGLEINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Key: POPUP_ACCOUNTS_SKETCHFABINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Key: POPUP_ACCOUNTS_SKETCHFABINFO_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:

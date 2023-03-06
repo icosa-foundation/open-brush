@@ -102,9 +102,9 @@ MonoBehaviour:
   m_DescriptionText: Help Center
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76118256381386752
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -112,9 +112,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: Opens in External Browser
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76117892328382464
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -429,19 +429,19 @@ MonoBehaviour:
   m_DescriptionText: Release Notes
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76117800062083072
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: Opens in External Browser
+  m_DescriptionTextExtra: POPUP_HELP_BUTTON_DESCRIPTION_EXTRA_BROWSER
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76117892328382464
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

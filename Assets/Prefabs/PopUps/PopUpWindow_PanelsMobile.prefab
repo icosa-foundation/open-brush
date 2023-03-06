@@ -229,12 +229,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Settings
+  m_DescriptionText: POPUP_PANELS_BUTTON_DESCRIPTION_SETTINGS
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76116941706158080
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -405,12 +405,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Reset Panels
+  m_DescriptionText: POPUP_PANELS_BUTTON_DESCRIPTION_RESET
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76117036946219008
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -697,12 +697,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Tips 'N Tricks
+  m_DescriptionText: POPUP_PANELS_BUTTON_DESCRIPTION_TUTORIAL
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76116655574933504
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -846,12 +846,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Labs
+  m_DescriptionText: POPUP_PANELS_BUTTON_DESCRIPTION_LABS
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76116867701858304
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

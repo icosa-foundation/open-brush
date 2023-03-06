@@ -70,7 +70,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PanelPopUpMap.Array.data[3].m_PopUpPrefab
       value: 
-      objectReference: {fileID: 1223528584666696, guid: 0bb7c6ed3ada92e40acc0fb35a16d2f2,
+      objectReference: {fileID: 1153581385733574731, guid: 545e16288627ef8439942b5ec3dac49e,
         type: 3}
     - target: {fileID: 114828844590133850, guid: f5b291cbc819737469486452ea6748b8,
         type: 3}

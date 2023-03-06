@@ -212,9 +212,9 @@ MonoBehaviour:
   m_DescriptionText: Cancel
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76039048963612672
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -340,6 +340,7 @@ GameObject:
   - component: {fileID: 3600410662878161579}
   - component: {fileID: 620032829335952194}
   - component: {fileID: 3857951834077258280}
+  - component: {fileID: 4929701146361358763}
   m_Layer: 16
   m_Name: Title
   m_TagString: Untagged
@@ -501,6 +502,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 620032829335952194}
   m_maskType: 0
+--- !u!114 &4929701146361358763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1258689514721676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3215294302546034826
+  references:
+    version: 2
+    RefIds:
+    - rid: 3215294302546034826
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 3857951834077258280}
+        m_TrackedProperties:
+          items:
+          - rid: 3215294302546034827
+        m_UpdateType: 0
+    - rid: 3215294302546034827
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 76126335156150272
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1339979900905618
 GameObject:
   m_ObjectHideFlags: 0
@@ -513,6 +554,7 @@ GameObject:
   - component: {fileID: 23438478656752654}
   - component: {fileID: 114553374900577208}
   - component: {fileID: 222203018142857952}
+  - component: {fileID: 1783023696379115327}
   m_Layer: 0
   m_Name: Description
   m_TagString: Untagged
@@ -683,6 +725,46 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1339979900905618}
   m_CullTransparentMesh: 0
+--- !u!114 &1783023696379115327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1339979900905618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3215294302546034828
+  references:
+    version: 2
+    RefIds:
+    - rid: 3215294302546034828
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 114553374900577208}
+        m_TrackedProperties:
+          items:
+          - rid: 3215294302546034829
+        m_UpdateType: 0
+    - rid: 3215294302546034829
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 76126729437503488
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1527706201158402
 GameObject:
   m_ObjectHideFlags: 0
@@ -878,12 +960,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Load Anyway
+  m_DescriptionText: POPUP_CONFIRMLOAD_BUTTON_DESCRIPTION_CONFIRM
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 76126873826418688
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

@@ -112,12 +112,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Flip Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_FLIP
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5145130421690368
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -371,12 +371,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Ungroup Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_UNGROUP
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5145968804339712
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -630,12 +630,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Group Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_GROUP
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5144771179552768
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -806,12 +806,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Invert Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_INVERT
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5145342544420864
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -982,12 +982,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5143817222856704
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1230,12 +1230,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Select All
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECTALL
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 5145273980133376
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
