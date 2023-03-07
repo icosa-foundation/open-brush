@@ -63,6 +63,10 @@ namespace TiltBrush.Animation{
 
         [SerializeField] public GameObject deleteFrameButton;
 
+        [SerializeField] public GameObject layersPanel;
+
+        bool animationMode = true;
+
 
         // Visual size of frame on timeline
         float sliderFrameSize = 0.12f;
@@ -723,6 +727,12 @@ namespace TiltBrush.Animation{
             if (playing) { stopAnimation();}
             else startAnimation();
       
+        }
+
+        public void togglePanel(){
+            animationMode = !animationMode;
+            this.gameObject.SetActive(animationMode);
+            layersPanel.gameObject.SetActive(!animationMode);
         }
 
     
