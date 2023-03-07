@@ -136,7 +136,7 @@ namespace TiltBrush
             // Consume the queue of scripts that the FileListener reports have changed
             foreach (var path in m_ScriptPathsToUpdate)
             {
-                var catMatch = TryGetCategoryFromScriptPath(path);
+                var catMatch = TryGetCategoryFromScriptName(path);
                 if (catMatch.HasValue)
                 {
                     var category = catMatch.Value;
@@ -179,33 +179,8 @@ namespace TiltBrush
             }
         }
 
-        private void LoadScriptFromString(string filename, string contents)
+        private ApiCategory? TryGetCategoryFromScriptName(string scriptFilename)
         {
-            Script script = new Script();
-            script.Options.DebugPrint = s => Debug.Log(s);
-            if (filename.StartsWith("__")) return;
-            script.DoString(contents);
-            ApiCategory? catMatch = null;
-            foreach (ApiCategory category in ApiCategories)
-            {
-                var categoryName = category.ToString();
-                if (filename.StartsWith(categoryName))
-                {
-                    catMatch = category;
-                    break;
-                };
-            }
-            if (catMatch.HasValue)
-            {
-                var category = catMatch.Value;
-                string scriptName = filename.Substring(category.ToString().Length + 1);
-                Scripts[category][scriptName] = script;
-            }
-        }
-
-        private ApiCategory? TryGetCategoryFromScriptPath(string path)
-        {
-            string scriptFilename = Path.GetFileNameWithoutExtension(path);
             foreach (ApiCategory category in ApiCategories)
             {
                 var categoryName = category.ToString();
@@ -231,23 +206,29 @@ namespace TiltBrush
 
         private string LoadScriptFromPath(string path)
         {
+            string filename = Path.GetFileNameWithoutExtension(path);
+            Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            string contents;
+            using(var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
+            fileStream.Close();
+            return LoadScriptFromString(filename, contents);
+        }
+
+        private string LoadScriptFromString(string filename, string contents)
+        {
+            if (filename.StartsWith("__")) return null;
             Script script = new Script();
             string scriptName = null;
-
-            string scriptFilename = Path.GetFileNameWithoutExtension(path);
-            if (scriptFilename.StartsWith("__")) return null;
-            Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            script.DoStream(fileStream);
-            var catMatch = TryGetCategoryFromScriptPath(path);
+            script.DoString(contents);
+            var catMatch = TryGetCategoryFromScriptName(filename);
             if (catMatch.HasValue)
             {
                 var category = catMatch.Value;
-                scriptName = scriptFilename.Substring(category.ToString().Length + 1);
+                scriptName = filename.Substring(category.ToString().Length + 1);
                 script.Globals["ScriptName"] = scriptName;
                 Scripts[category][scriptName] = script;
                 InitScriptOnce(script);
             }
-            fileStream.Close();
             return scriptName;
         }
 
