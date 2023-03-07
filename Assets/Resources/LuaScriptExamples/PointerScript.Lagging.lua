@@ -1,10 +1,8 @@
-﻿Settings = {
-    space="canvas"
-}
+﻿Settings = {space="canvas"}
 
 Widgets = {
     delay={label="Delay", type="int", min=0, max=100, default=20},
-    frequency={label="Frequency", type="float", min=0, max=50, default=40},
+    frequency={label="Frequency", type="float", min=0, max=50, default=20},
     amplitude={label="Amplitude", type="float", min=0.001, max=5, default=0.5},
 }
 
@@ -19,10 +17,13 @@ function WhileTriggerPressed()
     -- How much to mix old and new positions
     mix = (waveform.sine(app.time, frequency) + 1) * amplitude
 
+    --Interpolate back and forth between old and current positions
     newPosition = {
         unityMathf.lerpUnclamped(oldPosition.x, brush.position.x, mix),
         unityMathf.lerpUnclamped(oldPosition.y, brush.position.y, mix),
         unityMathf.lerpUnclamped(oldPosition.z, brush.position.z, mix),
     }
+
     return {newPosition, brush.rotation}
+
 end

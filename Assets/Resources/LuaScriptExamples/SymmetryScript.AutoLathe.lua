@@ -9,9 +9,6 @@ function Main()
     end
 
     return {
-        {
-            position=symmetry.position,
-            rotation={0, symmetry.rotation.y, 0}
-        }
+        {symmetry.position, rotation={0, symmetry.rotation.y, 0}}
     }
 end
