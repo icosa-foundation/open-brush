@@ -29,7 +29,8 @@ Transform:
   m_GameObject: {fileID: 1215067258630681599}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.73, y: 0, z: -0.06}
-  m_LocalScale: {x: 0.16999184, y: 0.14343303, z: 0.22767149}
+  m_LocalScale: {x: 0.16174501, y: 0.16174501, z: 0.24549817}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -116,8 +117,8 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: e0f15e7cc24155c479af772d960d6758, type: 3}
-  m_AtlasTexture: 1
-  m_ToggleButton: 0
+  m_AtlasTexture: 0
+  m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
@@ -125,7 +126,6 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  debug: 0
   activated: 0
   activatedButtonTexture: {fileID: 2800000, guid: 6158c15f403caf7408664782be08f46f,
     type: 3}
