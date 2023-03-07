@@ -4,7 +4,6 @@
 }
 
 function WhileTriggerPressed()
-    pos = {0, waveform.sine(brush.distanceMoved, frequency) * amplitude * 0.2, 0}
-    rot = brush.rotation
-    return {pos, rot}
+    position = {0, waveform.sine(brush.distanceMoved, frequency) * amplitude * 0.2, 0}
+    return {position}
 end

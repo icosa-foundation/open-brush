@@ -12,11 +12,13 @@ function OnTriggerPressed()
 end
 
 function WhileTriggerPressed()
+
     currentPos = {
         brush.position.x,
         brush.position.y,
         brush.position.z,
     }
+
     if app.frames % rate == 0 then
         draw.path({
             {initialPos, brush.rotation},
@@ -24,8 +26,6 @@ function WhileTriggerPressed()
         })
     end
 
-    --Do nothing to the actual pointer
-    pos = {0, 0, 0}
-    rot = {0, 0, 0}
-    return {pos, rot}
+    --Leave the actual pointer position unchanged
+    return {{0, 0, 0}}
 end

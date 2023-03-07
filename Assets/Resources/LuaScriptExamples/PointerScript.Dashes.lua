@@ -8,16 +8,14 @@ function Start()
 end
 
 function WhileTriggerPressed()
+
     wave = math.cos(brush.distanceDrawn * freq)
-    if wave > threshold then
-        brush.forcePaintingOff(true)
-    else
-        brush.forcePaintingOff(false)
-    end
-    --Do nothing to the actual pointer
-    pos = {0, 0, 0}
-    rot = {0, 0, 0}
-    return {pos, rot}
+
+    -- turn off painting when we are over the threshold
+    brush.forcePaintingOff(wave > threshold)
+
+    --Leave the pointer position unchanged
+    return {{0, 0, 0}}
 end
 
 function End()

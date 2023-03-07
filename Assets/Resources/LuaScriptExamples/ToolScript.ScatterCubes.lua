@@ -13,6 +13,7 @@ function WhileTriggerPressed()
     color.setRgb({
         math.random(), math.random(), math.random(),
     })
+
     brush.type("ShinyHull")
     brush.sizeSet(0.1)
 

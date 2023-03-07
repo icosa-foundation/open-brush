@@ -7,6 +7,8 @@ Widgets = {
 }
 
 function OnTriggerPressed()
+
+    --Store the brush transform at the point we press the trigger
     currentPos = brush.position
     currentRotation = brush.rotation
     return {currentPos, currentRotation}
@@ -14,6 +16,7 @@ end
 
 function WhileTriggerPressed()
 
+    --Similar to the LaserBeam PointerScript except we can change the direction during "flight"
     currentPos = {
         x = currentPos.x + (speed * -brush.direction.x),
         y = currentPos.y + (speed * -brush.direction.y),

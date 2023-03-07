@@ -16,9 +16,9 @@ function OnTriggerReleased()
         angle = (math.pi * 2 * turns * i) / steps
         y = radius * math.cos(angle)
         z = radius * math.sin(angle)
-        pos = {z, y, x}
-        rot = {0, 0, 0}
-        table.insert(points, {pos, rot})
+        position = { z, y, x}
+        rotation = { 0, 0, 0}
+        table.insert(points, { position, rotation })
     end
     return points
 end

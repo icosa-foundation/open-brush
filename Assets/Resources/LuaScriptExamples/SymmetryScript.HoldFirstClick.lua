@@ -12,7 +12,6 @@ function Main()
     brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
 
     pointers = {}
-    Colors = {}
     theta = 360.0 / copies
 
     for i = 0, copies - 1 do

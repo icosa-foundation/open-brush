@@ -3,5 +3,6 @@
 }
 
 function WhileTriggerPressed()
+    --We only want to change the pointer orientation
     return {rotation={0, 0, app.time * speed}};
 end

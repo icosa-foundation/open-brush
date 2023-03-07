@@ -31,7 +31,7 @@ function WhileTriggerPressed()
         currentPos = brush.position
     end
 
-    -- Wandering path
+    -- Wandering path based on a noise field
     currentPos = {
         x = currentPos.x + (speed * (-0.5 + unityMathf.perlinNoise(currentPos.y, currentPos.z))),
         y = currentPos.y + (speed * (-0.5 + unityMathf.perlinNoise(currentPos.x, currentPos.z))),

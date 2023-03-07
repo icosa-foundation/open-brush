@@ -33,36 +33,36 @@ end
 
 function Cube(cell, gridSize)
 
-    n = gridSize / 2
+    distance = gridSize / 2
     x = cell.x
     y = cell.y
     z = cell.z
 
     points = {}
 
-    table.insert(points, {{-n + x, n + y, n + z}, {0, 0, 0}})
-    table.insert(points, {{n + x, n + y, n + z}, {0, 0, 0}})
-    table.insert(points, {{n + x, -n + y, n + z}, {0, 0, 0}})
-    table.insert(points, {{-n + x, -n + y, n + z}, {0, 0, 0}})
-    table.insert(points, {{-n + x, n + y, n + z}, {0, 0, 0}})
+    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 0}})
+    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 0}})
+    table.insert(points, { { distance + x, -distance + y, distance + z}, { 0, 0, 0}})
+    table.insert(points, { { -distance + x, -distance + y, distance + z}, { 0, 0, 0}})
+    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 0}})
 
-    table.insert(points, {{n + x, n + y, n + z}, {0, 0, 90}})
-    table.insert(points, {{n + x, n + y, -n + z}, {0, 0, 90}})
-    table.insert(points, {{n + x, -n + y, -n + z}, {0, 0, 90}})
-    table.insert(points, {{n + x, -n + y, n + z}, {0, 0, 90}})
-    table.insert(points, {{n + x, n + y, n + z}, {0, 0, 90}})
+    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 90}})
+    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 90}})
+    table.insert(points, { { distance + x, -distance + y, -distance + z}, { 0, 0, 90}})
+    table.insert(points, { { distance + x, -distance + y, distance + z}, { 0, 0, 90}})
+    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 90}})
 
-    table.insert(points, {{n + x, n + y, -n + z}, {0, 0, 280}})
-    table.insert(points, {{-n + x, n + y, -n + z}, {0, 0, 280}})
-    table.insert(points, {{-n + x, -n + y, -n + z}, {0, 0, 280}})
-    table.insert(points, {{n + x, -n + y, -n + z}, {0, 0, 280}})
-    table.insert(points, {{n + x, n + y, -n + z}, {0, 0, 280}})
+    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 280}})
+    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 280}})
+    table.insert(points, { { -distance + x, -distance + y, -distance + z}, { 0, 0, 280}})
+    table.insert(points, { { distance + x, -distance + y, -distance + z}, { 0, 0, 280}})
+    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 280}})
 
-    table.insert(points, {{-n + x, n + y, -n + z}, {0, 0, 270}})
-    table.insert(points, {{-n + x, n + y, n + z}, {0, 0, 270}})
-    table.insert(points, {{-n + x, -n + y, n + z}, {0, 0, 270}})
-    table.insert(points, {{-n + x, -n + y, -n + z}, {0, 0, 270}})
-    table.insert(points, {{-n + x, n + y, -n + z}, {0, 0, 270}})
+    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 270}})
+    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 270}})
+    table.insert(points, { { -distance + x, -distance + y, distance + z}, { 0, 0, 270}})
+    table.insert(points, { { -distance + x, -distance + y, -distance + z}, { 0, 0, 270}})
+    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 270}})
 
     return points
 end

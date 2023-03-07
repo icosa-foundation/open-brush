@@ -9,21 +9,20 @@ Widgets = {
 
 function WhileTriggerPressed()
 
-    posMix = (math.sin(app.time * freq) + 1) * amp
-    rotMix = (math.sin(app.time * freq) + 1) * amp
+    mix = (math.sin(app.time * freq) + 1) * amp
 
-    pos = {
-        unityMathf.lerpUnclamped(brush.position.x, wand.position.x, posMix),
-        unityMathf.lerpUnclamped(brush.position.y, wand.position.y, posMix),
-        unityMathf.lerpUnclamped(brush.position.z, wand.position.z, posMix),
+    position = {
+        unityMathf.lerpUnclamped(brush.position.x, wand.position.x, mix),
+        unityMathf.lerpUnclamped(brush.position.y, wand.position.y, mix),
+        unityMathf.lerpUnclamped(brush.position.z, wand.position.z, mix),
     }
 
-    rot = {
-        unityMathf.lerpUnclamped(brush.rotation.x, wand.rotation.x, rotMix),
-        unityMathf.lerpUnclamped(brush.rotation.y, wand.rotation.y, rotMix),
-        unityMathf.lerpUnclamped(brush.rotation.z, wand.rotation.z, rotMix),
+    rotation = {
+        unityMathf.lerpUnclamped(brush.rotation.x, wand.rotation.x, mix),
+        unityMathf.lerpUnclamped(brush.rotation.y, wand.rotation.y, mix),
+        unityMathf.lerpUnclamped(brush.rotation.z, wand.rotation.z, mix),
     }
 
-    return {pos, rot}
+    return {position, rotation}
 
 end

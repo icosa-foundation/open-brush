@@ -10,20 +10,21 @@ Widgets = {
 }
 
 function Start()
+    --An empty table we can use to store the coordinates where we have drawn a tile
     filledCells = {}
 end
 
 function WhileTriggerPressed()
-    if not (app.frames % 4 == 0) then
-        return {}
-    end
 
     cell = {
         x=Quantize(brush.position.x, grid),
         z=Quantize(brush.position.z, grid),
     }
+
+    --A unique string key for each potential tile
     key = cell.x .. "," .. cell.z
 
+    --Only draw tiles in empty cells
     if filledCells[key]==nil then
         filledCells[key] = true
         color.jitter()
@@ -37,18 +38,20 @@ function Quantize(val, size)
     return unityMathf.round(val / size) * size
 end
 
+--Generates the path for each tile
 function Patch(cell, gridSize)
 
-    n = gridSize / 2
-    x = cell.x
-    z = cell.z
+    --Half the size of each tile
+    distance = gridSize / 2
 
     points = {}
 
-    l = -n + x
-    r = n + x
-    f = n + z
-    b = -n + z
+    --Left, right, forward and back offsets
+    l = -distance + cell.x
+    r = distance + cell.x
+    f = distance + cell.z
+    b = -distance + cell.z
+
     table.insert(points, {{l, GetHeight(l, f), f}, {0, 0, 0}})
     table.insert(points, {{r, GetHeight(r, f), f}, {0, 0, 0}})
     table.insert(points, {{r, GetHeight(r, b), b}, {0, 0, 90}})

@@ -9,7 +9,6 @@ function WhileTriggerPressed()
     if (brush.triggerIsPressed) then
         r = radius * brush.timeSincePressed
     end
-    pos = {math.sin(angle) * r, math.cos(angle) * r, 0}
-    rot = {0, 0, 0}
-    return {pos, rot}
+    position = {math.sin(angle) * r, math.cos(angle) * r, 0}
+    return {position}
 end
