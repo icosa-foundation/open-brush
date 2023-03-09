@@ -729,11 +729,7 @@ namespace TiltBrush.Animation{
       
         }
 
-        public void togglePanel(){
-            animationMode = !animationMode;
-            this.gameObject.SetActive(animationMode);
-            layersPanel.gameObject.SetActive(!animationMode);
-        }
+
 
     
 
