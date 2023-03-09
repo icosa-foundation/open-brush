@@ -478,7 +478,7 @@ namespace TiltBrush
         public static void SymmetrySetRotation(Quaternion rotation)
         {
             var widget = PointerManager.m_Instance.SymmetryWidget;
-            _SetWidgetTransform(widget, widget.transform.position, rotation);
+            _SetWidgetTransform(widget, Coords.AsCanvas[widget.transform].translation, rotation);
         }
 
         [ApiEndpoint("symmetry.set.transform", "Sets the position and rotation of the symmetry widget")]
