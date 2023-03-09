@@ -598,8 +598,6 @@ namespace TiltBrush
 
             if (!VrSdk.IsHmdInitialized())
             {
-                Debug.Log("VR HMD was not initialized on startup.");
-                StartupError = true;
                 CreateFailedToDetectVrDialog();
             }
             else

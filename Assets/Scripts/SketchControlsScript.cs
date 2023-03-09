@@ -974,8 +974,8 @@ namespace TiltBrush
             m_SketchSurfacePanel.m_UpdatedToolThisFrame = false;
 
             // Verify controllers are available and prune state if they're not.
-            if (App.VrSdk.GetControllerDof() == VrSdk.DoF.Six &&
-                App.VrSdk.IsInitializingUnityXR)
+            if ((App.VrSdk.GetControllerDof() == VrSdk.DoF.Six &&
+                App.VrSdk.IsInitializingUnityXR) && App.VrSdk.IsHmdInitialized())
             {
                 m_PanelManager.SetVisible(false);
                 PointerManager.m_Instance.RequestPointerRendering(false);
@@ -1448,6 +1448,11 @@ namespace TiltBrush
                     InputManager.KeyboardShortcut.Reset))
                 {
                     App.Instance.SetDesiredState(App.AppState.LoadingBrushesAndLighting);
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcutDown(
+                             InputManager.KeyboardShortcut.FlyMode))
+                {
+                    SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
                 }
                 else if (App.Config.m_ToggleProfileOnAppButton &&
                     (InputManager.Wand.GetVrInputDown(VrInput.Button03) ||
@@ -4096,7 +4101,7 @@ namespace TiltBrush
             }
         }
 
-        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
