@@ -134,6 +134,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
                 SetApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
+                ApiManager.Instance.StartUndo();
                 DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
@@ -208,6 +209,7 @@ namespace TiltBrush
                     SetApiProperty("tool.endPosition", rAttachPoint_CS.translation);
                     SetApiProperty("tool.vector", drawnVector_CS);
                     DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
+                    ApiManager.Instance.EndUndo();
                 }
             }
         }

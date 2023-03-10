@@ -518,7 +518,7 @@ namespace TiltBrush
             subset.m_Stroke = rNewStroke;
 
             SketchMemoryScript.m_Instance.RecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength));
+                new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
 
             if (m_SanityCheckStrokes)
             {
@@ -552,7 +552,7 @@ namespace TiltBrush
             brushScript.Stroke = rNewStroke;
 
             SketchMemoryScript.m_Instance.RecordCommand(
-                new BrushStrokeCommand(rNewStroke, stencil, lineLength));
+                new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
 
             MemoryListAdd(rNewStroke);
 

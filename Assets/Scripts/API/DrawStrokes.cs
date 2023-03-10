@@ -213,9 +213,15 @@ namespace TiltBrush
                 stroke.Recreate(null, App.Scene.ActiveCanvas);
                 if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, 123) // TODO calc length
+                var undoParent = ApiManager.Instance.ActiveUndo;
+                var cmd = new BrushStrokeCommand(
+                    stroke, WidgetManager.m_Instance.ActiveStencil, 123, undoParent
                 );
+                if (undoParent == null)
+                {
+                    // No active undo. So actually perform the command
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                }
             }
         }
     }

@@ -61,6 +61,7 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
         [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
         [NonSerialized] public bool PointerScriptsEnabled;
+
         private List<string> m_ScriptPathsToUpdate;
 
         private TransformBuffers m_TransformBuffers;
@@ -139,14 +140,19 @@ namespace TiltBrush
             // Consume the queue of scripts that the FileListener reports have changed
             foreach (var path in m_ScriptPathsToUpdate)
             {
-                var catMatch = TryGetCategoryFromScriptName(path);
+                var scriptFilename = Path.GetFileName(path);
+                var scriptName = Path.GetFileNameWithoutExtension(scriptFilename);
+                var catMatch = TryGetCategoryFromScriptName(scriptName);
                 if (catMatch.HasValue)
                 {
                     var category = catMatch.Value;
                     var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
-                    var scriptName = LoadScriptFromPath(path);
+                    LoadScriptFromPath(path);
                     ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
-                    if (activeScriptName==scriptName) InitScript(GetActiveScript(category));
+                    if (activeScriptName == scriptName.Substring(category.ToString().Length + 1))
+                    {
+                        InitScript(GetActiveScript(category));
+                    }
                 }
             }
             m_ScriptPathsToUpdate.Clear();
@@ -209,25 +215,26 @@ namespace TiltBrush
 
         private string LoadScriptFromPath(string path)
         {
-            string filename = Path.GetFileNameWithoutExtension(path);
+
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             string contents;
             using(var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
             fileStream.Close();
-            return LoadScriptFromString(filename, contents);
+            string filename = Path.GetFileName(path);
+            return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
-        private string LoadScriptFromString(string filename, string contents)
+        private string LoadScriptFromString(string scriptFilename, string contents)
         {
-            if (filename.StartsWith("__")) return null;
+            if (scriptFilename.StartsWith("__")) return null;
             Script script = new Script();
             string scriptName = null;
             script.DoString(contents);
-            var catMatch = TryGetCategoryFromScriptName(filename);
+            var catMatch = TryGetCategoryFromScriptName(scriptFilename);
             if (catMatch.HasValue)
             {
                 var category = catMatch.Value;
-                scriptName = filename.Substring(category.ToString().Length + 1);
+                scriptName = scriptFilename.Substring(category.ToString().Length + 1);
                 script.Globals["ScriptName"] = scriptName;
                 Scripts[category][scriptName] = script;
                 InitScriptOnce(script);
@@ -611,6 +618,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
+                ApiManager.Instance.StartUndo();
                 scriptTransformOutput = CallActivePointerScript("OnTriggerPressed");
                 m_TriggerWasPressed = true;
                 scriptHasRun = true;
@@ -626,6 +634,7 @@ namespace TiltBrush
                 scriptTransformOutput = CallActivePointerScript("OnTriggerReleased");
                 m_TriggerWasPressed = false;
                 scriptHasRun = true;
+                ApiManager.Instance.EndUndo();
             }
 
             if (!scriptHasRun) return;

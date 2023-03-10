@@ -64,6 +64,8 @@ namespace TiltBrush
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
+        public BaseCommand ActiveUndo { get; set; }
+
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -888,6 +890,24 @@ namespace TiltBrush
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        // Undo currently only affects stroke creation
+        // but any command can be supported as long as you set it's parent to ActiveUndo
+        // Mainly used by lua scripts at the moment.
+
+        public void StartUndo()
+        {
+            ActiveUndo = new BaseCommand();
+        }
+
+        public void EndUndo()
+        {
+            if (ActiveUndo.HasChildren)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
+            }
+            ActiveUndo = null;
         }
     }
 }
