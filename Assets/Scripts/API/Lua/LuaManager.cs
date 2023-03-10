@@ -129,6 +129,9 @@ namespace TiltBrush
             LoadUserScripts();
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
             panel.InitScriptUiNav();
+            ConfigureScriptButton(ApiCategory.PointerScript);
+            ConfigureScriptButton(ApiCategory.SymmetryScript);
+            ConfigureScriptButton(ApiCategory.ToolScript);
         }
 
         private void Update()
@@ -473,9 +476,20 @@ namespace TiltBrush
             // Checking a method for null does this but only really as a side-effect
             if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, "End");
             ActiveScripts[category] = index;
-            InitScript(GetActiveScript(category));
+            var script = GetActiveScript(category);
+            InitScript(script);
+            ConfigureScriptButton(category);
             //temp
             // App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+        }
+
+        public void ConfigureScriptButton(ApiCategory category)
+        {
+            var script = GetActiveScript(category);
+            var scriptName = script.Globals.Get("ScriptName").String;
+            var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
+            string description = script.Globals.Get("Settings")?.Table?.Get("description")?.String;
+            panel.ConfigureScriptButton(category, scriptName, description);
         }
 
         public void InitScriptOnce(Script script)

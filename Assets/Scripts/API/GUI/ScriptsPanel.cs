@@ -20,6 +20,10 @@ namespace TiltBrush
     public class ScriptsPanel : BasePanel
     {
 
+        public BaseButton SymmetryScriptButton;
+        public BaseButton PointerScriptButton;
+        public BaseButton ToolScriptButton;
+
         public override void InitPanel()
         {
             base.InitPanel();
@@ -39,5 +43,19 @@ namespace TiltBrush
             LuaManager.Instance.EnablePointerScript(btn.m_IsToggledOn);
         }
 
+        public void ConfigureScriptButton(LuaManager.ApiCategory category, string scriptName, string description)
+        {
+            BaseButton btn = category switch {
+                LuaManager.ApiCategory.PointerScript => PointerScriptButton,
+                LuaManager.ApiCategory.ToolScript => ToolScriptButton,
+                LuaManager.ApiCategory.SymmetryScript => SymmetryScriptButton,
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
+            };
+            btn.SetDescriptionText($"{category}: {scriptName}");
+            if (description != null)
+            {
+                btn.SetExtraDescriptionText(description);
+            }
+        }
     }
 }

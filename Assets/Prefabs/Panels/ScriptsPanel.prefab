@@ -267,6 +267,9 @@ MonoBehaviour:
   m_PopUpGazeDuration: 0.2
   m_PromoBorders:
   - {fileID: 23000010265477920}
+  SymmetryScriptButton: {fileID: 1090007126676559718}
+  PointerScriptButton: {fileID: 5067221232058941735}
+  ToolScriptButton: {fileID: 7766592774551079244}
 --- !u!114 &11478692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -647,7 +650,7 @@ GameObject:
   - component: {fileID: 7558889811881960815}
   - component: {fileID: 1090007126676559718}
   m_Layer: 16
-  m_Name: SymmetryScripts
+  m_Name: SymmetryScriptButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -784,7 +787,7 @@ GameObject:
   - component: {fileID: 58042035615659813}
   - component: {fileID: 7766592774551079244}
   m_Layer: 16
-  m_Name: ToolScripts
+  m_Name: ToolScriptButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -912,7 +915,7 @@ GameObject:
   - component: {fileID: 4473687491222372220}
   - component: {fileID: 5067221232058941735}
   m_Layer: 16
-  m_Name: PointerScripts
+  m_Name: PointerScriptButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1397,6 +1400,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: ScriptButton
+      value: 
+      objectReference: {fileID: 5067221232058941735}
     - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_CommandParam
@@ -1512,6 +1520,11 @@ PrefabInstance:
       propertyPath: ApiCategory
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: ScriptButton
+      value: 
+      objectReference: {fileID: 1090007126676559718}
     - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_CommandParam
@@ -1627,6 +1640,11 @@ PrefabInstance:
       propertyPath: ApiCategory
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: ScriptButton
+      value: 
+      objectReference: {fileID: 7766592774551079244}
     - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_CommandParam
