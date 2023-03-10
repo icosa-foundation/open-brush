@@ -1458,17 +1458,34 @@ namespace TiltBrush
                     }
                 }
 
+                bool resetColors = true;
+                bool resetBrushes = true;
                 if (m_SymmetryColorShiftEnabled || CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                 {
                     if (m_SymmetryPointerColors!=null && m_SymmetryPointerColors.Count > 0)
                     {
                         script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
+                        resetColors = false;
                     }
 
                     if (m_SymmetryPointerBrushes!=null && m_SymmetryPointerBrushes.Count > 0)
                     {
                         script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);
+                        resetBrushes = false;
                     }
+                }
+
+                // Ensure brush and color is reset after using scripts
+                if (resetBrushes)
+                {
+                    script.CurrentBrush = MainPointer.CurrentBrush;
+                }
+                if (resetColors)
+                {
+                    var color = JitterEnabled ?
+                        GenerateJitteredColor(m_lastChosenColor, script.CurrentBrush.m_ColorLuminanceMin) :
+                        m_lastChosenColor;
+                    script.SetColor(color);
                 }
 
                 script.CreateNewLine(
