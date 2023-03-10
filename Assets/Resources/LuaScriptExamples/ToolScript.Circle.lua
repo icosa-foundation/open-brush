@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Draws a circle",
     previewType="quad"
 }
 

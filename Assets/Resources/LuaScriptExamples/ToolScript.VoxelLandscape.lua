@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Draws a blocky landscape (best with the hull brush)",
     space="canvas",
 }
 

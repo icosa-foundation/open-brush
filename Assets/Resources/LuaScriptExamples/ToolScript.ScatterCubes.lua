@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Random hull brush cubes as you draw",
     space="canvas"
 }
 

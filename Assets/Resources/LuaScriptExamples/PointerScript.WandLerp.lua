@@ -1,6 +1,8 @@
 ﻿Settings = {
+    description="The brush oscillates between your left and right hand positions",
     space="canvas"
 }
+
 
 Widgets = {
     freq={label="Frequency", type="float", min=0, max=50, default=40},

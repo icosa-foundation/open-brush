@@ -1,6 +1,8 @@
 ﻿Settings = {
+    description="Draws a line in the chosen direction for as long as you hold the trigger",
     space="canvas"
 }
+
 
 Widgets = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},

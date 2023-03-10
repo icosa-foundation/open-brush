@@ -1,4 +1,7 @@
-﻿Settings = {previewType="quad"}
+﻿Settings = {
+    description="Draws a superellipse (otherwise known as a squircle)",
+    previewType="quad"
+}
 
 Widgets = {
     n={label="n", type="float", min=0.01, max=5, default=3.5},

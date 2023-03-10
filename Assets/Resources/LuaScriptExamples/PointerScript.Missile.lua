@@ -1,6 +1,8 @@
 ﻿Settings = {
+    description="Like Laser Beam except you can steer the line while holding the trigger",
     space="canvas"
 }
+
 
 Widgets = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},

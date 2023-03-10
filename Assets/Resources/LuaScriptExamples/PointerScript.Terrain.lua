@@ -1,6 +1,8 @@
 ﻿Settings = {
+    description="Your brush strokes are constrained to a hilly landscape with configurable height and scale",
     space="canvas"
 }
+
 
 Widgets = {
     scale={label="Scale", type="float", min=0.01, max=2, default=0.2},

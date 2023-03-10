@@ -1,3 +1,7 @@
+Settings = {
+    description="Like spinning the mirror by hand but with precise control"
+}
+
 Widgets = {
     speed={label="Speed", type="float", min=0, max=2000, default=1000},
 }

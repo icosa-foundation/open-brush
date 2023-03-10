@@ -1,4 +1,8 @@
-﻿Widgets = {
+﻿Settings = {
+    description="Like Many Around except the widget always moves to where you start drawing"
+}
+
+Widgets = {
     copies={label="Number of copies", type="int", min=0, max=36, default=4},
 }
 

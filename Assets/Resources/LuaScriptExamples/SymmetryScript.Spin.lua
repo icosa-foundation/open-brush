@@ -1,4 +1,8 @@
-﻿Settings = {space="pointer"}
+﻿Settings = {
+    description="Multiple copies of your brush spinning around your actual brush position",
+    space="pointer"
+}
+
 
 Widgets = {
     copies={label="Copies", type="int", min=1, max=8, default=2},

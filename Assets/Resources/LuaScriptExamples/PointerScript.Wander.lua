@@ -1,6 +1,8 @@
 ﻿Settings = {
+    description="The brush stroke wanders off in random directions while you hold the trigger",
     space="canvas"
 }
+
 
 Widgets = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.5},

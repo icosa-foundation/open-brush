@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Draws lines from the position you start drawing to your current position",
     space="canvas"
 }
 Widgets = {spacing={label="Spacing", type="int", min=1, max=30, default=4}}

@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Draws regular blocks in space as you draw (best with the hull brush)",
     space="canvas",
 }
 

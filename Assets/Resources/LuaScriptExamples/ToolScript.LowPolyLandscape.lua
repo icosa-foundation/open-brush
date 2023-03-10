@@ -1,4 +1,5 @@
 ﻿Settings = {
+    description="Draws tiles that follow a hilly landscape as you hold the trigger",
     space="canvas",
 }
 

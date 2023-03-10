@@ -1,4 +1,7 @@
-﻿Settings = {space="canvas"}
+﻿Settings = {
+    description="Oscillates the brush between the current position and an earlier one",
+    space="canvas"
+}
 
 Widgets = {
     delay={label="Delay", type="int", min=0, max=100, default=20},

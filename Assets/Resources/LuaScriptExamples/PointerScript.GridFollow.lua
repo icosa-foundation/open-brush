@@ -1,4 +1,7 @@
-﻿Settings = {space="canvas"}
+﻿Settings = {
+    description="Follows the brush but only following horizontal or vertical lines",
+    space="canvas"
+}
 
 Widgets = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},

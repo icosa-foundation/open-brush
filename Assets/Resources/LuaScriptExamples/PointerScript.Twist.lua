@@ -1,4 +1,8 @@
-﻿Widgets = {
+﻿Settings = {
+    description="Rotates your strokes without needing to dislocate your wrist"
+}
+
+Widgets = {
     speed={label="Speed", type="float", min=0, max=600, default=300},
 }
 

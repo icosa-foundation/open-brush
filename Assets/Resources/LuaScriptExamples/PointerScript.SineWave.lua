@@ -1,4 +1,8 @@
-﻿Widgets = {
+﻿Settings = {
+    description="Moves the brush in a simple up/down wave as you draw"
+}
+
+Widgets = {
     frequency={label="Frequency", type="float", min=0.1, max=2, default=1},
     amplitude={label="Amplitude", type="float", min=0.1, max=1, default=0.5},
 }
