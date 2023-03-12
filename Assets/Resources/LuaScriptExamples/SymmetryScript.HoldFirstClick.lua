@@ -9,7 +9,7 @@ Widgets = {
 function Main()
 
     if brush.triggerIsPressedThisFrame then
-        symmetry.setTransform(brush.position, brush.rotation)
+        symmetry.transform = {brush.position, brush.rotation}
     end
 
     -- Don't allow painting immediately otherwise you get stray lines

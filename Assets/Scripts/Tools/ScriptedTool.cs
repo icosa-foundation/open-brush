@@ -79,7 +79,7 @@ namespace TiltBrush
             }
             else
             {
-                LuaManager.Instance.CallActiveToolScript("End");
+                LuaManager.Instance.CallActiveToolScript(LuaNames.End);
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
             }
@@ -135,7 +135,7 @@ namespace TiltBrush
 
                 SetApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
                 ApiManager.Instance.StartUndo();
-                DoToolScript("OnTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
+                DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -198,7 +198,7 @@ namespace TiltBrush
                             break;
                     }
                 }
-                DoToolScript("WhileTriggerPressed", m_FirstPositionClicked_CS, rAttachPoint_CS);
+                DoToolScript(LuaNames.WhileTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -208,7 +208,7 @@ namespace TiltBrush
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     SetApiProperty("tool.endPosition", rAttachPoint_CS.translation);
                     SetApiProperty("tool.vector", drawnVector_CS);
-                    DoToolScript("OnTriggerReleased", m_FirstPositionClicked_CS, rAttachPoint_CS);
+                    DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
                     ApiManager.Instance.EndUndo();
                 }
             }

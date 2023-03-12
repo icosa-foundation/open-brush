@@ -1,4 +1,17 @@
-﻿using System;
+﻿// Copyright 2023 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -18,30 +31,45 @@ namespace TiltBrush
         public static Vector3 position => LuaManager.Instance.GetPastBrushPos(0);
         public static Quaternion rotation => LuaManager.Instance.GetPastBrushRot(0);
         public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.forward;
-        public static float size => PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
-        public static float size01 => PointerManager.m_Instance.MainPointer.BrushSize01;
+        public static float size
+        {
+            get => PointerManager.m_Instance.MainPointer.BrushSize01;
+            set => ApiMethods.BrushSizeSet(value);
+        }
         public static float pressure => PointerManager.m_Instance.MainPointer.GetPressure();
-        // ReSharper disable once Unity.NoNullPropagation
-        public static string name => PointerManager.m_Instance.MainPointer.CurrentBrush?.m_Description;
-        public static void type(string brushName) => ApiMethods.Brush(brushName);
+        public static string type
+        {
+            get => PointerManager.m_Instance.MainPointer.CurrentBrush.m_Description!;
+            set => ApiMethods.Brush(value);
+        }
         public static float speed => PointerManager.m_Instance.MainPointer.MovementSpeed;
-        public static Color color => PointerManager.m_Instance.PointerColor;
-        public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;
-        public static Vector3 pastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
-        public static Quaternion pastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
-        public static void sizeSet(float amount) => ApiMethods.BrushSizeSet(amount);
-        public static void sizeAdd(float amount) => ApiMethods.BrushSizeAdd(amount);
-        public static void forcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
-        public static void forcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
+        public static Color colorRgb
+        {
+            get => PointerManager.m_Instance.PointerColor;
+            set => App.BrushColor.CurrentColor = value;
+        }
 
         public static Vector3 colorHsv
         {
             get
             {
-                Color.RGBToHSV(color, out float h, out float s, out float v);
+                Color.RGBToHSV(App.BrushColor.CurrentColor, out float h, out float s, out float v);
                 return new Vector3(h, s, v);
             }
+            set => App.BrushColor.CurrentColor = Color.HSVToRGB(value.x, value.y, value.z);
         }
+
+        public static string colorHtml
+        {
+            get => ColorUtility.ToHtmlStringRGB(PointerManager.m_Instance.PointerColor);
+            set => ApiMethods.SetColorHTML(value);
+        }
+        public static void colorJitter() => LuaApiMethods.JitterColor();
+        public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;
+        public static Vector3 pastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
+        public static Quaternion pastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
+        public static void forcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
+        public static void forcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
 
         public static Vector3 lastColorPickedHsv
         {
@@ -90,7 +118,11 @@ namespace TiltBrush
         public static void draftingVisible() => ApiMethods.DraftingVisible();
         public static void draftingTransparent() => ApiMethods.DraftingTransparent();
         public static void draftingHidden() => ApiMethods.DraftingHidden();
-        public static void setEnvironment(string environmentName) => ApiMethods.SetEnvironment(environmentName);
+        public static string environment
+        {
+            get => SceneSettings.m_Instance.CurrentEnvironment.m_Description;
+            set => ApiMethods.SetEnvironment(value);
+        }
         public static void watermark(bool a) => LuaApiMethods.Watermark(a);
         // TODO Unified API for tools and panels
         // public static void SettingsPanel(bool a) => )LuaApiMethods.SettingsPanel)(a);
@@ -127,15 +159,25 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
-        public static Vector3 position => PointerManager.m_Instance.SymmetryWidget.transform.position;
-        public static Quaternion rotation => PointerManager.m_Instance.SymmetryWidget.transform.rotation;
+        public static TrTransform transform
+        {
+            get => TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
+            set => ApiMethods.SymmetrySetTransform(value.translation, value.rotation);
+        }
+        public static Vector3 position
+        {
+            get => PointerManager.m_Instance.SymmetryWidget.transform.position;
+            set => ApiMethods.SymmetrySetPosition(value);
+        }
+        public static Quaternion rotation
+        {
+            get => PointerManager.m_Instance.SymmetryWidget.transform.rotation;
+            set => ApiMethods.SymmetrySetRotation(value);
+        }
         public static Vector3 direction => PointerManager.m_Instance.SymmetryWidget.transform.rotation * Vector3.forward;
         public static void mirror() => ApiMethods.SymmetryPlane();
         public static void doubleMirror() => ApiMethods.SymmetryFour();
         public static void twoHandeded() => ApiMethods.SymmetryTwoHanded();
-        public static void setPosition(Vector3 position) => ApiMethods.SymmetrySetPosition(position);
-        public static void setRotation(Quaternion rotation) => ApiMethods.SymmetrySetRotation(rotation);
-        public static void setTransform(Vector3 position, Quaternion rotation) => ApiMethods.SymmetrySetTransform(position, rotation);
         public static void summonWidget() => ApiMethods.SummonMirror();
         public static void spin(Vector3 rot) => PointerManager.m_Instance.SymmetryWidget.Spin(rot);
     }
@@ -186,27 +228,6 @@ namespace TiltBrush
     {
         public static Vector3 pastPosition(int count) => LuaManager.Instance.GetPastHeadPos(count);
         public static Quaternion pastRotation(int count) => LuaManager.Instance.GetPastHeadRot(count);
-    }
-
-    [MoonSharpUserData]
-    public static class ColorApiWrapper
-    {
-        public static void addHsv(Vector3 hsv) => ApiMethods.AddColorHSV(hsv);
-        public static void addRgb(Vector3 color) => ApiMethods.AddColorRGB(color);
-        public static void setRgb(Vector3 color) => ApiMethods.SetColorRGB(color);
-        public static void setHsv(Vector3 hsv) => ApiMethods.SetColorHSV(hsv);
-        public static void setHtml(string color) => ApiMethods.SetColorHTML(color);
-        public static void jitter() => LuaApiMethods.JitterColor();
-        public static Color HsvToRgb(float h, float s, float v) => Color.HSVToRGB(
-            Mathf.Clamp01(h),
-            Mathf.Clamp01(s),
-            Mathf.Clamp01(v)
-        );
-        public static Vector3 RgbToHsv(Color rgb)
-        {
-            Color.RGBToHSV(rgb, out float h, out float s, out float v);
-            return new Vector3(h, s, v);
-        }
     }
 
     [MoonSharpUserData]
@@ -385,6 +406,13 @@ namespace TiltBrush
         public static float sawtooth(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SawtoothWave, frequency);
         public static float square(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SquareWave, frequency);
         public static float noise(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.Noise, frequency);
+    }
+
+    [MoonSharpUserData]
+    public static class TimerApiWrapper
+    {
+        public static void set(Closure fn, float interval, float delay = 0, int repeats = -1) => LuaManager.SetTimer(fn, interval, delay, repeats);
+        public static void unset(Closure fn) => LuaManager.UnsetTimer(fn);
     }
 
     enum ItemType

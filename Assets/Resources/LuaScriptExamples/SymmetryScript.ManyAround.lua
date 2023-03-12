@@ -26,7 +26,7 @@ function Main()
         if hueShiftAmount > 0 then
             t = i / copies
             newHue = waveform.triangle(t, hueShiftFrequency) * hueShiftAmount
-            newColor = color.HsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
+            newColor = unityColor.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
             table.insert(Colors, newColor)
         end
 

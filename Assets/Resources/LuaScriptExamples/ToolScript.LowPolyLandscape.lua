@@ -28,7 +28,7 @@ function WhileTriggerPressed()
     --Only draw tiles in empty cells
     if filledCells[key]==nil then
         filledCells[key] = true
-        color.jitter()
+        brush.colorJitter()
         return Patch(cell, grid)
     else
         return {}

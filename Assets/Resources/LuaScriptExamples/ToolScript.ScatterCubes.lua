@@ -11,13 +11,9 @@ Widgets = {
 
 function WhileTriggerPressed()
 
-    color.setRgb({
-        math.random(), math.random(), math.random(),
-    })
-
-    brush.type("ShinyHull")
-    brush.sizeSet(0.1)
-
+    brush.colorRgb ={math.random(), math.random(), math.random()}
+    brush.type = "ShinyHull"
+    brush.size = 0.1
     origin = brush.position
 
     if (math.random() < amount) then

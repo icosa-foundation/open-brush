@@ -753,7 +753,7 @@ namespace TiltBrush
 
         public List<TrTransform> GetScriptedTransforms()
         {
-            var result = LuaManager.Instance.CallActiveSymmetryScript("Main");
+            var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
             if (result.Transforms.Count != m_NumActivePointers)
             {
                 ChangeNumActivePointers(result.Transforms.Count);
@@ -822,7 +822,7 @@ namespace TiltBrush
         {
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
-                LuaManager.Instance.CallActiveSymmetryScript("End");
+                LuaManager.Instance.CallActiveSymmetryScript(LuaNames.End);
             }
 
             int active = m_NumActivePointers;

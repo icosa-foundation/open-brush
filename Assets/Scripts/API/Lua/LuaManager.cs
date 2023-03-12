@@ -33,6 +33,17 @@ namespace TiltBrush
         Canvas,
     }
 
+    public static class LuaNames
+    {
+        public static string Main => "Main";
+        public static string Start => "Start";
+        public static string End => "End";
+        public static string OnTriggerPressed => "OnTriggerPressed";
+        public static string OnTriggerReleased => "OnTriggerReleased";
+        public static string WhileTriggerPressed => "WhileTriggerPressed";
+
+    }
+
     public class LuaManager : MonoBehaviour
     {
         private FileWatcher m_FileWatcher;
@@ -66,6 +77,7 @@ namespace TiltBrush
 
         private TransformBuffers m_TransformBuffers;
         private bool m_TriggerWasPressed;
+        private static Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer> m_Timers;
 
         public static LuaManager Instance => m_Instance;
 
@@ -122,6 +134,7 @@ namespace TiltBrush
         {
             m_TransformBuffers = new TransformBuffers(512);
             m_ScriptPathsToUpdate = new List<string>();
+            m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
             LuaCustomConverters.RegisterAll();
@@ -156,6 +169,27 @@ namespace TiltBrush
                 }
             }
             m_ScriptPathsToUpdate.Clear();
+
+            var toRemove = new List<(Script OwnerScript, int ReferenceID)>();
+            foreach (var kv in m_Timers)
+            {
+                var timer = kv.Value;
+                if ((Time.time - timer.m_TimeLastRun >= timer.m_Interval) &&
+                    (Time.time - timer.m_TimeAdded >= timer.m_Delay))
+                {
+                    timer.m_TimeLastRun = Time.time;
+                    timer.m_Fn.Call();
+                    timer.m_CallCount++;
+                    if (timer.m_Repeats != -1 && timer.m_CallCount >= timer.m_Repeats)
+                    {
+                        toRemove.Add(kv.Key);
+                    }
+                }
+            }
+            foreach (var item in toRemove)
+            {
+                m_Timers.Remove(item);
+            }
         }
 
         public void InitScriptDataStructures()
@@ -391,10 +425,11 @@ namespace TiltBrush
             // It was proving fairly complex to reliably enforce this in the scripts themselves
             // It was hard to debug when it went wrong and it breaks the app in a confusing way.
             // So just do it here to be certain...
-            if (fnName == "End")
+            if (fnName == LuaNames.End)
             {
                 ApiMethods.ForcePaintingOn(false);
                 ApiMethods.ForcePaintingOff(false);
+                UnsetAllTimers(script);
             }
 
             return result;
@@ -481,7 +516,7 @@ namespace TiltBrush
             var previousScript = GetActiveScript(category);
             // TODO Only call this if previousScript has been initialized and hasn't already been ended
             // Checking a method for null does this but only really as a side-effect
-            if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, "End");
+            if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, LuaNames.End);
             ActiveScripts[category] = index;
             var script = GetActiveScript(category);
             InitScript(script);
@@ -514,12 +549,12 @@ namespace TiltBrush
                 // Ensure the value is set
                 GetOrSetWidgetCurrentValue(script, config);
             }
-            _CallScript(script, "Start");
+            _CallScript(script, LuaNames.Start);
         }
 
         public void RegisterApiClasses(Script script)
         {
-            // RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
+            RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
             RegisterApiClass(script, "unityMathf", typeof(MathfApiWrapper));
             RegisterApiClass(script, "unityQuaternion", typeof(QuaternionApiWrapper));
             // RegisterApiClass(script, "unityVector2", typeof(Vector2ApiWrapper));
@@ -528,7 +563,6 @@ namespace TiltBrush
             RegisterApiClass(script, "app", typeof(AppApiWrapper));
             RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "camerapath", typeof(CamerapathApiWrapper));
-            RegisterApiClass(script, "color", typeof(ColorApiWrapper));
             RegisterApiClass(script, "draw", typeof(DrawApiWrapper));
             RegisterApiClass(script, "guides", typeof(GuidesApiWrapper));
             RegisterApiClass(script, "headset", typeof(HeadsetApiWrapper));
@@ -541,6 +575,7 @@ namespace TiltBrush
             RegisterApiClass(script, "spectator", typeof(SpectatorApiWrapper));
             RegisterApiClass(script, "strokes", typeof(StrokesApiWrapper));
             RegisterApiClass(script, "symmetry", typeof(SymmetryApiWrapper));
+            RegisterApiClass(script, "timer", typeof(TimerApiWrapper));
             RegisterApiClass(script, "turtle", typeof(TurtleApiWrapper));
             RegisterApiClass(script, "user", typeof(UserApiWrapper));
             RegisterApiClass(script, "wand", typeof(WandApiWrapper));
@@ -556,7 +591,7 @@ namespace TiltBrush
             }
             else
             {
-                CallActivePointerScript("End");
+                CallActivePointerScript(LuaNames.End);
             }
         }
 
@@ -619,19 +654,19 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 ApiManager.Instance.StartUndo();
-                scriptTransformOutput = CallActivePointerScript("OnTriggerPressed");
+                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerPressed);
                 m_TriggerWasPressed = true;
                 scriptHasRun = true;
             }
             else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                scriptTransformOutput = CallActivePointerScript("WhileTriggerPressed");
+                scriptTransformOutput = CallActivePointerScript(LuaNames.WhileTriggerPressed);
                 m_TriggerWasPressed = true;
                 scriptHasRun = true;
             }
             else if (m_TriggerWasPressed)
             {
-                scriptTransformOutput = CallActivePointerScript("OnTriggerReleased");
+                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerPressed);
                 m_TriggerWasPressed = false;
                 scriptHasRun = true;
                 ApiManager.Instance.EndUndo();
@@ -658,6 +693,34 @@ namespace TiltBrush
                     pos_GS = tr_GS.translation;
                     rot_GS = tr_GS.rotation;
                     break;
+            }
+        }
+
+        public static void SetTimer(Closure fn, float interval, float delay, int repeats)
+        {
+            var key = (fn.OwnerScript, fn.ReferenceID);
+            m_Timers[key] = new LuaTimer(fn, interval, delay, repeats);
+        }
+
+        public static void UnsetTimer(Closure fn)
+        {
+            var key = (fn.OwnerScript, fn.ReferenceID);
+            m_Timers.Remove(key);
+        }
+
+        public static void UnsetAllTimers(Script script)
+        {
+            var toRemove = new List<(Script OwnerScript, int ReferenceID)>();
+            foreach (var key in m_Timers.Keys)
+            {
+                if (key.OwnerScript == script)
+                {
+                    toRemove.Add(key);
+                }
+            }
+            foreach (var item in toRemove)
+            {
+                m_Timers.Remove(item);
             }
         }
     }

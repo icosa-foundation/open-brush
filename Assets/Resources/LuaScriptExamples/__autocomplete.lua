@@ -1,6 +1,14 @@
 tool.startPosition = nil
 tool.endPosition = nil
 tool.vector = nil
+function unityColor.greyscale(col) end
+function unityColor.maxColorComponent(col) end
+function unityColor.toHtmlString(col) end
+function unityColor.parseHtmlString(html) end
+function unityColor.lerp(a, b, t) end
+function unityColor.lerpUnclamped(a, b, t) end
+function unityColor.hsvToRgb(h, s, v) end
+function unityColor.rgbToHsv(rgb) end
 unityMathf.deg2Rad = nil
 unityMathf.epsilon = nil
 unityMathf.infinity = nil
@@ -94,6 +102,7 @@ app.frames = nil
 app.currentScale = nil
 app.lastSelectedStroke = nil
 app.lastStroke = nil
+app.environment = nil
 function app.undo() end
 function app.redo() end
 function app.addListener(a) end
@@ -111,7 +120,6 @@ function app.postProcessing(a) end
 function app.draftingVisible() end
 function app.draftingTransparent() end
 function app.draftingHidden() end
-function app.setEnvironment(environmentName) end
 function app.watermark(a) end
 brush.timeSincePressed = nil
 brush.timeSinceReleased = nil
@@ -123,19 +131,17 @@ brush.position = nil
 brush.rotation = nil
 brush.direction = nil
 brush.size = nil
-brush.size01 = nil
 brush.pressure = nil
-brush.name = nil
+brush.type = nil
 brush.speed = nil
-brush.color = nil
-brush.lastColorPicked = nil
+brush.colorRgb = nil
 brush.colorHsv = nil
+brush.colorHtml = nil
+brush.lastColorPicked = nil
 brush.lastColorPickedHsv = nil
-function brush.type(brushName) end
+function brush.colorJitter() end
 function brush.pastPosition(back) end
 function brush.pastRotation(back) end
-function brush.sizeSet(amount) end
-function brush.sizeAdd(amount) end
 function brush.forcePaintingOn(active) end
 function brush.forcePaintingOff(active) end
 function camerapath.render() end
@@ -143,14 +149,6 @@ function camerapath.toggleVisuals() end
 function camerapath.togglePreview() end
 function camerapath.delete() end
 function camerapath.record() end
-function color.addHsv(hsv) end
-function color.addRgb(color) end
-function color.setRgb(color) end
-function color.setHsv(hsv) end
-function color.setHtml(color) end
-function color.jitter() end
-function color.HsvToRgb(h, s, v) end
-function color.RgbToHsv(rgb) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, radius, angle) end
@@ -235,17 +233,17 @@ function strokes.selectMultiple(from, to) end
 function strokes.join(from, to) end
 function strokes.joinPrevious() end
 function strokes.import(name) end
+symmetry.transform = nil
 symmetry.position = nil
 symmetry.rotation = nil
 symmetry.direction = nil
 function symmetry.mirror() end
 function symmetry.doubleMirror() end
 function symmetry.twoHandeded() end
-function symmetry.setPosition(position) end
-function symmetry.setRotation(rotation) end
-function symmetry.setTransform(position, rotation) end
 function symmetry.summonWidget() end
 function symmetry.spin(rot) end
+function timer.set(fn, interval, delay, repeats) end
+function timer.unset(fn) end
 turtle.transform = nil
 turtle.position = nil
 turtle.rotation = nil
