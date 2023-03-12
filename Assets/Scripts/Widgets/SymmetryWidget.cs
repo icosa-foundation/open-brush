@@ -70,7 +70,7 @@ namespace TiltBrush
 
         public void Spin(Vector3 velocity)
         {
-            AngularVelocity_GS = velocity;
+            AngularVelocity_GS = App.Scene.Pose.rotation * velocity;
             m_IsSpinningFreely = true;
         }
 
