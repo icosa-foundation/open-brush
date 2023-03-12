@@ -6,7 +6,7 @@ Widgets = {
 function Main()
 
     if brush.triggerIsPressedThisFrame then
-        symmetry.rotation = {angleX, angleY, angleZ}
+        symmetry.rotation = {0, 0, 0}
         symmetry.spin({0, speedY, speedZ})
     end
 
