@@ -49,5 +49,8 @@ namespace TiltBrush
         public static float sqrt(float f) => Mathf.Sqrt(f);
         public static float smoothStep(float from, float to, float t) => Mathf.SmoothStep(from, to, t);
         public static float tan(float f) => Mathf.Tan(f);
+        public static float sinh(float f) => (float)System.Math.Sinh(f);
+        public static float cosh(float f) => (float)System.Math.Cosh(f);
+        public static float tanh(float f) => (float)System.Math.Tanh(f);
     }
 }
