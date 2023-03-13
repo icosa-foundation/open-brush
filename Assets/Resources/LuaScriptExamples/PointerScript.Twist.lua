@@ -2,7 +2,7 @@
     description="Rotates your strokes without needing to dislocate your wrist"
 }
 
-Widgets = {
+Parameters = {
     speed={label="Speed", type="float", min=0, max=600, default=300},
 }
 

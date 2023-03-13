@@ -2,7 +2,7 @@
     description="Like Wiggle but uses a smooth noise function"
 }
 
-Widgets = {
+Parameters = {
     positionAmount={label="Position Amount", type="float", min=0.01, max=2, default=1},
     rotationAmount={label="Rotation Amount", type="float", min=0.01, max=360, default=0},
     frequency={label="Frequency", type="float", min=0.01, max=4, default=1}

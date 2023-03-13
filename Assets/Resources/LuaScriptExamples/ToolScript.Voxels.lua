@@ -3,7 +3,7 @@
     space="canvas",
 }
 
-Widgets = {
+Parameters = {
     gridSize={label="Grid Size", type="float", min=0.01, max=20, default=2},
 }
 

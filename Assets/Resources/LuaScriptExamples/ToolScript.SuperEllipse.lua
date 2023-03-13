@@ -3,7 +3,7 @@
     previewType="quad"
 }
 
-Widgets = {
+Parameters = {
     n={label="n", type="float", min=0.01, max=5, default=3.5},
 }
 

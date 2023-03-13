@@ -4,7 +4,7 @@
 }
 
 
-Widgets = {
+Parameters = {
     copies={label="Copies", type="int", min=1, max=8, default=2},
     speed={label="Speed", type="float", min=0.01, max=16, default=8},
     radius={label="Radius", type="float", min=0.01, max=2, default=.5},

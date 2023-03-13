@@ -4,7 +4,7 @@
 }
 
 
-Widgets = {
+Parameters = {
     freq={label="Frequency", type="float", min=0, max=50, default=40},
     amp={label="Amplitude", type="float", min=0, max=5, default=0.5},
 }

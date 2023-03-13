@@ -3,7 +3,7 @@
     previewType="sphere"
 }
 
-Widgets = {
+Parameters = {
     steps={label="Steps", type="float", min=3, max=2000, default=500},
     turns={label="Turns", type="float", min=1, max=40, default=10},
 }

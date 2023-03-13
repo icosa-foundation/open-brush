@@ -2,7 +2,7 @@
     description="As you draw, extra lines are added from the start of your stroke to the current position"
 }
 
-Widgets = {
+Parameters = {
     rate={label="Rate", type="int", min=1, max=10, default=10},
  }
 

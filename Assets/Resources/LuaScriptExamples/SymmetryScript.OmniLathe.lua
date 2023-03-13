@@ -1,4 +1,4 @@
-Widgets = {
+Parameters = {
     speedY={label="Speed Y", type="float", min=0, max=2000, default=500},
     speedZ={label="Speed Z", type="float", min=0, max=2000, default=0},
 }

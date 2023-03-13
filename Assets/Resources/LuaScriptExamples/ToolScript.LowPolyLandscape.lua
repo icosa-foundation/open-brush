@@ -3,7 +3,7 @@
     space="canvas",
 }
 
-Widgets = {
+Parameters = {
     scale={label="Scale", type="float", min=0.01, max=2, default=0.2},
     height={label="Height", type="float", min=0.01, max=20, default=2},
     offset={label="Offset", type="float", min=0, max=10, default=10},

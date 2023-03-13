@@ -2,7 +2,7 @@ Settings = {
     description="Like spinning the mirror by hand but with precise control"
 }
 
-Widgets = {
+Parameters = {
     speed={label="Speed", type="float", min=0, max=3000, default=1000},
     angleX={label="Angle X", type="float", min=-180, max=180, default=0},
     angleZ={label="Angle Z", type="float", min=-180, max=180, default=0},

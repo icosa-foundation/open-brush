@@ -3,7 +3,7 @@
     space="canvas"
 }
 
-Widgets = {
+Parameters = {
     maxSize={label="Maximum Size", type="float", min=0.01, max=1, default=0.25},
     spread={label="Spread", type="float", min=0.01, max=1, default=0.25},
     amount={label="Amount", type="float", min=0.001, max=1, default=0.25},

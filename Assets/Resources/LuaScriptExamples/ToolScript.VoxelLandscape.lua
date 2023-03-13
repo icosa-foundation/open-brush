@@ -3,7 +3,7 @@
     space="canvas",
 }
 
-Widgets = {
+Parameters = {
     xzSpacing ={ label="Horizontal Spacing", type="float", min=0.01, max=20, default=2},
     yGrid={label="Vertical Spacing", type="float", min=0.01, max=20, default=0.25},
 }

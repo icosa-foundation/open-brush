@@ -795,7 +795,7 @@ namespace TiltBrush
         {
             var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
 
-            var luaColors = script.Globals.Get("Colors");
+            var luaColors = script.Globals.Get(LuaNames.Colors);
             if (!Equals(luaColors, DynValue.Nil))
             {
                 m_SymmetryPointerColors = luaColors.ToObject<List<Color>>();
@@ -805,7 +805,7 @@ namespace TiltBrush
                 m_SymmetryPointerColors.Clear();
             }
 
-            var luaBrushes = script.Globals.Get("Brushes");
+            var luaBrushes = script.Globals.Get(LuaNames.Brushes);
             if (!Equals(luaBrushes, DynValue.Nil))
             {
                 m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(

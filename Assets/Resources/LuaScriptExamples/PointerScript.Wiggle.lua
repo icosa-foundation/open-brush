@@ -2,7 +2,7 @@
     description="Randomizes the brush position"
 }
 
-Widgets = {
+Parameters = {
     amount={label="Wiggle Amount", type="float", min=0, max=1, default=0.5},
 }
 

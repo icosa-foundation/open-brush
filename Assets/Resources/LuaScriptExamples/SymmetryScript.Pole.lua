@@ -3,7 +3,7 @@
     space="canvas"
 }
 
-Widgets = {copies={label="Copies", type="int", min=1, max=32, default=6}}
+Parameters = {copies={label="Copies", type="int", min=1, max=32, default=6}}
 
 function Start()
     --Colors = {

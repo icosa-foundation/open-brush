@@ -3,7 +3,7 @@
     previewType="cube"
 }
 
-Widgets = {
+Parameters = {
     turns={label="Number of turns", type="float", min=0, max=20, default=6},
     steps={label="Number of steps per turn", type="int", min=1, max=32, default=12},
 }

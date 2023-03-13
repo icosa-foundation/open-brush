@@ -3,7 +3,7 @@ Settings = {
     previewType="quad"
 }
 
-Widgets = {
+Parameters = {
     sym={label="Symmetry", type="int", min=1, max=32, default=4},
     n1={label="n1", type="float", min=0.01, max=5, default=1},
     n2={label="n2", type="float", min=0.01, max=5, default=3.5},

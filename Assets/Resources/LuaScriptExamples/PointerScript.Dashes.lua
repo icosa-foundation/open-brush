@@ -2,7 +2,7 @@
     description="Draws dashes with configurable frequency and spacing"
 }
 
-Widgets = {
+Parameters = {
     frequency={label="Frequency", type="float", min=0, max=20, default=5},
     spacing={label="Spacing", type="float", min=0, max=1, default=.75},
 }

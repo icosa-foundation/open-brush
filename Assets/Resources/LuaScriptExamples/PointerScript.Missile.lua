@@ -4,7 +4,7 @@
 }
 
 
-Widgets = {
+Parameters = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},
 }
 

@@ -35,6 +35,15 @@ namespace TiltBrush
 
     public static class LuaNames
     {
+
+        // Special Tables
+
+        public static string Parameters => "Parameters";
+        public static string Settings => "Settings";
+        public static string Colors => "Colors";
+        public static string Brushes => "Brushes";
+
+        // Special Methods
         public static string Main => "Main";
         public static string Start => "Start";
         public static string End => "End";
@@ -479,7 +488,7 @@ namespace TiltBrush
         public DynValue GetSettingForActiveScript(ApiCategory category, string key)
         {
             var script = GetActiveScript(category);
-            var settings = script.Globals.Get("Settings");
+            var settings = script.Globals.Get(LuaNames.Settings);
             return settings?.Table?.Get(key);
         }
 
@@ -530,7 +539,7 @@ namespace TiltBrush
             var script = GetActiveScript(category);
             var scriptName = script.Globals.Get("ScriptName").String;
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
-            string description = script.Globals.Get("Settings")?.Table?.Get("description")?.String;
+            string description = script.Globals.Get(LuaNames.Settings)?.Table?.Get("description")?.String;
             panel.ConfigureScriptButton(category, scriptName, description);
         }
 
@@ -609,7 +618,7 @@ namespace TiltBrush
 
         public Table GetWidgetConfigs(Script script)
         {
-            var configs = script.Globals.Get("Widgets");
+            var configs = script.Globals.Get(LuaNames.Parameters);
             return configs.IsNil() ? new Table(script) : configs.Table;
         }
 
