@@ -50,6 +50,8 @@ namespace TiltBrush
         public static string OnTriggerPressed => "OnTriggerPressed";
         public static string OnTriggerReleased => "OnTriggerReleased";
         public static string WhileTriggerPressed => "WhileTriggerPressed";
+        public static string ScriptNameString => "_ScriptName";
+        public static string IsExampleScriptBool => "_IsExampleScript";
 
     }
 
@@ -227,7 +229,7 @@ namespace TiltBrush
             foreach (var asset in exampleScripts)
             {
                 var luaFile = (TextAsset)asset;
-                LoadScriptFromString(luaFile.name, luaFile.text);
+                LoadScriptFromString(luaFile.name, luaFile.text, isExampleScript: true);
             }
         }
 
@@ -245,7 +247,7 @@ namespace TiltBrush
         {
             string msg = e.DecoratedMessage;
             if (string.IsNullOrEmpty(msg)) msg = e.Message;
-            string errorMsg = $"{script.Globals.Get("ScriptName").String}:{fnName}:{msg}";
+            string errorMsg = $"{script.Globals.Get(LuaNames.ScriptNameString).String}:{fnName}:{msg}";
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
@@ -267,7 +269,7 @@ namespace TiltBrush
             return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
-        private string LoadScriptFromString(string scriptFilename, string contents)
+        private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript=false)
         {
             if (scriptFilename.StartsWith("__")) return null;
             Script script = new Script();
@@ -278,7 +280,10 @@ namespace TiltBrush
             {
                 var category = catMatch.Value;
                 scriptName = scriptFilename.Substring(category.ToString().Length + 1);
-                script.Globals["ScriptName"] = scriptName;
+
+                script.Globals[LuaNames.ScriptNameString] = scriptName;
+                script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
+
                 Scripts[category][scriptName] = script;
                 InitScriptOnce(script);
             }
@@ -530,14 +535,12 @@ namespace TiltBrush
             var script = GetActiveScript(category);
             InitScript(script);
             ConfigureScriptButton(category);
-            //temp
-            // App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
         }
 
         public void ConfigureScriptButton(ApiCategory category)
         {
             var script = GetActiveScript(category);
-            var scriptName = script.Globals.Get("ScriptName").String;
+            var scriptName = script.Globals.Get(LuaNames.ScriptNameString).String;
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
             string description = script.Globals.Get(LuaNames.Settings)?.Table?.Get("description")?.String;
             panel.ConfigureScriptButton(category, scriptName, description);

@@ -599,15 +599,14 @@ namespace TiltBrush
             m_Transfers.Clear();
         }
 
+        public bool SyncPossible() => m_GoogleIdentity.LoggedIn && SyncEnabled && !DriveIsLowOnSpace && !m_IsCancelling;
+
         /// Syncs the local files with the device's Google Drive folder. If a sync is already in progress
         /// it will be cancelled before a new sync is performed. The sync prepares the transfers required
         /// to sync and then the actual transfers happen in the Update function.
         public async Task SyncLocalFilesAsync()
         {
-            if (!m_GoogleIdentity.LoggedIn || !SyncEnabled || DriveIsLowOnSpace || m_IsCancelling)
-            {
-                return;
-            }
+            if (!SyncPossible()) return;
 
             if (m_SyncTask != null)
             {

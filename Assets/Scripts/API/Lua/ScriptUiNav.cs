@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
-using System.Collections.Generic;
+using System.IO;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
@@ -23,24 +22,39 @@ public class ScriptUiNav : MonoBehaviour
 
     private TextMeshPro textMesh;
     public LuaManager.ApiCategory ApiCategory;
-
-    void Start()
-    {
-        Init();
-    }
+    public ActionButton m_CopyToUserScriptsFolder;
 
     public void Init()
     {
         textMesh = GetComponentInChildren<TextMeshPro>();
-        var names = LuaManager.Instance.GetScriptNames(ApiCategory);
-        if (names.Count > 0) textMesh.text = names[0];
+        RefreshNavUi();
     }
 
     public void ChangeScript(int increment)
     {
         LuaManager.Instance.ChangeCurrentScript(ApiCategory, increment);
+        RefreshNavUi();
+    }
+
+    private void RefreshNavUi()
+    {
         var index = LuaManager.Instance.ActiveScripts[ApiCategory];
         var scriptName = LuaManager.Instance.GetScriptNames(ApiCategory)[index];
+        var script = LuaManager.Instance.GetActiveScript(ApiCategory);
         textMesh.text = scriptName;
+        m_CopyToUserScriptsFolder.gameObject.SetActive(script.Globals.Get(LuaNames.IsExampleScriptBool).Boolean);
+    }
+
+    public void CopyScriptToUserScriptFolder()
+    {
+        var index = LuaManager.Instance.ActiveScripts[ApiCategory];
+        var scriptName = LuaManager.Instance.GetScriptNames(ApiCategory)[index];
+        var originalFilename = $"{ApiCategory}.{scriptName}";
+        var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");
+        if (!File.Exists(newFilename))
+        {
+            FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
+            m_CopyToUserScriptsFolder.gameObject.SetActive(false);
+        }
     }
 }

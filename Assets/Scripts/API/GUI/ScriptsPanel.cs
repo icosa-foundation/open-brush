@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -23,12 +22,6 @@ namespace TiltBrush
         public BaseButton SymmetryScriptButton;
         public BaseButton PointerScriptButton;
         public BaseButton ToolScriptButton;
-
-        public override void InitPanel()
-        {
-            base.InitPanel();
-            InitScriptUiNav();
-        }
 
         public void InitScriptUiNav()
         {
@@ -56,6 +49,15 @@ namespace TiltBrush
             {
                 btn.SetExtraDescriptionText(description);
             }
+        }
+
+        public void HandleGoogleDriveSync()
+        {
+            if (!App.DriveSync.IsFolderOfTypeSynced(DriveSync.SyncedFolderType.Scripts))
+            {
+                App.DriveSync.ToggleSyncOnFolderOfType(DriveSync.SyncedFolderType.Scripts);
+            }
+            App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
         }
     }
 }

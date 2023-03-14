@@ -4619,7 +4619,10 @@ namespace TiltBrush
                             InputManager.ControllerName.Brush,
                             kRemoveHeadsetFyi, fPopScalar: 0.5f);
                     }
-                    string baseDriveUrl = "https://drive.google.com";
+                    string folderId = App.GoogleUserSettings.DriveSyncFolderId;
+                    string baseDriveUrl = string.IsNullOrEmpty(folderId) ?
+                        "https://drive.google.com" :
+                        $"https://drive.google.com/drive/folders/{folderId}";
                     string driveURL = !App.GoogleIdentity.LoggedIn ? baseDriveUrl :
                         string.Format(
                             "http://accounts.google.com/AccountChooser?Email={0}&continue={1}",
