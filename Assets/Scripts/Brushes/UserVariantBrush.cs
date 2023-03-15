@@ -284,8 +284,7 @@ public class UserVariantBrush
             using (var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile)))
             {
                 m_ConfigData = fileReader.ReadToEnd();
-                m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(
-                  m_ConfigData, out warning, ignoreMissingMember: true);
+                m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(m_ConfigData, out warning);
             }
         }
         catch (JsonException e)
