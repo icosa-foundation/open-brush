@@ -12,25 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
-
 namespace TiltBrush
 {
 
     public class AppSettingsPanel : BasePanel
     {
-        public ToggleButton m_ToggleExperimentalModeToggle;
 
-        public override void InitPanel()
+        public void HandleToggleHandedness()
         {
-            base.InitPanel();
-            m_ToggleExperimentalModeToggle.m_IsToggledOn = App.Config.GetIsExperimental();
+            SketchControlsScript.DoSwapControls();
+        }
+
+        public void HandleResetFirstUse()
+        {
+            App.Config.SetIsExperimental(false);
+            PlayerPrefs.SetInt(PanelManager.kPlayerPrefAdvancedMode, 0);
+            PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
+            RestartNotification();
         }
 
         public void HandleToggleExperimentalMode(ToggleButton btn)
         {
-            App.Config.SetIsExperimental(btn.m_IsToggledOn);
+            App.Config.SetIsExperimental(btn.IsToggledOn);
+            RestartNotification();
+        }
+
+        private void RestartNotification()
+        {
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                $"Please restart Open Brush",
+                fPopScalar: 0.5f, false);
         }
     }
 } // namespace TiltBrush
