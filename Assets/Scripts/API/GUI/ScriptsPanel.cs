@@ -33,7 +33,12 @@ namespace TiltBrush
 
         public void TogglePointerScript(ToggleButton btn)
         {
-            LuaManager.Instance.EnablePointerScript(btn.m_IsToggledOn);
+            LuaManager.Instance.EnablePointerScript(btn.IsToggledOn);
+        }
+
+        public void ToggleBackgroundScripts(ToggleButton btn)
+        {
+            LuaManager.Instance.EnableBackgroundScripts(btn.IsToggledOn);
         }
 
         public void ConfigureScriptButton(LuaManager.ApiCategory category, string scriptName, string description)

@@ -23,6 +23,9 @@ public class ScriptUiNav : MonoBehaviour
     private TextMeshPro textMesh;
     public LuaManager.ApiCategory ApiCategory;
     public ActionButton m_CopyToUserScriptsFolder;
+    public ToggleButton m_ToggleBackgroundScript;
+    private int m_CurrentBackgroundScriptIndex;
+    private string m_CurrentBackgroundScriptName;
 
     public void Init()
     {
@@ -36,6 +39,13 @@ public class ScriptUiNav : MonoBehaviour
         RefreshNavUi();
     }
 
+    public void ChangeBackgroundScript(int increment)
+    {
+        m_CurrentBackgroundScriptIndex += increment;
+        m_CurrentBackgroundScriptName = LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.BackgroundScript)[m_CurrentBackgroundScriptIndex];
+        textMesh.text = m_CurrentBackgroundScriptName;
+    }
+
     private void RefreshNavUi()
     {
         var index = LuaManager.Instance.ActiveScripts[ApiCategory];
@@ -43,6 +53,15 @@ public class ScriptUiNav : MonoBehaviour
         var script = LuaManager.Instance.GetActiveScript(ApiCategory);
         textMesh.text = scriptName;
         m_CopyToUserScriptsFolder.gameObject.SetActive(script.Globals.Get(LuaNames.IsExampleScriptBool).Boolean);
+        if (ApiCategory == LuaManager.ApiCategory.BackgroundScript)
+        {
+            ChangeBackgroundScript(0);
+            m_ToggleBackgroundScript.gameObject.SetActive(true);
+        }
+        else
+        {
+            m_ToggleBackgroundScript.gameObject.SetActive(false);
+        }
     }
 
     public void CopyScriptToUserScriptFolder()
@@ -56,5 +75,11 @@ public class ScriptUiNav : MonoBehaviour
             FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
             m_CopyToUserScriptsFolder.gameObject.SetActive(false);
         }
+    }
+
+    public void ToggleBackgroundScript()
+    {
+        var active = LuaManager.Instance.ToggleBackgroundScript(m_CurrentBackgroundScriptName);
+        m_ToggleBackgroundScript.IsToggledOn = active;
     }
 }

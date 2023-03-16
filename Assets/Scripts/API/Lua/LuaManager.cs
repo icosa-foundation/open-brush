@@ -72,8 +72,9 @@ namespace TiltBrush
         public enum ApiCategory
         {
             PointerScript = 0, // Modifies the pointer position on every frame
-            ToolScript = 1,    // A scriptable tool that can create strokes based on click/drag/release
-            SymmetryScript = 2 // Generates copies of each new stroke with different transforms
+            ToolScript = 1, // A scriptable tool that can create strokes based on click/drag/release
+            SymmetryScript = 2, // Generates copies of each new stroke with different transforms
+            BackgroundScript = 3 // A general script that is called every frame
             // Scripts that modify brush settings for each new stroke (JitterScript?) Maybe combine with Pointerscript
             // Scripts that modify existing strokes (RepaintScript?)
             // Scriptable Brush mesh generation (BrushScript?)
@@ -83,8 +84,10 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
         [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
         [NonSerialized] public bool PointerScriptsEnabled;
+        [NonSerialized] public bool BackgroundScriptsEnabled;
 
         private List<string> m_ScriptPathsToUpdate;
+        private Dictionary<string, Script> m_ActiveBackgroundScripts;
 
         private TransformBuffers m_TransformBuffers;
         private bool m_TriggerWasPressed;
@@ -145,6 +148,7 @@ namespace TiltBrush
         {
             m_TransformBuffers = new TransformBuffers(512);
             m_ScriptPathsToUpdate = new List<string>();
+            m_ActiveBackgroundScripts = new Dictionary<string, Script>();
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
@@ -201,6 +205,7 @@ namespace TiltBrush
             {
                 m_Timers.Remove(item);
             }
+            if (BackgroundScriptsEnabled) CallActiveBackgroundScripts();
         }
 
         public void InitScriptDataStructures()
@@ -274,7 +279,15 @@ namespace TiltBrush
             if (scriptFilename.StartsWith("__")) return null;
             Script script = new Script();
             string scriptName = null;
-            script.DoString(contents);
+            try
+            {
+                script.DoString(contents);
+            }
+            catch (SyntaxErrorException e)
+            {
+                LogLuaError(script, "(Loading)", e);
+                return null;
+            }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
             if (catMatch.HasValue)
             {
@@ -449,6 +462,14 @@ namespace TiltBrush
             return result;
         }
 
+        private void CallActiveBackgroundScripts()
+        {
+            foreach (var script in m_ActiveBackgroundScripts.Values)
+            {
+                _CallScript(script, LuaNames.Main);
+            }
+        }
+
         private ScriptTrTransform CallActivePointerScript(string fnName)
         {
             var script = GetActiveScript(ApiCategory.PointerScript);
@@ -607,6 +628,19 @@ namespace TiltBrush
             }
         }
 
+        public void EnableBackgroundScripts(bool enable)
+        {
+            BackgroundScriptsEnabled = enable;
+            if (enable)
+            {
+                InitScript(GetActiveScript(ApiCategory.BackgroundScript));
+            }
+            else
+            {
+                CallActivePointerScript(LuaNames.End);
+            }
+        }
+
         public List<string> GetScriptNames(ApiCategory category)
         {
             if (Scripts != null && Scripts.Count > 0)
@@ -734,6 +768,20 @@ namespace TiltBrush
             {
                 m_Timers.Remove(item);
             }
+        }
+
+        public bool ToggleBackgroundScript(string scriptToToggle)
+        {
+            foreach (var scriptName in m_ActiveBackgroundScripts.Keys)
+            {
+                if (scriptToToggle == scriptName)
+                {
+                    m_ActiveBackgroundScripts.Remove(scriptToToggle);
+                    return false;
+                }
+            }
+            m_ActiveBackgroundScripts[scriptToToggle] = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
+            return true;
         }
     }
 }
