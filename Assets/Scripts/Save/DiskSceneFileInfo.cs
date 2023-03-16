@@ -365,7 +365,7 @@ namespace TiltBrush
 
         public IEnumerable<string> GetContentsAt(string path)
         {
-            return m_TiltFile.GetContentsAt(path);
+            return m_TiltFile == null ? new List<string>() : m_TiltFile.GetContentsAt(path);
         }
     }
 
