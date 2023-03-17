@@ -266,23 +266,26 @@ namespace TiltBrush
         public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
         public static void setPosition(int index, Vector3 position)
         {
-            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
-            tr.translation = position;
+            var tr = App.Scene.LayerCanvases.ToList()[index].Pose;
+            var newTransform = TrTransform.T(position);
+            newTransform = App.Scene.Pose * newTransform;
+            tr.translation = newTransform.translation;
             App.Scene.LayerCanvases.ToList()[index].Pose = tr;
         }
         public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
         public static void setRotation(int index, Quaternion rotation)
         {
             var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
-            tr.rotation = rotation;
+            var newTransform = TrTransform.R(rotation);
+            newTransform = App.Scene.Pose * newTransform;
+            tr.rotation = newTransform.rotation;
             App.Scene.LayerCanvases.ToList()[index].Pose = tr;
         }
         public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
-        public static void setTransform(int index, TrTransform transform)
+        public static void setTransform(int index, TrTransform newTransform)
         {
-            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
-            tr *= transform;
-            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+            newTransform = App.Scene.Pose * newTransform;
+            App.Scene.LayerCanvases.ToList()[index].Pose = newTransform;
         }
         public static void add() => ApiMethods.AddLayer();
         public static void clear(int index) => ApiMethods.ClearLayer(index);
