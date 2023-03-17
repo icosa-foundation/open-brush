@@ -29,6 +29,10 @@ namespace TiltBrush
             {
                 nav.Init();
             }
+            foreach (var nav in GetComponentsInChildren<ScriptUiNavMultiple>())
+            {
+                nav.Init();
+            }
         }
 
         public void TogglePointerScript(ToggleButton btn)

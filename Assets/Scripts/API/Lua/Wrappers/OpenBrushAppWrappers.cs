@@ -286,6 +286,7 @@ namespace TiltBrush
         public static void show(int index) => ApiMethods.ShowLayer(index);
         public static void hide(int index) => ApiMethods.HideLayer(index);
         public static void toggle(int index) => ApiMethods.ToggleLayer(index);
+        public static int count => App.Scene.LayerCanvases.Count();
     }
 
     [MoonSharpUserData]

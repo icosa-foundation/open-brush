@@ -52,6 +52,9 @@ function unityMathf.sin(f) end
 function unityMathf.sqrt(f) end
 function unityMathf.smoothStep(from, to, t) end
 function unityMathf.tan(f) end
+function unityMathf.sinh(f) end
+function unityMathf.cosh(f) end
+function unityMathf.tanh(f) end
 unityQuaternion.identity = nil
 unityQuaternion.kEpsilon = nil
 function unityQuaternion.angle(a, b) end
@@ -166,34 +169,35 @@ function guides.scale(index, scale) end
 function guides.toggle() end
 function headset.pastPosition(count) end
 function headset.pastRotation(count) end
-function image.import(location) end
-function image.select(index) end
-function image.moveTo(index, position) end
-function image.getTransform(index) end
-function image.getPosition(index) end
-function image.getRotation(index) end
-function image.setPosition(index, position) end
-function image.setRotation(index, rotation) end
-layer.getActive = nil
-function layer.getTransform(index) end
-function layer.getPosition(index) end
-function layer.setPosition(index, position) end
-function layer.getRotation(index) end
-function layer.setRotation(index, rotation) end
-function layer.add() end
-function layer.clear(index) end
-function layer.delete(index) end
-function layer.squash(sourceLayer, destinationLayer) end
-function layer.activate(index) end
-function layer.show(index) end
-function layer.hide(index) end
-function layer.toggle(index) end
-function model.select(index) end
-function model.getTransform(index) end
-function model.getPosition(index) end
-function model.getRotation(index) end
-function model.setPosition(index, position) end
-function model.setRotation(index, rotation) end
+function images.import(location) end
+function images.select(index) end
+function images.moveTo(index, position) end
+function images.getTransform(index) end
+function images.getPosition(index) end
+function images.getRotation(index) end
+function images.setPosition(index, position) end
+function images.setRotation(index, rotation) end
+layers.getActive = nil
+layers.count = nil
+function layers.getTransform(index) end
+function layers.getPosition(index) end
+function layers.setPosition(index, position) end
+function layers.getRotation(index) end
+function layers.setRotation(index, rotation) end
+function layers.add() end
+function layers.clear(index) end
+function layers.delete(index) end
+function layers.squash(sourceLayer, destinationLayer) end
+function layers.activate(index) end
+function layers.show(index) end
+function layers.hide(index) end
+function layers.toggle(index) end
+function models.select(index) end
+function models.getTransform(index) end
+function models.getPosition(index) end
+function models.getRotation(index) end
+function models.setPosition(index, position) end
+function models.setRotation(index, rotation) end
 function path.fromSvg(svg) end
 function path.fromSvgMultiple(svg) end
 function path.transform(path, transform) end

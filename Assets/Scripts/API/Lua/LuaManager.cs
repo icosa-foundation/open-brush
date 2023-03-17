@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Platforms;
@@ -174,12 +175,15 @@ namespace TiltBrush
                 if (catMatch.HasValue)
                 {
                     var category = catMatch.Value;
-                    var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
                     LoadScriptFromPath(path);
-                    ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
-                    if (activeScriptName == scriptName.Substring(category.ToString().Length + 1))
+                    if (catMatch != ApiCategory.BackgroundScript)
                     {
-                        InitScript(GetActiveScript(category));
+                        var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
+                        ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
+                        if (activeScriptName == scriptName.Substring(category.ToString().Length + 1))
+                        {
+                            InitScript(GetActiveScript(category));
+                        }
                     }
                 }
             }
@@ -205,7 +209,7 @@ namespace TiltBrush
             {
                 m_Timers.Remove(item);
             }
-            if (BackgroundScriptsEnabled) CallActiveBackgroundScripts();
+            if (BackgroundScriptsEnabled) CallActiveBackgroundScripts(LuaNames.Main);
         }
 
         public void InitScriptDataStructures()
@@ -251,8 +255,13 @@ namespace TiltBrush
         public void LogLuaError(Script script, string fnName, InterpreterException e)
         {
             string msg = e.DecoratedMessage;
+            // chunk_1:(12,4-38): cannot access field count of userdata<TiltBrush.LayerApiWrapper>
+            // Make the message more user friendly
+            msg = msg.Replace("chunk_1:", "on line: ");
+            // Replace the (line, char range) with just the line number itself
+            msg = Regex.Replace(msg, @"(.+)\((\d+),.+\)(.+)", @"$1$2$3");
             if (string.IsNullOrEmpty(msg)) msg = e.Message;
-            string errorMsg = $"{script.Globals.Get(LuaNames.ScriptNameString).String}:{fnName}:{msg}";
+            string errorMsg = $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
@@ -462,11 +471,11 @@ namespace TiltBrush
             return result;
         }
 
-        private void CallActiveBackgroundScripts()
+        private void CallActiveBackgroundScripts(string fnName)
         {
             foreach (var script in m_ActiveBackgroundScripts.Values)
             {
-                _CallScript(script, LuaNames.Main);
+                _CallScript(script, fnName);
             }
         }
 
@@ -540,9 +549,8 @@ namespace TiltBrush
 
         public void ChangeCurrentScript(ApiCategory category, int increment)
         {
-            int ActualMod(int x, int m) => (x % m + m) % m;
             if (Scripts[category].Count == 0) return;
-            int index = ActualMod(ActiveScripts[category] + increment, Scripts[category].Count);
+            int index = (int)Mathf.Repeat(ActiveScripts[category] + increment, Scripts[category].Count);
             _SetActiveScript(category, index);
         }
 
@@ -599,9 +607,9 @@ namespace TiltBrush
             RegisterApiClass(script, "draw", typeof(DrawApiWrapper));
             RegisterApiClass(script, "guides", typeof(GuidesApiWrapper));
             RegisterApiClass(script, "headset", typeof(HeadsetApiWrapper));
-            RegisterApiClass(script, "image", typeof(ImageApiWrapper));
-            RegisterApiClass(script, "layer", typeof(LayerApiWrapper));
-            RegisterApiClass(script, "model", typeof(ModelApiWrapper));
+            RegisterApiClass(script, "images", typeof(ImageApiWrapper));
+            RegisterApiClass(script, "layers", typeof(LayerApiWrapper));
+            RegisterApiClass(script, "models", typeof(ModelApiWrapper));
             RegisterApiClass(script, "path", typeof(PathApiWrapper));
             RegisterApiClass(script, "selection", typeof(SelectionApiWrapper));
             RegisterApiClass(script, "sketch", typeof(SketchApiWrapper));
@@ -633,11 +641,14 @@ namespace TiltBrush
             BackgroundScriptsEnabled = enable;
             if (enable)
             {
-                InitScript(GetActiveScript(ApiCategory.BackgroundScript));
+                foreach (var script in m_ActiveBackgroundScripts.Values)
+                {
+                    InitScript(script);
+                }
             }
             else
             {
-                CallActivePointerScript(LuaNames.End);
+                CallActiveBackgroundScripts(LuaNames.Main);
             }
         }
 
@@ -782,6 +793,30 @@ namespace TiltBrush
             }
             m_ActiveBackgroundScripts[scriptToToggle] = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
             return true;
+        }
+
+        public bool CopyActiveScriptToUserScriptFolder(ApiCategory category)
+        {
+            var index = ActiveScripts[category];
+            var scriptName = GetScriptNames(category)[index];
+            return CopyScriptToUserScriptFolder(category, scriptName);
+        }
+
+        public bool CopyScriptToUserScriptFolder(ApiCategory category, string scriptName)
+        {
+            var originalFilename = $"{category}.{scriptName}";
+            var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");
+            if (!File.Exists(newFilename))
+            {
+                FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
+                return true;
+            }
+            return false;
+        }
+
+        public bool IsBackgroundScriptActive(string scriptName)
+        {
+            return m_ActiveBackgroundScripts.ContainsKey(scriptName);
         }
     }
 }

@@ -12,74 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO;
+using System;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class ScriptUiNav : MonoBehaviour
 {
 
-    private TextMeshPro textMesh;
-    public LuaManager.ApiCategory ApiCategory;
-    public ActionButton m_CopyToUserScriptsFolder;
-    public ToggleButton m_ToggleBackgroundScript;
-    private int m_CurrentBackgroundScriptIndex;
-    private string m_CurrentBackgroundScriptName;
+    [SerializeField] private TextMeshPro m_TextMesh;
+    [SerializeField] private LuaManager.ApiCategory m_ApiCategory;
+    [SerializeField] private ActionButton m_CopyToUserScriptsFolder;
 
     public void Init()
     {
-        textMesh = GetComponentInChildren<TextMeshPro>();
+        m_TextMesh = GetComponentInChildren<TextMeshPro>();
         RefreshNavUi();
     }
 
-    public void ChangeScript(int increment)
+    public void HandleChangeScript(int increment)
     {
-        LuaManager.Instance.ChangeCurrentScript(ApiCategory, increment);
+        LuaManager.Instance.ChangeCurrentScript(m_ApiCategory, increment);
         RefreshNavUi();
-    }
-
-    public void ChangeBackgroundScript(int increment)
-    {
-        m_CurrentBackgroundScriptIndex += increment;
-        m_CurrentBackgroundScriptName = LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.BackgroundScript)[m_CurrentBackgroundScriptIndex];
-        textMesh.text = m_CurrentBackgroundScriptName;
     }
 
     private void RefreshNavUi()
     {
-        var index = LuaManager.Instance.ActiveScripts[ApiCategory];
-        var scriptName = LuaManager.Instance.GetScriptNames(ApiCategory)[index];
-        var script = LuaManager.Instance.GetActiveScript(ApiCategory);
-        textMesh.text = scriptName;
+        var index = LuaManager.Instance.ActiveScripts[m_ApiCategory];
+        var scriptName = LuaManager.Instance.GetScriptNames(m_ApiCategory)[index];
+        var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
+        m_TextMesh.text = scriptName;
         m_CopyToUserScriptsFolder.gameObject.SetActive(script.Globals.Get(LuaNames.IsExampleScriptBool).Boolean);
-        if (ApiCategory == LuaManager.ApiCategory.BackgroundScript)
-        {
-            ChangeBackgroundScript(0);
-            m_ToggleBackgroundScript.gameObject.SetActive(true);
-        }
-        else
-        {
-            m_ToggleBackgroundScript.gameObject.SetActive(false);
-        }
     }
 
-    public void CopyScriptToUserScriptFolder()
+    public void HandleCopyScriptToUserScriptFolder()
     {
-        var index = LuaManager.Instance.ActiveScripts[ApiCategory];
-        var scriptName = LuaManager.Instance.GetScriptNames(ApiCategory)[index];
-        var originalFilename = $"{ApiCategory}.{scriptName}";
-        var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");
-        if (!File.Exists(newFilename))
-        {
-            FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
-            m_CopyToUserScriptsFolder.gameObject.SetActive(false);
-        }
-    }
-
-    public void ToggleBackgroundScript()
-    {
-        var active = LuaManager.Instance.ToggleBackgroundScript(m_CurrentBackgroundScriptName);
-        m_ToggleBackgroundScript.IsToggledOn = active;
+        var copied = LuaManager.Instance.CopyActiveScriptToUserScriptFolder(m_ApiCategory);
+        m_CopyToUserScriptsFolder.gameObject.SetActive(copied);
     }
 }

@@ -19,14 +19,12 @@ namespace TiltBrush
     public class PrevNextScriptButton : BaseButton
     {
 
-        public int increment;
-        private ScriptUiNav nav;
+        [SerializeField] private UnityEngine.Events.UnityEvent<int> m_Action;
+        [SerializeField] private int increment;
 
         protected override void OnButtonPressed()
         {
-            base.OnButtonPressed();
-            if (nav == null) nav = transform.parent.GetComponent<ScriptUiNav>();
-            nav.ChangeScript(increment);
+            m_Action.Invoke(increment);
         }
 
     }
