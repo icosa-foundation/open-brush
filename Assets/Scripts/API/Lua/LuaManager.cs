@@ -792,6 +792,8 @@ namespace TiltBrush
                 }
             }
             m_ActiveBackgroundScripts[scriptToToggle] = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
+            var script = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
+            InitScript(script);
             return true;
         }
 
