@@ -8,10 +8,16 @@ Parameters = {
 }
 
 function WhileTriggerPressed()
-    angle = app.time * speed
-    r = brush.pressure * radius;
+
+    size = brush.pressure * radius;
+
     --Move the pointer in a circular path around the actual brush position
-    position = { math.sin(angle) * r, math.cos(angle) * r, 0}
-    rotation = { 0, 0, 0}
-    return { position, rotation }
+    angle = app.time * speed
+    position = {
+        x = math.sin(angle) * size,
+        y = math.cos(angle) * size,
+        z = 0
+    }
+    rotation = {0, 0, 0}
+    return {position, rotation}
 end
