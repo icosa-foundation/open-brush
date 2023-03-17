@@ -18,6 +18,6 @@ function Main()
     }
     rotation = {0, 0, 0}
     --if layerNumber < layer.count then
-        layers.setPosition(layerNumber, position)
+    layers.setPosition(layerNumber, position)
     --end
 end

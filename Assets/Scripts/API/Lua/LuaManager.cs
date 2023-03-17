@@ -169,18 +169,25 @@ namespace TiltBrush
             // Consume the queue of scripts that the FileListener reports have changed
             foreach (var path in m_ScriptPathsToUpdate)
             {
-                var scriptFilename = Path.GetFileName(path);
-                var scriptName = Path.GetFileNameWithoutExtension(scriptFilename);
-                var catMatch = TryGetCategoryFromScriptName(scriptName);
+                var scriptFilename = Path.GetFileNameWithoutExtension(Path.GetFileName(path));
+                var catMatch = TryGetCategoryFromScriptName(scriptFilename);
                 if (catMatch.HasValue)
                 {
                     var category = catMatch.Value;
+                    var scriptName = scriptFilename.Substring(category.ToString().Length + 1);
                     LoadScriptFromPath(path);
-                    if (catMatch != ApiCategory.BackgroundScript)
+                    if (catMatch == ApiCategory.BackgroundScript)
+                    {
+                        if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                        {
+                            InitScript(m_ActiveBackgroundScripts[scriptName]);
+                        }
+                    }
+                    else
                     {
                         var activeScriptName = GetScriptNames(category)[ActiveScripts[category]];
                         ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
-                        if (activeScriptName == scriptName.Substring(category.ToString().Length + 1))
+                        if (activeScriptName == scriptName)
                         {
                             InitScript(GetActiveScript(category));
                         }
@@ -307,6 +314,10 @@ namespace TiltBrush
                 script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
 
                 Scripts[category][scriptName] = script;
+                if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                {
+                    m_ActiveBackgroundScripts[scriptName] = script;
+                }
                 InitScriptOnce(script);
             }
             return scriptName;

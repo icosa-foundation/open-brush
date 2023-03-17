@@ -263,7 +263,6 @@ namespace TiltBrush
     public static class LayerApiWrapper
     {
         public static int getActive => App.Scene.LayerCanvases.ToList().IndexOf(App.Scene.ActiveCanvas);
-        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
         public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
         public static void setPosition(int index, Vector3 position)
         {
@@ -276,6 +275,13 @@ namespace TiltBrush
         {
             var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
             tr.rotation = rotation;
+            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+        }
+        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static void setTransform(int index, TrTransform transform)
+        {
+            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
+            tr *= transform;
             App.Scene.LayerCanvases.ToList()[index].Pose = tr;
         }
         public static void add() => ApiMethods.AddLayer();
@@ -322,6 +328,40 @@ namespace TiltBrush
         public static void togglePreview() => ApiMethods.ToggleCameraPathPreview();
         public static void delete() => ApiMethods.DeleteCameraPath();
         public static void record() => ApiMethods.RecordCameraPath();
+        public static TrTransform sample(float time, bool loop=true, bool pingpong=false)
+        {
+            var widget = WidgetManager.m_Instance.GetCurrentCameraPath();
+            var cameraPath = widget?.WidgetScript.Path;
+            if (cameraPath == null) return TrTransform.identity;
+            var t = new PathT(time);
+            var maxT = new PathT(time);
+            maxT.Clamp(cameraPath.NumPositionKnots);
+            var origin = cameraPath.GetPosition(new PathT(0));
+            if (t > maxT && loop)
+            {
+                if (pingpong)
+                {
+                    int numLoops = Mathf.FloorToInt(t.T / maxT.T);
+                    if (numLoops % 2 == 0)
+                    {
+                        t = new PathT(t.T % maxT.T);
+                    }
+                    else
+                    {
+                        t = new PathT(maxT.T - (t.T % maxT.T));
+                    }
+                }
+                else
+                {
+                    t = new PathT(t.T % maxT.T);
+                }
+            }
+            var tr = TrTransform.TR(
+                cameraPath.GetPosition(t) - origin,
+                cameraPath.GetRotation(t)
+            );
+            return tr;
+        }
     }
 
     [MoonSharpUserData]
