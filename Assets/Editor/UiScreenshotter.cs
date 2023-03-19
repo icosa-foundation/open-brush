@@ -59,7 +59,7 @@ namespace TiltBrush
 
             foreach (BasePanel.PanelType panelType in (BasePanel.PanelType[]) Enum.GetValues(typeof(BasePanel.PanelType)))
             {
-                TrTransform panelTr = TrTransform.T(new Vector3(-1, 100, 4));
+                TrTransform panelTr = TrTransform.T(new Vector3(-1.5f, 100, 4));
                 if (PanelManager.m_Instance.IsPanelOpen(panelType))
                 {
                     BasePanel panel = PanelManager.m_Instance.GetPanelByType(panelType);
@@ -68,7 +68,7 @@ namespace TiltBrush
                     var originalTransform = TrTransform.FromTransform(panel.transform);
                     panelTr.ToTransform(panel.transform);
                     panel.ResetReticleOffset();
-                    SaveCurrentView(cam, $"panel-{panelType}.png", 1280, 1280);
+                    SaveCurrentView(cam, $"panel-{panelType}.png", 1600, 1600);
                     originalTransform.ToTransform(panel.transform);
                 }
             }
