@@ -445,11 +445,11 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class WaveformApiWrapper
     {
-        public static float sine(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SineWave, frequency);
-        public static float triangle(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.TriangleWave, frequency);
-        public static float sawtooth(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SawtoothWave, frequency);
-        public static float square(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.SquareWave, frequency);
-        public static float noise(float time, float frequency) => PointerManager.CalcWaveform(time, PointerManager.Waveform.Noise, frequency);
+        public static float sine(float time, float frequency) => WaveGenerator.SineWave(time, frequency);
+        public static float triangle(float time, float frequency) => WaveGenerator.TriangleWave(time, frequency);
+        public static float sawtooth(float time, float frequency) => WaveGenerator.SawtoothWave(time, frequency);
+        public static float square(float time, float frequency) => WaveGenerator.SquareWave(time, frequency);
+        public static float noise(float time, float frequency) => WaveGenerator.Noise(time, frequency);
     }
 
     [MoonSharpUserData]

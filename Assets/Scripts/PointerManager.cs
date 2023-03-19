@@ -26,7 +26,7 @@ namespace TiltBrush
 
     //TODO: Separate basic pointer management (e.g. enumeration, global operations)
     //from higher-level symmetry code.
-    public class PointerManager : MonoBehaviour
+    public partial class PointerManager : MonoBehaviour
     {
         static public PointerManager m_Instance;
         const float STRAIGHTEDGE_PRESSURE = 1f;
@@ -46,14 +46,6 @@ namespace TiltBrush
             TwoHanded,
             ScriptedSymmetryMode = 6000
         }
-        public enum Waveform
-        {
-            SineWave,
-            SquareWave,
-            SawtoothWave,
-            TriangleWave,
-            Noise
-        }
 
         public enum ColorShiftComponent
         {
@@ -66,14 +58,14 @@ namespace TiltBrush
         [Serializable]
         public struct ColorShiftComponentSetting
         {
-            public Waveform mode;
+            public WaveGenerator.Mode mode;
             public float amp;
             public float freq;
         }
 
         private static readonly ColorShiftComponentSetting m_defaultColorShiftComponentSetting = new()
         {
-            mode = Waveform.SineWave, amp = 0, freq = 1
+            mode = WaveGenerator.Mode.SineWave, amp = 0, freq = 1
         };
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
@@ -1278,27 +1270,13 @@ namespace TiltBrush
             return Color.HSVToRGB(ActualMod(h, 1), s, v);
         }
 
-        public static float CalcWaveform(float t, Waveform mode, float freq)
-        {
-            // Input t is 0 to +1, output is -1 to +1
-            return mode switch
-            {
-                Waveform.SineWave => Mathf.Cos(t * freq * Mathf.PI * 2f),
-                Waveform.TriangleWave => Mathf.Abs((t * freq * 4) % 4 - 2) - 1,
-                Waveform.SawtoothWave => (t * freq % 1 - 0.5f) * 2f,
-                Waveform.SquareWave => (t * freq) % 1 < 0.5f ? -1 : 1,
-                Waveform.Noise => (Mathf.PerlinNoise(t * freq * 2, 0) * 3f) - 1.5f,
-                _ => t
-            };
-        }
-
         public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
         {
             // Expects x to vary from -1 to +1
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcWaveform(mod, settings.mode, settings.freq));
+                WaveGenerator.Sample(settings.mode, mod, settings.freq));
         }
 
         public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
@@ -1307,14 +1285,13 @@ namespace TiltBrush
             return Mathf.LerpUnclamped(
                 x,
                 x + settings.amp / 2,
-                CalcWaveform(mod, settings.mode, settings.freq)
+                WaveGenerator.Sample(settings.mode, mod, settings.freq)
             );
         }
 
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
         {
             float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
-            float sizeJitter = PointerManager.m_Instance.sizeJitter;
             float jitterValue = Random.Range(-sizeJitter * range, sizeJitter * range) * 0.5f;
             float jitteredBrushSize = currentSize + jitterValue;
             jitteredBrushSize = Mathf.Clamp(jitteredBrushSize, desc.m_BrushSizeRange.x, desc.m_BrushSizeRange.y);
