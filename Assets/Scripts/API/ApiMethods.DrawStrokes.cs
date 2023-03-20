@@ -108,7 +108,7 @@ namespace TiltBrush
                 try
                 {
                     brushDescriptor = BrushCatalog.m_Instance.AllBrushes
-                        .First(x => x.m_Description
+                        .First(x => x.Description
                             .Replace(" ", "")
                             .Replace(".", "")
                             .Replace("(", "")

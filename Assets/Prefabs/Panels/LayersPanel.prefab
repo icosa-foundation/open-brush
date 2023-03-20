@@ -441,6 +441,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9aeb2c80443c4314bb3cbe128f0857a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_MainLayerName:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81184247687733248
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_AdditionalLayerName:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81184440202092544
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_Widgets:
   - {fileID: 8931799926426736621}
   - {fileID: 8049365247439104534}
@@ -450,6 +468,9 @@ MonoBehaviour:
   - {fileID: 4607754664015214748}
   - {fileID: 522565082401551463}
   - {fileID: 5142255780986780541}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000013585526572
 GameObject:
   m_ObjectHideFlags: 0
@@ -645,8 +666,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Copy Selection to Current Layer
+  m_DescriptionText: LAYERS_PANEL_COPYLAYER_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81183732522344448
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 518d8419e77177d40893904be6ce3be5, type: 3}
@@ -674,6 +713,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3064214241829522109
 GameObject:
   m_ObjectHideFlags: 0
@@ -1233,6 +1275,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a, type: 3}
+--- !u!4 &1460265339012335933 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+    type: 3}
+  m_PrefabInstance: {fileID: 2222750886918293131}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8931799926426736621 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
@@ -1455,12 +1503,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
     type: 3}
   m_PrefabInstance: {fileID: 2481513017685043739}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1460265339012335933 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
-    type: 3}
-  m_PrefabInstance: {fileID: 2222750886918293131}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4426943955357017194
 PrefabInstance:
@@ -1708,15 +1750,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a, type: 3}
---- !u!4 &5784257269716051532 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
-    type: 3}
-  m_PrefabInstance: {fileID: 6547922586040478202}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &4607754664015214748 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+    type: 3}
+  m_PrefabInstance: {fileID: 6547922586040478202}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5784257269716051532 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
     type: 3}
   m_PrefabInstance: {fileID: 6547922586040478202}
   m_PrefabAsset: {fileID: 0}
@@ -1769,15 +1811,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a, type: 3}
---- !u!4 &7563585633729571511 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
-    type: 3}
-  m_PrefabInstance: {fileID: 7092160877643998465}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &522565082401551463 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+    type: 3}
+  m_PrefabInstance: {fileID: 7092160877643998465}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7563585633729571511 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 764252602712346550, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
     type: 3}
   m_PrefabInstance: {fileID: 7092160877643998465}
   m_PrefabAsset: {fileID: 0}
@@ -1806,6 +1848,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}

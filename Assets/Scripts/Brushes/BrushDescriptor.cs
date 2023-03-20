@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -91,7 +92,20 @@ namespace TiltBrush
         [Header("GUI")]
         public Texture2D m_ButtonTexture;
         [Tooltip("Name of the brush, in the UI and elsewhere")]
-        public string m_Description;
+        public string Description;
+        public LocalizedString m_LocalizedDescription;
+
+        public string Descriptiond
+        {
+            get
+            {
+                if (m_LocalizedDescription.TableReference != null)
+                {
+                    return m_LocalizedDescription.GetLocalizedString();
+                }
+                return Description;
+            }
+        }
 
         // Previously Experimental-Mode only
         [Tooltip("Optional, experimental-only information about the brush")]
@@ -339,7 +353,7 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return string.Format("BrushDescriptor<{0} {1} {2}>", this.name, m_Description, m_Guid);
+            return string.Format("BrushDescriptor<{0} {1} {2}>", this.name, Description, m_Guid);
         }
 
         /// Forwarding property to ease Poly Toolkit code compat issues
@@ -419,7 +433,7 @@ namespace TiltBrush
                 {
                     throw new InvalidOperationException(string.Format(
                         "{0} texture filetype ({1}) should be a '{2}'.",
-                        m_Description, path, EXPORT_TEXTURE_EXTENSION));
+                        Description, path, EXPORT_TEXTURE_EXTENSION));
                 }
                 return path;
             }

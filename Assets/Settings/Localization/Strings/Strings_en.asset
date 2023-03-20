@@ -1698,6 +1698,494 @@ MonoBehaviour:
     m_Localized: Recording Canceled
     m_Metadata:
       m_Items: []
+  - m_Id: 81183732522344448
+    m_Localized: Copy Selection to Current Layer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184247687733248
+    m_Localized: Main Layer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184440202092544
+    m_Localized: Layer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81187452349898752
+    m_Localized: Trigger To Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194531575881728
+    m_Localized: Loading Sketch...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194664648564736
+    m_Localized: Loading Models...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194744055128064
+    m_Localized: Loading...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194843074256896
+    m_Localized: Loading Images...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194906580213760
+    m_Localized: Exporting...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194990285938688
+    m_Localized: Loading Media...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203094671122432
+    m_Localized: Bubbles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203153294909440
+    m_Localized: Bubble Wand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203246727225344
+    m_Localized: Candy Cane
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203301878128640
+    m_Localized: Cel Vinyl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203372350824448
+    m_Localized: Charcoal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203423919792128
+    m_Localized: Chromatic Wave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203481385951232
+    m_Localized: Coarse Bristles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203567432097792
+    m_Localized: Comet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203611405180928
+    m_Localized: Concave Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203662118510592
+    m_Localized: Dance Floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203709862273024
+    m_Localized: Diamond
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203777713528832
+    m_Localized: Digital
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203824031227904
+    m_Localized: Disco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203865550643200
+    m_Localized: Dot Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203913957105664
+    m_Localized: Dots
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203958152486912
+    m_Localized: Double Flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204005120303104
+    m_Localized: Pinched Flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204078575149056
+    m_Localized: Pinched Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204129737269248
+    m_Localized: Drafting
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204173685186560
+    m_Localized: Dry Brush
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204235328872448
+    m_Localized: Duct Tape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204288453926912
+    m_Localized: Duct Tape (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204382188232704
+    m_Localized: Electricity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204427818065920
+    m_Localized: Embers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204493236625408
+    m_Localized: Faceted Tube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204541060079616
+    m_Localized: Fairy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204581946155008
+    m_Localized: Feather
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204635582914560
+    m_Localized: Felt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204676406075392
+    m_Localized: Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204735243771904
+    m_Localized: Fire2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204778390577152
+    m_Localized: Flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204889594159104
+    m_Localized: Flat Geometry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204982288277504
+    m_Localized: Gouache
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205065486491648
+    m_Localized: Guts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205104946503680
+    m_Localized: Highlighter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205150878326784
+    m_Localized: Tree
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205201507770368
+    m_Localized: Hypercolor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205290808696832
+    m_Localized: Hyper Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205339491983360
+    m_Localized: Icing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205378532564992
+    m_Localized: Ink
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205417556369408
+    m_Localized: Ink (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205502021263360
+    m_Localized: Keijiro Tube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205552273219584
+    m_Localized: Lacewing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205593624862720
+    m_Localized: Leaky Pen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205636259962880
+    m_Localized: Leaves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205679876530176
+    m_Localized: Leaves2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205749166432256
+    m_Localized: Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205790060896256
+    m_Localized: Light Wire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205838656102400
+    m_Localized: Wire (Lit)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205898521403392
+    m_Localized: Lofted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205943849246720
+    m_Localized: Lofted (Hue Shift)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206004192698368
+    m_Localized: Marbled Rainbow
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206060224405504
+    m_Localized: Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206102402326528
+    m_Localized: Marker (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206156286550016
+    m_Localized: Matte Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206207075377152
+    m_Localized: Muscle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206251857960960
+    m_Localized: Mylar Tube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206295621328896
+    m_Localized: Neon Pulse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206368749019136
+    m_Localized: Oil Paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206416861880320
+    m_Localized: Oil Paint (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206494716551168
+    m_Localized: Paper
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206536990941184
+    m_Localized: Paper (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206666636877824
+    m_Localized: Petal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206595077857280
+    m_Localized: Braid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206859902017536
+    m_Localized: Plasma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206904026095616
+    m_Localized: Race
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206946329845760
+    m_Localized: Rain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206986301562880
+    m_Localized: Rainbow
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207025421836288
+    m_Localized: Rising Bubbles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207069424279552
+    m_Localized: Shiny Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207135908192256
+    m_Localized: Single Sided
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207182829871104
+    m_Localized: Slice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207263394062336
+    m_Localized: Smooth Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207308449275904
+    m_Localized: Snow
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207357476495360
+    m_Localized: Snowflake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207400497471488
+    m_Localized: Soft Highlighter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207449709240320
+    m_Localized: Space
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207491186712576
+    m_Localized: Sparks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207535642140672
+    m_Localized: Spikes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207574603030528
+    m_Localized: Splatter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207648775102464
+    m_Localized: 3D Printing Brush
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207710548811776
+    m_Localized: Square Flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207756761653248
+    m_Localized: Stars
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207807806332928
+    m_Localized: Streamers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207912810733568
+    m_Localized: Taffy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207961254944768
+    m_Localized: Tapered Flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208043572355072
+    m_Localized: Tapered Highlighter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208094986133504
+    m_Localized: TaperedHueShift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208142008475648
+    m_Localized: Tapered Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208255854469120
+    m_Localized: TaperedMarkerGeo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208320484499456
+    m_Localized: Tapered Wire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208372611309568
+    m_Localized: Geom/Thick (Duct Tape)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208728183431168
+    m_Localized: Thick Paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208800589701120
+    m_Localized: Toon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208843535179776
+    m_Localized: Tube (Highlighter)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208895842344960
+    m_Localized: Tube (Flat)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208961575477248
+    m_Localized: Tube Toon Inverted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209021776322560
+    m_Localized: Tube (Marker)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209066508574720
+    m_Localized: Unlit Hull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209114365583360
+    m_Localized: Velvet Ink
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209159253024768
+    m_Localized: Watercolor Paper
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209241222307840
+    m_Localized: Watercolor Paper (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209297144963072
+    m_Localized: Waveform
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209348688764928
+    m_Localized: Waveform FFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209390745051136
+    m_Localized: Waveform Particles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209436215500800
+    m_Localized: Waveform Tube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209474924732416
+    m_Localized: Wet Paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209522190344192
+    m_Localized: Wet Paint (Geometry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209591056621568
+    m_Localized: Dr. Wigglez
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209706207043584
+    m_Localized: Wind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209742752014336
+    m_Localized: Wire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209777615069184
+    m_Localized: Wireframe
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

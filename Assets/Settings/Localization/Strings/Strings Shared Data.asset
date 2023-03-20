@@ -1575,6 +1575,498 @@ MonoBehaviour:
     m_Key: CAMERAPATH_TOOL_PATHCANCELLED
     m_Metadata:
       m_Items: []
+  - m_Id: 81183732522344448
+    m_Key: LAYERS_PANEL_COPYLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184247687733248
+    m_Key: LAYERS_PANEL_MAINLAYER_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184440202092544
+    m_Key: LAYERS_PANEL_ADDITIONALLAYER_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81187452349898752
+    m_Key: DROPPER_TOOL_CONFIRM_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194531575881728
+    m_Key: OVERLAY_LOADSKETCH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194664648564736
+    m_Key: OVERLAY_LOADMODEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194744055128064
+    m_Key: OVERLAY_LOADGENERIC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194843074256896
+    m_Key: OVERLAY_LOADIMAGES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194906580213760
+    m_Key: OVERLAY_EXPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194990285938688
+    m_Key: OVERLAY_LOADMEDIA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203094671122432
+    m_Key: BRUSH_BUBBLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203153294909440
+    m_Key: BRUSH_BUBBLEWAND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203246727225344
+    m_Key: BRUSH_CANDYCANE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203301878128640
+    m_Key: BRUSH_CELVINYL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203372350824448
+    m_Key: BRUSH_CHARCOAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203423919792128
+    m_Key: BRUSH_CHROMATICWAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203481385951232
+    m_Key: BRUSH_COARSEBRISTLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203567432097792
+    m_Key: BRUSH_COMET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203611405180928
+    m_Key: BRUSH_CONCAVEHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203662118510592
+    m_Key: BRUSH_DANCEFLOOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203709862273024
+    m_Key: BRUSH_DIAMOND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203777713528832
+    m_Key: BRUSH_DIGITAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203824031227904
+    m_Key: BRUSH_DISCO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203865550643200
+    m_Key: BRUSH_DOTMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203913957105664
+    m_Key: BRUSH_DOTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203958152486912
+    m_Key: BRUSH_DOUBLEFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204005120303104
+    m_Key: BRUSH_PINCHEDFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204078575149056
+    m_Key: BRUSH_PINCHEDMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204129737269248
+    m_Key: BRUSH_DRAFTING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204173685186560
+    m_Key: BRUSH_DRYBRUSH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204235328872448
+    m_Key: BRUSH_DUCTTAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204288453926912
+    m_Key: BRUSH_DUCTTAPEGEO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204382188232704
+    m_Key: BRUSH_ELECTRICITY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204427818065920
+    m_Key: BRUSH_EMBERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204493236625408
+    m_Key: BRUSH_FACETEDTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204541060079616
+    m_Key: BRUSH_FAIRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204581946155008
+    m_Key: BRUSH_FEATHER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204635582914560
+    m_Key: BRUSH_FELT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204676406075392
+    m_Key: BRUSH_FIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204735243771904
+    m_Key: BRUSH_FIRE2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204778390577152
+    m_Key: BRUSH_FLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204889594159104
+    m_Key: BRUSH_FLATGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204982288277504
+    m_Key: BRUSH_GOUACHE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205065486491648
+    m_Key: BRUSH_GUTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205104946503680
+    m_Key: BRUSH_HIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205150878326784
+    m_Key: BRUSH_TREE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205201507770368
+    m_Key: BRUSH_HYPERCOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205290808696832
+    m_Key: BRUSH_HYPERGRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205339491983360
+    m_Key: BRUSH_ICING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205378532564992
+    m_Key: BRUSH_INK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205417556369408
+    m_Key: BRUSH_INKGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205502021263360
+    m_Key: BRUSH_KEIJIROTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205552273219584
+    m_Key: BRUSH_LACEWING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205593624862720
+    m_Key: BRUSH_LEAKYPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205636259962880
+    m_Key: BRUSH_LEAVES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205679876530176
+    m_Key: BRUSH_LEAVES2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205749166432256
+    m_Key: BRUSH_LIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205790060896256
+    m_Key: BRUSH_LIGHTWIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205838656102400
+    m_Key: BRUSH_WIRELIT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205898521403392
+    m_Key: BRUSH_LOFTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205943849246720
+    m_Key: BRUSH_LOFTEDHUESHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206004192698368
+    m_Key: BRUSH_MARBLEDRAINBOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206060224405504
+    m_Key: BRUSH_MARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206102402326528
+    m_Key: BRUSH_MARKERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206156286550016
+    m_Key: BRUSH_MATTEHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206207075377152
+    m_Key: BRUSH_MUSCLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206251857960960
+    m_Key: BRUSH_MYLARTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206295621328896
+    m_Key: BRUSH_NEONPULSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206368749019136
+    m_Key: BRUSH_OILPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206416861880320
+    m_Key: BRUSH_OILPAINTGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206494716551168
+    m_Key: BRUSH_PAPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206536990941184
+    m_Key: BRUSH_PAPERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206595077857280
+    m_Key: BRUSH_BRAID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206666636877824
+    m_Key: BRUSH_PETAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206859902017536
+    m_Key: BRUSH_PLASMA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206904026095616
+    m_Key: BRUSH_RACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206946329845760
+    m_Key: BRUSH_RAIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206986301562880
+    m_Key: BRUSH_RAINBOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207025421836288
+    m_Key: BRUSH_RISINGBUBBLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207069424279552
+    m_Key: BRUSH_SHINYHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207135908192256
+    m_Key: BRUSH_SINGLESIDED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207182829871104
+    m_Key: BRUSH_SLICE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Key: BRUSH_SMOKE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207263394062336
+    m_Key: BRUSH_SMOOTHHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207308449275904
+    m_Key: BRUSH_SNOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207357476495360
+    m_Key: BRUSH_SNOWFLAKE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207400497471488
+    m_Key: BRUSH_SOFTHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207449709240320
+    m_Key: BRUSH_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207491186712576
+    m_Key: BRUSH_SPARKS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207535642140672
+    m_Key: BRUSH_SPIKES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207574603030528
+    m_Key: BRUSH_SPLATTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207648775102464
+    m_Key: BRUSH_3DPRINTING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207710548811776
+    m_Key: BRUSH_SQUAREFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207756761653248
+    m_Key: BRUSH_STARS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207807806332928
+    m_Key: BRUSH_STREAMERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207912810733568
+    m_Key: BRUSH_TAFFY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207961254944768
+    m_Key: BRUSH_TAPEREDFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208043572355072
+    m_Key: BRUSH_TAPEREDHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208094986133504
+    m_Key: BRUSH_TAPEREDHUESHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208142008475648
+    m_Key: BRUSH_TAPEREDMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208255854469120
+    m_Key: BRUSH_TAPEREDMARKERGEO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208320484499456
+    m_Key: BRUSH_TAPEREDWIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208372611309568
+    m_Key: BRUSH_GEOMTHICKDUCTTAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208728183431168
+    m_Key: BRUSH_THICKPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208800589701120
+    m_Key: BRUSH_TOON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208843535179776
+    m_Key: BRUSH_TUBEHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208895842344960
+    m_Key: BRUSH_TUBEFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208961575477248
+    m_Key: BRUSH_TUBETOONINVERTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209021776322560
+    m_Key: BRUSH_TUBEMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209066508574720
+    m_Key: BRUSH_UNLITHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209114365583360
+    m_Key: BRUSH_VELVETINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209159253024768
+    m_Key: BRUSH_WATERCOLORPAPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209241222307840
+    m_Key: BRUSH_WATERCOLORPAPERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209297144963072
+    m_Key: BRUSH_WAVEFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209348688764928
+    m_Key: BRUSH_WAVEFORMFFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209390745051136
+    m_Key: BRUSH_WAVEFORMPARTICLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209436215500800
+    m_Key: BRUSH_WAVEFORMTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209474924732416
+    m_Key: BRUSH_WETPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209522190344192
+    m_Key: BRUSH_WETPAINTGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209591056621568
+    m_Key: BRUSH_DRWIGGLEZ
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209706207043584
+    m_Key: BRUSH_WIND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209742752014336
+    m_Key: BRUSH_WIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209777615069184
+    m_Key: BRUSH_WIREFRAME
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
