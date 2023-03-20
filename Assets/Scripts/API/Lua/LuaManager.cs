@@ -284,13 +284,13 @@ namespace TiltBrush
 
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             string contents;
-            using(var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
+            using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
             fileStream.Close();
             string filename = Path.GetFileName(path);
             return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
-        private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript=false)
+        private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript = false)
         {
             if (scriptFilename.StartsWith("__")) return null;
             Script script = new Script();
@@ -419,7 +419,7 @@ namespace TiltBrush
 #endif
         }
 
-        public void _RegisterToApi(Script script, string cmd, object action, bool allowRedefine=false)
+        public void _RegisterToApi(Script script, string cmd, object action, bool allowRedefine = false)
         {
             var parts = cmd.Split(".");
             var tbl = script.Globals.Get(parts[0]);
@@ -428,7 +428,7 @@ namespace TiltBrush
                 script.Globals.Set(parts[0], DynValue.NewTable(new Table(script)));
                 tbl = script.Globals.Get(parts[0]);
             }
-            else if (tbl.Type!=DataType.Table)
+            else if (tbl.Type != DataType.Table)
             {
                 Debug.LogError($"Probably a namespace clash with {cmd}. {parts[0]} is type {script.Globals.Get(parts[0]).Type}");
                 return;
@@ -461,7 +461,7 @@ namespace TiltBrush
                 {
                     result = activeFunction.Call();
                 }
-                catch (InterpreterException  e)
+                catch (InterpreterException e)
                 {
                     LogLuaError(script, fnName, e);
                 }
@@ -524,7 +524,7 @@ namespace TiltBrush
             {
                 if (!Equals(result, DynValue.Nil)) trs = result.ToObject<List<TrTransform>>();
             }
-            catch (InterpreterException  e)
+            catch (InterpreterException e)
             {
                 LogLuaError(script, fnName, e);
             }

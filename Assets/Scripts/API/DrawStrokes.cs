@@ -29,9 +29,9 @@ namespace TiltBrush
         public static void TrTransformListToStroke(List<TrTransform> trList, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             MultiPositionPathsToStrokes(
-                new List<List<Vector3>>{trList.Select(tr => tr.translation).ToList()},
-                new List<List<Quaternion>>{trList.Select(tr => tr.rotation).ToList()},
-                new List<List<float>>{trList.Select(tr => tr.scale).ToList()},
+                new List<List<Vector3>> { trList.Select(tr => tr.translation).ToList() },
+                new List<List<Quaternion>> { trList.Select(tr => tr.rotation).ToList() },
+                new List<List<float>> { trList.Select(tr => tr.scale).ToList() },
                 origin, scale, brushScale, rawStroke);
         }
 

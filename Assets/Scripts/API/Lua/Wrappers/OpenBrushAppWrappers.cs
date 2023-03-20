@@ -275,7 +275,7 @@ namespace TiltBrush
         public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
         public static void setRotation(int index, Quaternion rotation)
         {
-            var tr =  App.Scene.LayerCanvases.ToList()[index].Pose;
+            var tr = App.Scene.LayerCanvases.ToList()[index].Pose;
             var newTransform = TrTransform.R(rotation);
             newTransform = App.Scene.Pose * newTransform;
             tr.rotation = newTransform.rotation;
@@ -331,7 +331,7 @@ namespace TiltBrush
         public static void togglePreview() => ApiMethods.ToggleCameraPathPreview();
         public static void delete() => ApiMethods.DeleteCameraPath();
         public static void record() => ApiMethods.RecordCameraPath();
-        public static TrTransform sample(float time, bool loop=true, bool pingpong=false)
+        public static TrTransform sample(float time, bool loop = true, bool pingpong = false)
         {
             var widget = WidgetManager.m_Instance.GetCurrentCameraPath();
             var cameraPath = widget?.WidgetScript.Path;
@@ -493,38 +493,38 @@ namespace TiltBrush
                 );
             }
 
-            switch(type)
+            switch (type)
             {
                 case ItemType.Image:
-                {
-                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
-                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
-                    break;
-                }
+                    {
+                        var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                        _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                        break;
+                    }
                 case ItemType.Model:
-                {
-                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
-                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
-                    break;
-                }
+                    {
+                        var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                        _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                        break;
+                    }
                 case ItemType.Video:
-                {
-                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
-                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
-                    break;
-                }
+                    {
+                        var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                        _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                        break;
+                    }
                 case ItemType.CameraPath:
-                {
-                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
-                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
-                    break;
-                }
+                    {
+                        var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                        _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                        break;
+                    }
                 case ItemType.Stencil:
-                {
-                    var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
-                    _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
-                    break;
-                }
+                    {
+                        var widgets = WidgetManager.m_Instance.ActiveImageWidgets;
+                        _Action(widgets[_NegativeIndexing(index, widgets)].WidgetScript);
+                        break;
+                    }
             }
         }
     }

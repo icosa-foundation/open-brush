@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 
-[ScriptedImporter( 1, "lua" )]
+[ScriptedImporter(1, "lua")]
 public class LuaAssetImporter : ScriptedImporter
 {
     // Allow loading of .lua files as TextAssets

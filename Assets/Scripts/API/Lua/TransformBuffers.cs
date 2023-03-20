@@ -69,8 +69,8 @@ namespace TiltBrush
             }
         }
 
-        public void AddBrushTr(TrTransform tr){m_BrushBuffer.PushFront(tr);}
-        public void AddWandTr(TrTransform tr){m_WandBuffer.PushFront(tr);}
-        public void AddHeadTr(TrTransform tr){m_HeadBuffer.PushFront(tr);}
+        public void AddBrushTr(TrTransform tr) { m_BrushBuffer.PushFront(tr); }
+        public void AddWandTr(TrTransform tr) { m_WandBuffer.PushFront(tr); }
+        public void AddHeadTr(TrTransform tr) { m_HeadBuffer.PushFront(tr); }
     }
 }

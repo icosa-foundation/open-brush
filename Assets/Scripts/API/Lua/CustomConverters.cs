@@ -195,7 +195,7 @@ public static class LuaCustomConverters
 
         Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<List<TrTransform>>(
             (script, list) => DynValue.NewTable(script,
-                list.Select(el=>DynValue.FromObject(script, el)).ToArray()
+                list.Select(el => DynValue.FromObject(script, el)).ToArray()
         ));
 
         // Color

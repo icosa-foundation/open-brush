@@ -47,7 +47,8 @@ namespace TiltBrush
 
         public void ConfigureScriptButton(LuaManager.ApiCategory category, string scriptName, string description)
         {
-            BaseButton btn = category switch {
+            BaseButton btn = category switch
+            {
                 LuaManager.ApiCategory.PointerScript => PointerScriptButton,
                 LuaManager.ApiCategory.ToolScript => ToolScriptButton,
                 LuaManager.ApiCategory.SymmetryScript => SymmetryScriptButton,

@@ -57,7 +57,7 @@ namespace TiltBrush
             cam.transform.position = new Vector3(0, 100, 0);
             cam.transform.rotation = Quaternion.identity;
 
-            foreach (BasePanel.PanelType panelType in (BasePanel.PanelType[]) Enum.GetValues(typeof(BasePanel.PanelType)))
+            foreach (BasePanel.PanelType panelType in (BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType)))
             {
                 TrTransform panelTr = TrTransform.T(new Vector3(-1.5f, 100, 4));
                 if (PanelManager.m_Instance.IsPanelOpen(panelType))

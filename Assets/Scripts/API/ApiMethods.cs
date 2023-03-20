@@ -208,7 +208,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("brush.move.to.hand", "Moves the brush to the given hand (l or r")]
-        public static void BrushMoveToHand(string hand, bool alsoRotate=false)
+        public static void BrushMoveToHand(string hand, bool alsoRotate = false)
         {
             Transform tr;
             if (hand.ToLower().StartsWith("l"))

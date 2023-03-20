@@ -802,7 +802,7 @@ namespace TiltBrush
             {
                 m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(
                     x => ApiMethods.LookupBrushDescriptor(x.String)
-                ).Where(x=>x != null).ToList();
+                ).Where(x => x != null).ToList();
             }
             else
             {

@@ -25,7 +25,7 @@ namespace TiltBrush
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
             var origin = svgPolyline.Polyline[0][0];
-            return svgPolyline.Polyline.SelectMany(l=>l).Select(p => TrTransform.T(p - origin)).ToList();
+            return svgPolyline.Polyline.SelectMany(l => l).Select(p => TrTransform.T(p - origin)).ToList();
         }
 
         public static List<List<TrTransform>> PathsFromSvg(string svgPathString)
