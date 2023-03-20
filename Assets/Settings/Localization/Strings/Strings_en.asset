@@ -1690,6 +1690,14 @@ MonoBehaviour:
       uploading to Sketchfab.'
     m_Metadata:
       m_Items: []
+  - m_Id: 81182403783614464
+    m_Localized: Path Recorded!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182608851525632
+    m_Localized: Recording Canceled
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

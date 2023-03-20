@@ -312,11 +312,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 281134452871168
-    m_Key: DROPCAM_WIDGET_DESCRIPTION
+    m_Key: WIDGET_DROPCAM_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 281373578530816
-    m_Key: DROPCAM_WIDGET_HINT
+    m_Key: WIDGET_DROPCAM_HINT
     m_Metadata:
       m_Items: []
   - m_Id: 264453647142912
@@ -1076,11 +1076,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 278827682140160
-    m_Key: SYMMETRY_WIDGET_DESCRIPTION
+    m_Key: WIDGET_SYMMETRY_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 279130447974400
-    m_Key: SYMMETRY_WIDGET_HINT
+    m_Key: WIDGET_SYMMETRY_HINT
     m_Metadata:
       m_Items: []
   - m_Id: 10778529927168
@@ -1565,6 +1565,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 76138521224077312
     m_Key: POPUP_ACCOUNTS_SKETCHFABINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182403783614464
+    m_Key: CAMERAPATH_TOOL_PATHRECORDED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182608851525632
+    m_Key: CAMERAPATH_TOOL_PATHCANCELLED
     m_Metadata:
       m_Items: []
   m_Metadata:
