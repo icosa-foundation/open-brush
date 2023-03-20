@@ -227,7 +227,7 @@ namespace TiltBrush
             // Used by API
 
             var pos = InputManager.m_Instance.GetBrushControllerAttachPoint().position;
-            float fPointerMovement_CS = (pos - m_PreviousPosition).magnitude  / Coords.CanvasPose.scale;
+            float fPointerMovement_CS = (pos - m_PreviousPosition).magnitude / Coords.CanvasPose.scale;
             m_DistanceMoved_CS += fPointerMovement_CS;
             m_PreviousPosition = pos;
 
