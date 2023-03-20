@@ -16,8 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -25,87 +23,41 @@ namespace TiltBrush
     // SketchCatalog.Awake must come after App.Awake
     public class SketchCatalog : MonoBehaviour
     {
-        static public SketchCatalog m_Instance;
+        public static SketchCatalog m_Instance;
 
         // This folder contains json files which define where to pull the sketch thumbnail and data
         // from Poly.  These are used to populate the showcase when we can't query Poly.
         // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
-        private Dictionary<string, ISketchSet> m_Sets = new Dictionary<string, ISketchSet>();
-        private Dictionary<string, Func<Dictionary<string, object>, ISketchSet>> m_CollectionCreators;
+        private PolySketchSet m_polySketchSet;
+        private GoogleDriveSketchSet m_googleDriveSketchSet = new();
 
+        private Dictionary<Uri, WeakReference<ISketchSet>> m_Sets = new();
 
-        private void SetupResourceCollectionCreators()
+        public ISketchSet GetSketchSet(string uri)
         {
-            m_CollectionCreators = new Dictionary<string, Func<Dictionary<string, object>, ISketchSet>>();
-
-            int maxTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
-            m_CollectionCreators[FileSketchSet.TypeName] = (Dictionary<string, object> _) =>
-                new FileSketchSet();
-            m_CollectionCreators[PolySketchSet.TypeName] = (Dictionary<string, object> _) =>
-                new PolySketchSet(this, PolySketchSet.SketchType.Liked, maxTriangles, needsLogin: true);
-            m_CollectionCreators[GoogleDriveSketchSet.TypeName] = (Dictionary<string, object> _) =>
-                new GoogleDriveSketchSet();
-            m_CollectionCreators["Resource-Rss"] = (Dictionary<string, object> options) =>
-                new ResourceCollectionSketchSet(new RssSketchCollection(App.HttpClient, new Uri(options["uri"] as string)));
-            m_CollectionCreators["Resource-Path"] = (Dictionary<string, object> options) =>
-                new ResourceCollectionSketchSet(new FilesystemSketchCollection(options["path"] as string, (options?["name"] ?? "") as string, options?["icon"] as Texture2D));
-            m_CollectionCreators["Resource-Icosa"] = (Dictionary<string, object> options) =>
-            {
-                object user = null;
-                options.TryGetValue("user", out user);
-                return new ResourceCollectionSketchSet(new IcosaSketchCollection(App.HttpClient, user as string));
-            };
+            return GetSketchSet(new Uri(uri));
         }
 
-        public static string CreateId(string id, Dictionary<string, object> options)
+        public ISketchSet GetSketchSet(Uri uri)
         {
-            var sb = new StringBuilder();
-            sb.Append(id);
-
-            if (options != null)
-            {
-                string add = "?";
-                foreach (var pair in options)
-                {
-                    sb.Append(add);
-                    add = "&";
-                    sb.Append(pair.Key);
-                    sb.Append("=");
-                    sb.Append(pair.Value);
-                }
-            }
-            return sb.ToString();
-        }
-
-        public static (string type, Dictionary<string, string> options) DecodeId(string id)
-        {
-            int firstSplit = id.IndexOf("?");
-            if (firstSplit < 0)
-            {
-                return (id, null);
-            }
-            var type = id.Substring(0, firstSplit);
-            var options = new Dictionary<string, string>(
-                id.Substring(firstSplit + 1)
-                    .Split("&")
-                    .Select(x => x.Split("="))
-                        .Select(x => new KeyValuePair<string, string>(x[0], x[1])));
-            return (type, options);
-        }
-
-        public ISketchSet GetSketchSet(string type, Dictionary<string, object> options)
-        {
-            string id = CreateId(type, options);
             ISketchSet sketchSet = null;
-            if (m_Sets.TryGetValue(id, out sketchSet))
+            if (m_Sets.TryGetValue(uri, out WeakReference<ISketchSet> sketchSetRef))
             {
-                return sketchSet;
+                if (sketchSetRef.TryGetTarget(out sketchSet))
+                {
+                    return sketchSet;
+                }
+                m_Sets.Remove(uri);
             }
-            sketchSet = m_CollectionCreators[type].Invoke(options);
+
+            sketchSet = new ResourceCollectionSketchSet(ResourceCollectionFactory.Instance.FetchCollection(uri));
             sketchSet.Init();
-            m_Sets[id] = sketchSet;
+            if (sketchSet != null)
+            {
+                m_Sets[uri] = new WeakReference<ISketchSet>(sketchSet);
+            }
             return sketchSet;
         }
 
@@ -113,6 +65,10 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+
+            m_polySketchSet = new PolySketchSet(this, PolySketchSet.SketchType.Curated, 100000);
+            m_Sets[new Uri("poly:")] = new WeakReference<ISketchSet>(m_polySketchSet);
+            m_Sets[new Uri("googledrive:")] = new WeakReference<ISketchSet>(m_googleDriveSketchSet);
 
             if (Application.platform == RuntimePlatform.OSXEditor ||
                 Application.platform == RuntimePlatform.OSXPlayer)
@@ -124,11 +80,15 @@ namespace TiltBrush
             }
 
             InitFeaturedSketchesPath();
-
-            SetupResourceCollectionCreators();
         }
 
-        public static bool InitFeaturedSketchesPath()
+        void Start()
+        {
+            m_polySketchSet.Init();
+            m_googleDriveSketchSet.Init();
+        }
+
+        private static bool InitFeaturedSketchesPath()
         {
             string featuredPath = App.FeaturedSketchesPath();
             if (!App.InitDirectoryAtPath(featuredPath)) { return false; }
@@ -153,9 +113,17 @@ namespace TiltBrush
 
         void Update()
         {
-            foreach (ISketchSet s in m_Sets.Values)
+            foreach (var entry in m_Sets.ToArray())
             {
-                s.Update();
+                ISketchSet sketchSet;
+                if (entry.Value.TryGetTarget(out sketchSet))
+                {
+                    sketchSet.Update();
+                }
+                else
+                {
+                    m_Sets.Remove(entry.Key);
+                }
             }
         }
 

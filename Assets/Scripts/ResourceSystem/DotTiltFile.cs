@@ -1,4 +1,5 @@
 
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -20,16 +21,55 @@ namespace TiltBrush
             public uint unused2;
         }
         public const uint TILT_SENTINEL = 0x546c6974; // 'tilT'
+        public const string FN_METADATA = "metadata.json";
+        public const string FN_METADATA_LEGACY = "main.json"; // used pre-release only
+        public const string FN_SKETCH = "data.sketch";
+        public const string FN_THUMBNAIL = "thumbnail.png";
         public static ushort HEADER_VERSION = 1;
         public static ushort HEADER_SIZE = (ushort)Marshal.SizeOf<TiltZipHeader>();
 
         private IResource m_Resource;
+        private FileInfo m_FileCache;
 
         public IResource Resource => m_Resource;
 
         public DotTiltFile(IResource resource)
         {
             m_Resource = resource;
+        }
+
+        ~DotTiltFile()
+        {
+            if (m_FileCache != null)
+            {
+                m_FileCache.Delete();
+            }
+        }
+
+        public async Task<Stream> GetStreamAsync()
+        {
+            if (m_FileCache == null)
+            {
+                var original = await m_Resource.GetStreamAsync();
+                if (original is FileStream)
+                {
+                    return original;
+                }
+                string tempFilename = Path.GetTempFileName();
+                using (var fileStream = File.Create(tempFilename))
+                {
+                    await original.CopyToAsync(fileStream);
+                    fileStream.Close();
+                }
+                original.Close();
+                m_FileCache = new FileInfo(tempFilename);
+            }
+            return m_FileCache.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
+        public async Task<bool> VerifyTiltHeaderAsync()
+        {
+            return ReadAndVerifyTiltHeader(await GetStreamAsync());
         }
 
         public bool ReadAndVerifyTiltHeader(Stream stream)
@@ -69,25 +109,7 @@ namespace TiltBrush
 
         public async Task<Stream> GetSubFileAsync(string filename)
         {
-            var stream = await m_Resource.GetStreamAsync();
-            if (stream == null)
-            {
-                return null;
-            }
-            string tempFilename;
-            if (!stream.CanSeek)
-            {
-                // Cache to a file
-                tempFilename = Path.GetTempFileName();
-                using (var fileStream = File.Create(tempFilename))
-                {
-                    await stream.CopyToAsync(fileStream);
-                    fileStream.Close();
-                }
-                //Debug.Log($"Copied {m_Resource.Uri} to {tempFilename}.");
-                stream.Close();
-                stream = File.Open(tempFilename, FileMode.Open);
-            }
+            var stream = await GetStreamAsync();
 
             if (!ReadAndVerifyTiltHeader(stream))
             {
@@ -103,6 +125,26 @@ namespace TiltBrush
             }
 
             return entry.Open();
+        }
+
+        public async Task<Stream> GetMetaDataStreamAsync()
+        {
+            var stream = await GetSubFileAsync(FN_METADATA);
+            if (stream == null)
+            {
+                return await GetSubFileAsync(FN_METADATA_LEGACY);
+            }
+            return stream;
+        }
+
+        public async Task<Stream> GetSketchStreamAsync()
+        {
+            return await GetSubFileAsync(FN_SKETCH);
+        }
+
+        public async Task<Stream> GetThumbnailStream()
+        {
+            return await GetSubFileAsync(FN_THUMBNAIL);
         }
     }
 }

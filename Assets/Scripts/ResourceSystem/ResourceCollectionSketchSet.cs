@@ -29,9 +29,8 @@ namespace TiltBrush
             m_ResourceEnumerator = m_Collection.ContentsAsync().GetAsyncEnumerator();
         }
 
-        public const string TypeName = "ResourceCollection";
-        public string SketchSetType => m_Collection.CollectionType;
-        public string SketchSetInstance => m_Collection.CollectionInstance;
+        public string SketchSetType => m_Collection?.Uri?.Scheme ?? "";
+        public string SketchSetInstance => m_Collection?.Uri?.OriginalString ?? "";
 
         public string Title => m_Collection.Name;
 

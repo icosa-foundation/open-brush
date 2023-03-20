@@ -598,181 +598,185 @@ namespace TiltBrush
             }
 
             m_LastSceneIsLegacy = false;
-            Stream metadata = await GetMetadataReadStreamAsync(fileInfo);
-            if (metadata == null)
+            SketchMetadata jsonData;
+            using (Stream metadata = await GetMetadataReadStreamAsync(fileInfo))
             {
-                OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
-                return false;
+                if (metadata == null)
+                {
+                    OutputWindowScript.m_Instance.AddNewLine("Could not load: {0}", fileInfo.HumanName);
+                    return false;
+                }
+                using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
+                {
+                    jsonData = DeserializeMetadata(jsonReader);
+                }
             }
-            using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
+
+            if (LastMetadataError != null)
             {
-                var jsonData = DeserializeMetadata(jsonReader);
-                if (LastMetadataError != null)
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    string.Format("Error detected in sketch '{0}'.\nSuggest re-saving.",
+                        fileInfo.HumanName));
+                Debug.LogWarning(string.Format("Error reading metadata for {0}.\n{1}",
+                    fileInfo.FullPath,
+                    SaveLoadScript.m_Instance.LastMetadataError));
+            }
+            if (jsonData.RequiredCapabilities != null)
+            {
+                var missingCapabilities = jsonData.RequiredCapabilities.Except(
+                    Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
+                if (missingCapabilities.Length > 0)
                 {
-                    ControllerConsoleScript.m_Instance.AddNewLine(
-                        string.Format("Error detected in sketch '{0}'.\nSuggest re-saving.",
-                            fileInfo.HumanName));
-                    Debug.LogWarning(string.Format("Error reading meteadata for {0}.\n{1}",
-                        fileInfo.FullPath,
-                        SaveLoadScript.m_Instance.LastMetadataError));
+                    Debug.LogFormat("Lacking playback capabilities: {0}",
+                        String.Join(", ", missingCapabilities));
+                    OutputWindowScript.m_Instance.AddNewLine(
+                        "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
+                        fileInfo.HumanName);
+                    return false;
                 }
-                if (jsonData.RequiredCapabilities != null)
+            }
+
+            if (!bAdditive)
+            {
+                var environment = EnvironmentCatalog.m_Instance
+                    .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
+                if (environment != null)
                 {
-                    var missingCapabilities = jsonData.RequiredCapabilities.Except(
-                        Enum.GetNames(typeof(PlaybackCapabilities))).ToArray();
-                    if (missingCapabilities.Length > 0)
+                    SceneSettings.m_Instance.RecordSkyColorsForFading();
+                    if (jsonData.Environment != null)
                     {
-                        Debug.LogFormat("Lacking playback capabilities: {0}",
-                            String.Join(", ", missingCapabilities));
-                        OutputWindowScript.m_Instance.AddNewLine(
-                            "Lacking a capability to load {0}.  Upgrade Tilt Brush?",
-                            fileInfo.HumanName);
-                        return false;
+                        SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
                     }
+                    SceneSettings.m_Instance.SetDesiredPreset(
+                        environment, forceTransition: true,
+                        keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
+                    );
                 }
-
-                if (!bAdditive)
+                else
                 {
-                    var environment = EnvironmentCatalog.m_Instance
-                        .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
-                    if (environment != null)
-                    {
-                        SceneSettings.m_Instance.RecordSkyColorsForFading();
-                        if (jsonData.Environment != null)
-                        {
-                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
-                        }
-                        SceneSettings.m_Instance.SetDesiredPreset(
-                            environment, forceTransition: true,
-                            keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                        );
-                    }
-                    else
-                    {
-                        Debug.LogWarningFormat("Unknown environment preset {0}",
-                            jsonData.EnvironmentPreset);
-                    }
-                    App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
-                        jsonData.SceneTransformInRoomSpace);
-                    App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
-                    App.Scene.ResetLayers(true);
-                    Coords.CanvasLocalPose = TrTransform.identity;
-                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                    {
-                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        if (Config.IsExperimental)
-                        {
-                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                        }
-                    }
-                    LastThumbnail_SS = App.Scene.Pose.inverse *
-                        jsonData.ThumbnailCameraTransformInRoomSpace;
-
+                    Debug.LogWarningFormat("Unknown environment preset {0}",
+                        jsonData.EnvironmentPreset);
                 }
-
-                SketchControlsScript.m_Instance.SketchPlaybackMode =
-                    SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
-
-                if (!bAdditive)
+                App.Instance.SetOdsCameraTransforms(jsonData.ThumbnailCameraTransformInRoomSpace,
+                    jsonData.SceneTransformInRoomSpace);
+                App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
+                App.Scene.ResetLayers(true);
+                Coords.CanvasLocalPose = TrTransform.identity;
+                if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
                 {
-                    // Create Layers
-                    if (jsonData.Layers != null)
+                    Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
+                    if (Config.IsExperimental)
                     {
-                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
-                        {
-                            var canvas = App.Scene.AddLayerNow();
-                            canvas.gameObject.name = layer.Name;
-                            canvas.gameObject.SetActive(layer.Visible);
-                        }
+                        Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
                     }
                 }
+                LastThumbnail_SS = App.Scene.Pose.inverse *
+                    jsonData.ThumbnailCameraTransformInRoomSpace;
 
-                var oldGroupToNewGroup = new Dictionary<int, int>();
+            }
 
-                // Load sketch
-                using (var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH))
+            SketchControlsScript.m_Instance.SketchPlaybackMode =
+                SketchControlsScript.m_Instance.m_DefaultSketchPlaybackMode;
+
+            if (!bAdditive)
+            {
+                // Create Layers
+                if (jsonData.Layers != null)
                 {
-                    Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
-                    bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
-                    m_LastSceneIsLegacy |= legacySketch;
-                    if (!success)
+                    foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                     {
-                        OutputWindowScript.m_Instance.AddNewLine(
-                            "Could not load: {0}", fileInfo.HumanName);
-                        // Prevent it from being overwritten
-                        m_LastSceneIsLegacy = false;
-                        return false;
+                        var canvas = App.Scene.AddLayerNow();
+                        canvas.gameObject.name = layer.Name;
+                        canvas.gameObject.SetActive(layer.Visible);
                     }
                 }
+            }
 
+            var oldGroupToNewGroup = new Dictionary<int, int>();
 
-                // It's proving to be rather complex to merge widgets/models etc. 
-                // For now skip all that when loading additively with the if (!bAdditive) below
-                // This should cover the majority of use cases.
-
-                // (For when we do support merging widgets:)
-                // It's much simpler to change the group ids in the JSON
-                // before we pass it to WidgetManager
-                //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
-
-                if (!bAdditive)
+            // Load sketch
+            using (var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH))
+            {
+                Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
+                bool legacySketch;
+                bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, out legacySketch, out oldGroupToNewGroup);
+                m_LastSceneIsLegacy |= legacySketch;
+                if (!success)
                 {
-                    ModelCatalog.m_Instance.ClearMissingModels();
-                    SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
-
-                    if (jsonData.ModelIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
-                    }
-
-                    if (jsonData.GuideIndex != null)
-                    {
-                        foreach (Guides guides in jsonData.GuideIndex)
-                        {
-                            StencilWidget.FromGuideIndex(guides);
-                        }
-                    }
-                    if (jsonData.Lights != null)
-                    {
-                        LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
-                    }
-                    // Pass even if null; null is treated as empty
-                    CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
-                    // Images are not stored on Poly either.
-                    if (!(fileInfo is PolySceneFileInfo))
-                    {
-                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
-                        {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
-                        }
-                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
-                        {
-                            WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
-                        }
-                    }
-                    if (jsonData.Mirror != null)
-                    {
-                        PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
-                    }
-                    if (jsonData.CameraPaths != null)
-                    {
-                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
-                    }
-                    if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
-                    {
-                        gdInfo.SourceId = jsonData.SourceId;
-                    }
-                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
-                    {
-                        StartCoroutine(
-                            OverlayManager.m_Instance.RunInCompositor(
-                                OverlayType.LoadMedia,
-                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
-                                0.5f));
-                    }
-                    m_LastSceneFile = fileInfo;
+                    OutputWindowScript.m_Instance.AddNewLine(
+                        "Could not load: {0}", fileInfo.HumanName);
+                    // Prevent it from being overwritten
+                    m_LastSceneIsLegacy = false;
+                    return false;
                 }
+            }
+
+
+            // It's proving to be rather complex to merge widgets/models etc. 
+            // For now skip all that when loading additively with the if (!bAdditive) below
+            // This should cover the majority of use cases.
+
+            // (For when we do support merging widgets:)
+            // It's much simpler to change the group ids in the JSON
+            // before we pass it to WidgetManager
+            //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
+
+            if (!bAdditive)
+            {
+                ModelCatalog.m_Instance.ClearMissingModels();
+                SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+
+                if (jsonData.ModelIndex != null)
+                {
+                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.ModelIndex);
+                }
+
+                if (jsonData.GuideIndex != null)
+                {
+                    foreach (Guides guides in jsonData.GuideIndex)
+                    {
+                        StencilWidget.FromGuideIndex(guides);
+                    }
+                }
+                if (jsonData.Lights != null)
+                {
+                    LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
+                }
+                // Pass even if null; null is treated as empty
+                CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
+                // Images are not stored on Poly either.
+                if (!(fileInfo is PolySceneFileInfo))
+                {
+                    if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.ImageIndex);
+                    }
+                    if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                    {
+                        WidgetManager.m_Instance.SetDataFromTilt(jsonData.Videos);
+                    }
+                }
+                if (jsonData.Mirror != null)
+                {
+                    PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
+                }
+                if (jsonData.CameraPaths != null)
+                {
+                    WidgetManager.m_Instance.SetDataFromTilt(jsonData.CameraPaths);
+                }
+                if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                {
+                    gdInfo.SourceId = jsonData.SourceId;
+                }
+                if (WidgetManager.m_Instance.CreatingMediaWidgets)
+                {
+                    StartCoroutine(
+                        OverlayManager.m_Instance.RunInCompositor(
+                            OverlayType.LoadMedia,
+                            WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
+                            0.5f));
+                }
+                m_LastSceneFile = fileInfo;
             }
 
             return true;

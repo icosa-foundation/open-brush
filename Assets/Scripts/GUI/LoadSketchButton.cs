@@ -86,10 +86,10 @@ namespace TiltBrush
 
         void RefreshDetails()
         {
-            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.SketchSetId);
+            m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.SketchSetInstance);
 
             m_SizeOk = true;
-            if (m_SketchSet.SketchSetType == PolySketchSet.TypeName && m_SketchSet.SketchSetInstance == "Liked")
+            if (m_SketchSet.SketchSetType == PolySketchSet.UriName && m_SketchSet.SketchSetInstance == "Liked")
             {
                 if (m_SketchSet.IsSketchIndexValid(m_SketchIndex))
                 {
@@ -151,7 +151,7 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
             if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.SketchSetType != GoogleDriveSketchSet.TypeName)
+                m_SketchSet.SketchSetType != GoogleDriveSketchSet.UriString)
             {
                 return;
             }

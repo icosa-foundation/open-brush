@@ -116,8 +116,8 @@ namespace TiltBrush
 
 
 
-        public const string TypeName = "Poly";
-        public string SketchSetType => TypeName;
+        public const string UriName = "poly:";
+        public string SketchSetType => UriName;
         public string SketchSetInstance => m_Type == SketchType.Curated ? "Curated" : "Liked";
 
         public string Title => "Poly";

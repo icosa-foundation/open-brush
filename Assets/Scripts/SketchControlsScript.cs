@@ -3867,7 +3867,7 @@ namespace TiltBrush
         IEnumerator<Null> LoadAndExportAll()
         {
             // Currently just gets the user sketch set
-            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSketchSet(FileSketchSet.TypeName, null);
+            ISketchSet sketchSet = SketchCatalog.m_Instance.GetSketchSet(FileSketchSet.TypeName);
             for (int i = 0; i < sketchSet.NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
@@ -4800,7 +4800,7 @@ namespace TiltBrush
                     {
                         bool download = false;
                         ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
-                        if (sketchSet.SketchSetType == GoogleDriveSketchSet.TypeName)
+                        if (sketchSet.SketchSetType == GoogleDriveSketchSet.UriString)
                         {
                             BasePanel sketchBook = m_PanelManager.GetSketchBookPanel();
                             if (sketchBook != null

@@ -19,4 +19,16 @@ namespace TiltBrush
         Task<Texture2D> LoadPreviewAsync();
         Task<Stream> GetStreamAsync();
     }
+
+    public interface IHasPreviewImage
+    {
+        Task<Texture2D> LoadImageAsync();
+    }
+
+    public interface IWritableResource : IResource
+    {
+
+    }
+
+
 }

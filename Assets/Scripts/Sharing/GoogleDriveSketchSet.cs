@@ -179,8 +179,8 @@ namespace TiltBrush
         private Coroutine m_ThumbnailLoadingCoroutine;
         private bool m_Changed;
 
-        public const string TypeName = "GoogleDrive";
-        public string SketchSetType => TypeName;
+        public const string UriString = "googledrive:";
+        public string SketchSetType => UriString;
         public string SketchSetInstance => "";
         public string Title => "Google Drive Backup";
 

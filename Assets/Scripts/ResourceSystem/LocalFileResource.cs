@@ -5,28 +5,27 @@ using UnityEngine;
 using UnityEngine.Assertions;
 namespace TiltBrush
 {
-    public class FilesystemSketch : IResource
+    public class LocalFileResource : IResource
     {
-        private string m_Path;
-        public FilesystemSketch(string path)
+        protected string m_Path;
+        public LocalFileResource(string path)
         {
             m_Path = path;
             Name = Path.GetFileNameWithoutExtension(path);
             Uri = new Uri("file://" + m_Path);
-            Assert.IsTrue(File.Exists(m_Path));
         }
 
-        public string Name { get; }
+        public string Name { get; protected set; }
 
-        public Uri Uri { get; }
+        public Uri Uri { get; protected set; }
 
-        public Uri PreviewUri { get; }
+        public Uri PreviewUri { get; protected set; }
 
-        public string Description { get; }
+        public string Description { get; protected set; }
 
-        public Author[] Authors { get; }
+        public Author[] Authors { get; protected set; }
 
-        public ResourceLicense License { get; }
+        public ResourceLicense License { get; protected set; }
 
 #pragma warning disable 1998
         public async Task InitAsync()
@@ -41,7 +40,7 @@ namespace TiltBrush
         }
         public async Task<Stream> GetStreamAsync()
         {
-            return new FileStream(m_Path, FileMode.Open);
+            return new FileStream(m_Path, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 #pragma warning restore 1998
     }

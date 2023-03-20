@@ -42,20 +42,6 @@ namespace TiltBrush
 
         string Title { get; }
 
-        string SketchSetId => $"{SketchSetType}:{SketchSetInstance}";
-        (string type, string instance) TypeAndInstanceFromId(string id)
-        {
-            int colonPos = id.IndexOf(":");
-            string type = id.Substring(0, colonPos);
-            string instance = id.Substring(colonPos + 1);
-            return (type, instance);
-        }
-
-        void DoTheThing()
-        {
-            Debug.Log("The Thing");
-        }
-
         /// True if the sketch set can be accessed, but does not imply that all the data (like icons, etc)
         /// have been read yet.
         bool IsReadyForAccess { get; }

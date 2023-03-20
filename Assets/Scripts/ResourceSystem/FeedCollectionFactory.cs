@@ -7,17 +7,29 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.ServiceModel.Syndication;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace TiltBrush
 {
-    public class RssSketchCollection : IResourceCollection
+    public class FeedCollectionFactory : MonoBehaviour, IResourceCollectionFactory
+    {
+        public string Scheme => "feed";
+
+        public IResourceCollection Create(Uri uri)
+        {
+            Assert.AreEqual(uri.Scheme, Scheme);
+            return new FeedCollection(App.HttpClient, uri);
+        }
+    }
+
+    public class FeedCollection : IResourceCollection
     {
         private Uri m_Uri;
         private HttpClient m_HttpClient;
         private List<RemoteSketchResource> m_Items;
         private string m_Title;
 
-        public RssSketchCollection(HttpClient httpClient, Uri uri)
+        public FeedCollection(HttpClient httpClient, Uri uri)
         {
             m_Uri = uri;
             m_HttpClient = httpClient;
@@ -32,13 +44,15 @@ namespace TiltBrush
         public string Description { get; }
         public Author[] Authors { get; }
         public ResourceLicense License { get; }
+
+        public int NumResources => m_Items?.Count ?? 0;
         public async Task InitAsync()
         {
             // might as well do all the work when getting the page
             SyndicationFeed feed;
             try
             {
-                var stream = await m_HttpClient.GetStreamAsync(m_Uri);
+                var stream = await m_HttpClient.GetStreamAsync(m_Uri.AbsolutePath);
                 using var xmlReader = XmlReader.Create(stream);
                 feed = SyndicationFeed.Load(xmlReader);
             }
@@ -66,32 +80,16 @@ namespace TiltBrush
         }
         public async IAsyncEnumerable<IResource> ContentsAsync()
         {
-            SyndicationFeed feed;
-            try
+            foreach (var item in m_Items)
             {
-                Debug.Log($"Fetching rss stream {m_Uri.AbsoluteUri}");
-                var stream = await m_HttpClient.GetStreamAsync(m_Uri);
-                Debug.Log("Got stream");
-                using var xmlReader = XmlReader.Create(stream);
-                Debug.Log("Loading feed");
-                feed = SyndicationFeed.Load(xmlReader);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-                yield break;
-            }
-            foreach (var item in feed.Items)
-            {
-                var remoteSketch = new RemoteSketchResource(
-                    name: item.Title.Text,
-                    uri: item.Links[0].Uri,
-                    previewUri: null,
-                    description: item.Summary.Text,
-                    authors: item.Authors.Select(x => new TiltBrush.Author { Name = x.Name, Url = x.Uri, Email = x.Email }).ToArray()
-                );
-                yield return remoteSketch;
+                yield return item;
             }
         }
+        public void Refresh()
+        {
+            InitAsync();
+        }
+        public event Action OnChanged;
+        public event Action OnRefreshingChanged;
     }
 }

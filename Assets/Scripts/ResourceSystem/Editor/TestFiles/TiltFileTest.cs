@@ -11,7 +11,7 @@ namespace TiltBrush.TestFiles
         [Test]
         public async Task CanExtractMetaFromTiltFile()
         {
-            var fileSketch = new FilesystemSketch($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
+            var fileSketch = new LocalFileResource($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
             var tiltFile = new DotTiltFile(fileSketch);
             var metaStream = await tiltFile.GetSubFileAsync("metadata.json");
             Assert.IsNotNull(metaStream);

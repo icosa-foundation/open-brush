@@ -5,9 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Assertions;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 namespace TiltBrush
 {
@@ -32,24 +34,41 @@ namespace TiltBrush
         public string ownerurl;
     }
 
-    public class IcosaSketchCollection : IResourceCollection
+    public class IcosaCollectionFactory : MonoBehaviour, IResourceCollectionFactory
+    {
+        public string Scheme => "icosa";
+
+        public IResourceCollection Create(Uri uri)
+        {
+            Assert.AreEqual(uri.Scheme, Scheme);
+            return new FeedCollection(App.HttpClient, uri);
+        }
+    }
+
+    public class IcosaCollection : IResourceCollection
     {
         private string m_User;
         private HttpClient m_httpClient;
+        public static Uri AllAssetsUri => new Uri("https://api.icosa.gallery/assets");
 
-        public IcosaSketchCollection(HttpClient httpClient, string user = null)
+        public static Uri CreateUserUri(string user)
         {
-            m_User = user;
-            Name = "Icosa";
-            if (m_User != null)
+            return new Uri($"https://api.icosa.gallery/users/{user}/assets");
+        }
+
+        public IcosaCollection(HttpClient httpClient, Uri uri)
+        {
+            if (uri.Segments.Length > 1)
             {
-                Name += $" for {m_User}";
-                Uri = new Uri($"https://api.icosa.gallery/users/{m_User}/assets");
+                m_User = uri.Segments[uri.Segments.Length - 2];
+                Name = $"Icosa : {m_User}";
             }
             else
             {
-                Uri = new Uri($"https://api.icosa.gallery/assets");
+                Name = "Icosa";
+                m_User = null;
             }
+
             m_httpClient = httpClient;
         }
 
@@ -116,6 +135,14 @@ namespace TiltBrush
 #pragma warning restore 1998
 
 
+        public int NumResources
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public async IAsyncEnumerable<IResource> ContentsAsync()
         {
             if (m_User == null)
@@ -154,5 +181,11 @@ namespace TiltBrush
                 }
             }
         }
+        public void Refresh()
+        {
+            throw new NotImplementedException();
+        }
+        public event Action OnChanged;
+        public event Action OnRefreshingChanged;
     }
 }

@@ -201,14 +201,14 @@ namespace TiltBrush
                 {"icon", m_FolderIcon},
             };
 
-            // Fetch the root stacks
-            m_SetStacks = new Stack<ISketchSet>[]
+            m_SetStacks = new string[]
             {
-                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet("Resource-Path", fileOptions)}),
-                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet("Resource-Rss", rssOptions)}),
-                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(PolySketchSet.TypeName, null)}),
-                new Stack<ISketchSet>(new[]{SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.TypeName, null)}),
-            };
+                $"file:///{App.UserSketchPath()}",
+                "feed:https://timaidley.github.io/open-brush-feed/sketches.rss",
+                "poly:",
+                "googledrive:"
+            }.Select(uri => new Stack<ISketchSet>(new[] { SketchCatalog.m_Instance.GetSketchSet(uri) })).ToArray();
+
             m_SelectedStack = (int)RootSet.Backup;
             CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
 
@@ -353,59 +353,68 @@ namespace TiltBrush
             // Base Refresh updates the modal parts of the panel, and we always want those refreshed.
             base.RefreshPage();
 
-            bool requiresPoly = CurrentSketchSet.SketchSetType == PolySketchSet.TypeName;
+            m_NoSketchesMessage.SetActive(false);
+            m_NoDriveSketchesMessage.SetActive(false);
+            m_NotLoggedInMessage.SetActive(false);
+            m_NoLikesMessage.SetActive(false);
+            m_ContactingServerMessage.SetActive(false);
+            m_NoShowcaseMessage.SetActive(false);
 
-            bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
-            m_NoPolyConnectionMessage.SetActive(polyDown);
-
-            bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
-            m_OutOfDateMessage.SetActive(outOfDate);
-
-            if (outOfDate || polyDown)
-            {
-                m_NoSketchesMessage.SetActive(false);
-                m_NoDriveSketchesMessage.SetActive(false);
-                m_NotLoggedInMessage.SetActive(false);
-                m_NoLikesMessage.SetActive(false);
-                m_ContactingServerMessage.SetActive(false);
-                m_NoShowcaseMessage.SetActive(false);
-                return;
-            }
+            // bool requiresPoly = CurrentSketchSet.SketchSetType == PolySketchSet.UriName;
+            //
+            // bool polyDown = VrAssetService.m_Instance.NoConnection && requiresPoly;
+            // m_NoPolyConnectionMessage.SetActive(polyDown);
+            //
+            // bool outOfDate = !polyDown && !VrAssetService.m_Instance.Available && requiresPoly;
+            // m_OutOfDateMessage.SetActive(outOfDate);
+            //
+            // if (outOfDate || polyDown)
+            // {
+            //     m_NoSketchesMessage.SetActive(false);
+            //     m_NoDriveSketchesMessage.SetActive(false);
+            //     m_NotLoggedInMessage.SetActive(false);
+            //     m_NoLikesMessage.SetActive(false);
+            //     m_ContactingServerMessage.SetActive(false);
+            //     m_NoShowcaseMessage.SetActive(false);
+            //     return;
+            // }
+            //
+            // bool refreshIcons = CurrentSketchSet.NumSketches > 0;
+            //
+            // // Show no sketches if we don't have sketches.
+            // bool isUser = CurrentSketchSet.SketchSetType == FileSketchSet.TypeName;
+            // bool isLiked = CurrentSketchSet.SketchSetType == PolySketchSet.UriName;
+            // bool isCurated = CurrentSketchSet is ResourceCollectionSketchSet;
+            // bool isDrive = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString;
+            // m_NoSketchesMessage.SetActive(isUser && (CurrentSketchSet.NumSketches <= 0));
+            // m_NoDriveSketchesMessage.SetActive(isDrive && (CurrentSketchSet.NumSketches <= 0));
+            //
+            // // Show sign in popup if signed out for liked or drive sketchsets
+            // bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn && (isLiked || isDrive);
+            // refreshIcons = refreshIcons && !showNotLoggedIn;
+            // m_NotLoggedInMessage.SetActive(showNotLoggedIn && isLiked);
+            // m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn && isDrive);
+            //
+            // // Show no likes text & gallery button if we don't have liked sketches.
+            // m_NoLikesMessage.SetActive(
+            //     isLiked &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     !CurrentSketchSet.IsActivelyRefreshingSketches &&
+            //     App.GoogleIdentity.LoggedIn);
+            //
+            // // Show Contacting Server if we're talking to Poly.
+            // m_ContactingServerMessage.SetActive(
+            //     (requiresPoly || isDrive) &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     (CurrentSketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
+            //
+            // // Show Showcase error if we're in Showcase and don't have sketches.
+            // m_NoShowcaseMessage.SetActive(
+            //     isCurated &&
+            //     (CurrentSketchSet.NumSketches <= 0) &&
+            //     !CurrentSketchSet.IsActivelyRefreshingSketches);
 
             bool refreshIcons = CurrentSketchSet.NumSketches > 0;
-
-            // Show no sketches if we don't have sketches.
-            bool isUser = CurrentSketchSet.SketchSetType == FileSketchSet.TypeName;
-            bool isLiked = CurrentSketchSet.SketchSetType == PolySketchSet.TypeName;
-            bool isCurated = CurrentSketchSet.SketchSetType == ResourceCollectionSketchSet.TypeName;
-            bool isDrive = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.TypeName;
-            m_NoSketchesMessage.SetActive(isUser && (CurrentSketchSet.NumSketches <= 0));
-            m_NoDriveSketchesMessage.SetActive(isDrive && (CurrentSketchSet.NumSketches <= 0));
-
-            // Show sign in popup if signed out for liked or drive sketchsets
-            bool showNotLoggedIn = !App.GoogleIdentity.LoggedIn && (isLiked || isDrive);
-            refreshIcons = refreshIcons && !showNotLoggedIn;
-            m_NotLoggedInMessage.SetActive(showNotLoggedIn && isLiked);
-            m_NotLoggedInDriveMessage.SetActive(showNotLoggedIn && isDrive);
-
-            // Show no likes text & gallery button if we don't have liked sketches.
-            m_NoLikesMessage.SetActive(
-                isLiked &&
-                (CurrentSketchSet.NumSketches <= 0) &&
-                !CurrentSketchSet.IsActivelyRefreshingSketches &&
-                App.GoogleIdentity.LoggedIn);
-
-            // Show Contacting Server if we're talking to Poly.
-            m_ContactingServerMessage.SetActive(
-                (requiresPoly || isDrive) &&
-                (CurrentSketchSet.NumSketches <= 0) &&
-                (CurrentSketchSet.IsActivelyRefreshingSketches && App.GoogleIdentity.LoggedIn));
-
-            // Show Showcase error if we're in Showcase and don't have sketches.
-            m_NoShowcaseMessage.SetActive(
-                isCurated &&
-                (CurrentSketchSet.NumSketches <= 0) &&
-                !CurrentSketchSet.IsActivelyRefreshingSketches);
 
             // Refresh all icons if necessary.
             if (!refreshIcons)
@@ -491,9 +500,9 @@ namespace TiltBrush
                 icon.UpdateUvOffsetAndScale(offset, m_SketchIconUvScale);
             }
 
-            switch (CurrentSketchSet.SketchSetType)
+            switch (SelectedSketchStack)
             {
-                case ResourceCollectionSketchSet.TypeName:
+                case (int)RootSet.Liked:
                     m_LoadingGallery.SetActive(CurrentSketchSet.IsActivelyRefreshingSketches);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
@@ -501,7 +510,7 @@ namespace TiltBrush
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case PolySketchSet.TypeName:
+                case (int)RootSet.Remote:
                     m_LoadingGallery.SetActive(false);
                     m_DriveSyncProgress.SetActive(false);
                     m_SyncingDriveIcon.SetActive(false);
@@ -509,9 +518,9 @@ namespace TiltBrush
                     m_DriveDisabledIcon.SetActive(false);
                     m_DriveFullIcon.SetActive(false);
                     break;
-                case FileSketchSet.TypeName:
-                case GoogleDriveSketchSet.TypeName:
-                    bool sketchSetRefreshing = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.TypeName &&
+                case (int)RootSet.Local:
+                case (int)RootSet.Backup:
+                    bool sketchSetRefreshing = CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString &&
                         CurrentSketchSet.IsActivelyRefreshingSketches;
                     bool driveSyncing = App.DriveSync.Syncing;
                     bool syncEnabled = App.DriveSync.SyncEnabled;
@@ -552,7 +561,7 @@ namespace TiltBrush
                 m_GalleryButtons[m_ElementNumberGalleryButtonDrive].gameObject.SetActive(false);
                 galleryButtonN = galleryButtonAvailable - 1;
 
-                if (CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.TypeName)
+                if (CurrentSketchSet.SketchSetType == GoogleDriveSketchSet.UriString)
                 {
                     // We were on the Drive tab but it's gone away so switch to the local tab by simulating
                     // the user pressing the local tab button.

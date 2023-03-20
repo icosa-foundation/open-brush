@@ -7689,11 +7689,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9578,6 +9580,7 @@ Transform:
   - {fileID: 1412532063}
   - {fileID: 383974627}
   - {fileID: 669339392}
+  - {fileID: 3156743985483546036}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -28433,7 +28436,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -31118,210 +31122,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1915334737}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  useExpensiveSharpen: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 1
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
-  useLegacyCubemapRotation: 0
-  useEfficientSupersample: 0
-  useEfficientSharpen: 0
-  _previewInEditor: 0
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  useExpensiveSharpen: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 1
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
-  useLegacyCubemapRotation: 0
-  useEfficientSupersample: 0
-  useEfficientSharpen: 0
-  _previewInEditor: 0
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  useExpensiveSharpen: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 1
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
-  useLegacyCubemapRotation: 0
-  useEfficientSupersample: 0
-  useEfficientSharpen: 0
-  _previewInEditor: 0
-  currentOverlayType: 2
-  isDynamic: 0
-  isProtectedContent: 0
-  srcRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  srcRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectLeft:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  destRectRight:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
-  invertTextureRects: 0
-  overrideTextureRectMatrix: 0
-  overridePerLayerColorScaleAndOffset: 0
-  colorScale: {x: 1, y: 1, z: 1, w: 1}
-  colorOffset: {x: 0, y: 0, z: 0, w: 0}
-  useExpensiveSuperSample: 0
-  useExpensiveSharpen: 0
-  hidden: 0
-  isExternalSurface: 0
-  externalSurfaceWidth: 0
-  externalSurfaceHeight: 0
-  compositionDepth: 0
-  noDepthBufferTesting: 1
-  layerTextureFormat: 0
-  currentOverlayShape: 0
-  textures:
-  - {fileID: 0}
-  - {fileID: 0}
-  isAlphaPremultiplied: 0
-  useBicubicFiltering: 0
-  useLegacyCubemapRotation: 0
-  useEfficientSupersample: 0
-  useEfficientSharpen: 0
-  _previewInEditor: 0
 --- !u!1001 &1916224247
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33952,6 +33752,81 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &3156743985483546035
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 652605545}
+    m_Modifications:
+    - target: {fileID: 511455843847941796, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_Name
+      value: ResourceCollectionFactory
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 86013ec7845ec4c49aea1aa9efa5c5fe, type: 3}
+--- !u!4 &3156743985483546036 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1197480599120525051, guid: 86013ec7845ec4c49aea1aa9efa5c5fe,
+    type: 3}
+  m_PrefabInstance: {fileID: 3156743985483546035}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3873296417163464587
 Transform:
   m_ObjectHideFlags: 0

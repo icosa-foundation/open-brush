@@ -16,20 +16,20 @@ namespace TiltBrush
         [Test]
         public void CreateFilesystemSketchFromTilt()
         {
-            var fileSketch = new FilesystemSketch($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
+            var fileSketch = new LocalFileResource($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
         }
 
         [Test]
         public void FilesystemSketchUriIsCorrect()
         {
-            var fileSketch = new FilesystemSketch($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
+            var fileSketch = new LocalFileResource($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt");
             Assert.AreEqual(fileSketch.Uri, new Uri($"file://{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet/Sketch 1.tilt"));
         }
 
         [Test]
         public async Task FilesystemSketchCollectionEnumAsync()
         {
-            var collection = new FilesystemSketchCollection($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet", "Test");
+            var collection = new LocalFolderCollection($"{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet", "Test");
             await collection.InitAsync();
             Assert.AreEqual(collection.Uri, new Uri($"file://{Application.dataPath}/Scripts/Resources/Editor/TestFiles/SketchSet"));
             Assert.AreEqual(collection.Name, "Test");
@@ -41,7 +41,7 @@ namespace TiltBrush
             Assert.AreEqual(contents.Count, 6);
             Assert.AreEqual(contents.Count(x => x is IResourceCollection), 1);
 
-            var subdir = contents.FirstOrDefault(x => x is IResourceCollection) as FilesystemSketchCollection;
+            var subdir = contents.FirstOrDefault(x => x is IResourceCollection) as LocalFolderCollection;
             await subdir.InitAsync();
 
             contents = new List<IResource>();

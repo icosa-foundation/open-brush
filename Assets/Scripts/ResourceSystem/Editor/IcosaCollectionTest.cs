@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace TiltBrush
         [Test]
         public async Task TestIcosaCollection()
         {
-            var collection = new IcosaSketchCollection(m_HttpClient);
+            var collection = new IcosaCollection(m_HttpClient, IcosaCollection.AllAssetsUri);
             await collection.InitAsync();
             var enumerator = collection.ContentsAsync().GetAsyncEnumerator();
             for (int i = 0; i < 10; ++i)
