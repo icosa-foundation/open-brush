@@ -265,6 +265,15 @@ namespace TiltBrush
             }
         }
 
+        public void PopSketchSet(int stack)
+        {
+            m_SetStacks[stack].Pop();
+            if (stack == m_SelectedStack)
+            {
+                SetVisibleSketchSet((RootSet)m_SelectedStack);
+            }
+        }
+
         void SetVisibleSketchSet(RootSet stack)
         {
             int stackIndex = (int)stack;
@@ -822,6 +831,11 @@ namespace TiltBrush
                 default:
                     break;
             }
+        }
+
+        public void BackButtonPressed()
+        {
+            PopSketchSet(m_SelectedStack);
         }
 
         private void OnSketchSetDirty()

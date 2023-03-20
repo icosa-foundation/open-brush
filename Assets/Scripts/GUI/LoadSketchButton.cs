@@ -163,6 +163,7 @@ namespace TiltBrush
                 {
                     var sketchSet = new ResourceCollectionSketchSet(collection);
                     SketchbookPanel.Instance.PushSketchSet(SketchbookPanel.Instance.SelectedSketchStack, sketchSet);
+                    return;
                 }
             }
 

@@ -148,7 +148,7 @@ namespace TiltBrush
             var sketch = m_Sketches[index];
             icon = sketch.Icon;
             authors = sketch.Authors;
-            description = "DESCRIPTION NOT IMPLEMENTED";
+            description = sketch.ResourceFileInfo.Resource.Description ?? "";
             return icon != null;
         }
 
