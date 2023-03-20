@@ -2186,6 +2186,70 @@ MonoBehaviour:
     m_Localized: Wireframe
     m_Metadata:
       m_Items: []
+  - m_Id: 81212669579288576
+    m_Localized: Black
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212740198785024
+    m_Localized: Blue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212798805794816
+    m_Localized: Dress Form
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212845635198976
+    m_Localized: ENVIRONMENT_DRESSFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212886244450304
+    m_Localized: Hot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212929865211904
+    m_Localized: Illustrative
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212976329711616
+    m_Localized: Night Sky
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213029828059136
+    m_Localized: No Lights
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213093988327424
+    m_Localized: Passthrough
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213138796077056
+    m_Localized: Pedestal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213180441321472
+    m_Localized: Pink Lemonade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213231821545472
+    m_Localized: Pistachio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213302868860928
+    m_Localized: Snowman
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213342391787520
+    m_Localized: Space
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213390877941760
+    m_Localized: Standard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213430556057600
+    m_Localized: White
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -92,10 +92,9 @@ namespace TiltBrush
         [Header("GUI")]
         public Texture2D m_ButtonTexture;
         [Tooltip("Name of the brush, in the UI and elsewhere")]
-        public string Description;
         public LocalizedString m_LocalizedDescription;
 
-        public string Descriptiond
+        public string Description
         {
             get
             {
@@ -103,7 +102,7 @@ namespace TiltBrush
                 {
                     return m_LocalizedDescription.GetLocalizedString();
                 }
-                return Description;
+                return "";
             }
         }
 

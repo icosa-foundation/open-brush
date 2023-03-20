@@ -2067,6 +2067,70 @@ MonoBehaviour:
     m_Key: BRUSH_WIREFRAME
     m_Metadata:
       m_Items: []
+  - m_Id: 81212669579288576
+    m_Key: ENVIRONMENT_BLACK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212740198785024
+    m_Key: ENVIRONMENT_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212798805794816
+    m_Key: ENVIRONMENT_DRESSFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212845635198976
+    m_Key: ENVIRONMENT_EXAMPLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212886244450304
+    m_Key: ENVIRONMENT_HOT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212929865211904
+    m_Key: ENVIRONMENT_ILLUSTRATIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212976329711616
+    m_Key: ENVIRONMENT_NIGHTSKY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213029828059136
+    m_Key: ENVIRONMENT_NOLIGHTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213093988327424
+    m_Key: ENVIRONMENT_PASSTHROUGH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213138796077056
+    m_Key: ENVIRONMENT_PEDESTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213180441321472
+    m_Key: ENVIRONMENT_PINKLEMONADE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213231821545472
+    m_Key: ENVIRONMENT_PISTACHIO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213302868860928
+    m_Key: ENVIRONMENT_SNOWMAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213342391787520
+    m_Key: ENVIRONMENT_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213390877941760
+    m_Key: ENVIRONMENT_STANDARD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213430556057600
+    m_Key: ENVIRONMENT_WHITE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

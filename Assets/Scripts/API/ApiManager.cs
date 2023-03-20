@@ -527,7 +527,7 @@ namespace TiltBrush
             html = html.Replace("{{brushesJson}}", brushesJson);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.m_Description.Replace(" ", ""))
+                .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
