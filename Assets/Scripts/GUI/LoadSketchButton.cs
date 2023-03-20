@@ -162,6 +162,7 @@ namespace TiltBrush
                 if (resourceFileInfo.Resource is IResourceCollection collection)
                 {
                     var sketchSet = new ResourceCollectionSketchSet(collection);
+                    sketchSet.Init();
                     SketchbookPanel.Instance.PushSketchSet(SketchbookPanel.Instance.SelectedSketchStack, sketchSet);
                     return;
                 }
