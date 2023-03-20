@@ -187,7 +187,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5056691860905984
-    m_Localized: "D\xE9bloquer les\r\nfonctionnalit\xE9s avanc\xE9es"
+    m_Localized: "D\xE9bloquer les\nfonctionnalit\xE9s avanc\xE9es"
     m_Metadata:
       m_Items: []
   - m_Id: 5064085647106048
@@ -696,11 +696,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7892226182717440
     m_Localized: "Cette option vous fera d\xE9passer la limite de m\xE9moire s\xFBre.
-      \r\nFaites preuve de prudence."
+      \nFaites preuve de prudence."
     m_Metadata:
       m_Items: []
   - m_Id: 7892372832362496
-    m_Localized: "Vous \xEAtes maintenant en zone de danger.\r\nContinuer vos travaux
+    m_Localized: "Vous \xEAtes maintenant en zone de danger.\nContinuer vos travaux
       pourrait provoquer des dysfonctionnement et une perte de votre travail."
     m_Metadata:
       m_Items: []
@@ -757,8 +757,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
-    m_Localized: "Partagez sur Poly\r\npour voir les mod\xE8les\r\net les objets
-      \xE0 blocs ici"
+    m_Localized: "Partagez sur Poly\npour voir les mod\xE8les\net les objets \xE0
+      blocs ici"
     m_Metadata:
       m_Items: []
   - m_Id: 7932746569326592
@@ -766,12 +766,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Chargement des mod\xE8les depuis Poly\r\n\r\nNe tardez pas \xE0
-      revenir\_!"
+    m_Localized: "Chargement des mod\xE8les depuis Poly\n\nNe tardez pas \xE0 revenir\_!"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: "Aimez les mod\xE8les       \r\nsur Poly pour\r\nles voir ici"
+    m_Localized: "Aimez les mod\xE8les       \nsur Poly pour\nles voir ici"
     m_Metadata:
       m_Items: []
   - m_Id: 7933313635033088
@@ -779,8 +778,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: "Connectez-vous sur le bureau\r\npour charger\r\nles mod\xE8les
-      Poly"
+    m_Localized: "Connectez-vous sur le bureau\npour charger\nles mod\xE8les Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -788,7 +786,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: "Partagez sur Poly\r\npour voir vos\r\nmod\xE8les ici"
+    m_Localized: "Partagez sur Poly\npour voir vos\nmod\xE8les ici"
     m_Metadata:
       m_Items: []
   - m_Id: 7933944802287616
@@ -796,12 +794,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7934076549570560
-    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\r\nle 30/06/2021\r\n\r\nPris en charge
-      d\u2019Icosa Gallery\r\nbient\xF4t disponible\_!"
+    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\nle 30/06/2021\n\nPris en charge d\u2019Icosa
+      Gallery\nbient\xF4t disponible\_!"
     m_Metadata:
       m_Items: []
   - m_Id: 7934199497203712
-    m_Localized: "Erreur de connexion\r\n\xE0 Poly"
+    m_Localized: "Erreur de connexion\n\xE0 Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 7939526611410944
@@ -885,7 +883,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7952483592413184
-    m_Localized: "Mettre \xE0 jour la\r\nsimplification\_?"
+    m_Localized: "Mettre \xE0 jour la\nsimplification\_?"
     m_Metadata:
       m_Items: []
   - m_Id: 7959094121701376
@@ -969,15 +967,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10132688213876736
-    m_Localized: "Aucun croquis\r\nenregistr\xE9"
+    m_Localized: "Aucun croquis\nenregistr\xE9"
     m_Metadata:
       m_Items: []
   - m_Id: 10132930728534016
-    m_Localized: "Aucun croquis \r\nGoogle Drive\r\ndisponible"
+    m_Localized: "Aucun croquis \nGoogle Drive\ndisponible"
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: "Aimez les croquis       \r\nsur Poly pour\r\nles voir ici"
+    m_Localized: "Aimez les croquis       \nsur Poly pour\nles voir ici"
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -985,29 +983,29 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133516949626880
-    m_Localized: "R\xE9cup\xE9ration des\r\ncroquis\u2026"
+    m_Localized: "R\xE9cup\xE9ration des\ncroquis\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Poly\r\n<color=#969696>\r\nVotre
+    m_Localized: "Erreur de r\xE9cup\xE9ration des croquis depuis Poly\n<color=#969696>\nVotre
       connexion Internet fonctionne-t-elle correctement\_?</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
-    m_Localized: "Connectez-vous pour acc\xE9der \r\naux croquis Poly"
+    m_Localized: "Connectez-vous pour acc\xE9der \naux croquis Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
-    m_Localized: "Connectez-vous pour acc\xE9der \r\n\xE0 Google Drive"
+    m_Localized: "Connectez-vous pour acc\xE9der \n\xE0 Google Drive"
     m_Metadata:
       m_Items: []
   - m_Id: 10134789291745280
-    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\r\nle 30/06/2021\r\n\r\nPris en charge
-      d\u2019Icosa Gallery\r\nbient\xF4t disponible\_!"
+    m_Localized: "Poly a \xE9t\xE9 ferm\xE9\nle 30/06/2021\n\nPris en charge d\u2019Icosa
+      Gallery\nbient\xF4t disponible\_!"
     m_Metadata:
       m_Items: []
   - m_Id: 10134947404423168
-    m_Localized: "Erreur de connexion\r\n\xE0 Poly"
+    m_Localized: "Erreur de connexion\n\xE0 Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 10137717402476544
@@ -1185,6 +1183,418 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18101557633294336
     m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68763796961820672
+    m_Localized: Joindre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68764809030598656
+    m_Localized: Calques
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768010396041216
+    m_Localized: "Activer le mode exp\xE9rimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768580896882688
+    m_Localized: "D\xE9sactiver le mode exp\xE9rimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773633749745664
+    m_Localized: Afficher dans le navigateur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773760459669504
+    m_Localized: Afficher dans le navigateur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68774380566544384
+    m_Localized: "Red\xE9marrage n\xE9cessaire pour\nle mode exp\xE9rimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036335840321536
+    m_Localized: "T\xE9l\xE9chargement du croquis\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Localized: "Recherche non encore impl\xE9ment\xE9e,\nmais j\u2019appr\xE9cie
+      votre enthousiasme."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Localized: COMPRIS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Localized: Retirer le casque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Localized: Connectez-vous sur le bureau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Localized: "Enregistrer et transf\xE9rer le croquis\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Localized: "Transfert\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Localized: "Succ\xE8s\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Localized: Terminer de publier sur le bureau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Localized: "Oh non\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Localized: "Il semble qu\u2019un probl\xE8me est survenu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Localized: Croquis non remixable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Localized: "Impossible de transf\xE9rer les croquis\nnon remixables sur Poly"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Localized: Erreur de connexion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Localized: "Une erreur s\u2019est produite lors de la connexion \nau serveur
+      Poly. Veuillez r\xE9essayer plus tard."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Localized: "Veuillez patienter\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Localized: "Contenu de m\xE9diath\xE8que"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Localized: "Le contenu de la m\xE9diath\xE8que\nne sera pas transf\xE9r\xE9\navec
+      le reste de votre croquis."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Localized: "TRANSF\xC9RER"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Localized: ANNULER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Localized: "Vid\xE9os de m\xE9diath\xE8que"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Localized: "Les vid\xE9os de la m\xE9diath\xE8que\nne seront pas transf\xE9r\xE9es\navec
+      le reste de votre croquis."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Localized: "Rien \xE0 transf\xE9rer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Localized: "Ce croquis ne contient\nrien \xE0 transf\xE9rer."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Localized: "Obsol\xE8te"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Localized: "Mettez \xE0 jour la Tilt Brush pour\npartager des croquis sur Poly
+      et Sketchfab"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Localized: "Connexion n\xE9cessaire pour transf\xE9rer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Localized: "Il faut quitter Tilt Brush pour se connecter.\nNous vous conseillons
+      d\u2019enregistrer votre\ntravail avant de continuer."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Localized: Enregistrer et se connecter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Localized: Connexion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Localized: Quittez Open Brush pour finaliser la publication
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Localized: "Lib\xE9rer la m\xE9moire des images\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Localized: "Cela d\xE9chargera les images inutilis\xE9es\npour lib\xE9rer la
+      m\xE9moire.\nLes images ne seront pas supprim\xE9es."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Localized: Continuer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Localized: "Dessiner\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Localized: Actualiser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Localized: Effacer le croquis et recharger Word
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Localized: "Fusionner les coups de pinceau (exp\xE9rimental)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Localized: Supprimer le croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Localized: "R\xE9v\xE9ler sur le bureau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Localized: Enregistrer les options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Localized: "\xC9craser la derni\xE8re sauvegarde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Localized: Enregistrer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Localized: Enregistrer un nouveau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Localized: "Cr\xE9er un nouveau fichier de sauvegarde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Localized: 'Ces croquis sont en
+
+      <b>lecture seule</b>'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Localized: Astuces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Localized: Labos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Localized: "Param\xE8tres"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Localized: "R\xE9initialiser les panneaux"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Localized: Miroir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Localized: Invoquer le miroir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Localized: Notes de version
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Localized: Afficher dans le navigateur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Localized: "Centre d\u2019aide"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Localized: "Condition d\u2019utilisation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Localized: "Politique de confidentialit\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Localized: "Enregistrer votre croquis\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Localized: "Vous \xEAtes sur le point de quitter\nOpen Brush"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Localized: Sauvegarde Google Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Localized: "B\xCATA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Localized: "Sauvegarde termin\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Localized: "Sauvegarde\u2026 888\_%"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Localized: Afficher sur Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Localized: "D\xE9sactiver la sauvegarde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Localized: Croquis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Localized: "Instantan\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Localized: "M\xE9diath\xE8que"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Localized: Exportations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Localized: "Vid\xE9os"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Localized: "Sauvegarde Google Drive d\xE9sactiv\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Localized: 'Activer la sauvegarde Google Drive conserve
+
+      votre travail
+      sur le cloud.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Localized: ACTIVER LA SAUVEGARDE DRIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Localized: "Sauvegarde Google Drive satur\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Localized: "Retirez des \xE9l\xE9ments de Google Drive\npour lib\xE9rer de
+      l\u2019espace de stockage."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Localized: "G\xC9RER"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Localized: "D\xC9SACTIVER"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Localized: "Charger le croquis\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Localized: "Les modifications non sauvegard\xE9es seront perdues"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Localized: "Charger le croquis complexe\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Localized: "Le croquis peut pr\xE9senter des ralentissements."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Localized: "Ce croquis d\xE9passe les limites de taille et peut provoquer une
+      mauvaise exp\xE9rience ou des dysfonctionnements."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Localized: "Charger quand m\xEAme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Localized: Comptes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Localized: Retirer le casque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Localized: Partager avec Google
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Localized: "Connectez-vous \xE0 un compte Google pour acc\xE9der \xE0 Google
+      Drive et assurer la prise en charge de YouTube."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Localized: Partager sur Sketchfab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Localized: "Connectez-vous \xE0 un compte Sketchfab pour autoriser les transferts
+      vers Sketchfab."
     m_Metadata:
       m_Items: []
   references:

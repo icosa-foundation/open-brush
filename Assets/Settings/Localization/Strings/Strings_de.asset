@@ -697,12 +697,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7892226182717440
-    m_Localized: "Dieser Vorgang \xFCberschreitet ein sicheres Speicherlimit.\r\nSei
+    m_Localized: "Dieser Vorgang \xFCberschreitet ein sicheres Speicherlimit.\nSei
       vorsichtig."
     m_Metadata:
       m_Items: []
   - m_Id: 7892372832362496
-    m_Localized: "Du bist jetzt in der Gefahrenzone.\r\nWeitere Arbeiten k\xF6nnen
+    m_Localized: "Du bist jetzt in der Gefahrenzone.\nWeitere Arbeiten k\xF6nnen
       zu Abst\xFCrzen und verlorener Arbeit f\xFChren."
     m_Metadata:
       m_Items: []
@@ -1006,7 +1006,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10132930728534016
-    m_Localized: "Keine Google-Drive-\r\nSkizzen\r\nverf\xFCgbar"
+    m_Localized: "Keine Google-Drive-\nSkizzen\nverf\xFCgbar"
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
@@ -1023,7 +1023,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133516949626880
-    m_Localized: "Skizzen werden\r\nabgerufen\_..."
+    m_Localized: "Skizzen werden\nabgerufen\_..."
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
@@ -1241,6 +1241,427 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18101557633294336
     m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68763796961820672
+    m_Localized: Mitmachen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68764809030598656
+    m_Localized: Ebenen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768010396041216
+    m_Localized: Experimentiermodus anschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768580896882688
+    m_Localized: Experimentiermodus ausschalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773633749745664
+    m_Localized: Im Browser ansehen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773760459669504
+    m_Localized: Im Browser ansehen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68774380566544384
+    m_Localized: "Neustart erforderlich\nf\xFCr Experimentiermodus"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036335840321536
+    m_Localized: Skizze wird heruntergeladen ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Localized: "Suche nicht implementiert,\naber mir gef\xE4llt dein Enthusiasmus."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Localized: VERSTANDEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Localized: Abbrechen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Localized: Headset abnehmen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Localized: Auf Desktop anmelden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Localized: Skizze speichern und hochladen?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Localized: "Wird hochgeladen\_..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Localized: Geschafft!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Localized: "Ver\xF6ffentlichen auf Desktop erledigt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Localized: Oh nein!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Localized: Etwas ist schiefgelaufen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Localized: Nicht abmischbare Skizze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Localized: "Nicht abmischbare Skizzen k\xF6nnen\nnicht auf Poly hochgeladen
+      werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Localized: Verbindungsfehler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Localized: "Bei der Verbindung zum Server von Poly ist ein\nFehler aufgetreten.
+      Versuche es sp\xE4ter noch einmal."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Localized: Bitte warten ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Localized: Medienbibliotheksinhalt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Localized: 'Medienbibliotheksinhalt
+
+      wird nicht mit dem Rest
+
+      deiner
+      Skizze hochgeladen.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Localized: HOCHLADEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Localized: ABBRECHEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Localized: Medienbibliotheksvideos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Localized: 'Medienbibliotheksvideos
+
+      werden nicht mit dem Rest
+
+      deiner
+      Skizze hochgeladen.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Localized: Nichts zum Hochladen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Localized: "Diese Skizze enth\xE4lt\nnichts zum Hochladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Localized: Veraltet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Localized: 'Aktualisiere Tilt Brush, um Skizzen
+
+      auf Poly und Sketchfab
+      zu teilen'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Localized: Du musst dich zum Hochladen anmelden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Localized: "F\xFCr die Anmeldung musst du\nTilt Brush verlassen. Wir empfehlen,\ndass
+      du dein Werk vorher speicherst."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Localized: Speichern und anmelden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Localized: Anmelden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Localized: "Verlasse Open Brush, um die Ver\xF6ffentlichung abzuschlie\xDFen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Localized: Bilderspeicher ausmisten?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Localized: "Hiermit werden ungenutzte Bilder\nentladen, um Speicherplatz zu
+      schaffen.\nDie Bilder werden nicht gel\xF6scht."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Localized: Fortfahren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Localized: 'Ziehen:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Localized: Aktualisieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Localized: "Skizze l\xF6schen und Wort neu laden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Localized: "Schlie\xDFen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Localized: "Pinselstriche zusammenf\xFChren (experimentell)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Localized: "Skizze l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Localized: "Enth\xFCllen auf Desktop"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Localized: Optionen speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Localized: "Speicherdaten \xFCberschreiben"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Localized: Speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Localized: Neu speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Localized: Neue Speicherdatei anlegen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Localized: "Diese Skizzen sind\n<b>schreibgesch\xFCtzt</b>"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Localized: Tipps und Tricks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Localized: Labore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Localized: Einstellungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Localized: "Panele zur\xFCcksetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Localized: Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Localized: "Spiegel beschw\xF6ren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Localized: "Anmerkungen zur Ver\xF6ffentlichung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Localized: Im Browser ansehen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Localized: Hilfecenter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Localized: Nutzungsbedingungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Localized: Datenschutzrichtlinie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Localized: Skizze speichern?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Localized: "Du verl\xE4sst\nOpen Brush"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Localized: Google-Drive-Back-up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Localized: BETA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Localized: Back-up abgeschlossen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Localized: "Back-up l\xE4uft ... 888 %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Localized: Auf Drive ansehen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Localized: Back-up deaktivieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Localized: Skizzen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Localized: "Schnappsch\xFCsse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Localized: Medienbibliothek
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Localized: Exporte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Localized: Videos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Localized: Google-Drive-Back-up deaktiviert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Localized: 'Wenn du das Google-Drive-Back-up aktivierst,
+
+      werden deine
+      Werke in die Cloud geladen.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Localized: DRIVE-BACK-UP AKTIVIEREN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Localized: Google-Drive-Back-up voll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Localized: 'Entferne Werke von Google Drive,
+
+      um Speicherplatz zu schaffen.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Localized: VERWALTEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Localized: DEAKTIVIEREN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Localized: Skizze laden?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Localized: "Nicht gespeicherte \xC4nderungen gehen verloren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Localized: Komplexe Skizze laden?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Localized: "Skizze k\xF6nnte verlangsamt werden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Localized: "Diese Skizze ist \xFCber dem Gr\xF6\xDFenlimit. Dies kann das Spielerlebnis
+      beeintr\xE4chtigen oder zu einem Absturz f\xFChren."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Localized: Trotzdem laden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Localized: Konten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Localized: Headset abnehmen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Localized: Mit Google teilen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Localized: "Melde dich mit deinem Google-Konto an\nf\xFCr Zugang zu Drive und
+      YouTube-Unterst\xFCtzung."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Localized: Auf Sketchfab teilen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Localized: "Melde dich mit deinem Sketchfab-Konto an,\num das Hochladen auf
+      Sketchfab zu erm\xF6glichen."
     m_Metadata:
       m_Items: []
   references:

@@ -694,11 +694,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7892226182717440
     m_Localized: "Esta operaci\xF3n te pondr\xE1 m\xE1s all\xE1 del l\xEDmite seguro
-      de memoria.\r\nTen cuidado."
+      de memoria.\nTen cuidado."
     m_Metadata:
       m_Items: []
   - m_Id: 7892372832362496
-    m_Localized: "Ahora est\xE1s en la zona de peligro.\r\nM\xE1s trabajo podr\xEDa
+    m_Localized: "Ahora est\xE1s en la zona de peligro.\nM\xE1s trabajo podr\xEDa
       causar desconexiones y trabajo perdido."
     m_Metadata:
       m_Items: []
@@ -767,11 +767,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7932977482539008
-    m_Localized: "Cargando modelos de Poly\r\n\r\n\xA1Vuelve pronto!"
+    m_Localized: "Cargando modelos de Poly\n\n\xA1Vuelve pronto!"
     m_Metadata:
       m_Items: []
   - m_Id: 7933149889404928
-    m_Localized: "Da Me gusta a modelos\r\nen Poly para\r\nverlos aqu\xED"
+    m_Localized: "Da Me gusta a modelos\nen Poly para\nverlos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 7933313635033088
@@ -779,7 +779,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933450197377024
-    m_Localized: "Suscr\xEDbete en el escritorio\r\npara cargar\r\nmodelos Poly"
+    m_Localized: "Suscr\xEDbete en el escritorio\npara cargar\nmodelos Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 7933561489039360
@@ -787,7 +787,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7933827554713600
-    m_Localized: "Comparte en Poly\r\npara ver tus\r\nmodelos aqu\xED"
+    m_Localized: "Comparte en Poly\npara ver tus\nmodelos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 7933944802287616
@@ -795,8 +795,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7934076549570560
-    m_Localized: "Poly se desconect\xF3\r\nel 30/06/2021\r\n\r\n\xA1Asistencia de
-      Icosa Gallery\r\npr\xF3ximamente!"
+    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa
+      Gallery\npr\xF3ximamente!"
     m_Metadata:
       m_Items: []
   - m_Id: 7934199497203712
@@ -886,7 +886,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7952483592413184
-    m_Localized: "\xBFActualizar\r\nsimplificaci\xF3n?"
+    m_Localized: "\xBFActualizar\nsimplificaci\xF3n?"
     m_Metadata:
       m_Items: []
   - m_Id: 7959094121701376
@@ -984,7 +984,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10133179773722624
-    m_Localized: "Da Me gusta a esquemas\r\nen Poly para\r\nverlos aqu\xED"
+    m_Localized: "Da Me gusta a esquemas\nen Poly para\nverlos aqu\xED"
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -998,21 +998,21 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Error al recuperar esquemas de Poly\r\n<color=#969696>\r\n\xBFC\xF3mo
+    m_Localized: "Error al recuperar esquemas de Poly\n<color=#969696>\n\xBFC\xF3mo
       va tu Internet?</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
-    m_Localized: "Inscr\xEDbete para acceder\r\na los esquemas de Poly"
+    m_Localized: "Inscr\xEDbete para acceder\na los esquemas de Poly"
     m_Metadata:
       m_Items: []
   - m_Id: 10134688972382208
-    m_Localized: "Inscr\xEDbete para acceder\r\na Google Drive"
+    m_Localized: "Inscr\xEDbete para acceder\na Google Drive"
     m_Metadata:
       m_Items: []
   - m_Id: 10134789291745280
-    m_Localized: "Poly se desconect\xF3\r\nel 30/06/2021\r\n\r\n\xA1Asistencia de
-      Icosa Gallery\r\npr\xF3ximamente!"
+    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa
+      Gallery\npr\xF3ximamente!"
     m_Metadata:
       m_Items: []
   - m_Id: 10134947404423168
@@ -1196,6 +1196,427 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18101557633294336
     m_Localized: "Posici\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68763796961820672
+    m_Localized: Unirse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68764809030598656
+    m_Localized: Capas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768010396041216
+    m_Localized: Activar modo experimental
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768580896882688
+    m_Localized: Desactivar modo experimental
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773633749745664
+    m_Localized: Ver en navegador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773760459669504
+    m_Localized: Ver en navegador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68774380566544384
+    m_Localized: 'Reinicio necesario
+
+      para el modo experimental'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036335840321536
+    m_Localized: Descargando bosquejo...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Localized: "No se ha implementado la b\xFAsqueda,\npero me gusta tu entusiasmo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Localized: ENTENDIDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Localized: Cancelar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Localized: "Qu\xEDtate el casco"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Localized: "Iniciar sesi\xF3n en el escritorio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Localized: "\xBFGuardar y subir bosquejo?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Localized: Subiendo...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Localized: "\xA1\xC9xito!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Localized: Terminar de publicar en el escritorio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Localized: "\xA1Oh, no!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Localized: Parece que algo ha ido mal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Localized: Bosquejo no remezclable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Localized: 'Los bosquejos no remezclables no
+
+      se pueden subir a Poly'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Localized: "Error de conexi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Localized: "Ha habido un error al conectar al servidor\nde Poly. Int\xE9ntalo
+      de nuevo m\xE1s tarde."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Localized: Vale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Localized: Espera...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Localized: Contenido de la biblioteca de medios
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Localized: "El contenido de la biblioteca de medios\nno se subir\xE1\ncon el
+      resto de tu bosquejo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Localized: SUBIR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Localized: CANCELAR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Localized: "V\xEDdeos de la biblioteca de medios"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Localized: "Los v\xEDdeos de la biblioteca de medios\nno se subir\xE1n\ncon
+      el resto de tu bosquejo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Localized: No hay nada que subir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Localized: 'Este bosquejo no contiene
+
+      nada que subir.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Localized: Anticuado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Localized: 'Actualiza el pincel inclinado para compartir
+
+      los bosquejos
+      en Poly y Sketchfab'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Localized: "Inicio de sesi\xF3n necesario para subir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Localized: "Iniciar sesi\xF3n requiere salir del pincel inclinado.\nSugerimos
+      guardar tu trabajo\nantes de continuar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Localized: "Guardar e iniciar sesi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Localized: "Iniciar sesi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Localized: Sal de Open Brush para terminar de publicar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Localized: "\xBFLiberar memoria de im\xE1genes?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Localized: "Esto liberar\xE1 la carga de las im\xE1genes sin usar\npara liberar
+      memoria.\nLas im\xE1genes no se eliminar\xE1n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Localized: Continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Localized: 'Dibujar:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Localized: Recargar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Localized: Borrar bosquejo y recargar Word
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Localized: Cerrar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Localized: Fusionar trazos del pincel (experimental)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Localized: Eliminar bosquejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Localized: Revelar en el escritorio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Localized: Opciones de guardado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Localized: "Sobrescribir \xFAltimo guardado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Localized: Guardar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Localized: Nuevo guardado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Localized: Crear un nuevo archivo de guardado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Localized: 'Estos bosquejos son de
+
+      <b>Solo lectura</b>'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Localized: Trucos y consejos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Localized: Laboratorios
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Localized: Ajustes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Localized: Reiniciar paneles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Localized: Espejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Localized: Convocar espejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Localized: Notas de lanzamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Localized: Ver en navegador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Localized: Centro de ayuda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Localized: "T\xE9rminos del servicio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Localized: "Pol\xEDtica de privacidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Localized: "\xBFGuardar tus esquemas?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Localized: "Est\xE1s a punto de salir de \nOpen Brush"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Localized: Copia de seguridad de Google Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Localized: BETA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Localized: Copia de seguridad completada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Localized: "Haciendo copia de seguridad... 888\_%"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Localized: Ver en Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Localized: Desactivar copia de seguridad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Localized: Bosquejos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Localized: "Instant\xE1neas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Localized: Biblioteca de medios
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Localized: Exportaciones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Localized: "V\xEDdeos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Localized: Copia de seguridad de Google Drive desactivada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Localized: 'Activar la copia de seguridad de Google Drive
+
+      mantiene tu
+      trabajo guardado en la nube.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Localized: ACTIVAR COPIA DE SEGURIDAD DE DRIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Localized: Copia de seguridad de Drive llena
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Localized: 'Elimina objetos de Google Drive
+
+      para liberar espacio de
+      almacenamiento.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Localized: GESTIONAR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Localized: DESACTIVAR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Localized: "\xBFCargar esquema?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Localized: "Los cambios sin guardar se perder\xE1n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Localized: "\xBFCargar esquema complejo?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Localized: El esquema puede funcionar lentamente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Localized: "Ese esquema sobrepasa las limitaciones de tama\xF1o y puede causar
+      una mala experiencia o bloquearse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Localized: Cargar de todos modos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Localized: Cuentas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Localized: "Qu\xEDtate el casco"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Localized: Compartir con Google
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Localized: "Inicia sesi\xF3n en la cuenta de Google para acceder\na Drive y
+      a la asistencia de YouTube."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Localized: Compartir en Sketchfab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Localized: "Inicia sesi\xF3n en un cuenta de Sketchfab para\npermitir la subida
+      a Sketchfab."
     m_Metadata:
       m_Items: []
   references:
