@@ -205,7 +205,7 @@ namespace TiltBrush
             {
                 $"file:///{App.UserSketchPath()}",
                 "feed:https://timaidley.github.io/open-brush-feed/sketches.rss",
-                "poly:",
+                IcosaCollection.AllAssetsUri.OriginalString,
                 "googledrive:"
             }.Select(uri => new Stack<ISketchSet>(new[] { SketchCatalog.m_Instance.GetSketchSet(uri) })).ToArray();
 

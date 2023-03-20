@@ -41,7 +41,7 @@ namespace TiltBrush
         public IResourceCollection Create(Uri uri)
         {
             Assert.AreEqual(uri.Scheme, Scheme);
-            return new FeedCollection(App.HttpClient, uri);
+            return new IcosaCollection(App.HttpClient, new Uri(uri.AbsoluteUri));
         }
     }
 
@@ -49,16 +49,16 @@ namespace TiltBrush
     {
         private string m_User;
         private HttpClient m_httpClient;
-        public static Uri AllAssetsUri => new Uri("https://api.icosa.gallery/assets");
+        public static Uri AllAssetsUri => new Uri("icosa:https://api.icosa.gallery/assets");
 
         public static Uri CreateUserUri(string user)
         {
-            return new Uri($"https://api.icosa.gallery/users/{user}/assets");
+            return new Uri($"icosa:https://api.icosa.gallery/users/{user}/assets");
         }
 
         public IcosaCollection(HttpClient httpClient, Uri uri)
         {
-            if (uri.Segments.Length > 1)
+            if (uri.Segments.Contains("users"))
             {
                 m_User = uri.Segments[uri.Segments.Length - 2];
                 Name = $"Icosa : {m_User}";
