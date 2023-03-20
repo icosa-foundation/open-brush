@@ -152,6 +152,7 @@ function camerapath.toggleVisuals() end
 function camerapath.togglePreview() end
 function camerapath.delete() end
 function camerapath.record() end
+function camerapath.sample(time, loop, pingpong) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, radius, angle) end
@@ -179,11 +180,12 @@ function images.setPosition(index, position) end
 function images.setRotation(index, rotation) end
 layers.getActive = nil
 layers.count = nil
-function layers.getTransform(index) end
 function layers.getPosition(index) end
 function layers.setPosition(index, position) end
 function layers.getRotation(index) end
 function layers.setRotation(index, rotation) end
+function layers.getTransform(index) end
+function layers.setTransform(index, newTransform) end
 function layers.add() end
 function layers.clear(index) end
 function layers.delete(index) end
@@ -279,7 +281,28 @@ wand.speed = nil
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
 function waveform.sine(time, frequency) end
+function waveform.cosine(time, frequency) end
 function waveform.triangle(time, frequency) end
 function waveform.sawtooth(time, frequency) end
 function waveform.square(time, frequency) end
-function waveform.noise(time, frequency) end
+function waveform.pulse(time, frequency, pulseWidth) end
+function waveform.exponent(time, frequency) end
+function waveform.power(time, frequency, power) end
+function waveform.parabolic(time, frequency) end
+function waveform.exponentialSawtooth(time, frequency, exponent) end
+function waveform.perlinNoise(time, frequency) end
+function waveform.whiteNoise() end
+function waveform.brownNoise(previous) end
+function waveform.blueNoise(previous) end
+function waveform.sine(time, frequency, duration, sampleRate) end
+function waveform.cosine(time, frequency, duration, sampleRate) end
+function waveform.triangle(time, frequency, duration, sampleRate) end
+function waveform.sawtooth(time, frequency, duration, sampleRate) end
+function waveform.square(time, frequency, duration, sampleRate) end
+function waveform.pulse(time, frequency, duration, sampleRate) end
+function waveform.exponentialSawtoothWave(time, frequency, duration, sampleRate) end
+function waveform.parabolic(time, frequency, duration, sampleRate) end
+function waveform.perlinNoise(time, frequency, duration, sampleRate) end
+function waveform.whiteNoise(duration, sampleRate) end
+function waveform.brownNoise(previous, duration, sampleRate) end
+function waveform.blueNoise(previous, duration, sampleRate) end

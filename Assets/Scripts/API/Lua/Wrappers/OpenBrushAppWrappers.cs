@@ -446,10 +446,42 @@ namespace TiltBrush
     public static class WaveformApiWrapper
     {
         public static float sine(float time, float frequency) => WaveGenerator.SineWave(time, frequency);
+        public static float cosine(float time, float frequency) => WaveGenerator.CosineWave(time, frequency);
         public static float triangle(float time, float frequency) => WaveGenerator.TriangleWave(time, frequency);
         public static float sawtooth(float time, float frequency) => WaveGenerator.SawtoothWave(time, frequency);
         public static float square(float time, float frequency) => WaveGenerator.SquareWave(time, frequency);
-        public static float noise(float time, float frequency) => WaveGenerator.Noise(time, frequency);
+        public static float pulse(float time, float frequency, float pulseWidth) => WaveGenerator.PulseWave(time, frequency, pulseWidth);
+        public static float exponent(float time, float frequency) => WaveGenerator.ExponentWave(time, frequency);
+        public static float power(float time, float frequency, float power) => WaveGenerator.PowerWave(time, frequency, power);
+        public static float parabolic(float time, float frequency) => WaveGenerator.ParabolicWave(time, frequency);
+        public static float exponentialSawtooth(float time, float frequency, float exponent) => WaveGenerator.ExponentialSawtoothWave(time, frequency, exponent);
+        public static float perlinNoise(float time, float frequency) => WaveGenerator.PerlinNoise(time, frequency);
+        public static float whiteNoise() => WaveGenerator.WhiteNoise();
+        public static float brownNoise(float previous) => WaveGenerator.BrownNoise(previous);
+        public static float blueNoise(float previous) => WaveGenerator.BlueNoise(previous);
+
+        // Bulk methods
+        public static float[] sine(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SineWave, frequency, time, duration, sampleRate);
+        public static float[] cosine(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.CosineWave, frequency, time, duration, sampleRate);
+        public static float[] triangle(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.TriangleWave, frequency, time, duration, sampleRate);
+        public static float[] sawtooth(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SawtoothWave, frequency, time, duration, sampleRate);
+        public static float[] square(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SquareWave, frequency, time, duration, sampleRate);
+        public static float[] pulse(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SquareWave, frequency, time, duration, sampleRate);
+        public static float[] exponentialSawtoothWave(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SquareWave, frequency, time, duration, sampleRate);
+        public static float[] parabolic(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SquareWave, frequency, time, duration, sampleRate);
+        public static float[] perlinNoise(float time, float frequency, float duration, int sampleRate) => WaveGenerator.Generate(
+            WaveGenerator.SquareWave, frequency, time, duration, sampleRate);
+        public static float[] whiteNoise(float duration, int sampleRate) => WaveGenerator.Generate(WaveGenerator.WhiteNoise, duration, sampleRate);
+        public static float[] brownNoise(float previous, float duration, int sampleRate) => WaveGenerator.Generate(WaveGenerator.BrownNoise, previous, duration, sampleRate);
+        public static float[] blueNoise(float previous, float duration, int sampleRate) => WaveGenerator.Generate(WaveGenerator.BlueNoise, previous, duration, sampleRate);
     }
 
     [MoonSharpUserData]
@@ -461,7 +493,6 @@ namespace TiltBrush
 
     enum ItemType
     {
-
         Image,
         Model,
         Video,

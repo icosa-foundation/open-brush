@@ -72,10 +72,11 @@ namespace TiltBrush
 
         public enum ApiCategory
         {
-            PointerScript = 0, // Modifies the pointer position on every frame
-            ToolScript = 1, // A scriptable tool that can create strokes based on click/drag/release
-            SymmetryScript = 2, // Generates copies of each new stroke with different transforms
-            BackgroundScript = 3 // A general script that is called every frame
+            PointerScript = 0,   // Modifies the pointer position on every frame
+            ToolScript = 1,      // A scriptable tool that can create strokes based on click/drag/release
+            SymmetryScript = 2,  // Generates copies of each new stroke with different transforms
+            BackgroundScript = 3, // A general script that is called every frame
+            WaveformScript = 4, // Generates data used for audio reactive brushes
             // Scripts that modify brush settings for each new stroke (JitterScript?) Maybe combine with Pointerscript
             // Scripts that modify existing strokes (RepaintScript?)
             // Scriptable Brush mesh generation (BrushScript?)
@@ -85,6 +86,7 @@ namespace TiltBrush
         [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
         [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
         [NonSerialized] public bool PointerScriptsEnabled;
+        [NonSerialized] public bool WaveformScriptsEnabled;
         [NonSerialized] public bool BackgroundScriptsEnabled;
 
         private List<string> m_ScriptPathsToUpdate;
