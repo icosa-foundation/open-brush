@@ -802,7 +802,7 @@ namespace TiltBrush
             {
                 m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(
                     x => ApiMethods.LookupBrushDescriptor(x.String)
-                ).Where(x=>x!=null).ToList();
+                ).Where(x=>x != null).ToList();
             }
             else
             {
@@ -1439,13 +1439,13 @@ namespace TiltBrush
                 bool resetBrushes = true;
                 if (m_SymmetryColorShiftEnabled || CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                 {
-                    if (m_SymmetryPointerColors!=null && m_SymmetryPointerColors.Count > 0)
+                    if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
                     {
                         script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                         resetColors = false;
                     }
 
-                    if (m_SymmetryPointerBrushes!=null && m_SymmetryPointerBrushes.Count > 0)
+                    if (m_SymmetryPointerBrushes != null && m_SymmetryPointerBrushes.Count > 0)
                     {
                         script.SetBrush(m_SymmetryPointerBrushes[i % m_SymmetryPointerBrushes.Count]);
                         resetBrushes = false;
