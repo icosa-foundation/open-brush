@@ -133,12 +133,23 @@ namespace TiltBrush
         private async Task FetchSketchesToAtLeastAsync(int index)
         {
             int totalIndex = index + m_LookAhead;
+            bool updated = false;
             while (await m_ResourceEnumerator.MoveNextAsync() && totalIndex > NumSketches)
             {
+                if (!updated)
+                {
+                    OnSketchRefreshingChanged?.Invoke();
+                }
                 var resource = m_ResourceEnumerator.Current;
                 var fileInfo = new ResourceFileInfo(resource);
                 var sketch = new ResourceSketch(fileInfo);
                 m_Sketches.Add(sketch);
+                updated = true;
+            }
+            if (updated)
+            {
+                OnSketchRefreshingChanged?.Invoke();
+                OnChanged?.Invoke();
             }
         }
 

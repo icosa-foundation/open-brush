@@ -219,24 +219,19 @@ namespace TiltBrush
             SetVisibleSketchSet(0);
             RefreshPage();
 
-            Action refresh = () =>
-            {
-                if (m_ContactingServerMessage.activeSelf ||
-                    m_NoShowcaseMessage.activeSelf ||
-                    m_LoadingGallery.activeSelf)
-                {
-                    // Update the overlays more frequently when these overlays are shown to reflect whether
-                    // we are actively trying to get sketches from Poly.
-                    RefreshPage();
-                }
-            };
+            App.GoogleIdentity.OnLogout += OnSketchRefreshingChanged;
+        }
 
-            // TODO: We probably should just do a refresh when we enter a sketchset
-            // SketchCatalog.m_Instance.GetSet(1).OnSketchRefreshingChanged += refresh;
-            // SketchCatalog.m_Instance.GetSet(2).OnSketchRefreshingChanged += refresh;
-            // SketchCatalog.m_Instance.GetSet(3).OnSketchRefreshingChanged += refresh;
-            // Should we just loop through the root ones here?
-            App.GoogleIdentity.OnLogout += refresh;
+        void OnSketchRefreshingChanged()
+        {
+            if (m_ContactingServerMessage.activeSelf ||
+                m_NoShowcaseMessage.activeSelf ||
+                m_LoadingGallery.activeSelf)
+            {
+                // Update the overlays more frequently when these overlays are shown to reflect whether
+                // we are actively trying to get sketches from Poly.
+                RefreshPage();
+            }
         }
 
         void OnDestroy()
@@ -244,6 +239,7 @@ namespace TiltBrush
             if (CurrentSketchSet != null)
             {
                 CurrentSketchSet.OnChanged -= OnSketchSetDirty;
+                CurrentSketchSet.OnSketchRefreshingChanged -= OnSketchRefreshingChanged;
             }
         }
 
@@ -284,12 +280,14 @@ namespace TiltBrush
                 if (CurrentSketchSet != null)
                 {
                     CurrentSketchSet.OnChanged -= OnSketchSetDirty;
+                    CurrentSketchSet.OnSketchRefreshingChanged -= OnSketchRefreshingChanged;
                 }
 
                 // Cache new set.
                 m_SelectedStack = stackIndex;
                 CurrentSketchSet = m_SetStacks[m_SelectedStack].Peek();
                 CurrentSketchSet.OnChanged += OnSketchSetDirty;
+                CurrentSketchSet.OnSketchRefreshingChanged += OnSketchRefreshingChanged;
                 CurrentSketchSet.RequestRefresh();
 
                 // Tell all the icons which set to reference when loading sketches.
