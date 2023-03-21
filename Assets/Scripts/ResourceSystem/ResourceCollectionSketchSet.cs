@@ -173,6 +173,11 @@ namespace TiltBrush
             return m_Sketches[index].SceneFileInfo.HumanName;
         }
 
+        public IResource GetResource(int index)
+        {
+            return m_Sketches[index].ResourceFileInfo.Resource;
+        }
+
         public void DeleteSketch(int index)
         {
             // do nothing

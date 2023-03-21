@@ -23,6 +23,7 @@ namespace TiltBrush
             set
             {
                 Assert.IsTrue(value is ResourceFileInfo);
+                m_FileInfo = (ResourceFileInfo)value;
             }
         }
 

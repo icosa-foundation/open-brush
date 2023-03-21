@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -28,6 +29,7 @@ namespace TiltBrush
 
         [SerializeField] private InspectSketchButton m_MenuButton;
         [SerializeField] private GameObject m_Warning;
+        [SerializeField] private TextMeshPro m_SketchName;
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
 
@@ -84,6 +86,22 @@ namespace TiltBrush
             get { return m_Warning != null && m_Warning.activeSelf; }
         }
 
+        public string SketchName
+        {
+            set
+            {
+                if (m_SketchName != null)
+                {
+                    m_SketchName.gameObject.SetActive(value != null);
+                    m_SketchName.text = value ?? "";
+                }
+            }
+            get
+            {
+                return (m_SketchName?.gameObject.activeSelf ?? false) ? m_SketchName.text : null;
+            }
+        }
+
         void RefreshDetails()
         {
             m_MenuButton.SetSketchDetails(m_SketchIndex, SketchSet.SketchSetInstance);
@@ -105,6 +123,16 @@ namespace TiltBrush
             {
                 m_Warning.GetComponent<Renderer>().material = m_SizeOk ? m_WarningMaterial : m_ErrorMaterial;
             }
+            if (m_SketchSet is ResourceCollectionSketchSet collectionSet
+                && m_SketchSet.IsSketchIndexValid(m_SketchIndex)
+                && collectionSet.GetResource(m_SketchIndex) is IResourceCollection collection)
+            {
+                SketchName = collection.Name;
+            }
+            else
+            {
+                SketchName = null;
+            }
         }
 
         public void UpdateUvOffsetAndScale(Vector2 offset, Vector2 scale)
@@ -124,6 +152,7 @@ namespace TiltBrush
             base.Awake();
             m_UIComponentManager = GetComponent<UIComponentManager>();
             WarningVisible = false;
+            SketchName = null;
             m_DynamicUvScale = Vector2.one;
             m_DynamicUvOffset = Vector2.zero;
             m_DynamicUvTransitionValue = 0.0f;
