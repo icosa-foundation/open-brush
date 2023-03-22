@@ -206,6 +206,15 @@ function path.transform(path, transform) end
 function path.translate(path, amount) end
 function path.rotate(path, amount) end
 function path.scale(path, amount) end
+visualizer.sampleRate = nil
+visualizer.duration = nil
+function visualizer.enableScripting(name) end
+function visualizer.disableScripting() end
+function visualizer.setWaveform(data) end
+function visualizer.setFft(data1, data2, data3, data4) end
+function visualizer.setBeats(x, y, z, w) end
+function visualizer.setBeatAccumulators(x, y, z, w) end
+function visualizer.setBandPeak(peak) end
 function selection.duplicate() end
 function selection.group() end
 function selection.invert() end
@@ -294,15 +303,17 @@ function waveform.perlinNoise(time, frequency) end
 function waveform.whiteNoise() end
 function waveform.brownNoise(previous) end
 function waveform.blueNoise(previous) end
-function waveform.sine(time, frequency, duration, sampleRate) end
-function waveform.cosine(time, frequency, duration, sampleRate) end
-function waveform.triangle(time, frequency, duration, sampleRate) end
-function waveform.sawtooth(time, frequency, duration, sampleRate) end
-function waveform.square(time, frequency, duration, sampleRate) end
-function waveform.pulse(time, frequency, duration, sampleRate) end
-function waveform.exponentialSawtoothWave(time, frequency, duration, sampleRate) end
-function waveform.parabolic(time, frequency, duration, sampleRate) end
-function waveform.perlinNoise(time, frequency, duration, sampleRate) end
-function waveform.whiteNoise(duration, sampleRate) end
-function waveform.brownNoise(previous, duration, sampleRate) end
-function waveform.blueNoise(previous, duration, sampleRate) end
+function waveform.sine(time, frequency, duration, sampleRate, amplitude) end
+function waveform.cosine(time, frequency, duration, sampleRate, amplitude) end
+function waveform.triangle(time, frequency, duration, sampleRate, amplitude) end
+function waveform.sawtooth(time, frequency, duration, sampleRate, amplitude) end
+function waveform.square(time, frequency, duration, sampleRate, amplitude) end
+function waveform.exponent(time, frequency, duration, sampleRate, amplitude) end
+function waveform.parabolic(time, frequency, duration, sampleRate, amplitude) end
+function waveform.pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
+function waveform.power(time, frequency, power, duration, sampleRate, amplitude) end
+function waveform.exponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
+function waveform.perlinNoise(time, frequency, duration, sampleRate, amplitude) end
+function waveform.whiteNoise(duration, sampleRate, amplitude) end
+function waveform.brownNoise(previous, duration, sampleRate, amplitude) end
+function waveform.blueNoise(previous, duration, sampleRate, amplitude) end

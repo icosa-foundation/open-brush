@@ -168,7 +168,7 @@ namespace TiltBrush
         public static void setFft(float[] data1, float[] data2, float[] data3, float[] data4) => VisualizerManager.m_Instance.InjectScriptedFft(data1, data2, data3, data4);
         public static void setBeats(float x, float y, float z, float w) => VisualizerManager.m_Instance.InjectScriptedBeats(new Vector4(x, y, z, w));
         public static void setBeatAccumulators(float x, float y, float z, float w) => VisualizerManager.m_Instance.InjectScriptedBeatAccumulator(new Vector4(x, y, z, w));
-        public static void setBandPeaks(float x, float y, float z) => VisualizerManager.m_Instance.InjectBandPeaks(new Vector4(x, 0, y, z));
+        public static void setBandPeak(float peak) => VisualizerManager.m_Instance.InjectBandPeaks(new Vector4(0, peak, 0, 0));
     }
 
 
