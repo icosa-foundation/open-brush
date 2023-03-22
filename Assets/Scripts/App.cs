@@ -393,6 +393,14 @@ namespace TiltBrush
             Switchboard.TriggerAudioReactiveStateChanged();
         }
 
+        public void AudioReactiveBrushesActive(bool active)
+        {
+            m_RequestingAudioReactiveMode = ActiveCanvas;
+            AudioCaptureManager.m_Instance.CaptureAudio(active);
+            VisualizerManager.m_Instance.EnableVisuals(active);
+            Switchboard.TriggerAudioReactiveStateChanged();
+        }
+
         public double SketchTimeToLevelLoadTime(double sketchTime)
         {
             return sketchTime + m_sketchTimeBase;

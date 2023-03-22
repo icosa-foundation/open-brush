@@ -94,40 +94,72 @@ namespace TiltBrush
             _ => 0
         };
 
-        public static float[] Generate(Func<float, float, float> func, float freq, float startTime, float duration, int sampleRate)
+        // Bulk generators
+
+        // Zero parameter waveforms
+        public static float[] Generate(Func<float> func, float duration, int sampleRate, float amplitude=1)
         {
             int numSamples = Mathf.FloorToInt(duration * sampleRate);
-            return Generate(func, freq, startTime, numSamples, 1f / sampleRate);
+            return Generate(func, numSamples, amplitude);
         }
-
-        public static float[] Generate(Func<float, float, float> func, float freq, float startTime, int numSamples, float timeDelta)
+        public static float[] Generate(Func<float> func, int numSamples, float amplitude=1)
         {
             var samples = new float[numSamples];
             for (int i = 0; i < numSamples; i++)
             {
-                samples[i] = func(startTime + timeDelta * i, freq);
+                samples[i] = func() * amplitude;
             }
             return samples;
         }
 
-        public static float[] Generate(Func<float, float> func, float previous, float duration, int sampleRate)
+        // One parameter waveforms
+        public static float[] Generate(Func<float, float> func, float duration, int sampleRate, float amplitude=1)
         {
             int numSamples = Mathf.FloorToInt(duration * sampleRate);
+            return Generate(func, numSamples, amplitude);
+        }
+        public static float[] Generate(Func<float, float> func, int numSamples, float amplitude=1)
+        {
+            float previous = 0;
             var samples = new float[numSamples];
             for (int i = 0; i < numSamples; i++)
             {
-                samples[i] = func(previous);
+                samples[i] = func(previous) * amplitude;
             }
             return samples;
         }
 
-        public static float[] Generate(Func<float> func, float duration, int sampleRate)
+
+        // Two parameter waveforms
+
+        public static float[] Generate(Func<float, float, float> func, float freq, float startTime, float duration, int sampleRate, float amplitude=1)
         {
             int numSamples = Mathf.FloorToInt(duration * sampleRate);
+            return Generate(func, freq, startTime, numSamples, 1f / sampleRate, amplitude);
+        }
+        public static float[] Generate(Func<float, float, float> func, float freq, float startTime, int numSamples, float timeDelta, float amplitude=1)
+        {
             var samples = new float[numSamples];
             for (int i = 0; i < numSamples; i++)
             {
-                samples[i] = func();
+                samples[i] = func(startTime + timeDelta * i, freq) * amplitude;
+            }
+            return samples;
+        }
+
+        // Three parameter waveforms
+
+        public static float[] Generate(Func<float, float, float, float> func, float freq, float param2, float startTime, float duration, int sampleRate, float amplitude=1)
+        {
+            int numSamples = Mathf.FloorToInt(duration * sampleRate);
+            return Generate(func, freq, param2, startTime, numSamples, 1f / sampleRate, amplitude);
+        }
+        public static float[] Generate(Func<float, float, float, float> func, float freq, float param2, float startTime, int numSamples, float timeDelta, float amplitude=1)
+        {
+            var samples = new float[numSamples];
+            for (int i = 0; i < numSamples; i++)
+            {
+                samples[i] = func(startTime + timeDelta * i, freq, param2) * amplitude;
             }
             return samples;
         }
