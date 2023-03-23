@@ -456,6 +456,30 @@ namespace TiltBrush
             }
             return meta;
         }
+
+        public AnimationMetadata AnimationTracksSerialized()
+        {
+      
+
+       
+            var meta = new AnimationMetadata();
+            var layers = LayerCanvases.ToArray();
+            meta.Tracks = new AnimationTrackMetadata[layers.Count()];
+      
+
+            for (var i = 0; i < layers.Length; i++)
+            {
+                var layer = layers[i];
+                meta.Tracks[i] = new AnimationTrackMetadata
+                {
+                    Visible = layer.gameObject.activeSelf,
+                    Name = layer.name
+                };
+            }
+
+            meta.numFrames =  animationUI_manager.timeline.Count;
+            return meta;
+        }
     }
 
 } // namespace TiltBrush

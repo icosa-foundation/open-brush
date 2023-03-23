@@ -199,6 +199,25 @@ namespace TiltBrush.Animation{
             return (-1,-1);
         }
 
+        public List<List<CanvasScript>> getTrackCanvases()
+        {
+           List<List<CanvasScript>> timelineCavses = new List<List<CanvasScript>>();
+            for (int i=0;i<timeline.Count;i++){
+
+                List<CanvasScript> frameLayers = new List<CanvasScript>();
+                
+                for (int l=0;l<timeline[i].layers.Count;l++){
+
+                        frameLayers.Add(timeline[i].layers[l].canvas);
+                };
+
+                timelineCavses.Add(frameLayers);
+            }
+
+            return timelineCavses;
+        }
+
+
         public void printTimeline(){
             String timelineString = "";
             
