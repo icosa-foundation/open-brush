@@ -30,6 +30,6 @@ namespace TiltBrush
         new string Name { get; set; }
         new string Description { get; set; }
         Task<Stream> GetWriteStreamAsync();
-
+        bool Delete();
     }
 }

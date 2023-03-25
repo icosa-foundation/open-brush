@@ -185,6 +185,12 @@ namespace TiltBrush
         {
             throw new NotImplementedException();
         }
+
+        public bool Delete(IResource resource)
+        {
+            return false;
+        }
+
         public event Action OnChanged;
         public event Action OnRefreshingChanged;
     }

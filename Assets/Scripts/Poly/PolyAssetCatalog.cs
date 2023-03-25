@@ -693,31 +693,33 @@ namespace TiltBrush
             // Json deserializing is in a separate method that doesn't access Unity objects so that it
             // can be called on a thread. The json deserializing can be pretty slow and can cause
             // frame drops if performed on the main thread.
-            Stream metadata = await SaveLoadScript.GetMetadataReadStreamAsync(sceneFileInfo);
-            if (metadata == null)
+            await using (Stream metadata = await SaveLoadScript.GetMetadataReadStreamAsync(sceneFileInfo))
             {
-                if (sceneFileInfo.Exists)
+                if (metadata == null)
                 {
-                    // ??? Let's try to provoke an exception to propagate to the caller
-                    using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
-                    throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                    if (sceneFileInfo.Exists)
+                    {
+                        // ??? Let's try to provoke an exception to propagate to the caller
+                        using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
+                        throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                    }
+                    else
+                    {
+                        throw new Exception(
+                            "Reading metadata from nonexistent " +
+                            $"{sceneFileInfo.InfoType} {sceneFileInfo.HumanName}");
+                    }
                 }
-                else
+                using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
                 {
-                    throw new Exception(
-                        "Reading metadata from nonexistent " +
-                        $"{sceneFileInfo.InfoType} {sceneFileInfo.HumanName}");
+                    var jsonData = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
+                    if (SaveLoadScript.m_Instance.LastMetadataError != null)
+                    {
+                        throw new Exception($"Deserialize error: {SaveLoadScript.m_Instance.LastMetadataError}");
+                    }
+                    if (jsonData.ModelIndex == null) { return null; }
+                    return jsonData.ModelIndex.Select(m => m.AssetId).Where(a => a != null).ToList();
                 }
-            }
-            using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
-            {
-                var jsonData = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
-                if (SaveLoadScript.m_Instance.LastMetadataError != null)
-                {
-                    throw new Exception($"Deserialize error: {SaveLoadScript.m_Instance.LastMetadataError}");
-                }
-                if (jsonData.ModelIndex == null) { return null; }
-                return jsonData.ModelIndex.Select(m => m.AssetId).Where(a => a != null).ToList();
             }
         }
 

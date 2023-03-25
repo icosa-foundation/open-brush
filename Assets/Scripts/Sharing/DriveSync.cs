@@ -986,7 +986,7 @@ namespace TiltBrush
         {
             var hints = new DriveData.File.ContentHintsData();
             var fileInfo = new DiskSceneFileInfo(path);
-            using (var thumbStream = await fileInfo.GetReadStreamAsync(TiltFile.FN_THUMBNAIL))
+            await using (var thumbStream = await fileInfo.GetReadStreamAsync(TiltFile.FN_THUMBNAIL))
             {
                 var thumbBytes = new byte[thumbStream.Length];
                 int read = await thumbStream.ReadAsync(thumbBytes, 0, thumbBytes.Length);

@@ -27,6 +27,7 @@ namespace TiltBrush
             m_IconsToLoad = new ConcurrentQueue<int>();
             m_Collection = collection;
             m_ResourceEnumerator = m_Collection.ContentsAsync().GetAsyncEnumerator();
+            m_Collection.OnChanged += RequestRefresh;
         }
 
         public string SketchSetType => m_Collection?.Uri?.Scheme ?? "";
@@ -99,7 +100,7 @@ namespace TiltBrush
             }
 
             var tilt = new DotTiltFile(resourceSketch.ResourceFileInfo.Resource);
-            using (var thumbStream = await tilt.GetSubFileAsync(TiltFile.FN_THUMBNAIL))
+            await using (var thumbStream = await tilt.GetSubFileAsync(TiltFile.FN_THUMBNAIL))
             {
                 if (thumbStream == null)
                 {
@@ -180,7 +181,10 @@ namespace TiltBrush
 
         public void DeleteSketch(int index)
         {
-            // do nothing
+            if (m_Collection.Delete(m_Sketches[index].ResourceFileInfo.Resource))
+            {
+                RequestRefresh();
+            }
         }
 
         public void PrecacheSketchModels(int index)
@@ -202,7 +206,10 @@ namespace TiltBrush
 
         public void RequestRefresh()
         {
-            // Not sure we have to do anything here
+            if (!IsActivelyRefreshingSketches)
+            {
+                m_Refreshing = FetchSketchesToAtLeastAsync(m_Sketches.Count - m_LookAhead);
+            }
         }
 
         public void Update()

@@ -29,5 +29,11 @@ namespace TiltBrush
         {
             throw new System.NotImplementedException();
         }
+
+        public bool Delete()
+        {
+            File.Delete(m_Path);
+            return !File.Exists(m_Path);
+        }
     }
 }

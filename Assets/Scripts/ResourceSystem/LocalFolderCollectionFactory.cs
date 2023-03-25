@@ -92,7 +92,27 @@ namespace TiltBrush
             m_Resources.AddRange(m_Dir.EnumerateDirectories().Where(dirInfo => !dirInfo.Name.StartsWith("."))
                 .Select(dirInfo => new LocalFolderCollection(dirInfo.FullName, dirInfo.Name, m_Icon)));
             m_Resources.AddRange(m_Dir.EnumerateFiles("*.tilt").Select(fileInfo => new WritableLocalFileResource(fileInfo.FullName)));
+            OnChanged?.Invoke();
         }
+
+        public bool Delete(IResource resource)
+        {
+            if (!m_Resources.Contains(resource))
+            {
+                return false;
+            }
+            if (resource is IWritableResource writableResource)
+            {
+                bool success = writableResource.Delete();
+                if (success)
+                {
+                    Refresh();
+                }
+                return success;
+            }
+            return false;
+        }
+
         public event Action OnChanged;
         public event Action OnRefreshingChanged;
 

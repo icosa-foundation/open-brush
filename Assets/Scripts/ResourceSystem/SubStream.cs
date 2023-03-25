@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 namespace TiltBrush
 {
     /// <summary>
@@ -16,6 +17,12 @@ namespace TiltBrush
             m_Stream = original;
             m_Offset = m_Stream.Position;
             m_Position = m_Stream.Position;
+        }
+
+        public override async ValueTask DisposeAsync()
+        {
+            await base.DisposeAsync();
+            await m_Stream.DisposeAsync();
         }
 
         public override int Read(byte[] buffer, int offset, int count)

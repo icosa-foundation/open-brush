@@ -308,14 +308,16 @@ namespace TiltBrush
         public async Task<SketchMetadata> ReadMetadataAsync()
         {
             SketchMetadata metadata = null;
-            var stream = await SaveLoadScript.GetMetadataReadStreamAsync(this);
-            if (stream != null)
+            await using (var stream = await SaveLoadScript.GetMetadataReadStreamAsync(this))
             {
-                using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
+                if (stream != null)
                 {
-                    metadata = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
-                    m_SourceId = metadata.SourceId;
-                    m_AssetId = metadata.AssetId;
+                    using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
+                    {
+                        metadata = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
+                        m_SourceId = metadata.SourceId;
+                        m_AssetId = metadata.AssetId;
+                    }
                 }
             }
             return metadata;

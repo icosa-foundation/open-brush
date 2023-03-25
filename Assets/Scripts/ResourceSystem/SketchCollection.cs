@@ -69,7 +69,7 @@ namespace TiltBrush
             // If we do not get an icon, get one from the file?
 
             var tilt = new DotTiltFile(resource);
-            using (var thumbStream = await tilt.GetSubFileAsync(DotTiltFile.FN_THUMBNAIL))
+            await using (var thumbStream = await tilt.GetSubFileAsync(DotTiltFile.FN_THUMBNAIL))
             {
                 if (thumbStream == null)
                 {

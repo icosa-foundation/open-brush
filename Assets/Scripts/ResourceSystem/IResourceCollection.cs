@@ -8,6 +8,9 @@ namespace TiltBrush
         int NumResources { get; }
         IAsyncEnumerable<IResource> ContentsAsync();
         void Refresh();
+
+        bool Delete(IResource resource);
+
         event Action OnChanged;
         event Action OnRefreshingChanged;
 

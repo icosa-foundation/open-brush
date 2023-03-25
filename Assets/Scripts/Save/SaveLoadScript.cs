@@ -599,7 +599,7 @@ namespace TiltBrush
 
             m_LastSceneIsLegacy = false;
             SketchMetadata jsonData;
-            using (Stream metadata = await GetMetadataReadStreamAsync(fileInfo))
+            await using (Stream metadata = await GetMetadataReadStreamAsync(fileInfo))
             {
                 if (metadata == null)
                 {
@@ -695,7 +695,7 @@ namespace TiltBrush
             var oldGroupToNewGroup = new Dictionary<int, int>();
 
             // Load sketch
-            using (var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH))
+            await using (var stream = await fileInfo.GetReadStreamAsync(TiltFile.FN_SKETCH))
             {
                 Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                 bool legacySketch;

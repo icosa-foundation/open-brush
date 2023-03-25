@@ -11,6 +11,60 @@ namespace TiltBrush
 {
     public class DotTiltFile
     {
+        public class SubFileStream : Stream
+        {
+            private Stream m_OriginalStream;
+            private SubStream m_SubStream;
+            private ZipArchive m_Archive;
+            private ZipArchiveEntry m_Entry;
+            private Stream m_Stream;
+            public SubFileStream(Stream stream, string filename)
+            {
+                m_SubStream = new SubStream(stream);
+                m_Archive = new ZipArchive(m_SubStream, ZipArchiveMode.Read, leaveOpen: false);
+                m_Entry = m_Archive.GetEntry(filename);
+                m_Stream = m_Entry.Open();
+            }
+            public override async ValueTask DisposeAsync()
+            {
+                await base.DisposeAsync();
+                await m_Stream.DisposeAsync();
+                m_Archive.Dispose();
+                await m_SubStream.DisposeAsync();
+                await m_OriginalStream.DisposeAsync();
+            }
+            public override void Flush()
+            {
+                m_Stream.Flush();
+            }
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                return m_Stream.Read(buffer, offset, count);
+            }
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return m_Stream.Seek(offset, origin);
+            }
+            public override void SetLength(long value)
+            {
+                m_Stream.SetLength(value);
+            }
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                m_Stream.Write(buffer, offset, count);
+            }
+            public override bool CanRead => m_Stream.CanRead;
+            public override bool CanSeek => m_Stream.CanSeek;
+            public override bool CanWrite => m_Stream.CanWrite;
+            public override long Length => m_Stream.Length;
+            public override long Position
+            {
+                get => m_Stream.Position;
+                set { m_Stream.Position = value; }
+            }
+        }
+
+
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
         private struct TiltZipHeader
         {
@@ -69,7 +123,10 @@ namespace TiltBrush
 
         public async Task<bool> VerifyTiltHeaderAsync()
         {
-            return ReadAndVerifyTiltHeader(await GetStreamAsync());
+            await using (var stream = await GetStreamAsync())
+            {
+                return ReadAndVerifyTiltHeader(stream);
+            }
         }
 
         public bool ReadAndVerifyTiltHeader(Stream stream)
@@ -116,15 +173,7 @@ namespace TiltBrush
                 return null;
             }
 
-            var subStream = new SubStream(stream);
-            var archive = new ZipArchive(subStream, ZipArchiveMode.Read);
-            var entry = archive.GetEntry(filename);
-            if (entry == null)
-            {
-                return null;
-            }
-
-            return entry.Open();
+            return new SubFileStream(stream, filename);
         }
 
         public async Task<Stream> GetMetaDataStreamAsync()
