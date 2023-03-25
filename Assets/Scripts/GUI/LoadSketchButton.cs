@@ -238,7 +238,15 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.SketchSetType == FileSketchSet.TypeName);
+            bool isWritable = m_SketchSet.SketchSetType == FileSketchSet.TypeName;
+            if (m_SketchSet is ResourceCollectionSketchSet resourceSet)
+            {
+                if (m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex) is ResourceFileInfo fileInfo)
+                {
+                    isWritable |= fileInfo.Resource is IWritableResource;
+                }
+            }
+            m_MenuButton.gameObject.SetActive(isWritable);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);

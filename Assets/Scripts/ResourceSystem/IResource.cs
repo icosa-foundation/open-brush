@@ -27,8 +27,9 @@ namespace TiltBrush
 
     public interface IWritableResource : IResource
     {
+        new string Name { get; set; }
+        new string Description { get; set; }
+        Task<Stream> GetWriteStreamAsync();
 
     }
-
-
 }

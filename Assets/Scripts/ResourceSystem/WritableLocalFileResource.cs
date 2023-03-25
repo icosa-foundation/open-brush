@@ -1,3 +1,5 @@
+using System.IO;
+using System.Threading.Tasks;
 namespace TiltBrush
 {
     public class WritableLocalFileResource : LocalFileResource, IWritableResource
@@ -7,5 +9,25 @@ namespace TiltBrush
 
         }
 
+        public string Name
+        {
+            get => base.Name;
+            set
+            {
+                throw new System.NotImplementedException();
+            }
+        }
+        public string Description
+        {
+            get => base.Description;
+            set
+            {
+                throw new System.NotImplementedException();
+            }
+        }
+        public async Task<Stream> GetWriteStreamAsync()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

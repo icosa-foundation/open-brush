@@ -91,7 +91,7 @@ namespace TiltBrush
             m_Resources = new List<IResource>();
             m_Resources.AddRange(m_Dir.EnumerateDirectories().Where(dirInfo => !dirInfo.Name.StartsWith("."))
                 .Select(dirInfo => new LocalFolderCollection(dirInfo.FullName, dirInfo.Name, m_Icon)));
-            m_Resources.AddRange(m_Dir.EnumerateFiles("*.tilt").Select(fileInfo => new LocalFileResource(fileInfo.FullName)));
+            m_Resources.AddRange(m_Dir.EnumerateFiles("*.tilt").Select(fileInfo => new WritableLocalFileResource(fileInfo.FullName)));
         }
         public event Action OnChanged;
         public event Action OnRefreshingChanged;
