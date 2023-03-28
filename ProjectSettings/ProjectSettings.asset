@@ -16,8 +16,8 @@ PlayerSettings:
   productName: Open Brush
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
-  m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 0
+  m_SplashScreenBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
   m_SplashScreenAnimation: 0
@@ -85,7 +85,7 @@ PlayerSettings:
   Prepare IOS For Recording: 0
   Force IOS Speakers When Recording: 0
   deferSystemGesturesMode: 0
-  hideHomeButton: 0
+  hideHomeButton: 1
   submitAnalytics: 0
   usePlayerLog: 1
   bakeCollisionMeshes: 0
@@ -164,7 +164,7 @@ PlayerSettings:
     Tizen: com.yourcompany.yourproduct
     WebGL: com.yourcompany.yourproduct
     Windows Store Apps: com.yourcompany.yourproduct
-    iPhone: com.yourcompany.yourproduct
+    iPhone: foundation.icosa.openbrush
     tvOS: com.yourcompany.yourproduct
   buildNumber:
     Standalone: 0
@@ -187,7 +187,7 @@ PlayerSettings:
   StripUnusedMeshComponents: 0
   VertexChannelCompressionMask: 4054
   iPhoneSdkVersion: 988
-  iOSTargetOSVersionString: 11.0
+  iOSTargetOSVersionString: 12.0
   tvOSSdkVersion: 0
   tvOSRequireExtendedGameController: 0
   tvOSTargetOSVersionString: 11.0
@@ -514,7 +514,8 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: Not Used
+  cameraUsageDescription: Cardboard SDK requires camera permission to read the QR
+    code (required to get the encoded device parameters).
   locationUsageDescription: 
   microphoneUsageDescription: Not Used
   bluetoothUsageDescription: 
@@ -891,7 +892,7 @@ PlayerSettings:
   luminVersion:
     m_VersionCode: 1
     m_VersionName: 
-  apiCompatibilityLevel: 6
+  apiCompatibilityLevel: 3
   activeInputHandler: 1
   cloudProjectId: 
   framebufferDepthMemorylessMode: 0

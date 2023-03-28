@@ -52,6 +52,14 @@ MonoBehaviour:
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4
+  - m_Id: scoped:project:OpenUPM
+    m_Name: OpenUPM
+    m_Url: https://package.openupm.com
+    m_Scopes:
+    - com.google.xr
+    m_IsDefault: 0
+    m_Capabilities: 0
+    m_ConfigSource: 4
   m_UserSelectedRegistryName: Vive
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:

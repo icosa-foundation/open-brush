@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.google.xr.cardboard": "1.20.0",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
@@ -75,6 +76,13 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
+      ]
+    },
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.google.xr"
       ]
     }
   ]

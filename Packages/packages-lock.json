@@ -6,6 +6,16 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.google.xr.cardboard": {
+      "version": "1.20.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.xr.management": "3.2.9",
+        "com.unity.xr.legacyinputhelpers": "2.1.4"
+      },
+      "url": "https://package.openupm.com"
+    },
     "com.meta.xr.sdk.utilities": {
       "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
       "depth": 0,
