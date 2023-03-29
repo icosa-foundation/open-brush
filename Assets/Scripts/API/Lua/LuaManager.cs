@@ -584,8 +584,27 @@ namespace TiltBrush
         {
             ActiveScripts[category] = index;
             var script = GetActiveScript(category);
-            if (PointerScriptsEnabled) InitScript(script);
+            if (IsCategoryActive(category)) InitScript(script);
             ConfigureScriptButton(category);
+        }
+
+        private bool IsCategoryActive(LuaApiCategory category)
+        {
+            // We have booleans for Background and Pointer scripts
+            // For symmetry and tool scripts, the UI buttons bypass LuaManager to activate the mode
+            // So we have to query their status more indirectly.
+            switch (category)
+            {
+                case LuaApiCategory.BackgroundScript:
+                    return BackgroundScriptsEnabled;
+                case LuaApiCategory.PointerScript:
+                    return PointerScriptsEnabled;
+                case LuaApiCategory.SymmetryScript:
+                    return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
+                case LuaApiCategory.ToolScript:
+                    return SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.ScriptedTool;
+            }
+            return false;
         }
 
         public void ConfigureScriptButton(LuaApiCategory category)
