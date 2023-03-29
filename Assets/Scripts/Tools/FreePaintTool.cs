@@ -125,13 +125,24 @@ namespace TiltBrush
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
 
-            // Allow API command to override painting mode
-            m_PaintingActive = ApiManager.Instance.ForcePainting switch
+            // Allow API commands to override painting mode
+            switch (ApiManager.Instance.ForcePainting)
             {
-                ApiManager.ForcePaintingMode.ForcedOn => true,
-                ApiManager.ForcePaintingMode.ForcedOff => false,
-                _ => m_PaintingActive,
-            };
+                case ApiManager.ForcePaintingMode.ForcedOn:
+                    m_PaintingActive = true;
+                    break;
+                case ApiManager.ForcePaintingMode.ForcedOff:
+                    m_PaintingActive = false;
+                    break;
+                case ApiManager.ForcePaintingMode.ForceNewStroke:
+                    m_PaintingActive = false;
+                    ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.WasForceNewStroke;
+                    break;
+                case ApiManager.ForcePaintingMode.WasForceNewStroke:
+                    m_PaintingActive = true;
+                    ApiManager.Instance.ForcePainting = ApiManager.Instance.PreviousForcePaintingMode;
+                    break;
+            }
 
             if (m_BimanualTape)
             {

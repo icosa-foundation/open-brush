@@ -22,14 +22,14 @@ namespace TiltBrush
 {
     public class ScriptParametersPopUpWindow : OptionsPopUpWindow
     {
-        private LuaManager.ApiCategory m_ApiCategory;
+        private LuaApiCategory m_ApiCategory;
         private Table m_WidgetConfigs;
         private List<AdvancedSlider> m_Widgets;
 
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
             m_Widgets = GetComponentsInChildren<AdvancedSlider>().ToList();
-            m_ApiCategory = (LuaManager.ApiCategory)iCommandParam;
+            m_ApiCategory = (LuaApiCategory)iCommandParam;
             var script = LuaManager.Instance.GetActiveScript(m_ApiCategory);
             m_WidgetConfigs = LuaManager.Instance.GetWidgetConfigs(script);
             var kvs = m_WidgetConfigs.Pairs.ToList();

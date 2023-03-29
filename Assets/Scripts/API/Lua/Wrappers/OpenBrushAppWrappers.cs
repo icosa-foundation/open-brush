@@ -70,6 +70,7 @@ namespace TiltBrush
         public static Quaternion pastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
         public static void forcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
         public static void forcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
+        public static void forceNewStroke() => ApiMethods.ForceNewStroke();
 
         public static Vector3 lastColorPickedHsv
         {

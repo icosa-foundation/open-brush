@@ -56,7 +56,9 @@ namespace TiltBrush
         {
             None,
             ForcedOn,
-            ForcedOff
+            ForcedOff,
+            ForceNewStroke,
+            WasForceNewStroke,
         }
 
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
@@ -64,6 +66,7 @@ namespace TiltBrush
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
+        [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
         public BaseCommand ActiveUndo { get; set; }
 
         private Dictionary<string, string> m_UserScripts;
@@ -566,13 +569,13 @@ namespace TiltBrush
             html = html.Replace("{{commandsJson}}", commandsJson);
 
             html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.ToolScript))
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript))
             );
             html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.SymmetryScript))
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript))
             );
             html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
-                LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.PointerScript))
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
             );
 
             return html;
@@ -903,7 +906,7 @@ namespace TiltBrush
 
         public void EndUndo()
         {
-            if (ActiveUndo.HasChildren)
+            if (ActiveUndo!= null && ActiveUndo.HasChildren)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
             }

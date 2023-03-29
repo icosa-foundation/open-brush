@@ -22,7 +22,7 @@ public class ScriptUiNav : MonoBehaviour
 {
 
     [SerializeField] private TextMeshPro m_TextMesh;
-    [SerializeField] private LuaManager.ApiCategory m_ApiCategory;
+    [SerializeField] private LuaApiCategory m_ApiCategory;
     [SerializeField] private ActionButton m_CopyToUserScriptsFolder;
 
     public void Init()

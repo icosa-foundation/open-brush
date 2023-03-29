@@ -18,11 +18,8 @@ end
 
 function WhileTriggerPressed()
 
-    -- Ensure we're not painting when we reset the path
     if (frameCount == framesPerPath) then
-        brush.forcePaintingOff(true)
-    elseif (frameCount == 0) then
-        brush.forcePaintingOff(false)
+        brush.forceNewStroke()
     end
 
     frameCount = frameCount + 1

@@ -147,6 +147,7 @@ function brush.pastPosition(back) end
 function brush.pastRotation(back) end
 function brush.forcePaintingOn(active) end
 function brush.forcePaintingOff(active) end
+function brush.forceNewStroke() end
 function camerapath.render() end
 function camerapath.toggleVisuals() end
 function camerapath.togglePreview() end

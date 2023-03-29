@@ -32,19 +32,19 @@ public class ScriptUiNavMultiple : MonoBehaviour
 
     private void UpdateUi()
     {
-        m_CurrentBackgroundScriptName = LuaManager.Instance.GetScriptNames(LuaManager.ApiCategory.BackgroundScript)[m_CurrentBackgroundScriptIndex];
-        var script = LuaManager.Instance.Scripts[LuaManager.ApiCategory.BackgroundScript][m_CurrentBackgroundScriptName];
+        m_CurrentBackgroundScriptName = LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript)[m_CurrentBackgroundScriptIndex];
+        var script = LuaManager.Instance.Scripts[LuaApiCategory.BackgroundScript][m_CurrentBackgroundScriptName];
         m_TextMesh.text = m_CurrentBackgroundScriptName;
         m_CopyToUserScriptsFolder.gameObject.SetActive(script.Globals.Get(LuaNames.IsExampleScriptBool).Boolean);
         bool isActive = LuaManager.Instance.IsBackgroundScriptActive(m_CurrentBackgroundScriptName);
         m_ToggleBackgroundScript.IsToggledOn = isActive;
         m_TextMesh.text = m_CurrentBackgroundScriptName;
-        LuaManager.Instance.ActiveScripts[LuaManager.ApiCategory.BackgroundScript] = m_CurrentBackgroundScriptIndex;
+        LuaManager.Instance.ActiveScripts[LuaApiCategory.BackgroundScript] = m_CurrentBackgroundScriptIndex;
     }
 
     public void HandleChangeScript(int increment)
     {
-        int backgroundScriptCount = LuaManager.Instance.Scripts[LuaManager.ApiCategory.BackgroundScript].Count;
+        int backgroundScriptCount = LuaManager.Instance.Scripts[LuaApiCategory.BackgroundScript].Count;
         if (backgroundScriptCount == 0) return;
         int index = (int)Mathf.Repeat(m_CurrentBackgroundScriptIndex + increment, backgroundScriptCount);
         m_CurrentBackgroundScriptIndex = index;
@@ -53,7 +53,7 @@ public class ScriptUiNavMultiple : MonoBehaviour
 
     public void HandleCopyScriptToUserScriptFolder()
     {
-        var copied = LuaManager.Instance.CopyActiveScriptToUserScriptFolder(LuaManager.ApiCategory.BackgroundScript);
+        var copied = LuaManager.Instance.CopyActiveScriptToUserScriptFolder(LuaApiCategory.BackgroundScript);
         m_CopyToUserScriptsFolder.gameObject.SetActive(copied);
     }
 

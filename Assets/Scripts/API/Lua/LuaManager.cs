@@ -19,6 +19,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.Loaders;
 using MoonSharp.Interpreter.Platforms;
 
 #if UNITY_EDITOR
@@ -32,6 +33,18 @@ namespace TiltBrush
         Default,
         Pointer,
         Canvas,
+    }
+
+    public enum LuaApiCategory
+    {
+        PointerScript = 0,    // Modifies the pointer position on every frame
+        ToolScript = 1,       // A scriptable tool that can create strokes based on click/drag/release
+        SymmetryScript = 2,   // Generates copies of each new stroke with different transforms
+        BackgroundScript = 3, // A general script that is called every frame
+        // Scripts that modify brush settings for each new stroke (JitterScript?) Maybe combine with Pointerscript
+        // Scripts that modify existing strokes (RepaintScript?)
+        // Scriptable Brush mesh generation (BrushScript?)
+        // Same as above but applies to the current selection with maybe some logic based on index within selection
     }
 
     public static class LuaNames
@@ -68,23 +81,11 @@ namespace TiltBrush
         public static List<string> AutoCompleteEntries;
 #endif
 
-        public List<ApiCategory> ApiCategories => Enum.GetValues(typeof(ApiCategory)).Cast<ApiCategory>().ToList();
+        public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
         public int ScriptedWaveformSampleRate = 16000;
 
-        public enum ApiCategory
-        {
-            PointerScript = 0,   // Modifies the pointer position on every frame
-            ToolScript = 1,      // A scriptable tool that can create strokes based on click/drag/release
-            SymmetryScript = 2,  // Generates copies of each new stroke with different transforms
-            BackgroundScript = 3, // A general script that is called every frame
-            // Scripts that modify brush settings for each new stroke (JitterScript?) Maybe combine with Pointerscript
-            // Scripts that modify existing strokes (RepaintScript?)
-            // Scriptable Brush mesh generation (BrushScript?)
-            // Same as above but applies to the current selection with maybe some logic based on index within selection
-        }
-
-        [NonSerialized] public Dictionary<ApiCategory, SortedDictionary<string, Script>> Scripts;
-        [NonSerialized] public Dictionary<ApiCategory, int> ActiveScripts;
+        [NonSerialized] public Dictionary<LuaApiCategory, SortedDictionary<string, Script>> Scripts;
+        [NonSerialized] public Dictionary<LuaApiCategory, int> ActiveScripts;
         [NonSerialized] public bool PointerScriptsEnabled;
         [NonSerialized] public bool VisualizerScriptingEnabled;
         [NonSerialized] public bool BackgroundScriptsEnabled;
@@ -154,15 +155,16 @@ namespace TiltBrush
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
+            Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
             LuaCustomConverters.RegisterAll();
             InitScriptDataStructures();
             LoadExampleScripts();
             LoadUserScripts();
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
             panel.InitScriptUiNav();
-            ConfigureScriptButton(ApiCategory.PointerScript);
-            ConfigureScriptButton(ApiCategory.SymmetryScript);
-            ConfigureScriptButton(ApiCategory.ToolScript);
+            ConfigureScriptButton(LuaApiCategory.PointerScript);
+            ConfigureScriptButton(LuaApiCategory.SymmetryScript);
+            ConfigureScriptButton(LuaApiCategory.ToolScript);
         }
 
         private void Update()
@@ -177,7 +179,7 @@ namespace TiltBrush
                     var category = catMatch.Value;
                     var scriptName = scriptFilename.Substring(category.ToString().Length + 1);
                     LoadScriptFromPath(path);
-                    if (catMatch == ApiCategory.BackgroundScript)
+                    if (catMatch == LuaApiCategory.BackgroundScript)
                     {
                         if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
                         {
@@ -222,8 +224,8 @@ namespace TiltBrush
 
         public void InitScriptDataStructures()
         {
-            Scripts = new Dictionary<ApiCategory, SortedDictionary<string, Script>>();
-            ActiveScripts = new Dictionary<ApiCategory, int>();
+            Scripts = new Dictionary<LuaApiCategory, SortedDictionary<string, Script>>();
+            ActiveScripts = new Dictionary<LuaApiCategory, int>();
             foreach (var category in ApiCategories)
             {
                 Scripts[category] = new SortedDictionary<string, Script>();
@@ -250,9 +252,9 @@ namespace TiltBrush
             }
         }
 
-        private ApiCategory? TryGetCategoryFromScriptName(string scriptFilename)
+        private LuaApiCategory? TryGetCategoryFromScriptName(string scriptFilename)
         {
-            foreach (ApiCategory category in ApiCategories)
+            foreach (LuaApiCategory category in ApiCategories)
             {
                 var categoryName = category.ToString();
                 if (scriptFilename.StartsWith(categoryName)) return category;
@@ -282,7 +284,6 @@ namespace TiltBrush
 
         private string LoadScriptFromPath(string path)
         {
-
             Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             string contents;
             using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
@@ -446,7 +447,7 @@ namespace TiltBrush
             }
         }
 
-        public Script GetActiveScript(ApiCategory category)
+        public Script GetActiveScript(LuaApiCategory category)
         {
             string scriptName = GetScriptNames(category)[ActiveScripts[category]];
             return Scripts[category][scriptName];
@@ -467,20 +468,25 @@ namespace TiltBrush
                     LogLuaError(script, fnName, e);
                 }
             }
+            return result;
+        }
 
-            // A bit hacky but always reset ForcePainting modes when calling "End".
-            // (even if there is no "End" function defined)
-            // It was proving fairly complex to reliably enforce this in the scripts themselves
-            // It was hard to debug when it went wrong and it breaks the app in a confusing way.
-            // So just do it here to be certain...
-            if (fnName == LuaNames.End)
+        public void EndActiveScript(LuaApiCategory category)
+        {
+            var script = GetActiveScript(category);
+            EndScript(script);
+        }
+
+        public void EndScript(Script script)
+        {
+            if (script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
+                _CallScript(script, LuaNames.End);
                 ApiMethods.ForcePaintingOn(false);
                 ApiMethods.ForcePaintingOff(false);
                 UnsetAllTimers(script);
+                script.Globals.Set("_scriptHasBeenInitialized", DynValue.False);
             }
-
-            return result;
         }
 
         private void CallActiveBackgroundScripts(string fnName)
@@ -493,9 +499,9 @@ namespace TiltBrush
 
         private ScriptTrTransform CallActivePointerScript(string fnName)
         {
-            var script = GetActiveScript(ApiCategory.PointerScript);
+            var script = GetActiveScript(LuaApiCategory.PointerScript);
             DynValue result = _CallScript(script, fnName);
-            var space = _GetSpaceForActiveScript(ApiCategory.PointerScript);
+            var space = _GetSpaceForActiveScript(LuaApiCategory.PointerScript);
             var tr = TrTransform.identity;
             if (!Equals(result, DynValue.Nil)) tr = result.ToObject<TrTransform>();
             return new ScriptTrTransform(tr, space);
@@ -503,16 +509,16 @@ namespace TiltBrush
 
         public ScriptTrTransforms CallActiveToolScript(string fnName)
         {
-            var script = GetActiveScript(ApiCategory.ToolScript);
-            var space = _GetSpaceForActiveScript(ApiCategory.ToolScript);
+            var script = GetActiveScript(LuaApiCategory.ToolScript);
+            var space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
             var trs = _TrTransformsFromScript(fnName, script);
             return new ScriptTrTransforms(trs, space);
         }
 
         public ScriptTrTransforms CallActiveSymmetryScript(string fnName)
         {
-            var script = GetActiveScript(ApiCategory.SymmetryScript);
-            var space = _GetSpaceForActiveScript(ApiCategory.SymmetryScript);
+            var script = GetActiveScript(LuaApiCategory.SymmetryScript);
+            var space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
             var trs = _TrTransformsFromScript(fnName, script);
             return new ScriptTrTransforms(trs, space);
         }
@@ -532,14 +538,14 @@ namespace TiltBrush
             return trs;
         }
 
-        public DynValue GetSettingForActiveScript(ApiCategory category, string key)
+        public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)
         {
             var script = GetActiveScript(category);
             var settings = script.Globals.Get(LuaNames.Settings);
             return settings?.Table?.Get(key);
         }
 
-        private ScriptCoordSpace _GetSpaceForActiveScript(ApiCategory category)
+        private ScriptCoordSpace _GetSpaceForActiveScript(LuaApiCategory category)
         {
             ScriptCoordSpace space = ScriptCoordSpace.Default;
             var spaceVal = GetSettingForActiveScript(category, "space");
@@ -550,35 +556,39 @@ namespace TiltBrush
             return space;
         }
 
-        public void SetActiveScriptByName(ApiCategory category, string scriptName)
+        public void SetActiveScriptByName(LuaApiCategory category, string scriptName)
         {
             int index = GetScriptNames(category).IndexOf(scriptName);
             if (index != -1)
             {
+                _EndPreviousScript(category);
                 _SetActiveScript(category, index);
             }
         }
 
-        public void ChangeCurrentScript(ApiCategory category, int increment)
+        public void ChangeCurrentScript(LuaApiCategory category, int increment)
         {
             if (Scripts[category].Count == 0) return;
+            _EndPreviousScript(category);
             int index = (int)Mathf.Repeat(ActiveScripts[category] + increment, Scripts[category].Count);
             _SetActiveScript(category, index);
         }
 
-        private void _SetActiveScript(ApiCategory category, int index)
+        private void _EndPreviousScript(LuaApiCategory category)
         {
             var previousScript = GetActiveScript(category);
-            // TODO Only call this if previousScript has been initialized and hasn't already been ended
-            // Checking a method for null does this but only really as a side-effect
-            if (previousScript.Globals.Get("draw.path").Function != null) _CallScript(previousScript, LuaNames.End);
+            EndScript(previousScript);
+        }
+
+        private void _SetActiveScript(LuaApiCategory category, int index)
+        {
             ActiveScripts[category] = index;
             var script = GetActiveScript(category);
-            InitScript(script);
+            if (PointerScriptsEnabled) InitScript(script);
             ConfigureScriptButton(category);
         }
 
-        public void ConfigureScriptButton(ApiCategory category)
+        public void ConfigureScriptButton(LuaApiCategory category)
         {
             var script = GetActiveScript(category);
             var scriptName = script.Globals.Get(LuaNames.ScriptNameString).String;
@@ -595,14 +605,18 @@ namespace TiltBrush
 
         public void InitScript(Script script)
         {
-            var configs = GetWidgetConfigs(script);
-            foreach (var config in configs.Pairs)
+            if (!script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
-                if (config.Key.Type != DataType.String) continue;
-                // Ensure the value is set
-                GetOrSetWidgetCurrentValue(script, config);
+                var configs = GetWidgetConfigs(script);
+                foreach (var config in configs.Pairs)
+                {
+                    if (config.Key.Type != DataType.String) continue;
+                    // Ensure the value is set
+                    GetOrSetWidgetCurrentValue(script, config);
+                }
+                script.Globals.Set("_scriptHasBeenInitialized", DynValue.True); // Used by EndScript
+                _CallScript(script, LuaNames.Start);
             }
-            _CallScript(script, LuaNames.Start);
         }
 
         public void RegisterApiClasses(Script script)
@@ -641,11 +655,11 @@ namespace TiltBrush
             PointerScriptsEnabled = enable;
             if (enable)
             {
-                InitScript(GetActiveScript(ApiCategory.PointerScript));
+                InitScript(GetActiveScript(LuaApiCategory.PointerScript));
             }
             else
             {
-                CallActivePointerScript(LuaNames.End);
+                EndActiveScript(LuaApiCategory.PointerScript);
             }
         }
 
@@ -661,11 +675,14 @@ namespace TiltBrush
             }
             else
             {
-                CallActiveBackgroundScripts(LuaNames.Main);
+                foreach (var script in m_ActiveBackgroundScripts.Values)
+                {
+                    EndScript(script);
+                }
             }
         }
 
-        public List<string> GetScriptNames(ApiCategory category)
+        public List<string> GetScriptNames(LuaApiCategory category)
         {
             if (Scripts != null && Scripts.Count > 0)
             {
@@ -683,7 +700,7 @@ namespace TiltBrush
             return configs.IsNil() ? new Table(script) : configs.Table;
         }
 
-        public void SetScriptParameterForActiveScript(ApiCategory category, string paramName, float paramValue)
+        public void SetScriptParameterForActiveScript(LuaApiCategory category, string paramName, float paramValue)
         {
             var script = GetActiveScript(category);
             script.Globals.Set(paramName, DynValue.NewNumber(paramValue));
@@ -794,30 +811,29 @@ namespace TiltBrush
             }
         }
 
-        public bool ToggleBackgroundScript(string scriptToToggle)
+        public void ToggleBackgroundScript(string scriptToToggle)
         {
+            var script = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
             foreach (var scriptName in m_ActiveBackgroundScripts.Keys)
             {
                 if (scriptToToggle == scriptName)
                 {
                     m_ActiveBackgroundScripts.Remove(scriptToToggle);
-                    return false;
+                    if (BackgroundScriptsEnabled) EndScript(script);
                 }
             }
-            m_ActiveBackgroundScripts[scriptToToggle] = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
-            var script = Scripts[ApiCategory.BackgroundScript][scriptToToggle];
-            InitScript(script);
-            return true;
+            m_ActiveBackgroundScripts[scriptToToggle] = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
+            if (BackgroundScriptsEnabled) InitScript(script);
         }
 
-        public bool CopyActiveScriptToUserScriptFolder(ApiCategory category)
+        public bool CopyActiveScriptToUserScriptFolder(LuaApiCategory category)
         {
             var index = ActiveScripts[category];
             var scriptName = GetScriptNames(category)[index];
             return CopyScriptToUserScriptFolder(category, scriptName);
         }
 
-        public bool CopyScriptToUserScriptFolder(ApiCategory category, string scriptName)
+        public bool CopyScriptToUserScriptFolder(LuaApiCategory category, string scriptName)
         {
             var originalFilename = $"{category}.{scriptName}";
             var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");

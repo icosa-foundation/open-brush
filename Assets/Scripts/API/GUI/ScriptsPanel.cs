@@ -45,13 +45,13 @@ namespace TiltBrush
             LuaManager.Instance.EnableBackgroundScripts(btn.IsToggledOn);
         }
 
-        public void ConfigureScriptButton(LuaManager.ApiCategory category, string scriptName, string description)
+        public void ConfigureScriptButton(LuaApiCategory category, string scriptName, string description)
         {
             BaseButton btn = category switch
             {
-                LuaManager.ApiCategory.PointerScript => PointerScriptButton,
-                LuaManager.ApiCategory.ToolScript => ToolScriptButton,
-                LuaManager.ApiCategory.SymmetryScript => SymmetryScriptButton,
+                LuaApiCategory.PointerScript => PointerScriptButton,
+                LuaApiCategory.ToolScript => ToolScriptButton,
+                LuaApiCategory.SymmetryScript => SymmetryScriptButton,
                 _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
             };
             btn.SetDescriptionText($"{category}: {scriptName}");

@@ -785,7 +785,7 @@ namespace TiltBrush
 
         private void SetScriptedBrushesAndColors()
         {
-            var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
+            var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
 
             var luaColors = script.Globals.Get(LuaNames.Colors);
             if (!Equals(luaColors, DynValue.Nil))
@@ -814,7 +814,7 @@ namespace TiltBrush
         {
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
-                LuaManager.Instance.CallActiveSymmetryScript(LuaNames.End);
+                LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
             }
 
             int active = m_NumActivePointers;
@@ -831,7 +831,7 @@ namespace TiltBrush
                     active = 4;
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
-                    var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.SymmetryScript);
+                    var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
                     LuaManager.Instance.InitScript(script);
                     var trs = GetScriptedTransforms();
                     active = trs.Count;

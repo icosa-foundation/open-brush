@@ -62,7 +62,7 @@ namespace TiltBrush
 
             if (bEnable)
             {
-                var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.ToolScript);
+                var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.ToolScript);
                 LuaManager.Instance.InitScript(script);
 
                 m_AttachmentSphere.parent = InputManager.Brush.Geometry.ToolAttachPoint;
@@ -79,7 +79,7 @@ namespace TiltBrush
             }
             else
             {
-                LuaManager.Instance.CallActiveToolScript(LuaNames.End);
+                LuaManager.Instance.EndActiveScript(LuaApiCategory.ToolScript);
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
             }
@@ -140,7 +140,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaManager.ApiCategory.ToolScript, "previewType");
+                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, "previewType");
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                 if (drawnVector_GS.sqrMagnitude > 0)
@@ -216,7 +216,7 @@ namespace TiltBrush
 
         private void SetApiProperty(string key, object value)
         {
-            var script = LuaManager.Instance.GetActiveScript(LuaManager.ApiCategory.ToolScript);
+            var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.ToolScript);
             LuaManager.Instance.SetApiProperty(script, key, value);
         }
 

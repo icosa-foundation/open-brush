@@ -518,6 +518,13 @@ namespace TiltBrush
             }
         }
 
+        [ApiEndpoint("brush.new.stroke", "Ends the current stroke and starts a new one next frame")]
+        public static void ForceNewStroke()
+        {
+            ApiManager.Instance.PreviousForcePaintingMode = ApiManager.Instance.ForcePainting;
+            ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForceNewStroke;
+        }
+
         [ApiEndpoint("image.select", "Selects an image by index.")]
         public static void SelectImage(int index)
         {
@@ -533,7 +540,7 @@ namespace TiltBrush
         [ApiEndpoint("scripts.toolscript.activate", "Activate the given tool script")]
         public static void ActivateToolScript(string scriptName)
         {
-            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.ToolScript, scriptName);
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.ToolScript, scriptName);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.ScriptedTool);
         }
 
@@ -546,7 +553,7 @@ namespace TiltBrush
         [ApiEndpoint("scripts.symmetryscript.activate", "Activate the given symmetry script")]
         public static void ActivateSymmetryScript(string scriptName)
         {
-            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.SymmetryScript, scriptName);
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.SymmetryScript, scriptName);
             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
         }
 
@@ -559,7 +566,7 @@ namespace TiltBrush
         [ApiEndpoint("scripts.pointerscript.activate", "Activate the given pointer script")]
         public static void ActivatePointerScript(string scriptName)
         {
-            LuaManager.Instance.SetActiveScriptByName(LuaManager.ApiCategory.PointerScript, scriptName);
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.PointerScript, scriptName);
             LuaManager.Instance.PointerScriptsEnabled = true;
         }
 
