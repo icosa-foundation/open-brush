@@ -240,10 +240,12 @@ namespace TiltBrush
         {
             // Angle the pointer according to the user-defined pointer angle.
             (Vector3 pos_GS, Quaternion rot_GS) = GetPointerPosition();
-            Quaternion pointerRot = rot_GS;
 
             // Modify pointer position and rotation with stencils.
             WidgetManager.m_Instance.MagnetizeToStencils(ref pos_GS, ref rot_GS);
+
+            // Deciding where to capture this makes a big difference to the output
+            Quaternion pointerRot = rot_GS;
 
             if (m_BimanualTape)
             {
