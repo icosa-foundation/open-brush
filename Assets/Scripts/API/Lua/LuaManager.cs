@@ -833,14 +833,17 @@ namespace TiltBrush
         public void ToggleBackgroundScript(string scriptToToggle)
         {
             var script = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
+            var toRemove = new List<string>();
             foreach (var scriptName in m_ActiveBackgroundScripts.Keys)
             {
                 if (scriptToToggle == scriptName)
                 {
-                    m_ActiveBackgroundScripts.Remove(scriptToToggle);
+                    toRemove.Add(scriptToToggle);
+                    // Only call EndScript if background scripts are enabled globally
                     if (BackgroundScriptsEnabled) EndScript(script);
                 }
             }
+            toRemove.Select(x => m_ActiveBackgroundScripts.Remove(x));
             m_ActiveBackgroundScripts[scriptToToggle] = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
             if (BackgroundScriptsEnabled) InitScript(script);
         }

@@ -185,6 +185,7 @@ function layers.getPosition(index) end
 function layers.setPosition(index, position) end
 function layers.getRotation(index) end
 function layers.setRotation(index, rotation) end
+function layers.centerPivot(index) end
 function layers.getTransform(index) end
 function layers.setTransform(index, newTransform) end
 function layers.add() end

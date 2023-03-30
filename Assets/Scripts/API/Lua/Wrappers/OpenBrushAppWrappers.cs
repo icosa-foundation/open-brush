@@ -283,21 +283,42 @@ namespace TiltBrush
         public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
         public static void setPosition(int index, Vector3 position)
         {
-            var tr = App.Scene.LayerCanvases.ToList()[index].Pose;
+            var layer = App.Scene.LayerCanvases.ToList()[index];
+            var tr = layer.Pose;
             var newTransform = TrTransform.T(position);
             newTransform = App.Scene.Pose * newTransform;
             tr.translation = newTransform.translation;
-            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+            layer.Pose = tr;
         }
         public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
         public static void setRotation(int index, Quaternion rotation)
         {
-            var tr = App.Scene.LayerCanvases.ToList()[index].Pose;
+            var layer = App.Scene.LayerCanvases.ToList()[index];
+            var tr = layer.Pose;
             var newTransform = TrTransform.R(rotation);
             newTransform = App.Scene.Pose * newTransform;
             tr.rotation = newTransform.rotation;
-            App.Scene.LayerCanvases.ToList()[index].Pose = tr;
+            layer.Pose = tr;
         }
+
+        public static void centerPivot(int index)
+        {
+            var layer = App.Scene.LayerCanvases.ToList()[index];
+            var pose_WS = layer.Pose;
+
+            var bounds_CS = layer.GetCanvasBoundingBox(true);
+            var center_WS = bounds_CS.center + pose_WS.translation;
+            var offset = pose_WS.translation - center_WS;
+            pose_WS.translation -= offset;
+            layer.Pose = pose_WS;
+
+            var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(layer);
+            foreach (var stroke in strokes)
+            {
+                stroke.Recreate(TrTransform.T(offset));
+            }
+        }
+
         public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
         public static void setTransform(int index, TrTransform newTransform)
         {
