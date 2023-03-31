@@ -600,6 +600,8 @@ namespace TiltBrush
         public string Name;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool Visible;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform Transform { get; set; }
     }
 
     // TODO: deprecate (7.5b-only)

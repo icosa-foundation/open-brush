@@ -375,7 +375,8 @@ namespace TiltBrush
                 meta[i] = new LayerMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
-                    Name = layer.name
+                    Name = layer.name,
+                    Transform = layer.Pose
                 };
             }
             return meta;
