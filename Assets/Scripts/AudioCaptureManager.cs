@@ -73,7 +73,7 @@ namespace TiltBrush
         private void ResetAudioCaptureType()
         {
             m_Instance = this;
-            if (LuaManager.Instance!=null) LuaManager.Instance.VisualizerScriptingEnabled = false;
+            if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
 #if UNITY_ANDROID
     m_Type = AudioCaptureType.App;
 #else
