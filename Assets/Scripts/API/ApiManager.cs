@@ -906,7 +906,7 @@ namespace TiltBrush
 
         public void EndUndo()
         {
-            if (ActiveUndo!= null && ActiveUndo.HasChildren)
+            if (ActiveUndo != null && ActiveUndo.HasChildren)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
             }
