@@ -688,7 +688,11 @@ namespace TiltBrush
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
+                            canvas.Pose = layer.Transform;
                         }
+                        // Normally the main layer shouldn't be transformed
+                        // But it's possible via scripting so we should support it
+                        App.Scene.MainCanvas.Pose = jsonData.Layers[0].Transform;
                     }
                 }
 
