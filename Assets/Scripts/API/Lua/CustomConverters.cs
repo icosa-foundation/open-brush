@@ -160,8 +160,8 @@ public static class LuaCustomConverters
                 {
                     // Indexed properties
                     position = table.Get(1).ToObject<Vector3>();
-                    rotation = table.Length > 2 ? table.Get(2).ToObject<Vector3>() : Vector3.zero;
-                    scale = table.Length > 3 ? (float)table.Get(3).Number : 1f;
+                    rotation = table.Length > 1 ? table.Get(2).ToObject<Vector3>() : Vector3.zero;
+                    scale = table.Length > 2 ? (float)table.Get(3).Number : 1f;
                 }
 
                 var tr = TrTransform.TRS(
