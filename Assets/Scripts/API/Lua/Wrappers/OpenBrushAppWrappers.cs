@@ -280,20 +280,20 @@ namespace TiltBrush
     public static class LayerApiWrapper
     {
         public static int getActive => App.Scene.LayerCanvases.ToList().IndexOf(App.Scene.ActiveCanvas);
-        public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
+        public static Vector3 getPosition(int index) => (App.Scene.Pose.inverse * App.Scene.GetLayerByIndex(index).Pose).translation;
         public static void setPosition(int index, Vector3 position)
         {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
+            var layer = App.Scene.GetLayerByIndex(index);
             var tr = layer.Pose;
             var newTransform = TrTransform.T(position);
             newTransform = App.Scene.Pose * newTransform;
             tr.translation = newTransform.translation;
             layer.Pose = tr;
         }
-        public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
+        public static Quaternion getRotation(int index) => (App.Scene.Pose.inverse * App.Scene.GetLayerByIndex(index).Pose).rotation;
         public static void setRotation(int index, Quaternion rotation)
         {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
+            var layer = App.Scene.GetLayerByIndex(index);
             var tr = layer.Pose;
             var newTransform = TrTransform.R(rotation);
             newTransform = App.Scene.Pose * newTransform;
@@ -303,27 +303,24 @@ namespace TiltBrush
 
         public static void centerPivot(int index)
         {
-            var layer = App.Scene.LayerCanvases.ToList()[index];
-            var pose_WS = layer.Pose;
-
-            var bounds_CS = layer.GetCanvasBoundingBox(true);
-            var center_WS = bounds_CS.center + pose_WS.translation;
-            var offset = pose_WS.translation - center_WS;
-            pose_WS.translation -= offset;
-            layer.Pose = pose_WS;
-
-            var strokes = SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(layer);
-            foreach (var stroke in strokes)
-            {
-                stroke.Recreate(TrTransform.T(offset));
-            }
+            App.Scene.GetLayerByIndex(index).CenterPivot();
         }
 
-        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static void showPivot(int index)
+        {
+            App.Scene.GetLayerByIndex(index).ShowGizmo();
+        }
+
+        public static void hidePivot(int index)
+        {
+            App.Scene.GetLayerByIndex(index).HideGizmo();
+        }
+
+        public static TrTransform getTransform(int index) => App.Scene.Pose.inverse * App.Scene.GetLayerByIndex(index).Pose;
         public static void setTransform(int index, TrTransform newTransform)
         {
             newTransform = App.Scene.Pose * newTransform;
-            App.Scene.LayerCanvases.ToList()[index].Pose = newTransform;
+            App.Scene.GetLayerByIndex(index).Pose = newTransform;
         }
         public static void add() => ApiMethods.AddLayer();
         public static void clear(int index) => ApiMethods.ClearLayer(index);
@@ -342,9 +339,9 @@ namespace TiltBrush
         public static void import(string location) => ApiMethods.ImportImage(location);
         public static void select(int index) => ApiMethods.SelectImage(index);
         public static void moveTo(int index, Vector3 position) => ApiMethods.PositionImage(index, position);
-        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
-        public static Vector3 getPosition(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.translation;
-        public static Quaternion getRotation(int index) => App.Scene.LayerCanvases.ToList()[index].Pose.rotation;
+        public static TrTransform getTransform(int index) => App.Scene.GetLayerByIndex(index).Pose;
+        public static Vector3 getPosition(int index) => App.Scene.GetLayerByIndex(index).Pose.translation;
+        public static Quaternion getRotation(int index) => App.Scene.GetLayerByIndex(index).Pose.rotation;
         public static void setPosition(int index, Vector3 position) => Utils._Transform(ItemType.Image, index, TrTransform.T(position));
         public static void setRotation(int index, Quaternion rotation) => Utils._Transform(ItemType.Image, index, TrTransform.R(rotation));
     }
@@ -354,7 +351,7 @@ namespace TiltBrush
     {
         // public static void import() => ApiMethods.ImportModel();
         public static void select(int index) => ApiMethods.SelectModel(index);
-        public static TrTransform getTransform(int index) => App.Scene.LayerCanvases.ToList()[index].Pose;
+        public static TrTransform getTransform(int index) => App.Scene.GetLayerByIndex(index).Pose;
         public static Vector3 getPosition(int index) => WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript.transform.position;
         public static Vector3 getRotation(int index) => WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript.transform.position;
         public static void setPosition(int index, Vector3 position) => Utils._Transform(ItemType.Model, index, TrTransform.T(position));

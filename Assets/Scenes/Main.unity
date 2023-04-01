@@ -17579,6 +17579,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MainCanvas: {fileID: 1843608206}
   m_SelectionCanvas: {fileID: 1830711221}
+  m_CanvasTransformPrefab: {fileID: 3644847496883318441, guid: 546467450645e1140902522a7f7baf56,
+    type: 3}
 --- !u!1 &1372392204
 GameObject:
   m_ObjectHideFlags: 0
@@ -18260,7 +18262,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffad114bb615d7c48879446723017243, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GvrOverlayPrefab: {fileID: 0}
   m_VrSystem: {fileID: 17776372}
   m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
     type: 3}
@@ -18276,6 +18277,8 @@ MonoBehaviour:
     type: 3}
   m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
+  m_UnityXRNeo3ControlsPrefab: {fileID: 0}
+  m_UnityXRPhoenixControlsPrefab: {fileID: 0}
   m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
   m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
