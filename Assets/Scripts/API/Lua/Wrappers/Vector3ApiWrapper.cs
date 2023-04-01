@@ -40,5 +40,13 @@ namespace TiltBrush
         public static Vector3 right => Vector3.right;
         public static Vector3 up => Vector3.up;
         public static Vector3 zero => Vector3.zero;
+
+        // Operators
+        public static Vector3 add(Vector3 a, Vector3 b) => a + b;
+        public static Vector3 subtract(Vector3 a, Vector3 b) => a - b;
+        public static Vector3 multiply(Vector3 a, float b) => a * b;
+        public static Vector3 divide(Vector3 a, float b) => a / b;
+        public static bool equals(Vector3 a, Vector3 b) => a == b;
+        public static bool notEquals(Vector3 a, Vector3 b) => a != b;
     }
 }

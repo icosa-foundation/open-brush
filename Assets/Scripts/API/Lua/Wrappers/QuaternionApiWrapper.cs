@@ -20,5 +20,9 @@ namespace TiltBrush
         public static Quaternion rotateTowards(Quaternion from, Quaternion to, float maxDegreesDelta) => Quaternion.RotateTowards(from, to, maxDegreesDelta);
         public static Quaternion slerp(Quaternion a, Quaternion b, float t) => Quaternion.Slerp(a, b, t);
         public static Quaternion slerpUnclamped(Quaternion a, Quaternion b, float t) => Quaternion.SlerpUnclamped(a, b, t);
+
+        // Operators
+        public static Quaternion multiply(Quaternion a, Quaternion b) => a * b;
+        public static bool equals(Quaternion a, Quaternion b) => a == b;
     }
 }

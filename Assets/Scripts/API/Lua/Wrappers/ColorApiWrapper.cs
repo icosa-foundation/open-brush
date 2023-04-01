@@ -41,5 +41,13 @@ namespace TiltBrush
             Color.RGBToHSV(rgb, out float h, out float s, out float v);
             return new Vector3(h, s, v);
         }
+
+        // Operators
+        public static Color add(Color a, Color b) => a + b;
+        public static Color subtract(Color a, Color b) => a - b;
+        public static Color multiply(Color a, float b) => a * b;
+        public static Color divide(Color a, float b) => a / b;
+        public static bool equals(Color a, Color b) => a == b;
+        public static bool notEquals(Color a, Color b) => a != b;
     }
 }
