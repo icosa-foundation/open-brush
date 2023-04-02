@@ -39,7 +39,7 @@ namespace TiltBrush
             LuaManager.AutoCompleteEntries.Add("tool.endPosition = nil");
             LuaManager.AutoCompleteEntries.Add("tool.vector = nil");
 
-            string filePath = Path.Combine("Assets/Resources/LuaScriptExamples", "__autocomplete.lua");
+            string filePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
             LuaManager.Instance.RegisterApiClasses(script);
             File.WriteAllLines(filePath, LuaManager.AutoCompleteEntries);
             LuaManager.AutoCompleteEntries = null;

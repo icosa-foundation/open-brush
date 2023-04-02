@@ -9,6 +9,12 @@ function unityColor.lerp(a, b, t) end
 function unityColor.lerpUnclamped(a, b, t) end
 function unityColor.hsvToRgb(h, s, v) end
 function unityColor.rgbToHsv(rgb) end
+function unityColor.add(a, b) end
+function unityColor.subtract(a, b) end
+function unityColor.multiply(a, b) end
+function unityColor.divide(a, b) end
+function unityColor.equals(a, b) end
+function unityColor.notEquals(a, b) end
 unityMathf.deg2Rad = nil
 unityMathf.epsilon = nil
 unityMathf.infinity = nil
@@ -69,6 +75,8 @@ function unityQuaternion.normalize(a) end
 function unityQuaternion.rotateTowards(from, to, maxDegreesDelta) end
 function unityQuaternion.slerp(a, b, t) end
 function unityQuaternion.slerpUnclamped(a, b, t) end
+function unityQuaternion.multiply(a, b) end
+function unityQuaternion.equals(a, b) end
 unityVector3.back = nil
 unityVector3.down = nil
 unityVector3.forward = nil
@@ -100,6 +108,12 @@ function unityVector3.scale(a, b) end
 function unityVector3.signedAngle(from, to, axis) end
 function unityVector3.slerp(a, b, t) end
 function unityVector3.slerpUnclamped(a, b, t) end
+function unityVector3.add(a, b) end
+function unityVector3.subtract(a, b) end
+function unityVector3.multiply(a, b) end
+function unityVector3.divide(a, b) end
+function unityVector3.equals(a, b) end
+function unityVector3.notEquals(a, b) end
 app.time = nil
 app.frames = nil
 app.currentScale = nil
@@ -186,6 +200,8 @@ function layers.setPosition(index, position) end
 function layers.getRotation(index) end
 function layers.setRotation(index, rotation) end
 function layers.centerPivot(index) end
+function layers.showPivot(index) end
+function layers.hidePivot(index) end
 function layers.getTransform(index) end
 function layers.setTransform(index, newTransform) end
 function layers.add() end

@@ -155,11 +155,30 @@ namespace TiltBrush
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
-            Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            var path = Path.Join(ApiManager.Instance.UserScriptsPath(), "Modules");
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new [] {$"{path}\\?.lua"};
             LuaCustomConverters.RegisterAll();
             InitScriptDataStructures();
+
+            var modulesPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
+            if (!Directory.Exists(modulesPath))
+            {
+                Directory.CreateDirectory(modulesPath);
+            }
+
+            // Allow includes from Scripts/LuaModules
+            Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { $"{modulesPath}\\?.lua" };
+
+            // Copy built-in Lua Libraries to User's LuaModules directory
+            var libraries = Resources.LoadAll<TextAsset>("LuaModules");
+            foreach (var library in libraries)
+            {
+                var newFilename = Path.Join(modulesPath, $"{library.name}.lua");
+                if (!File.Exists(newFilename))
+                {
+                    FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
+                }
+            }
+
             LoadExampleScripts();
             LoadUserScripts();
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
