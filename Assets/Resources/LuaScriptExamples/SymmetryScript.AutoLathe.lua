@@ -16,6 +16,6 @@ function Main()
     end
 
     return {
-        {symmetry.position, rotation={symmetry.rotation.x, symmetry.rotation.y, symmetry.rotation.z}}
+        {symmetry.position, rotation=symmetry.rotation}
     }
 end
