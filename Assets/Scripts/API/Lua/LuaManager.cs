@@ -156,6 +156,8 @@ namespace TiltBrush
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
             Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
+            var path = Path.Join(ApiManager.Instance.UserScriptsPath(), "Modules");
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new [] {$"{path}\\?.lua"};
             LuaCustomConverters.RegisterAll();
             InitScriptDataStructures();
             LoadExampleScripts();
@@ -303,7 +305,7 @@ namespace TiltBrush
             }
             catch (SyntaxErrorException e)
             {
-                LogLuaError(script, "(Loading)", e);
+                LogLuaError(script, $"(Loading: {scriptFilename})", e);
                 return null;
             }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
