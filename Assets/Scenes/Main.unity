@@ -10083,10 +10083,6 @@ MonoBehaviour:
     m_Type: 5
   - m_TutorialPrefab: {fileID: 152394, guid: fc52585901841164db56aa2a0a64a869, type: 3}
     m_Type: 6
-  - m_TutorialPrefab: {fileID: 152394, guid: 3630420c40092514aa65b4c2b4289113, type: 3}
-    m_Type: 7
-  - m_TutorialPrefab: {fileID: 152394, guid: 5dc3ba3f9cf6c7e41a4e01f4457b597f, type: 3}
-    m_Type: 8
   - m_TutorialPrefab: {fileID: 152394, guid: 4b4b97a1fbbd091428e6f4f9564b42e7, type: 3}
     m_Type: 9
   - m_TutorialPrefab: {fileID: 152394, guid: 389001cd00a4b6a49b26a73276d14d6d, type: 3}
