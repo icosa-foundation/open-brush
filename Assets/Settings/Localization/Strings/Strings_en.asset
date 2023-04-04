@@ -1088,7 +1088,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10142405791293440
-    m_Localized: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Localized: Snap Angle
     m_Metadata:
       m_Items: []
   - m_Id: 10149748172103680
@@ -1245,7 +1245,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18101557633294336
-    m_Localized: 
+    m_Localized: Position
     m_Metadata:
       m_Items: []
   - m_Id: 68763796961820672
