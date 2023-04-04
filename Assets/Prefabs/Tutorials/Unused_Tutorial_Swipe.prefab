@@ -479,7 +479,7 @@ GameObject:
   - component: {fileID: 423102}
   - component: {fileID: 114000011922780894}
   m_Layer: 0
-  m_Name: Tutorial_Swipe
+  m_Name: Unused_Tutorial_Swipe
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

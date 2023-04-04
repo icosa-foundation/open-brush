@@ -238,7 +238,7 @@ GameObject:
   - component: {fileID: 11432106}
   - component: {fileID: 114000012224245100}
   m_Layer: 5
-  m_Name: Tutorial_Snap_Line
+  m_Name: Unused_Tutorial_Snap_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

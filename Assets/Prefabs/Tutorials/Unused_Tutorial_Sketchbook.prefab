@@ -507,7 +507,7 @@ GameObject:
   - component: {fileID: 459692}
   - component: {fileID: 114000013038899300}
   m_Layer: 0
-  m_Name: Tutorial_Sketchbook
+  m_Name: Unused_Tutorial_Sketchbook
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
