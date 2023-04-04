@@ -2751,6 +2751,26 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_RIGHT
     m_Metadata:
       m_Items: []
+  - m_Id: 86542625575559168
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542994603008000
+    m_Key: CONTROLLER_HINT_THUMBPAD_UNLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543386296475648
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_PAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543571617603584
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_PAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543649577132032
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_PAD
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

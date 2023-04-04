@@ -2900,6 +2900,34 @@ MonoBehaviour:
       A Selection'
     m_Metadata:
       m_Items: []
+  - m_Id: 86542625575559168
+    m_Localized: 'Press Trigger to
+
+      Quick-Load'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542994603008000
+    m_Localized: Swipe Thumbpad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543386296475648
+    m_Localized: 'Press Thumbpad for
+
+      Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543571617603584
+    m_Localized: 'Press Thumbpad to
+
+      Exit Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543649577132032
+    m_Localized: 'Hold Thumbpad to
+
+      Duplicate'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
