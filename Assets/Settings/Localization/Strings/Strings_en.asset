@@ -2794,6 +2794,112 @@ MonoBehaviour:
     m_Localized: Orange
     m_Metadata:
       m_Items: []
+  - m_Id: 85227255933722624
+    m_Localized: 'Press Left Trigger
+
+      to Quick-Load'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86502336588701696
+    m_Localized: Hold Trigger to Paint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503100627312640
+    m_Localized: 'Press Trigger to
+
+      Unpin Object'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503188791582720
+    m_Localized: 'Press Trigger to
+
+      Pin Object'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503489334435840
+    m_Localized: 'Press Trigger to
+
+      Capture Save Icon'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503586919112704
+    m_Localized: 'Hold Trigger for
+
+      Preview'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86505772348628992
+    m_Localized: Move Thumbstick
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86507370093240320
+    m_Localized: Adjust Brush Size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86510761523568640
+    m_Localized: 'Press X To Enter
+
+      Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512053855739904
+    m_Localized: 'Press X to Exit
+
+      Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512303735595008
+    m_Localized: 'Hold X To Duplicate
+
+      A Selection'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86513132228075520
+    m_Localized: 'Use Grip to Grab
+
+      The Blinking Panel'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515258303995904
+    m_Localized: Point to Interact
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515585589731328
+    m_Localized: 'Share Your Sketch
+
+      with the Community'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86516117700108288
+    m_Localized: 'Unlock
+
+      advanced features'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86522814208434176
+    m_Localized: 'Press Right Trigger
+
+      to Quick-Load'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526550477660160
+    m_Localized: 'Press A To Exit
+
+      Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526918276177920
+    m_Localized: 'Press A To Enter
+
+      Deselect Mode'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86527241187254272
+    m_Localized: 'Hold  A To Duplicate
+
+      A Selection'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

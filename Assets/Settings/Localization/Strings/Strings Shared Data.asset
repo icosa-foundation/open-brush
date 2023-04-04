@@ -2675,6 +2675,82 @@ MonoBehaviour:
     m_Key: COLOR_ORANGE
     m_Metadata:
       m_Items: []
+  - m_Id: 85227255933722624
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86502336588701696
+    m_Key: CONTROLLER_HINT_TRIGGER_PAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503100627312640
+    m_Key: CONTROLLER_HINT_TRIGGER_UNPIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503188791582720
+    m_Key: CONTROLLER_HINT_TRIGGER_PIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503489334435840
+    m_Key: CONTROLLER_HINT_TRIGGER_SAVEICON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503586919112704
+    m_Key: CONTROLLER_HINT_TRIGGER_PREVEWPATH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86505772348628992
+    m_Key: CONTROLLER_HINT_THUMBSTICK_UNLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86507370093240320
+    m_Key: CONTROLLER_HINT_THUMBSTICK_BRUSHSIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86510761523568640
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512053855739904
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512303735595008
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86513132228075520
+    m_Key: CONTROLLER_HINT_GRIP_FLOATINGPANEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515258303995904
+    m_Key: CONTROLLER_HINT_POINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515585589731328
+    m_Key: CONTROLLER_HINT_SHARE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86516117700108288
+    m_Key: CONTROLLER_HINT_ADVANCED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86522814208434176
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526550477660160
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526918276177920
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86527241187254272
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_RIGHT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
