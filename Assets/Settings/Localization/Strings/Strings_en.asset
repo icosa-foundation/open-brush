@@ -2928,6 +2928,24 @@ MonoBehaviour:
       Duplicate'
     m_Metadata:
       m_Items: []
+  - m_Id: 86583802232332288
+    m_Localized: 'Save colors to your
+
+      sketch palette'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86584733715947520
+    m_Localized: 'Helpful info behind
+
+      Brush Controller'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86586444966813696
+    m_Localized: 'Duplicate when Selection
+
+      Tool overlaps selection'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -2771,6 +2771,18 @@ MonoBehaviour:
     m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_PAD
     m_Metadata:
       m_Items: []
+  - m_Id: 86583802232332288
+    m_Key: TUTORIAL_ADDCOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86584733715947520
+    m_Key: TUTORIAL_CONTROLLERCONSOLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86586444966813696
+    m_Key: TUTORIAL_DUPLICATE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
