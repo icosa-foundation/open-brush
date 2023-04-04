@@ -11169,7 +11169,7 @@ MonoBehaviour:
   - m_JointTransform: {fileID: 447194423}
     m_OffsetTransform: {fileID: 1736869949}
     m_AttachPoint: {fileID: 305196944}
-  m_SwipeHintObject: {fileID: 1467259784}
+  m_SwipeHintObject: {fileID: 0}
   m_GifProgressRings:
   - {fileID: 671684244}
   - {fileID: 1359923452}
@@ -12322,8 +12322,7 @@ MeshRenderer:
 --- !u!1 &825726036
 GameObject:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 126712, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
@@ -12357,8 +12356,7 @@ MonoBehaviour:
 --- !u!114 &825726038
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 11410358, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825726036}
@@ -12458,8 +12456,7 @@ CanvasRenderer:
 --- !u!23 &825726041
 MeshRenderer:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 2385760, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825726036}
@@ -19497,7 +19494,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1467259782}
-  - component: {fileID: 1467259784}
   m_Layer: 14
   m_Name: SwipeHint
   m_TagString: Untagged
@@ -19505,24 +19501,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1467259784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1467259783}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 005e52b7e10096a4d8b3ea9cf63ca08c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HintObject: {fileID: 0}
-  m_HintObjectParent: {fileID: 0}
-  m_HintObjectScale: 1.05
-  m_ActiveMinShowAngle: 0
-  m_ScaleXOnly: 1
-  m_HintText: {fileID: 0}
 --- !u!1 &1476953170
 GameObject:
   m_ObjectHideFlags: 0
@@ -33466,8 +33444,7 @@ Transform:
 --- !u!224 &2081414898
 RectTransform:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 22461458, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825726036}
