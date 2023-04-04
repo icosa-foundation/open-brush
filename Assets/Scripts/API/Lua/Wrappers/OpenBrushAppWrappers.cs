@@ -191,6 +191,9 @@ namespace TiltBrush
             get => PointerManager.m_Instance.SymmetryWidget.transform.rotation;
             set => ApiMethods.SymmetrySetRotation(value);
         }
+
+        public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
+        public static Vector3 wandOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastWandPos(0))).translation;
         public static Vector3 direction => PointerManager.m_Instance.SymmetryWidget.transform.rotation * Vector3.forward;
         public static void mirror() => ApiMethods.SymmetryPlane();
         public static void doubleMirror() => ApiMethods.SymmetryFour();

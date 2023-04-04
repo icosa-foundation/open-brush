@@ -12,7 +12,9 @@ Parameters = {
 function WhileTriggerPressed()
 
     -- Don't allow painting immediately otherwise you get stray lines
-    brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
+    if (brush.triggerIsPressedThisFrame) then
+        brush.forceNewStroke()
+    end
 
     -- Pick an old position from the buffer
     oldPosition = brush.pastPosition(delay)

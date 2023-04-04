@@ -1169,6 +1169,7 @@ MonoBehaviour:
   m_MaxPointers: 512
   m_MainPointerPrefab: {fileID: 133060, guid: 9b51341e2f5f13c4e8421b42c44de1ef, type: 3}
   m_AuxPointerPrefab: {fileID: 130268, guid: 7731b9109b4c6e84eaee3f77c6c6c6e1, type: 3}
+  m_DummyPointerPrefab: {fileID: 130268, guid: 98cf8986464c312458b068a83aa98c0a, type: 3}
   m_DefaultPointerAngle: 25
   m_DebugViewControlPoints: 0
   m_StraightEdgeGuide: {fileID: 622940449}

@@ -3,13 +3,17 @@
 }
 
 Parameters = {
-    copies={label="Number of copies", type="int", min=1, max=36, default=6},
+    copies={label="Number of copies", type="int", min=1, max=36, default=32},
     hueShiftFrequency={label="Hue Shift Frequency", type="float", min=0.1, max=6, default=1},
-    hueShiftAmount={label="Hue Shift Amount", type="float", min=0, max=1, default=0}
+    hueShiftAmount={label="Hue Shift Amount", type="float", min=0, max=1, default=0.3}
 }
 
 function Start()
     initialHsv = brush.colorHsv
+    --symmetry.transform = {
+    --    {0, 10, 6},
+    --    {0, 90, 90}
+    --}
 end
 
 function Main()
@@ -19,8 +23,16 @@ function Main()
     Colors = {}
 
     for i = 0, copies - 1 do
-        --Rotate the extra pointers around our centre
-        table.insert(pointers, {position={0, 0, 0}, rotation={0, i * theta, 0}})
+        angle = i * theta
+        pointer = {
+            position={
+                symmetry.brushOffset.x * (1 + (math.sin(angle/360 * 8 * math.pi)) * 0.125),
+                symmetry.brushOffset.y,
+                symmetry.brushOffset.z
+            },
+            rotation={0, angle, 0}
+        }
+        table.insert(pointers, pointer)
 
         --Colour cycling for the extra pointers
         if hueShiftAmount > 0 then

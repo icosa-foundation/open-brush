@@ -1,5 +1,5 @@
 Settings = {
-    description="Like spinning the mirror by hand but with precise control"
+    description="Autolathe but with multiple lathes"
 }
 
 Parameters = {
@@ -17,6 +17,11 @@ function Main()
     end
 
     return {
-        { position = { -symmetry.brushOffset.x, symmetry.brushOffset.y, symmetry.brushOffset.z } },
+        {
+            position = {-symmetry.brushOffset.x, symmetry.brushOffset.y, symmetry.brushOffset.z},
+        },
+        {
+            position = {-symmetry.brushOffset.x, -symmetry.brushOffset.y, symmetry.brushOffset.z},
+        },
     }
 end

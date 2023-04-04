@@ -19,7 +19,7 @@ function Main()
     theta = 360.0 / copies
 
     for i = 0, copies - 1 do
-        table.insert(pointers, {position={0, 0, 0}, rotation={0, i * theta, 0}})
+        table.insert(pointers, {position=symmetry.brushOffset, rotation={0, i * theta, 0}})
     end
 
     return pointers

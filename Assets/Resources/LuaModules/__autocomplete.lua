@@ -269,6 +269,8 @@ function strokes.import(name) end
 symmetry.transform = nil
 symmetry.position = nil
 symmetry.rotation = nil
+symmetry.brushOffset = nil
+symmetry.wandOffset = nil
 symmetry.direction = nil
 function symmetry.mirror() end
 function symmetry.doubleMirror() end

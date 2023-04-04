@@ -116,6 +116,7 @@ namespace TiltBrush
         [SerializeField] private int m_MaxPointers = 1;
         [SerializeField] private GameObject m_MainPointerPrefab;
         [SerializeField] private GameObject m_AuxPointerPrefab;
+        [SerializeField] private GameObject m_DummyPointerPrefab;
         [SerializeField] private float m_DefaultPointerAngle = 25.0f;
         [SerializeField] private bool m_DebugViewControlPoints = false;
         [SerializeField] private StraightEdgeGuideScript m_StraightEdgeGuide;
@@ -752,32 +753,73 @@ namespace TiltBrush
             }
 
             var trs_CS = new List<TrTransform>();
+            Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            bool needsDummyPointer = true;
 
-            int i = 0;
             foreach (var resultTr in result.Transforms)
             {
                 TrTransform newTr_CS = TrTransform.identity;
                 switch (result.Space)
                 {
                     case ScriptCoordSpace.Default:
-                        var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                        var tr = resultTr;
-                        var translation = tr.translation;
-                        tr.translation = Vector3.zero;
-                        newTr_CS = tr.TransformBy(xfWidget);
-                        translation = tr.rotation * translation;
-                        newTr_CS.translation += translation;
+                    {
+                        // Check to see if any pointers have an unchanged position
+                        if (resultTr.translation == SymmetryApiWrapper.brushOffset)
+                        {
+                            needsDummyPointer = false;
+                        }
+var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
+var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
+var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
+var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
+TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + resultTr.translation);
+newTr_CS = TrTransform.T(pos.translation);
+TrTransform rot = TrTransform.R(resultTr.rotation);
+newTr_CS = rot * newTr_CS;
+newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
                         break;
+                    }
                     case ScriptCoordSpace.Canvas:
+                        // Check to see if any pointers have an unchanged position
+                        if (resultTr.translation == BrushApiWrapper.position)
+                        {
+                            needsDummyPointer = false;
+                        }
+
                         newTr_CS = resultTr;
                         break;
                     case ScriptCoordSpace.Pointer:
-                        Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
-                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                    {
+                        // Check to see if any pointers have an unchanged position
+                        if (resultTr.translation == Vector3.zero)
+                        {
+                            needsDummyPointer = false;
+                        }                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
                         newTr_CS.translation = pointerRot_GS * resultTr.translation;
                         break;
+                    }
                 }
                 trs_CS.Add(newTr_CS);
+            }
+
+            // If none of the pointers match the normal pointer location then we need to show a dummy pointer
+            var dummyPointer = rAttachPoint_GS.GetComponentInChildren<PointerScript>()?.gameObject;
+
+            if (needsDummyPointer)
+            {
+                if (dummyPointer == null)
+                {
+                    dummyPointer = Instantiate(m_DummyPointerPrefab, rAttachPoint_GS);
+                    dummyPointer.GetComponent<PointerScript>().BrushSize01 = 0.001f;
+                }
+                dummyPointer.SetActive(true);
+            }
+            else
+            {
+                if (dummyPointer != null)
+                {
+                    dummyPointer.SetActive(false);
+                }
             }
 
             return trs_CS;
