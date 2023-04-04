@@ -2783,6 +2783,62 @@ MonoBehaviour:
     m_Key: TUTORIAL_DUPLICATE
     m_Metadata:
       m_Items: []
+  - m_Id: 86605819400708096
+    m_Key: TUTORIAL_GRIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605978197057536
+    m_Key: TUTORIAL_GUIDE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606072233353216
+    m_Key: TUTORIAL_NEXTTIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606143058370560
+    m_Key: TUTORIAL_PIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606447405457408
+    m_Key: TUTORIAL_QUICKTOOL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606504787730432
+    m_Key: TUTORIAL_SCALE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606528972087296
+    m_Key: TUTORIAL_SWAPCONTROLLERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607071601778688
+    m_Key: TUTORIAL_TOSS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607314393260032
+    m_Key: TUTORIAL_UNDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607365643460608
+    m_Key: TUTORIAL_REDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607461726576640
+    m_Key: TUTORIAL_WORLDTRANSFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607568958152704
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_KNUCKLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607659639005184
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_VIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607720842289152
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_OCULUS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

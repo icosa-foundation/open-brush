@@ -2946,6 +2946,76 @@ MonoBehaviour:
       Tool overlaps selection'
     m_Metadata:
       m_Items: []
+  - m_Id: 86605819400708096
+    m_Localized: 'Grip to Grab Objects
+
+      <color=#787878>Try grabbing this panel'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605978197057536
+    m_Localized: 'Use Guides to
+
+      Paint Precisely'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606072233353216
+    m_Localized: Use Arrows for more...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606143058370560
+    m_Localized: Pull Trigger to Pin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606447405457408
+    m_Localized: 'Press and Hold
+
+      to Change Tools'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606504787730432
+    m_Localized: 'Use Both Grips on
+
+      Objects to Scale'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606528972087296
+    m_Localized: Tap bottoms to Swap Controllers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607071601778688
+    m_Localized: Toss Objects to Dismiss<color=#787878>Try tossing this cube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607314393260032
+    m_Localized: Press to Undo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607365643460608
+    m_Localized: Press to Redo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607461726576640
+    m_Localized: 'Use Both Grips to Rotate
+
+      and Resize Yourself'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607568958152704
+    m_Localized: 'Grip then Press A Button
+
+      to Reset Your Size'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607659639005184
+    m_Localized: "Grip then Press Trackpad \nto Reset Your Size"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607720842289152
+    m_Localized: 'Grip then Press X or A Button
+
+      to Reset Your Size'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
