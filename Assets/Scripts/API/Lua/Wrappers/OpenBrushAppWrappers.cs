@@ -200,6 +200,10 @@ namespace TiltBrush
         public static void twoHandeded() => ApiMethods.SymmetryTwoHanded();
         public static void summonWidget() => ApiMethods.SummonMirror();
         public static void spin(Vector3 rot) => PointerManager.m_Instance.SymmetryWidget.Spin(rot);
+        public static float ellipse(float angle, float minorRadius)
+        {
+            return minorRadius / Mathf.Sqrt(Mathf.Pow(minorRadius * Mathf.Cos(angle), 2) + Mathf.Pow(Mathf.Sin(angle), 2));
+        }
     }
 
     [MoonSharpUserData]

@@ -26,7 +26,7 @@ function Main()
         angle = i * theta
         pointer = {
             position={
-                symmetry.brushOffset.x,
+                symmetry.brushOffset.x * (1 + (math.sin(angle/360 * 16 * math.pi)) * 0.25),
                 symmetry.brushOffset.y,
                 symmetry.brushOffset.z
             },
