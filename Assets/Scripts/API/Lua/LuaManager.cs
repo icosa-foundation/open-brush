@@ -664,8 +664,9 @@ namespace TiltBrush
             RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
             RegisterApiClass(script, "unityMathf", typeof(MathfApiWrapper));
             RegisterApiClass(script, "unityQuaternion", typeof(QuaternionApiWrapper));
-            // RegisterApiClass(script, "unityVector2", typeof(Vector2ApiWrapper));
+            RegisterApiClass(script, "unityVector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "unityVector3", typeof(Vector3ApiWrapper));
+            RegisterApiClass(script, "unityRandom", typeof(RandomApiWrapper));
 
             RegisterApiClass(script, "app", typeof(AppApiWrapper));
             RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
