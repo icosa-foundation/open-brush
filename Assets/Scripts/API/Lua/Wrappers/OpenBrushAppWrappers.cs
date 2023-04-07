@@ -66,6 +66,8 @@ namespace TiltBrush
         }
         public static void colorJitter() => LuaApiMethods.JitterColor();
         public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;
+        public static void resizeBuffer(int size) => LuaManager.Instance.ResizeBrushBuffer(size);
+        public static void setBufferSize(int size) => LuaManager.Instance.SetBrushBufferSize(size);
         public static Vector3 pastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
         public static Quaternion pastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
         public static void forcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
@@ -90,6 +92,8 @@ namespace TiltBrush
         public static Vector3 direction => LuaManager.Instance.GetPastWandRot(0) * Vector3.forward;
         public static float pressure => InputManager.Wand.GetTriggerValue();
         public static Vector3 speed => InputManager.Wand.m_Velocity;
+        public static void resizeBuffer(int size) => LuaManager.Instance.ResizeWandBuffer(size);
+        public static void setBufferSize(int size) => LuaManager.Instance.SetWandBufferSize(size);
         public static Vector3 pastPosition(int back) => LuaManager.Instance.GetPastWandPos(back);
         public static Quaternion pastRotation(int back) => LuaManager.Instance.GetPastWandRot(back);
     }
@@ -204,6 +208,67 @@ namespace TiltBrush
         {
             return minorRadius / Mathf.Sqrt(Mathf.Pow(minorRadius * Mathf.Cos(angle), 2) + Mathf.Pow(Mathf.Sin(angle), 2));
         }
+        public static float square(float angle)
+        {
+            const float halfEdgeLength = 0.5f;
+            float x = Mathf.Abs(Mathf.Cos(angle));
+            float y = Mathf.Abs(Mathf.Sin(angle));
+            float maxComponent = Mathf.Max(x, y);
+            return halfEdgeLength / maxComponent;
+        }
+        public static float superellipse(float angle, float n, float a = 1f, float b = 1f)
+        {
+            float x = Mathf.Abs(Mathf.Cos(angle));
+            float y = Mathf.Abs(Mathf.Sin(angle));
+            float power = 1 / n;
+            float superellipseRadius = Mathf.Pow(Mathf.Pow(x, n) / Mathf.Pow(a, n) + Mathf.Pow(y, n) / Mathf.Pow(b, n), -power);
+            return superellipseRadius;
+        }
+        public static float rsquare(float angle, float halfSideLength, float cornerRadius)
+        {
+            float x = Mathf.Abs(Mathf.Cos(angle));
+            float y = Mathf.Abs(Mathf.Sin(angle));
+
+            // Check if the point lies in the rounded corner area
+            if (x > halfSideLength - cornerRadius && y > halfSideLength - cornerRadius)
+            {
+                // Calculate the distance to the rounded corner center
+                float dx = x - (halfSideLength - cornerRadius);
+                float dy = y - (halfSideLength - cornerRadius);
+                float distanceToCornerCenter = Mathf.Sqrt(dx * dx + dy * dy);
+
+                // Calculate the distance to the rounded corner edge
+                return halfSideLength + cornerRadius - distanceToCornerCenter;
+            }
+            // Calculate the distance to the square edge as before
+            float maxComponent = Mathf.Max(x, y);
+            return halfSideLength / maxComponent;
+        }
+        public static float polygon(float angle, int numSides, float radius=1f)
+        {
+            // Calculate the angle of each sector in the polygon
+            float sectorAngle = 2 * Mathf.PI / numSides;
+
+            // Find the nearest vertex by rounding the angle to the nearest sector angle
+            float nearestVertexAngle = Mathf.Round(angle / sectorAngle) * sectorAngle;
+
+            // Calculate the bisector angle (half of the sector angle)
+            float bisectorAngle = sectorAngle / 2;
+
+            // Calculate the distance from the center to the midpoint of the edge
+            float apothem = radius * Mathf.Cos(bisectorAngle);
+
+            // Calculate the angle between the input angle and the nearest vertex angle
+            float deltaAngle = Mathf.Abs(angle - nearestVertexAngle);
+
+            // Calculate the distance from the midpoint of the edge to the point on the edge at the given angle
+            float edgePointDistance = apothem * Mathf.Tan(deltaAngle);
+
+            // Calculate the distance from the center to the point on the edge at the given angle
+            float distanceToEdge = Mathf.Sqrt(apothem * apothem + edgePointDistance * edgePointDistance);
+
+            return distanceToEdge;
+        }
     }
 
     [MoonSharpUserData]
@@ -250,6 +315,8 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class HeadsetApiWrapper
     {
+        public static void resizeBuffer(int size) => LuaManager.Instance.ResizeHeadBuffer(size);
+        public static void setBufferSize(int size) => LuaManager.Instance.SetHeadBufferSize(size);
         public static Vector3 pastPosition(int count) => LuaManager.Instance.GetPastHeadPos(count);
         public static Quaternion pastRotation(int count) => LuaManager.Instance.GetPastHeadRot(count);
     }

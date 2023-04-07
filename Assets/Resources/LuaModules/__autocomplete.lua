@@ -77,6 +77,37 @@ function unityQuaternion.slerp(a, b, t) end
 function unityQuaternion.slerpUnclamped(a, b, t) end
 function unityQuaternion.multiply(a, b) end
 function unityQuaternion.equals(a, b) end
+unityVector2.down = nil
+unityVector2.left = nil
+unityVector2.negativeInfinity = nil
+unityVector2.one = nil
+unityVector2.positiveInfinity = nil
+unityVector2.right = nil
+unityVector2.up = nil
+unityVector2.zero = nil
+function unityVector2.angle(a, b) end
+function unityVector2.clampMagnitude(v, maxLength) end
+function unityVector2.distance(a, b) end
+function unityVector2.magnitude(a) end
+function unityVector2.sqrMagnitude(a) end
+function unityVector2.dot(a, b) end
+function unityVector2.lerp(a, b, t) end
+function unityVector2.lerpUnclamped(a, b, t) end
+function unityVector2.max(a, b) end
+function unityVector2.min(a, b) end
+function unityVector2.moveTowards(current, target, maxDistanceDelta) end
+function unityVector2.normalized(a) end
+function unityVector2.reflect(a, b) end
+function unityVector2.scale(a, b) end
+function unityVector2.signedAngle(from, to, axis) end
+function unityVector2.slerp(a, b, t) end
+function unityVector2.slerpUnclamped(a, b, t) end
+function unityVector2.add(a, b) end
+function unityVector2.subtract(a, b) end
+function unityVector2.multiply(a, b) end
+function unityVector2.divide(a, b) end
+function unityVector2.equals(a, b) end
+function unityVector2.notEquals(a, b) end
 unityVector3.back = nil
 unityVector3.down = nil
 unityVector3.forward = nil
@@ -114,6 +145,16 @@ function unityVector3.multiply(a, b) end
 function unityVector3.divide(a, b) end
 function unityVector3.equals(a, b) end
 function unityVector3.notEquals(a, b) end
+unityRandom.insideUnitCircle = nil
+unityRandom.insideUnitSphere = nil
+unityRandom.onUnitSphere = nil
+unityRandom.rotation = nil
+unityRandom.rotationUniform = nil
+unityRandom.value = nil
+unityRandom.ColorHSV = nil
+function unityRandom.InitState(seed) end
+function unityRandom.Range(min, max) end
+function unityRandom.Range(min, max) end
 app.time = nil
 app.frames = nil
 app.currentScale = nil
@@ -157,6 +198,8 @@ brush.colorHtml = nil
 brush.lastColorPicked = nil
 brush.lastColorPickedHsv = nil
 function brush.colorJitter() end
+function brush.resizeBuffer(size) end
+function brush.setBufferSize(size) end
 function brush.pastPosition(back) end
 function brush.pastRotation(back) end
 function brush.forcePaintingOn(active) end
@@ -183,6 +226,8 @@ function guides.select(index) end
 function guides.moveTo(index, position) end
 function guides.scale(index, scale) end
 function guides.toggle() end
+function headset.resizeBuffer(size) end
+function headset.setBufferSize(size) end
 function headset.pastPosition(count) end
 function headset.pastRotation(count) end
 function images.import(location) end
@@ -277,6 +322,11 @@ function symmetry.doubleMirror() end
 function symmetry.twoHandeded() end
 function symmetry.summonWidget() end
 function symmetry.spin(rot) end
+function symmetry.ellipse(angle, minorRadius) end
+function symmetry.square(angle) end
+function symmetry.superellipse(angle, n, a, b) end
+function symmetry.rsquare(angle, halfSideLength, cornerRadius) end
+function symmetry.polygon(angle, numSides, radius) end
 function timer.set(fn, interval, delay, repeats) end
 function timer.unset(fn) end
 turtle.transform = nil
@@ -307,6 +357,8 @@ wand.rotation = nil
 wand.direction = nil
 wand.pressure = nil
 wand.speed = nil
+function wand.resizeBuffer(size) end
+function wand.setBufferSize(size) end
 function wand.pastPosition(back) end
 function wand.pastRotation(back) end
 function waveform.sine(time, frequency) end

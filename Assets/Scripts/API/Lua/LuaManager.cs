@@ -149,7 +149,7 @@ namespace TiltBrush
 
         public void Init()
         {
-            m_TransformBuffers = new TransformBuffers(512);
+            m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
             m_ActiveBackgroundScripts = new Dictionary<string, Script>();
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
@@ -186,6 +186,36 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
+        }
+
+        public void SetBrushBufferSize(int size)
+        {
+            if (m_TransformBuffers.BrushBufferSize!=size) ResizeBrushBuffer(size);
+        }
+
+        public void SetWandBufferSize(int size)
+        {
+            if (m_TransformBuffers.WandBufferSize!=size) ResizeWandBuffer(size);
+        }
+
+        public void SetHeadBufferSize(int size)
+        {
+            if (m_TransformBuffers.HeadBufferSize!=size) ResizeHeadBuffer(size);
+        }
+
+        public void ResizeBrushBuffer(int size)
+        {
+            m_TransformBuffers.BrushBufferSize = size;
+        }
+
+        public void ResizeWandBuffer(int size)
+        {
+            m_TransformBuffers.WandBufferSize = size;
+        }
+
+        public void ResizeHeadBuffer(int size)
+        {
+            m_TransformBuffers.HeadBufferSize = size;
         }
 
         private void Update()
@@ -389,27 +419,27 @@ namespace TiltBrush
             tbl.Table[parts[1]] = action;
         }
 
-        public void RegisterApiProperty(Script script, string cmd, object action)
+        public void RegisterApiClass(Script script, string fnName, Type t, string prefix = null)
         {
-            _RegisterToApi(script, cmd, action);
-#if UNITY_EDITOR
-            if (Application.isEditor && AutoCompleteEntries!=null)
+            var target = script.Globals;
+            if (prefix != null)
             {
-                AutoCompleteEntries.Add($"{cmd} = nil");
+                var container = script.Globals.Get(prefix).Table;
+                if (container == null)
+                {
+                    script.Globals.Set(prefix, DynValue.NewTable(new Table(script)));
+                    container = script.Globals.Get(prefix).Table;
+                }
+                target = container;
             }
-#endif
-        }
-
-        public void RegisterApiClass(Script script, string prefix, Type t)
-        {
-            script.Globals[prefix] = t;
+            target[fnName] = t;
 #if UNITY_EDITOR
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
                 foreach (var prop in t.GetProperties()
                     .Where(x => x.GetGetMethod(true).IsStatic))
                 {
-                    AutoCompleteEntries.Add($"{prefix}.{prop.Name} = nil");
+                    AutoCompleteEntries.Add($"{fnName}.{prop.Name} = nil");
                 }
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
                     .Where(x =>
@@ -421,51 +451,10 @@ namespace TiltBrush
                     string paramNames = "";
                     var paramNameList = prop.GetParameters().Select(p => p.Name);
                     paramNames = string.Join(", ", paramNameList);
-                    AutoCompleteEntries.Add($"function {prefix}.{prop.Name}({paramNames}) end");
+                    AutoCompleteEntries.Add($"function {fnName}.{prop.Name}({paramNames}) end");
                 }
             }
 #endif
-        }
-
-        public void RegisterApiCommand(Script script, string cmd, object action)
-        {
-            _RegisterToApi(script, cmd, action);
-#if UNITY_EDITOR
-            if (Application.isEditor && AutoCompleteEntries!=null)
-            {
-                string paramNames = "";
-                Delegate d = action as Delegate;
-                var paramNameList = d.Method.GetParameters().Select(p => p.Name);
-                paramNames = string.Join(", ", paramNameList);
-                AutoCompleteEntries.Add($"function {cmd}({paramNames}) end");
-            }
-#endif
-        }
-
-        public void _RegisterToApi(Script script, string cmd, object action, bool allowRedefine = false)
-        {
-            var parts = cmd.Split(".");
-            var tbl = script.Globals.Get(parts[0]);
-            if (Equals(tbl, DynValue.Nil))
-            {
-                script.Globals.Set(parts[0], DynValue.NewTable(new Table(script)));
-                tbl = script.Globals.Get(parts[0]);
-            }
-            else if (tbl.Type != DataType.Table)
-            {
-                Debug.LogError($"Probably a namespace clash with {cmd}. {parts[0]} is type {script.Globals.Get(parts[0]).Type}");
-                return;
-            }
-            var entry = tbl.Table.Get(parts[1]);
-            if (Equals(entry, DynValue.Nil) || allowRedefine)
-            {
-                tbl.Table[parts[1]] = action;
-            }
-            else
-            {
-                Debug.LogError($"Redefined {cmd}. {parts[1]} is already defined as {entry.Type}");
-                return;
-            }
         }
 
         public Script GetActiveScript(LuaApiCategory category)
@@ -609,7 +598,17 @@ namespace TiltBrush
             ConfigureScriptButton(category);
         }
 
-        private bool IsCategoryActive(LuaApiCategory category)
+        public bool IsAnyCategoryActive()
+        {
+            bool result = false;
+            foreach (var category in Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>())
+            {
+                result |= IsCategoryActive(category);
+            }
+            return result;
+        }
+
+        public bool IsCategoryActive(LuaApiCategory category)
         {
             // We have booleans for Background and Pointer scripts
             // For symmetry and tool scripts, the UI buttons bypass LuaManager to activate the mode

@@ -768,33 +768,31 @@ namespace TiltBrush
                         {
                             needsDummyPointer = false;
                         }
-var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
-var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
-var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
-var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
-TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + resultTr.translation);
-newTr_CS = TrTransform.T(pos.translation);
-TrTransform rot = TrTransform.R(resultTr.rotation);
-newTr_CS = rot * newTr_CS;
-newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
+                        var xfWidget_GS = TrTransform.FromTransform(m_SymmetryWidget);
+                        var xfWidget_CS = App.Scene.MainCanvas.AsCanvas[m_SymmetryWidget];
+                        var xfPointer_CS = TrTransform.T(LuaManager.Instance.GetPastBrushPos(0));
+                        var brushToWidget_CS = xfWidget_CS.inverse * xfPointer_CS;
+                        TrTransform pos = TrTransform.T(-brushToWidget_CS.translation + resultTr.translation);
+                        newTr_CS = TrTransform.T(pos.translation);
+                        TrTransform rot = TrTransform.R(resultTr.rotation);
+                        newTr_CS = rot * newTr_CS;
+                        newTr_CS = xfWidget_GS * newTr_CS * xfWidget_GS.inverse;
                         break;
                     }
                     case ScriptCoordSpace.Canvas:
-                        // Check to see if any pointers have an unchanged position
-                        if (resultTr.translation == BrushApiWrapper.position)
-                        {
-                            needsDummyPointer = false;
-                        }
-
-                        newTr_CS = resultTr;
+                    {
+                        needsDummyPointer = false;
+                        newTr_CS = TrTransform.T(resultTr.translation - LuaManager.Instance.GetPastBrushPos(0));
                         break;
+                    }
                     case ScriptCoordSpace.Pointer:
                     {
                         // Check to see if any pointers have an unchanged position
                         if (resultTr.translation == Vector3.zero)
                         {
                             needsDummyPointer = false;
-                        }                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                        }
+                        Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
                         newTr_CS.translation = pointerRot_GS * resultTr.translation;
                         break;
                     }

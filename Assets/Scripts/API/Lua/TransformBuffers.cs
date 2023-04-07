@@ -26,24 +26,28 @@ namespace TiltBrush
 
         public TrTransform PastBrushTr(int countBack)
         {
+            if (m_BrushBuffer.IsEmpty) return TrTransform.identity;
             countBack = Mathf.Min(countBack, m_BrushBuffer.Size - 1);
             return m_BrushBuffer[countBack];
         }
 
         public TrTransform PastWandTr(int countBack)
         {
+            if (m_WandBuffer.IsEmpty) return TrTransform.identity;
             countBack = Mathf.Min(countBack, m_WandBuffer.Size - 1);
             return m_WandBuffer[countBack];
         }
 
         public TrTransform PastHeadTr(int countBack)
         {
+            if (m_HeadBuffer.IsEmpty) return TrTransform.identity;
             countBack = Mathf.Min(countBack, m_HeadBuffer.Size - 1);
             return m_HeadBuffer[countBack];
         }
 
         public int BrushBufferSize
         {
+            get => m_BrushBufferSize;
             set
             {
                 m_BrushBufferSize = value;
@@ -53,6 +57,7 @@ namespace TiltBrush
 
         public int WandBufferSize
         {
+            get => m_WandBufferSize;
             set
             {
                 m_WandBufferSize = value;
@@ -62,6 +67,7 @@ namespace TiltBrush
 
         public int HeadBufferSize
         {
+            get => m_HeadBufferSize;
             set
             {
                 m_HeadBufferSize = value;
