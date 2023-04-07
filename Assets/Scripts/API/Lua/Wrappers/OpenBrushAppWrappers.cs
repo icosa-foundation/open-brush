@@ -218,11 +218,12 @@ namespace TiltBrush
         }
         public static float superellipse(float angle, float n, float a = 1f, float b = 1f)
         {
-            float x = Mathf.Abs(Mathf.Cos(angle));
-            float y = Mathf.Abs(Mathf.Sin(angle));
-            float power = 1 / n;
-            float superellipseRadius = Mathf.Pow(Mathf.Pow(x, n) / Mathf.Pow(a, n) + Mathf.Pow(y, n) / Mathf.Pow(b, n), -power);
-            return superellipseRadius;
+            float cosTheta = Mathf.Cos(angle);
+            float sinTheta = Mathf.Sin(angle);
+            float cosThetaN = Mathf.Pow(Mathf.Abs(cosTheta), n);
+            float sinThetaN = Mathf.Pow(Mathf.Abs(sinTheta), n);
+            float radius = Mathf.Pow(Mathf.Pow(a, n) * cosThetaN + Mathf.Pow(b, n) * sinThetaN, -1 / n);
+            return radius;
         }
         public static float rsquare(float angle, float halfSideLength, float cornerRadius)
         {
