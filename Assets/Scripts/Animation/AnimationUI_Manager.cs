@@ -31,7 +31,7 @@ namespace TiltBrush.Animation{
             public CanvasScript canvas;
         }
 
-        frameLayer newFrameLayer(CanvasScript canvas){
+        public frameLayer newFrameLayer(CanvasScript canvas){
             frameLayer thisframeLayer;
             thisframeLayer.canvas = canvas;
             thisframeLayer.visible = (bool)App.Scene.IsLayerVisible(canvas);
@@ -197,6 +197,20 @@ namespace TiltBrush.Animation{
 
             }
             return (-1,-1);
+        }
+
+    
+
+        public CanvasScript getTimelineCanvas(int frameIndex, int trackIndex ){
+     
+            if (timeline.Count > frameIndex){
+                   if (timeline[frameIndex].layers.Count > trackIndex){ 
+                    return timeline[frameIndex].layers[trackIndex].canvas;
+                   }
+            }
+           return App.Scene.MainCanvas;
+            
+
         }
 
         public List<List<CanvasScript>> getTrackCanvases()
@@ -418,6 +432,7 @@ namespace TiltBrush.Animation{
 
             }
             updateTimelineSlider();
+            updateTimelineNob();
 
         }
 
@@ -510,6 +525,10 @@ namespace TiltBrush.Animation{
     
         }
 
+        public void focusFrameNum(int frameNum){
+            focusFrame(timeline[frameNum]);
+        }
+
         private void focusFrame(Frame frame, bool timelineInput = false){
 
    
@@ -526,6 +545,8 @@ namespace TiltBrush.Animation{
             }
  
 
+
+            // App.Scene.m_LayerCanvases = new List<CanvasScript>(new CanvasScript[frame.layers.Count]);
             for (int i = 0; i< frame.layers.Count;i++){
 
                 if (i ==0) { 
@@ -590,6 +611,57 @@ namespace TiltBrush.Animation{
             resetTimeline();
 
         }
+        public void clearTimeline(){
+            timeline = new List<Frame>();
+        }
+         public void addLayersRaw(String name, bool visible,bool mainTrack = false){
+
+
+           
+            for (int i =0 ; i < timeline.Count; i++){
+
+             
+                if (mainTrack && i ==0){
+                  
+                    App.Scene.MainCanvas.gameObject.SetActive(visible);
+                    frameLayer addingLayer = newFrameLayer(App.Scene.MainCanvas);
+                    timeline[i].layers.Add(addingLayer);
+                    
+                }else{
+                    CanvasScript newCanvas = App.Scene.AddCanvas();
+                    newCanvas.gameObject.name = name;
+                    newCanvas.gameObject.SetActive(visible);
+                    frameLayer addingLayer = newFrameLayer(newCanvas);
+                    timeline[i].layers.Add(addingLayer);
+     
+    
+                }
+          
+                
+                
+
+            }
+
+        }
+        public void addFrameRaw(){
+            
+            Frame addingFrame = newFrame();
+
+
+            ;  
+            timeline.Add(addingFrame);
+
+            // focusFrame(addingFrame);   
+            
+            // print("TIMELINE SIZE -" + timeline.Count);
+
+      
+            // resetTimeline();
+
+
+        
+        }
+ 
         public void addKeyFrame(){
             
             Frame addingFrame = newFrame();

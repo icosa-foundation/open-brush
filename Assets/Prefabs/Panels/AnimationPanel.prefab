@@ -349,7 +349,7 @@ GameObject:
   - component: {fileID: 331921337032800447}
   - component: {fileID: 511419024171822062}
   m_Layer: 16
-  m_Name: LayersAnimationPanel
+  m_Name: AnimationPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

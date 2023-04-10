@@ -682,14 +682,51 @@ namespace TiltBrush
                 {
                     // Create Layers
                     if (jsonData.Layers != null)
+
+
                     {
+
+                        App.Scene.animationUI_manager.startTimeline();
+                        print("BEOFRE ADDING");
+                        App.Scene.animationUI_manager.printTimeline();
                         foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
                         {
                             var canvas = App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
+                            // App.Scene.animationUI_manager.timeline[0].layers.Add(App.Scene.animationUI_manager.newFrameLayer(canvas));
+                            print("ADD FRAME HERE");
+                            App.Scene.animationUI_manager.printTimeline();
                         }
                     }
+                    // Debug.Log("BEFORE LOAD TIMELINE");
+
+                    if (jsonData.AnimationTracks != null)
+                    {
+                   
+                        for (int i = 0 ;i < jsonData.AnimationTracks.numFrames -1; i++)  // Skip the main canvas
+                        {
+                            App.Scene.animationUI_manager.addKeyFrame();
+                        }
+
+                        // foreach (var track in jsonData.AnimationTracks.Tracks)  // Skip the main canvas
+                        // {
+
+                        //     App.Scene.animationUI_manager.addLayersRaw(track.Name,track.Visible,track.Name == "Main Canvas");
+
+                        // } 
+                    }
+                    print("BEFORE FOCUS FRAME");
+
+
+                     App.Scene.animationUI_manager.printTimeline();
+                   
+
+                    Debug.Log("AFTER LOAD TIMELINE");
+                    App.Scene.animationUI_manager.printTimeline();
+                    App.Scene.animationUI_manager.resetTimeline();
+                     App.Scene.animationUI_manager.focusFrameNum(0);
+                     App.Scene.animationUI_manager.timelineSlide(0);
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();

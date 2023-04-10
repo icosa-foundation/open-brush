@@ -108,8 +108,12 @@ namespace TiltBrush
                 using (var canvases = AllCanvases.GetEnumerator())
                 {
                     while (canvases.MoveNext())
-                    {
+                    {   
+                        Debug.Log("PREV HERE ");
+                        Debug.Log(prevScene);
+                        Debug.Log(canvases.Current);
                         canvases.Current.OnScenePoseChanged(prevScene, value);
+                        Debug.Log("AFTER PREV");
                     }
                 }
             }

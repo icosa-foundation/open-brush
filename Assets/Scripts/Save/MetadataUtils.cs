@@ -85,6 +85,11 @@ namespace TiltBrush
             return App.Scene.LayerCanvasesSerialized();
         }
 
+        public static AnimationMetadata GetAnimationTracks()
+        {
+            return App.Scene.AnimationTracksSerialized();
+        }
+
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)
         {
             var widgets =

@@ -244,6 +244,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.m_Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Track;
+                strokeExtensionMask |= StrokeExtension.Frame;
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -268,8 +269,8 @@ namespace TiltBrush
                 {
                     writer.UInt32(copy.trackIndex);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
-                {
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0){
+           
                     writer.UInt32(copy.frameIndex);
                 }
 
@@ -431,6 +432,38 @@ namespace TiltBrush
                 // Iterate through set bits of mask starting from LSB via bit tricks:
                 //    isolate lowest set bit: x & ~(x-1)
                 //    clear lowest set bit: x & (x-1)
+
+
+                   UInt32 thisTrack = 0;
+                   int MaxTrack = 0,MaxFrame = 0;
+
+                
+
+                   
+                // for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
+                // {
+                //    uint bit = (fields & ~(fields - 1));
+                //     switch ((StrokeExtension)bit)
+                //     {
+                //         case StrokeExtension.Track:
+                //             UInt32 trackIndex = reader.UInt32();
+                //              Debug.Log("TRACK: ");
+                //             Debug.Log(trackIndex);
+                //             MaxTrack = (int)trackIndex > MaxTrack ? (int)trackIndex : MaxTrack;
+                //             break;
+                //         case StrokeExtension.Frame:
+                //             UInt32 frameIndex = reader.UInt32();
+                //             Debug.Log("FRAME: ");
+                //             Debug.Log(frameIndex);
+                //             MaxFrame = (int)frameIndex > MaxFrame ? (int)frameIndex : MaxFrame;
+                //             break;
+                // }
+
+                // }
+
+                // Debug.Log("MAX FRAME AND MAX TRACK "  + MaxTrack.ToString() + " " + MaxFrame.ToString());
+
+             
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
@@ -458,8 +491,17 @@ namespace TiltBrush
                             {
                                 layerIndex = 0;
                             }
-                            Debug.Log("ADDING STROKE" +  layerIndex.ToString());
-                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+
+                            thisTrack = layerIndex;
+
+                            // var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
+                            // stroke.m_IntendedCanvas = canvas;
+                            break;
+                        case StrokeExtension.Frame:
+                            UInt32 frameIndex = reader.UInt32();
+                            Debug.Log("ADDING S FRAME " + thisTrack + " " + frameIndex.ToString() );
+
+                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)frameIndex,(int)thisTrack);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Seed:
