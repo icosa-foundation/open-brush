@@ -9723,7 +9723,6 @@ GameObject:
   - component: {fileID: 652605572}
   - component: {fileID: 652605564}
   - component: {fileID: 652605570}
-  - component: {fileID: 652605573}
   m_Layer: 0
   m_Name: App
   m_TagString: Untagged
@@ -10126,19 +10125,70 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_MeterStates:
-  - m_Description: 'Sketch Cost: Low'
+  - m_Description:
+      m_TableReference:
+        m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableEntryReference:
+        m_KeyId: 11105966657536
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     m_Color: {r: 0.028330477, g: 0.4216352, b: 0.9632353, a: 1}
-  - m_Description: 'Sketch Cost: Medium'
+  - m_Description:
+      m_TableReference:
+        m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableEntryReference:
+        m_KeyId: 11327010672640
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     m_Color: {r: 0.12559475, g: 0.74264705, b: 0.5383815, a: 1}
-  - m_Description: 'Sketch Cost: High'
+  - m_Description:
+      m_TableReference:
+        m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableEntryReference:
+        m_KeyId: 11410951278592
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     m_Color: {r: 0.6249851, g: 0.71323526, b: 0.07342122, a: 1}
-  - m_Description: 'Sketch Cost: Highest'
+  - m_Description:
+      m_TableReference:
+        m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableEntryReference:
+        m_KeyId: 11531013230592
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     m_Color: {r: 0.71323526, g: 0.45730966, b: 0.07342122, a: 1}
-  - m_Description: 'Sketch Cost: Picasso'
+  - m_Description:
+      m_TableReference:
+        m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableEntryReference:
+        m_KeyId: 11625947107328
+        m_Key: 
+      m_FallbackState: 0
+      m_WaitForCompletion: 0
+      m_LocalVariables: []
     m_Color: {r: 0.71323526, g: 0.07342126, b: 0.07342126, a: 1}
-  m_MaxMeterDescription: Tilt Meter Full
+  m_MaxMeterDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 10778529927168
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_BrushSizeAffectsCost: 0
   m_WidgetCostScalar: 0.6
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &652605559
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10448,124 +10498,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba223429cfccd914bb3b358738b234bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &652605573
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 652605543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TrackedObjects:
-  - rid: 3215294623607422999
-  references:
-    version: 2
-    RefIds:
-    - rid: 3215294623607422999
-      type: {class: TrackedMonoBehaviourObject, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
-        asm: Unity.Localization}
-      data:
-        m_Target: {fileID: 652605557}
-        m_TrackedProperties:
-          items:
-          - rid: 3215294623607423001
-          - rid: 3215294623607423002
-          - rid: 3215294623607423003
-          - rid: 3215294623607423004
-          - rid: 3215294623607423005
-          - rid: 3215294623607423006
-        m_UpdateType: 1
-        m_Changed:
-          m_PersistentCalls:
-            m_Calls: []
-    - rid: 3215294623607423001
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 11105966657536
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MeterStates.Array.data[0].m_Description
-    - rid: 3215294623607423002
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 11327010672640
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MeterStates.Array.data[1].m_Description
-    - rid: 3215294623607423003
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 11410951278592
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MeterStates.Array.data[2].m_Description
-    - rid: 3215294623607423004
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 11531013230592
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MeterStates.Array.data[3].m_Description
-    - rid: 3215294623607423005
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 11625947107328
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MeterStates.Array.data[4].m_Description
-    - rid: 3215294623607423006
-      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
-        asm: Unity.Localization}
-      data:
-        m_Localized:
-          m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
-          m_TableEntryReference:
-            m_KeyId: 10778529927168
-            m_Key: 
-          m_FallbackState: 0
-          m_WaitForCompletion: 0
-          m_LocalVariables: []
-        m_PropertyPath: m_MaxMeterDescription
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
@@ -29407,7 +29339,7 @@ MonoBehaviour:
     m_ModeGvr: 1
     m_Basic: 0
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1516143332900224, guid: 0e2763293ad7864469557914ca0129a3,
+  - m_PanelPrefab: {fileID: 1736516471272333392, guid: 0bc38db0c1bbe92458ab389448255167,
       type: 3}
     m_ModeVr: 0
     m_ModeVrExperimental: 0
