@@ -136,8 +136,6 @@ namespace TiltBrush
 
 
 #endif
-    }
-
 
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -217,4 +215,5 @@ namespace TiltBrush
     }
 
 #endif
+    }
 }
