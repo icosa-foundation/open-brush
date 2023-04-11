@@ -33,8 +33,8 @@ namespace TiltBrush
         [SerializeField] protected Texture2D m_ToggleOnTexture;
         [SerializeField] protected bool m_AllowUnavailable = false;
         [SerializeField] private GameObject m_LinkedUIObject;
-        private string m_DefaultDescription;
-        private Texture2D m_DefaultTexture;
+        protected string m_DefaultDescription;
+        protected Texture2D m_DefaultTexture;
 
         public string ToggleOnDescription
         {
