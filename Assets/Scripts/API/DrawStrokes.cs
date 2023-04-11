@@ -23,22 +23,18 @@ namespace TiltBrush
 
         public static void TrTransformListToStroke(List<TrTransform> trList, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
-            var trMatrix = Matrix4x4.TRS(
-                origin,
-                Quaternion.identity,
-                Vector3.one * scale
-            );
+            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
             MultiPositionPathsToStrokes(
-                new List<List<Vector3>> { trList.Select(tr => tr.translation).ToList() },
-                new List<List<Quaternion>> { trList.Select(tr => tr.rotation).ToList() },
-                new List<List<float>> { trList.Select(tr => tr.scale).ToList() },
-                trMatrix, brushScale, rawStroke);
+                new List<List<Vector3>> { trList.Select(t => t.translation).ToList() },
+                new List<List<Quaternion>> { trList.Select(t => t.rotation).ToList() },
+                new List<List<float>> { trList.Select(t => t.scale).ToList() },
+                tr, brushScale, rawStroke);
         }
 
-        public static void SinglePath2dToStroke(List<Vector2> polyline2d, Matrix4x4 trMatrix)
+        public static void SinglePath2dToStroke(List<Vector2> polyline2d, TrTransform tr)
         {
             var polylines2d = new List<List<Vector2>> { polyline2d };
-            MultiPath2dToStrokes(polylines2d, trMatrix);
+            MultiPath2dToStrokes(polylines2d, tr);
         }
 
         public static void PositionPathsToStroke(List<TrTransform> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
@@ -46,16 +42,12 @@ namespace TiltBrush
             var positions = path.Select(x => x.translation).ToList();
             var rotations = path.Select(x => x.rotation).ToList();
             var pressures = path.Select(x => x.scale).ToList();
-            var trMatrix = Matrix4x4.TRS(
-                origin,
-                Quaternion.identity,
-                Vector3.one * scale
-            );
+            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
             MultiPositionPathsToStrokes(
                 new List<List<Vector3>> { positions },
                 new List<List<Quaternion>> { rotations },
                 new List<List<float>> { pressures },
-                trMatrix,
+                tr,
                 brushScale
             );
         }
@@ -65,27 +57,22 @@ namespace TiltBrush
             var positions = path.Select(x => x.Select(y => y.translation).ToList()).ToList();
             var rotations = path.Select(x => x.Select(y => y.rotation).ToList()).ToList();
             var pressures = path.Select(x => x.Select(y => y.scale).ToList()).ToList();
-            var trMatrix = Matrix4x4.TRS(
-                origin,
-                Quaternion.identity,
-                Vector3.one * scale
-            );
+            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
             MultiPositionPathsToStrokes(
                 positions,
                 rotations,
                 pressures,
-                trMatrix,
+                tr,
                 brushScale
             );
         }
 
         public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, Quaternion rotation = default, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
-            var mat = TrTransform.TRS(origin, rotation, scale).ToMatrix4x4();
-            MultiPathsToStrokes(strokeData, mat, brushScale, rawStroke);
+            MultiPathsToStrokes(strokeData, TrTransform.TRS(origin, rotation, scale), brushScale, rawStroke);
         }
 
-        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Matrix4x4 trMatrix, float brushScale = 1f, bool rawStroke = false)
+        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, TrTransform tr, float brushScale = 1f, bool rawStroke = false)
         {
             var positions = new List<List<Vector3>>();
             var orientations = new List<List<Quaternion>>();
@@ -125,10 +112,10 @@ namespace TiltBrush
                 if (orientationsExist) orientations.Add(orientationsPath);
                 if (pressuresExist) pressures.Add(pressuresPath);
             }
-            MultiPositionPathsToStrokes(positions, orientations, pressures, trMatrix, brushScale, rawStroke);
+            MultiPositionPathsToStrokes(positions, orientations, pressures, tr, brushScale, rawStroke);
         }
 
-        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, Matrix4x4 trMatrix,
+        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, TrTransform tr,
                                                 float brushScale = 1f, bool breakOnOrigin = false)
         {
             var positions = new List<List<Vector3>>();
@@ -141,14 +128,14 @@ namespace TiltBrush
                 }
                 positions.Add(path);
             }
-            MultiPositionPathsToStrokes(positions, null, null, trMatrix, brushScale, breakOnOrigin);
+            MultiPositionPathsToStrokes(positions, null, null, tr, brushScale, breakOnOrigin);
         }
 
         public static void MultiPositionPathsToStrokes(
             List<List<Vector3>> positions,
             List<List<Quaternion>> orientations,
             List<List<float>> pressures,
-            Matrix4x4 trMatrix,
+            TrTransform tr,
             float brushScale = 1f,
             bool breakOnOrigin = false,
             bool rawStrokes = false)
@@ -183,7 +170,7 @@ namespace TiltBrush
 
                     if (rawStrokes)
                     {
-                        controlPoints.Add(new PointerManager.ControlPoint()
+                        controlPoints.Add(new PointerManager.ControlPoint
                         {
                             m_Pos = position,
                             m_Orient = orientation,
@@ -199,7 +186,7 @@ namespace TiltBrush
                         {
                             controlPoints.Add(new PointerManager.ControlPoint
                             {
-                                m_Pos = trMatrix * (position + (nextPosition - position) * step),
+                                m_Pos = position + (nextPosition - position) * step,
                                 m_Orient = orientation,
                                 m_Pressure = pressure,
                                 m_TimestampMs = time++
@@ -220,8 +207,8 @@ namespace TiltBrush
                     m_ControlPoints = controlPoints.ToArray(),
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                stroke.Group = @group;
-                stroke.Recreate(null, App.Scene.ActiveCanvas);
+                stroke.Group = group;
+                stroke.Recreate(tr, App.Scene.ActiveCanvas);
                 if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 var undoParent = ApiManager.Instance.ActiveUndo;
@@ -236,7 +223,7 @@ namespace TiltBrush
             }
         }
 
-        public static void Polygon(int sides, Matrix4x4 trMatrix = default)
+        public static void Polygon(int sides, TrTransform tr = default)
         {
             var path = new List<Vector3>();
             for (float i = 0; i <= sides; i++)
@@ -251,27 +238,27 @@ namespace TiltBrush
                 point = ApiManager.Instance.BrushRotation * point;
                 path.Add(point);
             }
-            MultiPositionPathsToStrokes(new List<List<Vector3>> { path }, null, null, trMatrix);
+            MultiPositionPathsToStrokes(new List<List<Vector3>> { path }, null, null, tr);
         }
 
-        public static void Text(string text, Matrix4x4 trMatrix)
+        public static void Text(string text, TrTransform tr)
         {
             var font = Resources.Load<CHRFont>("arcade");
             var textToStroke = new TextToStrokes(font);
             var polyline2d = textToStroke.Build(text);
-            MultiPositionPathsToStrokes(polyline2d, null, null, trMatrix);
+            MultiPositionPathsToStrokes(polyline2d, null, null, tr);
         }
 
-        public static void SvgPath(string svgPathString, Matrix4x4 trMatrix)
+        public static void SvgPath(string svgPathString, TrTransform tr)
         {
             SVGData svgData = new SVGData();
             svgData.Path(svgPathString);
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
-            MultiPath2dToStrokes(svgPolyline.Polyline, trMatrix, 1f, true);
+            MultiPath2dToStrokes(svgPolyline.Polyline, tr, 1f, true);
         }
 
-        public static void CameraPath(CameraPath path, Matrix4x4 trMatrix = default)
+        public static void CameraPath(CameraPath path, TrTransform tr = default)
         {
             var positions = new List<Vector3>();
             var rotations = new List<Quaternion>();
@@ -284,7 +271,7 @@ namespace TiltBrush
                 new List<List<Vector3>> { positions },
                 new List<List<Quaternion>> { rotations },
                 null,
-                trMatrix
+                tr
             );
 
         }

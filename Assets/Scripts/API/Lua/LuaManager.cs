@@ -688,6 +688,9 @@ namespace TiltBrush
             RegisterApiClass(script, "user", typeof(UserApiWrapper));
             RegisterApiClass(script, "wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "waveform", typeof(WaveformApiWrapper));
+
+            // TODO Proxy this.
+            UserData.RegisterType<Texture2D>();
         }
 
         public void EnablePointerScript(bool enable)

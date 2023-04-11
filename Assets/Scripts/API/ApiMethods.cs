@@ -253,7 +253,7 @@ namespace TiltBrush
             {
                 new List<Vector3>{Vector3.zero, end}
             };
-            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, Matrix4x4.Translate(ApiManager.Instance.BrushPosition));
+            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, TrTransform.T(ApiManager.Instance.BrushPosition));
             ApiManager.Instance.BrushPosition += end;
         }
 
@@ -367,7 +367,7 @@ namespace TiltBrush
                 location = _DownloadMediaFileFromUrl(location, "Images");
             }
 
-            var image = _LoadReferenceImage(location);
+            ReferenceImage image = _LoadReferenceImage(location);
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;

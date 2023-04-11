@@ -51,44 +51,29 @@ namespace TiltBrush
         public static void _SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             var floatPaths = new List<List<List<float>>> { floatPath };
-            var trMatrix = Matrix4x4.TRS(
-                origin,
-                Quaternion.identity,
-                Vector3.one * scale
-            );
+            var trMatrix = TrTransform.TRS(origin, Quaternion.identity, scale);
             DrawStrokes.MultiPathsToStrokes(floatPaths, trMatrix, brushScale, rawStroke);
         }
 
         [ApiEndpoint("draw.polygon", "Draws a polygon at the current brush position. Does not move the brush position")]
         public static void DrawPolygon(int sides, float radius, float angle)
         {
-            var trMatrix = Matrix4x4.TRS(
-                ApiManager.Instance.BrushPosition,
-                Quaternion.Euler(0, 0, angle),
-                Vector3.one * radius
-            );
+            var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
             DrawStrokes.Polygon(sides, trMatrix);
         }
 
         [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
         public static void Text(string text)
         {
-            var trMatrix = Matrix4x4.TRS(
-                ApiManager.Instance.BrushPosition,
-                Quaternion.identity,
-                Vector3.one
-            );
+            var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
             DrawStrokes.Text(text, trMatrix);
         }
 
         [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
         public static void SvgPath(string svgPathString)
         {
-            var trMatrix = Matrix4x4.TRS(
-                ApiManager.Instance.BrushPosition,
-                Quaternion.identity,
-                Vector3.one * 0.01f // SVG paths are usually scaled rather large
-            );
+            // SVG paths are usually scaled rather large so scale down 100x
+            var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 0.01f);
             DrawStrokes.SvgPath(svgPathString, trMatrix);
 
         }

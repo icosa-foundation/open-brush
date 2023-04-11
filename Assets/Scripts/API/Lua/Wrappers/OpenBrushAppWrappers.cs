@@ -103,6 +103,7 @@ namespace TiltBrush
     {
         public static float time => Time.realtimeSinceStartup;
         public static float frames => Time.frameCount;
+        public static bool physics(bool active) => Physics.autoSimulation = active;
         public static float currentScale => App.Scene.Pose.scale;
         public static List<TrTransform> lastSelectedStroke => SelectionManager.m_Instance.LastSelectedStrokeCP;
         public static List<TrTransform> lastStroke => SelectionManager.m_Instance.LastStrokeCP;
@@ -132,6 +133,15 @@ namespace TiltBrush
         // TODO Unified API for tools and panels
         // public static void SettingsPanel(bool a) => )LuaApiMethods.SettingsPanel)(a);
         // public static void SketchOrigin(bool a) => )LuaApiMethods.SketchOrigin)(a);
+
+        public static string clipboardText {
+            get => SystemClipboard.GetClipboardText();
+            set => SystemClipboard.SetClipboardText(value);
+        }
+        public static Texture2D clipboardImage {
+            get => SystemClipboard.GetClipboardImage();
+            // set => SystemClipboard.SetClipboardImage(value);
+        }
     }
 
 
@@ -288,9 +298,9 @@ namespace TiltBrush
     {
         public static void path(List<TrTransform> path) => LuaApiMethods.DrawPath(path);
         public static void paths(List<List<TrTransform>> paths) => LuaApiMethods.DrawPaths(paths);
-        public static void polygon(int sides, TrTransform tr) => DrawStrokes.Polygon(sides, tr.ToMatrix4x4());
-        public static void text(string text, TrTransform tr=default) => DrawStrokes.Text(text, tr.ToMatrix4x4());
-        public static void svg(string svg, TrTransform tr=default) => DrawStrokes.SvgPath(svg, tr.ToMatrix4x4());
+        public static void polygon(int sides, TrTransform tr=default) => DrawStrokes.Polygon(sides, tr);
+        public static void text(string text, TrTransform tr=default) => DrawStrokes.Text(text, tr);
+        public static void svg(string svg, TrTransform tr=default) => DrawStrokes.SvgPath(svg, tr);
         public static void cameraPath(int index) => ApiMethods.DrawCameraPath(index);
     }
 
