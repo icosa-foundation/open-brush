@@ -700,16 +700,26 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
+                        for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
-                            var canvas = App.Scene.AddLayerNow();
+                            var layer = jsonData.Layers[i];
+                            CanvasScript canvas = i == 0 ? App.Scene.MainCanvas : App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
+
+                            // Assume that layers with a scale of 0 are from legacy sketches with no layer transform stored
+                            // and that they should be set to 1
+                            // nb. The correct place to do this would be somewhere in the deserialization code
+                            // But after failing with DefaultValueHandling.Populate and custom JsonConverters
+                            // I'm just going to do it here
+                            if (layer.Transform.scale == 0)
+                            {
+                                TrTransform tr = layer.Transform;
+                                tr.scale = 1;
+                                layer.Transform = tr;
+                            }
                             canvas.Pose = layer.Transform;
                         }
-                        // Normally the main layer shouldn't be transformed
-                        // But it's possible via scripting so we should support it
-                        App.Scene.MainCanvas.Pose = jsonData.Layers[0].Transform;
                     }
                 }
 
