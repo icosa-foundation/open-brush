@@ -267,6 +267,7 @@ namespace TiltBrush
                 pos_GS = PointerManager.m_Instance.GenerateJitteredPosition(pos_GS, PointerManager.m_Instance.positionJitter);
             }
 
+            // TODO Should this only be turned on when scripts request it?
             // Usually done in UpdateTool but FreePaintTool overrides that and does it here
             // The reason for this is that we want to store the brush transforms after they've been processed above
             Transform wandTr_GS = InputManager.m_Instance.GetWandControllerAttachPoint();
