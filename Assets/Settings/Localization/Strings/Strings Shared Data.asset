@@ -2839,6 +2839,62 @@ MonoBehaviour:
     m_Key: TUTORIAL_WORLDTRANSFORMRESET_OCULUS
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Key: PANEL_REFERENCE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Key: PANEL_REFERENCE_ICONMODEL_LOADTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Key: PANEL_REFERENCE_MODEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Key: PANEL_REFERENCE_VIDEO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Key: PANEL_REFERENCE_IMAGE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Key: POPUP_REFERENCEPANEL_NODATA_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Key: BUTTON_OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Key: POPUP_REFERENCEPANEL_NODATA_BUTTON_ADDMEDIA_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Key: POPUP_REFERENCEPANEL_NODATA_MOBILETEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Key: BUTTON_OPENMOBILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Key: PANEL_REFERENCE_BUTTON_ADDMEDIA_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_REWIND_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_PLAYPAUSE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_FORWARD_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

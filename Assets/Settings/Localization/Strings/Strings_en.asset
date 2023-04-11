@@ -3016,6 +3016,70 @@ MonoBehaviour:
       to Reset Your Size'
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: Media Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: Click to Load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: Local Models
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: Local Videos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: Local Images
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: Add Media
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: 'Add images and
+
+      models to
+
+      see them here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: 'Add images to
+
+      your Device to
+
+      see them here'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: Learn How
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: Add Media
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: Skip Backward
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: Play / Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: Skip Forward
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
