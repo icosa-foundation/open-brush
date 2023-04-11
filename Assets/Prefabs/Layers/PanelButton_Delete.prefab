@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 4317228714540023563}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.001, y: 0.495, z: -0.037}
-  m_LocalScale: {x: 0.16999184, y: 0.14343303, z: 0.22767149}
+  m_LocalScale: {x: 0.161745, y: 0.161745, z: 0.2454982}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -123,6 +123,15 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c7e34f427cbbf7745a1aeca950177a6f, type: 3}
