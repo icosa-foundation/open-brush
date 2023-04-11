@@ -29195,7 +29195,7 @@ MonoBehaviour:
     m_ModeGvr: 0
     m_Basic: 1
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 1534940246011792, guid: 13675223bbb22444289afa8c4649a0aa,
+  - m_PanelPrefab: {fileID: 8342536447398316161, guid: 16ea55ab72c703c449db50dfbaffc5f5,
       type: 3}
     m_ModeVr: 0
     m_ModeVrExperimental: 0

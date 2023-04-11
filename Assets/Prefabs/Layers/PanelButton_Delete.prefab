@@ -147,7 +147,7 @@ MonoBehaviour:
   m_Command: 0
   m_CommandParam: -1
   m_CommandParam2: -1
-  m_RequiresPopup: 1
+  m_RequiresPopup: 0
   m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: LAYERS_PANEL_DELETE_BUTTON_POPUP

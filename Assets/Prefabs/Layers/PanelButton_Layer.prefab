@@ -318,7 +318,7 @@ MonoBehaviour:
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
   activated: 0
-  activatedButtonTexture: {fileID: 2800000, guid: 35c509404b758af4fb07fb3dc1ca76f0,
+  activatedButtonTexture: {fileID: 2800000, guid: cb24e09af3011724b893f07ef052b01a,
     type: 3}
   references:
     version: 2
