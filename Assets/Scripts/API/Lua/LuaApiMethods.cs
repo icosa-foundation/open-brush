@@ -155,6 +155,12 @@ namespace TiltBrush
             CameraConfig.Watermark = active;
         }
 
+        public static void SaveAs(string name)
+        {
+            // TODO enforce legal filenames and handle overwriting
+            var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: name);
+        }
 
         public static void Save(bool overwrite)
         {

@@ -149,6 +149,7 @@ namespace TiltBrush
             SymmetryTwoHanded = 6003,
             ScriptedSymmetryCommand = 6004,
             OpenScriptParametersPopup = 6005,
+            SaveAs = 6006,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000
@@ -4202,6 +4203,20 @@ namespace TiltBrush
                             GenerateBoundingBoxSaveIcon();
                         }
                         StartCoroutine(SaveLoadScript.m_Instance.SaveNewName());
+                        EatGazeObjectInput();
+                        break;
+                    }
+                case GlobalCommands.SaveAs:
+                    {
+                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        {
+                            return;
+                        }
+                        if (iParam1 == 1)
+                        {
+                            GenerateBoundingBoxSaveIcon();
+                        }
+                        StartCoroutine(SaveLoadScript.m_Instance.SaveAs(sParam));
                         EatGazeObjectInput();
                         break;
                     }

@@ -364,6 +364,16 @@ namespace TiltBrush
             return fileInfo;
         }
 
+        public DiskSceneFileInfo GetSceneFileInfoFromName(string name)
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(name);
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
         /// Save a snapshot directly to a location.
         /// The snapshot's AssetId is the source of truth
         public IEnumerator<Timeslice> SaveSnapshot(SceneFileInfo fileInfo, SketchSnapshot snapshot)
@@ -390,6 +400,13 @@ namespace TiltBrush
         public IEnumerator<Timeslice> SaveNewName(bool tiltasaurusMode = false)
         {
             return SaveLow(GetNewNameSceneFileInfo(tiltasaurusMode));
+        }
+
+        public IEnumerator<Timeslice> SaveAs(string filename)
+        {
+            string path = Path.Join(m_SaveDir, filename);
+            Debug.Log($"SaveAs: {path}");
+            return SaveLow(GetSceneFileInfoFromName(path));
         }
 
         /// In order to for this to work properly:
