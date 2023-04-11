@@ -1180,11 +1180,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 68768010396041216
-    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_DESCRIPTION
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 68768580896882688
-    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_POPUP
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_POPUP
     m_Metadata:
       m_Items: []
   - m_Id: 68773633749745664
@@ -1408,7 +1408,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76117036946219008
-    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_RESET
+    m_Key: POPUP_PANELS_BUTTON_RESET_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 76117383567695872
@@ -2893,6 +2893,22 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 89074884501331968
     m_Key: PANEL_REFERENCE_BUTTON_VIDEO_FORWARD_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Key: SETTINGS_PANEL_BUTTON_SWAPHAND_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -3080,6 +3080,22 @@ MonoBehaviour:
     m_Localized: Skip Forward
     m_Metadata:
       m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: (Restart required)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: Swap Hands
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: Tutorial Next Restart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: Turns Advanced+Experimental modes off
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
