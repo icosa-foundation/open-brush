@@ -288,14 +288,10 @@ namespace TiltBrush
     {
         public static void path(List<TrTransform> path) => LuaApiMethods.DrawPath(path);
         public static void paths(List<List<TrTransform>> paths) => LuaApiMethods.DrawPaths(paths);
-        public static void polygon(int sides, float radius, float angle) => ApiMethods.DrawPolygon(sides, radius, angle);
-        public static void text(string text) => ApiMethods.Text(text);
-        public static void svg(string svg) => ApiMethods.SvgPath(svg);
+        public static void polygon(int sides, TrTransform tr) => DrawStrokes.Polygon(sides, tr.ToMatrix4x4());
+        public static void text(string text, TrTransform tr=default) => DrawStrokes.Text(text, tr.ToMatrix4x4());
+        public static void svg(string svg, TrTransform tr=default) => DrawStrokes.SvgPath(svg, tr.ToMatrix4x4());
         public static void cameraPath(int index) => ApiMethods.DrawCameraPath(index);
-        // The Http Api commands for these take strings as input which we don't want
-        // public static void paths() => ApiMethods.DrawPaths();
-        // public static void path() => ApiMethods.DrawPath();
-        // public static void stroke() => ApiMethods.DrawStroke();
     }
 
     [MoonSharpUserData]
@@ -496,6 +492,7 @@ namespace TiltBrush
     {
         public static void open(string name) => ApiMethods.LoadNamedFile(name);
         public static void save(bool overwrite) => LuaApiMethods.Save(overwrite);
+        public static void saveAs(string name) => LuaApiMethods.SaveAs(name);
         public static void export() => ApiMethods.ExportRaw();
         public static void newSketch() => ApiMethods.NewSketch();
         // public static void user() => ApiMethods.LoadUser();
@@ -536,6 +533,9 @@ namespace TiltBrush
         public static void moveBy(Vector3 amount) => ApiMethods.BrushMoveBy(amount);
         public static void move(float amount) => ApiMethods.BrushMove(amount);
         public static void draw(float amount) => ApiMethods.BrushDraw(amount);
+        public static void drawPolygon(int sides, float radius=1, float angle=0) => ApiMethods.DrawPolygon(sides, radius, angle);
+        public static void drawText(string text) => ApiMethods.Text(text);
+        public static void drawSvg(string svg) => ApiMethods.SvgPath(svg);
         public static void turnY(float angle) => ApiMethods.BrushYaw(angle);
         public static void turnX(float angle) => ApiMethods.BrushPitch(angle);
         public static void turnZ(float angle) => ApiMethods.BrushRoll(angle);

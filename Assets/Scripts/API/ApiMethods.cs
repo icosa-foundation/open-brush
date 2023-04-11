@@ -253,8 +253,7 @@ namespace TiltBrush
             {
                 new List<Vector3>{Vector3.zero, end}
             };
-            var origin = ApiManager.Instance.BrushPosition;
-            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, origin);
+            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, Matrix4x4.Translate(ApiManager.Instance.BrushPosition));
             ApiManager.Instance.BrushPosition += end;
         }
 

@@ -213,9 +213,10 @@ function camerapath.record() end
 function camerapath.sample(time, loop, pingpong) end
 function draw.path(path) end
 function draw.paths(paths) end
-function draw.polygon(sides, radius, angle) end
-function draw.text(text) end
-function draw.svg(svg) end
+function draw.polygon(sides, tr) end
+function draw.polygon(sides) end
+function draw.text(text, tr) end
+function draw.svg(svg, tr) end
 function draw.cameraPath(index) end
 function guides.addCube(tr) end
 function guides.addSphere(tr) end
@@ -289,6 +290,7 @@ function selection.trim(count) end
 function selection.selectAll() end
 function sketch.open(name) end
 function sketch.save(overwrite) end
+function sketch.saveAs(name) end
 function sketch.export() end
 function sketch.newSketch() end
 spectator.position = nil
@@ -336,6 +338,9 @@ function turtle.moveTo(position) end
 function turtle.moveBy(amount) end
 function turtle.move(amount) end
 function turtle.draw(amount) end
+function turtle.drawPolygon(sides, radius, angle) end
+function turtle.drawText(text) end
+function turtle.drawSvg(svg) end
 function turtle.turnY(angle) end
 function turtle.turnX(angle) end
 function turtle.turnZ(angle) end
