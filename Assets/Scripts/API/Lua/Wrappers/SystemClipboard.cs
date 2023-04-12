@@ -15,23 +15,7 @@ namespace TiltBrush
         public static string GetClipboardText()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        string clipboardText = "";
-        AndroidJavaClass UnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-        AndroidJavaObject currentActivity = UnityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-        currentActivity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
-        {
-            AndroidJavaObject clipboardManager = currentActivity.Call<AndroidJavaObject>("getSystemService", "CLIPBOARD_SERVICE");
-            if (clipboardManager.Call<bool>("hasPrimaryClip"))
-            {
-                AndroidJavaObject clipData = clipboardManager.Call<AndroidJavaObject>("getPrimaryClip");
-                if (clipData.Call<int>("getItemCount") > 0)
-                {
-                    AndroidJavaObject clipItem = clipData.Call<AndroidJavaObject>("getItemAt", 0);
-                    clipboardText = clipItem.Call<string>("coerceToText", currentActivity).ToString();
-                }
-            }
-        }));
-        return clipboardText;
+            return GetClipboardManager().Call<string>("getText");
 #else
             return GUIUtility.systemCopyBuffer;
 #endif
@@ -40,20 +24,22 @@ namespace TiltBrush
         public static void SetClipboardText(string text)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        AndroidJavaClass UnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-        AndroidJavaObject currentActivity = UnityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-        currentActivity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
-        {
-            AndroidJavaObject clipboardManager = currentActivity.Call<AndroidJavaObject>("getSystemService", "clipboard");
-            AndroidJavaClass clipDataClass = new AndroidJavaClass("android.content.ClipData");
-            AndroidJavaObject clipData = clipDataClass.CallStatic<AndroidJavaObject>("newPlainText", "text", text);
-            clipboardManager.Call("setPrimaryClip", clipData);
-        }));
+            GetClipboardManager().Call("setText", text);
 #else
             GUIUtility.systemCopyBuffer = text;
 #endif
         }
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private static AndroidJavaObject GetClipboardManager()
+        {
+            var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            AndroidJavaObject _currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            var staticContext = new AndroidJavaClass("android.content.Context");
+            AndroidJavaObject _clipboardService = staticContext.GetStatic<AndroidJavaObject>("CLIPBOARD_SERVICE");
+            return _currentActivity.Call<AndroidJavaObject>("getSystemService", _clipboardService);
+        }
+#endif
 
         public static Texture2D GetClipboardImage()
         {
