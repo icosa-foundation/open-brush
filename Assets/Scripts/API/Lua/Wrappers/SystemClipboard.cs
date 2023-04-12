@@ -20,7 +20,7 @@ namespace TiltBrush
         AndroidJavaObject currentActivity = UnityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
         currentActivity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
         {
-            AndroidJavaObject clipboardManager = currentActivity.Call<AndroidJavaObject>("getSystemService", "clipboard");
+            AndroidJavaObject clipboardManager = currentActivity.Call<AndroidJavaObject>("getSystemService", "CLIPBOARD_SERVICE");
             if (clipboardManager.Call<bool>("hasPrimaryClip"))
             {
                 AndroidJavaObject clipData = clipboardManager.Call<AndroidJavaObject>("getPrimaryClip");
