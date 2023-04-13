@@ -243,8 +243,7 @@ namespace TiltBrush
 
         public static void Text(string text, TrTransform tr)
         {
-            var font = Resources.Load<CHRFont>("arcade");
-            var textToStroke = new TextToStrokes(font);
+            var textToStroke = new TextToStrokes(ApiManager.Instance.TextFont);
             var polyline2d = textToStroke.Build(text);
             MultiPositionPathsToStrokes(polyline2d, null, null, tr);
         }
