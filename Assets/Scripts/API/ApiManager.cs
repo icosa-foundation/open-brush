@@ -650,6 +650,32 @@ namespace TiltBrush
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
 
+        // TODO Find a better home for this. It won't always be API specific
+        public CHRFont TextFont {
+            get
+            {
+                if (m_TextFont == null)
+                {
+                    TextFont = Resources.Load<CHRFont>("arcade");
+                }
+                return m_TextFont;
+            }
+
+            set
+            {
+                m_TextFont = value;
+            }
+        }
+        private CHRFont m_TextFont;
+
+        public void SetTextFont(string chrData)
+        {
+            CHRFont font = ScriptableObject.CreateInstance<CHRFont>();
+            font.DataRaw = chrData;
+            font.Initialize();
+            TextFont = font;
+        }
+
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
             if (!HasOutgoingListeners) return;
