@@ -27,10 +27,8 @@ function WhileTriggerPressed()
         letterCount = letterCount + 1
         letter = string.sub(text, letterCount, letterCount)
         rot = brush.rotation
-        --rot.y = rot.y + 90
         transform = { position = brush.position, rotation=rot, scale=size }
         draw.text(letter, transform)
-        --draw.polygon(5, transform)
         letterCount = letterCount % string.len(text)
         distance = 0
     end

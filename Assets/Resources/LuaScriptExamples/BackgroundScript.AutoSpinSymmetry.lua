@@ -3,9 +3,9 @@ Settings = {
 }
 
 Parameters = {
-    speedX={label="Speed X", type="float", min=0, max=2000, default=0},
-    speedY={label="Speed Y", type="float", min=0, max=2000, default=200},
-    speedZ={label="Speed Z", type="float", min=0, max=2000, default=0},
+    speedX={label="Speed X", type="float", min=0, max=600, default=0},
+    speedY={label="Speed Y", type="float", min=0, max=600, default=150},
+    speedZ={label="Speed Z", type="float", min=0, max=600, default=0},
 }
 
 function Main()

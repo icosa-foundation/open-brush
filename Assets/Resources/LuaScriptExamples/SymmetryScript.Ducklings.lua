@@ -21,7 +21,7 @@ function Main()
     end
 
     pointers = {}
-    Colors = {}
+    colors = {}
 
     brush.setBufferSize(copies * delay)
     for i = 0, copies - 1 do
@@ -35,8 +35,9 @@ function Main()
             t = i / copies
             newHue = waveform.triangle(t, hueShiftFrequency) * hueShiftAmount
             newColor = unityColor.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
-            table.insert(Colors, newColor)
+            table.insert(colors, newColor)
         end
+        symmetry.setColors(colors)
     end
     return pointers
 end

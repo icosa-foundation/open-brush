@@ -161,6 +161,9 @@ app.currentScale = nil
 app.lastSelectedStroke = nil
 app.lastStroke = nil
 app.environment = nil
+app.clipboardText = nil
+app.clipboardImage = nil
+function app.physics(active) end
 function app.undo() end
 function app.redo() end
 function app.addListener(a) end
@@ -179,6 +182,8 @@ function app.draftingVisible() end
 function app.draftingTransparent() end
 function app.draftingHidden() end
 function app.watermark(a) end
+function app.readFile(path) end
+function app.setFont(fontData) end
 brush.timeSincePressed = nil
 brush.timeSinceReleased = nil
 brush.triggerIsPressed = nil
@@ -214,7 +219,6 @@ function camerapath.sample(time, loop, pingpong) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, tr) end
-function draw.polygon(sides) end
 function draw.text(text, tr) end
 function draw.svg(svg, tr) end
 function draw.cameraPath(index) end
@@ -264,7 +268,7 @@ function models.getPosition(index) end
 function models.getRotation(index) end
 function models.setPosition(index, position) end
 function models.setRotation(index, rotation) end
-function path.fromSvg(svg) end
+function path.fromSvg(svg, scale) end
 function path.fromSvgMultiple(svg) end
 function path.transform(path, transform) end
 function path.translate(path, amount) end
@@ -329,6 +333,12 @@ function symmetry.square(angle) end
 function symmetry.superellipse(angle, n, a, b) end
 function symmetry.rsquare(angle, halfSideLength, cornerRadius) end
 function symmetry.polygon(angle, numSides, radius) end
+function symmetry.setColors(colors) end
+function symmetry.getColors() end
+function symmetry.setBrushes(brushes) end
+function symmetry.getBrushNames() end
+function symmetry.getBrushGuids() end
+function symmetry.pointsToPolar(cartesianPoints) end
 function timer.set(fn, interval, delay, repeats) end
 function timer.unset(fn) end
 turtle.transform = nil
