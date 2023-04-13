@@ -320,8 +320,17 @@ namespace TiltBrush
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
-        public List<Color> SymmetryPointerColors => m_SymmetryPointerColors.ToList();
-        public List<BrushDescriptor> SymmetryPointerBrushes => m_SymmetryPointerBrushes.ToList();
+        public List<Color> SymmetryPointerColors
+        {
+            get { return m_SymmetryPointerColors; }
+            set { m_SymmetryPointerColors = value; }
+        }
+
+        public List<BrushDescriptor> SymmetryPointerBrushes
+        {
+            get { return m_SymmetryPointerBrushes; }
+            set { m_SymmetryPointerBrushes = value; }
+        }
 
         static public void ClearPlayerPrefs()
         {
@@ -823,33 +832,6 @@ namespace TiltBrush
             return trs_CS;
         }
 
-        private void SetScriptedBrushesAndColors()
-        {
-            var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
-
-            var luaColors = script.Globals.Get(LuaNames.Colors);
-            if (!Equals(luaColors, DynValue.Nil))
-            {
-                m_SymmetryPointerColors = luaColors.ToObject<List<Color>>();
-            }
-            else
-            {
-                m_SymmetryPointerColors.Clear();
-            }
-
-            var luaBrushes = script.Globals.Get(LuaNames.Brushes);
-            if (!Equals(luaBrushes, DynValue.Nil))
-            {
-                m_SymmetryPointerBrushes = luaBrushes.Table.Values.Select(
-                    x => ApiMethods.LookupBrushDescriptor(x.String)
-                ).Where(x => x != null).ToList();
-            }
-            else
-            {
-                m_SymmetryPointerBrushes.Clear();
-            }
-        }
-
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
@@ -1056,7 +1038,6 @@ namespace TiltBrush
                     {
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         var trs = GetScriptedTransforms();
-                        SetScriptedBrushesAndColors();
                         int pointerIndex = 0;
                         foreach (var tr in trs)
                         {

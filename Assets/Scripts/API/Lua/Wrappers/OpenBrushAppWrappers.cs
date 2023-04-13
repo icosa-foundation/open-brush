@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -141,6 +142,45 @@ namespace TiltBrush
         public static Texture2D clipboardImage {
             get => SystemClipboard.GetClipboardImage();
             // set => SystemClipboard.SetClipboardImage(value);
+        }
+
+        public static string readFile(string path)
+        {
+            bool valid = false;
+            // Disallow absolute paths
+            valid = !Path.IsPathRooted(path);
+            if (valid)
+            {
+                path = Path.Join(ApiManager.Instance.UserScriptsPath(), path);
+                // Check path is a subdirectory of User folder
+                valid = _IsSubdirectory(path, App.UserPath());
+            }
+            if (!valid)
+            {
+                // TODO think long and hard about security
+                Debug.LogWarning($"Path is not a subdirectory of User folder: {path}");
+                return null;
+            }
+
+            Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            string contents;
+            using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
+            fileStream.Close();
+
+            return contents;
+        }
+
+        public static void setFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
+
+        private static bool _IsSubdirectory(string path, string basePath)
+        {
+            var relPath = Path.GetRelativePath(
+                basePath.Replace('\\', '/'),
+                path.Replace('\\', '/')
+            );
+            return relPath != "." && relPath != ".."
+                && !relPath.StartsWith("../")
+                && !Path.IsPathRooted(relPath);
         }
     }
 
@@ -280,12 +320,69 @@ namespace TiltBrush
 
             return distanceToEdge;
         }
+
+        public static void setColors(List<Color> colors)
+        {
+            PointerManager.m_Instance.SymmetryPointerColors = colors;
+        }
+
+        public static List<Color> getColors()
+        {
+            return PointerManager.m_Instance.SymmetryPointerColors;
+        }
+
+        public static void setBrushes(List<string> brushes)
+        {
+            PointerManager.m_Instance.SymmetryPointerBrushes = brushes.Select(
+                x => ApiMethods.LookupBrushDescriptor(x)
+            ).Where(x => x != null).ToList();
+        }
+
+        public static List<string> getBrushNames()
+        {
+            return PointerManager.m_Instance.SymmetryPointerBrushes.Select(
+                x => x.m_Description
+            ).ToList();
+        }
+
+        public static List<string> getBrushGuids()
+        {
+            return PointerManager.m_Instance.SymmetryPointerBrushes.Select(
+                x => x.m_Guid.ToString()
+            ).ToList();
+        }
+
+        // Converts an array of points centered on the origin to a list of TrTransforms
+        // suitable for use with symmetry scripts default space
+        public static List<TrTransform> pointsToPolar(List<Vector2> cartesianPoints)
+        {
+            var polarCoordinates = new List<TrTransform>();
+
+            foreach (Vector2 point in cartesianPoints)
+            {
+                float radius = Mathf.Sqrt(point.x * point.x + point.y * point.y);
+                float angle = Mathf.Atan2(point.y, point.x);
+
+                polarCoordinates.Add(
+                    TrTransform.TR(
+                        new Vector3(
+                            brushOffset.x * radius,
+                            brushOffset.y,
+                            brushOffset.z * radius
+                        ),
+                        Quaternion.Euler(0, angle * Mathf.Rad2Deg, 0)
+                    )
+                );
+            }
+            return polarCoordinates;
+        }
+
     }
 
     [MoonSharpUserData]
     public static class PathApiWrapper
     {
-        public static List<TrTransform> fromSvg(string svg) => LuaApiMethods.PathFromSvg(svg);
+        public static List<TrTransform> fromSvg(string svg, float scale) => LuaApiMethods.PathFromSvg(svg, scale);
         public static List<List<TrTransform>> fromSvgMultiple(string svg) => LuaApiMethods.PathsFromSvg(svg);
         public static List<TrTransform> transform(List<TrTransform> path, TrTransform transform) => LuaApiMethods.TransformPath(path, transform);
         public static List<TrTransform> translate(List<TrTransform> path, Vector3 amount) => LuaApiMethods.TranslatePath(path, amount);
