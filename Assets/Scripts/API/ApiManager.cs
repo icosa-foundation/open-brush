@@ -670,10 +670,8 @@ namespace TiltBrush
 
         public void SetTextFont(string chrData)
         {
-            CHRFont font = ScriptableObject.CreateInstance<CHRFont>();
-            font.DataRaw = chrData;
-            font.Initialize();
-            TextFont = font;
+            TextFont.DataRaw = chrData;
+            TextFont.Initialize();
         }
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
