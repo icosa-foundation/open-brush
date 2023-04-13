@@ -17,7 +17,7 @@ namespace TiltBrush
             DrawStrokes.TrTransformListsToStroke(paths, Vector3.zero);
         }
 
-        public static List<TrTransform> PathFromSvg(string svgPathString)
+        public static List<TrTransform> PathFromSvg(string svgPathString, float scale)
         {
             // Joins all the paths into one and returns points as TrTransforms
             SVGData svgData = new SVGData();
@@ -25,7 +25,10 @@ namespace TiltBrush
             SVGPolyline svgPolyline = new SVGPolyline();
             svgPolyline.Fill(svgData);
             var origin = svgPolyline.Polyline[0][0];
-            return svgPolyline.Polyline.SelectMany(l => l).Select(p => TrTransform.T(p - origin)).ToList();
+            return svgPolyline.Polyline
+                .SelectMany(l => l)
+                .Select(p => TrTransform.T((p - origin) * scale))
+                .ToList();
         }
 
         public static List<List<TrTransform>> PathsFromSvg(string svgPathString)
