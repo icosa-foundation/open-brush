@@ -352,7 +352,7 @@ namespace TiltBrush
             ).ToList();
         }
 
-        public static List<TrTransform> pointsToPolar(List<TrTransform> transforms)
+        public static List<TrTransform> transformsToPolar(List<TrTransform> transforms)
         {
             return pointsToPolar(transforms.Select(x =>
             {

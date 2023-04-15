@@ -16,7 +16,7 @@ function Main()
         lastSpacing = spacing
     end
 
-    return symmetry.pointsToPolar(points)
+    return symmetry.transformsToPolar(points)
 end
 
 function End()

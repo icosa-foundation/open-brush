@@ -345,7 +345,7 @@ function symmetry.getColors() end
 function symmetry.setBrushes(brushes) end
 function symmetry.getBrushNames() end
 function symmetry.getBrushGuids() end
-function symmetry.pointsToPolar(transforms) end
+function symmetry.transformsToPolar(transforms) end
 function symmetry.pointsToPolar(cartesianPoints) end
 function timer.set(fn, interval, delay, repeats) end
 function timer.unset(fn) end
