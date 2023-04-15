@@ -166,7 +166,7 @@ namespace TiltBrush
 
             // Allow includes from Scripts/LuaModules
             Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { $"{modulesPath}\\?.lua" };
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(modulesPath, "?.lua") };
 
             // Copy built-in Lua Libraries to User's LuaModules directory
             var libraries = Resources.LoadAll<TextAsset>("LuaModules");
