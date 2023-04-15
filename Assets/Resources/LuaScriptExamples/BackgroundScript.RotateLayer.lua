@@ -4,15 +4,16 @@
 
 Parameters = {
     layerNumber={label="Layer Number", type="int", min=0, max=10, default=1},
-    speedX={label="X Rotation Speed", type="float", min=0.01, max=20, default=0},
-    speedY={label="Y Rotation Speed", type="float", min=0.01, max=20, default=0},
-    speedZ={label="Z Rotation Speed", type="float", min=0.01, max=20, default=6},
-    radius={label="Radius", type="float", min=0.01, max=5, default=1},
+    speedX={label="X Rotation Speed", type="int", min=-10, max=10, default=0},
+    speedY={label="Y Rotation Speed", type="int", min=-10, max=10, default=0},
+    speedZ={label="Z Rotation Speed", type="int", min=-10, max=10, default=2},
 }
 
 function Start()
-    layers.centerPivot(layerNumber)
+    originalRotation = layers.getRotation(layerNumber)
     angle = {x = 0, y = 0, z = 0}
+    layers.centerPivot(layerNumber)
+    -- layers.showPivot(layerNumber)
 end
 
 function Main()
@@ -23,4 +24,8 @@ function Main()
     }
     rotation = angle
     layers.setRotation(layerNumber, rotation)
+end
+
+function End()
+    layers.setRotation(layerNumber, originalRotation)
 end

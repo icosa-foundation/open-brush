@@ -1,12 +1,12 @@
+Settings = {space="canvas"}
+
 Parameters = {
     copies={label="Number of copies", type="int", min=1, max=64, default=12},
     delay={label="Delay per copy", type="int", min=1, max=10, default=4},
     amount={label="Amount", type="float", min=0, max=1, default=0.5},
-    hueShiftFrequency={label="Hue Shift Frequency", type="float", min=0.1, max=6, default=1},
-    hueShiftAmount={label="Hue Shift Amount", type="float", min=0, max=1, default=0.1}
 }
 
-Settings = {space="canvas"}
+symmetryHueShift = require "symmetryHueShift"
 
 function Start()
     initialHsv = brush.colorHsv

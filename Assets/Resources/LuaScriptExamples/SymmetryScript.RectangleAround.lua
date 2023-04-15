@@ -7,9 +7,9 @@ Parameters = {
     numPointsHeight={label="Number of points along height", type="int", min=2, max=32, default=5},
     spacing={label="Spacing", type="float", min=0.001 , max=1, default=.2},
     exteriorOnly={label="Exterior Only", type="int", min=0, max=1, default=1},
-    hueShiftFrequency={label="Hue Shift Frequency", type="float", min=0.1, max=6, default=1},
-    hueShiftAmount={label="Hue Shift Amount", type="float", min=0, max=1, default=0.3}
 }
+
+symmetryHueShift = require "symmetryHueShift"
 
 function Start()
     initialHsv = brush.colorHsv
@@ -18,18 +18,7 @@ end
 function Main()
 
     if brush.triggerIsPressedThisFrame then
-        if hueShiftAmount > 0 then
-            colors = {}
-            copies = numPointsWidth * numPointsHeight * 2
-            for i = 0, copies - 1 do
-                t = i / copies
-                newHue = waveform.triangle(t, hueShiftFrequency) * hueShiftAmount
-                newColor = unityColor.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
-                table.insert(colors, newColor)
-            end
-            symmetry.setColors(colors)
-            brush.forceNewStroke()
-        end
+        symmetryHueShift.generate(numPointsWidth * numPointsHeight * 2, initialHsv)
     end
 
     if (exteriorOnly==1) then
@@ -77,6 +66,5 @@ end
 
 
 function End()
-    --TODO
-    --color.setHsv(color.HsvToRgb(brush.colorHsv))
+    -- TODO fix brush.colorHsv = initialHsv
 end

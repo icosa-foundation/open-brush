@@ -274,6 +274,13 @@ function path.transform(path, transform) end
 function path.translate(path, amount) end
 function path.rotate(path, amount) end
 function path.scale(path, amount) end
+function path.centered(path) end
+function path.startingFrom(path, index) end
+function path.findClosest(path, point) end
+function path.findMinimum(path, axis) end
+function path.findMaximum(path, axis) end
+function path.normalized(path) end
+function path.resample(path, spacing) end
 visualizer.sampleRate = nil
 visualizer.duration = nil
 function visualizer.enableScripting(name) end
@@ -338,6 +345,7 @@ function symmetry.getColors() end
 function symmetry.setBrushes(brushes) end
 function symmetry.getBrushNames() end
 function symmetry.getBrushGuids() end
+function symmetry.pointsToPolar(transforms) end
 function symmetry.pointsToPolar(cartesianPoints) end
 function timer.set(fn, interval, delay, repeats) end
 function timer.unset(fn) end

@@ -352,6 +352,15 @@ namespace TiltBrush
             ).ToList();
         }
 
+        public static List<TrTransform> pointsToPolar(List<TrTransform> transforms)
+        {
+            return pointsToPolar(transforms.Select(x =>
+            {
+                var vector3 = x.translation;
+                return new Vector2(vector3.x, vector3.y);
+            }).ToList());
+        }
+
         // Converts an array of points centered on the origin to a list of TrTransforms
         // suitable for use with symmetry scripts default space
         public static List<TrTransform> pointsToPolar(List<Vector2> cartesianPoints)
@@ -388,6 +397,128 @@ namespace TiltBrush
         public static List<TrTransform> translate(List<TrTransform> path, Vector3 amount) => LuaApiMethods.TranslatePath(path, amount);
         public static List<TrTransform> rotate(List<TrTransform> path, Quaternion amount) => LuaApiMethods.RotatePath(path, amount);
         public static List<TrTransform> scale(List<TrTransform> path, Vector3 amount) => LuaApiMethods.ScalePath(path, amount);
+
+        public static List<TrTransform> centered(List<TrTransform> path)
+        {
+            Vector3 centroid = path.Aggregate(
+                Vector3.zero,
+                (acc, x) => acc + x.translation
+            ) / path.Count;
+            return path.Select(x => x * TrTransform.T(-centroid)).ToList();
+        }
+
+        public static List<TrTransform> startingFrom(List<TrTransform> path, int index)
+        {
+            return path.Skip(index).Concat(path.Take(index)).ToList();
+        }
+
+        public static int findClosest(List<TrTransform> path, Vector3 point)
+        {
+            return path.Select((x, i) => new {i, x}).Aggregate(
+                (acc, x) => (x.x.translation - point).sqrMagnitude < (acc.x.translation - point).sqrMagnitude ? x : acc
+            ).i;
+        }
+
+        public static int findMinimum(List<TrTransform> path, int axis)
+        {
+            return path
+                .Select((v, i) => (translation: v.translation[axis], index: i))
+                .Aggregate((a, b) => a.translation < b.translation ? a : b)
+                .index;
+        }
+
+        public static int findMaximum(List<TrTransform> path, int axis)
+        {
+            return path
+                .Select((v, i) => (translation: v.translation[axis], index: i))
+                .Aggregate((a, b) => a.translation > b.translation ? a : b)
+                .index;
+        }
+
+        public static List<TrTransform> normalized(List<TrTransform> path)
+        {
+            // Find the min and max values for each axis
+            float minX = path.Min(v => v.translation.x);
+            float minY = path.Min(v => v.translation.y);
+            float minZ = path.Min(v => v.translation.z);
+
+            float maxX = path.Max(v => v.translation.x);
+            float maxY = path.Max(v => v.translation.y);
+            float maxZ = path.Max(v => v.translation.z);
+
+            // Compute the range for each axis
+            float rangeX = maxX - minX;
+            float rangeY = maxY - minY;
+            float rangeZ = maxZ - minZ;
+
+            // Find the largest range to maintain the aspect ratio
+            float largestRange = Mathf.Max(rangeX, rangeY, rangeZ);
+
+            // If the largest range is zero, return the original path to avoid division by zero
+            if (largestRange == 0)
+            {
+                return path;
+            }
+
+            // Compute the uniform scale factor
+            float scaleFactor = 1 / largestRange;
+
+            // Calculate the center of the original path
+            Vector3 center = new Vector3(
+                (minX + maxX) / 2,
+                (minY + maxY) / 2,
+                (minZ + maxZ) / 2
+            );
+
+            // Apply the scale factor to each Vector3 in the input list
+            return path.Select(tr => TrTransform.TRS(
+                (tr.translation - center) * scaleFactor,
+                tr.rotation,
+                tr.scale
+            )).ToList();
+        }
+
+        public static List<TrTransform> resample(List<TrTransform> path, float spacing)
+        {
+            if (path == null || path.Count < 2 || spacing <= 0)
+            {
+                return new List<TrTransform>(path);
+            }
+
+            List<TrTransform> resampledPath = new List<TrTransform>();
+            resampledPath.Add(path[0]);
+
+            float accumulatedDistance = 0f;
+            int originalPathIndex = 0;
+            var startPoint = path[0];
+
+            while (originalPathIndex < path.Count - 1)
+            {
+                var endPoint = path[originalPathIndex + 1];
+                float segmentDistance = Vector3.Distance(startPoint.translation, endPoint.translation);
+                float remainingDistance = segmentDistance - accumulatedDistance;
+
+                if (accumulatedDistance + segmentDistance >= spacing)
+                {
+                    float interpolationFactor = (spacing - accumulatedDistance) / segmentDistance;
+                    Vector3 newTranslation = Vector3.Lerp(startPoint.translation, endPoint.translation, interpolationFactor);
+                    Quaternion newRotation = Quaternion.Lerp(startPoint.rotation, endPoint.rotation, interpolationFactor);
+                    float newScale = Mathf.Lerp(startPoint.scale, endPoint.scale, interpolationFactor);
+                    var newPoint = TrTransform.TRS(newTranslation, newRotation, newScale);
+                    resampledPath.Add(newPoint);
+                    startPoint = newPoint;
+                    accumulatedDistance = 0f;
+                }
+                else
+                {
+                    accumulatedDistance += segmentDistance;
+                    startPoint = endPoint;
+                    originalPathIndex++;
+                }
+            }
+            resampledPath.Add(path[^1]);
+            return resampledPath;
+        }
     }
 
     [MoonSharpUserData]

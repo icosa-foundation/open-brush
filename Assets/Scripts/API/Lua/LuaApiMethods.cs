@@ -65,7 +65,7 @@ namespace TiltBrush
 
         public static List<TrTransform> TransformPath(List<TrTransform> path, TrTransform tr)
         {
-            return path.Select(x => x.TransformBy(tr)).ToList();
+            return path.Select(x => tr * x).ToList();
         }
 
         public static Quaternion VectorToRotation(Vector3 vec)
