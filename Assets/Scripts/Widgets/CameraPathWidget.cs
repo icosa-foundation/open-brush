@@ -628,7 +628,7 @@ namespace TiltBrush
             return m_Path.SerializeToCameraPathMetadata();
         }
 
-        static public void CreateFromSaveData(CameraPathMetadata cameraPath)
+        static public CameraPathWidget CreateFromSaveData(CameraPathMetadata cameraPath)
         {
             // Create a new widget.
             CameraPathWidget widget = Instantiate<CameraPathWidget>(
@@ -741,6 +741,7 @@ namespace TiltBrush
             widget.m_Path.ValidatePathLooping();
             widget.m_Path.SetKnotsActive(false);
             App.Switchboard.TriggerCameraPathCreated();
+            return widget;
         }
 
         void OnDrawGizmosSelected()
