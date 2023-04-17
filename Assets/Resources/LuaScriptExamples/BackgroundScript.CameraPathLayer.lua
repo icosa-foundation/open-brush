@@ -8,7 +8,7 @@ Parameters = {
 }
 
 function Main()
-    transform = camerapath.sample(app.time * speed, true, true)
+    transform = cameraPath.sample(0, app.time * speed, true, true)
     --layers.setTransform(layerNumber, transform)
     layers.setPosition(layerNumber, transform.position)
 end

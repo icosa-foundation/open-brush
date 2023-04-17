@@ -668,50 +668,6 @@ namespace TiltBrush
     }
 
     [MoonSharpUserData]
-    public static class CamerapathApiWrapper
-    {
-        public static void render() => ApiMethods.RenderCameraPath();
-        public static void toggleVisuals() => ApiMethods.ToggleCameraPathVisuals();
-        public static void togglePreview() => ApiMethods.ToggleCameraPathPreview();
-        public static void delete() => ApiMethods.DeleteCameraPath();
-        public static void record() => ApiMethods.RecordCameraPath();
-        public static TrTransform sample(float time, bool loop = true, bool pingpong = false)
-        {
-            var widget = WidgetManager.m_Instance.GetCurrentCameraPath();
-            var cameraPath = widget?.WidgetScript.Path;
-            if (cameraPath == null) return TrTransform.identity;
-            var t = new PathT(time);
-            var maxT = new PathT(time);
-            maxT.Clamp(cameraPath.NumPositionKnots);
-            var origin = cameraPath.GetPosition(new PathT(0));
-            if (t > maxT && loop)
-            {
-                if (pingpong)
-                {
-                    int numLoops = Mathf.FloorToInt(t.T / maxT.T);
-                    if (numLoops % 2 == 0)
-                    {
-                        t = new PathT(t.T % maxT.T);
-                    }
-                    else
-                    {
-                        t = new PathT(maxT.T - (t.T % maxT.T));
-                    }
-                }
-                else
-                {
-                    t = new PathT(t.T % maxT.T);
-                }
-            }
-            var tr = TrTransform.TR(
-                cameraPath.GetPosition(t) - origin,
-                cameraPath.GetRotation(t)
-            );
-            return tr;
-        }
-    }
-
-    [MoonSharpUserData]
     public static class SelectionApiWrapper
     {
         public static void duplicate() => ApiMethods.Duplicate();

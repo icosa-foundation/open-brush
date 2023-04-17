@@ -669,7 +669,7 @@ namespace TiltBrush
 
             RegisterApiClass(script, "app", typeof(AppApiWrapper));
             RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
-            RegisterApiClass(script, "camerapath", typeof(CamerapathApiWrapper));
+            RegisterApiClass(script, "cameraPath", typeof(CameraPathApiWrapper));
             RegisterApiClass(script, "draw", typeof(DrawApiWrapper));
             RegisterApiClass(script, "guides", typeof(GuidesApiWrapper));
             RegisterApiClass(script, "headset", typeof(HeadsetApiWrapper));
