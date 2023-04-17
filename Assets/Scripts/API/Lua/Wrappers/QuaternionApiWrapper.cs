@@ -15,6 +15,7 @@ namespace TiltBrush
         public static Quaternion inverse(Quaternion a) => Quaternion.Inverse(a);
         public static Quaternion lerp(Quaternion a, Quaternion b, float t) => Quaternion.Lerp(a, b, t);
         public static Quaternion lerpUnclamped(Quaternion a, Quaternion b, float t) => Quaternion.LerpUnclamped(a, b, t);
+        public static Quaternion lookRotation(Vector3 forward) => Quaternion.LookRotation(forward, Vector3.up);
         public static Quaternion lookRotation(Vector3 forward, Vector3 up) => Quaternion.LookRotation(forward, up);
         public static Quaternion normalize(Quaternion a) => Quaternion.Normalize(a);
         public static Quaternion rotateTowards(Quaternion from, Quaternion to, float maxDegreesDelta) => Quaternion.RotateTowards(from, to, maxDegreesDelta);
