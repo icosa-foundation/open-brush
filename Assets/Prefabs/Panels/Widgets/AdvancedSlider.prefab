@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1884626016259365661}
   - component: {fileID: 4220200482343937391}
-  - component: {fileID: 1247450603250936685}
   - component: {fileID: 6988663123546496789}
   m_Layer: 16
   m_Name: ValueText
@@ -81,14 +80,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &1247450603250936685
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1366882551601991066}
-  m_CullTransparentMesh: 0
 --- !u!114 &6988663123546496789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -970,9 +961,14 @@ MonoBehaviour:
   m_DescriptionZScale: 10
   m_Nob: {fileID: 4471627121253469398}
   m_Mesh: {fileID: 4471627121255601424}
-  opIndex: 0
-  paramIndex: 0
+  m_Param1: 0
+  m_Param2: 0
+  m_safeMin: 0
+  m_safeMax: 1
+  m_unsafeMin: 0
+  m_unsafeMax: 1
   m_SafeLimits: 1
+  m_InitialValue: 0.5
   minText: {fileID: 7444929264988374951}
   maxText: {fileID: 791795469446217164}
   valueText: {fileID: 6988663123546496789}
