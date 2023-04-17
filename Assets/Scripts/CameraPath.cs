@@ -742,6 +742,35 @@ namespace TiltBrush
             }
         }
 
+        public void RefreshEntirePath()
+        {
+
+            // // Update all segments on this segment.
+            // for (int i = 0; i < PathKnots.Count; ++i)
+            // {
+            // }
+            for (int i = 0; i < Segments.Count; ++i)
+            {
+                RefreshSegment(i);
+            }
+            for (int i = 0; i < RotationKnots.Count; ++i)
+            {
+                RefreshRotationKnot(i);
+            }
+            for (int i = 0; i < SpeedKnots.Count; ++i)
+            {
+                int segment = SpeedKnots[i].PathT.Floor();
+                RefreshSpeedKnot(i);
+            }
+
+            // Update all fov knots on this segment.
+            for (int i = 0; i < FovKnots.Count; ++i)
+            {
+                int segment = FovKnots[i].PathT.Floor();
+                RefreshFovKnot(i);
+            }
+        }
+
         public void RefreshFromPathKnotMovement(int pathKnotIndex)
         {
             // Segments need to be updated before knots.
