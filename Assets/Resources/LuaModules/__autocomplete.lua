@@ -70,6 +70,7 @@ function unityQuaternion.fromToRotation(from, to) end
 function unityQuaternion.inverse(a) end
 function unityQuaternion.lerp(a, b, t) end
 function unityQuaternion.lerpUnclamped(a, b, t) end
+function unityQuaternion.lookRotation(forward) end
 function unityQuaternion.lookRotation(forward, up) end
 function unityQuaternion.normalize(a) end
 function unityQuaternion.rotateTowards(from, to, maxDegreesDelta) end
@@ -210,12 +211,33 @@ function brush.pastRotation(back) end
 function brush.forcePaintingOn(active) end
 function brush.forcePaintingOff(active) end
 function brush.forceNewStroke() end
-function camerapath.render() end
-function camerapath.toggleVisuals() end
-function camerapath.togglePreview() end
-function camerapath.delete() end
-function camerapath.record() end
-function camerapath.sample(time, loop, pingpong) end
+cameraPath.active = nil
+function cameraPath.renderActivePath() end
+function cameraPath.showAll() end
+function cameraPath.hideAll() end
+function cameraPath.previewActivePath(active) end
+function cameraPath.delete(index) end
+function cameraPath.create() end
+function cameraPath.createFromPath(path) end
+function cameraPath.duplicate(index) end
+function cameraPath.insertPosition(index, position, rotation, smoothing) end
+function cameraPath.insertPosition(index, t, rotation, smoothing) end
+function cameraPath.insertRotation(index, pos, rot) end
+function cameraPath.insertRotation(index, t, rot) end
+function cameraPath.insertFov(index, pos, fov) end
+function cameraPath.insertFov(index, t, fov) end
+function cameraPath.insertSpeed(index, pos, speed) end
+function cameraPath.insertSpeed(index, t, speed) end
+function cameraPath.extend(index, position, rotation, smoothing, atStart) end
+function cameraPath.loop(index) end
+function cameraPath.recordActivePath() end
+function cameraPath.sample(index, time, loop, pingpong) end
+function cameraPath.getTransform(index) end
+function cameraPath.setTransform(index, tr) end
+function cameraPath.getPosition(index) end
+function cameraPath.setPosition(index, position) end
+function cameraPath.getRotation(index) end
+function cameraPath.setRotation(index, rotation) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, tr) end

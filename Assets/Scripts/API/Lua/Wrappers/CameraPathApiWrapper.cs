@@ -42,8 +42,8 @@ namespace TiltBrush
             metadata.FovKnots = Array.Empty<CameraPathFovKnotMetadata>();
             metadata.SpeedKnots = Array.Empty<CameraPathSpeedKnotMetadata>();
             var widget = CameraPathWidget.CreateFromSaveData(metadata);
+            widget.Path.RefreshEntirePath();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
-            WidgetManager.m_Instance.CameraPathsVisible = true;
             return active;
         }
 
@@ -52,8 +52,8 @@ namespace TiltBrush
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             CameraPathMetadata metadata = pathWidget.AsSerializable();
             var widget = CameraPathWidget.CreateFromSaveData(metadata);
+            widget.Path.RefreshEntirePath();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
-            WidgetManager.m_Instance.CameraPathsVisible = true;
             return active;
         }
 
