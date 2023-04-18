@@ -35,7 +35,7 @@ namespace TiltBrush
             CameraPathMetadata metadata = new CameraPathMetadata();
             metadata.PathKnots = path.Select(t => new CameraPathPositionKnotMetadata
             {
-                Xf = t,
+                Xf = App.Scene.MainCanvas.Pose * t, // convert to canvas space,
                 TangentMagnitude = t.scale
             }).ToArray();
             metadata.RotationKnots = Array.Empty<CameraPathRotationKnotMetadata>();
@@ -78,6 +78,8 @@ namespace TiltBrush
 
         private static int _insertPosition(CameraPathWidget pathWidget, PathT pathT, Vector3 position, Quaternion rotation, float smoothing)
         {
+            position = App.Scene.MainCanvas.Pose.MultiplyPoint(position);
+            rotation = App.Scene.MainCanvas.Pose.rotation * rotation;
             CameraPathPositionKnot knot = pathWidget.Path.CreatePositionKnot(position);
             int knotIndex = pathT.Floor();
             if (pathWidget.Path.IsPositionNearHead(knot.transform.position) &&
@@ -98,6 +100,8 @@ namespace TiltBrush
 
         public static int insertRotation(int index, Vector3 pos, Quaternion rot)
         {
+            pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
+            rot = App.Scene.MainCanvas.Pose.rotation * rot;
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
                 return insertRotation(index, pathT.T, rot);
@@ -114,6 +118,7 @@ namespace TiltBrush
 
         public static int insertFov(int index, Vector3 pos, float fov)
         {
+            pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
                 return insertFov(index, pathT.T, fov);
@@ -131,6 +136,7 @@ namespace TiltBrush
 
         public static int insertSpeed(int index, Vector3 pos, float speed)
         {
+            pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
                 return insertSpeed(index, pathT.T, speed);
@@ -149,11 +155,13 @@ namespace TiltBrush
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             var extendType = atStart ? CameraPathTool.ExtendPathType.ExtendAtHead : CameraPathTool.ExtendPathType.ExtendAtTail;
-            pathWidget.ExtendPath(position, extendType);
+            pathWidget.ExtendPath(App.Scene.MainCanvas.Pose.MultiplyPoint(position), extendType);
             var knotDesc = pathWidget.Path.LastPlacedKnotInfo;
+            var rot = rotation * Vector3.forward;
+            rot = App.Scene.MainCanvas.Pose.rotation * rot; // convert to canvas space
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new ModifyPositionKnotCommand(
-                    pathWidget.Path, knotDesc, smoothing, rotation * Vector3.forward,
+                    pathWidget.Path, knotDesc, smoothing, rot,
                     mergesWithCreateCommand: true
                 )
             );
