@@ -42,6 +42,7 @@ namespace TiltBrush
             try
             {
                 m_HttpListener = new HttpListener();
+                m_HttpListenerTimeoutManager = m_HttpListener.TimeoutManager;
                 m_HttpListenerTimeoutManager.IdleConnection = TimeSpan.FromSeconds(5);
                 m_HttpListenerTimeoutManager.HeaderWait = TimeSpan.FromSeconds(5);
                 m_HttpListener.Prefixes.Add(String.Format("http://+:{0}/", m_httpListenerPort));
