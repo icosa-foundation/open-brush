@@ -15,10 +15,12 @@
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",
+    "com.unity.vectorgraphics": "https://github.com/icosa-gallery/com.unity.vectorgraphics.git#open-brush",
     "com.unity.xr.core-utils": "2.1.1",
     "com.unity.xr.management": "4.2.1",
     "com.unity.xr.oculus": "3.2.2",
     "com.unity.xr.openxr": "1.6.0",
+    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
@@ -51,8 +53,7 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0",
-    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git"
+    "com.unity.modules.wind": "1.0.0"
   },
   "scopedRegistries": [
     {
