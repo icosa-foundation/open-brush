@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using SVGMeshUnity;
+using Unity.VectorGraphics;
 using UnityEngine;
 
 namespace TiltBrush
@@ -19,13 +20,9 @@ namespace TiltBrush
 
         public static List<TrTransform> PathFromSvg(string svgPathString, float scale)
         {
-            // Joins all the paths into one and returns points as TrTransforms
-            SVGData svgData = new SVGData();
-            svgData.Path(svgPathString);
-            SVGPolyline svgPolyline = new SVGPolyline();
-            svgPolyline.Fill(svgData);
-            var origin = svgPolyline.Polyline[0][0];
-            return svgPolyline.Polyline
+            var svgPolyline = DrawStrokes.ParseSvgPath(svgPathString);
+            var origin = svgPolyline[0][0];
+            return svgPolyline
                 .SelectMany(l => l)
                 .Select(p => TrTransform.T((p - origin) * scale))
                 .ToList();
@@ -33,13 +30,9 @@ namespace TiltBrush
 
         public static List<List<TrTransform>> PathsFromSvg(string svgPathString)
         {
-            // Joins all the paths into one and returns points as TrTransforms
-            SVGData svgData = new SVGData();
-            svgData.Path(svgPathString);
-            SVGPolyline svgPolyline = new SVGPolyline();
-            svgPolyline.Fill(svgData);
-            var origin = svgPolyline.Polyline[0][0];
-            return svgPolyline.Polyline.Select(p => p.Select(q => TrTransform.T(q - origin)).ToList()).ToList();
+            var svgPolyline = DrawStrokes.ParseSvgPath(svgPathString);
+            var origin = svgPolyline[0][0];
+            return svgPolyline.Select(p => p.Select(q => TrTransform.T(q - origin)).ToList()).ToList();
         }
 
         public static List<TrTransform> TranslatePath(List<TrTransform> path, Vector3 translation)

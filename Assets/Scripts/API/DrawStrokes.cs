@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using SVGMeshUnity;
+using Unity.VectorGraphics;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -161,12 +163,6 @@ namespace TiltBrush
                         pressures[pathIndex][vertexIndex] :
                         defaultPressure;
                     var nextPosition = positionList[(vertexIndex + 1) % positionList.Count];
-                    // Fix for trailing zeros from SVG.
-                    // TODO Find out why and fix it properly
-                    if (breakOnOrigin && nextPosition == Vector3.zero)
-                    {
-                        break;
-                    }
 
                     if (rawStrokes)
                     {
@@ -250,11 +246,31 @@ namespace TiltBrush
 
         public static void SvgPath(string svgPathString, TrTransform tr)
         {
-            SVGData svgData = new SVGData();
-            svgData.Path(svgPathString);
-            SVGPolyline svgPolyline = new SVGPolyline();
-            svgPolyline.Fill(svgData);
-            MultiPath2dToStrokes(svgPolyline.Polyline, tr, 1f, true);
+            MultiPath2dToStrokes(ParseSvgPath(svgPathString), tr, 1f, true);
+        }
+
+        public static List<List<Vector2>> ParseSvgPath(string svgPathString)
+        {
+            var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
+            TextReader stringReader = new StringReader(svgText);
+            var sceneInfo = SVGParser.ImportSVG(stringReader);
+            VectorUtils.TessellationOptions tessellationOptions = new VectorUtils.TessellationOptions
+            {
+                StepDistance = 100.0f,
+                MaxCordDeviation = 0.5f,
+                MaxTanAngleDeviation = 0.1f,
+                SamplingStepSize = 0.01f,
+                AllowConcavePaths = true
+            };
+            var geoms = VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
+            var svgPolyline = new List<List<Vector2>>();
+            foreach (var geom in geoms)
+            {
+                var verts = geom.Vertices.Skip(1); // Skip the centroid vertex added for tessellation
+                verts = verts.Select(v => new Vector2(v.x, -v.y)); // SVG is Y down, Unity is Y up
+                svgPolyline.Add(verts.ToList());
+            }
+            return svgPolyline;
         }
 
         public static void CameraPath(CameraPath path, TrTransform tr = default)
