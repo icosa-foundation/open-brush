@@ -30,7 +30,7 @@ namespace TiltBrush
             return active;
         }
 
-        public static int createFromPath(List<TrTransform> path)
+        public static int createFromPath(List<TrTransform> path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
             metadata.PathKnots = path.Select(t => new CameraPathPositionKnotMetadata
@@ -42,6 +42,7 @@ namespace TiltBrush
             metadata.FovKnots = Array.Empty<CameraPathFovKnotMetadata>();
             metadata.SpeedKnots = Array.Empty<CameraPathSpeedKnotMetadata>();
             var widget = CameraPathWidget.CreateFromSaveData(metadata);
+            if (looped) widget.ExtendPath(Vector3.zero, CameraPathTool.ExtendPathType.Loop);
             widget.Path.RefreshEntirePath();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
             return active;
@@ -167,6 +168,19 @@ namespace TiltBrush
             );
         }
 
+        private static void _Extend(CameraPathWidget pathWidget, Vector3 position, Vector3 tangent, float smoothing, bool atStart = false)
+        {
+            var extendType = atStart ? CameraPathTool.ExtendPathType.ExtendAtHead : CameraPathTool.ExtendPathType.ExtendAtTail;
+            pathWidget.ExtendPath(App.Scene.MainCanvas.Pose.MultiplyPoint(position), extendType);
+            var knotDesc = pathWidget.Path.LastPlacedKnotInfo;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyPositionKnotCommand(
+                    pathWidget.Path, knotDesc, smoothing, tangent,
+                    mergesWithCreateCommand: true
+                )
+            );
+        }
+
         public static void loop(int index)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
@@ -253,6 +267,49 @@ namespace TiltBrush
         {
             setTransform(index, TrTransform.R(rotation));
         }
-    }
 
+        public static int simplify(int index, float tolerance, float smoothing)
+        {
+            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
+            List<Vector3> inputPoints = pathWidget.Path.PositionKnots.Select(knot => knot.transform.position).ToList();
+            List<Quaternion> inputRots = pathWidget.Path.PositionKnots.Select(knot => knot.transform.rotation).ToList();
+            var newPoints = new List<TrTransform>();
+
+            if (inputPoints.Count < 2)
+            {
+                Debug.LogError("Not enough input points to create a curve.");
+                return -1;
+            }
+
+            float angleToleranceRad = Mathf.Deg2Rad * tolerance;
+
+            Vector3 prevDirection = (inputPoints[1] - inputPoints[0]).normalized;
+            newPoints.Add(TrTransform.TRS(inputPoints[0], inputRots[0], smoothing));
+
+            int lastSplinePointIndex = 0;
+
+            for (int i = 2; i < inputPoints.Count; i++)
+            {
+                Vector3 currentDirection = (inputPoints[i] - inputPoints[i - 1]).normalized;
+                float angleBetween = Vector3.Angle(prevDirection, currentDirection) * Mathf.Deg2Rad;
+
+                if (angleBetween > angleToleranceRad)
+                {
+                    // Vector3 tangent = (inputPoints[i - 1] - inputPoints[lastSplinePointIndex]).normalized;
+                    float segmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[i - 1]).magnitude;
+                    newPoints.Add(TrTransform.TRS(inputPoints[i - 1], inputRots[i], segmentLength * smoothing ));
+
+                    prevDirection = currentDirection;
+                    lastSplinePointIndex = i - 1;
+                }
+            }
+
+            Vector3 lastTangent = (inputPoints[inputPoints.Count - 1] - inputPoints[lastSplinePointIndex]).normalized;
+            float lastSegmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[inputPoints.Count - 1]).magnitude;
+            newPoints.Add(TrTransform.TRS(inputPoints[inputPoints.Count - 1], inputRots[inputRots.Count - 1], lastSegmentLength * smoothing ));
+            return createFromPath(newPoints, pathWidget.Path.PathLoops);
+        }
+    }
 }
+
+
