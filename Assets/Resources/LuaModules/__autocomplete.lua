@@ -186,7 +186,8 @@ function app.draftingHidden() end
 function app.watermark(a) end
 function app.readFile(path) end
 function app.setFont(fontData) end
-function app.takeSnapshot(filename, width, height, superSampling) end
+function app.takeSnapshot(tr, filename, width, height, superSampling) end
+function app.take360Snapshot(tr, filename, width) end
 brush.timeSincePressed = nil
 brush.timeSinceReleased = nil
 brush.triggerIsPressed = nil

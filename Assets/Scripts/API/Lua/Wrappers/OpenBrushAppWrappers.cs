@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
+using ODS;
 using UnityAsyncAwaitUtil;
 using UnityEngine;
 
@@ -173,11 +174,8 @@ namespace TiltBrush
 
         public static void setFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
-        public static void takeSnapshot(string filename, int width, int height, float superSampling = 1f)
+        public static void takeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)
         {
-            // var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
-            // rig.EnableCameraRender();
-            // ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.Snapshot);
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
             {
@@ -194,9 +192,11 @@ namespace TiltBrush
             }
             string path = Path.Join(App.SnapshotPath(), filename);
             MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+
             if (cam != null)
             {
                 var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+                App.Scene.AsScene[rig.gameObject.transform] = tr;
                 var rMgr = rig.ManagerFromStyle(
                     MultiCamStyle.Snapshot
                 );
@@ -214,6 +214,21 @@ namespace TiltBrush
                 }
                 rig.gameObject.SetActive(initialState);
             }
+        }
+
+        public static void take360Snapshot(TrTransform tr, string filename, int width = 4096)
+        {
+            var odsDriver = App.Instance.InitOds();
+            App.Scene.AsScene[odsDriver.gameObject.transform] = tr;
+            odsDriver.FramesToCapture = 1;
+            odsDriver.OdsCamera.basename = filename;
+            odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
+            odsDriver.OdsCamera.imageWidth = width;
+            odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
+            odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+            odsDriver.OdsCamera.gameObject.SetActive(true);
+            odsDriver.OdsCamera.enabled = true;
+            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
         }
 
         private static bool _IsSubdirectory(string path, string basePath)
