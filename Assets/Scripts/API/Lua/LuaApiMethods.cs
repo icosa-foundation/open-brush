@@ -20,7 +20,7 @@ namespace TiltBrush
 
         public static List<TrTransform> PathFromSvg(string svgPathString, float scale)
         {
-            var svgPolyline = DrawStrokes.ParseSvgPath(svgPathString);
+            var svgPolyline = DrawStrokes.SvgPathStringToApiPaths(svgPathString);
             var origin = svgPolyline[0][0];
             return svgPolyline
                 .SelectMany(l => l)
@@ -30,7 +30,7 @@ namespace TiltBrush
 
         public static List<List<TrTransform>> PathsFromSvg(string svgPathString)
         {
-            var svgPolyline = DrawStrokes.ParseSvgPath(svgPathString);
+            var svgPolyline = DrawStrokes.SvgPathStringToApiPaths(svgPathString);
             var origin = svgPolyline[0][0];
             return svgPolyline.Select(p => p.Select(q => TrTransform.T(q - origin)).ToList()).ToList();
         }

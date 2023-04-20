@@ -246,12 +246,30 @@ namespace TiltBrush
 
         public static void SvgPath(string svgPathString, TrTransform tr)
         {
-            MultiPath2dToStrokes(ParseSvgPath(svgPathString), tr, 1f, true);
+            MultiPath2dToStrokes(SvgPathStringToApiPaths(svgPathString), tr, 1f, true);
         }
 
-        public static List<List<Vector2>> ParseSvgPath(string svgPathString)
+        public static List<List<Vector2>> SvgPathStringToApiPaths(string svgPathString)
         {
             var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
+            return SvgToApiPaths(svgText);
+        }
+
+        public static List<List<Vector2>> SvgToApiPaths(string svgText)
+        {
+            var geoms = ParseSvg(svgText);
+            var svgPolyline = new List<List<Vector2>>();
+            foreach (var geom in geoms)
+            {
+                var verts = geom.Vertices.Skip(1); // Skip the centroid vertex added for tessellation
+                verts = verts.Select(v => new Vector2(v.x, -v.y)); // SVG is Y down, Unity is Y up
+                svgPolyline.Add(verts.ToList());
+            }
+            return svgPolyline;
+        }
+
+        public static List<VectorUtils.Geometry> ParseSvg(string svgText)
+        {
             TextReader stringReader = new StringReader(svgText);
             var sceneInfo = SVGParser.ImportSVG(stringReader);
             VectorUtils.TessellationOptions tessellationOptions = new VectorUtils.TessellationOptions
@@ -262,15 +280,7 @@ namespace TiltBrush
                 SamplingStepSize = 0.01f,
                 AllowConcavePaths = true
             };
-            var geoms = VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
-            var svgPolyline = new List<List<Vector2>>();
-            foreach (var geom in geoms)
-            {
-                var verts = geom.Vertices.Skip(1); // Skip the centroid vertex added for tessellation
-                verts = verts.Select(v => new Vector2(v.x, -v.y)); // SVG is Y down, Unity is Y up
-                svgPolyline.Add(verts.ToList());
-            }
-            return svgPolyline;
+            return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
         }
 
         public static void CameraPath(CameraPath path, TrTransform tr = default)
