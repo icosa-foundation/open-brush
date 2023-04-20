@@ -1084,10 +1084,10 @@ namespace TiltBrush
             rotation = Quaternion.Euler(0, round(y), 0) * rotation;
             return rotation;
         }
-        public Vector3 SnapToGrid(Vector3 position)
+        public Vector3 SnapToGrid(Vector3 position_GS)
         {
-            if (SnappingGridSize == 0) return position;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            if (SnappingGridSize == 0) return position_GS;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
             float round(float val) { return Mathf.Round(val / SnappingGridSize) * SnappingGridSize; }
             Vector3 roundedCanvasPos = new Vector3(
                 round(localCanvasPos.x),
