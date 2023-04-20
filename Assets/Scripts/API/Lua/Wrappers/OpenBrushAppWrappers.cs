@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
+using UnityAsyncAwaitUtil;
 using UnityEngine;
 
 namespace TiltBrush
@@ -171,6 +172,49 @@ namespace TiltBrush
         }
 
         public static void setFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
+
+        public static void takeSnapshot(string filename, int width, int height, float superSampling = 1f)
+        {
+            // var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            // rig.EnableCameraRender();
+            // ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.Snapshot);
+            bool saveAsPng;
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
+            {
+                saveAsPng = false;
+            }
+            else if (filename.ToLower().EndsWith(".png"))
+            {
+                saveAsPng = true;
+            }
+            else
+            {
+                saveAsPng = false;
+                filename += ".jpg";
+            }
+            string path = Path.Join(App.SnapshotPath(), filename);
+            MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+            if (cam != null)
+            {
+                var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+                var rMgr = rig.ManagerFromStyle(
+                    MultiCamStyle.Snapshot
+                );
+                var initialState = rig.gameObject.activeSelf;
+                rig.gameObject.SetActive(true);
+                RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper.SuperSampling;
+                wrapper.SuperSampling = superSampling;
+                rMgr.RenderToTexture(tmp);
+                wrapper.SuperSampling = ssaaRestore;
+                using (var fs = new FileStream(path, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
+                }
+                rig.gameObject.SetActive(initialState);
+            }
+        }
 
         private static bool _IsSubdirectory(string path, string basePath)
         {

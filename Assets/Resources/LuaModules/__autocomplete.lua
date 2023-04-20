@@ -1,6 +1,7 @@
 tool.startPosition = nil
 tool.endPosition = nil
 tool.vector = nil
+tool.rotation = nil
 function unityColor.greyscale(col) end
 function unityColor.maxColorComponent(col) end
 function unityColor.toHtmlString(col) end
@@ -185,6 +186,7 @@ function app.draftingHidden() end
 function app.watermark(a) end
 function app.readFile(path) end
 function app.setFont(fontData) end
+function app.takeSnapshot(filename, width, height, superSampling) end
 brush.timeSincePressed = nil
 brush.timeSinceReleased = nil
 brush.triggerIsPressed = nil
@@ -218,7 +220,7 @@ function cameraPath.hideAll() end
 function cameraPath.previewActivePath(active) end
 function cameraPath.delete(index) end
 function cameraPath.create() end
-function cameraPath.createFromPath(path) end
+function cameraPath.createFromPath(path, looped) end
 function cameraPath.duplicate(index) end
 function cameraPath.insertPosition(index, position, rotation, smoothing) end
 function cameraPath.insertPosition(index, t, rotation, smoothing) end
@@ -238,6 +240,7 @@ function cameraPath.getPosition(index) end
 function cameraPath.setPosition(index, position) end
 function cameraPath.getRotation(index) end
 function cameraPath.setRotation(index, rotation) end
+function cameraPath.simplify(index, tolerance, smoothing) end
 function draw.path(path) end
 function draw.paths(paths) end
 function draw.polygon(sides, tr) end
