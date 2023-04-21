@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ControllerPad_Share
+  m_Name: ControllerPad_ShareYouTube
   m_Shader: {fileID: 4800000, guid: 9ed2fa8a603113d47ab652d528e0fee1, type: 3}
   m_ShaderKeywords: _EMISSION _LIGHTMAPPING_REALTIME
   m_LightmapFlags: 1
