@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VectorGraphics;
 using UnityEngine;
 
 namespace TiltBrush
@@ -116,17 +117,32 @@ namespace TiltBrush
         /// by the user of this method.
         public void AcquireImageFullsize(bool runForeground = false)
         {
-            m_FullSizeReferences++;
-            if (m_FullSizeReferences == 1)
+            if (FilePath.EndsWith(".svg"))
             {
                 // Try the cache first.
                 m_FullSize = ImageCache.LoadImageCache(FilePath);
                 if (m_FullSize == null)
                 {
-                    // Otherwise, this will generate a cache.
-                    m_FullSize = Object.Instantiate(Icon);
-                    var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
-                    App.Instance.StartCoroutine(co);
+                    // TODO Move into the async code path?
+                    var importer = new RuntimeSVGImporter();
+                    m_FullSize = importer.ImportAsTexture(FilePath);
+                    ImageCache.SaveImageCache(m_FullSize, FilePath);
+                }
+            }
+            else
+            {
+                m_FullSizeReferences++;
+                if (m_FullSizeReferences == 1)
+                {
+                    // Try the cache first.
+                    m_FullSize = ImageCache.LoadImageCache(FilePath);
+                    if (m_FullSize == null)
+                    {
+                        // Otherwise, this will generate a cache.
+                        m_FullSize = Object.Instantiate(Icon);
+                        var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
+                        App.Instance.StartCoroutine(co);
+                    }
                 }
             }
         }
@@ -285,6 +301,16 @@ namespace TiltBrush
             }
 
             Debug.Assert(m_State == ImageState.NotReady, "Invariant");
+
+            if (FilePath.EndsWith(".svg"))
+            {
+                // TODO Move into the async code path?
+                var importer = new RuntimeSVGImporter();
+                var tex = importer.ImportAsTexture(FilePath);
+                DownsizeTexture(tex, ref m_Icon, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                m_State = ImageState.Ready;
+                return true;
+            }
 
             if (m_coroutine == null)
             {
