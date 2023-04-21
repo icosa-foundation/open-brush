@@ -307,7 +307,21 @@ namespace TiltBrush
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
-                DownsizeTexture(tex, ref m_Icon, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                ImageCache.SaveImageCache(tex, FilePath);
+                m_ImageAspect = (float)tex.width / tex.height;
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                {
+                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                    m_Icon = resizedTex;
+                    Object.Destroy(resizedTex);
+                }
+                else
+                {
+                    m_Icon = tex;
+                }
+                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
                 m_State = ImageState.Ready;
                 return true;
             }
