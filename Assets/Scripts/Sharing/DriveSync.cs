@@ -969,6 +969,9 @@ namespace TiltBrush
                 case ".html":
                     metadata.MimeType = "text/html";
                     break;
+                case ".svg":
+                    metadata.MimeType = "image/svg+xml";
+                    break;
             }
 
             try
