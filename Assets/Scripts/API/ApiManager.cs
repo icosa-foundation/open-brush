@@ -31,6 +31,7 @@ namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
+        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";

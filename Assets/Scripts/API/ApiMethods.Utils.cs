@@ -155,7 +155,8 @@ namespace TiltBrush
 
         private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
         {
-            var request = System.Net.WebRequest.Create(url);
+            var request = System.Net.WebRequest.CreateHttp(url);
+            request.UserAgent = ApiManager.WEBREQUEST_USER_AGENT;
             request.Method = "HEAD";
             var response = request.GetResponse();
             Uri uri = new Uri(url);
