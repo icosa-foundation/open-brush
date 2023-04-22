@@ -44,18 +44,16 @@ namespace TiltBrush
             GameObject go = new GameObject();
             var mf = go.AddComponent<MeshFilter>();
             var mr = go.AddComponent<MeshRenderer>();
-            mr.materials = new[]
-            {
-                RuntimeSVGImporter.MaterialForSVG(false)
-            };
-
-            Mesh mesh;
-            mesh = ImportAsMesh(m_path);
+            var mat = RuntimeSVGImporter.MaterialForSVG(false);
+            mr.materials = new[] {mat};
+            m_collector.AddSvgIem(mr.materials[0]);
+            Mesh mesh = ImportAsMesh(m_path);
             mf.mesh = mesh;
             var collider = go.AddComponent<BoxCollider>();
             collider.size = mesh.bounds.size;
             return (go, warnings.Distinct().ToList(), m_collector);
         }
+
 
         Mesh ImportAsMesh(string path)
         {
