@@ -41,6 +41,7 @@ namespace TiltBrush
         Oculus,
         Wave,
         Pico,
+        Cardboard
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.

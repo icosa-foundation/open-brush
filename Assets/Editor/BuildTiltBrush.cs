@@ -22,7 +22,7 @@ using TiltBrush;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IPHONE
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEditor.SceneManagement;
@@ -115,6 +115,7 @@ static class BuildTiltBrush
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
 
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Cardboard, BuildTarget.iOS),
 #if OCULUS_SUPPORTED
             // Oculus
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Oculus, BuildTarget.StandaloneWindows64),
@@ -343,6 +344,9 @@ static class BuildTiltBrush
         {
             case BuildTarget.Android:
                 location += "/" + GuiBuildAndroidExecutableName;
+                break;
+            case BuildTarget.iOS:
+                location += "/" + kGuiBuildExecutableName;
                 break;
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
@@ -1095,6 +1099,9 @@ static class BuildTiltBrush
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
                     break;
+                case XrSdkMode.Cardboard:
+                    targetXrPluginsRequired = new string[] { "Google.XR.Cardboard.XRLoader" };
+                    break;
                 case XrSdkMode.Monoscopic:
                     targetSettings.InitManagerOnStart = false;
                     break;
@@ -1737,22 +1744,21 @@ static class BuildTiltBrush
                 {
                     // TODO: is it possible to embed loose files on iOS?
                     looseFilesDest = null;
-#if UNITY_EDITOR_OSX && UNITY_IPHONE
+#if UNITY_IPHONE
                     string pbxPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
 
                     PBXProject project = new PBXProject();
                     project.ReadFromString(File.ReadAllText(pbxPath));
-                    string pbxTarget = project.TargetGuidByName("Unity-iPhone");
+                    string pbxTarget = project.GetUnityMainTargetGuid();
 
                     // additional framework libs
                     project.AddFrameworkToProject(pbxTarget, "Security.framework", false);
                     project.AddFrameworkToProject(pbxTarget, "CoreData.framework", false);
                     // disable bitcode due to issue with Cardboard plugin (b/27129333)
-                    project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
+                    // TODO:Mike - I've disabled this disable, does bitcode work now?
+                    //project.SetBuildProperty(pbxTarget, "ENABLE_BITCODE", "false");
 
                     File.WriteAllText(pbxPath, project.WriteToString());
-#else
-                    Die(5, "OS X required for building iOS target.");
 #endif
                     break;
                 }
