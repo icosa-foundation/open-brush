@@ -1785,6 +1785,7 @@ static class BuildTiltBrush
         {
             // In the editor, Application.dataPath is the Assets/ folder
             string sourceBase = Path.GetDirectoryName(Application.dataPath);
+            if (info == null) return;
             ExecuteCopyRequests(info.copyRequests, sourceBase, looseFilesDest);
         }
     }

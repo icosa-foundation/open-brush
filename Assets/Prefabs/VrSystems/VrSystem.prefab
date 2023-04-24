@@ -410,7 +410,7 @@ GameObject:
   - component: {fileID: 124000014121364414}
   - component: {fileID: 114000013533438718}
   - component: {fileID: 81000010563896060}
-  - component: {fileID: 114000010140527564}
+  - component: {fileID: 3015405611969124237}
   - component: {fileID: 8383487415960193186}
   m_Layer: 0
   m_Name: Camera (eye)
@@ -574,7 +574,7 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000013132276250}
   m_Enabled: 1
---- !u!114 &114000010140527564
+--- !u!114 &3015405611969124237
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -583,14 +583,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000013132276250}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1156c073149742478887bb24456f32d, type: 3}
+  m_Script: {fileID: 11500000, guid: 113e4aa2cd3db44d1ac0cb7e9794964b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   globalGainDb: 0
   occlusionMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  quality: 2
+  stereoSpeakerModeEnabled: 0
+  recorderSeamless: 0
+  recorderSourceTag: Untagged
+  recorderFoldout: 0
 --- !u!114 &8383487415960193186
 MonoBehaviour:
   m_ObjectHideFlags: 0

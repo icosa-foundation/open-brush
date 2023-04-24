@@ -58,7 +58,7 @@ namespace TiltBrush
         [SerializeField] private bool m_PreviewLineEnabled;
         [SerializeField] private float m_PreviewLineControlPointLife = 1.0f;
         [SerializeField] private float m_PreviewLineIdealLength = 1.0f;
-        [SerializeField] private GvrAudioSource[] m_AudioSources;
+        [SerializeField] private AudioSource[] m_AudioSources;
         [SerializeField] private Vector2 m_BrushAudioPitchVelocityRange;
         [SerializeField] private AudioClip m_BrushPlaybackAudioClip;
 

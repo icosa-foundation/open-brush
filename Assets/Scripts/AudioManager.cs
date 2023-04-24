@@ -32,7 +32,7 @@ namespace TiltBrush
     {
         class AudioLoop
         {
-            public GvrAudioSource m_GvrAudioSource;
+            public AudioSource m_GvrAudioSource;
             // This is null if and only if the source is not being used.
             public string m_LoopName;
         }
@@ -58,7 +58,7 @@ namespace TiltBrush
 
         [SerializeField] private GameObject m_AudioOneShotPrefab;
         [SerializeField] private int m_NumAudioOneShots;
-        private GvrAudioSource[] m_AudioOneShots;
+        private AudioSource[] m_AudioOneShots;
         private int m_NextAvailableAudioOneShot;
 
         [SerializeField] private GameObject m_AudioLoopPrefab;
@@ -208,12 +208,12 @@ namespace TiltBrush
             Transform audioParent = new GameObject("AudioManager Things").transform;
             audioParent.parent = transform;
 
-            m_AudioOneShots = new GvrAudioSource[m_NumAudioOneShots];
+            m_AudioOneShots = new AudioSource[m_NumAudioOneShots];
             for (int i = 0; i < m_AudioOneShots.Length; ++i)
             {
                 GameObject audioObj = Instantiate(m_AudioOneShotPrefab, audioParent, true);
-                GvrAudioSource audioSource = audioObj.GetComponent<GvrAudioSource>();
-                audioSource.disableOnStop = true;
+                AudioSource audioSource = audioObj.GetComponent<AudioSource>();
+                // audioSource.disableOnStop = true;
 
                 m_AudioOneShots[i] = audioSource;
             }
@@ -223,8 +223,8 @@ namespace TiltBrush
             for (int i = 0; i < m_AudioLoops.Length; ++i)
             {
                 GameObject audioObj = Instantiate(m_AudioLoopPrefab, audioParent, true);
-                GvrAudioSource audioSource = audioObj.GetComponent<GvrAudioSource>();
-                audioSource.disableOnStop = true;
+                AudioSource audioSource = audioObj.GetComponent<AudioSource>();
+                // audioSource.disableOnStop = true;
                 audioSource.loop = true;
 
                 m_AudioLoops[i] = new AudioLoop
@@ -280,7 +280,7 @@ namespace TiltBrush
 
             m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.gameObject.SetActive(true);
             m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.volume = fVolume;
-            m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.gainDb = fGain;
+            // m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.gainDb = fGain;
             m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.spatialBlend = fSpatialBlend;
             m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.clip = rClip;
             m_AudioLoops[m_RecentlyUsedAudioLoop].m_GvrAudioSource.transform.SetParent(targetTransform);
@@ -735,7 +735,7 @@ namespace TiltBrush
             {
                 m_AudioOneShots[m_NextAvailableAudioOneShot].gameObject.SetActive(true);
                 m_AudioOneShots[m_NextAvailableAudioOneShot].volume = fVolume;
-                m_AudioOneShots[m_NextAvailableAudioOneShot].gainDb = fGain;
+                // m_AudioOneShots[m_NextAvailableAudioOneShot].gainDb = fGain;
                 m_AudioOneShots[m_NextAvailableAudioOneShot].spatialBlend = fSpatialBlend;
                 m_AudioOneShots[m_NextAvailableAudioOneShot].clip = rClip;
                 m_AudioOneShots[m_NextAvailableAudioOneShot].transform.position = vPos;
@@ -748,7 +748,7 @@ namespace TiltBrush
 
         public void StopAudio()
         {
-            foreach (GvrAudioSource s in m_AudioOneShots)
+            foreach (AudioSource s in m_AudioOneShots)
             {
                 s.Stop();
             }

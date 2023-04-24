@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UObject = UnityEngine.Object;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_STANDALONE_OSX
 // In the android build you get warnings about unused variables, because they code that uses them 
 // is only enabled for desktop. This disables those warnings.
 #pragma warning disable 649, 414
@@ -194,7 +194,7 @@ namespace TiltBrush
                 return;
             }
 
-#if !UNITY_ANDROID
+#if !UNITY_ANDROID && !UNITY_STANDALONE_OSX
             Camera srcCam = GetComponent<Camera>();
 
             // Store the clear and culling mask to restore after rendering.
@@ -230,7 +230,7 @@ namespace TiltBrush
             m_isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_STANDALONE_OSX
     // TODO:Mike - setting MSAA seems to crash quest when in Vulkan
     
     int msaa = QualityControls.m_Instance.MSAALevel;
@@ -432,7 +432,7 @@ namespace TiltBrush
         // Post-effect to blit temp framebuffer to downstream effects.
         // -------------------------------------------------------------------------------------------- //
         // This must be excluded from the build, even a no-op post effect negatively impacts performance.
-#if !UNITY_ANDROID
+#if !UNITY_ANDROID && !UNITY_STANDALONE_OSX
         public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             // We could skip the offscreen render when anti-aliasing is disabled.
@@ -483,6 +483,6 @@ namespace TiltBrush
 
 } // namespace TiltBrush
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_STANDALONE_OSX
 #pragma warning restore 649, 414
 #endif
