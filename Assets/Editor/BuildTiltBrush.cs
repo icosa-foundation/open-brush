@@ -295,7 +295,7 @@ static class BuildTiltBrush
             Target = GuiSelectedBuildTarget,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
-            Stamp = "(menuitem)",
+            Stamp = "",
             UnityOptions = GuiDevelopment
                 ? (BuildOptions.AllowDebugging | BuildOptions.Development | BuildOptions.CleanBuildCache)
                 : BuildOptions.None,
@@ -1419,7 +1419,7 @@ static class BuildTiltBrush
     {
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
-        string stamp = tiltOptions.Stamp;
+        string stamp = ""; //tiltOptions.Stamp;
         XrSdkMode xrSdk = tiltOptions.XrSdk;
         BuildOptions options = tiltOptions.UnityOptions;
 
