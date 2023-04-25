@@ -27,10 +27,7 @@ namespace TiltBrush
 
         private void Awake()
         {
-            if (m_Description.TableReference != null)
-            {
-                Init(m_Description.GetLocalizedString());
-            }
+            Init(m_Description.GetLocalizedString());
         }
 
         public void Init(string sText)

@@ -136,13 +136,18 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedPanelDescription.TableReference != null)
+                try
                 {
-                    return m_LocalizedPanelDescription.GetLocalizedString();
+                    var locString = m_LocalizedPanelDescription.GetLocalizedString();
+                    return locString;
                 }
-                return m_PanelDescription;
+                catch
+                {
+                    return m_PanelDescription;
+                }
             }
         }
+
         [SerializeField] protected GameObject m_PanelDescriptionPrefab;
 
         [SerializeField] protected Vector3 m_PanelDescriptionOffset;

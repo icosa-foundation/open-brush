@@ -137,11 +137,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_EnvironmentDescription.TableReference != null)
+                try
                 {
-                    return m_EnvironmentDescription.GetLocalizedString();
+                    var locString = m_EnvironmentDescription.GetLocalizedString();
+                    return locString;
                 }
-                return "";
+                catch
+                {
+                    return m_Guid.ToString();
+                }
             }
         }
 

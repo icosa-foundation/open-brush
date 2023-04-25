@@ -77,11 +77,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedDescription.TableReference != null)
+                try
                 {
-                    return m_LocalizedDescription.GetLocalizedString();
+                    var locString = m_LocalizedDescription.GetLocalizedString();
+                    return locString;
                 }
-                return m_DescriptionText;
+                catch
+                {
+                    return m_DescriptionText;
+                }
             }
         }
 
@@ -89,11 +93,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedDescriptionExtra.TableReference != null)
+                try
                 {
-                    return m_LocalizedDescriptionExtra.GetLocalizedString();
+                    var locString = m_LocalizedDescriptionExtra.GetLocalizedString();
+                    return locString;
                 }
-                return m_DescriptionTextExtra;
+                catch
+                {
+                    return m_DescriptionTextExtra;
+                }
             }
         }
         public bool IsDescriptionActive()

@@ -40,11 +40,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedToggleOnDescription.TableReference != null)
+                try
                 {
-                    return m_LocalizedToggleOnDescription.GetLocalizedString();
+                    var locString = m_LocalizedToggleOnDescription.GetLocalizedString();
+                    return locString;
                 }
-                return m_ToggleOnDescription;
+                catch
+                {
+                    return m_ToggleOnDescription;
+                }
             }
         }
 
@@ -52,11 +56,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedPopup.TableReference != null)
+                try
                 {
-                    return m_LocalizedPopup.GetLocalizedString();
+                    var locString = m_LocalizedPopup.GetLocalizedString();
+                    return locString;
                 }
-                return m_PopupText;
+                catch
+                {
+                    return m_PopupText;
+                }
             }
         }
 

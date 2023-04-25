@@ -65,10 +65,7 @@ namespace TiltBrush
 
                 if (AudioCaptureManager.m_Instance.IsCapturingAudio)
                 {
-                    if (m_AudioFoundText.TableReference != null)
-                    {
-                        m_WindowText.text = m_AudioFoundText.GetLocalizedString();
-                    }
+                    m_WindowText.text = m_AudioFoundText.GetLocalizedString();
                     m_AudioFoundTimer = m_AudioFoundDuration;
                     m_AudioSearchTimer = 0.0f;
                     m_AudioFound = true;

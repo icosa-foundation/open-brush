@@ -32,31 +32,9 @@ namespace TiltBrush
 
         private const string kIconSizeSuffix = "?sz=128";
 
-        [SerializeField]
-        public string LoggedInText
-        {
-            get
-            {
-                if (m_LocalizedLoggedInText.TableReference != null)
-                {
-                    return m_LocalizedLoggedInText.GetLocalizedString();
-                }
-                return m_LoggedInText;
-            }
-        }
+        public string LoggedInText => m_LocalizedLoggedInText.GetLocalizedString();
 
-        [SerializeField]
-        public string LogInText
-        {
-            get
-            {
-                if (m_LocalizedLogInText.TableReference != null)
-                {
-                    return m_LocalizedLogInText.GetLocalizedString();
-                }
-                return m_LogInText;
-            }
-        }
+        public string LogInText => m_LocalizedLogInText.GetLocalizedString();
 
         override protected void Awake()
         {

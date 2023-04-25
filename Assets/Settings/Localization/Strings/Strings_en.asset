@@ -3096,6 +3096,10 @@ MonoBehaviour:
     m_Localized: Turns Advanced+Experimental modes off
     m_Metadata:
       m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: Smoke
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

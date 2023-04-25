@@ -98,11 +98,15 @@ namespace TiltBrush
         {
             get
             {
-                if (m_LocalizedDescription.TableReference != null)
+                try
                 {
-                    return m_LocalizedDescription.GetLocalizedString();
+                    var locString = m_LocalizedDescription.GetLocalizedString();
+                    return locString;
                 }
-                return "";
+                catch
+                {
+                    return m_DurableName;
+                }
             }
         }
 

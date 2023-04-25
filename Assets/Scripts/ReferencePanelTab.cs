@@ -36,7 +36,8 @@ namespace TiltBrush
         protected ReferenceIcon[] m_Icons = new ReferenceIcon[0];
         protected int m_IndexOffset;
 
-        public string PanelName { get { return m_PanelName.TableReference != null ? m_PanelName.GetLocalizedString() : ""; } }
+        public string PanelName => m_PanelName.GetLocalizedString();
+
         public int PageIndex { get; set; }
         public abstract IReferenceItemCatalog Catalog { get; }
         public List<BaseButton> Buttons

@@ -179,11 +179,7 @@ namespace TiltBrush
         // the extra description.
         virtual public string UnloadedExtraDescription()
         {
-            if (m_LoadHelpText.TableReference != null)
-            {
-                return m_LoadHelpText.GetLocalizedString();
-            }
-            return null;
+            return m_LoadHelpText.GetLocalizedString();
         }
         virtual public string LoadedExtraDescription()
         {
