@@ -1355,8 +1355,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76081074568486912
-    m_Localized: "Iniciar sesi\xF3n requiere salir del pincel inclinado.\nSugerimos
-      guardar tu trabajo\nantes de continuar."
+    m_Localized: "Iniciar sesi\xF3n requiere salir de Open Brush.\nSugerimos guardar
+      tu trabajo\nantes de continuar."
     m_Metadata:
       m_Items: []
   - m_Id: 76084187576721408

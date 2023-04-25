@@ -997,51 +997,15 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1000010727908878, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000011197837762, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000011947057708, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000012022869828, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000012381343644, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1000012632495268, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
       propertyPath: m_Name
       value: PopupWindow_UploadMobile
       objectReference: {fileID: 0}
-    - target: {fileID: 1000012985209088, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
+    - target: {fileID: 1000013096383082, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1000013096383082, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000013114340806, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1000014041336086, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1000014096753506, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1954885538622324, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
@@ -1089,25 +1053,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 612561239130847434, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+        type: 3}
+      propertyPath: m_text
+      value: 'Signing in requires exiting Open Brush.
+
+        We suggest saving
+        your work
+
+        before proceeding.'
+      objectReference: {fileID: 0}
     - target: {fileID: 970682864746106188, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1607740331362510216, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
+    - target: {fileID: 5386564173593758542, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
-      propertyPath: m_IsActive
-      value: 0
+      propertyPath: m_text
+      value: Sign-In Required to Upload
       objectReference: {fileID: 0}
     - target: {fileID: 5464780960715826228, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
       propertyPath: managedReferences[3215294302546034699].m_Localized.m_TableEntryReference.m_KeyId
       value: 76081074568486912
-      objectReference: {fileID: 0}
-    - target: {fileID: 6508589329552276940, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8368804412439821593, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
         type: 3}
@@ -1123,11 +1092,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0.3369999
-      objectReference: {fileID: 0}
-    - target: {fileID: 8734179732674817566, guid: 4d2503fe0d5c9ae48a510658ac9df4a9,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d2503fe0d5c9ae48a510658ac9df4a9, type: 3}
