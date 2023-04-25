@@ -21,6 +21,7 @@ using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
 using MoonSharp.Interpreter.Platforms;
+using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using System.Reflection;
@@ -98,6 +99,7 @@ namespace TiltBrush
 
         public static LuaManager Instance => m_Instance;
 
+        private LinkedList<LuaWebRequest> m_WebRequests;
 
         public struct ScriptTrTransform
         {
@@ -135,6 +137,7 @@ namespace TiltBrush
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
+            m_WebRequests = new LinkedList<LuaWebRequest>();
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -270,6 +273,33 @@ namespace TiltBrush
             {
                 m_Timers.Remove(item);
             }
+
+            // Consume the queue of WebRequests that are still active
+            for (var node = m_WebRequests.First; node != null;)
+            {
+                var nextNode = node.Next;
+                var req = node.Value;
+                if (!req.script.Globals.Get("_scriptHasEnded").Boolean)
+                {
+                    if (!req.request.isDone) continue;  // The only case where we don't remove the item from the queue
+                    switch (req.request.result)
+                    {
+                        case UnityWebRequest.Result.ConnectionError:
+                        case UnityWebRequest.Result.DataProcessingError:
+                        case UnityWebRequest.Result.ProtocolError:
+                            try { req.onError?.Call(req.request.error, req.context); }
+                            catch (InterpreterException e) { LogLuaError(req.script, req.onError.ToString(), e); }
+                            break;
+                        case UnityWebRequest.Result.Success:
+                            try { req.onSuccess?.Call(req.request.downloadHandler.text, req.context); }
+                            catch (InterpreterException e) { LogLuaError(req.script, req.onSuccess.ToString(), e); }
+                            break;
+                    }
+                }
+                m_WebRequests.Remove(node);
+                node = nextNode;
+            }
+
             if (BackgroundScriptsEnabled) CallActiveBackgroundScripts(LuaNames.Main);
         }
 
@@ -496,6 +526,7 @@ namespace TiltBrush
                 ApiMethods.ForcePaintingOff(false);
                 UnsetAllTimers(script);
                 script.Globals.Set("_scriptHasBeenInitialized", DynValue.False);
+                script.Globals.Set("_scriptHasEnded", DynValue.True);
             }
         }
 
@@ -654,6 +685,7 @@ namespace TiltBrush
                     GetOrSetWidgetCurrentValue(script, config);
                 }
                 script.Globals.Set("_scriptHasBeenInitialized", DynValue.True); // Used by EndScript
+                script.Globals.Set("_scriptHasEnded", DynValue.False);
                 _CallScript(script, LuaNames.Start);
             }
         }
@@ -688,6 +720,8 @@ namespace TiltBrush
             RegisterApiClass(script, "user", typeof(UserApiWrapper));
             RegisterApiClass(script, "wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "waveform", typeof(WaveformApiWrapper));
+            RegisterApiClass(script, "webRequest", typeof(WebRequestApiWrapper));
+
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
@@ -892,5 +926,28 @@ namespace TiltBrush
         {
             return m_ActiveBackgroundScripts.ContainsKey(scriptName);
         }
+
+        public void QueueWebRequest(UnityWebRequest request, Closure onSuccess, Closure onError, DynValue context)
+        {
+            var req = new LuaWebRequest
+            {
+                script = onSuccess.OwnerScript,
+                request = request,
+                onSuccess = onSuccess,
+                onError = onError,
+                context = context
+            };
+            m_WebRequests.AddLast(req);
+        }
+
+        private class LuaWebRequest
+        {
+            public Script script;
+            public UnityWebRequest request;
+            public Closure onSuccess;
+            public Closure onError;
+            public DynValue context;
+        }
+
     }
 }
