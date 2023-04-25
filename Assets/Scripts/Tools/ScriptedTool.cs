@@ -236,12 +236,12 @@ namespace TiltBrush
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     tr_CS.scale = drawnVector_CS.magnitude;
-                    result.Transforms = result.Transforms.Select(tr =>
+                    result.MultiTransforms = result.MultiTransforms.Select(path => path.Select(tr =>
                     {
                         // Orient each point to the controller
                         tr.translation = tr_CS.rotation * tr.translation;
                         return tr;
-                    }).ToList();
+                    }).ToList()).ToList();
                     break;
                 case ScriptCoordSpace.Canvas:
                     tr_CS.translation = Vector3.zero;
