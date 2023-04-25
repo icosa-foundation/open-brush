@@ -19,6 +19,7 @@ using MoonSharp.Interpreter;
 using ODS;
 using UnityAsyncAwaitUtil;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace TiltBrush
 {
@@ -712,6 +713,8 @@ namespace TiltBrush
         public static Quaternion getRotation(int index) => App.Scene.GetLayerByIndex(index).Pose.rotation;
         public static void setPosition(int index, Vector3 position) => Utils._Transform(ItemType.Image, index, TrTransform.T(position));
         public static void setRotation(int index, Quaternion rotation) => Utils._Transform(ItemType.Image, index, TrTransform.R(rotation));
+        public static string formEncode(int index) => ApiMethods.FormEncodeImage(index);
+        public static string saveBase64(string base64, string filename) => ApiMethods.SaveBase64(base64, filename);
     }
 
     [MoonSharpUserData]
@@ -856,6 +859,46 @@ namespace TiltBrush
     {
         public static void set(Closure fn, float interval, float delay = 0, int repeats = -1) => LuaManager.SetTimer(fn, interval, delay, repeats);
         public static void unset(Closure fn) => LuaManager.UnsetTimer(fn);
+    }
+
+    [MoonSharpUserData]
+    public static class WebRequestApiWrapper
+    {
+
+        private static void _setHeaders(ref UnityWebRequest request, Table headers)
+        {
+            if (headers != null)
+            {
+                foreach (var header in headers.Keys)
+                {
+                    var key = header.String;
+                    var value = headers.Get(key).String;
+                    request.SetRequestHeader(key, value);
+                }
+            }
+        }
+
+        public static void get(string url, Closure onSuccess, Closure onError, Table headers, DynValue context)
+        {
+            var request = UnityWebRequest.Get(url);
+            _setHeaders(ref request, headers);
+            request.SendWebRequest();
+            LuaManager.Instance.QueueWebRequest(request, onSuccess, onError, context);
+        }
+
+        public static void post(string url, Table postData, Closure onSuccess, Closure onError, Table headers, DynValue context)
+        {
+            List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
+            foreach (var pair in postData.Pairs)
+            {
+                Debug.Log($"{pair.Key}={pair.Value}");
+                formData.Add(new MultipartFormDataSection($"{pair.Key}={pair.Value}"));
+            }
+            var request = UnityWebRequest.Post(url, formData);
+            _setHeaders(ref request, headers);
+            request.SendWebRequest();
+            LuaManager.Instance.QueueWebRequest(request, onSuccess, onError, context);
+        }
     }
 
     enum ItemType
