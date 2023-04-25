@@ -22,22 +22,55 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        public static void _DrawFromFloatList(List<List<List<float>>> floatPaths, TrTransform tr, float brushScale = 1f, bool rawStroke = false)
+        {
+            var allTrList = new List<IEnumerable<TrTransform>>();
+            foreach (var item in floatPaths)
+            {
+                IEnumerable<TrTransform> trList = null;
+                if (item[0].Count == 3)
+                {
+                    trList = item.Select(p => TrTransform.T(
+                        new Vector3(p[0], p[1], p[2])
+                    ));
+                }
+                else if (item[0].Count == 6)
+                {
+                    trList = item.Select(p => TrTransform.TR(
+                        new Vector3(p[0], p[1], p[2]),
+                        Quaternion.Euler(p[0], p[1], p[2])
+                    ));
+
+                }
+                else if (item[0].Count == 7)
+                {
+                    trList = item.Select(p => TrTransform.TRS(
+                        new Vector3(p[0], p[1], p[2]),
+                        Quaternion.Euler(p[0], p[1], p[2]),
+                        p[3]
+                    ));
+
+                }
+                allTrList.Add(trList);
+
+            }
+            DrawStrokes.DrawNestedTrList(allTrList, tr, brushScale, rawStroke);
+        }
+
         [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]
         public static void DrawPaths(string jsonString)
         {
-            // TODO Use brush rotation 
-            var origin = ApiManager.Instance.BrushPosition;
+            var origin = TrTransform.T(ApiManager.Instance.BrushPosition);
             var paths = JsonConvert.DeserializeObject<List<List<List<float>>>>($"[{jsonString}]");
-            DrawStrokes.MultiPathsToStrokes(paths, origin);
+            _DrawFromFloatList(paths, origin);
         }
 
         [ApiEndpoint("draw.path", "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position")]
         public static void DrawPath(string jsonString)
         {
-            // TODO Use brush rotation
             var origin = ApiManager.Instance.BrushPosition;
             var path = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
-            _SinglePathToStroke(path, origin);
+            _DrawSinglePath(path, origin);
         }
 
         [ApiEndpoint("draw.stroke", "Draws an exact brush stroke as recorded in another app")]
@@ -45,21 +78,21 @@ namespace TiltBrush
         {
             // TODO Use brush rotation
             var strokeData = JsonConvert.DeserializeObject<List<List<float>>>($"[{jsonString}]");
-            _SinglePathToStroke(strokeData, Vector3.zero, rawStroke: true);
+            _DrawSinglePath(strokeData, Vector3.zero, rawStroke: true);
         }
 
-        public static void _SinglePathToStroke(List<List<float>> floatPath, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
+        public static void _DrawSinglePath(List<List<float>> floatPath, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
         {
             var floatPaths = new List<List<List<float>>> { floatPath };
-            var trMatrix = TrTransform.TRS(origin, Quaternion.identity, scale);
-            DrawStrokes.MultiPathsToStrokes(floatPaths, trMatrix, brushScale, rawStroke);
+            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
+            _DrawFromFloatList(floatPaths, tr, brushScale, rawStroke);
         }
 
         [ApiEndpoint("draw.polygon", "Draws a polygon at the current brush position. Does not move the brush position")]
         public static void DrawPolygon(int sides, float radius, float angle)
         {
-            var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
-            DrawStrokes.Polygon(sides, trMatrix);
+            var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
+            DrawStrokes.Polygon(sides, tr);
         }
 
         [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
@@ -74,7 +107,7 @@ namespace TiltBrush
         {
             // SVG paths are usually scaled rather large so scale down 100x
             var trMatrix = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.identity, 0.01f);
-            DrawStrokes.SvgPath(svgPathString, trMatrix);
+            DrawStrokes.DrawSvgPathString(svgPathString, trMatrix);
 
         }
 
