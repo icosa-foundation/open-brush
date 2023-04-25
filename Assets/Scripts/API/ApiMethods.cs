@@ -536,6 +536,37 @@ namespace TiltBrush
             _SetWidgetTransform(_GetActiveImage(index), position);
         }
 
+        [ApiEndpoint("image.formEncode", "Converts an image to a string suitable for use in a form")]
+        public static string FormEncodeImage(int index)
+        {
+            var path = _GetActiveImage(index).ReferenceImage.FileFullPath;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
+        }
+
+        [ApiEndpoint("image.base64Decode", "Saves an image based on a base64 encoded string")]
+        public static string SaveBase64(string base64, string filename)
+        {
+            var bytes = Convert.FromBase64String(base64);
+            if (bytes.Length > 4 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+            {
+                if (!filename.ToLower().EndsWith(".png"))
+                {
+                    filename += ".png";
+                }
+            }
+            else if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            {
+                if (!filename.ToLower().EndsWith(".jpg") && !filename.ToLower().EndsWith(".jpeg"))
+                {
+                    filename += ".jpg";
+                }
+            }
+            var path = Path.Combine(App.ReferenceImagePath(), filename);
+            File.WriteAllBytes(path, bytes);
+            return path;
+        }
+
+
         [ApiEndpoint("scripts.toolscript.activate", "Activate the given tool script")]
         public static void ActivateToolScript(string scriptName)
         {
