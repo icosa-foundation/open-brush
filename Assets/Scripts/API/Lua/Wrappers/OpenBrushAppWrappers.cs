@@ -451,8 +451,9 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class PathApiWrapper
     {
-        public static List<TrTransform> fromSvg(string svg, float scale) => LuaApiMethods.PathFromSvg(svg, scale);
-        public static List<List<TrTransform>> fromSvgMultiple(string svg) => LuaApiMethods.PathsFromSvg(svg);
+        public static List<TrTransform> fromSvgPath(string svg) => LuaApiMethods.PathFromSvgPath(svg);
+        public static List<List<TrTransform>> fromSvgPaths(string svg) => LuaApiMethods.PathsFromSvgPaths(svg);
+        public static List<List<TrTransform>> fromSvg(string svg) => DrawStrokes.SvgToApiPaths(svg);
         public static List<TrTransform> transform(List<TrTransform> path, TrTransform transform) => LuaApiMethods.TransformPath(path, transform);
         public static List<TrTransform> translate(List<TrTransform> path, Vector3 amount) => LuaApiMethods.TranslatePath(path, amount);
         public static List<TrTransform> rotate(List<TrTransform> path, Quaternion amount) => LuaApiMethods.RotatePath(path, amount);
@@ -493,6 +494,11 @@ namespace TiltBrush
                 .Select((v, i) => (translation: v.translation[axis], index: i))
                 .Aggregate((a, b) => a.translation > b.translation ? a : b)
                 .index;
+        }
+
+        public static List<List<TrTransform>> normalized(List<List<TrTransform>> path)
+        {
+            return path.Select(x => normalized(x)).ToList();
         }
 
         public static List<TrTransform> normalized(List<TrTransform> path)
@@ -536,6 +542,11 @@ namespace TiltBrush
                 tr.rotation,
                 tr.scale
             )).ToList();
+        }
+
+        public static List<List<TrTransform>> resample(List<List<TrTransform>> path, float spacing)
+        {
+            return path.Select(x => resample(x, spacing)).ToList();
         }
 
         public static List<TrTransform> resample(List<TrTransform> path, float spacing)
@@ -588,7 +599,8 @@ namespace TiltBrush
         public static void paths(List<List<TrTransform>> paths) => LuaApiMethods.DrawPaths(paths);
         public static void polygon(int sides, TrTransform tr=default) => DrawStrokes.Polygon(sides, tr);
         public static void text(string text, TrTransform tr=default) => DrawStrokes.Text(text, tr);
-        public static void svg(string svg, TrTransform tr=default) => DrawStrokes.SvgPath(svg, tr);
+        public static void svgPath(string svg, TrTransform tr=default) => DrawStrokes.DrawSvgPathString(svg, tr);
+        public static void svg(string svg, TrTransform tr=default) => DrawStrokes.DrawSvg(svg, tr);
         public static void cameraPath(int index) => ApiMethods.DrawCameraPath(index);
     }
 

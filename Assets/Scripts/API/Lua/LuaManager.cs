@@ -116,11 +116,20 @@ namespace TiltBrush
         public struct ScriptTrTransforms
         {
             public List<TrTransform> Transforms;
+            public List<List<TrTransform>> MultiTransforms;
             public ScriptCoordSpace Space;
 
             public ScriptTrTransforms(List<TrTransform> transforms, ScriptCoordSpace space)
             {
+                MultiTransforms = null;
                 Transforms = transforms;
+                Space = space;
+            }
+
+            public ScriptTrTransforms(List<List<TrTransform>> multi, ScriptCoordSpace space)
+            {
+                MultiTransforms = multi;
+                Transforms = null;
                 Space = space;
             }
         }
@@ -552,8 +561,8 @@ namespace TiltBrush
         {
             var script = GetActiveScript(LuaApiCategory.ToolScript);
             var space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
-            var trs = _TrTransformsFromScript(fnName, script);
-            return new ScriptTrTransforms(trs, space);
+            var paths = _MultiTrTransformsFromScript(fnName, script);
+            return new ScriptTrTransforms(paths, space);
         }
 
         public ScriptTrTransforms CallActiveSymmetryScript(string fnName)
@@ -567,16 +576,50 @@ namespace TiltBrush
         private List<TrTransform> _TrTransformsFromScript(string fnName, Script script)
         {
             DynValue result = _CallScript(script, fnName);
-            var trs = new List<TrTransform>();
+            var paths = new List<TrTransform>();
             try
             {
-                if (!Equals(result, DynValue.Nil)) trs = result.ToObject<List<TrTransform>>();
+                if (!Equals(result, DynValue.Nil))
+                {
+                    paths = result.ToObject<List<TrTransform>>();
+                }
             }
             catch (InterpreterException e)
             {
                 LogLuaError(script, fnName, e);
             }
-            return trs;
+            return paths;
+        }
+
+        private List<List<TrTransform>> _MultiTrTransformsFromScript(string fnName, Script script)
+        {
+            DynValue result = _CallScript(script, fnName);
+            var paths = new List<List<TrTransform>>();
+            try
+            {
+                if (!Equals(result, DynValue.Nil))
+                {
+                    // Assume if the result is nested 3 levels deep then we have multiple paths
+                    if (result?.Table?.Get(1)?.Table?.Get(1)?.Type == DataType.Table)
+                    {
+                        foreach (var item in result.Table.Values)
+                        {
+                            paths.Add(item.ToObject<List<TrTransform>>());
+                        }
+                    }
+                    else
+                    {
+                        // If we have just a single path then wrap it
+                        paths = new List<List<TrTransform>>();
+                        paths.Add(result.ToObject<List<TrTransform>>());
+                    }
+                }
+            }
+            catch (InterpreterException e)
+            {
+                LogLuaError(script, fnName, e);
+            }
+            return paths;
         }
 
         public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)

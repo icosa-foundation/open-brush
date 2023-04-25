@@ -249,10 +249,8 @@ namespace TiltBrush
                     tr_CS.scale = 1f;
                     break;
             }
-
-            DrawStrokes.PositionPathsToStroke(
-                result.Transforms, tr_CS.translation, tr_CS.scale, 1f / App.ActiveCanvas.Pose.scale
-            );
+            float brushScale = 1f / App.ActiveCanvas.Pose.scale;
+            DrawStrokes.DrawNestedTrList(result.MultiTransforms, tr_CS, brushScale);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

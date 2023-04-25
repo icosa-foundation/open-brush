@@ -10,29 +10,22 @@ namespace TiltBrush
     {
         public static void DrawPath(List<TrTransform> path)
         {
-            DrawStrokes.TrTransformListToStroke(path, Vector3.zero);
+            DrawStrokes.DrawSingleTrList(path, TrTransform.identity);
         }
 
         public static void DrawPaths(List<List<TrTransform>> paths)
         {
-            DrawStrokes.TrTransformListsToStroke(paths, Vector3.zero);
+            DrawStrokes.DrawNestedTrList(paths, TrTransform.identity);
         }
 
-        public static List<TrTransform> PathFromSvg(string svgPathString, float scale)
+        public static List<TrTransform> PathFromSvgPath(string svgPathString)
         {
-            var svgPolyline = DrawStrokes.SvgPathStringToApiPaths(svgPathString);
-            var origin = svgPolyline[0][0];
-            return svgPolyline
-                .SelectMany(l => l)
-                .Select(p => TrTransform.T((p - origin) * scale))
-                .ToList();
+            return DrawStrokes.SvgPathStringToApiPaths(svgPathString)[0];
         }
 
-        public static List<List<TrTransform>> PathsFromSvg(string svgPathString)
+        public static List<List<TrTransform>> PathsFromSvgPaths(string svgPathString)
         {
-            var svgPolyline = DrawStrokes.SvgPathStringToApiPaths(svgPathString);
-            var origin = svgPolyline[0][0];
-            return svgPolyline.Select(p => p.Select(q => TrTransform.T(q - origin)).ToList()).ToList();
+            return DrawStrokes.SvgPathStringToApiPaths(svgPathString);
         }
 
         public static List<TrTransform> TranslatePath(List<TrTransform> path, Vector3 translation)

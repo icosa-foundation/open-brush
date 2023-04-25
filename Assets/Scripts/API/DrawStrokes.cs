@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,146 +23,34 @@ namespace TiltBrush
     public static class DrawStrokes
     {
 
-        public static void TrTransformListToStroke(List<TrTransform> trList, Vector3 origin, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
+        public static void DrawSingleTrList(IEnumerable<TrTransform> path, TrTransform tr, float brushScale = 1f, bool rawStrokes = false)
         {
-            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
-            MultiPositionPathsToStrokes(
-                new List<List<Vector3>> { trList.Select(t => t.translation).ToList() },
-                new List<List<Quaternion>> { trList.Select(t => t.rotation).ToList() },
-                new List<List<float>> { trList.Select(t => t.scale).ToList() },
-                tr, brushScale, rawStroke);
+            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, brushScale, rawStrokes);
         }
 
-        public static void SinglePath2dToStroke(List<Vector2> polyline2d, TrTransform tr)
-        {
-            var polylines2d = new List<List<Vector2>> { polyline2d };
-            MultiPath2dToStrokes(polylines2d, tr);
-        }
-
-        public static void PositionPathsToStroke(List<TrTransform> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
-        {
-            var positions = path.Select(x => x.translation).ToList();
-            var rotations = path.Select(x => x.rotation).ToList();
-            var pressures = path.Select(x => x.scale).ToList();
-            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
-            MultiPositionPathsToStrokes(
-                new List<List<Vector3>> { positions },
-                new List<List<Quaternion>> { rotations },
-                new List<List<float>> { pressures },
-                tr,
-                brushScale
-            );
-        }
-
-        public static void TrTransformListsToStroke(List<List<TrTransform>> path, Vector3 origin, float scale = 1f, float brushScale = 1f)
-        {
-            var positions = path.Select(x => x.Select(y => y.translation).ToList()).ToList();
-            var rotations = path.Select(x => x.Select(y => y.rotation).ToList()).ToList();
-            var pressures = path.Select(x => x.Select(y => y.scale).ToList()).ToList();
-            var tr = TrTransform.TRS(origin, Quaternion.identity, scale);
-            MultiPositionPathsToStrokes(
-                positions,
-                rotations,
-                pressures,
-                tr,
-                brushScale
-            );
-        }
-
-        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, Vector3 origin, Quaternion rotation = default, float scale = 1f, float brushScale = 1f, bool rawStroke = false)
-        {
-            MultiPathsToStrokes(strokeData, TrTransform.TRS(origin, rotation, scale), brushScale, rawStroke);
-        }
-
-        public static void MultiPathsToStrokes(List<List<List<float>>> strokeData, TrTransform tr, float brushScale = 1f, bool rawStroke = false)
-        {
-            var positions = new List<List<Vector3>>();
-            var orientations = new List<List<Quaternion>>();
-            var pressures = new List<List<float>>();
-
-            // This assumes that the stroke data is consistent.
-            // If we have orientation or pressure for the first point, we have it for all
-            bool orientationsExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
-            bool pressuresExist = strokeData[0][0].Count == 6 || strokeData[0][0].Count == 7;
-
-            foreach (List<List<float>> positionList in strokeData)
-            {
-                var positionsPath = new List<Vector3>();
-                var orientationsPath = new List<Quaternion>();
-                var pressuresPath = new List<float>();
-
-                foreach (List<float> controlPoint in positionList)
-                {
-                    if (controlPoint.Count < 3) { controlPoint.Add(0); }  // Handle 2D paths
-
-                    positionsPath.Add(new Vector3(controlPoint[0], controlPoint[1], controlPoint[2]));
-                    if (orientationsExist)
-                    {
-                        orientationsPath.Add(
-                            Quaternion.Euler(
-                                controlPoint[3],
-                                controlPoint[4],
-                                controlPoint[5]
-                            ));
-                    }
-                    if (pressuresExist)
-                    {
-                        pressuresPath.Add(controlPoint.Last());
-                    }
-                }
-                positions.Add(positionsPath);
-                if (orientationsExist) orientations.Add(orientationsPath);
-                if (pressuresExist) pressures.Add(pressuresPath);
-            }
-            MultiPositionPathsToStrokes(positions, orientations, pressures, tr, brushScale, rawStroke);
-        }
-
-        public static void MultiPath2dToStrokes(List<List<Vector2>> polylines2d, TrTransform tr,
-                                                float brushScale = 1f, bool breakOnOrigin = false)
-        {
-            var positions = new List<List<Vector3>>();
-            foreach (List<Vector2> positionList in polylines2d)
-            {
-                var path = new List<Vector3>();
-                foreach (Vector2 position in positionList)
-                {
-                    path.Add(new Vector3(position.x, position.y, 0));
-                }
-                positions.Add(path);
-            }
-            MultiPositionPathsToStrokes(positions, null, null, tr, brushScale, breakOnOrigin);
-        }
-
-        public static void MultiPositionPathsToStrokes(
-            List<List<Vector3>> positions,
-            List<List<Quaternion>> orientations,
-            List<List<float>> pressures,
+        public static void DrawNestedTrList(
+            IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             float brushScale = 1f,
-            bool breakOnOrigin = false,
             bool rawStrokes = false)
         {
+            var paths = pathEnumerable.ToList();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
-            float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
-            float defaultPressure = Mathf.Lerp(minPressure, 1f, 0.5f);
             var group = App.GroupManager.NewUnusedGroup();
-            for (var pathIndex = 0; pathIndex < positions.Count; pathIndex++)
+            int pathIndex = 0;
+            foreach (var item in paths)
             {
+                var path = item.ToList();
                 // Single joined paths
-                var positionList = positions[pathIndex];
-                if (positionList.Count < 2) continue;
+                if (path.Count < 2) continue;
                 var controlPoints = new List<PointerManager.ControlPoint>();
-                for (var vertexIndex = 0; vertexIndex < positionList.Count - 1; vertexIndex++)
+                for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
                 {
-                    var position = positionList[vertexIndex];
-                    Quaternion orientation = orientations?.Any() == true ?
-                        orientations[pathIndex][vertexIndex] :
-                        Quaternion.identity;
-                    float pressure = pressures?.Any() == true ?
-                        pressures[pathIndex][vertexIndex] :
-                        defaultPressure;
-                    var nextPosition = positionList[(vertexIndex + 1) % positionList.Count];
+                    Vector3 position = path[vertexIndex].translation;
+                    Quaternion orientation = path[vertexIndex].rotation;
+                    float pressure = path[vertexIndex].scale;
+                    Vector3 nextPosition = path[(vertexIndex + 1) % path.Count].translation;
 
                     if (rawStrokes)
                     {
@@ -216,12 +104,13 @@ namespace TiltBrush
                     // No active undo. So actually perform the command
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
+                pathIndex++;
             }
         }
 
         public static void Polygon(int sides, TrTransform tr = default)
         {
-            var path = new List<Vector3>();
+            var path = new List<TrTransform>();
             for (float i = 0; i <= sides; i++)
             {
                 var theta = Mathf.PI * (i / sides) * 2f;
@@ -232,43 +121,54 @@ namespace TiltBrush
                     0
                 );
                 point = ApiManager.Instance.BrushRotation * point;
-                path.Add(point);
+                path.Add(TrTransform.T(point));
             }
-            MultiPositionPathsToStrokes(new List<List<Vector3>> { path }, null, null, tr);
+            DrawNestedTrList(new List<List<TrTransform>> { path }, tr);
         }
 
         public static void Text(string text, TrTransform tr)
         {
             var textToStroke = new TextToStrokes(ApiManager.Instance.TextFont);
-            var polyline2d = textToStroke.Build(text);
-            MultiPositionPathsToStrokes(polyline2d, null, null, tr);
+            DrawNestedTrList(textToStroke.Build(text), tr);
         }
 
-        public static void SvgPath(string svgPathString, TrTransform tr)
+        public static void DrawSvgPathString(string svgPathString, TrTransform tr)
         {
-            MultiPath2dToStrokes(SvgPathStringToApiPaths(svgPathString), tr, 1f, true);
+            DrawNestedTrList(SvgPathStringToApiPaths(svgPathString), tr);
         }
 
-        public static List<List<Vector2>> SvgPathStringToApiPaths(string svgPathString)
+        public static void DrawSvg(string svg, TrTransform tr)
+        {
+            DrawNestedTrList(SvgToApiPaths(svg), tr);
+        }
+
+        public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)
         {
             var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
             return SvgToApiPaths(svgText);
         }
 
-        public static List<List<Vector2>> SvgToApiPaths(string svgText)
+        public static List<List<TrTransform>> SvgToApiPaths(string svgText)
         {
-            var geoms = ParseSvg(svgText);
-            var svgPolyline = new List<List<Vector2>>();
+            svgText = _PreProcessSvg(svgText);
+            var geoms = _ParseSvg(svgText);
+            var svgPolyline = new List<List<TrTransform>>();
             foreach (var geom in geoms)
             {
-                var verts = geom.Vertices.Skip(1); // Skip the centroid vertex added for tessellation
-                verts = verts.Select(v => new Vector2(v.x, -v.y)); // SVG is Y down, Unity is Y up
-                svgPolyline.Add(verts.ToList());
+                var verts = geom.Vertices.Select(v => new Vector3(v.x, -v.y, 0)); // SVG is Y down, Unity is Y up
+                svgPolyline.Add(verts.Select(TrTransform.T).ToList());
             }
             return svgPolyline;
         }
 
-        public static List<VectorUtils.Geometry> ParseSvg(string svgText)
+        private static string _PreProcessSvg(string svgText)
+        {
+            var colorString = ColorUtility.ToHtmlStringRGB(App.BrushColor.CurrentColor);
+            svgText = svgText.Replace("currentcolor", $"#{colorString}", StringComparison.OrdinalIgnoreCase);
+            return svgText;
+        }
+
+        private static List<VectorUtils.Geometry> _ParseSvg(string svgText, bool outlinesOnly = true, bool convexOutlinesOnly = false)
         {
             TextReader stringReader = new StringReader(svgText);
             var sceneInfo = SVGParser.ImportSVG(stringReader);
@@ -278,27 +178,23 @@ namespace TiltBrush
                 MaxCordDeviation = 0.5f,
                 MaxTanAngleDeviation = 0.1f,
                 SamplingStepSize = 0.01f,
-                AllowConcavePaths = true
+                OutlinesOnly = outlinesOnly,
+                ConvexOutlinesOnly = convexOutlinesOnly,
             };
             return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
         }
 
         public static void CameraPath(CameraPath path, TrTransform tr = default)
         {
-            var positions = new List<Vector3>();
-            var rotations = new List<Quaternion>();
+            var points = new List<TrTransform>();
             for (float t = 0; t < path.Segments.Count; t += .1f)
             {
-                positions.Add(path.GetPosition(new PathT(t)));
-                rotations.Add(path.GetRotation(new PathT(t)));
+                points.Add(TrTransform.TR(
+                    path.GetPosition(new PathT(t)),
+                    path.GetRotation(new PathT(t))
+                ));
             }
-            MultiPositionPathsToStrokes(
-                new List<List<Vector3>> { positions },
-                new List<List<Quaternion>> { rotations },
-                null,
-                tr
-            );
-
+            DrawNestedTrList(new List<List<TrTransform>> { points }, tr);
         }
     }
 }

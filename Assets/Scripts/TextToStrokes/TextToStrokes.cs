@@ -28,9 +28,9 @@ namespace TiltBrush
             _font = font;
         }
 
-        public List<List<Vector3>> Build(string text)
+        public List<List<TrTransform>> Build(string text)
         {
-            var shape = new List<List<Vector3>>();
+            var shape = new List<List<TrTransform>>();
             Vector2 offset = Vector2.zero;
             foreach (var character in text)
             {
@@ -53,7 +53,7 @@ namespace TiltBrush
                 shape.AddRange(
                     letter.Select(
                         path => path.Select(
-                            point => new Vector3(point.x + offset.x, point.y + offset.y, 0)
+                            point => TrTransform.T(new Vector3(point.x + offset.x, point.y + offset.y, 0))
                         ).ToList()
                     ).ToList()
                 );
