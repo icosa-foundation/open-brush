@@ -425,10 +425,11 @@ namespace TiltBrush
         // suitable for use with symmetry scripts default space
         public static List<TrTransform> pointsToPolar(List<Vector2> cartesianPoints)
         {
-            var polarCoordinates = new List<TrTransform>();
+            var polarCoordinates = new List<TrTransform>(cartesianPoints.Count);
 
-            foreach (Vector2 point in cartesianPoints)
+            for (var i = 0; i < cartesianPoints.Count; i++)
             {
+                var point = cartesianPoints[i];
                 float radius = Mathf.Sqrt(point.x * point.x + point.y * point.y);
                 float angle = Mathf.Atan2(point.y, point.x);
 
@@ -454,27 +455,75 @@ namespace TiltBrush
         public static List<TrTransform> fromSvgPath(string svg) => LuaApiMethods.PathFromSvgPath(svg);
         public static List<List<TrTransform>> fromSvgPaths(string svg) => LuaApiMethods.PathsFromSvgPaths(svg);
         public static List<List<TrTransform>> fromSvg(string svg) => DrawStrokes.SvgToApiPaths(svg);
-        public static List<TrTransform> transform(List<TrTransform> path, TrTransform transform) => LuaApiMethods.TransformPath(path, transform);
-        public static List<TrTransform> translate(List<TrTransform> path, Vector3 amount) => LuaApiMethods.TranslatePath(path, amount);
-        public static List<TrTransform> rotate(List<TrTransform> path, Quaternion amount) => LuaApiMethods.RotatePath(path, amount);
-        public static List<TrTransform> scale(List<TrTransform> path, Vector3 amount) => LuaApiMethods.ScalePath(path, amount);
+        public static List<List<TrTransform>> transform(List<List<TrTransform>> paths, TrTransform transform)
+        {
+            for (var i = 0; i < paths.Count; i++)
+            {
+                var path = paths[i];
+                LuaApiMethods.TransformPath(path, transform);
+            }
+            return paths;
+        }
+        public static List<TrTransform> transform(List<TrTransform> path, TrTransform transform)
+        {
+            LuaApiMethods.TransformPath(path, transform);
+            return path;
+        }
+        public static List<List<TrTransform>> translate(List<List<TrTransform>> paths, Vector3 amount) => transform(paths, TrTransform.T(amount));
+        public static List<TrTransform> translate(List<TrTransform> path, Vector3 amount) => transform(path, TrTransform.T(amount));
+        public static List<List<TrTransform>> rotate(List<List<TrTransform>> paths, Quaternion amount) => transform(paths, TrTransform.R(amount));
+        public static List<TrTransform> rotate(List<TrTransform> path, Quaternion amount) => transform(path, TrTransform.R(amount));
+        public static List<List<TrTransform>> scale(List<List<TrTransform>> paths, Vector3 amount)
+        {
+            LuaApiMethods.ScalePaths(paths, amount);
+            return paths;
+        }
+        public static List<TrTransform> scale(List<TrTransform> path, Vector3 amount)
+        {
+            LuaApiMethods.ScalePath(path, amount);
+            return path;
+        }
+
+        public static List<List<TrTransform>> centered(List<List<TrTransform>> paths)
+        {
+            (Vector3 center, float _) = _CalculateCenterAndScale(paths.SelectMany(p => p).ToList());
+
+            // Apply the scale factor to each Vector3 in the input list
+            for (var i = 0; i < paths.Count; i++)
+            {
+                for (var j = 0; j < paths[i].Count; j++)
+                {
+                    var tr = paths[i][j];
+                    tr.translation = tr.translation - center;
+                    paths[i][j] = tr;
+                }
+            }
+            return paths;
+        }
 
         public static List<TrTransform> centered(List<TrTransform> path)
         {
-            Vector3 centroid = path.Aggregate(
-                Vector3.zero,
-                (acc, x) => acc + x.translation
-            ) / path.Count;
-            return path.Select(x => x * TrTransform.T(-centroid)).ToList();
+            (Vector3 center, float _) = _CalculateCenterAndScale(path);
+
+            // Apply the scale factor to each Vector3 in the input list
+            for (var i = 0; i < path.Count; i++)
+            {
+                var tr = path[i];
+                tr.translation = tr.translation - center;
+                path[i] = tr;
+            }
+            return path;
         }
 
         public static List<TrTransform> startingFrom(List<TrTransform> path, int index)
         {
+            if (path == null) return path;
             return path.Skip(index).Concat(path.Take(index)).ToList();
         }
 
         public static int findClosest(List<TrTransform> path, Vector3 point)
         {
+            if (path == null) return 0;
             return path.Select((x, i) => new {i, x}).Aggregate(
                 (acc, x) => (x.x.translation - point).sqrMagnitude < (acc.x.translation - point).sqrMagnitude ? x : acc
             ).i;
@@ -482,6 +531,7 @@ namespace TiltBrush
 
         public static int findMinimum(List<TrTransform> path, int axis)
         {
+            if (path == null) return 0;
             return path
                 .Select((v, i) => (translation: v.translation[axis], index: i))
                 .Aggregate((a, b) => a.translation < b.translation ? a : b)
@@ -496,12 +546,42 @@ namespace TiltBrush
                 .index;
         }
 
-        public static List<List<TrTransform>> normalized(List<List<TrTransform>> path)
+        public static List<List<TrTransform>> normalized(List<List<TrTransform>> paths, float scale = 1)
         {
-            return path.Select(x => normalized(x)).ToList();
+            if (paths == null) return null;
+            (Vector3 center, float unitScale) = _CalculateCenterAndScale(paths.SelectMany(p => p).ToList());
+            scale *= unitScale;
+
+            // Apply the scale factor to each Vector3 in the input list
+            for (var i = 0; i < paths.Count; i++)
+            {
+                for (var j = 0; j < paths[i].Count; j++)
+                {
+                    var tr = paths[i][j];
+                    tr.translation = (tr.translation - center) * scale;
+                    paths[i][j] = tr;
+                }
+            }
+            return paths;
         }
 
-        public static List<TrTransform> normalized(List<TrTransform> path)
+        public static List<TrTransform> normalized(List<TrTransform> path, float scale = 1)
+        {
+            if (path == null) return null;
+            (Vector3 center, float unitScale) = _CalculateCenterAndScale(path);
+            scale *= unitScale;
+
+            // Apply the scale factor to each Vector3 in the input list
+            for (var i = 0; i < path.Count; i++)
+            {
+                var tr = path[i];
+                tr.translation = (tr.translation - center) * scale;
+                path[i] = tr;
+            }
+            return path;
+        }
+
+        private static (Vector3 center, float scale) _CalculateCenterAndScale(List<TrTransform> path)
         {
             // Find the min and max values for each axis
             float minX = path.Min(v => v.translation.x);
@@ -517,18 +597,6 @@ namespace TiltBrush
             float rangeY = maxY - minY;
             float rangeZ = maxZ - minZ;
 
-            // Find the largest range to maintain the aspect ratio
-            float largestRange = Mathf.Max(rangeX, rangeY, rangeZ);
-
-            // If the largest range is zero, return the original path to avoid division by zero
-            if (largestRange == 0)
-            {
-                return path;
-            }
-
-            // Compute the uniform scale factor
-            float scaleFactor = 1 / largestRange;
-
             // Calculate the center of the original path
             Vector3 center = new Vector3(
                 (minX + maxX) / 2,
@@ -536,26 +604,24 @@ namespace TiltBrush
                 (minZ + maxZ) / 2
             );
 
-            // Apply the scale factor to each Vector3 in the input list
-            return path.Select(tr => TrTransform.TRS(
-                (tr.translation - center) * scaleFactor,
-                tr.rotation,
-                tr.scale
-            )).ToList();
+            // Find the largest range to maintain the aspect ratio
+            float largestRange = Mathf.Max(rangeX, rangeY, rangeZ);
+
+            // Don't scale if the largest range is zero to avoid division by zero
+            float scale = largestRange == 0 ? 1 : 1 / largestRange;
+
+            return (center, scale);
         }
 
-        public static List<List<TrTransform>> resample(List<List<TrTransform>> path, float spacing)
+        public static List<List<TrTransform>> resample(List<List<TrTransform>> paths, float spacing)
         {
-            return path.Select(x => resample(x, spacing)).ToList();
+            if (paths == null || spacing <= 0) return paths;
+            return paths.Select(x => resample(x, spacing)).ToList();
         }
 
         public static List<TrTransform> resample(List<TrTransform> path, float spacing)
         {
-            if (path == null || path.Count < 2 || spacing <= 0)
-            {
-                return new List<TrTransform>(path);
-            }
-
+            if (path == null || path.Count < 2 || spacing <= 0) return path;
             List<TrTransform> resampledPath = new List<TrTransform>();
             resampledPath.Add(path[0]);
 
@@ -567,7 +633,6 @@ namespace TiltBrush
             {
                 var endPoint = path[originalPathIndex + 1];
                 float segmentDistance = Vector3.Distance(startPoint.translation, endPoint.translation);
-                float remainingDistance = segmentDistance - accumulatedDistance;
 
                 if (accumulatedDistance + segmentDistance >= spacing)
                 {
@@ -597,8 +662,8 @@ namespace TiltBrush
     {
         public static void path(List<TrTransform> path) => LuaApiMethods.DrawPath(path);
         public static void paths(List<List<TrTransform>> paths) => LuaApiMethods.DrawPaths(paths);
-        public static void polygon(int sides, TrTransform tr=default) => DrawStrokes.Polygon(sides, tr);
-        public static void text(string text, TrTransform tr=default) => DrawStrokes.Text(text, tr);
+        public static void polygon(int sides, TrTransform tr=default) => DrawStrokes.DrawPolygon(sides, tr);
+        public static void text(string text, TrTransform tr=default) => DrawStrokes.DrawText(text, tr);
         public static void svgPath(string svg, TrTransform tr=default) => DrawStrokes.DrawSvgPathString(svg, tr);
         public static void svg(string svg, TrTransform tr=default) => DrawStrokes.DrawSvg(svg, tr);
         public static void cameraPath(int index) => ApiMethods.DrawCameraPath(index);

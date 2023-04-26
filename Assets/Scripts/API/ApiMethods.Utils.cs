@@ -55,8 +55,9 @@ namespace TiltBrush
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                var newCPs = new List<PointerManager.ControlPoint>();
-                for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                int cpCount = stroke.m_ControlPoints.Length;
+                var newCPs = new List<PointerManager.ControlPoint>(cpCount);
+                for (var i = 0; i < cpCount; i++)
                 {
                     var cp = stroke.m_ControlPoints[i];
                     cp.m_Pos = func(cp.m_Pos);

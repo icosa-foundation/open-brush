@@ -24,35 +24,37 @@ namespace TiltBrush
     {
         public static void _DrawFromFloatList(List<List<List<float>>> floatPaths, TrTransform tr, float brushScale = 1f, bool rawStroke = false)
         {
-            var allTrList = new List<IEnumerable<TrTransform>>();
-            foreach (var item in floatPaths)
+            var allTrList = new List<List<TrTransform>>(floatPaths.Count);
+            for (var i = 0; i < floatPaths.Count; i++)
             {
-                IEnumerable<TrTransform> trList = null;
-                if (item[0].Count == 3)
+                var item = floatPaths[i];
+                var trList = new List<TrTransform>(item.Count);
+                for (var j = 0; j < item.Count; j++)
                 {
-                    trList = item.Select(p => TrTransform.T(
-                        new Vector3(p[0], p[1], p[2])
-                    ));
-                }
-                else if (item[0].Count == 6)
-                {
-                    trList = item.Select(p => TrTransform.TR(
-                        new Vector3(p[0], p[1], p[2]),
-                        Quaternion.Euler(p[0], p[1], p[2])
-                    ));
-
-                }
-                else if (item[0].Count == 7)
-                {
-                    trList = item.Select(p => TrTransform.TRS(
-                        new Vector3(p[0], p[1], p[2]),
-                        Quaternion.Euler(p[0], p[1], p[2]),
-                        p[3]
-                    ));
-
+                    var floats = item[j];
+                    if (floats.Count == 3)
+                    {
+                        trList.Add(TrTransform.T(
+                            new Vector3(floats[0], floats[1], floats[2])
+                        ));
+                    }
+                    else if (floats.Count == 6)
+                    {
+                        trList.Add(TrTransform.TR(
+                            new Vector3(floats[0], floats[1], floats[2]),
+                            Quaternion.Euler(floats[0], floats[1], floats[2])
+                        ));
+                    }
+                    else if (floats.Count == 7)
+                    {
+                        trList.Add(TrTransform.TRS(
+                            new Vector3(floats[0], floats[1], floats[2]),
+                            Quaternion.Euler(floats[0], floats[1], floats[2]),
+                            floats[3]
+                        ));
+                    }
                 }
                 allTrList.Add(trList);
-
             }
             DrawStrokes.DrawNestedTrList(allTrList, tr, brushScale, rawStroke);
         }
@@ -92,14 +94,14 @@ namespace TiltBrush
         public static void DrawPolygon(int sides, float radius, float angle)
         {
             var tr = TrTransform.TRS(ApiManager.Instance.BrushPosition, Quaternion.Euler(0, 0, angle), radius);
-            DrawStrokes.Polygon(sides, tr);
+            DrawStrokes.DrawPolygon(sides, tr);
         }
 
         [ApiEndpoint("draw.text", "Draws the characters supplied at the current brush position")]
         public static void Text(string text)
         {
             var trMatrix = TrTransform.T(ApiManager.Instance.BrushPosition);
-            DrawStrokes.Text(text, trMatrix);
+            DrawStrokes.DrawText(text, trMatrix);
         }
 
         [ApiEndpoint("draw.svg", "Draws the path supplied as an SVG Path string at the current brush position")]
@@ -225,7 +227,7 @@ namespace TiltBrush
         {
             CameraPathWidget widget = _GetActiveCameraPath(index);
             CameraPath path = widget.Path;
-            DrawStrokes.CameraPath(path);
+            DrawStrokes.DrawCameraPath(path);
         }
     }
 

@@ -28,30 +28,43 @@ namespace TiltBrush
             return DrawStrokes.SvgPathStringToApiPaths(svgPathString);
         }
 
-        public static List<TrTransform> TranslatePath(List<TrTransform> path, Vector3 translation)
+        public static void ScalePaths(List<List<TrTransform>> paths, Vector3 scale)
         {
-            return TransformPath(path, TrTransform.T(translation));
+            foreach (var path in paths)
+            {
+                ScalePath(path, scale);
+            }
         }
 
-        public static List<TrTransform> RotatePath(List<TrTransform> path, Quaternion rotation)
-        {
-            return TransformPath(path, TrTransform.R(rotation));
-        }
-
-        public static List<TrTransform> ScalePath(List<TrTransform> path, Vector3 scale)
+        public static void ScalePath(List<TrTransform> path, Vector3 scale)
         {
             // Supports non-uniform scaling
-            return path.Select(tr => TrTransform.TRS(
-                new Vector3(
+            for (var i = 0; i < path.Count; i++)
+            {
+                var tr = path[i];
+                tr.translation = new Vector3(
                     tr.translation.x * scale.x,
                     tr.translation.y * scale.y,
                     tr.translation.z * scale.z
-                ), tr.rotation, tr.scale)).ToList();
+                );
+                path[i] = tr;
+            }
         }
 
-        public static List<TrTransform> TransformPath(List<TrTransform> path, TrTransform tr)
+        public static void TransformPath(List<List<TrTransform>> path, TrTransform tr)
         {
-            return path.Select(x => tr * x).ToList();
+            for (int i = 0; i < path.Count; i++)
+            {
+                TransformPath(path[i], tr);
+            }
+        }
+
+        public static void TransformPath(List<TrTransform> path, TrTransform tr)
+        {
+            for (int i = 0; i < path.Count; i++)
+            {
+                path[i] = tr * path[i];
+            }
         }
 
         public static Quaternion VectorToRotation(Vector3 vec)
@@ -94,7 +107,6 @@ namespace TiltBrush
             points.Add(p2);
             return points;
         }
-
 
         public static void StraightEdge(bool active)
         {

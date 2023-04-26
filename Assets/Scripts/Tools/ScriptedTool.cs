@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -236,7 +237,8 @@ namespace TiltBrush
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     tr_CS.scale = drawnVector_CS.magnitude;
-                    result.MultiTransforms = result.MultiTransforms.Select(path => path.Select(tr =>
+
+                    result.Transforms = result.Transforms.Select(path => path.Select(tr =>
                     {
                         // Orient each point to the controller
                         tr.translation = tr_CS.rotation * tr.translation;
@@ -250,7 +252,7 @@ namespace TiltBrush
                     break;
             }
             float brushScale = 1f / App.ActiveCanvas.Pose.scale;
-            DrawStrokes.DrawNestedTrList(result.MultiTransforms, tr_CS, brushScale);
+            DrawStrokes.DrawNestedTrList(result.Transforms, tr_CS, brushScale);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

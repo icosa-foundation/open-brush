@@ -39,12 +39,16 @@ namespace TiltBrush
             uint time = 0;
             var group = App.GroupManager.NewUnusedGroup();
             int pathIndex = 0;
-            foreach (var item in paths)
+            for (var i = 0; i < paths.Count; i++)
             {
+                var item = paths[i];
+                if (item == null) continue;
                 var path = item.ToList();
                 // Single joined paths
                 if (path.Count < 2) continue;
-                var controlPoints = new List<PointerManager.ControlPoint>();
+                int cpCount = path.Count - 1;
+                if (!rawStrokes) cpCount *= 3; // Three control points per original vertex
+                var controlPoints = new List<PointerManager.ControlPoint>(cpCount);
                 for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
                 {
                     Vector3 position = path[vertexIndex].translation;
@@ -108,9 +112,9 @@ namespace TiltBrush
             }
         }
 
-        public static void Polygon(int sides, TrTransform tr = default)
+        public static void DrawPolygon(int sides, TrTransform tr = default)
         {
-            var path = new List<TrTransform>();
+            var path = new List<TrTransform>(sides);
             for (float i = 0; i <= sides; i++)
             {
                 var theta = Mathf.PI * (i / sides) * 2f;
@@ -126,7 +130,7 @@ namespace TiltBrush
             DrawNestedTrList(new List<List<TrTransform>> { path }, tr);
         }
 
-        public static void Text(string text, TrTransform tr)
+        public static void DrawText(string text, TrTransform tr)
         {
             var textToStroke = new TextToStrokes(ApiManager.Instance.TextFont);
             DrawNestedTrList(textToStroke.Build(text), tr);
@@ -152,11 +156,17 @@ namespace TiltBrush
         {
             svgText = _PreProcessSvg(svgText);
             var geoms = _ParseSvg(svgText);
-            var svgPolyline = new List<List<TrTransform>>();
-            foreach (var geom in geoms)
+            var svgPolyline = new List<List<TrTransform>>(geoms.Count);
+            for (var i = 0; i < geoms.Count; i++)
             {
-                var verts = geom.Vertices.Select(v => new Vector3(v.x, -v.y, 0)); // SVG is Y down, Unity is Y up
-                svgPolyline.Add(verts.Select(TrTransform.T).ToList());
+                var geom = geoms[i];
+                var verts = new List<TrTransform>(geom.Vertices.Length);
+                for (var j = 0; j < geom.Vertices.Length; j++)
+                {
+                    var v = geom.Vertices[j];
+                    verts.Add(TrTransform.T(new Vector3(v.x, -v.y, 0))); // SVG is Y down, Unity is Y up
+                }
+                svgPolyline.Add(verts);
             }
             return svgPolyline;
         }
@@ -184,9 +194,9 @@ namespace TiltBrush
             return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
         }
 
-        public static void CameraPath(CameraPath path, TrTransform tr = default)
+        public static void DrawCameraPath(CameraPath path, TrTransform tr = default)
         {
-            var points = new List<TrTransform>();
+            var points = new List<TrTransform>(path.Segments.Count);
             for (float t = 0; t < path.Segments.Count; t += .1f)
             {
                 points.Add(TrTransform.TR(

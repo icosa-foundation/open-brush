@@ -184,7 +184,7 @@ public static class LuaCustomConverters
             }
         );
 
-        // List<TrTransform>
+        // List<TrTransform> (single path)
 
         Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<TrTransform>),
             dynVal =>
@@ -197,6 +197,20 @@ public static class LuaCustomConverters
             (script, list) => DynValue.NewTable(script,
                 list.Select(el => DynValue.FromObject(script, el)).ToArray()
         ));
+
+        // List<List<TrTransform>> (multiple paths)
+
+        Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<List<TrTransform>>),
+            dynVal =>
+            {
+                return dynVal.Table.Values.Select(x => x.ToObject<List<TrTransform>>()).ToList();
+            }
+        );
+
+        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<List<List<TrTransform>>>(
+            (script, list) => DynValue.NewTable(script,
+                list.Select(el => DynValue.FromObject(script, el)).ToArray()
+            ));
 
         // Color
 

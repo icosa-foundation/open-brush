@@ -115,23 +115,25 @@ namespace TiltBrush
 
         public struct ScriptTrTransforms
         {
-            public List<TrTransform> Transforms;
-            public List<List<TrTransform>> MultiTransforms;
+            public List<List<TrTransform>> Transforms;
             public ScriptCoordSpace Space;
+
+            // Return nested paths flattened into a single list of transforms
+            public List<TrTransform> FlattenedTransforms => Transforms.SelectMany(x => x).ToList();
 
             public ScriptTrTransforms(List<TrTransform> transforms, ScriptCoordSpace space)
             {
-                MultiTransforms = null;
+                // Ensure single paths are wrapped in a list
+                Transforms = new List<List<TrTransform>> { transforms };
+                Space = space;
+            }
+
+            public ScriptTrTransforms(List<List<TrTransform>> transforms, ScriptCoordSpace space)
+            {
                 Transforms = transforms;
                 Space = space;
             }
 
-            public ScriptTrTransforms(List<List<TrTransform>> multi, ScriptCoordSpace space)
-            {
-                MultiTransforms = multi;
-                Transforms = null;
-                Space = space;
-            }
         }
 
         void Awake()
@@ -600,7 +602,7 @@ namespace TiltBrush
                 if (!Equals(result, DynValue.Nil))
                 {
                     // Assume if the result is nested 3 levels deep then we have multiple paths
-                    if (result?.Table?.Get(1)?.Table?.Get(1)?.Type == DataType.Table)
+                    if (result?.Table?.Get(1)?.Table?.Get(1)?.Table?.Get(1)?.Type == DataType.Table)
                     {
                         foreach (var item in result.Table.Values)
                         {
