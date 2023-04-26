@@ -1046,7 +1046,10 @@ namespace TiltBrush
                             // tr *= App.Scene.Pose.inverse;
                             // Apply the transform to the pointer
                             var tmp = tr * pointer0_GS; // Work around 2018.3.x Mono parse bug
-                            tmp.ToTransform(m_Pointers[pointerIndex].m_Script.transform);
+                            if (tmp.IsFinite())
+                            {
+                                tmp.ToTransform(m_Pointers[pointerIndex].m_Script.transform);
+                            }
                             pointerIndex++;
                         }
                         break;
