@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -26,12 +28,15 @@ namespace TiltBrush
 
     public class PolyPanel : ModalPanel
     {
-        [SerializeField] private TextMesh m_PanelText;
-        [SerializeField] private TextMesh m_PanelTextSubtitle;
-        [SerializeField] private TextMesh m_PanelTextUserSubtitle;
-        [SerializeField] private string m_PanelTextStandard;
-        [SerializeField] private string m_PanelTextFeatured;
-        [SerializeField] private string m_PanelTextLiked;
+        [SerializeField] private TextMeshPro m_PanelText;
+        [SerializeField] private TextMeshPro m_PanelTextSubtitle;
+        [SerializeField] private TextMeshPro m_PanelTextUserSubtitle;
+        [SerializeField] private LocalizedString m_PanelTextStandard;
+        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedString(); } }
+        [SerializeField] private LocalizedString m_PanelTextFeatured;
+        public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedString(); } }
+        [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
+        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedString(); } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
         [SerializeField] private GameObject m_NoObjectsMessage;
         [SerializeField] private GameObject m_InternetError;
@@ -51,6 +56,8 @@ namespace TiltBrush
         public bool ShowingFeatured { get { return m_CurrentSet == PolySetType.Featured; } }
         public bool ShowingLikes { get { return m_CurrentSet == PolySetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == PolySetType.User; } }
+
+
 
         override public void OnWidgetShowAnimComplete()
         {
@@ -235,17 +242,17 @@ namespace TiltBrush
             switch (m_CurrentSet)
             {
                 case PolySetType.User:
-                    m_PanelText.text = m_PanelTextStandard;
+                    m_PanelText.text = PanelTextStandard;
                     m_PanelTextSubtitle.gameObject.SetActive(false);
                     m_PanelTextUserSubtitle.gameObject.SetActive(true);
                     break;
                 case PolySetType.Featured:
-                    m_PanelText.text = m_PanelTextFeatured;
+                    m_PanelText.text = PanelTextFeatured;
                     m_PanelTextSubtitle.gameObject.SetActive(false);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;
                 case PolySetType.Liked:
-                    m_PanelText.text = m_PanelTextLiked;
+                    m_PanelText.text = PanelTextLiked;
                     m_PanelTextSubtitle.gameObject.SetActive(true);
                     m_PanelTextUserSubtitle.gameObject.SetActive(false);
                     break;

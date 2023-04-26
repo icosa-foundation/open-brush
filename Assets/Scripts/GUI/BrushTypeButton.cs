@@ -87,11 +87,11 @@ namespace TiltBrush
 
             if (Config.IsExperimental)
             {
-                SetDescriptionText(rBrush.m_Description, rBrush.m_DescriptionExtra);
+                SetDescriptionText(rBrush.Description, rBrush.m_DescriptionExtra);
             }
             else
             {
-                SetDescriptionText(rBrush.m_Description);
+                SetDescriptionText(rBrush.Description);
             }
             m_AudioReactiveIcon.SetActive(rBrush.m_AudioReactive &&
                 VisualizerManager.m_Instance.VisualsRequested);
