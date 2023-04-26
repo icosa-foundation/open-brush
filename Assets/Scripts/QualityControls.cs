@@ -175,24 +175,24 @@ namespace TiltBrush
             }
             m_Cameras = cameras.Where(x => x.tag != "Ignore").ToList();
 
-            foreach (var camera in m_Cameras)
-            {
-                var rBloom = camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                if (rBloom)
-                {
-                    m_Bloom.Add(rBloom);
-                }
-                var rFxaa = camera.GetComponent<FXAA>();
-                if (rFxaa)
-                {
-                    m_Fxaa.Add(rFxaa);
-                }
-                var mobileBloom = camera.GetComponent<MobileBloom>();
-                if (mobileBloom)
-                {
-                    m_MobileBloom.Add(mobileBloom);
-                }
-            }
+            // foreach (var camera in m_Cameras)
+            // {
+            //     var rBloom = camera.GetComponent<SENaturalBloomAndDirtyLens>();
+            //     if (rBloom)
+            //     {
+            //         m_Bloom.Add(rBloom);
+            //     }
+            //     var rFxaa = camera.GetComponent<FXAA>();
+            //     if (rFxaa)
+            //     {
+            //         m_Fxaa.Add(rFxaa);
+            //     }
+            //     var mobileBloom = camera.GetComponent<MobileBloom>();
+            //     if (mobileBloom)
+            //     {
+            //         m_MobileBloom.Add(mobileBloom);
+            //     }
+            // }
 
             m_FrameTimeStamps = new Queue<double>();
 
@@ -215,6 +215,7 @@ namespace TiltBrush
 
         void Update()
         {
+            return;
             if (!App.Config.IsMobileHardware)
             {
                 return;

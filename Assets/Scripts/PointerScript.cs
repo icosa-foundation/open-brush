@@ -321,7 +321,7 @@ namespace TiltBrush
                 for (int i = 0; i < m_AudioSources.Length; i++)
                 {
                     // Adjust volume of each layer based on brush speed
-                    m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
+                    // m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
                     m_AudioSources[i].pitch += fPitchAdjust;
                 }
             }
