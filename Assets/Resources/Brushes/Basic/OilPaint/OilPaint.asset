@@ -24,7 +24,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 11400000, guid: c1105f80e6e305d42a2368476c5e8948, type: 2}
   m_LooksIdentical: 1
   m_ButtonTexture: {fileID: 2800000, guid: 5d389e49c32371c4aaf832d61e52302e, type: 3}
-  m_Description: Oil Paint
+  m_Description: BRUSH_OILPAINT
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81206368749019136
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 0eb0e9197ee66d546aed557124a2ca9c, type: 3}
@@ -74,3 +83,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

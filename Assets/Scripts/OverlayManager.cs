@@ -13,9 +13,10 @@
 // limitations under the License.
 
 using System;
-using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -55,6 +56,14 @@ namespace TiltBrush
         [SerializeField] private int m_Size;
         [SerializeField] private Color m_BackgroundColor;
         [SerializeField] private Color m_TextColor;
+
+        [SerializeField] private LocalizedString m_LoadSketchText;
+        [SerializeField] private LocalizedString m_LoadModelText;
+        [SerializeField] private LocalizedString m_LoadGenericText;
+        [SerializeField] private LocalizedString m_LoadImagesText;
+        [SerializeField] private LocalizedString m_ExportText;
+        [SerializeField] private LocalizedString m_LoadMediaText;
+        [SerializeField] private LocalizedString m_SuccessText;
 
         private enum OverlayMode
         {
@@ -289,32 +298,32 @@ namespace TiltBrush
             switch (type)
             {
                 case OverlayType.LoadSketch:
-                    SetText("Loading Sketch...");
+                    SetText(m_LoadSketchText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadModel:
-                    SetText("Loading Models...");
+                    SetText(m_LoadModelText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadGeneric:
-                    SetText("Loading...");
+                    SetText(m_LoadGenericText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadImages:
-                    SetText("Loading Images...");
+                    SetText(m_LoadImagesText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.Export:
-                    SetText("Exporting...");
+                    SetText(m_ExportText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
                 case OverlayType.LoadMedia:
-                    SetText("Loading Media...");
+                    SetText(m_LoadMediaText.GetLocalizedString());
                     RenderLogo(0);
                     SetOverlayTexture(m_GUILogo);
                     break;
@@ -424,7 +433,7 @@ namespace TiltBrush
                 yield return null; // eat a frame
                 if (showSuccessText)
                 {
-                    SetText("Success!");
+                    SetText(m_SuccessText.GetLocalizedString());
                     float successHold = 1.0f;
                     while (successHold >= 0.0f)
                     {
@@ -513,7 +522,7 @@ namespace TiltBrush
 
                 if (showSuccessText)
                 {
-                    SetText("Success!");
+                    SetText(m_SuccessText.GetLocalizedString());
                     await Awaiters.Seconds(1f);
                 }
 
@@ -571,7 +580,7 @@ namespace TiltBrush
                 Progress.Report(0.75);
                 if (showSuccessText)
                 {
-                    SetText("Success!");
+                    SetText(m_SuccessText.GetLocalizedString());
                     await Awaiters.Seconds(1f);
                 }
 
@@ -628,6 +637,14 @@ namespace TiltBrush
 
         public void RenderLogo(double progress)
         {
+            // TODO:Mike Temp hack to set correct logo progress
+            if (m_OverlayMode == OverlayMode.Default)
+            {
+                m_Overlay.GetComponent<GvrOverlay>().Progress = (float)progress;
+                return;
+            }
+
+            // TODO:Mike Old code which is generating an image, then submitting to platform specific compositor.
             RenderTexture.active = m_GUILogo;
             GL.Clear(true, true, m_BackgroundColor);
             GL.PushMatrix();
@@ -659,6 +676,14 @@ namespace TiltBrush
 
         public void SetText(string text)
         {
+            // TODO:Mike Temp hack to set correct logo progress
+            if (m_OverlayMode == OverlayMode.Default)
+            {
+                m_Overlay.GetComponent<GvrOverlay>().MessageStatus = text;
+                return;
+            }
+
+            // TODO:Mike Old code which is generating text glyphs, then submitting to compositor
             var settings = new TextGenerationSettings();
             settings.font = m_Font;
             settings.color = m_TextColor;
