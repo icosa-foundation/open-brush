@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -24,7 +25,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_DriveFullElements;
         [SerializeField] private GameObject m_BackupCompleteElements;
         [SerializeField] private GameObject m_BackingUpElements;
-        [SerializeField] private TextMesh m_BackingUpProgress;
+        [SerializeField] private TextMeshPro m_BackingUpProgress;
 
         private bool m_DriveSyncing = false;
 
