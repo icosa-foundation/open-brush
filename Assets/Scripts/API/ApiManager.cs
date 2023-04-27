@@ -524,9 +524,9 @@ namespace TiltBrush
             // TODO Document these
 
             string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.m_Description != "")
+                .Where(x => x.Description != "")
                 .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.m_Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
+                .Select(x => x.Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
                 .ToArray();
             string brushesJson = JsonConvert.SerializeObject(brushNameList);
             html = html.Replace("{{brushesJson}}", brushesJson);
@@ -538,7 +538,7 @@ namespace TiltBrush
             html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.m_Description.Replace(" ", ""))
+                .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
