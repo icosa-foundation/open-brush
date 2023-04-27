@@ -25,7 +25,7 @@ namespace TiltBrush
                 // If we haven't requested visuals, show the popup.
                 if (!App.Instance.RequestingAudioReactiveMode)
                 {
-                    panel.CreatePopUp(m_Command, m_CommandParam, -1, m_PopupText);
+                    panel.CreatePopUp(m_Command, m_CommandParam, -1, PopupText);
                     ResetState();
                 }
                 App.Instance.ToggleAudioReactiveBrushesRequest();

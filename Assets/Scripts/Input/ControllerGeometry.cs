@@ -89,9 +89,9 @@ namespace TiltBrush
         [SerializeField] private Renderer m_PinCushion;
 
         [Header("Wand objects")]
+        [SerializeField] private HintObjectScript m_MenuPanelHintObject;
         [SerializeField] private HintObjectScript m_QuickLoadHintObject;
         [SerializeField] private HintObjectScript m_SwipeHint;
-        [SerializeField] private HintObjectScript m_MenuPanelHintObject;
 
         [Header("Brush objects")]
         [SerializeField] private LineRenderer m_GuideLine;

@@ -38,6 +38,7 @@ jobs:
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
+      previousfullrelease: ${{ steps.rawchangelogdata.outputs.previousfullrelease }}
       currentrelease: ${{ steps.rawchangelogdata.outputs.currentrelease }}
       rawchangelog: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
       basename: ${{ steps.github.outputs.basename }}
@@ -53,25 +54,47 @@ jobs:
       - name: Calculate version and stamp
         id: version
         run: |
+          # General note: for pull requests, we query github.event.pull_request.head.sha rather than the default sha, which is a merge commit of the target branch into the head. For pushes or tag commits, there's no additional commits made by the CI, so we can use the default, current, reference
+
+          # Get the first two numbers from the last tag, including a tag on the current commit (to handle the case of a formal build)
           MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
-          STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
-          if [ $PATCH_VERSION == $MAJOR_MINOR ]
+
+          # How many commits have been made since the last tag of the form vX.Y.
+          #
+          # We used to use this version, however, it couldn't handle these two cases at the same time:
+          #                    (v2.1)
+          #                       |
+          #             /-c2..c4..c5-\
+          #            /              \
+          #   c...c0..c1....c3.........m6..c7....c10.c11.....m13...c14 <- [main]
+          #       ^                         \               /
+          #    (v2.0)                        \-c8..c9..c12-/
+          # If we use --first-parent, it wouldn't find a tag that was not a first parent, and so it'll think we're now in 2.0.8, though it skips the commits on the branches. If we did not use --first-parent, it gets the proper tag (v2.1), but counts each commit in the feature branch, and gives 2.1.10. While we almost always squash, if we ever do have an explicit merge commit, we don't want to count the commits on the feature branch. In this case, we actually want to get 2.1.7 (commits c3, m6, c7, c10, c11, m13, and c14).
+          ######## OLD CODE ########
+          # # If the value is not equal to zero, git describe will give us a version in the form vX.Y-Z-gAAAAAAA, where Z is the count. If the current commit has a vX.Y tag, it'll just return that, so the 'cut' does nothing. We test for this below
+          # PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
+          ######## END OLD CODE ########
+
+          # Instead, we'll find the last tag, wherever it is, and then count the --first-parent commits "since" then (i.e., not included; they might be historically behind it)
+          CLOSEST_TAG=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD)
+          PATCH_VERSION=$(git log ${CLOSEST_TAG}.. --oneline --first-parent | wc -l)
+
+          if [ $PATCH_VERSION == "0" ]
           then
-            PATCH_VERSION="0"
             STAMP=""
-            echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
 
           else
-            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
+            # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
+            STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
         env:
@@ -84,8 +107,10 @@ jobs:
           else
             PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           fi
+          PREVFULL=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
           CUR="$(git rev-parse HEAD)"
           echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
+          echo "previousfullrelease=$PREVFULL" >> $GITHUB_OUTPUT
           echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
           LAST_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*' --abbrev=0 HEAD^)
           RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //')" | sed -e "s/origin\/main/$VERSION/" | tac)
@@ -393,7 +418,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.6.0
+        uses: mikepenz/release-changelog-builder-action@v3.7.1
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -420,7 +445,8 @@ jobs:
                     "title": "## 💬 Uncategorized",
                     "labels": []
                 }
-              ]
+              ],
+              "pr_template": "- #{{TITLE}} (PR ##{{NUMBER}} by @#{{AUTHOR}})"
             }
 
       - name: Echo Changelog (for debugging purposes)
@@ -483,8 +509,72 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
+          target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+
+  publish_gitbook:
+    name: Publish changelog from last major build to open-brush-docs
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if:
+      github.event_name == 'push' &&
+      github.repository == 'icosa-gallery/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3.7.1
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ],
+              "template": "# Changelog since #{{FROM_TAG}}\n\n[Full release details](#{{RELEASE_DIFF}})\n\n#{{CHANGELOG}}\n\n",
+              "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
+            }
+
+      - name: Create Changelog file
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          mkdir -p changelog/
+          echo "$CHANGELOG" | tee changelog/automatic-changelog.md
+
+      - name: Publish release notes
+        uses: cpina/github-action-push-to-another-repository@composite-1.5.1
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        with:
+          source-directory: 'changelog/'
+          target-directory: 'automatic-release-notes/'
+          destination-github-username: 'icosa-gallery'
+          destination-repository-name: 'open-brush-docs'
+          user-name: 'release-note-bot'
+          user-email: automatic-release@icosa
+          target-branch: master
 
   publish_steam:
     name: Publish Steam Release

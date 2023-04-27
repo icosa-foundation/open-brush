@@ -38,7 +38,7 @@ namespace TiltBrush
         {
             LightingButton iconButton = icon.m_IconScript as LightingButton;
             iconButton.SetPreset(m_Environments[iCatalog]);
-            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].m_Description);
+            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].Description);
         }
 
         override public void Init(GameObject rParent, string sText)
@@ -52,10 +52,10 @@ namespace TiltBrush
             {
                 //find the index of our current preset in the preset list
                 int iPresetIndex = -1;
-                m_CurrentPresetDesc = rCurrentPreset.m_Description;
+                m_CurrentPresetDesc = rCurrentPreset.Description;
                 for (int i = 0; i < m_Environments.Count; ++i)
                 {
-                    if (m_Environments[i].m_Description == m_CurrentPresetDesc)
+                    if (m_Environments[i].Description == m_CurrentPresetDesc)
                     {
                         iPresetIndex = i;
                         break;
@@ -81,7 +81,7 @@ namespace TiltBrush
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
             {
-                m_CurrentPresetDesc = rCurrentPreset.m_Description;
+                m_CurrentPresetDesc = rCurrentPreset.Description;
             }
             RefreshPage();
         }
