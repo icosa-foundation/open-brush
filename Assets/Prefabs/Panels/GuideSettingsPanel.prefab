@@ -402,7 +402,16 @@ MonoBehaviour:
   m_MeshCollider: {fileID: 6569620}
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap: []
-  m_PanelDescription: Guide Settings
+  m_PanelDescription: GUIDESETTINGS_PANEL_DESCRIPTION
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7860833050402816
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1, y: 0.65, z: 0}
@@ -437,6 +446,9 @@ MonoBehaviour:
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &5677933611914740602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -850,7 +862,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Grid Line Width
+  m_DescriptionText: GUIDESETTINGS_PANEL_LINEWIDTH_SLIDER_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7862159872335872
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 10
@@ -858,6 +879,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 2321374}
   m_MinGridWidth: 0.01
   m_MaxGridWidth: 4
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &192934
 GameObject:
   m_ObjectHideFlags: 0
@@ -1581,7 +1605,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Grid Size
+  m_DescriptionText: GUIDESETTINGS_PANEL_GRIDSIZE_SLIDER_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7862047624372224
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 10
@@ -1589,6 +1622,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 23664233917765338}
   m_MinGridSize: 0.01
   m_MaxGridSize: 3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1744263076835604
 GameObject:
   m_ObjectHideFlags: 0
@@ -2120,7 +2156,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Grid Frame Width
+  m_DescriptionText: GUIDESETTINGS_PANEL_FRAMEWIDTH_SLIDER_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7862314168197120
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 10
@@ -2128,6 +2173,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 648573723663122901}
   m_MinGridWidth: 0
   m_MaxGridWidth: 4
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1232581600304147628
 GameObject:
   m_ObjectHideFlags: 0
@@ -3129,7 +3177,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Pointer Snap Distance
+  m_DescriptionText: GUIDESETTINGS_PANEL_SNAPDISTANCE_SLIDER_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7861838345379840
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 10
@@ -3137,6 +3194,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 9178696958901958908}
   m_MinAttractDistance: 0.25
   m_MaxAttractDistance: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7489139515378010876
 GameObject:
   m_ObjectHideFlags: 0

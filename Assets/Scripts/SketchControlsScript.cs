@@ -1315,15 +1315,20 @@ namespace TiltBrush
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.SwapControls))
                 {
-                    InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
-                    InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush)
-                        .DisplayControllerSwapAnimation();
-                    InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Wand)
-                        .DisplayControllerSwapAnimation();
-                    AudioManager.m_Instance.PlayControllerSwapSound(
-                        InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
+                    DoSwapControls();
                 }
             }
+        }
+
+        public static void DoSwapControls()
+        {
+            InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
+            InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush)
+                .DisplayControllerSwapAnimation();
+            InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Wand)
+                .DisplayControllerSwapAnimation();
+            AudioManager.m_Instance.PlayControllerSwapSound(
+                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
         }
 
         void UpdateStandardInput()
