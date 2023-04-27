@@ -73,7 +73,7 @@ namespace TiltBrush
             GameObject line = Instantiate(desc.m_BrushPrefab);
             line.transform.SetParent(parent);
             Coords.AsLocal[line.transform] = TrTransform.identity;
-            line.name = desc.m_Description;
+            line.name = desc.Description;
 
             BaseBrushScript currentLine = line.GetComponent<BaseBrushScript>();
             // TODO: pass this into InitBrush and do it there

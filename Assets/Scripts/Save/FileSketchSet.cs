@@ -254,7 +254,7 @@ namespace TiltBrush
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = false;
+            m_ReadOnly = true;
             m_SketchesPath = path;
         }
 
@@ -490,7 +490,7 @@ namespace TiltBrush
             {
                 return;
             }
-            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di))
+            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
             {
                 //don't add bogus files to the catalog
                 if (info.IsHeaderValid())

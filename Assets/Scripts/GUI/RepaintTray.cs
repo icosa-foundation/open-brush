@@ -55,22 +55,22 @@ namespace TiltBrush
 
         public void RecolorToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Recolor, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Recolor, button.IsToggledOn);
         }
 
         public void RebrushToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Rebrush, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Rebrush, button.IsToggledOn);
         }
 
         public void ResizeToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Resize, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Resize, button.IsToggledOn);
         }
 
         public void JitterToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Jitter, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Jitter, button.IsToggledOn);
         }
     }
 

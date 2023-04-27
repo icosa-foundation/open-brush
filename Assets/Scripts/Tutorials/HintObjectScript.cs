@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -21,10 +22,15 @@ namespace TiltBrush
     {
         [SerializeField] private Transform m_HintObject;
         [SerializeField] private Transform m_HintObjectParent;
+        [SerializeField] private LineRenderer m_Stem;
+        [SerializeField] private Transform[] m_StemNodes;
         [SerializeField] private float m_HintObjectScale = 1.05f;
         [SerializeField] private float m_ActiveMinShowAngle = 70.0f;
         [SerializeField] private bool m_ScaleXOnly = true;
-        [SerializeField] private TextMesh m_HintText;
+
+        [SerializeField] private LocalizedString m_HintDescription;
+        [SerializeField] private UIComponentDescription m_HintText;
+
 
         private float m_ActivateSpeed = 6.0f;
         private float m_ActivateTimer;
@@ -49,13 +55,8 @@ namespace TiltBrush
         {
             if (m_HintText)
             {
-                m_HintText.text = text;
+                m_HintText.SetDescription(text);
             }
-        }
-
-        public string GetHintText()
-        {
-            return m_HintText != null ? m_HintText.text : "";
         }
 
         void Awake()
@@ -63,7 +64,10 @@ namespace TiltBrush
             m_CurrentState = State.Deactivated;
             m_BaseScale = transform.localScale;
             m_ActivateTimer = 0.0f;
+            CreateStemNodes();
             UpdateScale(0.0f);
+
+            SetHintText(m_HintDescription.GetLocalizedString());
         }
 
         public void Activate(bool bActivate)
@@ -221,6 +225,24 @@ namespace TiltBrush
                 vScale = m_BaseScale * fScale;
             }
             transform.localScale = vScale;
+        }
+
+        void CreateStemNodes()
+        {
+            if (m_Stem)
+            {
+                m_Stem.positionCount = m_StemNodes.Length;
+                for (int node = 0; node < m_StemNodes.Length; node++)
+                {
+                    var currentNode = m_StemNodes[node];
+                    // Set node to be child of the renderer for a local transform
+                    var oldParent = currentNode.transform.parent;
+                    currentNode.transform.parent = m_Stem.transform;
+                    m_Stem.SetPosition(node, currentNode.localPosition);
+                    currentNode.transform.parent = oldParent;
+                }
+            }
+
         }
 
         void UpdateActive()

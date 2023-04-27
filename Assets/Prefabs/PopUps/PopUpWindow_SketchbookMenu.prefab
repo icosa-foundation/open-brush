@@ -68,7 +68,6 @@ MonoBehaviour:
   m_TopBorder: {fileID: 1000011100612268}
   m_BottomBorder: {fileID: 1000011100612268}
   m_WindowText: {fileID: 0}
-  m_WindowSubText: {fileID: 0}
   m_CharacterWidth: 0.175
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
@@ -209,8 +208,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Delete Sketch
+  m_DescriptionText: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_TRASH
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 76097050869555200
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: ec89811da32c80447855f194dd672b9b, type: 3}
@@ -230,10 +247,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: Delete Sketch?
-  m_ToggleOnDescription: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription:
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000010635069932
 GameObject:
   m_ObjectHideFlags: 0
@@ -346,8 +384,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Reveal on desktop
+  m_DescriptionText: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_REVEAL
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 76097256218484736
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 95431c39820c0f34782398ae96c82714, type: 3}
@@ -367,10 +423,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_ToggleOnDescription: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription:
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000011100612268
 GameObject:
   m_ObjectHideFlags: 0
@@ -682,8 +759,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Merge Brush Strokes (Experimental)
+  m_DescriptionText: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_MERGE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 76096904425431040
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
@@ -703,10 +798,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
-  m_ToggleOnDescription: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription:
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8366139741319417911
 GameObject:
   m_ObjectHideFlags: 0
@@ -815,12 +931,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Rename Sketch
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6da5cd89204da99468e34a61cc7ad99d, type: 3}
@@ -840,7 +956,7 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: Rename Sketch
-  m_ToggleOnDescription: 
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
