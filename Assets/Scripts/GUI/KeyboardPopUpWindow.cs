@@ -20,7 +20,6 @@ namespace TiltBrush
     public class KeyboardPopUpWindow : OptionsPopUpWindow
     {
         private KeyboardUI m_KeyboardUI;
-        private const string m_validFilenameCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-";
         [NonSerialized] public static string m_LastInput;
 
         public bool m_SanitizeFilename;
