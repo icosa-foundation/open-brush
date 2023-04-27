@@ -29,10 +29,10 @@ namespace TiltBrush
         {
             base.OnToolChanged();
             var pm = PointerManager.m_Instance;
-            m_RecolorButton.m_IsToggledOn = pm.RecolorOn;
-            m_ResizeButton.m_IsToggledOn = pm.ResizeOn;
-            m_RebrushButton.m_IsToggledOn = pm.RebrushOn;
-            m_JitterButton.m_IsToggledOn = pm.JitterOn;
+            m_RecolorButton.IsToggledOn = pm.RecolorOn;
+            m_ResizeButton.IsToggledOn = pm.ResizeOn;
+            m_RebrushButton.IsToggledOn = pm.RebrushOn;
+            m_JitterButton.IsToggledOn = pm.JitterOn;
 
         }
         enum ButtonType

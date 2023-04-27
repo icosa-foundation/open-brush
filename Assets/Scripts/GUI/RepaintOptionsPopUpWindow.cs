@@ -28,10 +28,10 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             var pm = PointerManager.m_Instance;
-            m_RecolorButton.m_IsToggledOn = pm.RecolorOn;
-            m_ResizeButton.m_IsToggledOn = pm.ResizeOn;
-            m_RebrushButton.m_IsToggledOn = pm.RebrushOn;
-            m_JitterButton.m_IsToggledOn = pm.JitterOn;
+            m_RecolorButton.IsToggledOn = pm.RecolorOn;
+            m_ResizeButton.IsToggledOn = pm.ResizeOn;
+            m_RebrushButton.IsToggledOn = pm.RebrushOn;
+            m_JitterButton.IsToggledOn = pm.JitterOn;
         }
 
         enum ButtonType
@@ -64,7 +64,7 @@ namespace TiltBrush
 
         public void RecolorToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Recolor, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Recolor, button.IsToggledOn);
         }
 
         public void HandleOKButton()
@@ -74,17 +74,17 @@ namespace TiltBrush
 
         public void RebrushToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Rebrush, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Rebrush, button.IsToggledOn);
         }
 
         public void ResizeToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Resize, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Resize, button.IsToggledOn);
         }
 
         public void JitterToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Jitter, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Jitter, button.IsToggledOn);
         }
     }
 } // namespace TiltBrush
