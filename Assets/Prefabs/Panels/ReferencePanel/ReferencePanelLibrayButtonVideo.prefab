@@ -7,10 +7,35 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4263085423041571640, guid: 9909577543dfa024d8916bccbe96bdc8,
+    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
         type: 3}
-      propertyPath: m_Name
-      value: ReferencePanelLibrayButtonVideo
+      propertyPath: m_ButtonType
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: ffec55618afa59c47be9d4642eb27aff, type: 3}
+    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: PANEL_REFERENCE_VIDEO_DESCRIPTION
+      objectReference: {fileID: 0}
+    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 89044379697438720
+      objectReference: {fileID: 0}
+    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
+      objectReference: {fileID: 0}
+    - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
         type: 3}
@@ -29,6 +54,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
         type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
@@ -41,16 +71,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4261599209355794468, guid: 9909577543dfa024d8916bccbe96bdc8,
         type: 3}
@@ -67,20 +87,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
+    - target: {fileID: 4263085423041571640, guid: 9909577543dfa024d8916bccbe96bdc8,
         type: 3}
-      propertyPath: m_DescriptionText
-      value: Local Videos
+      propertyPath: m_Name
+      value: ReferencePanelLibrayButtonVideo
       objectReference: {fileID: 0}
-    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
-        type: 3}
-      propertyPath: m_ButtonType
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 4233113665861330626, guid: 9909577543dfa024d8916bccbe96bdc8,
-        type: 3}
-      propertyPath: m_ButtonTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: ffec55618afa59c47be9d4642eb27aff, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9909577543dfa024d8916bccbe96bdc8, type: 3}

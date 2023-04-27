@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 8016207021970525679}
   - component: {fileID: 8036693984046201463}
   - component: {fileID: 1781126387072998529}
-  m_Layer: 5
+  m_Layer: 16
   m_Name: PanelButton_Clear
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 8029199270954784939}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.611, y: 0, z: -0.06}
-  m_LocalScale: {x: 0.16174501, y: 0.16174501, z: 0.24549817}
+  m_LocalScale: {x: 0.161745, y: 0.161745, z: 0.2454982}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -112,8 +112,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Clear Contents
+  m_DescriptionText: LAYERS_PANEL_CLEAR_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7874007866777600
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: f1831d2ed278b99499541d1559015daa, type: 3}
@@ -126,3 +144,6 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
+  references:
+    version: 2
+    RefIds: []

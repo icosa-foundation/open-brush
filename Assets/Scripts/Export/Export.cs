@@ -16,6 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -31,6 +33,7 @@ namespace TiltBrush
         const string kExportReadmeBody = @"[InternetShortcut]
 URL=" + kExportDocumentationUrl;
 #endif
+        const string kExportSuccess = "EXPORT_SUCCESS";
 
         // Returns a writable name for the export file, creating any directories as necessary;
         // or null on failure.
@@ -235,7 +238,7 @@ URL=" + kExportDocumentationUrl;
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, basename + " exported!");
+                InputManager.ControllerName.Brush, basename + $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
             ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);

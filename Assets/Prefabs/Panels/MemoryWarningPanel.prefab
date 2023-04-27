@@ -30,6 +30,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.25, y: -0.75, z: -0.03}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4195487487734092}
   m_RootOrder: 2
@@ -53,6 +54,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -110,8 +112,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Cancel Action
+  m_DescriptionText: MEMORYWARNING_PANEL_WARNINGBACK_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7892515468058624
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 957f69e59565cd1469fa095b415fa513, type: 3}
@@ -131,10 +151,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1002243801905128
 GameObject:
   m_ObjectHideFlags: 0
@@ -163,6 +204,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4619942407700460}
   - {fileID: 4890043546159880}
@@ -190,6 +232,15 @@ MonoBehaviour:
   m_ParticleBounds: {x: 0, y: 0, z: 0}
   m_PanelPopUpMap: []
   m_PanelDescription: 
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1, y: 1, z: 0}
@@ -225,6 +276,9 @@ MonoBehaviour:
   m_PopUpGazeDuration: 0.2
   m_PromoBorders:
   - {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &114436183255611560
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,6 +321,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0.75, z: -0.03}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4648175053487084}
   m_RootOrder: 2
@@ -290,6 +345,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -347,8 +403,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Understood
+  m_DescriptionText: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7892854560759808
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
@@ -368,10 +442,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1301807037823974
 GameObject:
   m_ObjectHideFlags: 0
@@ -398,6 +493,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 224167512835986220}
   - {fileID: 224988910467490322}
@@ -416,6 +512,7 @@ GameObject:
   - component: {fileID: 224793365738985470}
   - component: {fileID: 23489758056882244}
   - component: {fileID: 114703596198473620}
+  - component: {fileID: 4672024151343994335}
   m_Layer: 16
   m_Name: Warning
   m_TagString: Untagged
@@ -433,6 +530,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4195487487734092}
   m_RootOrder: 0
@@ -453,6 +551,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -503,7 +602,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <color=#fdf561ff>Memory Limit Caution</color>
+  m_text: Memory Limit Caution
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -512,8 +611,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4288059030
-  m_fontColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
+    rgba: 4284610045
+  m_fontColor: {r: 0.99215686, g: 0.9607843, b: 0.38039216, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -569,12 +668,52 @@ MonoBehaviour:
   m_margin: {x: -0.31141979, y: -0.43944836, z: -0.30795962, w: 1.1764753}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 23489758056882244}
-  m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 23489758056882244}
+  m_maskType: 0
+--- !u!114 &4672024151343994335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1339213185453288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 6394126997433090056
+  references:
+    version: 2
+    RefIds:
+    - rid: 6394126997433090056
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 114703596198473620}
+        m_TrackedProperties:
+          items:
+          - rid: 6394126997433090057
+        m_UpdateType: 0
+    - rid: 6394126997433090057
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 7891809302454272
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1370099815538338
 GameObject:
   m_ObjectHideFlags: 0
@@ -603,6 +742,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2, y: 2.5, z: 2.55}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4947430804114360}
   m_RootOrder: 0
@@ -626,6 +766,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 0
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -682,6 +823,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4801197719440002}
   - {fileID: 4251127013671066}
@@ -715,6 +857,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 224793365738985470}
   - {fileID: 224783003561319714}
@@ -750,6 +893,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4979320406102004}
   m_RootOrder: 2
@@ -788,6 +932,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4047497065323926}
   - {fileID: 4904847959507168}
@@ -824,6 +969,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4195487487734092}
   - {fileID: 4648175053487084}
@@ -845,11 +991,32 @@ MonoBehaviour:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ExceededMessage: {fileID: 1301807037823974}
   m_WarningMessage: {fileID: 1504881338776342}
+  references:
+    version: 2
+    RefIds: []
 --- !u!65 &65882015518901448
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -874,6 +1041,7 @@ GameObject:
   - component: {fileID: 224988910467490322}
   - component: {fileID: 23815729991727356}
   - component: {fileID: 114692176455258930}
+  - component: {fileID: 5515377250323430558}
   m_Layer: 16
   m_Name: Text
   m_TagString: Untagged
@@ -891,6 +1059,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4648175053487084}
   m_RootOrder: 1
@@ -911,6 +1080,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -961,14 +1131,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<color=white>
+  m_text: 'You are now in the danger zone.
 
-    You are now in the danger zone.
-
-    Further work may
-    cause crashes and lost work.
-
-    </color>'
+    Further work may cause crashes and
+    lost work.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -977,8 +1143,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4288059030
-  m_fontColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1034,12 +1200,52 @@ MonoBehaviour:
   m_margin: {x: -0.31141979, y: 0.6332202, z: -0.30795962, w: -0.027681828}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 23815729991727356}
-  m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 23815729991727356}
+  m_maskType: 0
+--- !u!114 &5515377250323430558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1706114744361246}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 6394126997433090062
+  references:
+    version: 2
+    RefIds:
+    - rid: 6394126997433090062
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 114692176455258930}
+        m_TrackedProperties:
+          items:
+          - rid: 6394126997433090063
+        m_UpdateType: 0
+    - rid: 6394126997433090063
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 7892372832362496
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1740010200131574
 GameObject:
   m_ObjectHideFlags: 0
@@ -1068,6 +1274,7 @@ Transform:
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 99.99997, z: 99.99997}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4879668422837624}
   m_RootOrder: 2
@@ -1091,6 +1298,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1149,6 +1357,7 @@ Transform:
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4879668422837624}
   m_RootOrder: 0
@@ -1172,6 +1381,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1230,6 +1440,7 @@ Transform:
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4879668422837624}
   m_RootOrder: 1
@@ -1253,6 +1464,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1310,6 +1522,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4979320406102004}
   m_RootOrder: 1
@@ -1338,6 +1551,7 @@ GameObject:
   - component: {fileID: 224783003561319714}
   - component: {fileID: 23450520148271048}
   - component: {fileID: 114309426849717852}
+  - component: {fileID: 1104781377821354269}
   m_Layer: 16
   m_Name: Text
   m_TagString: Untagged
@@ -1355,6 +1569,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4195487487734092}
   m_RootOrder: 1
@@ -1375,6 +1590,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1425,14 +1641,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<color=white>
+  m_text: 'This operation will put you beyond a safe memory limit.
 
-    This operation will put you beyond a safe memory limit.
-
-    Proceed
-    with caution.
-
-    </color>'
+    Proceed with
+    caution.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -1441,8 +1653,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4288059030
-  m_fontColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1498,12 +1710,52 @@ MonoBehaviour:
   m_margin: {x: -0.31141979, y: 0.6332202, z: -0.30795962, w: -0.027681828}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 23450520148271048}
-  m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 23450520148271048}
+  m_maskType: 0
+--- !u!114 &1104781377821354269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1897452335992338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 6394126997433090060
+  references:
+    version: 2
+    RefIds:
+    - rid: 6394126997433090060
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 114309426849717852}
+        m_TrackedProperties:
+          items:
+          - rid: 6394126997433090061
+        m_UpdateType: 0
+    - rid: 6394126997433090061
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 7892226182717440
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &1903572286805094
 GameObject:
   m_ObjectHideFlags: 0
@@ -1531,6 +1783,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4947430804114360}
   m_RootOrder: 1
@@ -1578,6 +1831,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.25, y: -0.75, z: -0.03}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4195487487734092}
   m_RootOrder: 3
@@ -1601,6 +1855,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1658,8 +1913,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Understood
+  m_DescriptionText: MEMORYWARNING_PANEL_WARNINGOK_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7892717637705728
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
@@ -1679,10 +1952,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1949813017429004
 GameObject:
   m_ObjectHideFlags: 0
@@ -1694,6 +1988,7 @@ GameObject:
   - component: {fileID: 224167512835986220}
   - component: {fileID: 23630731818910146}
   - component: {fileID: 114950385311535612}
+  - component: {fileID: 9115419781959679480}
   m_Layer: 16
   m_Name: Warning
   m_TagString: Untagged
@@ -1711,6 +2006,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4648175053487084}
   m_RootOrder: 0
@@ -1731,6 +2027,7 @@ MeshRenderer:
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1781,7 +2078,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <color=#ff5050>Memory Limit Exceeded</color>
+  m_text: Memory Limit Exceeded
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -1790,8 +2087,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4288059030
-  m_fontColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
+    rgba: 4283453695
+  m_fontColor: {r: 1, g: 0.3137255, b: 0.3137255, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1847,9 +2144,49 @@ MonoBehaviour:
   m_margin: {x: -0.31141979, y: -0.43944836, z: -0.30795962, w: 1.1764753}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 23630731818910146}
-  m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 23630731818910146}
+  m_maskType: 0
+--- !u!114 &9115419781959679480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1949813017429004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 6394126997433090058
+  references:
+    version: 2
+    RefIds:
+    - rid: 6394126997433090058
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 114950385311535612}
+        m_TrackedProperties:
+          items:
+          - rid: 6394126997433090059
+        m_UpdateType: 0
+    - rid: 6394126997433090059
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 7891984230096896
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text

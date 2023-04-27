@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4753270356448495058}
   - component: {fileID: 1217548100869019240}
   - component: {fileID: 5424936402947707933}
-  m_Layer: 5
+  m_Layer: 16
   m_Name: PanelButton_Hide
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 1215067258630681599}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.73, y: 0, z: -0.06}
-  m_LocalScale: {x: 0.16174501, y: 0.16174501, z: 0.24549817}
+  m_LocalScale: {x: 0.161745, y: 0.161745, z: 0.2454982}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -112,13 +112,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Hide/Show
+  m_DescriptionText: LAYERS_PANEL_SHOWHIDE_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7873280473800704
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: e0f15e7cc24155c479af772d960d6758, type: 3}
-  m_AtlasTexture: 0
-  m_ToggleButton: 1
+  m_AtlasTexture: 1
+  m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
@@ -129,3 +147,6 @@ MonoBehaviour:
   activated: 0
   activatedButtonTexture: {fileID: 2800000, guid: 6158c15f403caf7408664782be08f46f,
     type: 3}
+  references:
+    version: 2
+    RefIds: []

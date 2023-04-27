@@ -85,7 +85,7 @@ namespace TiltBrush
             {
                 manifest = "Experimental";
             }
-            return $"{brush.m_Description}\t{brush.m_AudioReactive}\t{prefabName}\t{materialName}\t{shaderName}\t{brushScripts}\t{experimental}\t{brush.m_SupersededBy}\t{manifest}";
+            return $"{brush.Description}\t{brush.m_AudioReactive}\t{prefabName}\t{materialName}\t{shaderName}\t{brushScripts}\t{experimental}\t{brush.m_SupersededBy}\t{manifest}";
         }
 
         public static string sniffBrushScript(BrushDescriptor brush)

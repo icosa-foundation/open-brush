@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
 
-    [CreateAssetMenu(fileName = "Environment", menuName = "Tilt Brush Environment")]
+    [CreateAssetMenu(fileName = "Environment", menuName = "Open Brush Environment")]
     public class Environment : ScriptableObject
     {
         [Serializable]
@@ -130,7 +131,24 @@ namespace TiltBrush
         }
 
         public SerializableGuid m_Guid;
-        public string m_Description;
+        public LocalizedString m_EnvironmentDescription;
+
+        public string Description
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_EnvironmentDescription.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_Guid.ToString();
+                }
+            }
+        }
+
         public Texture2D m_IconTexture;
         public RenderSettingsLite m_RenderSettings;
         public List<Light> m_Lights;
