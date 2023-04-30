@@ -751,6 +751,13 @@ namespace TiltBrush
         {
             m_MainPointerData.m_Script.transform.position = vPos;
             m_MainPointerData.m_Script.transform.forward = vForward;
+            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+            {
+                // Monoscopic has a different codepath so we need to do this here.
+                // TODO figure out how to remove this conditional
+                // without calling UpdateSymmetryPointerTransforms multiple times
+                UpdateSymmetryPointerTransforms();
+            }
         }
 
         public List<TrTransform> GetScriptedTransforms()
