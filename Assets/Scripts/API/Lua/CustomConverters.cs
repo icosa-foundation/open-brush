@@ -83,19 +83,19 @@ public static class LuaCustomConverters
             }
         );
 
-        Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector3>(
-            (script, vector) =>
-            {
-                DynValue x = DynValue.NewNumber(vector.x);
-                DynValue y = DynValue.NewNumber(vector.y);
-                DynValue z = DynValue.NewNumber(vector.z);
-                DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
-                dynVal.Table.Set("x", x);
-                dynVal.Table.Set("y", y);
-                dynVal.Table.Set("z", z);
-                return dynVal;
-            }
-        );
+        // Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector3>(
+        //     (script, vector) =>
+        //     {
+        //         DynValue x = DynValue.NewNumber(vector.x);
+        //         DynValue y = DynValue.NewNumber(vector.y);
+        //         DynValue z = DynValue.NewNumber(vector.z);
+        //         DynValue dynVal = DynValue.NewTable(script, new DynValue[] { });
+        //         dynVal.Table.Set("x", x);
+        //         dynVal.Table.Set("y", y);
+        //         dynVal.Table.Set("z", z);
+        //         return dynVal;
+        //     }
+        // );
 
         // Quaternion
 

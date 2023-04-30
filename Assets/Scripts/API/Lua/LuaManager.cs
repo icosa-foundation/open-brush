@@ -139,16 +139,7 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            if (Directory.Exists(ApiManager.Instance.UserScriptsPath()))
-            {
-                m_FileWatcher = new FileWatcher(ApiManager.Instance.UserScriptsPath(), "*.lua");
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
-                m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
-                // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
-            m_WebRequests = new LinkedList<LuaWebRequest>();
+            Init();
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -156,21 +147,23 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-        private void Start()
-        {
-            Init();
-        }
-
         public void Init()
         {
+            m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
             m_ActiveBackgroundScripts = new Dictionary<string, Script>();
             m_Timers = new Dictionary<(Script OwnerScript, int ReferenceID), LuaTimer>();
+            LuaCustomConverters.RegisterAll();
             UserData.RegisterAssembly();
             Script.GlobalOptions.Platform = new StandardPlatformAccessor();
-            LuaCustomConverters.RegisterAll();
-            InitScriptDataStructures();
+            Scripts = new Dictionary<LuaApiCategory, SortedDictionary<string, Script>>();
+            ActiveScripts = new Dictionary<LuaApiCategory, int>();
+            foreach (var category in ApiCategories)
+            {
+                Scripts[category] = new SortedDictionary<string, Script>();
+                ActiveScripts[category] = 0;
+            }
 
             var modulesPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
             if (!Directory.Exists(modulesPath))
@@ -200,6 +193,16 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
+
+            if (Directory.Exists(ApiManager.Instance.UserScriptsPath()))
+            {
+                m_FileWatcher = new FileWatcher(ApiManager.Instance.UserScriptsPath(), "*.lua");
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
+                m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
+                // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
+                m_FileWatcher.EnableRaisingEvents = true;
+            }
         }
 
         public void SetBrushBufferSize(int size)
@@ -312,17 +315,6 @@ namespace TiltBrush
             }
 
             if (BackgroundScriptsEnabled) CallActiveBackgroundScripts(LuaNames.Main);
-        }
-
-        public void InitScriptDataStructures()
-        {
-            Scripts = new Dictionary<LuaApiCategory, SortedDictionary<string, Script>>();
-            ActiveScripts = new Dictionary<LuaApiCategory, int>();
-            foreach (var category in ApiCategories)
-            {
-                Scripts[category] = new SortedDictionary<string, Script>();
-                ActiveScripts[category] = 0;
-            }
         }
 
         public void LoadUserScripts()
@@ -458,6 +450,13 @@ namespace TiltBrush
                 tbl = script.Globals.Get(parts[0]);
             }
             tbl.Table[parts[1]] = action;
+        }
+
+        public void RegisterLuaModule(Script script, string libName)
+        {
+            var libAsset = Resources.Load($"LuaInjectedModules/{libName}", typeof(TextAsset));
+            var lib = script.DoString(((TextAsset)libAsset).text);
+            script.Globals[libName] = lib.Table;
         }
 
         public void RegisterApiClass(Script script, string fnName, Type t, string prefix = null)
@@ -737,6 +736,12 @@ namespace TiltBrush
 
         public void RegisterApiClasses(Script script)
         {
+            // Internal only classes
+            UserData.RegisterType<Vector3>();
+            script.Globals["__Vector3"] = typeof(Vector3);
+            script.Globals["__Vector3ApiWrapper"] = typeof(Vector3ApiWrapper);
+            RegisterLuaModule(script, "vector3");
+
             RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
             RegisterApiClass(script, "unityMathf", typeof(MathfApiWrapper));
             RegisterApiClass(script, "unityQuaternion", typeof(QuaternionApiWrapper));
@@ -748,6 +753,7 @@ namespace TiltBrush
             RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "cameraPath", typeof(CameraPathApiWrapper));
             RegisterApiClass(script, "draw", typeof(DrawApiWrapper));
+            RegisterApiClass(script, "easing", typeof(EasingApiWrapper));
             RegisterApiClass(script, "guides", typeof(GuidesApiWrapper));
             RegisterApiClass(script, "headset", typeof(HeadsetApiWrapper));
             RegisterApiClass(script, "images", typeof(ImageApiWrapper));
