@@ -15,17 +15,17 @@ function sign(number)
 end
 
 function OnTriggerReleased()
-    points = {}
-    for i = 0.0, math.pi * 2, 0.01 do
+    points = Path:New()
+    for i = 0.0, Math.pi * 2, 0.01 do
         angle = sym * i / 4.0
-        term1 = math.pow(math.abs(math.cos(angle)), n2)
-        term2 = math.pow(math.abs(math.sin(angle)), n3)
-        r = math.pow(term1 + term2, -1.0 / n1)
-        x = math.cos(i) * r
-        y = math.sin(i) * r
-        position = { x, y, 0}
-        rotation = { 0, 0, angle * 180}
-        table.insert(points, { position, rotation })
+        term1 = Math:Pow(Math:Abs(Math:Cos(angle)), n2)
+        term2 = Math:Pow(Math:Abs(Math:Sin(angle)), n3)
+        r = Math:Pow(term1 + term2, -1.0 / n1)
+        x = Math:Cos(i) * r
+        y = Math:Sin(i) * r
+        position = Vector3:New(x, y, 0)
+        rotation = Rotation:New(0, 0, angle * 180)
+        points:Insert(Transform:New(position, rotation))
     end
     return points
 end

@@ -12,23 +12,18 @@ Parameters = {
 function WhileTriggerPressed()
 
     -- Don't allow painting immediately otherwise you get stray lines
-    if (brush.triggerIsPressedThisFrame) then
-        brush.forceNewStroke()
+    if (Brush.triggerIsPressedThisFrame) then
+        Brush:ForceNewStroke()
     end
 
     -- Pick an old position from the buffer
-    oldPosition = brush.pastPosition(delay)
+    oldPosition = Brush:GetPastPosition(delay)
 
     -- How much to mix old and new positions
-    mix = (waveform.sine(app.time, frequency) + 1) * amplitude
+    mix = (Waveform:Sine(App.time, frequency) + 1) * amplitude
 
     --Interpolate back and forth between old and current positions
-    newPosition = {
-        unityMathf.lerpUnclamped(oldPosition.x, brush.position.x, mix),
-        unityMathf.lerpUnclamped(oldPosition.y, brush.position.y, mix),
-        unityMathf.lerpUnclamped(oldPosition.z, brush.position.z, mix),
-    }
-
-    return {newPosition, brush.rotation}
+    newPosition = Vector3.LerpUnclamped(oldPosition, Brush.position, mix)
+    return Transform:New(newPosition, Brush.rotation)
 
 end

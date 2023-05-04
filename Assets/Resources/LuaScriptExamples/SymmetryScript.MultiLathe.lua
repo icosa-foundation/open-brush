@@ -10,18 +10,14 @@ Parameters = {
 
 function Main()
 
-    if brush.triggerIsPressedThisFrame then
-        brush.forceNewStroke()
-        symmetry.rotation = {angleX, 0, angleZ}
-        symmetry.spin({0, speed, 0})
+    if Brush.triggerIsPressedThisFrame then
+        Brush:ForceNewStroke()
+        Symmetry.rotation = Rotation:New(angleX, 0, angleZ)
+        Symmetry:Spin(0, speed, 0)
     end
 
-    return {
-        {
-            position = {-symmetry.brushOffset.x, symmetry.brushOffset.y, symmetry.brushOffset.z},
-        },
-        {
-            position = {-symmetry.brushOffset.x, -symmetry.brushOffset.y, symmetry.brushOffset.z},
-        },
-    }
+    return Path:New({
+        Symmetry.brushOffset:Scale(-1, 1, 1),
+        Symmetry.brushOffset:Scale(-1, -1, 1)
+    })
 end

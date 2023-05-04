@@ -498,23 +498,6 @@ namespace TiltBrush
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
         }
 
-        public int? GetIndexOfCameraPath(CameraPathWidget path)
-        {
-            int index = 0;
-            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
-            {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
-                {
-                    if (m_CameraPathWidgets[i].WidgetScript == path)
-                    {
-                        return index;
-                    }
-                    ++index;
-                }
-            }
-            return null;
-        }
-
         public CameraPathWidget CreatePathWidget()
         {
             CreateWidgetCommand command =
@@ -1499,9 +1482,14 @@ namespace TiltBrush
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-
         public List<TypedWidgetData<StencilWidget>> ActiveStencilWidgets =>
             m_StencilWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+
+        public int GetActiveWidgetIndex(ImageWidget widget) => ActiveImageWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(ModelWidget widget) => ActiveModelWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(VideoWidget widget) => ActiveVideoWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(CameraPathWidget widget) => ActiveCameraPathWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(StencilWidget widget) => ActiveStencilWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
 
     }
 }

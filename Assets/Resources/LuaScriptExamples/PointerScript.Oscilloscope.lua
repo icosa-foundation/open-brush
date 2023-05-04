@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Control your pointer with multiple waveforms"
 }
 
@@ -12,64 +12,61 @@ Parameters = {
 }
 
 function OnTriggerPressed()
-    brush.forcePaintingOff(false)
+    Brush:ForcePaintingOff(false)
     xPrevious = 0
     yPrevious = 0
-    return Calc(0)
+    return calc(0)
 end
 
 function WhileTriggerPressed()
-    return Calc(brush.timeSincePressed)
+    return calc(Brush.timeSincePressed)
 end
 
-function Calc(t)
+function calc(t)
 
     x = sampleWave(xWave, t, xFrequency, xPrevious)
-    xPrevious = x
     y = sampleWave(yWave, t + (yPhase * 0.5), yFrequency, yPrevious)
+    xPrevious = x
     yPrevious = y
 
-    position = {
-        x = -x * radius,
-        y = y * radius,
-        z = 0
-    }
-    return {position, {0,0,0}}
+    position = Vector3:New(-x * radius, y * radius, 0)
+
+    return Transform:New(position)
 end
 
 function sampleWave(waveType, time, frequency, previous)
     if waveType==0 then
         return time * frequency
     elseif waveType==1 then
-        return waveform.cosine(time, frequency)
+        return Waveform:Cosine(time, frequency)
     elseif waveType==2 then
-        return waveform.triangle(time, frequency)
+        return Waveform:Triangle(time, frequency)
     elseif waveType==3 then
-        return waveform.sawtooth(time, frequency)
+        return Waveform:Sawtooth(time, frequency)
     elseif waveType==4 then
-        return waveform.square(time, frequency)
+        return Waveform:Square(time, frequency)
     elseif waveType==5 then
-        return waveform.pulse(time, frequency, 0.8)
+        return Waveform:Pulse(time, frequency, 0.8)
     elseif waveType==6 then
-        return waveform.pulse(time, frequency, 0.2)
+        return Waveform:Pulse(time, frequency, 0.2)
     elseif waveType==7 then
-        return waveform.exponent(time, frequency)
+        return Waveform:Exponent(time, frequency)
     elseif waveType==8 then
-        return waveform.power(time, frequency, 2)
+        return Waveform:Power(time, frequency, 2)
     elseif waveType==9 then
-        return waveform.power(time, frequency, 0.5)
+        return Waveform:Power(time, frequency, 0.5)
     elseif waveType==10 then
-        return waveform.parabolic(time, frequency)
+        return Waveform:Parabolic(time, frequency)
     elseif waveType==11 then
-        return waveform.exponentialSawtooth(time, frequency, 2.0)
+        return Waveform:ExponentialSawtooth(time, frequency, 2.0)
     elseif waveType==12 then
-        return waveform.perlinNoise(time, frequency)
+        return Waveform:PerlinNoise(time, frequency)
     elseif waveType==13 then
-        return waveform.whiteNoise()
+        return Waveform:WhiteNoise()
     elseif waveType==14 then
-        return waveform.brownNoise(previous)
+        return Waveform:BrownNoise(previous)
     elseif waveType==15 then
-        return waveform.blueNoise(previous)
+        return Waveform:BlueNoise(previous)
     else
         return 0
     end

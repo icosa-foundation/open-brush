@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws dashes with configurable frequency and spacing"
 }
 
@@ -8,20 +8,20 @@ Parameters = {
 }
 
 function Start()
-    brush.forcePaintingOff(false)
+    Brush:ForcePaintingOff(false)
 end
 
 function WhileTriggerPressed()
 
-    wave = math.cos(brush.distanceDrawn * frequency)
+    wave = Math:Cos(Brush.distanceDrawn * frequency)
 
     -- turn off painting when we are over the threshold
-    brush.forcePaintingOff(wave > spacing)
+    Brush:ForcePaintingOff(wave > spacing)
 
     --Leave the pointer position unchanged
-    return {{0, 0, 0}}
+    return Transform.zero
 end
 
 function End()
-    brush.forcePaintingOff(false)
+    Brush:ForcePaintingOff(false)
 end

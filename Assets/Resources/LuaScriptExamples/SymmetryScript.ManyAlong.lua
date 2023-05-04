@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Linear copies of your stroke with optional color shifts"
 }
 
@@ -10,32 +10,28 @@ Parameters = {
 symmetryHueShift = require "symmetryHueShift"
 
 function Start()
-    initialHsv = brush.colorHsv
+    initialHsv = Brush.colorHsv
 end
 
 function Main()
 
-    if brush.triggerIsPressedThisFrame then
+    if Brush.triggerIsPressedThisFrame then
         symmetryHueShift.generate(copies, initialHsv)
     end
 
-    pointers = {}
+    pointers = Path:New()
 
     for i = 0, copies - 1 do
 
         t = i / copies
 
         --Shift the extra pointers
-        pos = {{
-           symmetry.brushOffset.x - distance * t,
-           symmetry.brushOffset.y,
-           symmetry.brushOffset.z
-       }}
-        table.insert(pointers, pos)
+        position = Symmetry.brushOffset:Subtract(distance * t, 0, 0)
+        pointers:Insert(position)
     end
     return pointers
 end
 
 function End()
-    -- TODO fix brush.colorHsv = initialHsv
+    -- TODO fix Brush.colorHsv = initialHsv
 end

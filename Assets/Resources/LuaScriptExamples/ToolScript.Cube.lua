@@ -1,39 +1,44 @@
-﻿Settings = {
+Settings = {
     description="Draws a cube",
     previewType="cube"
 }
 
 function OnTriggerReleased()
 
-    points = {}
+    paths = MultiPath:New()
+    face = Path:New()
 
     -- front face
-    table.insert(points, {{-1, 1, 1}, {0, 0, 0}}) -- top left
-    table.insert(points, {{1, 1, 1}, {0, 0, 0}}) -- top right
-    table.insert(points, {{1, -1, 1}, {0, 0, 0}}) -- bottom right
-    table.insert(points, {{-1, -1, 1}, {0, 0, 0}}) -- bottom left
-    table.insert(points, {{-1, 1, 1}, {0, 0, 0}}) -- top left (to close the loop)
+    face:Insert(Transform:New(Vector3:New(-1, 1, 1), Rotation.zero)) -- top left
+    face:Insert(Transform:New(Vector3:New(1, 1, 1), Rotation.zero)) -- top right
+    face:Insert(Transform:New(Vector3:New(1, -1, 1), Rotation.zero)) -- bottom right
+    face:Insert(Transform:New(Vector3:New(-1, -1, 1), Rotation.zero)) -- bottom left
+    face:Insert(Transform:New(Vector3:New(-1, 1, 1), Rotation.zero)) -- top left (to close the loop)
+    paths:Insert(face)
 
     -- right face
-    table.insert(points, {{1, 1, 1}, {0, 0, 90}}) -- top right
-    table.insert(points, {{1, 1, -1}, {0, 0, 90}}) -- top back
-    table.insert(points, {{1, -1, -1}, {0, 0, 90}}) -- bottom back
-    table.insert(points, {{1, -1, 1}, {0, 0, 90}}) -- bottom right
-    table.insert(points, {{1, 1, 1}, {0, 0, 90}}) -- top right (to close the loop)
+    face:Insert(Transform:New(Vector3:New(1, 1, 1), Rotation:New(0, 0, 90))) -- top right
+    face:Insert(Transform:New(Vector3:New(1, 1, -1), Rotation:New(0, 0, 90))) -- top back
+    face:Insert(Transform:New(Vector3:New(1, -1, -1), Rotation:New(0, 0, 90))) -- bottom back
+    face:Insert(Transform:New(Vector3:New(1, -1, 1), Rotation:New(0, 0, 90))) -- bottom right
+    face:Insert(Transform:New(Vector3:New(1, 1, 1), Rotation:New(0, 0, 90))) -- top right (to close the loop)
+    paths:Insert(face)
 
     -- back face
-    table.insert(points, {{1, 1, -1}, {0, 0, 180}}) -- top back
-    table.insert(points, {{-1, 1, -1}, {0, 0, 180}}) -- top left
-    table.insert(points, {{-1, -1, -1}, {0, 0, 180}}) -- bottom left
-    table.insert(points, {{1, -1, -1}, {0, 0, 180}}) -- bottom back
-    table.insert(points, {{1, 1, -1}, {0, 0, 180}}) -- top back (to close the loop)
+    face:Insert(Transform:New(Vector3:New(1, 1, -1), Rotation:New(0, 0, 180))) -- top back
+    face:Insert(Transform:New(Vector3:New(-1, 1, -1), Rotation:New(0, 0, 180))) -- top left
+    face:Insert(Transform:New(Vector3:New(-1, -1, -1), Rotation:New(0, 0, 180))) -- bottom left
+    face:Insert(Transform:New(Vector3:New(1, -1, -1), Rotation:New(0, 0, 180))) -- bottom back
+    face:Insert(Transform:New(Vector3:New(1, 1, -1), Rotation:New(0, 0, 180))) -- top back (to close the loop)
+    paths:Insert(face)
 
     -- left face
-    table.insert(points, {{-1, 1, -1}, {0, 0, 270}}) -- top left
-    table.insert(points, {{-1, 1, 1}, {0, 0, 270}}) -- top front
-    table.insert(points, {{-1, -1, 1}, {0, 0, 270}}) -- bottom front
-    table.insert(points, {{-1, -1, -1}, {0, 0, 270}}) -- bottom left
-    table.insert(points, {{-1, 1, -1}, {0, 0, 270}}) -- top left (to close the loop)
+    face:Insert(Transform:New(Vector3:New(-1, 1, -1), Rotation:New(0, 0, 270))) -- top left
+    face:Insert(Transform:New(Vector3:New(-1, 1, 1), Rotation:New(0, 0, 270))) -- top front
+    face:Insert(Transform:New(Vector3:New(-1, -1, 1), Rotation:New(0, 0, 270))) -- bottom front
+    face:Insert(Transform:New(Vector3:New(-1, -1, -1), Rotation:New(0, 0, 270))) -- bottom left
+    face:Insert(Transform:New(Vector3:New(-1, 1, -1), Rotation:New(0, 0, 270))) -- top left (to close the loop)
+    paths:Insert(face)
 
-    return points
+    return paths
 end

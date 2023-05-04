@@ -18,36 +18,109 @@ using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
-    public static class ColorApiWrapper
+    public class ColorApiWrapper
     {
-        public static float greyscale(Color col) => col.grayscale;
-        public static float maxColorComponent(Color col) => col.maxColorComponent;
-        public static string toHtmlString(Color col) => ColorUtility.ToHtmlStringRGB(col);
-        public static Color parseHtmlString(string html)
+        public Color _Color;
+
+        public ColorApiWrapper(float r = 0, float g = 0, float b = 0)
+        {
+            _Color = new Color(r, g, b);
+        }
+
+        public ColorApiWrapper(Color color)
+        {
+            _Color = color;
+        }
+
+        public ColorApiWrapper(string html)
+        {
+            _Color = ParseHtmlString(html);
+        }
+
+        public static ColorApiWrapper New(float r = 0, float g = 0, float b = 0)
+        {
+            var instance = new ColorApiWrapper(r, g, b);
+            return instance;
+        }
+
+        public static ColorApiWrapper New(string html)
+        {
+            return new ColorApiWrapper(html);
+        }
+
+        public override string ToString()
+        {
+            return $"Color({_Color.r}, {_Color.g}, {_Color.b})";
+        }
+
+        public float this[int index]
+        {
+            get => _Color[index];
+            set => _Color[index] = value;
+        }
+
+        public float r => _Color.r;
+        public float g => _Color.g;
+        public float b => _Color.b;
+        public float a => _Color.a;
+        public float grayscale => _Color.grayscale;
+        public Color gamma => _Color.gamma;
+        public Color linear => _Color.linear;
+        public float maxColorComponent => _Color.maxColorComponent;
+
+        public static float Greyscale(Color col) => col.grayscale;
+        public static float MaxColorComponent(Color col) => col.maxColorComponent;
+        public static string ToHtmlString(Color col) => ColorUtility.ToHtmlStringRGB(col);
+        public static Color ParseHtmlString(string html)
         {
             var success = ColorUtility.TryParseHtmlString(html, out Color color);
             return success ? color : Color.magenta;
         }
-        public static Color lerp(Color a, Color b, float t) => Color.Lerp(a, b, t);
-        public static Color lerpUnclamped(Color a, Color b, float t) => Color.LerpUnclamped(a, b, t);
-        public static Color hsvToRgb(float h, float s, float v) => Color.HSVToRGB(
+        public static Color Lerp(Color a, Color b, float t) => Color.Lerp(a, b, t);
+        public static Color LerpUnclamped(Color a, Color b, float t) => Color.LerpUnclamped(a, b, t);
+        public static Color HsvToRgb(float h, float s, float v) => Color.HSVToRGB(
             Mathf.Clamp01(h),
             Mathf.Clamp01(s),
             Mathf.Clamp01(v)
         );
 
-        public static Vector3 rgbToHsv(Color rgb)
+        public static Vector3 RgbToHsv(Color rgb)
         {
             Color.RGBToHSV(rgb, out float h, out float s, out float v);
             return new Vector3(h, s, v);
         }
 
+        public static Color black => Color.black;
+        public static Color blue => Color.blue;
+        public static Color clear => Color.clear;
+        public static Color cyan => Color.cyan;
+        public static Color gray => Color.gray;
+        public static Color green => Color.green;
+        public static Color grey => Color.grey;
+        public static Color magenta => Color.magenta;
+        public static Color red => Color.red;
+        public static Color white => Color.white;
+        public static Color yellow => Color.yellow;
+
         // Operators
-        public static Color add(Color a, Color b) => a + b;
-        public static Color subtract(Color a, Color b) => a - b;
-        public static Color multiply(Color a, float b) => a * b;
-        public static Color divide(Color a, float b) => a / b;
-        public static bool equals(Color a, Color b) => a == b;
-        public static bool notEquals(Color a, Color b) => a != b;
+        public Color Add(Color b) => _Color + b;
+        public Color Add(float r, float g, float b) => _Color + new Color(r, g, b);
+        public Color Subtract(Color b) => _Color - b;
+        public Color Subtract(float r, float g, float b) => _Color - new Color(r, g, b);
+        public Color Multiply(float b) => _Color * b;
+        public Color Multiply(float r, float g, float b) => _Color * new Color(r, g, b);
+        public Color Divide(float b) => _Color / b;
+        public bool Equals(Color b) => _Color == b;
+        public bool Equals(float r, float g, float b) => _Color == new Color(r, g, b);
+        public bool NotEquals(Color b) => _Color != b;
+        public bool NotEquals(float r, float g, float b) => _Color != new Color(r, g, b);
+
+        // Static Operators
+        public static Color Add(Color a, Color b) => a + b;
+        public static Color Subtract(Color a, Color b) => a - b;
+        public static Color Multiply(Color a, float b) => a * b;
+        public static Color Divide(Color a, float b) => a / b;
+        public static bool Equals(Color a, Color b) => a == b;
+        public static bool NotEquals(Color a, Color b) => a != b;
     }
 }

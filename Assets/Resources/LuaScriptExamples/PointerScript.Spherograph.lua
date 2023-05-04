@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="",
     space="canvas"
 }
@@ -10,29 +10,29 @@ Parameters = {
 }
 
 function OnTriggerPressed()
-    initialPos = brush.position
-    return Calc()
+    initialPos = Brush.position
+    return calc()
 end
 
 function WhileTriggerPressed()
-    return Calc()
+    return calc()
 end
 
-function Calc()
-    u = brush.distanceDrawn * uScale
-    v = brush.distanceDrawn * vScale
+function calc()
+    u = Brush.distanceDrawn * uScale
+    v = Brush.distanceDrawn * vScale
     p = Sphere(u,v)
-    return {
-        position={p.x + initialPos.x, p.y + initialPos.y, p.z + initialPos.z,},
-        rotation=unityQuaternion.lookRotation({p.x, p.y, p.z}, {1, 0, 0})
-    }
+    return Tranform:New(
+        initialPos:Add(p),
+        Rotation.lookRotation(Vector3:New(p.x, p.y, p.z), Vector3.right)
+    )
 end
 
 function Sphere(u, v)
-    return {
-        x = math.cos(u) * math.cos(v),
-        y = math.cos(u) * math.sin(v),
-        z = math.sin(u),
-    }
+    return Vector3:New(
+        Math:Cos(u) * Math:Cos(v),
+        Math:Cos(u) * Math:Sin(v),
+        Math:Sin(u)
+    )
 end
 

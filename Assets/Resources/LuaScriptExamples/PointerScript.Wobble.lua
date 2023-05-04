@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Like Wiggle but uses a smooth noise function"
 }
 
@@ -9,11 +9,11 @@ Parameters = {
 }
 
 function WhileTriggerPressed()
-    noiseX = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x - 100, frequency * brush.position.z)
-    noiseY = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x, frequency * brush.position.z)
-    noiseZ = -0.5 + unityMathf.perlinNoise(frequency * brush.position.x + 100, frequency * brush.position.z)
-    return {
-        position = {noiseX * positionAmount, noiseY * positionAmount, noiseZ * positionAmount},
-        rotation =  {noiseX * rotationAmount, noiseY * rotationAmount, noiseZ * rotationAmount}
-    };
+    noiseX = -0.5 + Math.perlinNoise(frequency * Brush.position.x - 100, frequency * Brush.position.z)
+    noiseY = -0.5 + Math.perlinNoise(frequency * Brush.position.x, frequency * Brush.position.z)
+    noiseZ = -0.5 + Math.perlinNoise(frequency * Brush.position.x + 100, frequency * Brush.position.z)
+    return Tranform:New(
+        positionAmount:Scale(noiseX, noiseY, noiseZ),
+        rotationAmount:Scale(noiseX, noiseY, noiseZ)
+    )
 end

@@ -1,440 +1,576 @@
-tool.startPosition = nil
-tool.endPosition = nil
-tool.vector = nil
-tool.rotation = nil
-function unityColor.greyscale(col) end
-function unityColor.maxColorComponent(col) end
-function unityColor.toHtmlString(col) end
-function unityColor.parseHtmlString(html) end
-function unityColor.lerp(a, b, t) end
-function unityColor.lerpUnclamped(a, b, t) end
-function unityColor.hsvToRgb(h, s, v) end
-function unityColor.rgbToHsv(rgb) end
-function unityColor.add(a, b) end
-function unityColor.subtract(a, b) end
-function unityColor.multiply(a, b) end
-function unityColor.divide(a, b) end
-function unityColor.equals(a, b) end
-function unityColor.notEquals(a, b) end
-unityMathf.deg2Rad = nil
-unityMathf.epsilon = nil
-unityMathf.infinity = nil
-unityMathf.negativeInfinity = nil
-unityMathf.pI = nil
-unityMathf.rad2Deg = nil
-function unityMathf.abs(f) end
-function unityMathf.acos(f) end
-function unityMathf.approximately(a, b) end
-function unityMathf.asin(f) end
-function unityMathf.atan(f) end
-function unityMathf.atan2(y, x) end
-function unityMathf.ceil(f) end
-function unityMathf.clamp(value, min, max) end
-function unityMathf.clamp01(value) end
-function unityMathf.closestPowerOfTwo(value) end
-function unityMathf.cos(f) end
-function unityMathf.deltaAngle(current, target) end
-function unityMathf.exp(power) end
-function unityMathf.floor(f) end
-function unityMathf.inverseLerp(a, b, value) end
-function unityMathf.isPowerOfTwo(value) end
-function unityMathf.lerp(a, b, t) end
-function unityMathf.lerpAngle(a, b, t) end
-function unityMathf.lerpUnclamped(a, b, t) end
-function unityMathf.log(f, p) end
-function unityMathf.log10(f) end
-function unityMathf.max(a, b) end
-function unityMathf.max(values) end
-function unityMathf.min(a, b) end
-function unityMathf.min(values) end
-function unityMathf.moveTowards(current, target, maxDelta) end
-function unityMathf.nextPowerOfTwo(value) end
-function unityMathf.perlinNoise(x, y) end
-function unityMathf.pingPong(t, length) end
-function unityMathf.pow(f, p) end
-function unityMathf.repeater(t, length) end
-function unityMathf.round(f) end
-function unityMathf.sign(f) end
-function unityMathf.sin(f) end
-function unityMathf.sqrt(f) end
-function unityMathf.smoothStep(from, to, t) end
-function unityMathf.tan(f) end
-function unityMathf.sinh(f) end
-function unityMathf.cosh(f) end
-function unityMathf.tanh(f) end
-unityQuaternion.identity = nil
-unityQuaternion.kEpsilon = nil
-function unityQuaternion.angle(a, b) end
-function unityQuaternion.angleAxis(angle, axis) end
-function unityQuaternion.dot(a, b) end
-function unityQuaternion.fromToRotation(from, to) end
-function unityQuaternion.inverse(a) end
-function unityQuaternion.lerp(a, b, t) end
-function unityQuaternion.lerpUnclamped(a, b, t) end
-function unityQuaternion.lookRotation(forward) end
-function unityQuaternion.lookRotation(forward, up) end
-function unityQuaternion.normalize(a) end
-function unityQuaternion.rotateTowards(from, to, maxDegreesDelta) end
-function unityQuaternion.slerp(a, b, t) end
-function unityQuaternion.slerpUnclamped(a, b, t) end
-function unityQuaternion.multiply(a, b) end
-function unityQuaternion.equals(a, b) end
-unityVector2.down = nil
-unityVector2.left = nil
-unityVector2.negativeInfinity = nil
-unityVector2.one = nil
-unityVector2.positiveInfinity = nil
-unityVector2.right = nil
-unityVector2.up = nil
-unityVector2.zero = nil
-function unityVector2.angle(a, b) end
-function unityVector2.clampMagnitude(v, maxLength) end
-function unityVector2.distance(a, b) end
-function unityVector2.magnitude(a) end
-function unityVector2.sqrMagnitude(a) end
-function unityVector2.dot(a, b) end
-function unityVector2.lerp(a, b, t) end
-function unityVector2.lerpUnclamped(a, b, t) end
-function unityVector2.max(a, b) end
-function unityVector2.min(a, b) end
-function unityVector2.moveTowards(current, target, maxDistanceDelta) end
-function unityVector2.normalized(a) end
-function unityVector2.reflect(a, b) end
-function unityVector2.scale(a, b) end
-function unityVector2.signedAngle(from, to, axis) end
-function unityVector2.slerp(a, b, t) end
-function unityVector2.slerpUnclamped(a, b, t) end
-function unityVector2.add(a, b) end
-function unityVector2.subtract(a, b) end
-function unityVector2.multiply(a, b) end
-function unityVector2.divide(a, b) end
-function unityVector2.equals(a, b) end
-function unityVector2.notEquals(a, b) end
-unityVector3.back = nil
-unityVector3.down = nil
-unityVector3.forward = nil
-unityVector3.left = nil
-unityVector3.negativeInfinity = nil
-unityVector3.one = nil
-unityVector3.positiveInfinity = nil
-unityVector3.right = nil
-unityVector3.up = nil
-unityVector3.zero = nil
-function unityVector3.angle(a, b) end
-function unityVector3.clampMagnitude(v, maxLength) end
-function unityVector3.cross(a, b) end
-function unityVector3.distance(a, b) end
-function unityVector3.magnitude(a) end
-function unityVector3.sqrMagnitude(a) end
-function unityVector3.dot(a, b) end
-function unityVector3.lerp(a, b, t) end
-function unityVector3.lerpUnclamped(a, b, t) end
-function unityVector3.max(a, b) end
-function unityVector3.min(a, b) end
-function unityVector3.moveTowards(current, target, maxDistanceDelta) end
-function unityVector3.normalize(a) end
-function unityVector3.project(a, b) end
-function unityVector3.projectOnPlane(vector, planeNormal) end
-function unityVector3.reflect(a, b) end
-function unityVector3.rotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
-function unityVector3.scale(a, b) end
-function unityVector3.signedAngle(from, to, axis) end
-function unityVector3.slerp(a, b, t) end
-function unityVector3.slerpUnclamped(a, b, t) end
-function unityVector3.add(a, b) end
-function unityVector3.subtract(a, b) end
-function unityVector3.multiply(a, b) end
-function unityVector3.divide(a, b) end
-function unityVector3.equals(a, b) end
-function unityVector3.notEquals(a, b) end
-unityRandom.insideUnitCircle = nil
-unityRandom.insideUnitSphere = nil
-unityRandom.onUnitSphere = nil
-unityRandom.rotation = nil
-unityRandom.rotationUniform = nil
-unityRandom.value = nil
-unityRandom.ColorHSV = nil
-function unityRandom.InitState(seed) end
-function unityRandom.Range(min, max) end
-function unityRandom.Range(min, max) end
-app.time = nil
-app.frames = nil
-app.currentScale = nil
-app.lastSelectedStroke = nil
-app.lastStroke = nil
-app.environment = nil
-app.clipboardText = nil
-app.clipboardImage = nil
-function app.physics(active) end
-function app.undo() end
-function app.redo() end
-function app.addListener(a) end
-function app.resetPanels() end
-function app.showScriptsFolder() end
-function app.showExportFolder() end
-function app.showSketchesFolder(a) end
-function app.straightEdge(a) end
-function app.autoOrient(a) end
-function app.viewOnly(a) end
-function app.autoSimplify(a) end
-function app.disco(a) end
-function app.profiling(a) end
-function app.postProcessing(a) end
-function app.draftingVisible() end
-function app.draftingTransparent() end
-function app.draftingHidden() end
-function app.watermark(a) end
-function app.readFile(path) end
-function app.setFont(fontData) end
-function app.takeSnapshot(tr, filename, width, height, superSampling) end
-function app.take360Snapshot(tr, filename, width) end
-brush.timeSincePressed = nil
-brush.timeSinceReleased = nil
-brush.triggerIsPressed = nil
-brush.triggerIsPressedThisFrame = nil
-brush.distanceMoved = nil
-brush.distanceDrawn = nil
-brush.position = nil
-brush.rotation = nil
-brush.direction = nil
-brush.size = nil
-brush.pressure = nil
-brush.type = nil
-brush.speed = nil
-brush.colorRgb = nil
-brush.colorHsv = nil
-brush.colorHtml = nil
-brush.lastColorPicked = nil
-brush.lastColorPickedHsv = nil
-function brush.colorJitter() end
-function brush.resizeBuffer(size) end
-function brush.setBufferSize(size) end
-function brush.pastPosition(back) end
-function brush.pastRotation(back) end
-function brush.forcePaintingOn(active) end
-function brush.forcePaintingOff(active) end
-function brush.forceNewStroke() end
-cameraPath.active = nil
-function cameraPath.renderActivePath() end
-function cameraPath.showAll() end
-function cameraPath.hideAll() end
-function cameraPath.previewActivePath(active) end
-function cameraPath.delete(index) end
-function cameraPath.create() end
-function cameraPath.createFromPath(path, looped) end
-function cameraPath.duplicate(index) end
-function cameraPath.insertPosition(index, position, rotation, smoothing) end
-function cameraPath.insertPosition(index, t, rotation, smoothing) end
-function cameraPath.insertRotation(index, pos, rot) end
-function cameraPath.insertRotation(index, t, rot) end
-function cameraPath.insertFov(index, pos, fov) end
-function cameraPath.insertFov(index, t, fov) end
-function cameraPath.insertSpeed(index, pos, speed) end
-function cameraPath.insertSpeed(index, t, speed) end
-function cameraPath.extend(index, position, rotation, smoothing, atStart) end
-function cameraPath.loop(index) end
-function cameraPath.recordActivePath() end
-function cameraPath.sample(index, time, loop, pingpong) end
-function cameraPath.getTransform(index) end
-function cameraPath.setTransform(index, tr) end
-function cameraPath.getPosition(index) end
-function cameraPath.setPosition(index, position) end
-function cameraPath.getRotation(index) end
-function cameraPath.setRotation(index, rotation) end
-function cameraPath.simplify(index, tolerance, smoothing) end
-function draw.path(path) end
-function draw.paths(paths) end
-function draw.polygon(sides, tr) end
-function draw.text(text, tr) end
-function draw.svg(svg, tr) end
-function draw.cameraPath(index) end
-function guides.addCube(tr) end
-function guides.addSphere(tr) end
-function guides.addCapsule(tr) end
-function guides.addCone(tr) end
-function guides.addEllipsoid(tr) end
-function guides.select(index) end
-function guides.moveTo(index, position) end
-function guides.scale(index, scale) end
-function guides.toggle() end
-function headset.resizeBuffer(size) end
-function headset.setBufferSize(size) end
-function headset.pastPosition(count) end
-function headset.pastRotation(count) end
-function images.import(location) end
-function images.select(index) end
-function images.moveTo(index, position) end
-function images.getTransform(index) end
-function images.getPosition(index) end
-function images.getRotation(index) end
-function images.setPosition(index, position) end
-function images.setRotation(index, rotation) end
-layers.getActive = nil
-layers.count = nil
-function layers.getPosition(index) end
-function layers.setPosition(index, position) end
-function layers.getRotation(index) end
-function layers.setRotation(index, rotation) end
-function layers.centerPivot(index) end
-function layers.showPivot(index) end
-function layers.hidePivot(index) end
-function layers.getTransform(index) end
-function layers.setTransform(index, newTransform) end
-function layers.add() end
-function layers.clear(index) end
-function layers.delete(index) end
-function layers.squash(sourceLayer, destinationLayer) end
-function layers.activate(index) end
-function layers.show(index) end
-function layers.hide(index) end
-function layers.toggle(index) end
-function models.select(index) end
-function models.getTransform(index) end
-function models.getPosition(index) end
-function models.getRotation(index) end
-function models.setPosition(index, position) end
-function models.setRotation(index, rotation) end
-function path.fromSvg(svg, scale) end
-function path.fromSvgMultiple(svg) end
-function path.transform(path, transform) end
-function path.translate(path, amount) end
-function path.rotate(path, amount) end
-function path.scale(path, amount) end
-function path.centered(path) end
-function path.startingFrom(path, index) end
-function path.findClosest(path, point) end
-function path.findMinimum(path, axis) end
-function path.findMaximum(path, axis) end
-function path.normalized(path) end
-function path.resample(path, spacing) end
-visualizer.sampleRate = nil
-visualizer.duration = nil
-function visualizer.enableScripting(name) end
-function visualizer.disableScripting() end
-function visualizer.setWaveform(data) end
-function visualizer.setFft(data1, data2, data3, data4) end
-function visualizer.setBeats(x, y, z, w) end
-function visualizer.setBeatAccumulators(x, y, z, w) end
-function visualizer.setBandPeak(peak) end
-function selection.duplicate() end
-function selection.group() end
-function selection.invert() end
-function selection.flip() end
-function selection.recolor() end
-function selection.rebrush() end
-function selection.resize() end
-function selection.trim(count) end
-function selection.selectAll() end
-function sketch.open(name) end
-function sketch.save(overwrite) end
-function sketch.saveAs(name) end
-function sketch.export() end
-function sketch.newSketch() end
-spectator.position = nil
-spectator.rotation = nil
-function spectator.turn(angle) end
-function spectator.turnX(angle) end
-function spectator.turnZ(angle) end
-function spectator.direction(direction) end
-function spectator.lookAt(position) end
-function spectator.mode(mode) end
-function spectator.show(type) end
-function spectator.hide(type) end
-function spectator.toggle() end
-function spectator.on() end
-function spectator.off() end
-strokes.count = nil
-function strokes.delete(index) end
-function strokes.select(index) end
-function strokes.selectMultiple(from, to) end
-function strokes.join(from, to) end
-function strokes.joinPrevious() end
-function strokes.import(name) end
-symmetry.transform = nil
-symmetry.position = nil
-symmetry.rotation = nil
-symmetry.brushOffset = nil
-symmetry.wandOffset = nil
-symmetry.direction = nil
-function symmetry.mirror() end
-function symmetry.doubleMirror() end
-function symmetry.twoHandeded() end
-function symmetry.summonWidget() end
-function symmetry.spin(rot) end
-function symmetry.ellipse(angle, minorRadius) end
-function symmetry.square(angle) end
-function symmetry.superellipse(angle, n, a, b) end
-function symmetry.rsquare(angle, halfSideLength, cornerRadius) end
-function symmetry.polygon(angle, numSides, radius) end
-function symmetry.setColors(colors) end
-function symmetry.getColors() end
-function symmetry.setBrushes(brushes) end
-function symmetry.getBrushNames() end
-function symmetry.getBrushGuids() end
-function symmetry.transformsToPolar(transforms) end
-function symmetry.pointsToPolar(cartesianPoints) end
-function timer.set(fn, interval, delay, repeats) end
-function timer.unset(fn) end
-turtle.transform = nil
-turtle.position = nil
-turtle.rotation = nil
-function turtle.moveTo(position) end
-function turtle.moveBy(amount) end
-function turtle.move(amount) end
-function turtle.draw(amount) end
-function turtle.drawPolygon(sides, radius, angle) end
-function turtle.drawText(text) end
-function turtle.drawSvg(svg) end
-function turtle.turnY(angle) end
-function turtle.turnX(angle) end
-function turtle.turnZ(angle) end
-function turtle.lookAt(amount) end
-function turtle.lookForwards() end
-function turtle.lookUp() end
-function turtle.lookDown() end
-function turtle.lookLeft() end
-function turtle.lookRight() end
-function turtle.lookBackwards() end
-function turtle.homeReset() end
-function turtle.homeSet() end
-function turtle.transformPush() end
-function turtle.transformPop() end
-user.position = nil
-user.rotation = nil
-wand.position = nil
-wand.rotation = nil
-wand.direction = nil
-wand.pressure = nil
-wand.speed = nil
-function wand.resizeBuffer(size) end
-function wand.setBufferSize(size) end
-function wand.pastPosition(back) end
-function wand.pastRotation(back) end
-function waveform.sine(time, frequency) end
-function waveform.cosine(time, frequency) end
-function waveform.triangle(time, frequency) end
-function waveform.sawtooth(time, frequency) end
-function waveform.square(time, frequency) end
-function waveform.pulse(time, frequency, pulseWidth) end
-function waveform.exponent(time, frequency) end
-function waveform.power(time, frequency, power) end
-function waveform.parabolic(time, frequency) end
-function waveform.exponentialSawtooth(time, frequency, exponent) end
-function waveform.perlinNoise(time, frequency) end
-function waveform.whiteNoise() end
-function waveform.brownNoise(previous) end
-function waveform.blueNoise(previous) end
-function waveform.sine(time, frequency, duration, sampleRate, amplitude) end
-function waveform.cosine(time, frequency, duration, sampleRate, amplitude) end
-function waveform.triangle(time, frequency, duration, sampleRate, amplitude) end
-function waveform.sawtooth(time, frequency, duration, sampleRate, amplitude) end
-function waveform.square(time, frequency, duration, sampleRate, amplitude) end
-function waveform.exponent(time, frequency, duration, sampleRate, amplitude) end
-function waveform.parabolic(time, frequency, duration, sampleRate, amplitude) end
-function waveform.pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
-function waveform.power(time, frequency, power, duration, sampleRate, amplitude) end
-function waveform.exponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
-function waveform.perlinNoise(time, frequency, duration, sampleRate, amplitude) end
-function waveform.whiteNoise(duration, sampleRate, amplitude) end
-function waveform.brownNoise(previous, duration, sampleRate, amplitude) end
-function waveform.blueNoise(previous, duration, sampleRate, amplitude) end
+Tool.startPosition = nil
+Tool.endPosition = nil
+Tool.vector = nil
+Tool.rotation = nil
+App.time = nil
+App.frames = nil
+App.currentScale = nil
+App.lastSelectedStroke = nil
+App.lastStroke = nil
+App.environment = nil
+App.clipboardText = nil
+App.clipboardImage = nil
+function App.Physics(active) end
+function App.Undo() end
+function App.Redo() end
+function App.AddListener(a) end
+function App.ResetPanels() end
+function App.ShowScriptsFolder() end
+function App.ShowExportFolder() end
+function App.ShowSketchesFolder(a) end
+function App.StraightEdge(a) end
+function App.AutoOrient(a) end
+function App.ViewOnly(a) end
+function App.AutoSimplify(a) end
+function App.Disco(a) end
+function App.Profiling(a) end
+function App.PostProcessing(a) end
+function App.DraftingVisible() end
+function App.DraftingTransparent() end
+function App.DraftingHidden() end
+function App.Watermark(a) end
+function App.ReadFile(path) end
+function App.SetFont(fontData) end
+function App.TakeSnapshot(tr, filename, width, height, superSampling) end
+function App.Take360Snapshot(tr, filename, width) end
+Brush.timeSincePressed = nil
+Brush.timeSinceReleased = nil
+Brush.triggerIsPressed = nil
+Brush.triggerIsPressedThisFrame = nil
+Brush.distanceMoved = nil
+Brush.distanceDrawn = nil
+Brush.position = nil
+Brush.rotation = nil
+Brush.direction = nil
+Brush.size = nil
+Brush.pressure = nil
+Brush.type = nil
+Brush.speed = nil
+Brush.colorRgb = nil
+Brush.colorHsv = nil
+Brush.colorHtml = nil
+Brush.lastColorPicked = nil
+Brush.LastColorPickedHsv = nil
+function Brush.JitterColor() end
+function Brush.ResizeBuffer(size) end
+function Brush.SetBufferSize(size) end
+function Brush.GetPastPosition(back) end
+function Brush.GetPastRotation(back) end
+function Brush.ForcePaintingOn(active) end
+function Brush.ForcePaintingOff(active) end
+function Brush.ForceNewStroke() end
+CameraPath.count = nil
+CameraPath.active = nil
+function CameraPath.RenderActivePath() end
+function CameraPath.ShowAll() end
+function CameraPath.HideAll() end
+function CameraPath.PreviewActivePath(active) end
+function CameraPath.Delete() end
+function CameraPath.New() end
+function CameraPath.CreateFromPath(path, looped) end
+function CameraPath.Duplicate() end
+function CameraPath.InsertPosition(position, rotation, smoothing) end
+function CameraPath.InsertPosition(t, rotation, smoothing) end
+function CameraPath.InsertRotation(pos, rot) end
+function CameraPath.InsertRotation(t, rot) end
+function CameraPath.InsertFov(pos, fov) end
+function CameraPath.InsertFov(t, fov) end
+function CameraPath.InsertSpeed(pos, speed) end
+function CameraPath.InsertSpeed(t, speed) end
+function CameraPath.Extend(position, rotation, smoothing, atStart) end
+function CameraPath.Loop() end
+function CameraPath.RecordActivePath() end
+function CameraPath.Sample(time, loop, pingpong) end
+function CameraPath.Simplify(tolerance, smoothing) end
+Color.black = nil
+Color.blue = nil
+Color.clear = nil
+Color.cyan = nil
+Color.gray = nil
+Color.green = nil
+Color.grey = nil
+Color.magenta = nil
+Color.red = nil
+Color.white = nil
+Color.yellow = nil
+function Color.New(r, g, b) end
+function Color.New(html) end
+function Color.Greyscale(col) end
+function Color.MaxColorComponent(col) end
+function Color.ToHtmlString(col) end
+function Color.ParseHtmlString(html) end
+function Color.Lerp(a, b, t) end
+function Color.LerpUnclamped(a, b, t) end
+function Color.HsvToRgb(h, s, v) end
+function Color.RgbToHsv(rgb) end
+function Color.Add(b) end
+function Color.Add(r, g, b) end
+function Color.Subtract(b) end
+function Color.Subtract(r, g, b) end
+function Color.Multiply(b) end
+function Color.Multiply(r, g, b) end
+function Color.Divide(b) end
+function Color.NotEquals(b) end
+function Color.NotEquals(r, g, b) end
+function Color.Add(a, b) end
+function Color.Subtract(a, b) end
+function Color.Multiply(a, b) end
+function Color.Divide(a, b) end
+function Color.NotEquals(a, b) end
+function Draw.Path(path) end
+function Draw.Paths(paths) end
+function Draw.Polygon(sides, tr) end
+function Draw.Text(text, tr) end
+function Draw.CameraPath(index) end
+function Easing.linear(t) end
+function Easing.inQuad(t) end
+function Easing.outQuad(t) end
+function Easing.inOutQuad(t) end
+function Easing.inCubic(t) end
+function Easing.outCubic(t) end
+function Easing.inOutCubic(t) end
+function Easing.inQuart(t) end
+function Easing.outQuart(t) end
+function Easing.inOutQuart(t) end
+function Easing.inQuint(t) end
+function Easing.outQuint(t) end
+function Easing.inOutQuint(t) end
+function Easing.inSine(t) end
+function Easing.outSine(t) end
+function Easing.inOutSine(t) end
+function Easing.inExpo(t) end
+function Easing.outExpo(t) end
+function Easing.inOutExpo(t) end
+function Easing.inCirc(t) end
+function Easing.outCirc(t) end
+function Easing.inOutCirc(t) end
+function Easing.inElastic(t) end
+function Easing.outElastic(t) end
+function Easing.inOutElastic(t) end
+function Easing.inBack(t) end
+function Easing.outBack(t) end
+function Easing.inOutBack(t) end
+function Easing.inBounce(t) end
+function Easing.outBounce(t) end
+function Easing.inOutBounce(t) end
+Guides.count = nil
+function Guides.AddCube(tr) end
+function Guides.AddSphere(tr) end
+function Guides.AddCapsule(tr) end
+function Guides.AddCone(tr) end
+function Guides.AddEllipsoid(tr) end
+function Guides.Select() end
+function Guides.Scale(scale) end
+function Guides.Toggle() end
+function Headset.ResizeBuffer(size) end
+function Headset.SetBufferSize(size) end
+function Headset.PastPosition(count) end
+function Headset.PastRotation(count) end
+Images.count = nil
+function Images.Import(location) end
+function Images.Select() end
+function Images.FormEncode() end
+function Images.SaveBase64(base64, filename) end
+Layers.count = nil
+Layers.active = nil
+function Layers.CenterPivot() end
+function Layers.ShowPivot() end
+function Layers.HidePivot() end
+function Layers.Clear() end
+function Layers.Delete() end
+function Layers.Squash() end
+function Layers.SquashTo(destinationLayer) end
+function Layers.Show() end
+function Layers.Hide() end
+function Layers.Toggle() end
+Math.deg2Rad = nil
+Math.epsilon = nil
+Math.positiveInfinity = nil
+Math.negativeInfinity = nil
+Math.pi = nil
+Math.rad2Deg = nil
+function Math.Abs(f) end
+function Math.Acos(f) end
+function Math.Approximately(a, b) end
+function Math.Asin(f) end
+function Math.Atan(f) end
+function Math.Atan2(y, x) end
+function Math.Ceil(f) end
+function Math.Clamp(value, min, max) end
+function Math.Clamp01(value) end
+function Math.ClosestPowerOfTwo(value) end
+function Math.Cos(f) end
+function Math.DeltaAngle(current, target) end
+function Math.Exp(power) end
+function Math.Floor(f) end
+function Math.InverseLerp(a, b, value) end
+function Math.IsPowerOfTwo(value) end
+function Math.Lerp(a, b, t) end
+function Math.LerpAngle(a, b, t) end
+function Math.LerpUnclamped(a, b, t) end
+function Math.Log(f, p) end
+function Math.Log10(f) end
+function Math.Max(a, b) end
+function Math.Max(values) end
+function Math.Min(a, b) end
+function Math.Min(values) end
+function Math.MoveTowards(current, target, maxDelta) end
+function Math.NextPowerOfTwo(value) end
+function Math.PerlinNoise(x, y) end
+function Math.PingPong(t, length) end
+function Math.Pow(f, p) end
+function Math.Repeater(t, length) end
+function Math.Round(f) end
+function Math.Sign(f) end
+function Math.Sin(f) end
+function Math.Sqrt(f) end
+function Math.SmoothStep(from, to, t) end
+function Math.Tan(f) end
+function Math.Sinh(f) end
+function Math.Cosh(f) end
+function Math.Tanh(f) end
+Models.count = nil
+function Models.Select() end
+function MultiplePaths.AsSingleTrList() end
+function MultiplePaths.AsMultiTrList() end
+function MultiplePaths.Insert(path) end
+function MultiplePaths.InsertPoint(transform) end
+function MultiplePaths.Transform(transform) end
+function MultiplePaths.Translate(amount) end
+function MultiplePaths.Rotate(amount) end
+function MultiplePaths.Scale(amount) end
+function MultiplePaths.Center() end
+function MultiplePaths.Normalize(scale) end
+function MultiplePaths.Resample(spacing) end
+function MultiplePaths.Join(paths) end
+function MultiplePaths.Longest(paths) end
+function Path.AsSingleTrList() end
+function Path.AsMultiTrList() end
+function Path.New() end
+function Path.New(transformList) end
+function Path.New(positionList) end
+function Path.Insert(transform) end
+function Path.Transform(transform) end
+function Path.Translate(amount) end
+function Path.Rotate(amount) end
+function Path.Scale(scale) end
+function Path.Center() end
+function Path.StartingFrom(index) end
+function Path.FindClosest(point) end
+function Path.FindMinimumX() end
+function Path.FindMinimumY() end
+function Path.FindMinimumZ() end
+function Path.FindMaximumX() end
+function Path.FindMaximumY() end
+function Path.FindMaximumZ() end
+function Path._FindMinimum(axis) end
+function Path._FindMaximum(axis) end
+function Path.Normalize(scale) end
+function Path._CalculateCenterAndScale(path) end
+function Path.Resample(spacing) end
+function Path2d.AsSingleTrList() end
+function Path2d.AsMultiTrList() end
+function Path2d.New() end
+function Path2d.New(transformList) end
+function Path2d.New(positionList) end
+function Path2d.Insert(transform) end
+function Path2d.ProjectOnX() end
+function Path2d.ProjectOnY() end
+function Path2d.ProjectOnZ() end
+function Path2d.Transform(transform) end
+function Path2d.Translate(amount) end
+function Path2d.Rotate(amount) end
+function Path2d.Scale(scale) end
+function Path2d.Center() end
+function Path2d.StartingFrom(index) end
+function Path2d.FindClosest(point) end
+function Path2d.FindMinimumX() end
+function Path2d.FindMinimumY() end
+function Path2d.FindMinimumZ() end
+function Path2d.FindMaximumX() end
+function Path2d.FindMaximumY() end
+function Path2d.FindMaximumZ() end
+function Path2d._FindMinimum(axis) end
+function Path2d._FindMaximum(axis) end
+function Path2d.Normalize(scale) end
+function Path2d._CalculateCenterAndScale(path) end
+function Path2d.Resample(spacing) end
+Random.insideUnitCircle = nil
+Random.insideUnitSphere = nil
+Random.onUnitSphere = nil
+Random.rotation = nil
+Random.rotationUniform = nil
+Random.value = nil
+Random.colorHSV = nil
+function Random.InitState(seed) end
+function Random.Range(min, max) end
+function Random.Range(min, max) end
+Rotation.zero = nil
+Rotation.left = nil
+Rotation.right = nil
+Rotation.up = nil
+Rotation.down = nil
+Rotation.anticlockwise = nil
+Rotation.clockwise = nil
+Rotation.kEpsilon = nil
+function Rotation.New(x, y, z) end
+function Rotation.SetFromToRotation(fromDirection, toDirection) end
+function Rotation.SetLookRotation(view) end
+function Rotation.SetLookRotation(view, up) end
+function Rotation.ToAngleAxis() end
+function Rotation.Angle(a, b) end
+function Rotation.AngleAxis(angle, axis) end
+function Rotation.Dot(a, b) end
+function Rotation.FromToRotation(from, to) end
+function Rotation.Inverse(a) end
+function Rotation.Lerp(a, b, t) end
+function Rotation.LerpUnclamped(a, b, t) end
+function Rotation.LookRotation(forward) end
+function Rotation.LookRotation(forward, up) end
+function Rotation.Normalize(a) end
+function Rotation.RotateTowards(from, to, maxDegreesDelta) end
+function Rotation.Slerp(a, b, t) end
+function Rotation.SlerpUnclamped(a, b, t) end
+function Rotation.Multiply(b) end
+function Rotation.Multiply(x, y, z) end
+function Rotation.Multiply(a, b) end
+function Selection.Duplicate() end
+function Selection.Group() end
+function Selection.Invert() end
+function Selection.Flip() end
+function Selection.Recolor() end
+function Selection.Rebrush() end
+function Selection.Resize() end
+function Selection.Trim(count) end
+function Selection.SelectAll() end
+function Sketch.Open(name) end
+function Sketch.Save(overwrite) end
+function Sketch.SaveAs(name) end
+function Sketch.Export() end
+function Sketch.NewSketch() end
+Spectator.position = nil
+Spectator.rotation = nil
+function Spectator.Turn(angle) end
+function Spectator.TurnX(angle) end
+function Spectator.TurnZ(angle) end
+function Spectator.Direction(direction) end
+function Spectator.LookAt(position) end
+function Spectator.Mode(mode) end
+function Spectator.Show(type) end
+function Spectator.Hide(type) end
+function Spectator.Toggle() end
+function Spectator.On() end
+function Spectator.Off() end
+Strokes.count = nil
+function Strokes.ChangeMaterial(brushName) end
+function Strokes.Delete(index) end
+function Strokes.Select(index) end
+function Strokes.SelectMultiple(from, to) end
+function Strokes.Join(from, to) end
+function Strokes.JoinPrevious() end
+function Strokes.Import(name) end
+function Svg.ParsePathString(svgPath) end
+function Svg.ParseDocument(svg) end
+function Svg.DrawPathString(svg, tr) end
+function Svg.DrawDocument(svg, tr) end
+Symmetry.transform = nil
+Symmetry.position = nil
+Symmetry.rotation = nil
+Symmetry.brushOffset = nil
+Symmetry.wandOffset = nil
+Symmetry.direction = nil
+function Symmetry.Mirror() end
+function Symmetry.DoubleMirror() end
+function Symmetry.TwoHandeded() end
+function Symmetry.SummonWidget() end
+function Symmetry.Spin(xSpeed, ySpeed, zSpeed) end
+function Symmetry.Ellipse(angle, minorRadius) end
+function Symmetry.Square(angle) end
+function Symmetry.Superellipse(angle, n, a, b) end
+function Symmetry.Rsquare(angle, halfSideLength, cornerRadius) end
+function Symmetry.Polygon(angle, numSides, radius) end
+function Symmetry.ClearColors(colors) end
+function Symmetry.AddColor(color) end
+function Symmetry.SetColors(colors) end
+function Symmetry.GetColors() end
+function Symmetry.AddBrush(brush) end
+function Symmetry.ClearBrushes(brushes) end
+function Symmetry.SetBrushes(brushes) end
+function Symmetry.GetBrushNames() end
+function Symmetry.GetBrushGuids() end
+function Symmetry.PathToPolar(path) end
+function Symmetry.Path2dToPolar(cartesianPoints) end
+function Timer.Set(fn, interval, delay, repeats) end
+function Timer.Unset(fn) end
+Transform.zero = nil
+function Transform.New(translation, rotation, scale) end
+function Transform.New(translation, scale) end
+function Transform.New(scale) end
+function Transform.Multiply(b) end
+function Transform.Multiply(a, b) end
+Turtle.transform = nil
+Turtle.position = nil
+Turtle.rotation = nil
+function Turtle.MoveTo(position) end
+function Turtle.MoveBy(amount) end
+function Turtle.Move(amount) end
+function Turtle.Draw(amount) end
+function Turtle.DrawPolygon(sides, radius, angle) end
+function Turtle.DrawText(text) end
+function Turtle.DrawSvg(svg) end
+function Turtle.TurnY(angle) end
+function Turtle.TurnX(angle) end
+function Turtle.TurnZ(angle) end
+function Turtle.LookAt(amount) end
+function Turtle.LookForwards() end
+function Turtle.LookUp() end
+function Turtle.LookDown() end
+function Turtle.LookLeft() end
+function Turtle.LookRight() end
+function Turtle.LookBackwards() end
+function Turtle.HomeReset() end
+function Turtle.HomeSet() end
+function Turtle.TransformPush() end
+function Turtle.TransformPop() end
+User.position = nil
+User.rotation = nil
+Vector2.down = nil
+Vector2.left = nil
+Vector2.negativeInfinity = nil
+Vector2.one = nil
+Vector2.positiveInfinity = nil
+Vector2.right = nil
+Vector2.up = nil
+Vector2.zero = nil
+function Vector2.New(x, y) end
+function Vector2.Angle(a, b) end
+function Vector2.ClampMagnitude(v, maxLength) end
+function Vector2.Distance(a, b) end
+function Vector2.Magnitude(a) end
+function Vector2.SqrMagnitude(a) end
+function Vector2.Dot(a, b) end
+function Vector2.Lerp(a, b, t) end
+function Vector2.LerpUnclamped(a, b, t) end
+function Vector2.Max(a, b) end
+function Vector2.Min(a, b) end
+function Vector2.MoveTowards(current, target, maxDistanceDelta) end
+function Vector2.Normalized(a) end
+function Vector2.Reflect(a, b) end
+function Vector2.Scale(a, b) end
+function Vector2.SignedAngle(from, to, axis) end
+function Vector2.Slerp(a, b, t) end
+function Vector2.SlerpUnclamped(a, b, t) end
+function Vector2.PointOnCircle(degrees) end
+function Vector2.ProjectOnX() end
+function Vector2.ProjectOnY() end
+function Vector2.ProjectOnZ() end
+function Vector2.Add(b) end
+function Vector2.Add(x, y) end
+function Vector2.Subtract(b) end
+function Vector2.Subtract(x, y) end
+function Vector2.Multiply(b) end
+function Vector2.Multiply(x, y) end
+function Vector2.Divide(b) end
+function Vector2.Divide(x, y) end
+function Vector2.NotEquals(b) end
+function Vector2.NotEquals(x, y) end
+function Vector2.Add(a, b) end
+function Vector2.Subtract(a, b) end
+function Vector2.Multiply(a, b) end
+function Vector2.Divide(a, b) end
+function Vector2.NotEquals(a, b) end
+Vector3.back = nil
+Vector3.down = nil
+Vector3.forward = nil
+Vector3.left = nil
+Vector3.negativeInfinity = nil
+Vector3.one = nil
+Vector3.positiveInfinity = nil
+Vector3.right = nil
+Vector3.up = nil
+Vector3.zero = nil
+function Vector3.New(x, y, z) end
+function Vector3.Angle(a, b) end
+function Vector3.ClampMagnitude(v, maxLength) end
+function Vector3.Cross(a, b) end
+function Vector3.Distance(a, b) end
+function Vector3.Magnitude(a) end
+function Vector3.SqrMagnitude(a) end
+function Vector3.Dot(a, b) end
+function Vector3.Lerp(a, b, t) end
+function Vector3.LerpUnclamped(a, b, t) end
+function Vector3.Max(a, b) end
+function Vector3.Min(a, b) end
+function Vector3.MoveTowards(current, target, maxDistanceDelta) end
+function Vector3.Normalize(a) end
+function Vector3.Project(a, b) end
+function Vector3.ProjectOnPlane(vector, planeNormal) end
+function Vector3.Reflect(a, b) end
+function Vector3.RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
+function Vector3.Scale(a, b) end
+function Vector3.SignedAngle(from, to, axis) end
+function Vector3.Slerp(a, b, t) end
+function Vector3.SlerpUnclamped(a, b, t) end
+function Vector3.Add(b) end
+function Vector3.Add(x, y, z) end
+function Vector3.Subtract(b) end
+function Vector3.Subtract(x, y, z) end
+function Vector3.Multiply(b) end
+function Vector3.Scale(b) end
+function Vector3.Scale(x, y, z) end
+function Vector3.Divide(b) end
+function Vector3.NotEquals(b) end
+function Vector3.NotEquals(x, y, z) end
+function Vector3.Add(a, b) end
+function Vector3.Subtract(a, b) end
+function Vector3.Multiply(a, b) end
+function Vector3.Divide(a, b) end
+function Vector3.NotEquals(a, b) end
+Visualizer.sampleRate = nil
+Visualizer.duration = nil
+function Visualizer.EnableScripting(name) end
+function Visualizer.DisableScripting() end
+function Visualizer.SetWaveform(data) end
+function Visualizer.SetFft(data1, data2, data3, data4) end
+function Visualizer.SetBeats(x, y, z, w) end
+function Visualizer.SetBeatAccumulators(x, y, z, w) end
+function Visualizer.SetBandPeak(peak) end
+Wand.position = nil
+Wand.rotation = nil
+Wand.direction = nil
+Wand.pressure = nil
+Wand.speed = nil
+function Wand.ResizeBuffer(size) end
+function Wand.SetBufferSize(size) end
+function Wand.PastPosition(back) end
+function Wand.PastRotation(back) end
+function Waveform.Sine(time, frequency) end
+function Waveform.Cosine(time, frequency) end
+function Waveform.Triangle(time, frequency) end
+function Waveform.Sawtooth(time, frequency) end
+function Waveform.Square(time, frequency) end
+function Waveform.Pulse(time, frequency, pulseWidth) end
+function Waveform.Exponent(time, frequency) end
+function Waveform.Power(time, frequency, power) end
+function Waveform.Parabolic(time, frequency) end
+function Waveform.ExponentialSawtooth(time, frequency, exponent) end
+function Waveform.PerlinNoise(time, frequency) end
+function Waveform.WhiteNoise() end
+function Waveform.BrownNoise(previous) end
+function Waveform.BlueNoise(previous) end
+function Waveform.Sine(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Cosine(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Triangle(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Sawtooth(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Square(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Exponent(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Parabolic(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
+function Waveform.Power(time, frequency, power, duration, sampleRate, amplitude) end
+function Waveform.ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
+function Waveform.PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
+function Waveform.WhiteNoise(duration, sampleRate, amplitude) end
+function Waveform.BrownNoise(previous, duration, sampleRate, amplitude) end
+function Waveform.BlueNoise(previous, duration, sampleRate, amplitude) end
+function WebRequest.Get(url, onSuccess, onError, headers, context) end
+function WebRequest.Post(url, postData, onSuccess, onError, headers, context) end

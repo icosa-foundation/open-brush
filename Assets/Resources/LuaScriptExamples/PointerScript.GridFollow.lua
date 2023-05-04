@@ -1,66 +1,67 @@
-﻿Settings = {
+Settings = {
     description="Follows the brush but only following horizontal or vertical lines",
     space="canvas"
 }
 
 Parameters = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},
+    framesBetweenChanges={label="Number of frames between direction changes", type="int", min=0, max=20, default=5},
 }
 
 function OnTriggerPressed()
     --Store the brush transform at the moment we start drawing a line
-    drawingPosition = brush.position
-    currentRotation = brush.rotation
-    return { drawingPosition, currentRotation}
+    currentPosition = Brush.position
+    currentRotation = Brush.rotation
+    vector = Vector3.zero
+    framesSinceChange = 0
+    return Transform:New(currentPosition, currentRotation)
 end
 
 function WhileTriggerPressed()
 
-    -- A vector from the actual brush position to the calculated one used for drawing
-    vector = {
-        x = brush.position.x - drawingPosition.x,
-        y = brush.position.y - drawingPosition.y,
-        z = brush.position.z - drawingPosition.z,
-    }
+    framesSinceChange = framesSinceChange + 1
 
-    -- Store whether the vector is positive or negative in each axis
-    signs = {
-        x = unityMathf.sign(vector.x),
-        y = unityMathf.sign(vector.y),
-        z = unityMathf.sign(vector.z),
-    }
+    if framesSinceChange > framesBetweenChanges then
 
-    -- Make them all positive
-    vector = {
-        x = unityMathf.abs(vector.x),
-        y = unityMathf.abs(vector.y),
-        z = unityMathf.abs(vector.z),
-    }
+        -- A vector from the actual Brush.Position to the calculated one used for drawing
+        vector = Brush.position.Subtract(currentPosition)
 
-    -- Zero out all directions except the biggest
-    -- Set the biggest direction equal to "speed"
-    if vector.x > vector.y and vector.x > vector.z then
-        vector = {x = speed / 3, y = 0, z = 0}
-    elseif vector.y > vector.x and vector.y > vector.z then
-        vector = {x = 0, y = speed / 3, z = 0}
-    elseif vector.z > vector.x and vector.z > vector.y then
-        vector = {x = 0, y = 0, z = speed / 3}
+        -- Store whether the vector is positive or negative in each axis
+        signs = Vector3:New(
+            Math.Sign(vector.x),
+            Math.Sign(vector.y),
+            Math.Sign(vector.z)
+        )
+
+        -- Make them all positive
+        vector = Vector3:New(
+            Math.Abs(vector.x),
+            Math.Abs(vector.y),
+            Math.Abs(vector.z)
+        )
+
+        -- Zero out all directions except the biggest
+        -- Set the biggest direction equal to "speed"
+        if vector.x > vector.y and vector.x > vector.z then
+            vector = Vector3:New(speed/3, 0, 0)
+            rotation = Rotation:New(0, currentRotation.y, currentRotation.z)
+        elseif vector.y > vector.x and vector.y > vector.z then
+            vector = Vector3:New(0, speed/3, 0)
+            rotation = Rotation:New(currentRotation.x, 0, currentRotation.z)
+        elseif vector.z > vector.x and vector.z > vector.y then
+            vector = Vector3:New(0, 0, speed/3)
+            rotation = Rotation:New(currentRotation.x, currentRotation.y, 0)
+        end
+
+        -- Restore the positive/negative for each direction
+        vector = currentPosition:Scale(signs)
+        framesSinceChange = 0
+
     end
 
-    -- Restore the positive/negative for each direction
-    vector = {
-        x = vector.x * signs.x,
-        y = vector.y * signs.y,
-        z = vector.z * signs.z,
-    }
-
     -- Move the position used for drawing by the result of the above calculations
-    drawingPosition = {
-        x = drawingPosition.x + vector.x,
-        y = drawingPosition.y + vector.y,
-        z = drawingPosition.z + vector.z,
-    }
+    currentPosition = currentPosition:Add(vector)
 
-    return {drawingPosition, currentRotation}
+    return Transform:New(currentPosition, currentRotation)
 
 end

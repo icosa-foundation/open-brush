@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Random hull brush cubes as you draw",
     space="canvas"
 }
@@ -11,37 +11,37 @@ Parameters = {
 
 function WhileTriggerPressed()
 
-    brush.colorRgb ={math.random(), math.random(), math.random()}
-    brush.type = "ShinyHull"
-    brush.size = 0.1
-    origin = brush.position
+    Brush.colorRgb = Color:New(Random.value, Random.value, Random.value)
+    Brush.type = "ShinyHull"
+    Brush.size = 0.1
+    origin = Brush.position
 
-    if (math.random() < amount) then
-        return drawCube({
-        x = origin.x + (math.random() * spread * 2) - spread,
-        y = origin.y + (math.random() * spread * 2) - spread,
-        z = origin.z + (math.random() * spread * 2) - spread
-    }, math.random() * maxSize)
+    if (Random.value < amount) then
+        randomOffset = Random.InsideUnitSphere():Scale(spread)
+        return drawCube(
+            origin:Add(randomOffset),
+            Random.value * maxSize
+        )
     end
 end
 
 function drawCube(center, size)
 
-    points = {}
+    points = Path:New()
 
     -- front face
-    table.insert(points, {{-size + center.x, size + center.y, size + center.z}}) -- top left
-    table.insert(points, {{size + center.x, size + center.y, size + center.z}}) -- top right
-    table.insert(points, {{size + center.x, -size + center.y, size + center.z}}) -- bottom right
-    table.insert(points, {{-size + center.x, -size + center.y, size + center.z}}) -- bottom left
-    table.insert(points, {{-size + center.x, size + center.y, size + center.z}}) -- top left
+    points:Insert(center:Add(-size, size, size)) -- top left
+    points:Insert(center:Add(size, size, size)) -- top right
+    points:Insert(center:Add(size, -size, size)) -- bottom right
+    points:Insert(center:Add(-size, -size, size)) -- bottom left
+    points:Insert(center:Add(-size, size, size)) -- top left
 
     -- back face
-    table.insert(points, {{size + center.x, size + center.y, -size + center.z}}) -- top back
-    table.insert(points, {{-size + center.x, size + center.y, -size + center.z}}) -- top left
-    table.insert(points, {{-size + center.x, -size + center.y, -size + center.z}}) -- bottom left
-    table.insert(points, {{size + center.x, -size + center.y, -size + center.z}}) -- bottom back
-    table.insert(points, {{size + center.x, size + center.y, -size + center.z}}) -- top back
+    points:Insert(center:Add(size, size, -size)) -- top back
+    points:Insert(center:Add(-size, size, -size)) -- top left
+    points:Insert(center:Add(-size, -size, -size)) -- bottom left
+    points:Insert(center:Add(size, -size, -size)) -- bottom back
+    points:Insert(center:Add(size, size, -size)) -- top back
 
     return points
 end

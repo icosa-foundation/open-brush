@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws a spherical spiral",
     previewType="sphere"
 }
@@ -9,17 +9,20 @@ Parameters = {
 }
 
 function OnTriggerReleased()
+
     radius = 1.0
-    points = {}
+    points = Path:New()
+
     for i = 0, steps do
-        x = 2.0 * i / steps - 1
-        radius=math.sqrt(1 - x * x)
-        angle = (math.pi * 2 * turns * i) / steps
-        y = radius * math.cos(angle)
-        z = radius * math.sin(angle)
-        position = { z, y, x}
-        rotation = { 0, 0, 0}
-        table.insert(points, { position, rotation })
+
+        radius = Math:Sqrt(1 - x * x)
+        angle = (Math.pi * 2 * turns * i) / steps
+
+        x = radius * Math:Sin(angle)
+        y = radius * Math:Cos(angle)
+        z = 2.0 * i / steps - 1
+
+        points:Insert(Transform:New(x, y, z))
     end
     return points
 end

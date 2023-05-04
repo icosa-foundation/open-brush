@@ -113,29 +113,6 @@ namespace TiltBrush
             }
         }
 
-        public struct ScriptTrTransforms
-        {
-            public List<List<TrTransform>> Transforms;
-            public ScriptCoordSpace Space;
-
-            // Return nested paths flattened into a single list of transforms
-            public List<TrTransform> FlattenedTransforms => Transforms.SelectMany(x => x).ToList();
-
-            public ScriptTrTransforms(List<TrTransform> transforms, ScriptCoordSpace space)
-            {
-                // Ensure single paths are wrapped in a list
-                Transforms = new List<List<TrTransform>> { transforms };
-                Space = space;
-            }
-
-            public ScriptTrTransforms(List<List<TrTransform>> transforms, ScriptCoordSpace space)
-            {
-                Transforms = transforms;
-                Space = space;
-            }
-
-        }
-
         void Awake()
         {
             m_Instance = this;
@@ -180,7 +157,7 @@ namespace TiltBrush
             foreach (var library in libraries)
             {
                 var newFilename = Path.Join(modulesPath, $"{library.name}.lua");
-                if (!File.Exists(newFilename))
+                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
                 {
                     FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
                 }
@@ -295,18 +272,22 @@ namespace TiltBrush
                 var req = node.Value;
                 if (!req.script.Globals.Get("_scriptHasEnded").Boolean)
                 {
-                    if (!req.request.isDone) continue;  // The only case where we don't remove the item from the queue
+                    if (!req.request.isDone)
+                    {
+                        node = nextNode;
+                        continue; // The only case where we don't remove the item from the queue
+                    }
                     switch (req.request.result)
                     {
                         case UnityWebRequest.Result.ConnectionError:
                         case UnityWebRequest.Result.DataProcessingError:
                         case UnityWebRequest.Result.ProtocolError:
                             try { req.onError?.Call(req.request.error, req.context); }
-                            catch (InterpreterException e) { LogLuaError(req.script, req.onError.ToString(), e); }
+                            catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onError.ToString(), e); }
                             break;
                         case UnityWebRequest.Result.Success:
                             try { req.onSuccess?.Call(req.request.downloadHandler.text, req.context); }
-                            catch (InterpreterException e) { LogLuaError(req.script, req.onSuccess.ToString(), e); }
+                            catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onSuccess.ToString(), e); }
                             break;
                     }
                 }
@@ -346,18 +327,27 @@ namespace TiltBrush
             return null;
         }
 
-        public void LogLuaError(Script script, string fnName, InterpreterException e)
+        public void LogLuaInterpreterError(Script script, string fnName, InterpreterException e)
         {
-            string msg = e.DecoratedMessage;
-            // chunk_1:(12,4-38): cannot access field count of userdata<TiltBrush.LayerApiWrapper>
+            string msg = e.DecoratedMessage ?? e.Message;
+            _LogLuaError(script, fnName, e, msg);
+        }
+
+        public void LogLuaCastError(Script script, string fnName, InvalidCastException e)
+        {
+            _LogLuaError(script, fnName, e, e.Message);
+        }
+
+        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        {
             // Make the message more user friendly
             msg = msg.Replace("chunk_1:", "on line: ");
             // Replace the (line, char range) with just the line number itself
             msg = Regex.Replace(msg, @"(.+)\((\d+),.+\)(.+)", @"$1$2$3");
-            if (string.IsNullOrEmpty(msg)) msg = e.Message;
             string errorMsg = $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
+
         }
 
         public void LogLuaMessage(string s)
@@ -387,7 +377,7 @@ namespace TiltBrush
             }
             catch (SyntaxErrorException e)
             {
-                LogLuaError(script, $"(Loading: {scriptFilename})", e);
+                LogLuaInterpreterError(script, $"(Loading: {scriptFilename})", e);
                 return null;
             }
             var catMatch = TryGetCategoryFromScriptName(scriptFilename);
@@ -452,13 +442,6 @@ namespace TiltBrush
             tbl.Table[parts[1]] = action;
         }
 
-        public void RegisterLuaModule(Script script, string libName)
-        {
-            var libAsset = Resources.Load($"LuaInjectedModules/{libName}", typeof(TextAsset));
-            var lib = script.DoString(((TextAsset)libAsset).text);
-            script.Globals[libName] = lib.Table;
-        }
-
         public void RegisterApiClass(Script script, string fnName, Type t, string prefix = null)
         {
             var target = script.Globals;
@@ -515,7 +498,11 @@ namespace TiltBrush
                 }
                 catch (InterpreterException e)
                 {
-                    LogLuaError(script, fnName, e);
+                    LogLuaInterpreterError(script, fnName, e);
+                }
+                catch (InvalidCastException e)
+                {
+                    LogLuaCastError(script, fnName, e);
                 }
             }
             return result;
@@ -558,69 +545,22 @@ namespace TiltBrush
             return new ScriptTrTransform(tr, space);
         }
 
-        public ScriptTrTransforms CallActiveToolScript(string fnName)
+        public IPathApiWrapper CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.ToolScript);
-            var space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
-            var paths = _MultiTrTransformsFromScript(fnName, script);
-            return new ScriptTrTransforms(paths, space);
+            DynValue result = _CallScript(script, fnName);
+            IPathApiWrapper pathWrapper = result.ToObject<MultiPathApiWrapper>();
+            pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+            return pathWrapper;
         }
 
-        public ScriptTrTransforms CallActiveSymmetryScript(string fnName)
+        public IPathApiWrapper CallActiveSymmetryScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.SymmetryScript);
-            var space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
-            var trs = _TrTransformsFromScript(fnName, script);
-            return new ScriptTrTransforms(trs, space);
-        }
-
-        private List<TrTransform> _TrTransformsFromScript(string fnName, Script script)
-        {
             DynValue result = _CallScript(script, fnName);
-            var paths = new List<TrTransform>();
-            try
-            {
-                if (!Equals(result, DynValue.Nil))
-                {
-                    paths = result.ToObject<List<TrTransform>>();
-                }
-            }
-            catch (InterpreterException e)
-            {
-                LogLuaError(script, fnName, e);
-            }
-            return paths;
-        }
-
-        private List<List<TrTransform>> _MultiTrTransformsFromScript(string fnName, Script script)
-        {
-            DynValue result = _CallScript(script, fnName);
-            var paths = new List<List<TrTransform>>();
-            try
-            {
-                if (!Equals(result, DynValue.Nil))
-                {
-                    // Assume if the result is nested 3 levels deep then we have multiple paths
-                    if (result?.Table?.Get(1)?.Table?.Get(1)?.Table?.Get(1)?.Type == DataType.Table)
-                    {
-                        foreach (var item in result.Table.Values)
-                        {
-                            paths.Add(item.ToObject<List<TrTransform>>());
-                        }
-                    }
-                    else
-                    {
-                        // If we have just a single path then wrap it
-                        paths = new List<List<TrTransform>>();
-                        paths.Add(result.ToObject<List<TrTransform>>());
-                    }
-                }
-            }
-            catch (InterpreterException e)
-            {
-                LogLuaError(script, fnName, e);
-            }
-            return paths;
+            var pathWrapper = result.ToObject<PathApiWrapper>();
+            pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+            return pathWrapper;
         }
 
         public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)
@@ -736,43 +676,39 @@ namespace TiltBrush
 
         public void RegisterApiClasses(Script script)
         {
-            // Internal only classes
-            UserData.RegisterType<Vector3>();
-            script.Globals["__Vector3"] = typeof(Vector3);
-            script.Globals["__Vector3ApiWrapper"] = typeof(Vector3ApiWrapper);
-            RegisterLuaModule(script, "vector3");
-
-            RegisterApiClass(script, "unityColor", typeof(ColorApiWrapper));
-            RegisterApiClass(script, "unityMathf", typeof(MathfApiWrapper));
-            RegisterApiClass(script, "unityQuaternion", typeof(QuaternionApiWrapper));
-            RegisterApiClass(script, "unityVector2", typeof(Vector2ApiWrapper));
-            RegisterApiClass(script, "unityVector3", typeof(Vector3ApiWrapper));
-            RegisterApiClass(script, "unityRandom", typeof(RandomApiWrapper));
-
-            RegisterApiClass(script, "app", typeof(AppApiWrapper));
-            RegisterApiClass(script, "brush", typeof(BrushApiWrapper));
-            RegisterApiClass(script, "cameraPath", typeof(CameraPathApiWrapper));
-            RegisterApiClass(script, "draw", typeof(DrawApiWrapper));
-            RegisterApiClass(script, "easing", typeof(EasingApiWrapper));
-            RegisterApiClass(script, "guides", typeof(GuidesApiWrapper));
-            RegisterApiClass(script, "headset", typeof(HeadsetApiWrapper));
-            RegisterApiClass(script, "images", typeof(ImageApiWrapper));
-            RegisterApiClass(script, "layers", typeof(LayerApiWrapper));
-            RegisterApiClass(script, "models", typeof(ModelApiWrapper));
-            RegisterApiClass(script, "path", typeof(PathApiWrapper));
-            RegisterApiClass(script, "visualizer", typeof(VisualizerApiWrapper));
-            RegisterApiClass(script, "selection", typeof(SelectionApiWrapper));
-            RegisterApiClass(script, "sketch", typeof(SketchApiWrapper));
-            RegisterApiClass(script, "spectator", typeof(SpectatorApiWrapper));
-            RegisterApiClass(script, "strokes", typeof(StrokesApiWrapper));
-            RegisterApiClass(script, "symmetry", typeof(SymmetryApiWrapper));
-            RegisterApiClass(script, "timer", typeof(TimerApiWrapper));
-            RegisterApiClass(script, "turtle", typeof(TurtleApiWrapper));
-            RegisterApiClass(script, "user", typeof(UserApiWrapper));
-            RegisterApiClass(script, "wand", typeof(WandApiWrapper));
-            RegisterApiClass(script, "waveform", typeof(WaveformApiWrapper));
-            RegisterApiClass(script, "webRequest", typeof(WebRequestApiWrapper));
-
+            RegisterApiClass(script, "App", typeof(AppApiWrapper));
+            RegisterApiClass(script, "Brush", typeof(BrushApiWrapper));
+            RegisterApiClass(script, "CameraPath", typeof(CameraPathsApiWrapper));
+            RegisterApiClass(script, "Color", typeof(ColorApiWrapper));
+            RegisterApiClass(script, "Draw", typeof(DrawApiWrapper));
+            RegisterApiClass(script, "Easing", typeof(EasingApiWrapper));
+            RegisterApiClass(script, "Guides", typeof(GuidesApiWrapper));
+            RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
+            RegisterApiClass(script, "Images", typeof(ImageApiWrapper));
+            RegisterApiClass(script, "Layers", typeof(LayersApiWrapper));
+            RegisterApiClass(script, "Math", typeof(MathApiWrapper));
+            RegisterApiClass(script, "Models", typeof(ModelApiWrapper));
+            RegisterApiClass(script, "MultiplePaths", typeof(MultiPathApiWrapper));
+            RegisterApiClass(script, "Path", typeof(PathApiWrapper));
+            RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
+            RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
+            RegisterApiClass(script, "Rotation", typeof(RotationApiWrapper));
+            RegisterApiClass(script, "Selection", typeof(SelectionApiWrapper));
+            RegisterApiClass(script, "Sketch", typeof(SketchApiWrapper));
+            RegisterApiClass(script, "Spectator", typeof(SpectatorApiWrapper));
+            RegisterApiClass(script, "Strokes", typeof(StrokeApiWrapper));
+            RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
+            RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
+            RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
+            RegisterApiClass(script, "Transform", typeof(TransformApiWrapper));
+            RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));
+            RegisterApiClass(script, "User", typeof(UserApiWrapper));
+            RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
+            RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
+            RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
+            RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
+            RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
+            RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();

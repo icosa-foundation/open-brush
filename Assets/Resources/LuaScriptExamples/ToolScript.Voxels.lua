@@ -1,6 +1,6 @@
-﻿Settings = {
+Settings = {
     description="Draws regular blocks in space as you draw (best with the hull brush)",
-    space="canvas",
+    space="canvas"
 }
 
 Parameters = {
@@ -13,57 +13,53 @@ end
 
 function WhileTriggerPressed()
 
-    cell = {
-        x=Quantize(brush.position.x, gridSize),
-        y=Quantize(brush.position.y, gridSize),
-        z=Quantize(brush.position.z, gridSize),
-    }
+    cell = Vector3:New(
+        quantize(Brush.position.x, gridSize),
+        quantize(Brush.position.y, gridSize),
+        quantize(Brush.position.z, gridSize)
+    )
     key = cell.x .. "," .. cell.y .. "," .. cell.z
 
     if (filledCells[key]==nil) then
         filledCells[key] = true
-        return Cube(cell, gridSize)
+        return cube(cell, gridSize)
     else
-        return {}
+        return Path:New()
     end
 end
 
-function Quantize(val, grid)
-    return unityMathf.round(val / grid) * grid
+function quantize(val, grid)
+    return Math:Round(val / grid) * grid
 end
 
-function Cube(cell, gridSize)
+function cube(center, gridSize)
 
-    distance = gridSize / 2
-    x = cell.x
-    y = cell.y
-    z = cell.z
+    points = Path:New()
+    d = gridSize / 2
 
-    points = {}
+    points:Insert(Transform:New(center:Add(-d, d, d), Rotation.zero))
+    points:Insert(Transform:New(center:Add(d, d, d), Rotation.zero))
+    points:Insert(Transform:New(center:Add(d, -d, d), Rotation.zero))
+    points:Insert(Transform:New(center:Add(-d, -d, d), Rotation.zero))
+    points:Insert(Transform:New(center:Add(-d, d, d), Rotation.zero))
 
-    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 0}})
-    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 0}})
-    table.insert(points, { { distance + x, -distance + y, distance + z}, { 0, 0, 0}})
-    table.insert(points, { { -distance + x, -distance + y, distance + z}, { 0, 0, 0}})
-    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 0}})
+    points:Insert(Transform:New(center:Add(d, d, d), Rotation.clockwise))
+    points:Insert(Transform:New(center:Add(d, d, -d), Rotation.clockwise))
+    points:Insert(Transform:New(center:Add(d, -d, -d), Rotation.clockwise))
+    points:Insert(Transform:New(center:Add(d, -d, d), Rotation.clockwise))
+    points:Insert(Transform:New(center:Add(d, d, d), Rotation.clockwise))
 
-    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 90}})
-    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 90}})
-    table.insert(points, { { distance + x, -distance + y, -distance + z}, { 0, 0, 90}})
-    table.insert(points, { { distance + x, -distance + y, distance + z}, { 0, 0, 90}})
-    table.insert(points, { { distance + x, distance + y, distance + z}, { 0, 0, 90}})
+    points:Insert(Transform:New(center:Add(d, d, -d), Rotation:New(0, 0, 180)))
+    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation:New(0, 0, 180)))
+    points:Insert(Transform:New(center:Add(-d, -d, -d), Rotation:New(0, 0, 180)))
+    points:Insert(Transform:New(center:Add(d, -d, -d), Rotation:New(0, 0, 180)))
+    points:Insert(Transform:New(center:Add(d, d, -d), Rotation:New(0, 0, 180)))
 
-    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 280}})
-    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 280}})
-    table.insert(points, { { -distance + x, -distance + y, -distance + z}, { 0, 0, 280}})
-    table.insert(points, { { distance + x, -distance + y, -distance + z}, { 0, 0, 280}})
-    table.insert(points, { { distance + x, distance + y, -distance + z}, { 0, 0, 280}})
-
-    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 270}})
-    table.insert(points, { { -distance + x, distance + y, distance + z}, { 0, 0, 270}})
-    table.insert(points, { { -distance + x, -distance + y, distance + z}, { 0, 0, 270}})
-    table.insert(points, { { -distance + x, -distance + y, -distance + z}, { 0, 0, 270}})
-    table.insert(points, { { -distance + x, distance + y, -distance + z}, { 0, 0, 270}})
+    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation.anticlockwise))
+    points:Insert(Transform:New(center:Add(-d, d, d), Rotation.anticlockwise))
+    points:Insert(Transform:New(center:Add(-d, -d, d), Rotation.anticlockwise))
+    points:Insert(Transform:New(center:Add(-d, -d, -d), Rotation.anticlockwise))
+    points:Insert(Transform:New(center:Add(-d, d, -d), Rotation.anticlockwise))
 
     return points
 end

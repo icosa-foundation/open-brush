@@ -8,5 +8,5 @@ Parameters = {
 
 function WhileTriggerPressed()
     --We only want to change the pointer orientation
-    return {rotation={0, 0, app.time * speed}};
+    return Transform:New(Rotation:New(0, 0, App.time * speed))
 end

@@ -8,6 +8,6 @@ Parameters = {
 }
 
 function WhileTriggerPressed()
-    position = {0, waveform.sine(brush.distanceMoved, frequency) * amplitude * 0.2, 0}
-    return {position}
+    y = Waveform:Sine(Brush.distanceMoved, frequency) * amplitude * 0.2
+    return Transform:New(0, y, 0)
 end

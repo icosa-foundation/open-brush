@@ -8,62 +8,29 @@ namespace TiltBrush
 {
     public static class LuaApiMethods
     {
-        public static void DrawPath(List<TrTransform> path)
+        public static void DrawPath(IPathApiWrapper path)
         {
-            DrawStrokes.DrawSingleTrList(path, TrTransform.identity);
+            DrawStrokes.DrawSingleTrList(path.AsSingleTrList(), TrTransform.identity);
         }
 
-        public static void DrawPaths(List<List<TrTransform>> paths)
+        public static void DrawPaths(IPathApiWrapper paths)
         {
-            DrawStrokes.DrawNestedTrList(paths, TrTransform.identity);
+            DrawStrokes.DrawNestedTrList(paths.AsMultiTrList(), TrTransform.identity);
         }
 
-        public static List<TrTransform> PathFromSvgPath(string svgPathString)
+        public static void TransformPath(MultiPathApiWrapper path, TrTransform tr)
         {
-            return DrawStrokes.SvgPathStringToApiPaths(svgPathString)[0];
-        }
-
-        public static List<List<TrTransform>> PathsFromSvgPaths(string svgPathString)
-        {
-            return DrawStrokes.SvgPathStringToApiPaths(svgPathString);
-        }
-
-        public static void ScalePaths(List<List<TrTransform>> paths, Vector3 scale)
-        {
-            foreach (var path in paths)
+            for (int i = 0; i < path._MultiPath.Count; i++)
             {
-                ScalePath(path, scale);
+                TransformPath(path._MultiPath[i], tr);
             }
         }
 
-        public static void ScalePath(List<TrTransform> path, Vector3 scale)
+        public static void TransformPath(PathApiWrapper path, TrTransform tr)
         {
-            // Supports non-uniform scaling
-            for (var i = 0; i < path.Count; i++)
+            for (int i = 0; i < path._Path.Count; i++)
             {
-                var tr = path[i];
-                tr.translation = new Vector3(
-                    tr.translation.x * scale.x,
-                    tr.translation.y * scale.y,
-                    tr.translation.z * scale.z
-                );
-                path[i] = tr;
-            }
-        }
-
-        public static void TransformPath(List<List<TrTransform>> path, TrTransform tr)
-        {
-            for (int i = 0; i < path.Count; i++)
-            {
-                TransformPath(path[i], tr);
-            }
-        }
-
-        public static void TransformPath(List<TrTransform> path, TrTransform tr)
-        {
-            for (int i = 0; i < path.Count; i++)
-            {
-                path[i] = tr * path[i];
+                path._Path[i] = tr * path._Path[i];
             }
         }
 

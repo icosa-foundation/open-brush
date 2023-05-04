@@ -1,35 +1,27 @@
-﻿Settings = {
+Settings = {
     description="As you draw, extra lines are added from the start of your stroke to the current position"
 }
 
 Parameters = {
     rate={label="Rate", type="int", min=1, max=10, default=10},
- }
+}
 
 function OnTriggerPressed()
-    initialPos = {
-        brush.position.x,
-        brush.position.y,
-        brush.position.z,
-    }
+    initialPos = Brush.position
     currentPos = initialPos
 end
 
 function WhileTriggerPressed()
 
-    currentPos = {
-        brush.position.x,
-        brush.position.y,
-        brush.position.z,
-    }
+    currentPos = Brush.position
 
-    if app.frames % rate == 0 then
-        draw.path({
-            {initialPos, brush.rotation},
-            {currentPos, brush.rotation},
-        })
+    if App.frames % rate == 0 then
+        Draw:Path({
+            Transform:New(initialPos, Brush.rotation),
+            Transform:New(currentPos, Brush.rotation),
+       })
     end
 
     --Leave the actual pointer position unchanged
-    return {{0, 0, 0}}
+    return Transform.zero
 end

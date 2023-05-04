@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="The brush oscillates between your left and right hand positions",
     space="canvas"
 }
@@ -11,20 +11,11 @@ Parameters = {
 
 function WhileTriggerPressed()
 
-    mix = (math.sin(app.time * freq) + 1) * amp
+    mix = (Math:Sin(App.time * freq) + 1) * amp
 
-    position = {
-        unityMathf.lerpUnclamped(brush.position.x, wand.position.x, mix),
-        unityMathf.lerpUnclamped(brush.position.y, wand.position.y, mix),
-        unityMathf.lerpUnclamped(brush.position.z, wand.position.z, mix),
-    }
+    position = Vector3.LerpUnclamped(Brush.position, Wand.position, mix)
+    rotation = Rotation:Lerp(Brush.rotation, Wand.rotation, mix)
 
-    rotation = {
-        unityMathf.lerpUnclamped(brush.rotation.x, wand.rotation.x, mix),
-        unityMathf.lerpUnclamped(brush.rotation.y, wand.rotation.y, mix),
-        unityMathf.lerpUnclamped(brush.rotation.z, wand.rotation.z, mix),
-    }
-
-    return {position, rotation}
+    return Transform:New(position, rotation)
 
 end

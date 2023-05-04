@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws a conical spiral",
     previewType="cube"
 }
@@ -9,13 +9,13 @@ Parameters = {
 }
 
 function OnTriggerReleased()
-    points = {}
+    points = Path:New();
     totalSteps = turns * steps
     for i = 0, 1, 1/totalSteps do
-        angle = math.pi * 2 * turns * i
-        position = { math.cos(angle) * i, math.sin(angle) * i, -(i * 2) + 1}
-        rotation = { 0, angle * unityMathf.rad2Deg, 0}
-        table.insert(points, { position, rotation })
+        angle = Math.pi * 2 * turns * i
+        position = Vector3:New(Math:Cos(angle) * i, Math:Sin(angle) * i, -(i * 2) + 1)
+        rotation = Rotation:New(0, angle * Math.rad2Deg, 0)
+        points:Insert(Transform:New(position, rotation))
     end
     return points
 end

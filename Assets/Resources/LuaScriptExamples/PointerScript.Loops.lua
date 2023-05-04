@@ -9,15 +9,10 @@ Parameters = {
 
 function WhileTriggerPressed()
 
-    size = brush.pressure * radius;
+    size = Brush.pressure * radius
 
     --Move the pointer in a circular path around the actual brush position
-    angle = app.time * speed
-    position = {
-        x = math.sin(angle) * size,
-        y = math.cos(angle) * size,
-        z = 0
-    }
-    rotation = {0, 0, 0}
-    return {position, rotation}
+    angle = App.time * speed
+    position = Vector2:PointOnCircle(angle):Multiply(size)
+    return Transform:New(position, Brush.rotation)
 end

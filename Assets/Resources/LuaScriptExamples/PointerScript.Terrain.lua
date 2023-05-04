@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Your brush strokes are constrained to a hilly landscape with configurable height and scale",
     space="canvas"
 }
@@ -13,18 +13,18 @@ Parameters = {
 function WhileTriggerPressed()
 
     -- Don't allow painting immediately otherwise you get stray lines
-    brush.forcePaintingOff(brush.triggerIsPressedThisFrame)
+    Brush:ForcePaintingOff(Brush.triggerIsPressedThisFrame)
 
-    return {
-        position = {
-            brush.position.x,
-            GetHeight(brush.position.x, brush.position.z),
-            brush.position.z
-        },
-        rotation = {-90, 0, 0}
-    };
+    return Tranform:New(
+        Vector3:New(
+            Brush.position.x,
+            getHeight(Brush.position.x, Brush.position.z),
+            Brush.position.z
+        ),
+        Rotation.down
+    )
 end
 
-function GetHeight(x, y)
-    return unityMathf.perlinNoise(x * scale, y * scale) * height + offset;
+function getHeight(x, y)
+    return Math.perlinNoise(x * scale, y * scale) * height + offset
 end

@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Radial copies of your stroke with optional color shifts"
 }
 
@@ -12,12 +12,12 @@ Parameters = {
 symmetryHueShift = require "symmetryHueShift"
 
 function Start()
-    initialHsv = brush.colorHsv
+    initialHsv = Brush.colorHsv
 end
 
 function Main()
 
-    if brush.triggerIsPressedThisFrame then
+    if Brush.triggerIsPressedThisFrame then
         symmetryHueShift.generate(numPointsWidth * numPointsHeight * 2, initialHsv)
     end
 
@@ -27,12 +27,12 @@ function Main()
         points = calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
     end
 
-    return symmetry.pointsToPolar(points)
+    return Symmetry:PointsToPolar(points)
 end
 
 
 function calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spacing)
-    local points = {}
+    local points = Path:New()
     local width = (numPointsWidth - 1) * spacing
     local height = (numPointsHeight - 1) * spacing
 
@@ -41,7 +41,7 @@ function calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spaci
             if i == 0 or i == numPointsHeight - 1 or j == 0 or j == numPointsWidth - 1 then
                 local x = -width / 2 + j * spacing
                 local y = -height / 2 + i * spacing
-                table.insert(points, {x, y})
+                points:Insert(Vector2.New(x, y))
             end
         end
     end
@@ -50,7 +50,7 @@ function calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spaci
 end
 
 function calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
-    local points = {}
+    local points = Path:New()
     local width = (numPointsWidth - 1) * spacing
     local height = (numPointsHeight - 1) * spacing
 
@@ -58,7 +58,7 @@ function calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
         for j = 0, numPointsWidth - 1 do
             local x = -width / 2 + j * spacing
             local y = -height / 2 + i * spacing
-            table.insert(points, {x, y})
+            points:Insert(Vector2.New(x, y))
         end
     end
     return points
@@ -66,5 +66,5 @@ end
 
 
 function End()
-    -- TODO fix brush.colorHsv = initialHsv
+    -- TODO fix Brush.colorHsv = initialHsv
 end

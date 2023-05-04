@@ -9,14 +9,14 @@ Parameters = {
 }
 
 function Start()
-    initialHsv = brush.colorHsv
+    initialHsv = Brush.colorHsv
 end
 
 function WhileTriggerPressed()
-    if app.frames % rate == 0 then
-        newHue = waveform.triangle(app.time, hueShiftFrequency) * hueShiftAmount
-        newColor = unityColor.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
-        brush.colorRgb = newColor
-        brush.forceNewStroke()
+    if App.frames % rate == 0 then
+        newHue = Waveform:Triangle(App.time, hueShiftFrequency) * hueShiftAmount
+        newColor = Color.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
+        Brush.colorRgb = newColor
+        Brush:ForceNewStroke()
     end
 end

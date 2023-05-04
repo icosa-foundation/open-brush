@@ -1,6 +1,6 @@
-﻿Settings = {
+Settings = {
     description="Draws tiles that follow a hilly landscape as you hold the trigger",
-    space="canvas",
+    space="canvas"
 }
 
 Parameters = {
@@ -18,9 +18,9 @@ end
 function WhileTriggerPressed()
 
     cell = {
-        x=Quantize(brush.position.x, grid),
-        z=Quantize(brush.position.z, grid),
-    }
+        x=quantize(Brush.position.x, grid),
+        z=quantize(Brush.position.z, grid),
+   }
 
     --A unique string key for each potential tile
     key = cell.x .. "," .. cell.z
@@ -28,24 +28,24 @@ function WhileTriggerPressed()
     --Only draw tiles in empty cells
     if filledCells[key]==nil then
         filledCells[key] = true
-        brush.colorJitter()
-        return Patch(cell, grid)
+        Brush:JitterColor()
+        return patch(cell, grid)
     else
-        return {}
+        return Path:New()
     end
 end
 
-function Quantize(val, size)
-    return unityMathf.round(val / size) * size
+function quantize(val, size)
+    return Math.round(val / size) * size
 end
 
 --Generates the path for each tile
-function Patch(cell, gridSize)
+function patch(cell, gridSize)
 
     --Half the size of each tile
     distance = gridSize / 2
 
-    points = {}
+    points = Path:New()
 
     --Left, right, forward and back offsets
     l = -distance + cell.x
@@ -53,14 +53,14 @@ function Patch(cell, gridSize)
     f = distance + cell.z
     b = -distance + cell.z
 
-    table.insert(points, {{l, GetHeight(l, f), f}, {0, 0, 0}})
-    table.insert(points, {{r, GetHeight(r, f), f}, {0, 0, 0}})
-    table.insert(points, {{r, GetHeight(r, b), b}, {0, 0, 90}})
-    table.insert(points, {{l, GetHeight(l, b), b}, {0, 0, 270}})
+    points:Insert(Transform:New(Vector3:New(l, GetHeight(l, f), f), Rotation.zero))
+    points:Insert(Transform:New(Vector3:New(r, GetHeight(r, f), f), Rotation.zero))
+    points:Insert(Transform:New(Vector3:New(r, GetHeight(r, b), b), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(l, GetHeight(l, b), b), Rotation:New(0, 0, 270)))
 
     return points
 end
 
 function GetHeight(x, y)
-    return unityMathf.perlinNoise(x * scale, y * scale) * height + offset;
+    return Math.perlinNoise(x * scale, y * scale) * height + offset
 end

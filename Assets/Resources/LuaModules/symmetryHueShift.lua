@@ -8,16 +8,15 @@ Parameters["hueShiftFrequency"] = {label="Hue Shift Frequency", type="float", mi
 Parameters["hueShiftAmount"] = {label="Hue Shift Amount", type="float", min=0, max=1, default=0.3}
 
 function symmetryHueShift.generate(copies, initialHsv)
+    Symmetry.ClearColors()
 	if hueShiftAmount > 0 then
-		colors = {}
 		for i = 0, copies - 1 do
 			t = i / copies
-			newHue = waveform.triangle(t, hueShiftFrequency) * hueShiftAmount
-			newColor = unityColor.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
-			table.insert(colors, newColor)
+			newHue = Waveform:Triangle(t, hueShiftFrequency) * hueShiftAmount
+			newColor = Color.HsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
+			Symmetry.AddColor(color)
 		end
-		symmetry.setColors(colors)
-		brush.forceNewStroke()
+		Brush.ForceNewStroke()
 	end
 end
 

@@ -1,15 +1,17 @@
-﻿function Main()
-    return {
+Settings = {space="pointer"}
+
+function Main()
+    return Path:New({
         -- Top bar
-        { position = { symmetry.brushOffset.x + 0, symmetry.brushOffset.y + 0, symmetry.brushOffset.z }},
-        { position = { symmetry.brushOffset.x + 1, symmetry.brushOffset.y + 0, symmetry.brushOffset.z }},
-        { position = { symmetry.brushOffset.x + 2, symmetry.brushOffset.y + 0, symmetry.brushOffset.z }},
+        Vector3:New(0, 0, 0),
+        Vector3:New(1, 0, 0),
+        Vector3:New(2, 0, 0),
         ----Sides
-        { position = { symmetry.brushOffset.x + 0, symmetry.brushOffset.y + 1, symmetry.brushOffset.z }},
-        { position = { symmetry.brushOffset.x + 2, symmetry.brushOffset.y + 1, symmetry.brushOffset.z }},
+        Vector3:New(0, 1, 0),
+        Vector3:New(2, 1, 0),
         ---- Bottom bar
-        { position = { symmetry.brushOffset.x + 0, symmetry.brushOffset.y + 2, symmetry.brushOffset.z }},
-        { position = { symmetry.brushOffset.x + 1, symmetry.brushOffset.y + 2, symmetry.brushOffset.z }},
-        { position = { symmetry.brushOffset.x + 2, symmetry.brushOffset.y + 2, symmetry.brushOffset.z }},
-    }
+        Vector3:New(0, 2, 0),
+        Vector3:New(1, 2, 0),
+        Vector3:New(2, 2, 0)
+    })
 end

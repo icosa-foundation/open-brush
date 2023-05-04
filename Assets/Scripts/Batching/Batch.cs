@@ -39,6 +39,8 @@ namespace TiltBrush
         /// (if this is violated, RemoveSubset() will fail)
         public List<BatchSubset> m_Groups;
 
+        public BrushDescriptor Brush => BrushCatalog.m_Instance.GetBrush(m_ParentPool.m_BrushGuid);
+
         /// Returns the BatchManager timestamp of the last time the Batch's mesh was written to.
         public int LastMeshUpdate { get { return m_LastMeshUpdate; } }
         public BatchPool ParentPool { get { return m_ParentPool; } }
@@ -316,7 +318,7 @@ namespace TiltBrush
                 m_bTopologyDirty = false; // The topology gets updated in CopyToMesh().
                 m_Geometry.CopyToMesh(m_MeshFilter.mesh);
                 Bounds bounds = m_MeshFilter.mesh.bounds;
-                bounds.Expand(BrushCatalog.m_Instance.GetBrush(m_ParentPool.m_BrushGuid).m_BoundsPadding *
+                bounds.Expand(Brush.m_BoundsPadding *
                     2 * App.METERS_TO_UNITS * Vector3.one);
                 m_MeshFilter.mesh.bounds = bounds;
                 m_LastMeshUpdate = m_ParentPool.Owner.CurrentTimestamp;

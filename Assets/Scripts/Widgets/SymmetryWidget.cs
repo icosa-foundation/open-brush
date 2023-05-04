@@ -68,9 +68,9 @@ namespace TiltBrush
             }
         }
 
-        public void Spin(Vector3 velocity)
+        public void Spin(float xSpeed, float ySpeed, float zSpeed)
         {
-            AngularVelocity_GS = App.Scene.Pose.rotation * velocity;
+            AngularVelocity_GS = App.Scene.Pose.rotation * new Vector3(xSpeed, ySpeed, zSpeed);
             m_IsSpinningFreely = true;
         }
 

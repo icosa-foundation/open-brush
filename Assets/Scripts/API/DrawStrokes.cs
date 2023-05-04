@@ -143,16 +143,16 @@ namespace TiltBrush
 
         public static void DrawSvg(string svg, TrTransform tr)
         {
-            DrawNestedTrList(SvgToApiPaths(svg), tr);
+            DrawNestedTrList(SvgDocumentToNestedPaths(svg), tr);
         }
 
         public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)
         {
             var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
-            return SvgToApiPaths(svgText);
+            return SvgDocumentToNestedPaths(svgText);
         }
 
-        public static List<List<TrTransform>> SvgToApiPaths(string svgText)
+        public static List<List<TrTransform>> SvgDocumentToNestedPaths(string svgText)
         {
             svgText = _PreProcessSvg(svgText);
             var geoms = _ParseSvg(svgText);

@@ -357,7 +357,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
-        public static void ImportImage(string location)
+        public static ImageWidget ImportImage(string location)
         {
             if (location.StartsWith("http://") || location.StartsWith("https://"))
             {
@@ -382,6 +382,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            return imageWidget;
         }
 
         [ApiEndpoint("environment.type", "Sets the current environment")]
@@ -403,7 +404,6 @@ namespace TiltBrush
         {
             ClearLayerCommand cmd = new ClearLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-
         }
 
         [ApiEndpoint("layer.delete", "Deletes a layer")]

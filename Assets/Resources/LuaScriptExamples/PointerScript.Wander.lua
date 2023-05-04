@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="The brush stroke wanders off in random directions while you hold the trigger",
     space="canvas"
 }
@@ -12,14 +12,14 @@ Parameters = {
 function OnTriggerPressed()
     -- Reset the path when the user starts painting
     frameCount = 0
-    currentPos = brush.position
-    return {currentPos, brush.rotation}
+    currentPos = Brush.position
+    return Transform:New(currentPos, Brush.rotation)
 end
 
 function WhileTriggerPressed()
 
     if (frameCount == framesPerPath) then
-        brush.forceNewStroke()
+        Brush:ForceNewStroke()
     end
 
     frameCount = frameCount + 1
@@ -27,16 +27,16 @@ function WhileTriggerPressed()
     -- Reset the path when we reach the limit
     if (frameCount > framesPerPath) then
         frameCount = 0
-        currentPos = brush.position
+        currentPos = Brush.position
     end
 
     -- Wandering path based on a noise field
-    currentPos = {
-        x = currentPos.x + (speed * (-0.5 + unityMathf.perlinNoise(currentPos.y, currentPos.z))),
-        y = currentPos.y + (speed * (-0.5 + unityMathf.perlinNoise(currentPos.x, currentPos.z))),
-        z = currentPos.z + (speed * (-0.5 + unityMathf.perlinNoise(currentPos.x, currentPos.y))),
-    }
+    currentPos = currentPos:Add(
+        speed * (-0.5 + Math.perlinNoise(currentPos.y, currentPos.z)),
+        speed * (-0.5 + Math.perlinNoise(currentPos.x, currentPos.z)),
+        speed * (-0.5 + Math.perlinNoise(currentPos.x, currentPos.y))
+    )
 
-    return {currentPos, brush.rotation}
+    return Transform:New(currentPos, Brush.rotation)
 
 end

@@ -6,34 +6,116 @@ using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
-    public static class CameraPathApiWrapper
+    public class CameraPathsApiWrapper
     {
-        public static void renderActivePath() => ApiMethods.RenderCameraPath();
-        public static void showAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
-        public static void hideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
-        public static void previewActivePath(bool active) => WidgetManager.m_Instance.FollowingPath = active;
-        public static void delete(int index)
-        {
-            try
-            {
-                var cameraPathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-                WidgetManager.m_Instance.DeleteCameraPath(cameraPathWidget);
-            }
-            catch (ArgumentOutOfRangeException e)
-            { }
-        }
 
-        public static int create()
+        public CameraPathWidget _CameraPathWidget;
+
+        public CameraPathsApiWrapper()
         {
             var widget = WidgetManager.m_Instance.CreatePathWidget();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
-            return active;
+            _CameraPathWidget = widget;
         }
 
-        public static int createFromPath(List<TrTransform> path, bool looped)
+        public CameraPathsApiWrapper(CameraPathWidget cameraPathWidget)
+        {
+            _CameraPathWidget = cameraPathWidget;
+        }
+
+        public int index
+        {
+            get
+            {
+                var val = WidgetManager.m_Instance.GetActiveWidgetIndex(_CameraPathWidget);
+                return val;
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"CameraPath({_CameraPathWidget})";
+        }
+
+        public CameraPathWidget this[int index] => WidgetManager.m_Instance.GetNthActiveCameraPath(index);
+        public CameraPathWidget last => this[count - 1];
+
+        public static int count => WidgetManager.m_Instance.ActiveCameraPathWidgets.Count;
+
+
+        public static CameraPathWidget active
+        {
+            get => WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript;
+            set => WidgetManager.m_Instance.SetCurrentCameraPath(value);
+        }
+
+        public TrTransform transform
+        {
+            get =>  App.Scene.MainCanvas.AsCanvas[_CameraPathWidget.transform];
+            set
+            {
+                value = App.Scene.Pose * value;
+                App.Scene.ActiveCanvas.AsCanvas[_CameraPathWidget.transform] = value;
+            }
+        }
+
+        public Vector3 position
+        {
+            get => transform.translation;
+            set
+            {
+                var tr_CS = transform;
+                var newTransform = TrTransform.T(value);
+                newTransform = App.Scene.Pose * newTransform;
+                tr_CS.translation = newTransform.translation;
+                transform = tr_CS;
+            }
+        }
+
+        public Quaternion rotation
+        {
+            get => transform.rotation;
+            set
+            {
+                var tr_CS = transform;
+                var newTransform = TrTransform.R(value);
+                newTransform = App.Scene.Pose * newTransform;
+                tr_CS.rotation = newTransform.rotation;
+                transform = tr_CS;
+            }
+        }
+
+        public float scale
+        {
+            get => transform.scale;
+            set
+            {
+                var tr_CS = transform;
+                var newTransform = TrTransform.S(value);
+                newTransform = App.Scene.Pose * newTransform;
+                tr_CS.scale = newTransform.scale;
+                transform = tr_CS;
+            }
+        }
+
+        public static void RenderActivePath() => ApiMethods.RenderCameraPath();
+        public static void ShowAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
+        public static void HideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
+        public static void PreviewActivePath(bool active) => WidgetManager.m_Instance.FollowingPath = active;
+        public void Delete()
+        {
+            WidgetManager.m_Instance.DeleteCameraPath(_CameraPathWidget);
+        }
+
+        public CameraPathWidget New()
+        {
+            return new CameraPathsApiWrapper()._CameraPathWidget;
+        }
+
+        public CameraPathWidget CreateFromPath(IPathApiWrapper path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
-            metadata.PathKnots = path.Select(t => new CameraPathPositionKnotMetadata
+            metadata.PathKnots = path.AsSingleTrList().Select(t => new CameraPathPositionKnotMetadata
             {
                 Xf = App.Scene.MainCanvas.Pose * t, // convert to canvas space,
                 TangentMagnitude = t.scale
@@ -48,33 +130,29 @@ namespace TiltBrush
             return active;
         }
 
-        public static int duplicate(int index)
+        public CameraPathWidget Duplicate()
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            CameraPathMetadata metadata = pathWidget.AsSerializable();
+            CameraPathMetadata metadata = _CameraPathWidget.AsSerializable();
             var widget = CameraPathWidget.CreateFromSaveData(metadata);
             widget.Path.RefreshEntirePath();
-            WidgetManager.m_Instance.SetCurrentCameraPath(widget);
-            return active;
+            return widget;
         }
 
-
-        public static int insertPosition(int index, Vector3 position, Quaternion rotation, float smoothing)
+        public int InsertPosition(Vector3 position, Quaternion rotation, float smoothing)
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            if (pathWidget.Path.ProjectPositionOnToPath(position, out PathT pathT, out Vector3 error))
+            if (_CameraPathWidget.Path.ProjectPositionOnToPath(position, out PathT pathT, out Vector3 error))
             {
-                return _insertPosition(pathWidget, pathT, position, rotation, smoothing);
+                return _insertPosition(_CameraPathWidget, pathT, position, rotation, smoothing);
             }
             return -1;
         }
 
-        public static int insertPosition(int index, float t, Quaternion rotation, float smoothing)
+        public int InsertPosition(float t, Quaternion rotation, float smoothing)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             PathT pathT = new PathT(t);
-            var position = pathWidget.Path.GetPosition(pathT);
-            return _insertPosition(pathWidget, pathT, position, rotation, smoothing);
+            var position = _CameraPathWidget.Path.GetPosition(pathT);
+            return _insertPosition(_CameraPathWidget, pathT, position, rotation, smoothing);
         }
 
         private static int _insertPosition(CameraPathWidget pathWidget, PathT pathT, Vector3 position, Quaternion rotation, float smoothing)
@@ -99,70 +177,66 @@ namespace TiltBrush
             return knotIndex;
         }
 
-        public static int insertRotation(int index, Vector3 pos, Quaternion rot)
+        public int InsertRotation(Vector3 pos, Quaternion rot)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
             rot = App.Scene.MainCanvas.Pose.rotation * rot;
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
-                return insertRotation(index, pathT.T, rot);
+            if (_CameraPathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
+                return InsertRotation(pathT.T, rot);
             return -1;
         }
 
-        public static int insertRotation(int index, float t, Quaternion rot)
+        public int InsertRotation(float t, Quaternion rot)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             PathT pathT = new PathT(t);
-            var knot = pathWidget.Path.CreateRotationKnot(pathT, rot);
-            return pathWidget.Path.AllKnots.IndexOf(knot);
+            var knot = _CameraPathWidget.Path.CreateRotationKnot(pathT, rot);
+            return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
-        public static int insertFov(int index, Vector3 pos, float fov)
+        public int InsertFov(Vector3 pos, float fov)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
-                return insertFov(index, pathT.T, fov);
+            if (_CameraPathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
+                return InsertFov(pathT.T, fov);
             return -1;
         }
 
-        public static int insertFov(int index, float t, float fov)
+        public int InsertFov(float t, float fov)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             PathT pathT = new PathT(t);
-            var knot = pathWidget.Path.CreateFovKnot(pathT);
+            var knot = _CameraPathWidget.Path.CreateFovKnot(pathT);
             knot.FovValue = fov;
-            return pathWidget.Path.AllKnots.IndexOf(knot);
+            return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
-        public static int insertSpeed(int index, Vector3 pos, float speed)
+        public int InsertSpeed(Vector3 pos, float speed)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            if (pathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
-                return insertSpeed(index, pathT.T, speed);
+            if (_CameraPathWidget.Path.ProjectPositionOnToPath(pos, out PathT pathT, out Vector3 error))
+                return InsertSpeed(pathT.T, speed);
             return -1;
         }
-        public static int insertSpeed(int index, float t, float speed)
+        public int InsertSpeed(float t, float speed)
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             PathT pathT = new PathT(t);
-            var knot = pathWidget.Path.CreateSpeedKnot(pathT);
+            var knot = _CameraPathWidget.Path.CreateSpeedKnot(pathT);
             knot.SpeedValue = speed;
-            return pathWidget.Path.AllKnots.IndexOf(knot);
+            return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
-        public static void extend(int index, Vector3 position, Quaternion rotation, float smoothing, bool atStart = false)
+        public void Extend(Vector3 position, Quaternion rotation, float smoothing, bool atStart = false)
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
             var extendType = atStart ? CameraPathTool.ExtendPathType.ExtendAtHead : CameraPathTool.ExtendPathType.ExtendAtTail;
-            pathWidget.ExtendPath(App.Scene.MainCanvas.Pose.MultiplyPoint(position), extendType);
-            var knotDesc = pathWidget.Path.LastPlacedKnotInfo;
+            _CameraPathWidget.ExtendPath(App.Scene.MainCanvas.Pose.MultiplyPoint(position), extendType);
+            var knotDesc = _CameraPathWidget.Path.LastPlacedKnotInfo;
             var rot = rotation * Vector3.forward;
             rot = App.Scene.MainCanvas.Pose.rotation * rot; // convert to canvas space
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new ModifyPositionKnotCommand(
-                    pathWidget.Path, knotDesc, smoothing, rot,
+                    _CameraPathWidget.Path, knotDesc, smoothing, rot,
                     mergesWithCreateCommand: true
                 )
             );
@@ -181,29 +255,12 @@ namespace TiltBrush
             );
         }
 
-        public static void loop(int index)
+        public void Loop()
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            pathWidget.ExtendPath(Vector3.zero, CameraPathTool.ExtendPathType.Loop); // position is ignored
+            _CameraPathWidget.ExtendPath(Vector3.zero, CameraPathTool.ExtendPathType.Loop); // position is ignored
         }
 
-        public static int active
-        {
-            get
-            {
-                var activePath = WidgetManager.m_Instance.GetCurrentCameraPath();
-                if (activePath == null) return -1;
-                return WidgetManager.m_Instance.GetIndexOfCameraPath(activePath.WidgetScript).Value;
-            }
-
-            set
-            {
-                var path = WidgetManager.m_Instance.GetNthActiveCameraPath(value);
-                WidgetManager.m_Instance.SetCurrentCameraPath(path);
-            }
-        }
-
-        public static void recordActivePath()
+        public static void RecordActivePath()
         {
             // Turn off MultiCam if we're going to record the camera path.
             if (SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.MultiCamTool)
@@ -213,10 +270,9 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.CameraPathCaptureRig.RecordPath();
         }
 
-        public static TrTransform sample(int index, float time, bool loop = true, bool pingpong = false)
+        public TrTransform Sample(float time, bool loop = true, bool pingpong = false)
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            var cameraPath = pathWidget.Path;
+            var cameraPath = _CameraPathWidget.Path;
             if (cameraPath == null) return TrTransform.identity;
             var t = new PathT(time);
             var maxT = new PathT(time);
@@ -248,37 +304,16 @@ namespace TiltBrush
             return tr;
         }
 
-        public static TrTransform getTransform(int index) => App.Scene.ActiveCanvas.AsCanvas[WidgetManager.m_Instance.GetNthActiveCameraPath(index).transform];
-        public static void setTransform(int index, TrTransform tr)
+        public CameraPathWidget Simplify(float tolerance, float smoothing)
         {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            App.Scene.ActiveCanvas.AsCanvas[pathWidget.transform] = tr;
-            pathWidget.Path.RefreshEntirePath();
-        }
-
-        public static Vector3 getPosition(int index) => getTransform(index).translation;
-        public static void setPosition(int index, Vector3 position)
-        {
-            setTransform(index, TrTransform.T(position));
-        }
-
-        public static Quaternion getRotation(int index) => getTransform(index).rotation;
-        public static void setRotation(int index, Quaternion rotation)
-        {
-            setTransform(index, TrTransform.R(rotation));
-        }
-
-        public static int simplify(int index, float tolerance, float smoothing)
-        {
-            var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-            List<Vector3> inputPoints = pathWidget.Path.PositionKnots.Select(knot => knot.transform.position).ToList();
-            List<Quaternion> inputRots = pathWidget.Path.PositionKnots.Select(knot => knot.transform.rotation).ToList();
+            List<Vector3> inputPoints = _CameraPathWidget.Path.PositionKnots.Select(knot => knot.transform.position).ToList();
+            List<Quaternion> inputRots = _CameraPathWidget.Path.PositionKnots.Select(knot => knot.transform.rotation).ToList();
             var newPoints = new List<TrTransform>();
 
             if (inputPoints.Count < 2)
             {
                 Debug.LogError("Not enough input points to create a curve.");
-                return -1;
+                return null;
             }
 
             float angleToleranceRad = Mathf.Deg2Rad * tolerance;
@@ -304,10 +339,9 @@ namespace TiltBrush
                 }
             }
 
-            Vector3 lastTangent = (inputPoints[inputPoints.Count - 1] - inputPoints[lastSplinePointIndex]).normalized;
             float lastSegmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[inputPoints.Count - 1]).magnitude;
             newPoints.Add(TrTransform.TRS(inputPoints[inputPoints.Count - 1], inputRots[inputRots.Count - 1], lastSegmentLength * smoothing ));
-            return createFromPath(newPoints, pathWidget.Path.PathLoops);
+            return CreateFromPath(new PathApiWrapper(newPoints), _CameraPathWidget.Path.PathLoops);
         }
     }
 }

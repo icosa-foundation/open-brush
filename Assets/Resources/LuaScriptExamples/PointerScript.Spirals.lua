@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Moves in a circle that grows bigger as long as the trigger is help down"
 }
 
@@ -8,11 +8,14 @@ Parameters = {
 }
 
 function WhileTriggerPressed()
-    angle = app.time * speed
+    angle = App.time * speed
     r = 0
-    if (brush.triggerIsPressed) then
-        r = radius * brush.timeSincePressed
+    if (Brush.triggerIsPressed) then
+        r = radius * Brush.timeSincePressed
     end
-    position = {math.sin(angle) * r, math.cos(angle) * r, 0}
-    return {position}
+    return Transform:New(
+        Math:Sin(angle) * r,
+        Math:Cos(angle) * r,
+        0
+    )
 end

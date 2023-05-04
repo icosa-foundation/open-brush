@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws a superellipse (otherwise known as a squircle)",
     previewType="quad"
 }
@@ -12,14 +12,14 @@ function sign(number)
 end
 
 function OnTriggerReleased()
-    points = {}
+    points = Path:New()
     for i = 0, 360, 10 do
-        angle = i * math.pi / 180
-        x = math.pow(math.abs(math.cos(angle)), 2/n) * sign(math.cos(angle))
-        y = math.pow(math.abs(math.sin(angle)), 2/n) * sign(math.sin(angle))
-        position = { x, y, 0}
-        rotation = { 0, 0, angle * 180}
-        table.insert(points, {position, rotation})
+        angle = i * Math.pi / 180
+        x = Math:Pow(Math:Abs(Math:Cos(angle)), 2/n) * sign(Math:Cos(angle))
+        y = Math:Pow(Math:Abs(Math:Sin(angle)), 2/n) * sign(Math:Sin(angle))
+        position = Vector3:New(x, y, 0)
+        rotation = Rotation:New(0, 0, angle * 180)
+        points:Insert(Transform:New(position, rotation))
     end
     return points
 end

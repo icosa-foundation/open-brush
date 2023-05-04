@@ -9,7 +9,7 @@ Parameters = {
 }
 
 function OnTriggerPressed()
-    text = app.clipboardText;
+    text = App.clipboardText
     if text == nil or string.len(text) == 0 then
         text = "Hello World"
     end
@@ -20,15 +20,15 @@ function OnTriggerPressed()
 end
 
 function WhileTriggerPressed()
-    distanceMovedThisFrame = brush.distanceMoved - distanceLastFrame;
-    distanceLastFrame = brush.distanceMoved
+    distanceMovedThisFrame = Brush.distanceMoved - distanceLastFrame
+    distanceLastFrame = Brush.distanceMoved
     distance = distance + distanceMovedThisFrame
     if distance > spacing then
         letterCount = letterCount + 1
         letter = string.sub(text, letterCount, letterCount)
-        rot = brush.rotation
-        transform = { position = brush.position, rotation=rot, scale=size }
-        draw.text(letter, transform)
+        rot = Brush.rotation
+        transform = Transform:New(Brush.position, rot, size)
+        Draw:Text(letter, transform)
         letterCount = letterCount % string.len(text)
         distance = 0
     end

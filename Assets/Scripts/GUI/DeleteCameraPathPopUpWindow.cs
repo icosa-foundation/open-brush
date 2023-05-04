@@ -22,7 +22,7 @@ namespace TiltBrush
         override public void Init(GameObject parent, string text)
         {
             // Intercept the text and tack on the index of the current path.
-            int? index = WidgetManager.m_Instance.GetIndexOfCameraPath(
+            int? index = WidgetManager.m_Instance.GetActiveWidgetIndex(
                 WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript);
             if (index != null)
             {

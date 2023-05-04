@@ -1,25 +1,20 @@
-﻿Settings = {
+Settings = {
     description="Multiple copies of your brush spaced between your left and right hand positions",
 }
 
 Parameters = {copies={label="Copies", type="int", min=1, max=32, default=12}}
 
 function Start()
-    Colors = {
-        {1, 0, 0},
-        {0, 1, 0},
-    }
+    Symmetry:ClearColors()
+    Symmetry:AddColor(Color.red)
+    Symmetry:AddColor(Color.green)
 end
 
 function Main()
-    transforms = {}
+    pointers = Path:New()
     for i = 0.0, copies do
-        position = {
-            unityMathf.lerp(symmetry.brushOffset.x, symmetry.wandOffset.x, i/copies),
-            unityMathf.lerp(symmetry.brushOffset.y, symmetry.wandOffset.y, i/copies),
-            unityMathf.lerp(symmetry.brushOffset.z, symmetry.wandOffset.z, i/copies),
-        }
-        table.insert(transforms, { position })
+        position = Vector3.Lerp(Symmetry.brushOffset, Symmetry.wandOffset, i/copies)
+        pointers:Insert(position)
     end
     return transforms
 end

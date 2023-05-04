@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws a line in the chosen direction for as long as you hold the trigger",
     space="canvas"
 }
@@ -10,22 +10,17 @@ Parameters = {
 function OnTriggerPressed()
 
     --Store the brush transform at the point we press the trigger
-    direction = brush.direction
-    currentPos = brush.position
-    currentRotation = brush.rotation
+    direction = Brush.direction
+    currentPos = Brush.position
+    currentRotation = Brush.rotation
 
-    return {currentPos, currentRotation}
+    return Transform:New(currentPos, currentRotation)
 end
 
 function WhileTriggerPressed()
 
     -- Move the pointer in the direction we were facing when we pressed the trigger
-    currentPos = {
-        x = currentPos.x + (speed * -direction.x),
-        y = currentPos.y + (speed * -direction.y),
-        z = currentPos.z + (speed * -direction.z),
-    }
-
-    return {currentPos, currentRotation}
+    currentPos = currentPos:Add(direction:Multiply(speed))
+    return Transform:New(currentPos, currentRotation)
 
 end

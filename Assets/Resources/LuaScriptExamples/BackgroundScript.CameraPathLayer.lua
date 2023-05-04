@@ -3,12 +3,15 @@
 }
 
 Parameters = {
-    layerNumber={label="Layer Number", type="int", min=0, max=10, default=1},
     speed={label="Animation Speed", type="float", min=0.01, max=10, default=1},
 }
 
+function Start()
+    layer = Layers.active
+    cameraPath = CameraPath.active
+end
+
 function Main()
-    transform = cameraPath.sample(0, app.time * speed, true, true)
-    --layers.setTransform(layerNumber, transform)
-    layers.setPosition(layerNumber, transform.position)
+    transform = cameraPath:Sample(App.time * speed, true, true)
+    layer.position = transform.position
 end

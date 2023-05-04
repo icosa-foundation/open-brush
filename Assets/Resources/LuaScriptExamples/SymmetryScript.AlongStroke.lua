@@ -1,7 +1,7 @@
-Settings = {space="canvas"}
+Settings = {space="pointer"}
 
 function Start()
-    stroke = app.lastStroke
+    stroke = App.lastStroke
 end
 
 function Main()

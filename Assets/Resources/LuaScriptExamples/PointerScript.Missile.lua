@@ -3,7 +3,6 @@
     space="canvas"
 }
 
-
 Parameters = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},
 }
@@ -11,19 +10,16 @@ Parameters = {
 function OnTriggerPressed()
 
     --Store the brush transform at the point we press the trigger
-    currentPos = brush.position
-    currentRotation = brush.rotation
-    return {currentPos, currentRotation}
+    currentPos = Brush.position
+    currentRotation = Brush.rotation
+    return Transform:New(currentPos, currentRotation)
 end
 
 function WhileTriggerPressed()
 
     --Similar to the LaserBeam PointerScript except we can change the direction during "flight"
-    currentPos = {
-        x = currentPos.x + (speed * -brush.direction.x),
-        y = currentPos.y + (speed * -brush.direction.y),
-        z = currentPos.z + (speed * -brush.direction.z),
-    }
-    return {currentPos, currentRotation}
+    direction = Brush.direction:Multiply(-1)
+    currentPos = currentPos:Add(speed * direction)
+    return Transform:New(currentPos, currentRotation)
 
 end

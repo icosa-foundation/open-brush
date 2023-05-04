@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Radial copies of your stroke with optional color shifts"
 }
 
@@ -12,42 +12,38 @@ Parameters = {
 symmetryHueShift = require "symmetryHueShift"
 
 function Start()
-    initialHsv = brush.colorHsv
+    initialHsv = Brush.colorHsv
 end
 
 function Main()
 
-    if brush.triggerIsPressedThisFrame then
+    if Brush.triggerIsPressedThisFrame then
         symmetryHueShift.generate(copies, initialHsv)
     end
 
-    pointers = {}
-    theta = (math.pi * 2.0) / copies
+    pointers = Path:New()
+    theta = (Math.pi * 2.0) / copies
 
     for i = 0, copies - 1 do
-        angle = (symmetry.rotation.y * unityMathf.deg2Rad) + i * theta
-        radius = symmetry.superellipse(angle, n, eccentricity)
+        angle = (Symmetry.rotation.y * Math.deg2Rad) + i * theta
+        radius = Symmetry:Superellipse(angle, n, eccentricity)
         if n < 1 then
-            radius = radius * unityMathf.pow(1 + (1-n), 2)
+            radius = radius * Math.pow(1 + (1-n), 2)
         end
 
-        pointer = {
-            position={
-                symmetry.brushOffset.x * radius,
-                symmetry.brushOffset.y,
-                unityMathf.lerp(
-                    symmetry.brushOffset.z,
-                symmetry.brushOffset.z * radius,
-                    axisConsistency
-                ),
-            },
-            rotation={0, angle * unityMathf.rad2Deg, 0}
-        }
-        table.insert(pointers, pointer)
+        pointer = Transform:New(
+            Vector3:New(
+                Symmetry.brushOffset.x * radius,
+                Symmetry.brushOffset.y,
+                Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, axisConsistency)
+            ),
+            Rotation:New(0, angle * Math.rad2Deg, 0)
+        )
+        pointers:Insert(pointer)
     end
     return pointers
 end
 
 function End()
-    -- TODO fix brush.colorHsv = initialHsv
+    -- TODO fix Brush.colorHsv = initialHsv
 end
