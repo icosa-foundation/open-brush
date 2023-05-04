@@ -418,7 +418,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.1
+        uses: mikepenz/release-changelog-builder-action@v3.7.2
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -524,7 +524,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.1
+        uses: mikepenz/release-changelog-builder-action@v3.7.2
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
