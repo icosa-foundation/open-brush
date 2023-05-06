@@ -57,9 +57,9 @@ namespace TiltBrush
         public int count => _Path2d.Count;
         public void Insert(Vector2 transform) => _Path2d.Add(transform);
 
-        public PathApiWrapper ProjectOnX() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(0, v.x, v.y)).ToList());
-        public PathApiWrapper ProjectOnY() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, 0, v.y)).ToList());
-        public PathApiWrapper ProjectOnZ() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, v.y, 0)).ToList());
+        public PathApiWrapper OnX() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(0, v.x, v.y)).ToList());
+        public PathApiWrapper OnY() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, 0, v.y)).ToList());
+        public PathApiWrapper OnZ() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, v.y, 0)).ToList());
 
         public void Transform(TrTransform transform)
         {

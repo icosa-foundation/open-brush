@@ -56,7 +56,7 @@ namespace TiltBrush
                 }
                 allTrList.Add(trList);
             }
-            DrawStrokes.DrawNestedTrList(allTrList, tr, brushScale, rawStroke);
+            DrawStrokes.DrawNestedTrList(allTrList, tr, null, brushScale, rawStroke);
         }
 
         [ApiEndpoint("draw.paths", "Draws a series of paths at the current brush position [[[x1,y1,z1],[x2,y2,z2], etc...]]. Does not move the brush position")]

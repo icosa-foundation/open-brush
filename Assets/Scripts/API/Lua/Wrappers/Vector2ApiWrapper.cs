@@ -59,9 +59,9 @@ namespace TiltBrush
             return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
         }
 
-        public Vector3 ProjectOnX() => new Vector3(0, _Vector2.x, _Vector2.y);
-        public Vector3 ProjectOnY() => new Vector3(_Vector2.x, 0, _Vector2.y);
-        public Vector3 ProjectOnZ() => new Vector3(_Vector2.x, _Vector2.y, 0);
+        public Vector3 OnX() => new Vector3(0, _Vector2.x, _Vector2.y);
+        public Vector3 OnY() => new Vector3(_Vector2.x, 0, _Vector2.y);
+        public Vector3 OnZ() => new Vector3(_Vector2.x, _Vector2.y, 0);
 
         public static Vector2 down => Vector2.down;
         public static Vector2 left => Vector2.left;

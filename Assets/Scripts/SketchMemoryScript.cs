@@ -711,6 +711,14 @@ namespace TiltBrush
                     s.m_BatchSubset.m_VertLength > 0)).ToList();
         }
 
+        public List<Stroke> GetAllActiveStrokes()
+        {
+            return m_MemoryList.Where(
+                s => s.IsGeometryEnabled &&
+                    (s.m_Type != Stroke.Type.BatchedBrushStroke ||
+                    s.m_BatchSubset.m_VertLength > 0)).ToList();
+        }
+
         public List<Stroke> GetAllActiveStrokes(CanvasScript layer)
         {
             return m_MemoryList.Where(

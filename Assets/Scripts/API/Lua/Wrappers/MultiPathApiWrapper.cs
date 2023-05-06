@@ -21,14 +21,18 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<PathApiWrapper> _MultiPath;
 
+        [MoonSharpHidden]
+        public List<Color> _Colors;
+
         public MultiPathApiWrapper()
         {
             _MultiPath = new List<PathApiWrapper>();
         }
 
-        public MultiPathApiWrapper(IEnumerable<PathApiWrapper> multipath)
+        public MultiPathApiWrapper(IEnumerable<PathApiWrapper> multipath, List<Color> colors = null)
         {
             _MultiPath = multipath.ToList();
+            _Colors = colors;
         }
 
         public MultiPathApiWrapper(PathApiWrapper path)

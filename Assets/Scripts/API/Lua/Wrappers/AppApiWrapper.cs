@@ -13,8 +13,6 @@ namespace TiltBrush
         public static float frames => UnityEngine.Time.frameCount;
         public static bool Physics(bool active) => UnityEngine.Physics.autoSimulation = active;
         public static float currentScale => App.Scene.Pose.scale;
-        public static PathApiWrapper lastSelectedStroke => new PathApiWrapper(SelectionManager.m_Instance.LastSelectedStrokeCP);
-        public static PathApiWrapper lastStroke => new PathApiWrapper(SelectionManager.m_Instance.LastStrokeCP);
         public static void Undo() => ApiMethods.Undo();
         public static void Redo() => ApiMethods.Redo();
         public static void AddListener(string a) => ApiMethods.AddListener(a);

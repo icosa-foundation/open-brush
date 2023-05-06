@@ -134,7 +134,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty("tool.startPosition", m_FirstPositionClicked_CS.translation);
+                SetApiProperty("Tool.startPosition", m_FirstPositionClicked_CS.translation);
                 ApiManager.Instance.StartUndo();
                 DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
@@ -207,8 +207,8 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty("tool.endPosition", rAttachPoint_CS.translation);
-                    SetApiProperty("tool.vector", drawnVector_CS);
+                    SetApiProperty("Tool.endPosition", rAttachPoint_CS.translation);
+                    SetApiProperty("Tool.vector", drawnVector_CS);
                     DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
                     ApiManager.Instance.EndUndo();
                 }
@@ -224,7 +224,8 @@ namespace TiltBrush
         private void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
         {
             var result = LuaManager.Instance.CallActiveToolScript(fnName);
-            if (result.Transforms == null || result.Transforms.Count == 0) return;
+            if (result == null) return;
+            List<List<TrTransform>> transforms = null;
 
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
             var tr_CS = new TrTransform();
@@ -233,26 +234,23 @@ namespace TiltBrush
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
+
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
                     tr_CS.scale = drawnVector_CS.magnitude;
 
-                    result.Transforms = result.Transforms.Select(path => path.Select(tr =>
-                    {
-                        // Orient each point to the controller
-                        tr.translation = tr_CS.rotation * tr.translation;
-                        return tr;
-                    }).ToList()).ToList();
+                    transforms = result.AsMultiTrList();
                     break;
                 case ScriptCoordSpace.Canvas:
                     tr_CS.translation = Vector3.zero;
                     tr_CS.rotation = Quaternion.identity;
                     tr_CS.scale = 1f;
+                    transforms = result.AsMultiTrList();
                     break;
             }
             float brushScale = 1f / App.ActiveCanvas.Pose.scale;
-            DrawStrokes.DrawNestedTrList(result.Transforms, tr_CS, brushScale);
+            if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations

@@ -25,12 +25,13 @@ namespace TiltBrush
 
         public static void DrawSingleTrList(IEnumerable<TrTransform> path, TrTransform tr, float brushScale = 1f, bool rawStrokes = false)
         {
-            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, brushScale, rawStrokes);
+            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, null, brushScale, rawStrokes);
         }
 
         public static void DrawNestedTrList(
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
+            List<Color> colors = null,
             float brushScale = 1f,
             bool rawStrokes = false)
         {
@@ -41,6 +42,7 @@ namespace TiltBrush
             int pathIndex = 0;
             for (var i = 0; i < paths.Count; i++)
             {
+                var color = colors != null ? colors[i] : App.BrushColor.CurrentColor;
                 var item = paths[i];
                 if (item == null) continue;
                 var path = item.ToList();
@@ -90,7 +92,7 @@ namespace TiltBrush
                     m_BrushGuid = brush.m_Guid,
                     m_BrushScale = brushScale,
                     m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                    m_Color = App.BrushColor.CurrentColor,
+                    m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
                 };
@@ -143,20 +145,26 @@ namespace TiltBrush
 
         public static void DrawSvg(string svg, TrTransform tr)
         {
-            DrawNestedTrList(SvgDocumentToNestedPaths(svg), tr);
+            DrawNestedTrList(SvgDocumentToNestedPaths(svg).paths, tr);
         }
 
         public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)
         {
             var svgText = $"<svg xmlns=\"http: //www.w3.org/2000/svg\"><path d=\"{svgPathString}\"/></svg>";
-            return SvgDocumentToNestedPaths(svgText);
+            return SvgDocumentToNestedPaths(svgText).paths;
         }
 
-        public static List<List<TrTransform>> SvgDocumentToNestedPaths(string svgText)
+        public static (List<List<TrTransform>> paths, List<Color> colors) SvgDocumentToNestedPaths(string svgText, float offsetPerPath = 0, bool includeColors = false)
         {
             svgText = _PreProcessSvg(svgText);
             var geoms = _ParseSvg(svgText);
             var svgPolyline = new List<List<TrTransform>>(geoms.Count);
+            List<Color> colors = null;
+            if (includeColors)
+            {
+                colors = new List<Color>(geoms.Count);
+            }
+            float offset = 0;
             for (var i = 0; i < geoms.Count; i++)
             {
                 var geom = geoms[i];
@@ -164,11 +172,16 @@ namespace TiltBrush
                 for (var j = 0; j < geom.Vertices.Length; j++)
                 {
                     var v = geom.Vertices[j];
-                    verts.Add(TrTransform.T(new Vector3(v.x, -v.y, 0))); // SVG is Y down, Unity is Y up
+                    verts.Add(TrTransform.T(new Vector3(v.x, -v.y, offset))); // SVG is Y down, Unity is Y up
                 }
                 svgPolyline.Add(verts);
+                if (includeColors)
+                {
+                    colors.Add(geom.Color);
+                }
+                offset += offsetPerPath;
             }
-            return svgPolyline;
+            return (svgPolyline, colors);
         }
 
         private static string _PreProcessSvg(string svgText)

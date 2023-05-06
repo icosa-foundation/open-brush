@@ -338,6 +338,18 @@ namespace TiltBrush
             _LogLuaError(script, fnName, e, e.Message);
         }
 
+        public void LogGenericLuaError(Script script, string fnName, Exception e)
+        {
+            if (e is ScriptRuntimeException)
+            {
+                LogLuaInterpreterError(script, fnName, e as ScriptRuntimeException);
+            }
+            else if (e is InvalidCastException)
+            {
+                LogLuaCastError(script, fnName, e as InvalidCastException);
+            }
+        }
+
         private void _LogLuaError(Script script, string fnName, Exception e, string msg)
         {
             // Make the message more user friendly
@@ -459,8 +471,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
-                foreach (var prop in t.GetProperties()
-                    .Where(x => x.GetGetMethod(true).IsStatic))
+                foreach (var prop in t.GetProperties())
                 {
                     AutoCompleteEntries.Add($"{fnName}.{prop.Name} = nil");
                 }
@@ -541,25 +552,66 @@ namespace TiltBrush
             DynValue result = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(LuaApiCategory.PointerScript);
             var tr = TrTransform.identity;
-            if (!Equals(result, DynValue.Nil)) tr = result.ToObject<TrTransform>();
+            try
+            {
+                tr = result.ToObject<TrTransform>();
+            }
+            catch (InvalidCastException e)
+            {
+                LogLuaCastError(script, fnName, e);
+            }
             return new ScriptTrTransform(tr, space);
         }
 
-        public IPathApiWrapper CallActiveToolScript(string fnName)
+        public MultiPathApiWrapper CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.ToolScript);
             DynValue result = _CallScript(script, fnName);
-            IPathApiWrapper pathWrapper = result.ToObject<MultiPathApiWrapper>();
-            pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
-            return pathWrapper;
+            MultiPathApiWrapper multipathWrapper = null;
+            try
+            {
+                // Try to cast to multipath first
+                multipathWrapper = result.ToObject<MultiPathApiWrapper>();
+            }
+            catch (Exception _)
+            {
+                try
+                {
+                    // If that fails, try to cast to path
+                    var pathWrapper = result.ToObject<PathApiWrapper>();
+                    // and wrap it as a multipath
+                    multipathWrapper = new MultiPathApiWrapper(pathWrapper);
+                }
+                catch (Exception e)
+                {
+                    // If neither then log the error
+                    LogGenericLuaError(script, fnName, e);
+                }
+            }
+            if (multipathWrapper != null)
+            {
+                multipathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+            }
+            return multipathWrapper;
         }
 
         public IPathApiWrapper CallActiveSymmetryScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.SymmetryScript);
-            DynValue result = _CallScript(script, fnName);
-            var pathWrapper = result.ToObject<PathApiWrapper>();
-            pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+            var pathWrapper = new PathApiWrapper();
+            try
+            {
+                DynValue result = _CallScript(script, fnName);
+                pathWrapper = result.ToObject<PathApiWrapper>();
+                if (pathWrapper != null)
+                {
+                    pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+                }
+            }
+            catch (InvalidCastException e)
+            {
+                LogLuaCastError(script, fnName, e);
+            }
             return pathWrapper;
         }
 

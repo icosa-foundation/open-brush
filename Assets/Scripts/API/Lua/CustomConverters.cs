@@ -93,11 +93,6 @@ public static class LuaCustomConverters
         Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<TrTransform>((script, trTransform) => UserData.Create(
             new TransformApiWrapper(trTransform)));
 
-        // Multi Paths
-
-        Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.UserData, typeof(MultiPathApiWrapper),
-            dynVal => ((MultiPathApiWrapper)dynVal.ToObject())._MultiPath);
-
         // Color
 
         Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.UserData, typeof(Color),

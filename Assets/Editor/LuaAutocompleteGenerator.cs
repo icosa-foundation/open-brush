@@ -35,10 +35,10 @@ namespace TiltBrush
             LuaManager.AutoCompleteEntries = new List<string>();
 
             // Manually add some entries that aren't added the standard way
-            LuaManager.AutoCompleteEntries.Add("tool.startPosition = nil");
-            LuaManager.AutoCompleteEntries.Add("tool.endPosition = nil");
-            LuaManager.AutoCompleteEntries.Add("tool.vector = nil");
-            LuaManager.AutoCompleteEntries.Add("tool.rotation = nil");
+            LuaManager.AutoCompleteEntries.Add("Tool.startPosition = nil");
+            LuaManager.AutoCompleteEntries.Add("Tool.endPosition = nil");
+            LuaManager.AutoCompleteEntries.Add("Tool.vector = nil");
+            LuaManager.AutoCompleteEntries.Add("Tool.rotation = nil");
 
             string filePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
             LuaManager.Instance.RegisterApiClasses(script);

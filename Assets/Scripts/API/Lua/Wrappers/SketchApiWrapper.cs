@@ -14,5 +14,9 @@ namespace TiltBrush
         // public static void liked() => ApiMethods.LoadLiked();
         // public static void drive() => ApiMethods.LoadDrive();
         // public static void exportSelected() => ApiMethods.SaveModel();
+
+        public static StrokeListApiWrapper strokes => new StrokeListApiWrapper(
+            SketchMemoryScript.m_Instance.GetAllActiveStrokes()
+        );
     }
 }
