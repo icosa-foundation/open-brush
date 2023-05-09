@@ -1,4 +1,5 @@
-﻿using MoonSharp.Interpreter;
+﻿using System.Linq;
+using MoonSharp.Interpreter;
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -15,8 +16,40 @@ namespace TiltBrush
         // public static void drive() => ApiMethods.LoadDrive();
         // public static void exportSelected() => ApiMethods.SaveModel();
 
+        public static CameraPathListApiWrapper cameraPaths => new CameraPathListApiWrapper(
+            WidgetManager.m_Instance.ActiveCameraPathWidgets.Select(w => w.WidgetScript).ToList()
+        );
+
         public static StrokeListApiWrapper strokes => new StrokeListApiWrapper(
             SketchMemoryScript.m_Instance.GetAllActiveStrokes()
         );
+
+        public static LayerListApiWrapper layers => new LayerListApiWrapper(
+            App.Scene.LayerCanvases.ToList()
+        );
+
+        public static ImageListApiWrapper images => new ImageListApiWrapper(
+            WidgetManager.m_Instance.ActiveImageWidgets.Select(w => w.WidgetScript).ToList()
+        );
+
+        public static VideoListApiWrapper videos => new VideoListApiWrapper(
+            WidgetManager.m_Instance.ActiveVideoWidgets.Select(w => w.WidgetScript).ToList()
+        );
+
+        public static ModelListApiWrapper models => new ModelListApiWrapper(
+            WidgetManager.m_Instance.ActiveModelWidgets.Select(w => w.WidgetScript).ToList()
+        );
+
+        public static GuideListApiWrapper guides => new GuideListApiWrapper(
+            WidgetManager.m_Instance.ActiveStencilWidgets.Select(w => w.WidgetScript).ToList()
+        );
+
+        public static LightListApiWrapper lights => new LightListApiWrapper(
+        );
+
+        public static EnvironmentListApiWrapper environments => new EnvironmentListApiWrapper(
+        );
+
     }
+
 }

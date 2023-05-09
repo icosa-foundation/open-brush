@@ -58,9 +58,6 @@ function Brush.ForcePaintingOn(active) end
 function Brush.ForcePaintingOff(active) end
 function Brush.ForceNewStroke() end
 CameraPath.index = nil
-CameraPath.Item = nil
-CameraPath.last = nil
-CameraPath.count = nil
 CameraPath.active = nil
 CameraPath.transform = nil
 CameraPath.position = nil
@@ -72,7 +69,8 @@ function CameraPath.HideAll() end
 function CameraPath.PreviewActivePath(active) end
 function CameraPath.Delete() end
 function CameraPath.New() end
-function CameraPath.CreateFromPath(path, looped) end
+function CameraPath.FromPath(path, looped) end
+function CameraPath.AsPath(step) end
 function CameraPath.Duplicate() end
 function CameraPath.InsertPosition(position, rotation, smoothing) end
 function CameraPath.InsertPosition(t, rotation, smoothing) end
@@ -131,11 +129,6 @@ function Color.Subtract(a, b) end
 function Color.Multiply(a, b) end
 function Color.Divide(a, b) end
 function Color.NotEquals(a, b) end
-function Draw.Path(path) end
-function Draw.Paths(paths) end
-function Draw.Polygon(sides, tr) end
-function Draw.Text(text, tr) end
-function Draw.CameraPath(index) end
 function Easing.linear(t) end
 function Easing.inQuad(t) end
 function Easing.outQuad(t) end
@@ -167,59 +160,49 @@ function Easing.inOutBack(t) end
 function Easing.inBounce(t) end
 function Easing.outBounce(t) end
 function Easing.inOutBounce(t) end
-Guides.index = nil
-Guides.Item = nil
-Guides.last = nil
-Guides.count = nil
-Guides.transform = nil
-Guides.position = nil
-Guides.rotation = nil
-Guides.scale = nil
-function Guides.AddCube(tr) end
-function Guides.AddSphere(tr) end
-function Guides.AddCapsule(tr) end
-function Guides.AddCone(tr) end
-function Guides.AddEllipsoid(tr) end
-function Guides.Select() end
-function Guides.Scale(scale) end
-function Guides.Toggle() end
+Guide.index = nil
+Guide.transform = nil
+Guide.position = nil
+Guide.rotation = nil
+Guide.scale = nil
+function Guide.NewCube(transform) end
+function Guide.NewSphere(transform) end
+function Guide.NewCapsule(transform) end
+function Guide.NewCone(transform) end
+function Guide.NewEllipsoid(transform) end
+function Guide.NewCustom(transform, model) end
+function Guide.Select() end
+function Guide.Scale(scale) end
 function Headset.ResizeBuffer(size) end
 function Headset.SetBufferSize(size) end
 function Headset.PastPosition(count) end
 function Headset.PastRotation(count) end
-Images.index = nil
-Images.Item = nil
-Images.last = nil
-Images.count = nil
-Images.transform = nil
-Images.position = nil
-Images.rotation = nil
-Images.scale = nil
-function Images.Import(location) end
-function Images.Select() end
-function Images.FormEncode() end
-function Images.SaveBase64(base64, filename) end
-Layers.index = nil
-Layers.Item = nil
-Layers.Item = nil
-Layers.last = nil
-Layers.main = nil
-Layers.count = nil
-Layers.active = nil
-Layers.transform = nil
-Layers.position = nil
-Layers.rotation = nil
-Layers.scale = nil
-function Layers.CenterPivot() end
-function Layers.ShowPivot() end
-function Layers.HidePivot() end
-function Layers.Clear() end
-function Layers.Delete() end
-function Layers.Squash() end
-function Layers.SquashTo(destinationLayer) end
-function Layers.Show() end
-function Layers.Hide() end
-function Layers.Toggle() end
+Image.index = nil
+Image.transform = nil
+Image.position = nil
+Image.rotation = nil
+Image.scale = nil
+function Image.Import(location) end
+function Image.Select() end
+function Image.FormEncode() end
+function Image.SaveBase64(base64, filename) end
+Layer.index = nil
+Layer.active = nil
+Layer.transform = nil
+Layer.position = nil
+Layer.rotation = nil
+Layer.scale = nil
+function Layer.New() end
+function Layer.CenterPivot() end
+function Layer.ShowPivot() end
+function Layer.HidePivot() end
+function Layer.Clear() end
+function Layer.Delete() end
+function Layer.Squash(other) end
+function Layer.SquashTo(destinationLayer) end
+function Layer.Show() end
+function Layer.Hide() end
+function Layer.Toggle() end
 Math.deg2Rad = nil
 Math.epsilon = nil
 Math.positiveInfinity = nil
@@ -266,31 +249,33 @@ function Math.Tan(f) end
 function Math.Sinh(f) end
 function Math.Cosh(f) end
 function Math.Tanh(f) end
-Models.index = nil
-Models.Item = nil
-Models.last = nil
-Models.count = nil
-Models.transform = nil
-Models.position = nil
-Models.rotation = nil
-Models.scale = nil
-function Models.Select() end
-MultiplePaths.Space = nil
-MultiplePaths.count = nil
-MultiplePaths.pointCount = nil
-function MultiplePaths.AsSingleTrList() end
-function MultiplePaths.AsMultiTrList() end
-function MultiplePaths.Insert(path) end
-function MultiplePaths.InsertPoint(transform) end
-function MultiplePaths.Transform(transform) end
-function MultiplePaths.Translate(amount) end
-function MultiplePaths.Rotate(amount) end
-function MultiplePaths.Scale(amount) end
-function MultiplePaths.Center() end
-function MultiplePaths.Normalize(scale) end
-function MultiplePaths.Resample(spacing) end
-function MultiplePaths.Join(paths) end
-function MultiplePaths.Longest(paths) end
+Model.index = nil
+Model.transform = nil
+Model.position = nil
+Model.rotation = nil
+Model.scale = nil
+function Model.Import(location) end
+function Model.Select() end
+MultiPath.Space = nil
+MultiPath.count = nil
+MultiPath.pointCount = nil
+function MultiPath.AsSingleTrList() end
+function MultiPath.AsMultiTrList() end
+function MultiPath.New() end
+function MultiPath.New(pathList) end
+function MultiPath.Draw() end
+function MultiPath.FromText(text) end
+function MultiPath.Insert(path) end
+function MultiPath.InsertPoint(transform) end
+function MultiPath.Transform(transform) end
+function MultiPath.Translate(amount) end
+function MultiPath.Rotate(amount) end
+function MultiPath.Scale(scale) end
+function MultiPath.Center() end
+function MultiPath.Normalize(scale) end
+function MultiPath.Resample(spacing) end
+function MultiPath.Join() end
+function MultiPath.Longest() end
 Path.Space = nil
 Path.count = nil
 function Path.AsSingleTrList() end
@@ -298,6 +283,7 @@ function Path.AsMultiTrList() end
 function Path.New() end
 function Path.New(transformList) end
 function Path.New(positionList) end
+function Path.Draw() end
 function Path.Insert(transform) end
 function Path.Transform(transform) end
 function Path.Translate(amount) end
@@ -316,6 +302,7 @@ function Path._FindMinimum(axis) end
 function Path._FindMaximum(axis) end
 function Path.Normalize(scale) end
 function Path._CalculateCenterAndScale(path) end
+function Path.Resample(trs, spacing) end
 function Path.Resample(spacing) end
 Path2d.Space = nil
 Path2d.count = nil
@@ -345,6 +332,7 @@ function Path2d._FindMinimum(axis) end
 function Path2d._FindMaximum(axis) end
 function Path2d.Normalize(scale) end
 function Path2d._CalculateCenterAndScale(path) end
+function Path2d.Polygon(sides) end
 function Path2d.Resample(spacing) end
 Random.insideUnitCircle = nil
 Random.insideUnitSphere = nil
@@ -399,7 +387,15 @@ function Selection.Rebrush() end
 function Selection.Resize() end
 function Selection.Trim(count) end
 function Selection.SelectAll() end
+Sketch.cameraPaths = nil
 Sketch.strokes = nil
+Sketch.layers = nil
+Sketch.images = nil
+Sketch.videos = nil
+Sketch.models = nil
+Sketch.guides = nil
+Sketch.lights = nil
+Sketch.environments = nil
 function Sketch.Open(name) end
 function Sketch.Save(overwrite) end
 function Sketch.SaveAs(name) end
@@ -418,16 +414,16 @@ function Spectator.Hide(type) end
 function Spectator.Toggle() end
 function Spectator.On() end
 function Spectator.Off() end
-Strokes.path = nil
-Strokes.Item = nil
-Strokes.count = nil
-function Strokes.ChangeMaterial(brushName) end
-function Strokes.Delete() end
-function Strokes.Select() end
-function Strokes.SelectMultiple(from, to) end
-function Strokes.Join(from, to) end
-function Strokes.JoinPrevious() end
-function Strokes.Import(name) end
+Stroke.path = nil
+Stroke.Item = nil
+Stroke.count = nil
+function Stroke.ChangeMaterial(brushName) end
+function Stroke.Delete() end
+function Stroke.Select() end
+function Stroke.SelectMultiple(from, to) end
+function Stroke.Join(from, to) end
+function Stroke.JoinPrevious() end
+function Stroke.Import(name) end
 function Svg.ParsePathString(svgPath) end
 function Svg.ParseDocument(svg, offsetPerPath, includeColors) end
 function Svg.DrawPathString(svg, tr) end
@@ -595,6 +591,12 @@ function Vector3.Subtract(a, b) end
 function Vector3.Multiply(a, b) end
 function Vector3.Divide(a, b) end
 function Vector3.NotEquals(a, b) end
+Video.index = nil
+Video.transform = nil
+Video.position = nil
+Video.rotation = nil
+Video.scale = nil
+function Video.Import(location) end
 Visualizer.sampleRate = nil
 Visualizer.duration = nil
 function Visualizer.EnableScripting(name) end

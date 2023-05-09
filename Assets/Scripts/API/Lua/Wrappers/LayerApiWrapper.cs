@@ -4,48 +4,47 @@ using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
-    public class LayersApiWrapper
+    public class LayerApiWrapper
     {
         public CanvasScript _CanvasScript;
 
-        public LayersApiWrapper()
+        public LayerApiWrapper()
         {
             ApiMethods.AddLayer();
-            _CanvasScript = active._CanvasScript;
+            _CanvasScript = App.Scene.ActiveCanvas;
         }
 
-        public LayersApiWrapper(CanvasScript canvasScript)
+        public LayerApiWrapper(CanvasScript canvasScript)
         {
             _CanvasScript = canvasScript;
         }
 
         public int index => App.Scene.LayerCanvases.ToList().IndexOf(_CanvasScript);
 
-        // public static LayersApiWrapper New()
-        // {
-        //     var instance = new LayersApiWrapper();
-        //     return instance;
-        // }
+        public static LayerApiWrapper New()
+        {
+            var instance = new LayerApiWrapper();
+            return instance;
+        }
 
         public override string ToString()
         {
             return $"Layer({_CanvasScript.name})";
         }
 
-        public CanvasScript this[int index] => App.Scene.GetCanvasByLayerIndex(index);
-        public CanvasScript this[string name] => App.Scene.LayerCanvases.First(x => x.name == name);
-        public CanvasScript last => this[count - 1];
-        public  CanvasScript main => this[0];
-
-        public static int count => App.Scene.LayerCanvases.Count();
-
-        public static LayersApiWrapper active
+        public bool active
         {
-            get => new(App.Scene.ActiveCanvas);
+            get => App.Scene.ActiveCanvas == _CanvasScript;
             set
             {
-                ActivateLayerCommand cmd = new ActivateLayerCommand(value._CanvasScript);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                if (value)
+                {
+                    App.Scene.ActiveCanvas = _CanvasScript;
+                }
+                else if (active)
+                {
+                    App.Scene.ActiveCanvas = App.Scene.MainCanvas;
+                }
             }
         }
 
@@ -116,12 +115,12 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        public CanvasScript Squash()
+        public CanvasScript Squash(LayerApiWrapper other)
         {
             int destinationIndex = index - 1;
             if (destinationIndex >= 0)
             {
-                return SquashTo(this[destinationIndex]);
+                return SquashTo(SketchApiWrapper.layers[destinationIndex]._CanvasScript);
             }
             return null;
         }

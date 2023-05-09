@@ -8,7 +8,7 @@ namespace TiltBrush
     {
         public Vector3 _Vector3;
 
-        public Vector3ApiWrapper(float x = 0, float y = 0, float z = 0)
+        public Vector3ApiWrapper(float x, float y, float z)
         {
             _Vector3 = new Vector3(x, y, z);
         }
@@ -23,7 +23,7 @@ namespace TiltBrush
             _Vector3 = vector;
         }
 
-        public static Vector3ApiWrapper New(float x = 0, float y = 0, float z = 0)
+        public static Vector3ApiWrapper New(float x, float y, float z)
         {
             var instance = new Vector3ApiWrapper(x, y, z);
             return instance;

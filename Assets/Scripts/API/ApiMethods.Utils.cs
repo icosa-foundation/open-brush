@@ -175,10 +175,16 @@ namespace TiltBrush
                 filename = uri.AbsolutePath.Split('/').Last();
             }
 
-            var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
-            WebClient wc = new WebClient();
-            wc.DownloadFile(uri, path);
-            return filename;
+            // TODO - make this smarter
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
+                filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4"))
+            {
+                var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
+                WebClient wc = new WebClient();
+                wc.DownloadFile(uri, path);
+                return filename;
+            }
+            return null;
         }
 
         private static void _SpectatorShowHide(string thing, bool state)

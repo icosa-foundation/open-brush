@@ -763,6 +763,7 @@ namespace TiltBrush
         public List<TrTransform> GetScriptedTransforms()
         {
             var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+            if (result == null) return new List<TrTransform>();
             List<TrTransform> transforms = result.AsSingleTrList();
             if (transforms.Count != m_NumActivePointers)
             {

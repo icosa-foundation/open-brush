@@ -106,23 +106,4 @@ namespace TiltBrush
 
     }
 
-    [MoonSharpUserData]
-    public class StrokeListApiWrapper
-    {
-        [MoonSharpHidden]
-        public List<Stroke> _Strokes;
-        public static Stroke lastSelected => SelectionManager.m_Instance.LastSelectedStroke;
-        public static Stroke last => SelectionManager.m_Instance.LastStroke;
-
-        public StrokeListApiWrapper()
-        {
-            _Strokes = new List<Stroke>();
-        }
-
-        public StrokeListApiWrapper(List<Stroke> strokes)
-        {
-            _Strokes = strokes;
-        }
-    }
-
 }

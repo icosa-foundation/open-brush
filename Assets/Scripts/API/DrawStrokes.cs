@@ -23,9 +23,14 @@ namespace TiltBrush
     public static class DrawStrokes
     {
 
-        public static void DrawSingleTrList(IEnumerable<TrTransform> path, TrTransform tr, float brushScale = 1f, bool rawStrokes = false)
+        public static void DrawSingleTrList(
+            IEnumerable<TrTransform> path,
+            TrTransform tr,
+            float brushScale = 1f,
+            float smoothing = 0.2f,
+            bool rawStrokes = false)
         {
-            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, null, brushScale, rawStrokes);
+            DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, tr, null, brushScale, rawStrokes, smoothing);
         }
 
         public static void DrawNestedTrList(
@@ -33,7 +38,8 @@ namespace TiltBrush
             TrTransform tr,
             List<Color> colors = null,
             float brushScale = 1f,
-            bool rawStrokes = false)
+            bool rawStrokes = false,
+            float smoothing = 0.2f)
         {
             var paths = pathEnumerable.ToList();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
@@ -51,6 +57,7 @@ namespace TiltBrush
                 int cpCount = path.Count - 1;
                 if (!rawStrokes) cpCount *= 3; // Three control points per original vertex
                 var controlPoints = new List<PointerManager.ControlPoint>(cpCount);
+
                 for (var vertexIndex = 0; vertexIndex < path.Count - 1; vertexIndex++)
                 {
                     Vector3 position = path[vertexIndex].translation;
@@ -58,30 +65,29 @@ namespace TiltBrush
                     float pressure = path[vertexIndex].scale;
                     Vector3 nextPosition = path[(vertexIndex + 1) % path.Count].translation;
 
-                    if (rawStrokes)
+                    void addPoint(Vector3 pos)
                     {
                         controlPoints.Add(new PointerManager.ControlPoint
                         {
-                            m_Pos = position,
+                            m_Pos = pos,
                             m_Orient = orientation,
                             m_Pressure = pressure,
                             m_TimestampMs = time++
                         });
                     }
+
+                    if (rawStrokes)
+                    {
+                        addPoint(position);
+                    }
                     else
                     {
-                        // Create extra control points if needed
-                        // Procedural strokes need to have extra control points added to avoid being smoothed out.
-                        for (float step = 0; step <= 1f; step += 0.25f)
-                        {
-                            controlPoints.Add(new PointerManager.ControlPoint
-                            {
-                                m_Pos = position + (nextPosition - position) * step,
-                                m_Orient = orientation,
-                                m_Pressure = pressure,
-                                m_TimestampMs = time++
-                            });
-                        }
+                        // smoothing controls much to pull extra vertices towards the middle
+                        // 0.25 smooths corners a lot, 0.1 is tighter
+                        addPoint(position + (nextPosition - position));
+                        // addPoint(position + (nextPosition - position) * smoothing);
+                        // addPoint(position + (nextPosition - position) * .5f);
+                        // addPoint(position + (nextPosition - position) * (1 - smoothing));
                     }
 
                 }
@@ -207,16 +213,9 @@ namespace TiltBrush
             return VectorUtils.TessellateScene(sceneInfo.Scene, tessellationOptions);
         }
 
-        public static void DrawCameraPath(CameraPath path, TrTransform tr = default)
+        public static void DrawCameraPath(CameraPath path, float step, TrTransform tr = default)
         {
-            var points = new List<TrTransform>(path.Segments.Count);
-            for (float t = 0; t < path.Segments.Count; t += .1f)
-            {
-                points.Add(TrTransform.TR(
-                    path.GetPosition(new PathT(t)),
-                    path.GetRotation(new PathT(t))
-                ));
-            }
+            var points = path.AsTrList(step);
             DrawNestedTrList(new List<List<TrTransform>> { points }, tr);
         }
     }

@@ -730,17 +730,16 @@ namespace TiltBrush
         {
             RegisterApiClass(script, "App", typeof(AppApiWrapper));
             RegisterApiClass(script, "Brush", typeof(BrushApiWrapper));
-            RegisterApiClass(script, "CameraPath", typeof(CameraPathsApiWrapper));
+            RegisterApiClass(script, "CameraPath", typeof(CameraPathApiWrapper));
             RegisterApiClass(script, "Color", typeof(ColorApiWrapper));
-            RegisterApiClass(script, "Draw", typeof(DrawApiWrapper));
             RegisterApiClass(script, "Easing", typeof(EasingApiWrapper));
-            RegisterApiClass(script, "Guides", typeof(GuidesApiWrapper));
+            RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
-            RegisterApiClass(script, "Images", typeof(ImageApiWrapper));
-            RegisterApiClass(script, "Layers", typeof(LayersApiWrapper));
+            RegisterApiClass(script, "Image", typeof(ImageApiWrapper));
+            RegisterApiClass(script, "Layer", typeof(LayerApiWrapper));
             RegisterApiClass(script, "Math", typeof(MathApiWrapper));
-            RegisterApiClass(script, "Models", typeof(ModelApiWrapper));
-            RegisterApiClass(script, "MultiplePaths", typeof(MultiPathApiWrapper));
+            RegisterApiClass(script, "Model", typeof(ModelApiWrapper));
+            RegisterApiClass(script, "MultiPath", typeof(MultiPathApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
@@ -748,7 +747,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Selection", typeof(SelectionApiWrapper));
             RegisterApiClass(script, "Sketch", typeof(SketchApiWrapper));
             RegisterApiClass(script, "Spectator", typeof(SpectatorApiWrapper));
-            RegisterApiClass(script, "Strokes", typeof(StrokeApiWrapper));
+            RegisterApiClass(script, "Stroke", typeof(StrokeApiWrapper));
             RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
             RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
@@ -757,6 +756,7 @@ namespace TiltBrush
             RegisterApiClass(script, "User", typeof(UserApiWrapper));
             RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
+            RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));

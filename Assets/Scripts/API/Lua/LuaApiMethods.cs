@@ -18,14 +18,6 @@ namespace TiltBrush
             DrawStrokes.DrawNestedTrList(paths.AsMultiTrList(), TrTransform.identity);
         }
 
-        public static void TransformPath(MultiPathApiWrapper path, TrTransform tr)
-        {
-            for (int i = 0; i < path._MultiPath.Count; i++)
-            {
-                TransformPath(path._MultiPath[i], tr);
-            }
-        }
-
         public static void TransformPath(PathApiWrapper path, TrTransform tr)
         {
             for (int i = 0; i < path._Path.Count; i++)

@@ -6,19 +6,19 @@ using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
-    public class CameraPathsApiWrapper
+    public class CameraPathApiWrapper
     {
 
         public CameraPathWidget _CameraPathWidget;
 
-        public CameraPathsApiWrapper()
+        public CameraPathApiWrapper()
         {
             var widget = WidgetManager.m_Instance.CreatePathWidget();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
             _CameraPathWidget = widget;
         }
 
-        public CameraPathsApiWrapper(CameraPathWidget cameraPathWidget)
+        public CameraPathApiWrapper(CameraPathWidget cameraPathWidget)
         {
             _CameraPathWidget = cameraPathWidget;
         }
@@ -37,16 +37,20 @@ namespace TiltBrush
             return $"CameraPath({_CameraPathWidget})";
         }
 
-        public CameraPathWidget this[int index] => WidgetManager.m_Instance.GetNthActiveCameraPath(index);
-        public CameraPathWidget last => this[count - 1];
-
-        public static int count => WidgetManager.m_Instance.ActiveCameraPathWidgets.Count;
-
-
-        public static CameraPathWidget active
+        public bool active
         {
-            get => WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript;
-            set => WidgetManager.m_Instance.SetCurrentCameraPath(value);
+            get => WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript == _CameraPathWidget;
+            set
+            {
+                if (value)
+                {
+                    WidgetManager.m_Instance.SetCurrentCameraPath(_CameraPathWidget);
+                }
+                else if (active)
+                {
+                    WidgetManager.m_Instance.SetCurrentCameraPath(null);
+                }
+            }
         }
 
         public TrTransform transform
@@ -56,6 +60,13 @@ namespace TiltBrush
             {
                 value = App.Scene.Pose * value;
                 App.Scene.ActiveCanvas.AsCanvas[_CameraPathWidget.transform] = value;
+
+                // After trying various ways to get the path to update after transforming
+                // I gave up and recreated it from scratch.
+                CameraPathMetadata metadata = _CameraPathWidget.AsSerializable();
+                WidgetManager.m_Instance.DeleteCameraPath(_CameraPathWidget);
+                _CameraPathWidget = CameraPathWidget.CreateFromSaveData(metadata);
+                _CameraPathWidget.Path.RefreshEntirePath();
             }
         }
 
@@ -107,12 +118,14 @@ namespace TiltBrush
             WidgetManager.m_Instance.DeleteCameraPath(_CameraPathWidget);
         }
 
-        public CameraPathWidget New()
+        public static CameraPathApiWrapper New()
         {
-            return new CameraPathsApiWrapper()._CameraPathWidget;
+            var wrapper = new CameraPathApiWrapper();
+            wrapper._CameraPathWidget = CameraPathWidget.CreateEmpty();
+            return wrapper;
         }
 
-        public CameraPathWidget CreateFromPath(IPathApiWrapper path, bool looped)
+        public static CameraPathApiWrapper FromPath(IPathApiWrapper path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
             metadata.PathKnots = path.AsSingleTrList().Select(t => new CameraPathPositionKnotMetadata
@@ -127,7 +140,14 @@ namespace TiltBrush
             if (looped) widget.ExtendPath(Vector3.zero, CameraPathTool.ExtendPathType.Loop);
             widget.Path.RefreshEntirePath();
             WidgetManager.m_Instance.SetCurrentCameraPath(widget);
-            return active;
+            return new CameraPathApiWrapper(widget);
+        }
+
+        public PathApiWrapper AsPath(float step)
+        {
+            return new PathApiWrapper(
+                _CameraPathWidget.Path.AsTrList(step)
+            );
         }
 
         public CameraPathWidget Duplicate()
@@ -235,10 +255,7 @@ namespace TiltBrush
             var rot = rotation * Vector3.forward;
             rot = App.Scene.MainCanvas.Pose.rotation * rot; // convert to canvas space
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new ModifyPositionKnotCommand(
-                    _CameraPathWidget.Path, knotDesc, smoothing, rot,
-                    mergesWithCreateCommand: true
-                )
+                new ModifyPositionKnotCommand(_CameraPathWidget.Path, knotDesc, smoothing, rot, final: true)
             );
         }
 
@@ -304,7 +321,7 @@ namespace TiltBrush
             return tr;
         }
 
-        public CameraPathWidget Simplify(float tolerance, float smoothing)
+        public CameraPathApiWrapper Simplify(float tolerance, float smoothing)
         {
             List<Vector3> inputPoints = _CameraPathWidget.Path.PositionKnots.Select(knot => knot.transform.position).ToList();
             List<Quaternion> inputRots = _CameraPathWidget.Path.PositionKnots.Select(knot => knot.transform.rotation).ToList();
@@ -341,7 +358,7 @@ namespace TiltBrush
 
             float lastSegmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[inputPoints.Count - 1]).magnitude;
             newPoints.Add(TrTransform.TRS(inputPoints[inputPoints.Count - 1], inputRots[inputRots.Count - 1], lastSegmentLength * smoothing ));
-            return CreateFromPath(new PathApiWrapper(newPoints), _CameraPathWidget.Path.PathLoops);
+            return FromPath(new PathApiWrapper(newPoints), _CameraPathWidget.Path.PathLoops);
         }
     }
 }

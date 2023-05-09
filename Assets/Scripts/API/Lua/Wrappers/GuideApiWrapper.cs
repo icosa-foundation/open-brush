@@ -1,14 +1,15 @@
-﻿using MoonSharp.Interpreter;
+﻿using System.Linq;
+using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
-    public class GuidesApiWrapper
+    public class GuideApiWrapper
     {
 
         public StencilWidget _StencilWidget;
 
-        public GuidesApiWrapper(StencilWidget widget)
+        public GuideApiWrapper(StencilWidget widget)
         {
             _StencilWidget = widget;
         }
@@ -17,13 +18,8 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"CameraPath({_StencilWidget})";
+            return $"Guide({_StencilWidget})";
         }
-
-        public StencilWidget this[int index] => WidgetManager.m_Instance.ActiveStencilWidgets[index].WidgetScript;
-        public StencilWidget last => this[count - 1];
-
-        public static int count => WidgetManager.m_Instance.ActiveStencilWidgets.Count;
 
         public TrTransform transform
         {
@@ -74,21 +70,30 @@ namespace TiltBrush
             }
         }
 
-        public static StencilWidget AddCube(TrTransform tr) => _Add(StencilType.Cube, tr);
-        public static StencilWidget AddSphere(TrTransform tr) => _Add(StencilType.Sphere, tr);
-        public static StencilWidget AddCapsule(TrTransform tr) => _Add(StencilType.Capsule, tr);
-        public static StencilWidget AddCone(TrTransform tr) => _Add(StencilType.Cone, tr);
-        public static StencilWidget AddEllipsoid(TrTransform tr) => _Add(StencilType.Ellipsoid, tr);
-        public void Select() => ApiMethods.SelectGuide(index);
-        public void Scale(Vector3 scale) => ApiMethods.ScaleGuide(index, scale);
-        public void Toggle() => ApiMethods.StencilsDisable();
+        public static GuideApiWrapper NewCube(TrTransform transform) => _Add(StencilType.Cube, transform);
+        public static GuideApiWrapper NewSphere(TrTransform transform) => _Add(StencilType.Sphere, transform);
+        public static GuideApiWrapper NewCapsule(TrTransform transform) => _Add(StencilType.Capsule, transform);
+        public static GuideApiWrapper NewCone(TrTransform transform) => _Add(StencilType.Cone, transform);
+        public static GuideApiWrapper NewEllipsoid(TrTransform transform) => _Add(StencilType.Ellipsoid, transform);
+        public static GuideApiWrapper NewCustom(TrTransform transform, ModelApiWrapper model)
+        {
+            var guide = _Add(StencilType.Custom, transform);
+            var customGuide = guide._StencilWidget as CustomStencil;
+            if (customGuide == null) return null;
+            customGuide.SetCustomStencil(model._ModelWidget.Model.GetMeshes().First().mesh);
+            return guide;
+        }
+        public void Select() => ApiMethods.SelectWidget(_StencilWidget);
+        public void Scale(Vector3 scale) => SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+            new MoveWidgetCommand(_StencilWidget, _StencilWidget.LocalTransform, scale));
 
-        private static StencilWidget _Add(StencilType type, TrTransform tr)
+        private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(type), tr);
+                WidgetManager.m_Instance.GetStencilPrefab(type), tr, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            return createCommand.Widget as StencilWidget;
+            var widget = createCommand.Widget as StencilWidget;
+            return new GuideApiWrapper(widget);
         }
     }
 }

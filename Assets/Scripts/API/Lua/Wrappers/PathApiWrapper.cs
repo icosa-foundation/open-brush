@@ -52,7 +52,7 @@ namespace TiltBrush
             var transformList = new List<TrTransform>(count);
             for (int i = 0; i < count; i++)
             {
-                transformList[i] = TrTransform.T(positionList[i]);
+                transformList.Add(TrTransform.T(positionList[i]));
             }
             _Path = transformList;
         }
@@ -62,6 +62,8 @@ namespace TiltBrush
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
         public int count => _Path.Count;
+
+        public void Draw() => LuaApiMethods.DrawPath(this);
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
         public void Transform(TrTransform transform)
@@ -75,13 +77,7 @@ namespace TiltBrush
             // Supports non-uniform scaling
             for (var i = 0; i < _Path.Count; i++)
             {
-                var tr = _Path[i];
-                tr.translation = new Vector3(
-                    tr.translation.x * scale.x,
-                    tr.translation.y * scale.y,
-                    tr.translation.z * scale.z
-                );
-                _Path[i] = tr;
+                _Path[i].translation.Scale(scale);
             }
         }
 
@@ -186,19 +182,19 @@ namespace TiltBrush
             return (center, scale);
         }
 
-        public void Resample(float spacing)
+        public static List<TrTransform> Resample(List<TrTransform> trs, float spacing)
         {
-            if (_Path == null || _Path.Count < 2 || spacing <= 0) return;
+            if (trs == null || trs.Count < 2 || spacing <= 0) return trs;
             List<TrTransform> resampledPath = new List<TrTransform>();
-            resampledPath.Add(_Path[0]);
+            resampledPath.Add(trs[0]);
 
             float accumulatedDistance = 0f;
             int originalPathIndex = 0;
-            var startPoint = _Path[0];
+            var startPoint = trs[0];
 
-            while (originalPathIndex < _Path.Count - 1)
+            while (originalPathIndex < trs.Count - 1)
             {
-                var endPoint = _Path[originalPathIndex + 1];
+                var endPoint = trs[originalPathIndex + 1];
                 float segmentDistance = Vector3.Distance(startPoint.translation, endPoint.translation);
 
                 if (accumulatedDistance + segmentDistance >= spacing)
@@ -219,8 +215,13 @@ namespace TiltBrush
                     originalPathIndex++;
                 }
             }
-            resampledPath.Add(_Path[^1]);
-            _Path = resampledPath;
+            resampledPath.Add(trs[^1]);
+            return resampledPath;
+        }
+
+        public void Resample(float spacing)
+        {
+           _Path = Resample(_Path, spacing);
         }
     }
 }

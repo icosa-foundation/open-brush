@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Draws words that follows your brush. Tries to access the clipboard so try copying in some text.",
     space="canvas"
 }
@@ -28,7 +28,7 @@ function WhileTriggerPressed()
         letter = string.sub(text, letterCount, letterCount)
         rot = Brush.rotation
         transform = Transform:New(Brush.position, rot, size)
-        Draw:Text(letter, transform)
+        MultiPath:FromText(letter, transform):Draw()
         letterCount = letterCount % string.len(text)
         distance = 0
     end

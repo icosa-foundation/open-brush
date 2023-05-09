@@ -17,13 +17,8 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"CameraPath({_ModelWidget})";
+            return $"Model({_ModelWidget})";
         }
-
-        public ModelWidget this[int index] => WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
-        public ModelWidget last => this[count - 1];
-
-        public static int count => WidgetManager.m_Instance.ActiveModelWidgets.Count;
 
         public TrTransform transform
         {
@@ -74,7 +69,7 @@ namespace TiltBrush
             }
         }
 
-        // public ModelWidget void import() => ApiMethods.ImportModel();
+        public static ModelApiWrapper Import(string location) => new ModelApiWrapper(ApiMethods.ImportModel(location));
         public void Select() => ApiMethods.SelectModel(index);
     }
 }

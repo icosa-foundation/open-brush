@@ -33,7 +33,8 @@ namespace TiltBrush
         Cylinder,
         InteriorDome,
         Pyramid,
-        Ellipsoid
+        Ellipsoid,
+        Custom
     }
 
     [Serializable]

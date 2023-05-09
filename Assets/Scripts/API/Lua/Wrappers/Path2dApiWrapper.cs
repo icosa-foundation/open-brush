@@ -181,6 +181,24 @@ namespace TiltBrush
             return (center, scale);
         }
 
+        public static Path2dApiWrapper Polygon(int sides)
+        {
+            var path = new List<Vector2>(sides);
+            for (float i = 0; i <= sides; i++)
+            {
+                var theta = Mathf.PI * (i / sides) * 2f;
+                theta += Mathf.Deg2Rad;
+                var point = new Vector3(
+                    Mathf.Cos(theta),
+                    Mathf.Sin(theta),
+                    0
+                );
+                point = ApiManager.Instance.BrushRotation * point;
+                path.Add(point);
+            }
+            return new Path2dApiWrapper(path);
+        }
+
         public void Resample(float spacing)
         {
             if (_Path2d == null || _Path2d.Count < 2 || spacing <= 0) return;

@@ -28,6 +28,9 @@ namespace TiltBrush
         // Location where the model is grabbable by the brush controller
         private TrTransform m_EndXf;
         private Quaternion? m_DesiredEndForward;
+        private bool m_ForceTransform;
+        private float m_SnapGridSize;
+        private float m_SnapAngle;
         private CanvasScript m_Canvas;
 
         // Creates a new widget by instantiating the prefab and setting its transform.
@@ -36,6 +39,9 @@ namespace TiltBrush
             GrabWidget widgetPrefab,
             TrTransform spawnXf,
             Quaternion? desiredEndForward = null,
+            bool forceTransform = false,
+            float snapGrid = 0,
+            float snapAngle = 0,
             BaseCommand parent = null)
             : base(parent)
         {
@@ -43,12 +49,15 @@ namespace TiltBrush
                 InputManager.ControllerName.Brush).transform;
             m_Canvas = App.ActiveCanvas;
             m_SpawnXf = spawnXf;
-            m_EndXf = TrTransform.TRS(
+            m_EndXf = forceTransform ? m_SpawnXf : TrTransform.TRS(
                 Vector3.Lerp(m_SpawnXf.translation, controller.position, m_SpawnAggression),
                 controller.rotation,
                 m_SpawnXf.scale);
             m_Prefab = widgetPrefab;
             m_DesiredEndForward = desiredEndForward;
+            m_ForceTransform = forceTransform;
+            m_SnapGridSize = snapGrid;
+            m_SnapAngle = snapAngle;
         }
 
         public GrabWidget Widget { get { return m_Widget; } }
@@ -116,7 +125,7 @@ namespace TiltBrush
                     WidgetManager.m_Instance.CameraPathsVisible = true;
                 }
 
-                m_Widget.InitIntroAnim(m_SpawnXf, m_EndXf, false, m_DesiredEndForward);
+                m_Widget.InitIntroAnim(m_SpawnXf, m_EndXf, false, m_DesiredEndForward, m_ForceTransform, m_SnapGridSize, m_SnapAngle);
                 m_TiltMeterCost = m_Widget.GetTiltMeterCost();
             }
 

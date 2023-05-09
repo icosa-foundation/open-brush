@@ -16,13 +16,8 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"CameraPath({_ImageWidget})";
+            return $"Image({_ImageWidget})";
         }
-
-        public ImageWidget this[int index] => WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
-        public ImageWidget last => this[count - 1];
-
-        public static int count => WidgetManager.m_Instance.ActiveImageWidgets.Count;
 
         public TrTransform transform
         {
@@ -73,7 +68,7 @@ namespace TiltBrush
             }
         }
 
-        public ImageWidget Import(string location) => ApiMethods.ImportImage(location);
+        public static ImageApiWrapper Import(string location) => new (ApiMethods.ImportImage(location));
         public void Select() => ApiMethods.SelectImage(index);
         public string FormEncode() => ApiMethods.FormEncodeImage(index);
         public string SaveBase64(string base64, string filename) => ApiMethods.SaveBase64(base64, filename);

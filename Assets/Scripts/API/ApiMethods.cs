@@ -356,6 +356,34 @@ namespace TiltBrush
             return image;
         }
 
+        [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
+        public static VideoWidget ImportVideo(string location)
+        {
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            {
+                location = _DownloadMediaFileFromUrl(location, "Videos");
+            }
+            location = Path.Combine(App.VideoLibraryPath(), location);
+
+            // TODO don't use "turtle" coordinates
+            var tr = new TrTransform();
+            tr.translation = ApiManager.Instance.BrushPosition;
+            tr.rotation = ApiManager.Instance.BrushRotation;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var videoWidget = cmd.Widget as VideoWidget;
+            if (videoWidget != null)
+            {
+                var video = new ReferenceVideo(location);
+                videoWidget.SetVideo(video);
+                videoWidget.Show(true);
+                cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
+                // videoWidget.VideoController.Playing = true;
+                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => {}));
+            }
+            return videoWidget;
+        }
+
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
         public static ImageWidget ImportImage(string location)
         {
@@ -365,6 +393,8 @@ namespace TiltBrush
             }
 
             ReferenceImage image = _LoadReferenceImage(location);
+
+            // TODO don't use "turtle" coordinates
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;
@@ -452,7 +482,7 @@ namespace TiltBrush
             SelectWidget(_GetActiveModel(index));
         }
 
-        private static void SelectWidget(GrabWidget widget)
+        public static void SelectWidget(GrabWidget widget)
         {
             SelectionManager.m_Instance.SelectWidget(widget);
         }
@@ -602,34 +632,6 @@ namespace TiltBrush
         {
             LuaManager.Instance.PointerScriptsEnabled = false;
         }
-
-        // WIP
-        // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
-        // public static void ImportVideo(string location)
-        // {
-        //     if (location.StartsWith("http://") || location.StartsWith("https://"))
-        //     {
-        //         location = _DownloadMediaFileFromUrl(location, "Videos");
-        //     }
-        //     location = DownloadMediaFileFromUrl(location, "Videos");
-        //
-        //     location = Path.Combine("Videos", location);
-        //     var video = new TiltVideo();
-        //     video.FilePath = location;
-        //     VideoWidget.FromTiltVideo(video);
-        //     // var tr = new TrTransform();
-        //     // tr.translation = ApiManager.Instance.BrushPosition;
-        //     // tr.rotation = ApiManager.Instance.BrushRotation;
-        //     // CreateWidgetCommand createCommand = new CreateWidgetCommand(
-        //     //     WidgetManager.m_Instance.ImageWidgetPrefab, tr);
-        //     // SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-        //     // videoWidget.Show(true);
-        //     // createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
-        //     //
-        //     // WidgetManager.m_Instance.WidgetsDormant = false;
-        //     // SketchControlsScript.m_Instance.EatGazeObjectInput();
-        //     // SelectionManager.m_Instance.RemoveFromSelection(false);
-        // }
 
         [ApiEndpoint("guide.add", "Adds a guide to the scene")]
         public static void AddGuide(string type)

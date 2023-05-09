@@ -16,10 +16,10 @@ function WhileTriggerPressed()
     currentPos = Brush.position
 
     if App.frames % rate == 0 then
-        Draw:Path({
+        Path:New({
             Transform:New(initialPos, Brush.rotation),
             Transform:New(currentPos, Brush.rotation),
-       })
+       }):Draw()
     end
 
     --Leave the actual pointer position unchanged

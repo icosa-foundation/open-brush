@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Rotates a layer around it's center"
 }
 
@@ -11,7 +11,7 @@ Parameters = {
 function Start()
     originalRotation = layer:GetRotation(layerNumber)
     rotation = Rotation.zero
-    layer = Layers.active
+    layer = Sketch.layers.active
     layer:CenterPivot(layerNumber)
     layer:ShowPivot(layerNumber)
 end

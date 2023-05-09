@@ -19,9 +19,9 @@ namespace TiltBrush
         }
 
         // Convenient shorthand
-        public TransformApiWrapper(float xPosition, float yPosition, float zPosition)
+        public TransformApiWrapper(float x, float y, float z)
         {
-            _TrTransform = TrTransform.T(new Vector3(xPosition, yPosition, zPosition));
+            _TrTransform = TrTransform.T(new Vector3(x, y, z));
         }
 
         public TransformApiWrapper(TrTransform tr)

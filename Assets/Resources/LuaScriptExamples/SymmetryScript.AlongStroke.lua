@@ -1,9 +1,11 @@
 Settings = {space="pointer"}
 
 function Start()
-    stroke = App.lastStroke
+    print (Sketch.strokes)
+    print (Sketch.strokes.last)
+    stroke = Sketch.strokes.last
 end
 
 function Main()
-    return stroke
+    return stroke.path
 end

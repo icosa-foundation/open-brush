@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Simple layer animation example"
 }
 
@@ -7,7 +7,7 @@ Parameters = {
 }
 
 function Start()
-    layer = Layers.active
+    layer = Sketch.layers.active
     cameraPath = CameraPath.active
 end
 

@@ -274,7 +274,12 @@ namespace TiltBrush
         // Mainly stored for use in scripts
         private Stroke m_LastSelectedStroke;
         private Stroke m_LastStroke;
+
         private GrabWidget m_LastSelectedWidget;
+        private ImageWidget m_LastSelectedImage;
+        private VideoWidget m_LastSelectedVideo;
+        private ModelWidget m_LastSelectedModel;
+        private StencilWidget m_LastSelectedStencil;
 
         private List<TrTransform> m_LastSelectedStrokeCP;
 
@@ -297,6 +302,30 @@ namespace TiltBrush
         {
             get => m_LastSelectedWidget;
             set => m_LastSelectedWidget = value;
+        }
+
+        public ImageWidget LastSelectedImage
+        {
+            get => m_LastSelectedImage;
+            set => m_LastSelectedImage = value;
+        }
+
+        public VideoWidget LastSelectedVideo
+        {
+            get => m_LastSelectedVideo;
+            set => m_LastSelectedVideo = value;
+        }
+
+        public ModelWidget LastSelectedModel
+        {
+            get => m_LastSelectedModel;
+            set => m_LastSelectedModel = value;
+        }
+
+        public StencilWidget LastSelectedStencil
+        {
+            get => m_LastSelectedStencil;
+            set => m_LastSelectedStencil = value;
         }
 
         /// Returns the active strokes in the given group.
@@ -734,7 +763,22 @@ namespace TiltBrush
             {
                 SelectWidget(widget);
             }
-            if (widgets.Any()) LastSelectedWidget = widgets.Last();
+            if (widgets.Any())
+            {
+                LastSelectedWidget = widgets.Last();
+
+                var imageWidget = widgets.Last(w => w is ImageWidget) as ImageWidget;
+                LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
+
+                var videoWidget = widgets.Last(w => w is VideoWidget) as VideoWidget;
+                LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
+
+                var modelWidget = widgets.Last(w => w is ModelWidget) as ModelWidget;
+                LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
+
+                var stencilWidget = widgets.Last(w => w is StencilWidget) as StencilWidget;
+                LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
+            }
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -1065,7 +1109,22 @@ namespace TiltBrush
             rotation = Quaternion.Euler(0, round(y), 0) * rotation;
             return rotation;
         }
-        public Vector3 SnapToGrid(Vector3 position_GS)
+
+        // All transforms are in canvas space
+        public Vector3 SnapToGrid_CS(Vector3 position)
+        {
+            float gridSize = SnappingGridSize;
+            if (gridSize == 0) return position;
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(position.x),
+                round(position.y),
+                round(position.z)
+            );
+            return roundedCanvasPos;
+        }
+
+        public Vector3 SnapToGrid_GS(Vector3 position_GS)
         {
             if (SnappingGridSize == 0) return position_GS;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
