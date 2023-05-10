@@ -141,7 +141,8 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, "previewType");
+                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
+                var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
                 if (drawnVector_GS.sqrMagnitude > 0)
@@ -187,7 +188,19 @@ namespace TiltBrush
                             Graphics.DrawMesh(previewSphere, transform_GS, previewMaterial, 0);
                             break;
                         case "quad":
-                            Graphics.DrawMesh(previewQuad, transform_GS, previewMaterial, 0);
+                            var mat = transform_GS;
+                            switch (previewAxisVal.String?.ToLower())
+                            {
+                                case "x":
+                                    mat *= Matrix4x4.Rotate(Quaternion.LookRotation(Vector3.right));
+                                    break;
+                                case "y":
+                                    mat *= Matrix4x4.Rotate(Quaternion.LookRotation(Vector3.up));
+                                    break;
+                                default:
+                                    break;
+                            }
+                            Graphics.DrawMesh(previewQuad, mat, previewMaterial, 0);
                             break;
                         case "capsule":
                             Graphics.DrawMesh(previewCapsule, transform_GS, previewMaterial, 0);
@@ -209,6 +222,7 @@ namespace TiltBrush
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     SetApiProperty("Tool.endPosition", rAttachPoint_CS.translation);
                     SetApiProperty("Tool.vector", drawnVector_CS);
+                    SetApiProperty("Tool.rotation", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
                     DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
                     ApiManager.Instance.EndUndo();
                 }
