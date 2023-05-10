@@ -36,6 +36,12 @@ namespace TiltBrush
             }
         }
 
+        public string brushType => _Stroke.m_BatchSubset.m_ParentBatch.Brush.m_Description;
+        public float brushSize => _Stroke.m_BrushSize;
+        public ColorApiWrapper brushColor => new ColorApiWrapper(_Stroke.m_Color);
+
+        public LayerApiWrapper layer => new LayerApiWrapper(_Stroke.Canvas);
+
         public StrokeApiWrapper(Stroke stroke)
         {
             _Stroke = stroke;
@@ -48,7 +54,7 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"{_Stroke.m_BatchSubset.m_ParentBatch.Brush.m_Description} stroke on {_Stroke.Canvas.name})";
+            return $"{brushType} stroke on {layer._CanvasScript.name})";
         }
 
 
