@@ -4,7 +4,7 @@ Settings = {
 }
 
 Parameters = {
-    xzSpacing = {label="Horizontal Spacing", type="float", min=0.01, max=20, default=2},
+    xzGrid = {label="Horizontal Spacing", type="float", min=0.01, max=20, default=2},
     yGrid={label="Vertical Spacing", type="float", min=0.01, max=20, default=0.25},
 }
 
@@ -27,7 +27,9 @@ function WhileTriggerPressed()
         if bottom == nil then
             bottom = 0
         end
-        return cube(cell, bottom, top, xzGrid)
+        path = cube(cell, bottom, top, xzGrid)
+        path:Resample(0.1)
+        return path
     else
         return Path:New()
     end

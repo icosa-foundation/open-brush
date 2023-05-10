@@ -28,7 +28,10 @@ function WhileTriggerPressed()
         letter = string.sub(text, letterCount, letterCount)
         rot = Brush.rotation
         transform = Transform:New(Brush.position, rot, size)
-        MultiPath:FromText(letter, transform):Draw()
+        path = MultiPath:FromText(letter)
+        path:Transform(transform)
+        path:Resample(0.01)
+        path:Draw()
         letterCount = letterCount % string.len(text)
         distance = 0
     end

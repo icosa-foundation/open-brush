@@ -15,6 +15,7 @@ function Main()
     if (spacing ~= lastSpacing) then
         updatePath()
         lastSpacing = spacing
+        symmetryHueShift.generate(path.count, initialHsv)
     end
 
     return Symmetry.PathToPolar(path)

@@ -22,7 +22,9 @@ function WhileTriggerPressed()
 
     if (filledCells[key]==nil) then
         filledCells[key] = true
-        return cube(cell, gridSize)
+        path = cube(cell, gridSize)
+        path:Resample(0.1)
+        return path
     else
         return Path:New()
     end
