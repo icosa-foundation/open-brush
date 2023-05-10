@@ -4318,12 +4318,10 @@ namespace TiltBrush
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.FourAroundY)
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.FourAroundY);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
@@ -4331,12 +4329,10 @@ namespace TiltBrush
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.TwoHanded);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
@@ -4344,12 +4340,10 @@ namespace TiltBrush
                     if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.ScriptedSymmetryMode);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
                         PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Off");
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
