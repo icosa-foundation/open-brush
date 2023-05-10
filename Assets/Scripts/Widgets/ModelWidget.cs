@@ -30,6 +30,7 @@ namespace TiltBrush
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private float m_InitSize_CS;
+        public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
         private bool m_PolyCallbackActive;
 

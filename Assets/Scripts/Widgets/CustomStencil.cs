@@ -43,9 +43,9 @@ namespace TiltBrush
 
         protected override void Awake()
         {
-            base.Awake();
             m_Type = StencilType.Custom;
-            SetCustomStencil(m_DefaultMesh);
+            // SetCustomStencil(m_DefaultMesh);
+            base.Awake();
         }
 
         public void SetCustomStencil(Mesh mesh = null)
@@ -55,12 +55,17 @@ namespace TiltBrush
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
         }
 
+        public void SetColliderScale(float scale)
+        {
+            var collider = GetComponentInChildren<MeshCollider>();
+            collider.transform.localScale = Vector3.one * scale * 0.5f; // Compensate for the prefab having a scale of 2
+        }
+
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             var collider = GetComponentInChildren<MeshCollider>();
             surfacePos = collider.ClosestPoint(pos);
             surfaceNorm = Vector3.zero;
-            Vector3 vCenterToPos = pos - transform.position;
             RaycastHit hit;
             if (Physics.Raycast(pos, surfacePos - pos, out hit))
             {

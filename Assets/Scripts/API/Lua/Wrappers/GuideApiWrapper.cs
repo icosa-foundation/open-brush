@@ -81,6 +81,7 @@ namespace TiltBrush
             var customGuide = guide._StencilWidget as CustomStencil;
             if (customGuide == null) return null;
             customGuide.SetCustomStencil(model._ModelWidget.Model.GetMeshes().First().mesh);
+            customGuide.SetColliderScale(model._ModelWidget.InitSize_CS);
             return guide;
         }
         public void Select() => ApiMethods.SelectWidget(_StencilWidget);
