@@ -62,7 +62,12 @@ namespace TiltBrush
         public static PathApiWrapper New(List<TrTransform> transformList) => new PathApiWrapper(transformList);
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
-        public int count => _Path.Count;
+        public int count => _Path?.Count ?? 0;
+
+        public override string ToString()
+        {
+            return _Path == null ? "Empty Path" : $"Path with {count} points)";
+        }
 
         public void Draw() => LuaApiMethods.DrawPath(this);
         public void Insert(TrTransform transform) => _Path.Add(transform);

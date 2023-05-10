@@ -1374,13 +1374,6 @@ namespace TiltBrush
             FinalizeLine();
 
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
-
-            // Store last stroke for API usage
-            try
-            {
-                SelectionManager.m_Instance.LastStroke = SketchMemoryScript.m_Instance.MostRecentStroke;
-            }
-            catch (NullReferenceException e) { }
         }
 
         private void State_ProcessingStraightEdge(bool terminate)

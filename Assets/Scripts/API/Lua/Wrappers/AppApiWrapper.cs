@@ -75,6 +75,8 @@ namespace TiltBrush
             return contents;
         }
 
+        public static void Error(string message) => LuaManager.Instance.LogLuaErrorRaisedByScript(message);
+
         public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)

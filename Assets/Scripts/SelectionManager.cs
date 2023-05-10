@@ -292,12 +292,6 @@ namespace TiltBrush
             set => m_LastSelectedStroke = value;
         }
 
-        public Stroke LastStroke
-        {
-            get => m_LastStroke;
-            set => m_LastStroke = value;
-        }
-
         public GrabWidget LastSelectedWidget
         {
             get => m_LastSelectedWidget;

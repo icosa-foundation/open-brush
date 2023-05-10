@@ -56,10 +56,16 @@ namespace TiltBrush
             return new MultiPathApiWrapper(builder.Build(text));
         }
 
-        public int count => _MultiPath.Count;
-        public int pointCount => _MultiPath.Sum(l => l.Count);
+        public int count => _MultiPath?.Count ?? 0;
+        public int pointCount => _MultiPath?.Sum(l => l.Count) ?? 0;
+
+        public override string ToString()
+        {
+            return _MultiPath == null ? "Empty Path" : $"MultiPath with {count} paths and {pointCount} points";
+        }
+
         public void Insert(PathApiWrapper path) => _MultiPath.Add(path._Path);
-        public void InsertPoint(TrTransform transform) => _MultiPath.Last().Add(transform);
+        public void InsertPoint(TrTransform transform) => _MultiPath[^1].Add(transform);
 
         public void Transform(TrTransform transform)
         {

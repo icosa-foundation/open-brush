@@ -14,6 +14,7 @@ namespace TiltBrush
         {
             get
             {
+                if (_Stroke == null) return new PathApiWrapper();
                 if (m_Path == null)
                 {
                     var origin = _Stroke.m_ControlPoints[0].m_Pos;
@@ -36,27 +37,21 @@ namespace TiltBrush
             }
         }
 
-        public string brushType => _Stroke.m_BatchSubset.m_ParentBatch.Brush.m_Description;
+        public string brushType => _Stroke?.m_BatchSubset.m_ParentBatch.Brush.m_Description;
         public float brushSize => _Stroke.m_BrushSize;
         public ColorApiWrapper brushColor => new ColorApiWrapper(_Stroke.m_Color);
 
-        public LayerApiWrapper layer => new LayerApiWrapper(_Stroke.Canvas);
+        public LayerApiWrapper layer => _Stroke != null ? new LayerApiWrapper(_Stroke.Canvas) : null;
 
         public StrokeApiWrapper(Stroke stroke)
         {
             _Stroke = stroke;
         }
 
-        public StrokeApiWrapper(StrokeApiWrapper stroke)
-        {
-            _Stroke = stroke._Stroke;
-        }
-
         public override string ToString()
         {
-            return $"{brushType} stroke on {layer._CanvasScript.name})";
+            return _Stroke == null ? "Empty Stroke" : $"{brushType} stroke on {layer._CanvasScript.name})";
         }
-
 
         // public Transform this[int index] => SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
         // public Stroke last => this[count - 1];
@@ -93,7 +88,7 @@ namespace TiltBrush
             }
         }
 
-        public int count => _Stroke.m_ControlPoints.Length;
+        public int count => _Stroke?.m_ControlPoints.Length ?? 0;
 
         public void Delete()
         {

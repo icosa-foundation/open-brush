@@ -9,7 +9,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<ModelWidget> _Models;
         public ModelApiWrapper lastSelected => new ModelApiWrapper(SelectionManager.m_Instance.LastSelectedModel);
-        public ModelApiWrapper last => new ModelApiWrapper(_Models.Last());
+        public ModelApiWrapper last => (_Models == null || _Models.Count == 0) ? null : new ModelApiWrapper(_Models[^1]);
 
         public ModelListApiWrapper()
         {
@@ -22,7 +22,7 @@ namespace TiltBrush
         }
 
         public ModelApiWrapper this[int index] => new ModelApiWrapper(_Models[index]);
-        public int count => _Models.Count;
+        public int count => _Models?.Count ?? 0;
 
     }
 }

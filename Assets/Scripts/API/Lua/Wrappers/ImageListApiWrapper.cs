@@ -9,7 +9,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<ImageWidget> _Images;
         public ImageApiWrapper lastSelected => new ImageApiWrapper(SelectionManager.m_Instance.LastSelectedImage);
-        public ImageApiWrapper last => new ImageApiWrapper(_Images.Last());
+        public ImageApiWrapper last => (_Images == null || _Images.Count == 0) ? null : new ImageApiWrapper(_Images[^1]);
 
         public ImageListApiWrapper()
         {
@@ -22,6 +22,6 @@ namespace TiltBrush
         }
 
         public ImageApiWrapper this[int index] => new ImageApiWrapper(_Images[index]);
-        public int count => _Images.Count;
+        public int count => _Images?.Count ?? 0;
     }
 }

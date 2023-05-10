@@ -9,7 +9,7 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public List<Light> _Lights;
-        public LightApiWrapper last => new LightApiWrapper(_Lights.Last());
+        public LightApiWrapper last => new LightApiWrapper(_Lights[^1]);
 
         public LightListApiWrapper()
         {

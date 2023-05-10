@@ -329,6 +329,11 @@ namespace TiltBrush
             return null;
         }
 
+        public void LogLuaErrorRaisedByScript(string msg)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine(msg, true, true);
+        }
+
         public void LogLuaInterpreterError(Script script, string fnName, InterpreterException e)
         {
             string msg = e.DecoratedMessage ?? e.Message;
@@ -361,7 +366,6 @@ namespace TiltBrush
             string errorMsg = $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
-
         }
 
         public void LogLuaMessage(string s)

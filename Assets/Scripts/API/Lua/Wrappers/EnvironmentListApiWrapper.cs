@@ -8,7 +8,7 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public List<Environment> _Environments;
-        public EnvironmentApiWrapper last => new EnvironmentApiWrapper(_Environments.Last());
+        public EnvironmentApiWrapper last => new EnvironmentApiWrapper(_Environments[^1]);
 
         public EnvironmentListApiWrapper()
         {

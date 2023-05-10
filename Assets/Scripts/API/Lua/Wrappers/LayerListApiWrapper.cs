@@ -8,7 +8,7 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public List<CanvasScript> _Layers;
-        public LayerApiWrapper last => new LayerApiWrapper(_Layers.Last());
+        public LayerApiWrapper last => new LayerApiWrapper(_Layers[^1]);
 
         public LayerListApiWrapper()
         {
@@ -22,7 +22,7 @@ namespace TiltBrush
         public LayerApiWrapper this[int index] => new LayerApiWrapper(_Layers[index]);
         public LayerApiWrapper this[string name] => new LayerApiWrapper(_Layers.First(x => x.name == name));
         public  LayerApiWrapper main => new LayerApiWrapper(_Layers[0]);
-        public static int count => App.Scene.LayerCanvases.Count();
+        public int count => _Layers?.Count ?? 0;
 
         public LayerApiWrapper active
         {

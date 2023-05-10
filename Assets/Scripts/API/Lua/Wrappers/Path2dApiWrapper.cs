@@ -54,7 +54,7 @@ namespace TiltBrush
         public static Path2dApiWrapper New(List<Vector2> transformList) => new Path2dApiWrapper(transformList);
         public static Path2dApiWrapper New(List<Vector3> positionList) => new Path2dApiWrapper(positionList);
 
-        public int count => _Path2d.Count;
+        public int count => _Path2d?.Count ?? 0;
         public void Insert(Vector2 transform) => _Path2d.Add(transform);
 
         public PathApiWrapper OnX() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(0, v.x, v.y)).ToList());

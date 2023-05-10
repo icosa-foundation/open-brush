@@ -9,7 +9,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<StencilWidget> _Guides;
         public GuideApiWrapper lastSelected => new GuideApiWrapper(SelectionManager.m_Instance.LastSelectedStencil);
-        public GuideApiWrapper last => new GuideApiWrapper(_Guides.Last());
+        public GuideApiWrapper last => (_Guides == null || _Guides.Count == 0) ? null : new GuideApiWrapper(_Guides[^1]);
 
         public GuideListApiWrapper()
         {
@@ -28,7 +28,7 @@ namespace TiltBrush
         }
 
         public GuideApiWrapper this[int index] => new GuideApiWrapper(_Guides[index]);
-        public int count => _Guides.Count;
+        public int count => _Guides?.Count ?? 0;
 
     }
 }

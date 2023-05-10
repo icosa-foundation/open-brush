@@ -11,7 +11,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<CameraPathWidget> _CameraPaths;
 
-        public CameraPathApiWrapper last => new CameraPathApiWrapper(_CameraPaths[count - 1]);
+        public CameraPathApiWrapper last => (_CameraPaths == null || _CameraPaths.Count == 0) ? null : new CameraPathApiWrapper(_CameraPaths[^1]);
 
         public CameraPathListApiWrapper()
         {
@@ -24,7 +24,7 @@ namespace TiltBrush
         }
 
         public CameraPathApiWrapper this[int index] => new CameraPathApiWrapper(_CameraPaths[index]);
-        public int count => _CameraPaths.Count;
+        public int count => _CameraPaths?.Count ?? 0;
 
 
         public CameraPathWidget active
@@ -33,9 +33,9 @@ namespace TiltBrush
             set => WidgetManager.m_Instance.SetCurrentCameraPath(value);
         }
 
-        public static void ShowAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
-        public static void HideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
-        public static void PreviewActivePath(bool active) => WidgetManager.m_Instance.FollowingPath = active;
+        public void ShowAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
+        public void HideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
+        public void PreviewActivePath(bool active) => WidgetManager.m_Instance.FollowingPath = active;
     }
 }
 

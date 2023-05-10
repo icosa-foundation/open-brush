@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
@@ -7,8 +8,9 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public List<Stroke> _Strokes;
-        public static StrokeApiWrapper lastSelected => new StrokeApiWrapper(SelectionManager.m_Instance.LastSelectedStroke);
-        public static StrokeApiWrapper last => new StrokeApiWrapper(SelectionManager.m_Instance.LastStroke);
+        public StrokeApiWrapper lastSelected => new StrokeApiWrapper(SelectionManager.m_Instance.LastSelectedStroke);
+        public StrokeApiWrapper last => _Strokes == null || _Strokes.Count == 0 ? null : new StrokeApiWrapper(_Strokes[^1]);
+        public int count => _Strokes?.Count ?? 0;
 
         public StrokeListApiWrapper()
         {

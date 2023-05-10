@@ -9,7 +9,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<VideoWidget> _Videos;
         public VideoApiWrapper lastSelected => new VideoApiWrapper(SelectionManager.m_Instance.LastSelectedVideo);
-        public VideoApiWrapper last => new VideoApiWrapper(_Videos[count - 1]);
+        public VideoApiWrapper last => (_Videos == null || _Videos.Count == 0) ? null : new VideoApiWrapper(_Videos[^1]);
 
         public VideoListApiWrapper()
         {
@@ -22,7 +22,7 @@ namespace TiltBrush
         }
 
         public VideoApiWrapper this[int index] => new VideoApiWrapper(_Videos[index]);
-        public int count => _Videos.Count;
+        public int count => _Videos?.Count ?? 0;
 
 
     }
