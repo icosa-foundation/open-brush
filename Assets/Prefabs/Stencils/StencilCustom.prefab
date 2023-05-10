@@ -69,7 +69,7 @@ MonoBehaviour:
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_MinSize_CS: 0.1
   m_MaxSize_CS: 200
-  m_TintColor: {r: 1, g: 1, b: 1, a: 0}
+  m_TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_StencilGrabDistance: 1
   m_PointerLiftSlope: 0.0002
   m_DefaultMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
@@ -113,7 +113,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000011619151448}
-  m_Mesh: {fileID: 4300000, guid: 793b0c4790e0a1645977c07a1f99a01d, type: 3}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &23000012466095934
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -183,7 +183,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4000013021276218}
   m_Father: {fileID: 4000011963436858}
@@ -201,5 +201,5 @@ MeshCollider:
   m_Enabled: 1
   serializedVersion: 4
   m_Convex: 1
-  m_CookingOptions: 0
-  m_Mesh: {fileID: 0}
+  m_CookingOptions: -1
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
