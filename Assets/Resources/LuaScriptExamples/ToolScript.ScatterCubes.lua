@@ -17,7 +17,7 @@ function WhileTriggerPressed()
     origin = Brush.position
 
     if (Random.value < amount) then
-        randomOffset = Random.InsideUnitSphere():Scale(spread)
+        randomOffset = Random.insideUnitSphere:Multiply(spread)
         return drawCube(
             origin:Add(randomOffset),
             Random.value * maxSize
