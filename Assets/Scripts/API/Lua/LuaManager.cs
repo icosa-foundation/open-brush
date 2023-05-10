@@ -67,6 +67,8 @@ namespace TiltBrush
         public static string WhileTriggerPressed => "WhileTriggerPressed";
         public static string ScriptNameString => "_ScriptName";
         public static string IsExampleScriptBool => "_IsExampleScript";
+        public static string ToolPreviewType => "previewType";
+        public static string ToolPreviewAxis => "previewAxis";
 
     }
 
