@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -182,6 +183,29 @@ namespace TiltBrush
             return (center, scale);
         }
 
+        public static List<TrTransform> Subdivide(List<TrTransform> trs, int parts)
+        {
+            if (trs == null || trs.Count < 2 || parts <= 0) return trs;
+            List<TrTransform> subdividedPath = new List<TrTransform>();
+
+            for (int i = 0; i < trs.Count - 1; i++)
+            {
+                var currentTr = trs[i];
+                var nextTr = trs[i + 1];
+                for (int j = 0; j < parts; j++)
+                {
+                    var newTr = TrTransform.TRS(
+                        Vector3.Lerp(currentTr.translation, nextTr.translation, j),
+                        Quaternion.Lerp(currentTr.rotation, nextTr.rotation, j),
+                        Mathf.Lerp(currentTr.scale, nextTr.scale, j)
+                    );
+                    subdividedPath.Add(newTr);
+                }
+            }
+            subdividedPath.Add(trs[^1]);
+            return subdividedPath;
+        }
+
         public static List<TrTransform> Resample(List<TrTransform> trs, float spacing)
         {
             if (trs == null || trs.Count < 2 || spacing <= 0) return trs;
@@ -222,6 +246,11 @@ namespace TiltBrush
         public void Resample(float spacing)
         {
            _Path = Resample(_Path, spacing);
+        }
+
+        public void Subdivide(int parts)
+        {
+            _Path = Subdivide(_Path, parts);
         }
     }
 }
