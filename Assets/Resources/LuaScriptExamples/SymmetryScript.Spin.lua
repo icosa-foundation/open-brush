@@ -12,9 +12,9 @@ Parameters = {
 function Main()
     pointers = Path:New()
     for i = 1.0, copies do
-        angle = (App.time * speed) + ((Math.pi * 2.0) * (i / copies))
+        angle = (App.time * speed) + (360 * (i / copies))
         position = Vector2:PointOnCircle(angle):Multiply(radius)
-        pointers:Insert(position.x, position.y, 0)
+        pointers:Insert(Transform:New(position.x, position.y, 0))
     end
-    return transforms
+    return pointers
 end

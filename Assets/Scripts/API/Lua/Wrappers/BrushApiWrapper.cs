@@ -13,7 +13,7 @@ namespace TiltBrush
         public static float distanceDrawn => SketchSurfacePanel.m_Instance.ActiveTool.DistanceDrawn_CS;
         public static Vector3 position => LuaManager.Instance.GetPastBrushPos(0);
         public static Quaternion rotation => LuaManager.Instance.GetPastBrushRot(0);
-        public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.forward;
+        public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.back;
         public static float size
         {
             get => PointerManager.m_Instance.MainPointer.BrushSize01;

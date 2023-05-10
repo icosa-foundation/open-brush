@@ -17,7 +17,6 @@ function Main()
     if (spacing ~= lastSpacing) then
         updatePath()
         lastSpacing = spacing
-        symmetryHueShift.generate(path.count, initialHsv)
     end
     return path
 end
@@ -31,5 +30,6 @@ function updatePath()
         path = stroke.path
         path:Resample(spacing)
         path:Center()
+        symmetryHueShift.generate(path.count, initialHsv)
     end
 end

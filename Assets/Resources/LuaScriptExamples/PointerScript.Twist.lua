@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Rotates your strokes without needing to dislocate your wrist"
 }
 
@@ -8,5 +8,8 @@ Parameters = {
 
 function WhileTriggerPressed()
     --We only want to change the pointer orientation
-    return Transform:New(Rotation:New(0, 0, App.time * speed))
+    return Transform:New(
+            Vector3.zero,
+            Rotation:New(0, 0, App.time * speed)
+    )
 end

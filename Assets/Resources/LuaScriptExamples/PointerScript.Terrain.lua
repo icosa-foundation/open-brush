@@ -15,7 +15,7 @@ function WhileTriggerPressed()
     -- Don't allow painting immediately otherwise you get stray lines
     Brush:ForcePaintingOff(Brush.triggerIsPressedThisFrame)
 
-    return Tranform:New(
+    return Transform:New(
         Vector3:New(
             Brush.position.x,
             getHeight(Brush.position.x, Brush.position.z),

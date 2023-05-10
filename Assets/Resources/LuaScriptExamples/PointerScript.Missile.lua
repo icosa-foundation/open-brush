@@ -1,4 +1,4 @@
-﻿Settings = {
+Settings = {
     description="Like Laser Beam except you can steer the line while holding the trigger",
     space="canvas"
 }
@@ -18,8 +18,8 @@ end
 function WhileTriggerPressed()
 
     --Similar to the LaserBeam PointerScript except we can change the direction during "flight"
-    direction = Brush.direction:Multiply(-1)
-    currentPos = currentPos:Add(speed * direction)
+    direction = Brush.direction
+    currentPos = currentPos:Add(direction:Multiply(speed))
     return Transform:New(currentPos, currentRotation)
 
 end

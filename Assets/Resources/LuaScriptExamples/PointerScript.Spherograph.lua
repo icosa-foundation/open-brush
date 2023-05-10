@@ -22,9 +22,9 @@ function calc()
     u = Brush.distanceDrawn * uScale
     v = Brush.distanceDrawn * vScale
     p = Sphere(u,v)
-    return Tranform:New(
+    return Transform:New(
         initialPos:Add(p),
-        Rotation.lookRotation(Vector3:New(p.x, p.y, p.z), Vector3.right)
+        Rotation.lookRotation(p, Vector3.right)
     )
 end
 

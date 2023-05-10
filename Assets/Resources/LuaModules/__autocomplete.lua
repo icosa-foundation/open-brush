@@ -28,6 +28,7 @@ function App.DraftingTransparent() end
 function App.DraftingHidden() end
 function App.Watermark(a) end
 function App.ReadFile(path) end
+function App.Error(message) end
 function App.SetFont(fontData) end
 function App.TakeSnapshot(tr, filename, width, height, superSampling) end
 function App.Take360Snapshot(tr, filename, width) end
@@ -302,8 +303,10 @@ function Path._FindMinimum(axis) end
 function Path._FindMaximum(axis) end
 function Path.Normalize(scale) end
 function Path._CalculateCenterAndScale(path) end
+function Path.Subdivide(trs, parts) end
 function Path.Resample(trs, spacing) end
 function Path.Resample(spacing) end
+function Path.Subdivide(parts) end
 Path2d.Space = nil
 Path2d.count = nil
 function Path2d.AsSingleTrList() end
@@ -415,6 +418,10 @@ function Spectator.Toggle() end
 function Spectator.On() end
 function Spectator.Off() end
 Stroke.path = nil
+Stroke.brushType = nil
+Stroke.brushSize = nil
+Stroke.brushColor = nil
+Stroke.layer = nil
 Stroke.Item = nil
 Stroke.count = nil
 function Stroke.ChangeMaterial(brushName) end
@@ -461,6 +468,7 @@ Transform.zero = nil
 function Transform.New(translation, rotation, scale) end
 function Transform.New(translation, scale) end
 function Transform.New(scale) end
+function Transform.New(x, y, z) end
 function Transform.Multiply(b) end
 function Transform.Multiply(a, b) end
 Turtle.transform = nil

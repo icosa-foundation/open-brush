@@ -47,6 +47,12 @@ namespace TiltBrush
             return instance;
         }
 
+        public static TransformApiWrapper New(float x, float y, float z)
+        {
+            var instance = new TransformApiWrapper(x, y, z);
+            return instance;
+        }
+
         public override string ToString()
         {
             return $"TrTransform({_TrTransform.translation}, {_TrTransform.rotation}, {_TrTransform.scale})";

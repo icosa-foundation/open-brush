@@ -560,7 +560,7 @@ namespace TiltBrush
             var tr = TrTransform.identity;
             try
             {
-                tr = result.ToObject<TrTransform>();
+                tr = result.Equals(DynValue.Nil) ? TrTransform.identity : result.ToObject<TrTransform>();
             }
             catch (InvalidCastException e)
             {
