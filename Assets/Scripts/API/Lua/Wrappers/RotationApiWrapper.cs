@@ -94,6 +94,7 @@ namespace TiltBrush
         // Operators
         public Quaternion Multiply(Quaternion b) => _Quaternion * b;
         public Quaternion Multiply(float x, float y, float z) => _Quaternion * Quaternion.Euler(x, y, z);
+        public Quaternion Scale(float a) => _Quaternion * Quaternion.Euler(x * a, y * a, z * a);
         public bool Equals(Quaternion b) => _Quaternion == b;
         public bool Equals(float x, float y, float z) => _Quaternion ==  Quaternion.Euler(x, y, z);
 

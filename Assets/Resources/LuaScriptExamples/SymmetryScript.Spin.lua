@@ -5,16 +5,16 @@ Settings = {
 
 Parameters = {
     copies={label="Copies", type="int", min=1, max=8, default=2},
-    speed={label="Speed", type="float", min=0.01, max=16, default=8},
-    radius={label="Radius", type="float", min=0.1, max=200, default=50},
+    speed={label="Speed", type="float", min=0, max=1000, default=500},
+    radius={label="Radius", type="float", min=0.1, max=2, default=0.25},
 }
 
 function Main()
     pointers = Path:New()
     for i = 1.0, copies do
         angle = (App.time * speed) + (360 * (i / copies))
-        position = Vector2:PointOnCircle(angle):Multiply(radius)
-        pointers:Insert(Transform:New(position.x, position.y, 0))
+        position = Vector2:PointOnCircle(angle):Multiply(radius):OnZ()
+        pointers:Insert(Transform:New(position))
     end
     return pointers
 end

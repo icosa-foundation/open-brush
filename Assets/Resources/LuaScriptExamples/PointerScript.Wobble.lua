@@ -12,8 +12,7 @@ function WhileTriggerPressed()
     noiseX = -0.5 + Math.perlinNoise(frequency * Brush.position.x - 100, frequency * Brush.position.z)
     noiseY = -0.5 + Math.perlinNoise(frequency * Brush.position.x, frequency * Brush.position.z)
     noiseZ = -0.5 + Math.perlinNoise(frequency * Brush.position.x + 100, frequency * Brush.position.z)
-    return Tranform:New(
-        positionAmount:Scale(noiseX, noiseY, noiseZ),
-        rotationAmount:Scale(noiseX, noiseY, noiseZ)
-    )
+    position = Vector3:New(noiseX, noiseY, noiseZ):Multiply(positionAmount)
+    rotation = Rotation:New(noiseX, noiseY, noiseZ):Scale(rotationAmount)
+    return Transform:New(position, rotation)
 end

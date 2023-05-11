@@ -16,5 +16,5 @@ function Main()
         position = Vector3.Lerp(Symmetry.brushOffset, Symmetry.wandOffset, i/copies)
         pointers:Insert(position)
     end
-    return transforms
+    return pointers
 end

@@ -5,7 +5,7 @@ Settings = {
 
 
 Parameters = {
-    speed={label="Speed", type="float", min=0.01, max=2, default=.5},
+    speed={label="Speed", type="float", min=0.01, max=1, default=.25},
     framesPerPath={label="Frames Per Path", type="int", min=1, max=1000, default=200},
 }
 

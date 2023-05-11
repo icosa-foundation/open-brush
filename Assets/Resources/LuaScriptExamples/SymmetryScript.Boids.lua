@@ -19,7 +19,7 @@ function Boid.new(position, velocity)
     local self = setmetatable({}, Boid)
     self.position = position
     self.velocity = velocity
-    self.orientation = Rotation.lookRotation(self.velocity, vector3.up)
+    self.orientation = Rotation.lookRotation(self.velocity, Vector3.up)
     return self
 end
 
@@ -97,10 +97,10 @@ function Main()
 end
 
 function updateBoids(dt)
-    pointers = {}
+    pointers = Path:New()
     for _, boid in ipairs(boids) do
         boid:update(dt, boids)
-        table.insert(pointers, {boid.position, boid.orientation})
+        pointers.Insert(Transform:New(boid.position, boid.orientation))
     end
     return pointers
 end

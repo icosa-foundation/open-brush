@@ -380,6 +380,7 @@ function Rotation.Slerp(a, b, t) end
 function Rotation.SlerpUnclamped(a, b, t) end
 function Rotation.Multiply(b) end
 function Rotation.Multiply(x, y, z) end
+function Rotation.Scale(a) end
 function Rotation.Multiply(a, b) end
 function Selection.Duplicate() end
 function Selection.Group() end
@@ -461,7 +462,6 @@ function Symmetry.SetBrushes(brushes) end
 function Symmetry.GetBrushNames() end
 function Symmetry.GetBrushGuids() end
 function Symmetry.PathToPolar(path) end
-function Symmetry.Path2dToPolar(cartesianPoints) end
 function Timer.Set(fn, interval, delay, repeats) end
 function Timer.Unset(fn) end
 Transform.zero = nil

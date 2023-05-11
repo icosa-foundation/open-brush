@@ -15,5 +15,6 @@ function Main()
         Symmetry:Spin(0, speedY, speedZ)
     end
 
-    return Transform:New(Symmetry.brushOffset:Scale(-1, 1, 1))
+    position = Symmetry.brushOffset:Scale(-1, 1, 1)
+    return Path:New({Transform:New(position)})
 end

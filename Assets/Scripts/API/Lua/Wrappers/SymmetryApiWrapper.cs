@@ -152,18 +152,18 @@ namespace TiltBrush
             ).ToList();
         }
 
-        public static List<TrTransform> PathToPolar(IPathApiWrapper path)
+        public static PathApiWrapper PathToPolar(IPathApiWrapper path)
         {
-            return Path2dToPolar(path.AsSingleTrList().Select(x =>
+            return new PathApiWrapper(Path2dToPolar(path.AsSingleTrList().Select(x =>
             {
                 var vector3 = x.translation;
                 return new Vector2(vector3.x, vector3.y);
-            }).ToList());
+            }).ToList()));
         }
 
         // Converts an array of points centered on the origin to a list of TrTransforms
         // suitable for use with symmetry scripts default space
-        public static List<TrTransform> Path2dToPolar(List<Vector2> cartesianPoints)
+        private static List<TrTransform> Path2dToPolar(List<Vector2> cartesianPoints)
         {
             var polarCoordinates = new List<TrTransform>(cartesianPoints.Count);
 
@@ -186,6 +186,5 @@ namespace TiltBrush
             }
             return polarCoordinates;
         }
-
     }
 }

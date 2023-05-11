@@ -27,7 +27,7 @@ function Main()
         points = calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
     end
 
-    return Symmetry:PointsToPolar(points)
+    return Symmetry:PathToPolar(points)
 end
 
 
@@ -41,7 +41,7 @@ function calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spaci
             if i == 0 or i == numPointsHeight - 1 or j == 0 or j == numPointsWidth - 1 then
                 local x = -width / 2 + j * spacing
                 local y = -height / 2 + i * spacing
-                points:Insert(Vector2.New(x, y))
+                points:Insert(Vector2.New(x, y):OnZ())
             end
         end
     end
@@ -58,7 +58,7 @@ function calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)
         for j = 0, numPointsWidth - 1 do
             local x = -width / 2 + j * spacing
             local y = -height / 2 + i * spacing
-            points:Insert(Vector2.New(x, y))
+            points:Insert(Vector2.New(x, y):OnZ())
         end
     end
     return points

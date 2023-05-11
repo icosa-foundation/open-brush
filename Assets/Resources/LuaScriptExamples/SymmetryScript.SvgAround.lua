@@ -6,23 +6,17 @@ symmetryHueShift = require "symmetryHueShift"
 
 function Start()
     initialHsv = Brush.colorHsv
+    lastSpacing = spacing
     updatePath()
 end
 
 function Main()
-
     -- Update the path if we changed the spacing
     if (spacing ~= lastSpacing) then
         updatePath()
         lastSpacing = spacing
-        symmetryHueShift.generate(path.count, initialHsv)
     end
-
-    return Symmetry.PathToPolar(path)
-end
-
-function End()
-    Brush.colorHsv = initialHsv
+    return Symmetry:PathToPolar(path)
 end
 
 function updatePath()
@@ -36,4 +30,3 @@ function updatePath()
     path:StartingFrom(lowest) -- Make it the new start point
     symmetryHueShift.generate(path.count, initialHsv)
 end
-
