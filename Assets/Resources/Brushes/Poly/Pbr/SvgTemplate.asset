@@ -15,7 +15,7 @@ MonoBehaviour:
   m_Guid:
     m_storage: cf3401b3-4ada-4877-995a-1aa64e7b604a
   m_DurableName: SvgTemplate
-  m_CreationVersion: 
+  m_CreationVersion: 15.0
   m_ShaderVersion: 1.0
   m_BrushPrefab: {fileID: 1000010482034202, guid: 3154f6c50e7168843a2dbdc5dbaa3b22,
     type: 3}
