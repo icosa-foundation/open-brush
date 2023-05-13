@@ -1172,6 +1172,9 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
+
+            MagnetizeToStencils(ref xf_GS);
+
             if (m_RecordMovements)
             {
                 TrTransform newXf = TrTransform.FromTransform(
@@ -1201,6 +1204,26 @@ namespace TiltBrush
             m_bWasSnapping = SnapEnabled;
 
             OnEndUpdateWithDesiredTransform();
+        }
+
+        protected virtual bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            var pos = xf_GS.translation;
+            var rot = xf_GS.rotation;
+
+            bool usedStencil = WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot, GetStencilsToIgnore());
+            if (usedStencil)
+            {
+                xf_GS.translation = pos;
+                // If we're magnetizing to a stencil, we want to flip the widget
+                xf_GS.rotation = rot * Quaternion.Euler(0, 180, 0);
+            }
+            return usedStencil;
+        }
+
+        protected virtual IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget>();
         }
 
         virtual public TrTransform GetGrabbedTrTransform()
@@ -1276,10 +1299,6 @@ namespace TiltBrush
 
             return outXf_GS;
         }
-
-
-
-
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {
@@ -1577,8 +1596,11 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            InputManager.GetControllerGeometry(m_InteractingController)
-                .TogglePadSnapHint(SnapEnabled, show);
+            // TODO:Mike 'SnapEnabled' is controlled by the new snap panel, rather than button input.
+            // This breaks using this button to quickly toggle on a grabbed object.
+            // Disabling icon for now to avoid confusion.
+            // InputManager.GetControllerGeometry(m_InteractingController)
+            //     .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1

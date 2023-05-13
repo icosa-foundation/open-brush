@@ -799,15 +799,18 @@ namespace TiltBrush
             }
         }
 
-        public void MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot)
+        public bool MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot, IEnumerable<StencilWidget> stencilsToIgnore = null)
         {
             // Early out if stencils are disabled.
             if (m_StencilsDisabled && !App.UserConfig.Flags.GuideToggleVisiblityOnly)
             {
-                return;
+                return false;
             }
 
             Vector3 samplePos = pos;
+
+
+            bool stencilWasUsed = false;
 
             // If we're painting, we have a different path for magnetization that relies on the
             // previous frame.
@@ -816,7 +819,7 @@ namespace TiltBrush
                 // If we don't have an active stencil, we're done here.
                 if (m_ActiveStencil == null)
                 {
-                    return;
+                    return false;
                 }
 
                 // Using the 0 index of m_StencilContactInfos as a shortcut.
@@ -826,6 +829,7 @@ namespace TiltBrush
                 m_ActiveStencil.SetInUse(true);
                 pos = m_StencilContactInfos[0].pos;
                 rot = Quaternion.LookRotation(m_StencilContactInfos[0].normal);
+                stencilWasUsed = true;
             }
             else
             {
@@ -838,9 +842,11 @@ namespace TiltBrush
                 int iPrimaryIndex = -1;
                 float fBestScore = 0;
                 int sIndex = 0;
-                foreach (var stencil in m_StencilWidgets)
+
+                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets.Select(w => w.WidgetScript);
+                if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
+                foreach (var sw in widgetsToCheck)
                 {
-                    StencilWidget sw = stencil.WidgetScript;
                     Debug.Assert(sw != null);
 
                     // Reset tint
@@ -848,13 +854,14 @@ namespace TiltBrush
 
                     // Does a rough check to see if the stencil might overlap. OverlapSphereNonAlloc is
                     // shockingly slow, which is why we don't use it.
-                    Collider collider = stencil.m_WidgetScript.GrabCollider;
+                    Collider collider = sw.GrabCollider;
                     float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
                     if (centerDist >
                         (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
                     {
                         continue;
                     }
+
                     m_StencilContactInfos[sIndex].widget = sw;
 
                     FindClosestPointOnWidgetSurface(samplePos, ref m_StencilContactInfos[sIndex]);
@@ -897,6 +904,7 @@ namespace TiltBrush
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
                     rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal);
+                    stencilWasUsed = true;
                 }
 
                 if (prevStencil != m_ActiveStencil)
@@ -905,7 +913,7 @@ namespace TiltBrush
                 }
             }
 
-            return;
+            return stencilWasUsed;
         }
 
         bool FindClosestPointOnCollider(
