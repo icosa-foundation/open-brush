@@ -757,22 +757,17 @@ namespace TiltBrush
             {
                 SelectWidget(widget);
             }
-            if (widgets.Any())
-            {
-                LastSelectedWidget = widgets.Last();
 
-                var imageWidget = widgets.Last(w => w is ImageWidget) as ImageWidget;
-                LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
-
-                var videoWidget = widgets.Last(w => w is VideoWidget) as VideoWidget;
-                LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
-
-                var modelWidget = widgets.Last(w => w is ModelWidget) as ModelWidget;
-                LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
-
-                var stencilWidget = widgets.Last(w => w is StencilWidget) as StencilWidget;
-                LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
-            }
+            var lastWidget = widgets.LastOrDefault();
+            LastSelectedWidget = lastWidget != null ? lastWidget : LastSelectedWidget;
+            var imageWidget = widgets.LastOrDefault(w => w is ImageWidget) as ImageWidget;
+            LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
+            var videoWidget = widgets.LastOrDefault(w => w is VideoWidget) as VideoWidget;
+            LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
+            var modelWidget = widgets.LastOrDefault(w => w is ModelWidget) as ModelWidget;
+            LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
+            var stencilWidget = widgets.LastOrDefault(w => w is StencilWidget) as StencilWidget;
+            LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
