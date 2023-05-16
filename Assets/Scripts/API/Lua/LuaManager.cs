@@ -875,7 +875,7 @@ namespace TiltBrush
             }
             else if (m_TriggerWasPressed)
             {
-                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerPressed);
+                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerReleased);
                 m_TriggerWasPressed = false;
                 scriptHasRun = true;
                 ApiManager.Instance.EndUndo();
