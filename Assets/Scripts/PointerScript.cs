@@ -94,6 +94,38 @@ namespace TiltBrush
 
         private List<PreviewControlPoint> m_PreviewControlPoints; // FIFO queue
         private List<PointerManager.ControlPoint> m_ControlPoints;
+
+        // Used by the API
+        public List<TrTransform> CurrentPath
+        {
+            get
+            {
+                var path = new List<TrTransform>(m_ControlPoints.Count);
+                for (int i = 0; i < m_ControlPoints.Count; i++)
+                {
+                    var cp = m_ControlPoints[i];
+                    path.Add(TrTransform.TRS(cp.m_Pos, cp.m_Orient, cp.m_Pressure));
+                }
+                return path;
+            }
+            set
+            {
+                var startTime = m_ControlPoints[0].m_TimestampMs;
+                var endTime = m_ControlPoints[^1].m_TimestampMs;
+                m_ControlPoints = new List<PointerManager.ControlPoint>(value.Count);
+                for (var i = 0; i < value.Count; i++)
+                {
+                    var cp = value[i];
+                    m_ControlPoints.Add(new PointerManager.ControlPoint
+                    {
+                        m_Pos = cp.translation,
+                        m_Orient = cp.rotation,
+                        m_Pressure = cp.scale,
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                    });
+                }
+            }
+        }
         private bool m_LastControlPointIsKeeper;
         private Vector3 m_PreviousPosition; //used for audio
 

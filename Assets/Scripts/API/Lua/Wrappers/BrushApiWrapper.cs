@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -56,6 +57,13 @@ namespace TiltBrush
         public static void ForcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
         public static void ForcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
         public static void ForceNewStroke() => ApiMethods.ForceNewStroke();
+
+        public static PathApiWrapper currentPath
+        {
+            get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
+            set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
+
+        }
 
         public static Vector3 LastColorPickedHsv
         {
