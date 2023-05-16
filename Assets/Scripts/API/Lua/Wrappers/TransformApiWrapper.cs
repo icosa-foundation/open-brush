@@ -58,6 +58,10 @@ namespace TiltBrush
             return $"TrTransform({_TrTransform.translation}, {_TrTransform.rotation}, {_TrTransform.scale})";
         }
 
+        public Vector3ApiWrapper position => new Vector3ApiWrapper(_TrTransform.translation);
+        public RotationApiWrapper rotation => new RotationApiWrapper(_TrTransform.rotation);
+        public float scale => _TrTransform.scale;
+
         public static TrTransform zero => TrTransform.identity;
 
         // Operators
