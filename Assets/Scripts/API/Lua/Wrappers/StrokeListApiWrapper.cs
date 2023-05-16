@@ -10,6 +10,8 @@ namespace TiltBrush
         public List<Stroke> _Strokes;
         public StrokeApiWrapper lastSelected => new StrokeApiWrapper(SelectionManager.m_Instance.LastSelectedStroke);
         public StrokeApiWrapper last => _Strokes == null || _Strokes.Count == 0 ? null : new StrokeApiWrapper(_Strokes[^1]);
+
+        public StrokeApiWrapper this[int index] => new StrokeApiWrapper(_Strokes[index]);
         public int count => _Strokes?.Count ?? 0;
 
         public StrokeListApiWrapper()
