@@ -13,7 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
@@ -22,8 +25,6 @@ namespace TiltBrush
 {
     public class UiScreenshotter : Editor
     {
-
-        static public TrTransform panelTr;
 
         [MenuItem("Open Brush/Info/Generate UI Screenshots")]
         static void Generate()
@@ -57,9 +58,13 @@ namespace TiltBrush
             cam.transform.position = new Vector3(0, 100, 0);
             cam.transform.rotation = Quaternion.identity;
 
-            foreach (BasePanel.PanelType panelType in (BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType)))
+            int count = ((BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType))).Length;
+            Debug.Log($"Starting {count} panel screenshots");
+            for (var i = 0; i < count; i++)
             {
-                TrTransform panelTr = TrTransform.T(new Vector3(-1.5f, 100, 4));
+                var panelType = ((BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType)))[i];
+                Debug.Log($"Screenshot {i}: {panelType}");
+                TrTransform panelTr = TrTransform.T(new Vector3(-1.25f, 100, 4));
                 if (PanelManager.m_Instance.IsPanelOpen(panelType))
                 {
                     BasePanel panel = PanelManager.m_Instance.GetPanelByType(panelType);
@@ -69,6 +74,37 @@ namespace TiltBrush
                     panelTr.ToTransform(panel.transform);
                     panel.ResetReticleOffset();
                     SaveCurrentView(cam, $"panel-{panelType}.png", 1600, 1600);
+
+                    // Try to open popups
+                    FieldInfo fieldInfo = typeof(BasePanel).GetField("m_PanelPopUpMap", BindingFlags.NonPublic | BindingFlags.Instance);
+                    PopupMapKey[] popupMap = (PopupMapKey[])fieldInfo?.GetValue(panel);
+                    if (popupMap != null)
+                    {
+                        foreach (var popup in popupMap)
+                        {
+                            var btn = panel.GetComponentsInChildren<OptionButton>()
+                                .FirstOrDefault(x => x.m_Command == popup.m_Command);
+                            if (btn == null)
+                            {
+                                Debug.LogWarning($"No button found for {popup.m_Command}");
+                                continue;
+                            }
+                            Debug.Log($"Screenshop popup for {popup.m_Command}");
+                            GameObject go = Instantiate(popup.m_PopUpPrefab,
+                                btn.transform.position + new Vector3(.5f, 0, -0.25f), btn.transform.rotation);
+                            go.transform.localScale = Vector3.one * 5;
+                            var activePopUp = go.GetComponent<PopUpWindow>();
+                            activePopUp.Init(panel.gameObject, "");
+                            try
+                            {
+                                activePopUp.SetPopupCommandParameters(btn.m_CommandParam, btn.m_CommandParam2);
+                            }
+                            catch (NullReferenceException e) { }
+                            SaveCurrentView(cam, $"panel-{panelType}_{btn.m_Command}.png", 1600, 1600);
+                            go.transform.position = new Vector3(-100, 0, 0);
+                            Destroy(go);
+                        }
+                    }
                     originalTransform.ToTransform(panel.transform);
                 }
             }
