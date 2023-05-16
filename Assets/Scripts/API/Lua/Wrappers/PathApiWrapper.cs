@@ -62,6 +62,8 @@ namespace TiltBrush
         public static PathApiWrapper New(List<TrTransform> transformList) => new PathApiWrapper(transformList);
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
+        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
+        public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
         public int count => _Path?.Count ?? 0;
 
         public override string ToString()
@@ -190,21 +192,44 @@ namespace TiltBrush
 
         public static List<TrTransform> Subdivide(List<TrTransform> trs, int parts)
         {
-            if (trs == null || trs.Count < 2 || parts <= 0) return trs;
+            if (trs == null || trs.Count < 2 || parts < 1) return trs;
             List<TrTransform> subdividedPath = new List<TrTransform>();
 
+            float totalDistance = 0;
             for (int i = 0; i < trs.Count - 1; i++)
             {
-                var currentTr = trs[i];
-                var nextTr = trs[i + 1];
-                for (int j = 0; j < parts; j++)
+                totalDistance += Vector3.Distance(trs[i].translation, trs[i + 1].translation);
+            }
+
+            float partDistance = totalDistance / parts;
+
+            subdividedPath.Add(trs[0]);
+
+            float accumulatedDistance = 0f;
+            int originalPathIndex = 0;
+            var startPoint = trs[0];
+
+            while (originalPathIndex < trs.Count - 1)
+            {
+                var endPoint = trs[originalPathIndex + 1];
+                float segmentDistance = Vector3.Distance(startPoint.translation, endPoint.translation);
+
+                if (accumulatedDistance + segmentDistance >= partDistance)
                 {
-                    var newTr = TrTransform.TRS(
-                        Vector3.Lerp(currentTr.translation, nextTr.translation, j),
-                        Quaternion.Lerp(currentTr.rotation, nextTr.rotation, j),
-                        Mathf.Lerp(currentTr.scale, nextTr.scale, j)
-                    );
-                    subdividedPath.Add(newTr);
+                    float interpolationFactor = (partDistance - accumulatedDistance) / segmentDistance;
+                    Vector3 newTranslation = Vector3.Lerp(startPoint.translation, endPoint.translation, interpolationFactor);
+                    Quaternion newRotation = Quaternion.Lerp(startPoint.rotation, endPoint.rotation, interpolationFactor);
+                    float newScale = Mathf.Lerp(startPoint.scale, endPoint.scale, interpolationFactor);
+                    var newPoint = TrTransform.TRS(newTranslation, newRotation, newScale);
+                    subdividedPath.Add(newPoint);
+                    startPoint = newPoint;
+                    accumulatedDistance = 0f;
+                }
+                else
+                {
+                    accumulatedDistance += segmentDistance;
+                    startPoint = endPoint;
+                    originalPathIndex++;
                 }
             }
             subdividedPath.Add(trs[^1]);
