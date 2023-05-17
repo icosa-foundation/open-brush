@@ -19,6 +19,7 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         public static ModelWidget ImportModel(string location)
         {
             if (location.StartsWith("poly:"))
