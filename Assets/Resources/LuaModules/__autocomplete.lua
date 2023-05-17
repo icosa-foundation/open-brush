@@ -49,10 +49,11 @@ Brush.colorRgb = nil
 Brush.colorHsv = nil
 Brush.colorHtml = nil
 Brush.lastColorPicked = nil
+Brush.currentPath = nil
 Brush.LastColorPickedHsv = nil
 function Brush.JitterColor() end
-function Brush.ResizeBuffer(size) end
-function Brush.SetBufferSize(size) end
+function Brush.ResizeHistory(size) end
+function Brush.SetHistorySize(size) end
 function Brush.GetPastPosition(back) end
 function Brush.GetPastRotation(back) end
 function Brush.ForcePaintingOn(active) end
@@ -268,16 +269,18 @@ function MultiPath.Draw() end
 function MultiPath.FromText(text) end
 function MultiPath.Insert(path) end
 function MultiPath.InsertPoint(transform) end
-function MultiPath.Transform(transform) end
-function MultiPath.Translate(amount) end
-function MultiPath.Rotate(amount) end
-function MultiPath.Scale(scale) end
+function MultiPath.TransformBy(transform) end
+function MultiPath.TranslateBy(amount) end
+function MultiPath.RotateBy(amount) end
+function MultiPath.ScaleBy(scale) end
 function MultiPath.Center() end
 function MultiPath.Normalize(scale) end
 function MultiPath.Resample(spacing) end
 function MultiPath.Join() end
 function MultiPath.Longest() end
 Path.Space = nil
+Path.Item = nil
+Path.last = nil
 Path.count = nil
 function Path.AsSingleTrList() end
 function Path.AsMultiTrList() end
@@ -286,10 +289,10 @@ function Path.New(transformList) end
 function Path.New(positionList) end
 function Path.Draw() end
 function Path.Insert(transform) end
-function Path.Transform(transform) end
-function Path.Translate(amount) end
-function Path.Rotate(amount) end
-function Path.Scale(scale) end
+function Path.TransformBy(transform) end
+function Path.TranslateBy(amount) end
+function Path.RotateBy(amount) end
+function Path.ScaleBy(scale) end
 function Path.Center() end
 function Path.StartingFrom(index) end
 function Path.FindClosest(point) end
@@ -307,6 +310,7 @@ function Path.Subdivide(trs, parts) end
 function Path.Resample(trs, spacing) end
 function Path.Resample(spacing) end
 function Path.Subdivide(parts) end
+function Path.Hermite(start, end, resolution, tangentStrength) end
 Path2d.Space = nil
 Path2d.count = nil
 function Path2d.AsSingleTrList() end
@@ -318,10 +322,10 @@ function Path2d.Insert(transform) end
 function Path2d.OnX() end
 function Path2d.OnY() end
 function Path2d.OnZ() end
-function Path2d.Transform(transform) end
-function Path2d.Translate(amount) end
-function Path2d.Rotate(amount) end
-function Path2d.Scale(scale) end
+function Path2d.TransformBy(transform) end
+function Path2d.TranslateBy(amount) end
+function Path2d.RotateBy(amount) end
+function Path2d.ScaleBy(scale) end
 function Path2d.Center() end
 function Path2d.StartingFrom(index) end
 function Path2d.FindClosest(point) end
@@ -405,6 +409,7 @@ function Sketch.Save(overwrite) end
 function Sketch.SaveAs(name) end
 function Sketch.Export() end
 function Sketch.NewSketch() end
+function Sketch.SetSkybox(imagewrapper) end
 Spectator.position = nil
 Spectator.rotation = nil
 function Spectator.Turn(angle) end
@@ -464,7 +469,20 @@ function Symmetry.GetBrushGuids() end
 function Symmetry.PathToPolar(path) end
 function Timer.Set(fn, interval, delay, repeats) end
 function Timer.Unset(fn) end
+Transform.up = nil
+Transform.down = nil
+Transform.right = nil
+Transform.left = nil
+Transform.forward = nil
+Transform.back = nil
+Transform.position = nil
+Transform.rotation = nil
+Transform.scale = nil
 Transform.zero = nil
+function Transform.TransformBy(transform) end
+function Transform.TranslateBy(translation) end
+function Transform.RotateBy(rotation) end
+function Transform.ScaleBy(scale) end
 function Transform.New(translation, rotation, scale) end
 function Transform.New(translation, scale) end
 function Transform.New(scale) end

@@ -74,13 +74,13 @@ namespace TiltBrush
         public void Draw() => LuaApiMethods.DrawPath(this);
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
-        public void Transform(TrTransform transform)
+        public void TransformBy(TrTransform transform)
         {
             LuaApiMethods.TransformPath(this, transform);
         }
-        public void Translate(Vector3 amount) => Transform(TrTransform.T(amount));
-        public void Rotate(Quaternion amount) => Transform(TrTransform.R(amount));
-        public void Scale(Vector3 scale)
+        public void TranslateBy(Vector3 amount) => TransformBy(TrTransform.T(amount));
+        public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+        public void ScaleBy(Vector3 scale)
         {
             // Supports non-uniform scaling
             for (var i = 0; i < _Path.Count; i++)
@@ -282,5 +282,52 @@ namespace TiltBrush
         {
             _Path = Subdivide(_Path, parts);
         }
+
+        public static PathApiWrapper Hermite(TrTransform start, TrTransform end, int resolution, float tangentStrength = 1f)
+        {
+
+            Vector3 tangentInDirection(TrTransform p1, TrTransform p2)
+            {
+                // Returns left or right of p1 based on which one is pointing towards p2
+                Vector3 dir = p2.translation - p1.translation;
+                float dotRight = Vector3.Dot(dir, p1.right);
+                float dotLeft = Vector3.Dot(dir, -p1.right);
+                return dotRight > dotLeft ? p1.right : -p1.right;
+            }
+
+            List<TrTransform> path = new List<TrTransform>(resolution + 1);
+
+            Vector3 startTangent = tangentInDirection(start, end) * tangentStrength;
+            Vector3 endTangent = tangentInDirection(end, start) * tangentStrength;
+
+            for (int i = 0; i <= resolution; i++)
+            {
+                float t = (float)i / resolution; // calculate t
+
+                float t2 = t * t;
+                float t3 = t2 * t;
+                float h00 = 2 * t3 - 3 * t2 + 1;
+                float h10 = t3 - 2 * t2 + t;
+                float h01 = -2 * t3 + 3 * t2;
+                float h11 = t3 - t2;
+                Vector3 position = h00 * start.translation + h10 * startTangent + h01 * end.translation + h11 * endTangent;
+
+                Quaternion orientation = Quaternion.LookRotation(path.Count < 1 ?
+                    startTangent.normalized :
+                    (path[^1].translation - position).normalized);
+
+                float scale = Mathf.Lerp(start.scale, end.scale, t);
+
+                path.Add(TrTransform.TRS(position, orientation, scale));
+            }
+
+            Vector3 finalTangent = end.translation - path[^1].translation;
+            Quaternion finalOrientation = Quaternion.LookRotation(finalTangent.normalized);
+            TrTransform tr = TrTransform.TR(end.translation, finalOrientation);
+            path.Add(tr);
+
+            return new PathApiWrapper(path);
+        }
+
     }
 }

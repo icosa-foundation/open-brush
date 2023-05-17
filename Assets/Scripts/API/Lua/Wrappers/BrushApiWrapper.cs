@@ -17,7 +17,7 @@ namespace TiltBrush
         public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.back;
         public static float size
         {
-            get => PointerManager.m_Instance.MainPointer.BrushSize01;
+            get => PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
             set => ApiMethods.BrushSizeSet(value);
         }
         public static float pressure => PointerManager.m_Instance.MainPointer.GetPressure();
@@ -50,8 +50,8 @@ namespace TiltBrush
         }
         public static void JitterColor() => LuaApiMethods.JitterColor();
         public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;
-        public static void ResizeBuffer(int size) => LuaManager.Instance.ResizeBrushBuffer(size);
-        public static void SetBufferSize(int size) => LuaManager.Instance.SetBrushBufferSize(size);
+        public static void ResizeHistory(int size) => LuaManager.Instance.ResizeBrushBuffer(size);
+        public static void SetHistorySize(int size) => LuaManager.Instance.SetBrushBufferSize(size);
         public static Vector3 GetPastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
         public static Quaternion GetPastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
         public static void ForcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
