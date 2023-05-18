@@ -26,5 +26,18 @@ namespace TiltBrush
             get => SketchControlsScript.m_Instance.GetDropCampWidget().transform.rotation;
             set => SketchControlsScript.m_Instance.GetDropCampWidget().transform.rotation = value;
         }
+
+        public static void LockToScene(bool locked)
+        {
+            var tr = SketchControlsScript.m_Instance.GetDropCampWidget().transform;
+            if (locked)
+            {
+                tr.SetParent(App.Scene.transform, true);
+            }
+            else
+            {
+                tr.SetParent(SketchControlsScript.m_Instance.transform, true);
+            }
+        }
     }
 }
