@@ -22,6 +22,19 @@ namespace TiltBrush
         [SerializeField] private Material m_UninitializedCameraMaterial;
         
         public bool m_PreviewOn;
+
+        private Camera m_Camera;
+
+        // Cached off or created on Start(); otherwise read-only
+        private CameraInfo m_CameraInfo;
+
+        /// Where the camera's output should be fed.
+        public MeshRenderer m_Display;
+        // Width of the live render target
+        public int m_DisplayWidth;
+        // Height of the live render target
+        public int m_DisplayHeight;
+
         
         protected override void Awake()
         {
@@ -66,19 +79,6 @@ namespace TiltBrush
             public RenderTexture renderTexture;
         }
 
-        // Manual camera. If null then GetComponent is used
-        public Camera m_Camera;
-
-        // Cached off or created on Start(); otherwise read-only
-        private CameraInfo m_CameraInfo;
-
-        /// Where the camera's output should be fed.
-        public MeshRenderer m_Display;
-        // Width of the live render target
-        public int m_DisplayWidth;
-        // Height of the live render target
-        public int m_DisplayHeight;
-
         public Material LeftEyeMaterial { get => CamInfo.renderer.material; }
         public bool LeftEyeMaterialRenderTextureExists { get => CamInfo.renderTexture != null; }
 
@@ -101,18 +101,14 @@ namespace TiltBrush
         protected override void Start()
         {
             base.Start();
-            
+
+            m_Camera = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
+
             // Lazy init.
             m_CameraInfo = CamInfo;
 
             SceneSettings.m_Instance.RegisterCamera(m_CameraInfo.camera);
 
-            if (!App.Config.PlatformConfig.EnableMulticamPreview)
-            {
-                // If we're looking through the viewfinder, we need to make some changes to this camera
-                SetScreenshotResolution(App.UserConfig.Flags.SnapshotWidth > 0
-                    ? App.UserConfig.Flags.SnapshotWidth : 1920);
-            }
             if (App.Config.IsMobileHardware)
             {
                 // Force no HDR on mobile
@@ -150,24 +146,6 @@ namespace TiltBrush
             CreateDisplayRenderTextures();
         }
 
-        public void SetScreenshotResolution(int width)
-        {
-            int oldWidth = m_DisplayWidth;
-            int oldHeight = m_DisplayHeight;
-            m_DisplayWidth = width;
-            // Preserve the aspect ratio using exact math (most likely 16 x 9)
-            m_DisplayHeight = (oldHeight * width) / oldWidth;
-            // Don't allow odd widths and heights.
-            if ((m_DisplayWidth % 2 == 1) || (m_DisplayHeight % 2 == 1))
-            {
-                m_DisplayHeight = Mathf.FloorToInt(m_DisplayHeight / 2) * 2;
-                m_DisplayWidth = Mathf.FloorToInt(m_DisplayWidth / 2) * 2;
-                OutputWindowScript.Error("Odd-numbered capture dimensions not supported.",
-                    string.Format("Capture dimensions capped to {0}x{1}.", m_DisplayWidth, m_DisplayHeight));
-            }
-            CreateDisplayRenderTextures();
-        }
-        
         RenderTextureFormat CameraFormat()
         {
             return m_Camera.allowHDR
@@ -202,8 +180,9 @@ namespace TiltBrush
             info.renderTexture.depth = 24;
             Debug.Assert(info.renderer != null);
             Debug.Assert(info.renderer.material != null);
-            info.renderer.material.SetTexture("_MainTex", info.renderTexture);
-            info.renderer.material.name = "SshotMat" + tag;
+            Material material;
+            (material = info.renderer.material).SetTexture("_MainTex", info.renderTexture);
+            material.name = "SshotMat" + tag;
             info.camera.targetTexture = info.renderTexture;
         }
     }
