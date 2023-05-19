@@ -17,7 +17,7 @@ function Main()
     end
 
     return Path:New({
-        Symmetry.brushOffset:Scale(-1, 1, 1),
-        Symmetry.brushOffset:Scale(-1, -1, 1)
+        Symmetry.brushOffset:ScaleBy(-1, 1, 1),
+        Symmetry.brushOffset:ScaleBy(-1, -1, 1)
     })
 end

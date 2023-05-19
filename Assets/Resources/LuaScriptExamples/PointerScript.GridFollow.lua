@@ -57,7 +57,7 @@ function WhileTriggerPressed()
         end
 
         -- Restore the positive/negative for each direction
-        vector = vector:Scale(signs)
+        vector = vector:ScaleBy(signs)
         framesSinceChange = 0
 
     end

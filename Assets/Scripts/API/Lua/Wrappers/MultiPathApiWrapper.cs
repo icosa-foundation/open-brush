@@ -67,7 +67,7 @@ namespace TiltBrush
         public void Insert(PathApiWrapper path) => _MultiPath.Add(path._Path);
         public void InsertPoint(TrTransform transform) => _MultiPath[^1].Add(transform);
 
-        public void Transform(TrTransform transform)
+        public void TransformBy(TrTransform transform)
         {
             for (var i = 0; i < _MultiPath.Count; i++)
             {
@@ -79,9 +79,9 @@ namespace TiltBrush
             }
         }
 
-        public void Translate(Vector3 amount) => Transform(TrTransform.T(amount));
-        public void Rotate(Quaternion amount) => Transform(TrTransform.R(amount));
-        public void Scale(Vector3 scale)
+        public void TranslateBy(Vector3 amount) => TransformBy(TrTransform.T(amount));
+        public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+        public void ScaleBy(Vector3 scale)
         {
             for (var i = 0; i < _MultiPath.Count; i++)
             {

@@ -25,7 +25,7 @@ function Main()
         angle = i * theta
         radius = (1 + (Math:Sin(angle/360 * 16 * Math.pi)) * 0.25)
         pointer = Transform:New(
-            Symmetry.brushOffset:Scale(radius, 0, 0),
+            Symmetry.brushOffset:ScaleBy(radius, 0, 0),
             Rotation:New(0, angle, 0)
         )
         pointers:Insert(pointer)

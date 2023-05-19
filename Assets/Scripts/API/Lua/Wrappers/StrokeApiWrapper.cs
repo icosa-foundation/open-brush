@@ -17,11 +17,13 @@ namespace TiltBrush
                 if (_Stroke == null) return new PathApiWrapper();
                 if (m_Path == null)
                 {
-                    var origin = _Stroke.m_ControlPoints[0].m_Pos;
                     m_Path = new PathApiWrapper(
-                        _Stroke.m_ControlPoints.Select(cp => cp.m_Pos).ToList()
+                        _Stroke.m_ControlPoints.Select(cp => TrTransform.TRS(
+                            cp.m_Pos,
+                            cp.m_Orient,
+                            cp.m_Pressure
+                        )).ToList()
                     );
-                    m_Path.Translate(-origin);
                 }
                 return m_Path;
             }

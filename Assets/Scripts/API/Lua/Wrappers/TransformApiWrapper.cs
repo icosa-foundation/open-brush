@@ -18,6 +18,19 @@ namespace TiltBrush
             _TrTransform = TrTransform.TRS(translation, Quaternion.identity, scale);
         }
 
+        public Vector3 up => _TrTransform.up;
+        public Vector3 down => -_TrTransform.up;
+        public Vector3 right => _TrTransform.right;
+        public Vector3 left => -_TrTransform.right;
+        public Vector3 forward => _TrTransform.forward;
+        public Vector3 back => -_TrTransform.forward;
+
+        // Same as Multiply
+        public TrTransform TransformBy(TrTransform transform) => _TrTransform * transform;
+        public TrTransform TranslateBy(Vector3 translation) => _TrTransform * TrTransform.T(translation);
+        public TrTransform RotateBy(Quaternion rotation) => _TrTransform * TrTransform.R(rotation);
+        public TrTransform ScaleBy(float scale) => _TrTransform * TrTransform.S(scale);
+
         // Convenient shorthand
         public TransformApiWrapper(float x, float y, float z)
         {

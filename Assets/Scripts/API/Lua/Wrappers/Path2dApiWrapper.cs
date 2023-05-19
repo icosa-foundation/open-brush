@@ -61,16 +61,16 @@ namespace TiltBrush
         public PathApiWrapper OnY() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, 0, v.y)).ToList());
         public PathApiWrapper OnZ() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, v.y, 0)).ToList());
 
-        public void Transform(TrTransform transform)
+        public void TransformBy(TrTransform transform)
         {
             for (int i = 0; i < _Path2d.Count; i++)
             {
                 _Path2d[i] = transform * _Path2d[i];
             }
         }
-        public void Translate(Vector2 amount) => Transform(TrTransform.T(amount));
-        public void Rotate(Quaternion amount) => Transform(TrTransform.R(amount));
-        public void Scale(Vector2 scale)
+        public void TranslateBy(Vector2 amount) => TransformBy(TrTransform.T(amount));
+        public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+        public void ScaleBy(Vector2 scale)
         {
             // Supports non-uniform scaling
             for (var i = 0; i < _Path2d.Count; i++)
