@@ -2423,6 +2423,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: DropCamPreviewScreen
       objectReference: {fileID: 0}
+    - target: {fileID: 4388517816090527302, guid: 470c032f83dbe45f189e02aa1faa3166,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4388517816090527303, guid: 470c032f83dbe45f189e02aa1faa3166,
         type: 3}
       propertyPath: m_RootOrder
