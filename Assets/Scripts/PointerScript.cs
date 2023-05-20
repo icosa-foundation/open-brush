@@ -104,7 +104,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_ControlPoints.Count; i++)
                 {
                     var cp = m_ControlPoints[i];
-                    path.Add(TrTransform.TRS(cp.m_Pos, cp.m_Orient, cp.m_Pressure));
+                    var tr = TrTransform.TR(cp.m_Pos, cp.m_Orient);
+                    path.Add(tr);
                 }
                 return path;
             }
@@ -115,12 +116,12 @@ namespace TiltBrush
                 m_ControlPoints = new List<PointerManager.ControlPoint>(value.Count);
                 for (var i = 0; i < value.Count; i++)
                 {
-                    var cp = value[i];
+                    var tr = value[i];
                     m_ControlPoints.Add(new PointerManager.ControlPoint
                     {
-                        m_Pos = cp.translation,
-                        m_Orient = cp.rotation,
-                        m_Pressure = cp.scale,
+                        m_Pos = tr.translation,
+                        m_Orient = tr.rotation,
+                        m_Pressure = tr.scale,
                         m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
                     });
                 }
