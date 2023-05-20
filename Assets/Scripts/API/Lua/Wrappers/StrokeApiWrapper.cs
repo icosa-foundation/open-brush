@@ -17,24 +17,34 @@ namespace TiltBrush
                 if (_Stroke == null) return new PathApiWrapper();
                 if (m_Path == null)
                 {
-                    m_Path = new PathApiWrapper(
-                        _Stroke.m_ControlPoints.Select(cp => TrTransform.TRS(
-                            cp.m_Pos,
-                            cp.m_Orient,
-                            cp.m_Pressure
-                        )).ToList()
-                    );
+                    int count = _Stroke.m_ControlPoints.Count();
+                    var path = new List<TrTransform>(count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var cp = _Stroke.m_ControlPoints[i];
+                        var tr = TrTransform.TR(cp.m_Pos, cp.m_Orient);
+                        path.Add(tr);
+                    }
+                    m_Path = new PathApiWrapper(path);
                 }
                 return m_Path;
             }
             set
             {
-                _Stroke.m_ControlPoints = value._Path.Select(tr => new PointerManager.ControlPoint
+                var startTime = _Stroke.m_ControlPoints[0].m_TimestampMs;
+                var endTime = _Stroke.m_ControlPoints[^1].m_TimestampMs;
+                _Stroke.m_ControlPoints = new PointerManager.ControlPoint[value._Path.Count];
+                for (var i = 0; i < value._Path.Count; i++)
                 {
-                    m_Pos = tr.translation,
-                    m_Orient = tr.rotation,
-                    m_Pressure = tr.scale
-                }).ToArray();
+                    var tr = value[i]._TrTransform;
+                    _Stroke.m_ControlPoints[i] = new PointerManager.ControlPoint
+                    {
+                        m_Pos = tr.translation,
+                        m_Orient = tr.rotation,
+                        m_Pressure = tr.scale,
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                    };
+                }
                 _Stroke.Recreate();
             }
         }

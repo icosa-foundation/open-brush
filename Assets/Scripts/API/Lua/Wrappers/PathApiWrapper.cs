@@ -32,6 +32,10 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<TrTransform> _Path;
 
+        private List<Vector3> _DirectionVectors;
+        private List<Vector3> _Normals;
+        private List<Vector3> _Tangents;
+
         public PathApiWrapper()
         {
             _Path = new List<TrTransform>();
@@ -69,6 +73,55 @@ namespace TiltBrush
         public override string ToString()
         {
             return _Path == null ? "Empty Path" : $"Path with {count} points)";
+        }
+
+        [MoonSharpHidden]
+        private void _CalculateVectors()
+        {
+            _Normals = new List<Vector3>(_Path.Count);
+            _Tangents = new List<Vector3>(_Path.Count);
+            _DirectionVectors = new List<Vector3>(_Path.Count);
+            var nTangent = _CalculatePathVector(_Path, 0);
+            Vector3 preferredRight = Vector3.Cross(_Path[0].rotation * Vector3.forward, nTangent);
+            for (var i = 0; i < _Path.Count; i++)
+            {
+                Vector3 pathVector = _CalculatePathVector(_Path, i);
+                BaseBrushScript.ComputeSurfaceFrameNew(preferredRight, pathVector, _Path[i].rotation, out Vector3 nright, out Vector3 nNormal);
+                preferredRight = nright;
+
+                _DirectionVectors.Add(pathVector);
+                _Normals.Add(nNormal);
+                _Tangents.Add(nright);
+            }
+        }
+
+        private static Vector3 _CalculatePathVector(List<TrTransform> path, int i)
+        {
+            if (i == 0 && path.Count <= 1) {return path[i].rotation * Vector3.forward;} // A path with only one point
+            if (i == 0) {return (path[i + 1].translation - path[i].translation).normalized;}
+            if (i + 1 >= path.Count) {return (path[i].translation - path[i - 1].translation).normalized;}
+
+            Vector3 toPrevious = (path[i].translation - path[i - 1].translation).normalized;
+            Vector3 toNext = (path[i + 1].translation - path[i].translation).normalized;
+            return ((toPrevious + toNext) / 2).normalized;
+        }
+
+        public Vector3 GetDirection(int index)
+        {
+            if (_DirectionVectors == null) _CalculateVectors();
+            return _DirectionVectors[index];
+        }
+
+        public Vector3 GetNormal(int index)
+        {
+            if (_Normals == null) _CalculateVectors();
+            return _Normals[index];
+        }
+
+        public Vector3 GetTangent(int index)
+        {
+            if (_Normals == null) _CalculateVectors();
+            return _Tangents[index];
         }
 
         public void Draw() => LuaApiMethods.DrawPath(this);
@@ -283,22 +336,26 @@ namespace TiltBrush
             _Path = Subdivide(_Path, parts);
         }
 
-        public static PathApiWrapper Hermite(TrTransform start, TrTransform end, int resolution, float tangentStrength = 1f)
+        public static PathApiWrapper Hermite(TrTransform start, TrTransform end, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 
-            Vector3 tangentInDirection(TrTransform p1, TrTransform p2)
+            Vector3 tangentInDirection(TrTransform p1, TrTransform p2, Vector3 tangent)
             {
-                // Returns left or right of p1 based on which one is pointing towards p2
+                // Flips tangent based on direction towards p2
                 Vector3 dir = p2.translation - p1.translation;
                 float dotRight = Vector3.Dot(dir, p1.right);
                 float dotLeft = Vector3.Dot(dir, -p1.right);
-                return dotRight > dotLeft ? p1.right : -p1.right;
+                return dotRight > dotLeft ? tangent : -tangent;
             }
 
-            List<TrTransform> path = new List<TrTransform>(resolution + 1);
+            List<TrTransform> path = new List<TrTransform>(resolution + 2);
 
-            Vector3 startTangent = tangentInDirection(start, end) * tangentStrength;
-            Vector3 endTangent = tangentInDirection(end, start) * tangentStrength;
+            startTangent = tangentInDirection(start, end, startTangent) * tangentStrength;
+            endTangent = tangentInDirection(end, start, endTangent) * tangentStrength;
+
+            Quaternion startOrientation = Quaternion.LookRotation(startTangent.normalized);
+            TrTransform trStart = TrTransform.TR(start.translation, startOrientation);
+            path.Add(trStart);
 
             for (int i = 0; i <= resolution; i++)
             {
@@ -312,6 +369,7 @@ namespace TiltBrush
                 float h11 = t3 - t2;
                 Vector3 position = h00 * start.translation + h10 * startTangent + h01 * end.translation + h11 * endTangent;
 
+                // TODO this ain't right
                 Quaternion orientation = Quaternion.LookRotation(path.Count < 1 ?
                     startTangent.normalized :
                     (path[^1].translation - position).normalized);
@@ -321,10 +379,9 @@ namespace TiltBrush
                 path.Add(TrTransform.TRS(position, orientation, scale));
             }
 
-            Vector3 finalTangent = end.translation - path[^1].translation;
-            Quaternion finalOrientation = Quaternion.LookRotation(finalTangent.normalized);
-            TrTransform tr = TrTransform.TR(end.translation, finalOrientation);
-            path.Add(tr);
+            Quaternion finalOrientation = Quaternion.LookRotation(endTangent.normalized);
+            TrTransform trEnd = TrTransform.TR(end.translation, finalOrientation);
+            path.Add(trEnd);
 
             return new PathApiWrapper(path);
         }

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using MoonSharp.Interpreter;
+using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -45,11 +46,20 @@ namespace TiltBrush
         );
 
         public static LightListApiWrapper lights => new LightListApiWrapper(
+            // TODO should this just be custom lights?
+            App.Scene.Lights.ToList()
         );
 
         public static EnvironmentListApiWrapper environments => new EnvironmentListApiWrapper(
+            EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 
+        public static void SetSkybox(ImageApiWrapper imagewrapper)
+        {
+            var tex = imagewrapper._ImageWidget.ReferenceImage.FullSize;
+            RenderSettings.skybox = new Material(Resources.Load<Material>("CustomSkybox"));
+            RenderSettings.skybox.SetTexture("_Tex", tex);
+        }
     }
 
 }

@@ -404,7 +404,7 @@ namespace TiltBrush
         //
         // The isOriMirrored flag is passed through just in case we need to be
         // correct at some point in the future.
-        protected static void ComputeSurfaceFrameNew(Vector3 vPreferredR,
+        public static void ComputeSurfaceFrameNew(Vector3 vPreferredR,
                                                      Vector3 nMove, Quaternion ori,
                                                      out Vector3 nRight, out Vector3 nNormal)
         {
