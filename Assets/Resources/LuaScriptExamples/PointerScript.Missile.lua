@@ -8,7 +8,6 @@ Parameters = {
 }
 
 function OnTriggerPressed()
-
     --Store the brush transform at the point we press the trigger
     currentPos = Brush.position
     currentRotation = Brush.rotation
@@ -16,7 +15,6 @@ function OnTriggerPressed()
 end
 
 function WhileTriggerPressed()
-
     --Similar to the LaserBeam PointerScript except we can change the direction during "flight"
     direction = Brush.direction
     currentPos = currentPos:Add(direction:Multiply(speed))
