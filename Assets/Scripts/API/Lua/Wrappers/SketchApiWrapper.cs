@@ -45,11 +45,6 @@ namespace TiltBrush
             WidgetManager.m_Instance.ActiveStencilWidgets.Select(w => w.WidgetScript).ToList()
         );
 
-        public static LightListApiWrapper lights => new LightListApiWrapper(
-            // TODO should this just be custom lights?
-            App.Scene.Lights.ToList()
-        );
-
         public static EnvironmentListApiWrapper environments => new EnvironmentListApiWrapper(
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
@@ -60,6 +55,53 @@ namespace TiltBrush
             RenderSettings.skybox = new Material(Resources.Load<Material>("CustomSkybox"));
             RenderSettings.skybox.SetTexture("_Tex", tex);
         }
-    }
 
+        private static CustomLights _CustomLights => LightsControlScript.m_Instance.CustomLightsFromScene;
+
+        public static ColorApiWrapper ambientLightColor
+        {
+            get => new(_CustomLights.Ambient);
+            set => _CustomLights.Ambient = value._Color;
+        }
+
+        public static ColorApiWrapper mainLightColor
+        {
+            get => new(_CustomLights.Shadow.Color);
+            set
+            {
+                _CustomLights.Shadow.Color = value._Color;
+                App.Scene.GetLight((int)LightMode.Shadow).color = value._Color;
+            }
+        }
+
+        public static ColorApiWrapper secondaryLightColor
+        {
+            get => new(_CustomLights.NoShadow.Color);
+            set
+            {
+                _CustomLights.NoShadow.Color = value._Color;
+                App.Scene.GetLight((int)LightMode.NoShadow).color = value._Color;
+            }
+        }
+
+        public static RotationApiWrapper mainLightRotation
+        {
+            get => new(_CustomLights.Shadow.Orientation);
+            set
+            {
+                _CustomLights.Shadow.Orientation = value._Quaternion;
+                App.Scene.GetLight((int)LightMode.Shadow).transform.rotation = value._Quaternion;
+            }
+        }
+
+        public static RotationApiWrapper secondaryLightRotation
+        {
+            get => new(_CustomLights.NoShadow.Orientation);
+            set
+            {
+                _CustomLights.NoShadow.Orientation = value._Quaternion;
+                App.Scene.GetLight((int)LightMode.NoShadow).transform.rotation = value._Quaternion;
+            }
+        }
+    }
 }
