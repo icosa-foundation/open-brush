@@ -9,6 +9,17 @@ namespace TiltBrush
         [MoonSharpHidden]
         public List<Environment> _Environments;
         public EnvironmentApiWrapper last => new EnvironmentApiWrapper(_Environments[^1]);
+        public EnvironmentApiWrapper current
+        {
+            get
+            {
+                return new EnvironmentApiWrapper(SceneSettings.m_Instance.GetDesiredPreset());
+            }
+            set
+            {
+                SceneSettings.m_Instance.SetDesiredPreset(value._Environment);
+            }
+        }
 
         public EnvironmentListApiWrapper()
         {
