@@ -287,6 +287,9 @@ function Path.AsMultiTrList() end
 function Path.New() end
 function Path.New(transformList) end
 function Path.New(positionList) end
+function Path.GetDirection(index) end
+function Path.GetNormal(index) end
+function Path.GetTangent(index) end
 function Path.Draw() end
 function Path.Insert(transform) end
 function Path.TransformBy(transform) end
@@ -310,7 +313,7 @@ function Path.Subdivide(trs, parts) end
 function Path.Resample(trs, spacing) end
 function Path.Resample(spacing) end
 function Path.Subdivide(parts) end
-function Path.Hermite(start, end, resolution, tangentStrength) end
+function Path.Hermite(start, end, startTangent, endTangent, resolution, tangentStrength) end
 Path2d.Space = nil
 Path2d.count = nil
 function Path2d.AsSingleTrList() end
@@ -402,8 +405,12 @@ Sketch.images = nil
 Sketch.videos = nil
 Sketch.models = nil
 Sketch.guides = nil
-Sketch.lights = nil
 Sketch.environments = nil
+Sketch.ambientLightColor = nil
+Sketch.mainLightColor = nil
+Sketch.secondaryLightColor = nil
+Sketch.mainLightRotation = nil
+Sketch.secondaryLightRotation = nil
 function Sketch.Open(name) end
 function Sketch.Save(overwrite) end
 function Sketch.SaveAs(name) end
@@ -423,6 +430,7 @@ function Spectator.Hide(type) end
 function Spectator.Toggle() end
 function Spectator.On() end
 function Spectator.Off() end
+function Spectator.LockToScene(locked) end
 Stroke.path = nil
 Stroke.brushType = nil
 Stroke.brushSize = nil
@@ -469,6 +477,7 @@ function Symmetry.GetBrushGuids() end
 function Symmetry.PathToPolar(path) end
 function Timer.Set(fn, interval, delay, repeats) end
 function Timer.Unset(fn) end
+Transform.inverse = nil
 Transform.up = nil
 Transform.down = nil
 Transform.right = nil

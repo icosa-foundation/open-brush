@@ -19,5 +19,4 @@ function WhileTriggerPressed()
     direction = Brush.direction
     currentPos = currentPos:Add(direction:Multiply(speed))
     return Transform:New(currentPos, currentRotation)
-
 end
