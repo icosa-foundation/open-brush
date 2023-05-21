@@ -50,20 +50,6 @@ namespace TiltBrush
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 
-        public static void SetSkybox(string filename)
-        {
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            var path = Path.Combine(App.MediaLibraryPath(), "Images", filename);
-            if (File.Exists(path))     {
-                var fileData = File.ReadAllBytes(path);
-                tex.LoadImage(fileData);
-                var mat = Resources.Load<Material>("Environments/CustomSkybox");
-                mat.mainTexture = tex;
-                RenderSettings.skybox = mat;
-                // RenderSettings.skybox.SetTexture("_Tex", tex);
-            }
-        }
-
         private static CustomLights _CustomLights => LightsControlScript.m_Instance.CustomLightsFromScene;
 
         public static ColorApiWrapper ambientLightColor

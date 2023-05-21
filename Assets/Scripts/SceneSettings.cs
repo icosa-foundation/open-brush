@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -114,6 +115,8 @@ namespace TiltBrush
 
         private List<LightTransition> m_TransitionLights;
         private int m_RequestInstantSceneSwitch;
+        private string m_CustomSkybox;
+        private Color m_CustomSkyboxTint = Color.gray;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -203,6 +206,24 @@ namespace TiltBrush
                 {
                     GradientActiveChanged();
                 }
+            }
+        }
+
+        public void LoadCustomSkybox(string filename)
+        {
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            var path = Path.Combine(App.MediaLibraryPath(), "Images", filename);
+            if (File.Exists(path))
+            {
+                var fileData = File.ReadAllBytes(path);
+                tex.LoadImage(fileData);
+                var mat = Resources.Load<Material>("Environments/CustomSkybox");
+                mat.mainTexture = tex;
+                RenderSettings.skybox = mat;
+            }
+            else
+            {
+                Debug.LogError($"Could not find skybox image: {path}");
             }
         }
 
@@ -298,6 +319,7 @@ namespace TiltBrush
             m_CustomFogColor = (Color)custom.FogColor;
             m_CustomFogDensity = custom.FogDensity;
             m_CustomReflectionIntensity = custom.ReflectionIntensity;
+            m_CustomSkybox = custom.Skybox;
 
             bool hasCustomGradient = custom.GradientColors != null;
             if (hasCustomGradient)
@@ -553,6 +575,7 @@ namespace TiltBrush
                     break;
                 case TransitionState.Scene:
                     m_HasCustomLights = false;
+                    if (m_CustomSkybox != null) RenderSettings.skybox.SetColor("_Tint", m_CustomSkyboxTint);
                     break;
             }
 
@@ -747,6 +770,7 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
+                if (m_CustomSkybox != null) LoadCustomSkybox(m_CustomSkybox);
 
                 if (FadingToDesiredEnvironment != null)
                 {
@@ -807,7 +831,8 @@ namespace TiltBrush
                         GradientSkew = m_GradientSkew,
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
-                        ReflectionIntensity = RenderSettings.reflectionIntensity
+                        ReflectionIntensity = RenderSettings.reflectionIntensity,
+                        Skybox = m_CustomSkybox
                     };
             }
         }

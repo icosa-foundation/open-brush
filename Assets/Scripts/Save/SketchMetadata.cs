@@ -553,7 +553,7 @@ namespace TiltBrush
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }
 
-        public Texture2D Skybox { get; set; }
+        public string Skybox { get; set; }
     }
 
     [Serializable]
