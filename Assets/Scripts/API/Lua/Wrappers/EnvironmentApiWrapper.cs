@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using UnityEngine;
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -10,5 +11,14 @@ namespace TiltBrush
         {
             _Environment = environment;
         }
+
+        public SkyboxApiWrapper skybox
+        {
+            get
+            {
+                return new SkyboxApiWrapper(_Environment.m_SkyboxMaterial);
+            }
+        }
     }
+
 }

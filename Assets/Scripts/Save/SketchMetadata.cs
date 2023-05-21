@@ -14,6 +14,7 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -551,6 +552,8 @@ namespace TiltBrush
         public Color32 FogColor { get; set; }
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }
+
+        public Texture2D Skybox { get; set; }
     }
 
     [Serializable]
