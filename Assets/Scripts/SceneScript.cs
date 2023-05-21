@@ -43,6 +43,7 @@ namespace TiltBrush
 
         private bool m_bInitialized;
         private Light[] m_Lights;
+        public Light[] Lights => m_Lights;
         private HashSet<int> m_DeletedLayers;
 
         private CanvasScript m_ActiveCanvas;
