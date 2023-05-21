@@ -12,13 +12,11 @@ namespace TiltBrush
             _Environment = environment;
         }
 
-        public SkyboxApiWrapper skybox
+        public override string ToString()
         {
-            get
-            {
-                return new SkyboxApiWrapper(_Environment.m_SkyboxMaterial);
-            }
+            return $"Environment({_Environment.m_Description})";
         }
+
     }
 
 }

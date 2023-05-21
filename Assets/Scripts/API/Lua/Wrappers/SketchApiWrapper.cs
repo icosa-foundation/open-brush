@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
@@ -49,11 +50,18 @@ namespace TiltBrush
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 
-        public static void SetSkybox(ImageApiWrapper imagewrapper)
+        public static void SetSkybox(string filename)
         {
-            var tex = imagewrapper._ImageWidget.ReferenceImage.FullSize;
-            RenderSettings.skybox = new Material(Resources.Load<Material>("CustomSkybox"));
-            RenderSettings.skybox.SetTexture("_Tex", tex);
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            var path = Path.Combine(App.MediaLibraryPath(), "Images", filename);
+            if (File.Exists(path))     {
+                var fileData = File.ReadAllBytes(path);
+                tex.LoadImage(fileData);
+                var mat = Resources.Load<Material>("Environments/CustomSkybox");
+                mat.mainTexture = tex;
+                RenderSettings.skybox = mat;
+                // RenderSettings.skybox.SetTexture("_Tex", tex);
+            }
         }
 
         private static CustomLights _CustomLights => LightsControlScript.m_Instance.CustomLightsFromScene;

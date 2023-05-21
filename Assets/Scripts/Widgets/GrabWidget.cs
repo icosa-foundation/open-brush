@@ -1019,8 +1019,9 @@ namespace TiltBrush
             }
         }
 
-        public void HideNow()
+        public void HideNow(bool force = false)
         {
+            if (force) m_CurrentState = State.Tossed;
             if (m_CurrentState == State.Tossed)
             {
                 m_TossTimer = 0;

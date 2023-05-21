@@ -85,6 +85,7 @@ namespace TiltBrush
             return guide;
         }
         public void Select() => ApiMethods.SelectWidget(_StencilWidget);
+        public void Delete() => ApiMethods.DeleteWidget(_StencilWidget);
         public void Scale(Vector3 scale) => SketchMemoryScript.m_Instance.PerformAndRecordCommand(
             new MoveWidgetCommand(_StencilWidget, _StencilWidget.LocalTransform, scale));
 

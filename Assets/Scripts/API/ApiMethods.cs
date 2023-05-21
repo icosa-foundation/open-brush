@@ -487,6 +487,11 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
+        public static void DeleteWidget(GrabWidget widget)
+        {
+            widget.HideNow(force: true);
+        }
+
         [ApiEndpoint("model.set.position", "Move a 3d model to the given coordinates")]
         public static void PositionModel(int index, Vector3 position)
         {
@@ -555,6 +560,30 @@ namespace TiltBrush
         public static void SelectImage(int index)
         {
             SelectWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint("image.delete", "Deletes an image by index.")]
+        public static void DeleteImage(int index)
+        {
+            DeleteWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint("video.delete", "Deletes a video by index.")]
+        public static void DeleteVideo(int index)
+        {
+            DeleteWidget(_GetActiveVideo(index));
+        }
+
+        [ApiEndpoint("model.delete", "Deletes a 3d model by index.")]
+        public static void DeleteModel(int index)
+        {
+            DeleteWidget(_GetActiveModel(index));
+        }
+
+        [ApiEndpoint("guide.delete", "Deletes a guide by index.")]
+        public static void DeleteGuide(int index)
+        {
+            DeleteWidget(_GetActiveStencil(index));
         }
 
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]

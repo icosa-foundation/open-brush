@@ -174,6 +174,7 @@ function Guide.NewCone(transform) end
 function Guide.NewEllipsoid(transform) end
 function Guide.NewCustom(transform, model) end
 function Guide.Select() end
+function Guide.Delete() end
 function Guide.Scale(scale) end
 function Headset.ResizeBuffer(size) end
 function Headset.SetBufferSize(size) end
@@ -186,6 +187,7 @@ Image.rotation = nil
 Image.scale = nil
 function Image.Import(location) end
 function Image.Select() end
+function Image.Delete() end
 function Image.FormEncode() end
 function Image.SaveBase64(base64, filename) end
 Layer.index = nil
@@ -258,6 +260,7 @@ Model.rotation = nil
 Model.scale = nil
 function Model.Import(location) end
 function Model.Select() end
+function Model.Delete() end
 MultiPath.Space = nil
 MultiPath.count = nil
 MultiPath.pointCount = nil
@@ -416,7 +419,7 @@ function Sketch.Save(overwrite) end
 function Sketch.SaveAs(name) end
 function Sketch.Export() end
 function Sketch.NewSketch() end
-function Sketch.SetSkybox(imagewrapper) end
+function Sketch.SetSkybox(filename) end
 Spectator.position = nil
 Spectator.rotation = nil
 function Spectator.Turn(angle) end
@@ -632,6 +635,8 @@ Video.position = nil
 Video.rotation = nil
 Video.scale = nil
 function Video.Import(location) end
+function Video.Select() end
+function Video.Delete() end
 Visualizer.sampleRate = nil
 Visualizer.duration = nil
 function Visualizer.EnableScripting(name) end

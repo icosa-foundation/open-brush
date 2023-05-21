@@ -69,7 +69,8 @@ namespace TiltBrush
         }
 
         public static ImageApiWrapper Import(string location) => new (ApiMethods.ImportImage(location));
-        public void Select() => ApiMethods.SelectImage(index);
+        public void Select() => ApiMethods.SelectWidget(_ImageWidget);
+        public void Delete() => ApiMethods.DeleteWidget(_ImageWidget);
         public string FormEncode() => ApiMethods.FormEncodeImage(index);
         public string SaveBase64(string base64, string filename) => ApiMethods.SaveBase64(base64, filename);
     }

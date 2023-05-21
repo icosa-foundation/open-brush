@@ -70,6 +70,7 @@ namespace TiltBrush
         }
 
         public static VideoApiWrapper Import(string location) => new (ApiMethods.ImportVideo(location));
-        // public void Select() => ApiMethods.SelectVideo(index);
+        public void Select() => ApiMethods.SelectWidget(_VideoWidget);
+        public void Delete() => ApiMethods.DeleteWidget(_VideoWidget);
     }
 }

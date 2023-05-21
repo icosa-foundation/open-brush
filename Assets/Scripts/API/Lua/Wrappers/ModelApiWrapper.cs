@@ -70,6 +70,7 @@ namespace TiltBrush
         }
 
         public static ModelApiWrapper Import(string location) => new ModelApiWrapper(ApiMethods.ImportModel(location));
-        public void Select() => ApiMethods.SelectModel(index);
+        public void Select() => ApiMethods.SelectWidget(_ModelWidget);
+        public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
     }
 }
