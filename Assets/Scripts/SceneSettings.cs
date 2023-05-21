@@ -770,7 +770,7 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (m_CustomSkybox != null) LoadCustomSkybox(m_CustomSkybox);
+                if (!string.IsNullOrEmpty(m_CustomSkybox)) LoadCustomSkybox(m_CustomSkybox);
 
                 if (FadingToDesiredEnvironment != null)
                 {
