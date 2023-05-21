@@ -419,7 +419,6 @@ function Sketch.Save(overwrite) end
 function Sketch.SaveAs(name) end
 function Sketch.Export() end
 function Sketch.NewSketch() end
-function Sketch.SetSkybox(filename) end
 Spectator.position = nil
 Spectator.rotation = nil
 function Spectator.Turn(angle) end
