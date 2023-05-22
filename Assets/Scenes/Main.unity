@@ -1269,7 +1269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1711ff795b0eac4da4815318e17b3fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MaxPointers: 10
+  m_MaxPointers: 256
   m_MainPointerPrefab: {fileID: 133060, guid: 9b51341e2f5f13c4e8421b42c44de1ef, type: 3}
   m_AuxPointerPrefab: {fileID: 130268, guid: 7731b9109b4c6e84eaee3f77c6c6c6e1, type: 3}
   m_DefaultPointerAngle: 25
