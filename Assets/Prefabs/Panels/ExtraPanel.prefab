@@ -30,7 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4232412870837608}
-  m_RootOrder: 8
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &65772034241514116
 BoxCollider:
@@ -339,9 +339,9 @@ Transform:
   - {fileID: 4020115478564282}
   - {fileID: 8211543910910235730}
   - {fileID: 7161901348231431177}
-  - {fileID: 3298845783872388597}
   - {fileID: 7656778960772056826}
   - {fileID: 2183017126753138076}
+  - {fileID: 3298845783872388597}
   - {fileID: 4159606566656768}
   - {fileID: 4082672982539268}
   - {fileID: 4924232686100982}
@@ -380,7 +380,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4232412870837608}
-  m_RootOrder: 9
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33786679359167878
 MeshFilter:
@@ -1123,7 +1123,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4232412870837608}
-  m_RootOrder: 10
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33572971787848210
 MeshFilter:
@@ -1613,7 +1613,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4232412870837608}
-  m_RootOrder: 7
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3288402495669431177
 MeshFilter:
@@ -1835,6 +1835,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_DescriptionText
       value: Transform Tools
+      objectReference: {fileID: 0}
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 103943359016206336
       objectReference: {fileID: 0}
     - target: {fileID: 4969199155606796208, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}

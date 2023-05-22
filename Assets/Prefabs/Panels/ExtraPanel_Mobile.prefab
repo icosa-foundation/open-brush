@@ -1586,6 +1586,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4723356810989372}
     m_Modifications:
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: Grid and Snap Settings
+      objectReference: {fileID: 0}
     - target: {fileID: 4969199155606796208, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_Name
@@ -1604,7 +1609,7 @@ PrefabInstance:
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.425
+      value: -0.432
       objectReference: {fileID: 0}
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
@@ -1671,6 +1676,11 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: 4fb00a3c13d9a1b4e916be1c5a5357b8, type: 3}
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 103943359016206336
+      objectReference: {fileID: 0}
     - target: {fileID: 4969199155606796208, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_Name
@@ -1689,7 +1699,7 @@ PrefabInstance:
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.425
+      value: -0.43200004
       objectReference: {fileID: 0}
     - target: {fileID: 5992996673163279405, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}

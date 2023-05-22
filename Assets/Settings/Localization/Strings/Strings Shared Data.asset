@@ -2911,6 +2911,10 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 103943359016206336
+    m_Key: EXTRA_PANEL_TRANSFORMTOOLS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
