@@ -283,11 +283,11 @@ namespace TiltBrush
             string sBrushDescription = "";
             if (rBrush != null)
             {
-                sBrushDescription = rBrush.m_Description;
+                sBrushDescription = rBrush.Description;
                 if (Config.IsExperimental && !string.IsNullOrEmpty(rBrush.m_DescriptionExtra))
                 {
                     sBrushDescription = string.Format(
-                        "{0} ({1})", rBrush.m_Description, rBrush.m_DescriptionExtra);
+                        "{0} ({1})", rBrush.Description, rBrush.m_DescriptionExtra);
                 }
                 m_SelectionColor = rColor;
                 m_SelectionBrush = rBrush;
