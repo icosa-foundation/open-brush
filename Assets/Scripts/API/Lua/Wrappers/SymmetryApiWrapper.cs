@@ -141,7 +141,7 @@ namespace TiltBrush
         public static List<string> GetBrushNames()
         {
             return PointerManager.m_Instance.SymmetryPointerBrushes.Select(
-                x => x.m_Description
+                x => x.Description
             ).ToList();
         }
 

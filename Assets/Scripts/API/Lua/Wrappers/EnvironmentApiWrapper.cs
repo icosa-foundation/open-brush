@@ -1,5 +1,5 @@
 ﻿using MoonSharp.Interpreter;
-using UnityEngine;
+
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -14,7 +14,7 @@ namespace TiltBrush
 
         public override string ToString()
         {
-            return $"Environment({_Environment.m_Description})";
+            return $"Environment({_Environment.Description})";
         }
 
     }

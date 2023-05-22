@@ -49,7 +49,7 @@ namespace TiltBrush
             }
         }
 
-        public string brushType => _Stroke?.m_BatchSubset.m_ParentBatch.Brush.m_Description;
+        public string brushType => _Stroke?.m_BatchSubset.m_ParentBatch.Brush.Description;
         public float brushSize => _Stroke.m_BrushSize;
         public ColorApiWrapper brushColor => new ColorApiWrapper(_Stroke.m_Color);
 

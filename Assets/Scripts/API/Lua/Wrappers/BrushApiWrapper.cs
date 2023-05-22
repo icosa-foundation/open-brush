@@ -23,7 +23,7 @@ namespace TiltBrush
         public static float pressure => PointerManager.m_Instance.MainPointer.GetPressure();
         public static string type
         {
-            get => PointerManager.m_Instance.MainPointer.CurrentBrush.m_Description!;
+            get => PointerManager.m_Instance.MainPointer.CurrentBrush.Description!;
             set => ApiMethods.Brush(value);
         }
         public static float speed => PointerManager.m_Instance.MainPointer.MovementSpeed;

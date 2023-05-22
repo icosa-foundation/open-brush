@@ -34,7 +34,7 @@ namespace TiltBrush
         public EnvironmentApiWrapper this[int index] => new EnvironmentApiWrapper(_Environments[index]);
         public int count => _Environments?.Count ?? 0;
 
-        public EnvironmentApiWrapper ByName(string name) => new EnvironmentApiWrapper(_Environments.FirstOrDefault(e => e.m_Description == name));
+        public EnvironmentApiWrapper ByName(string name) => new EnvironmentApiWrapper(_Environments.FirstOrDefault(e => e.Description == name));
     }
 
 }

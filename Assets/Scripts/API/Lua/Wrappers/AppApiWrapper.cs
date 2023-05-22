@@ -32,7 +32,7 @@ namespace TiltBrush
         public static void DraftingHidden() => ApiMethods.DraftingHidden();
         public static string environment
         {
-            get => SceneSettings.m_Instance.CurrentEnvironment.m_Description;
+            get => SceneSettings.m_Instance.CurrentEnvironment.Description;
             set => ApiMethods.SetEnvironment(value);
         }
         public static void Watermark(bool a) => LuaApiMethods.Watermark(a);
