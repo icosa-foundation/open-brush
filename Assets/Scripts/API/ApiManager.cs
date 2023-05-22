@@ -25,6 +25,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using WebSocketServer;
 
 namespace TiltBrush
 {
@@ -550,6 +551,14 @@ namespace TiltBrush
             html = html.Replace("{{commandsJson}}", commandsJson);
 
             return html;
+        }
+
+        public void ReceiveWebSocketMessage(WebSocketMessage message)
+        {
+            foreach (var cmd in message.data.Split("&"))
+            {
+                EnqueueCommand(cmd);
+            }
         }
 
         string ApiCommandCallback(HttpListenerRequest request)

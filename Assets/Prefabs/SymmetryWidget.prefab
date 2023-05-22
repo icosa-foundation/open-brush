@@ -34,8 +34,7 @@ Transform:
 --- !u!1 &8373124984786508974
 GameObject:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 126712, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
@@ -54,8 +53,7 @@ GameObject:
 --- !u!224 &8373124985705063440
 RectTransform:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 22461458, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984786508974}
@@ -75,8 +73,7 @@ RectTransform:
 --- !u!23 &8373124984786508978
 MeshRenderer:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 2385760, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984786508974}
@@ -118,8 +115,7 @@ MeshRenderer:
 --- !u!114 &8373124984786508976
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 11410358, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984786508974}
@@ -253,8 +249,7 @@ MonoBehaviour:
 --- !u!1 &8373124984978532359
 GameObject:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 126712, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
@@ -273,8 +268,7 @@ GameObject:
 --- !u!224 &8373124985417775635
 RectTransform:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 22461458, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984978532359}
@@ -294,8 +288,7 @@ RectTransform:
 --- !u!23 &8373124985667550919
 MeshRenderer:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 2385760, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984978532359}
@@ -337,8 +330,7 @@ MeshRenderer:
 --- !u!114 &8373124985417775636
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 11410358, guid: f636b2bdcf1c7f5498e324d362ac1ba8,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8373124984978532359}
@@ -601,14 +593,16 @@ MonoBehaviour:
   m_HighlightMeshXfs:
   - {fileID: 8373124985362611616}
   m_ValidSnapRotationStickyAngle: 0
-  m_SnapGhostMaterial: {fileID: 0}
+  m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_LeftRightMesh: {fileID: 8373124986040236645}
-  m_FrontBackMesh: {fileID: 0}
+  m_FrontBackMesh: {fileID: 8373124985360318272}
   m_TitleText: {fileID: 8373124985417775636}
   m_HintText: {fileID: 8373124984786508974}
   m_Home: {fileID: 0}
-  m_CustomSymmetryMesh: {fileID: 0}
-  m_CustomSymmetryMaterial: {fileID: 0}
+  m_CustomSymmetryMesh: {fileID: 4300000, guid: b71c23914bd4e0a4290d3fc1dd01f027,
+    type: 3}
+  m_CustomSymmetryMaterial: {fileID: 2100000, guid: 6f7312c03e3c22b48808ce1e5bb229a6,
+    type: 2}
   m_GuideBeams:
   - m_Beam: {fileID: 8373124985867090502}
     m_Direction: 0
