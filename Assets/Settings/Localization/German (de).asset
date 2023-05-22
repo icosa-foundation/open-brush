@@ -15,11 +15,16 @@ MonoBehaviour:
   m_Identifier:
     m_Code: de
   m_Metadata:
-    m_Items: []
+    m_Items:
+    - rid: 7458765345141817362
   m_LocaleName: German (de)
   m_CustomFormatCultureCode: 
   m_UseCustomFormatter: 0
   m_SortOrder: 2
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7458765345141817362
+      type: {class: FallbackLocale, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_Locale: {fileID: 11400000, guid: 35f3779472064f74bafddfc140d73eb6, type: 2}

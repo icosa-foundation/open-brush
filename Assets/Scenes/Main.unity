@@ -27959,25 +27959,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1712388236}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1717152977 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4492044767078796463, guid: 382dabebd59956d499aefb54b02f804d,
-    type: 3}
-  m_PrefabInstance: {fileID: 4492044766644994641}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1717152978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1717152977}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c9acfb4340bf4549a26cb8f6891ebcb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SpectatorCamTarget: {fileID: 1572529038}
 --- !u!1 &1726887557
 GameObject:
   m_ObjectHideFlags: 0
@@ -34512,6 +34493,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 652605545}
     m_Modifications:
+    - target: {fileID: 1717152978, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
+      propertyPath: SpectatorCamTarget
+      value: 
+      objectReference: {fileID: 1572529038}
     - target: {fileID: 4492044767078796463, guid: 382dabebd59956d499aefb54b02f804d,
         type: 3}
       propertyPath: m_Name
@@ -34572,8 +34557,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 5713667951292597152, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
+    m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 382dabebd59956d499aefb54b02f804d, type: 3}
 --- !u!4 &5080288855832605660
 Transform:
