@@ -346,7 +346,7 @@ namespace TiltBrush
                 AddLayerNow();
             }
 
-            if (layerIndex == -1) return App.Scene.MainCanvas;
+            if (layerIndex == -1 || layerIndex >= m_LayerCanvases.Count) return App.Scene.MainCanvas;
             return m_LayerCanvases[layerIndex];
         }
 

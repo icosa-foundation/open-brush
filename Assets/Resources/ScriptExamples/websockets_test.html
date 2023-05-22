@@ -1,0 +1,64 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charSet="UTF-8">
+</head>
+<body>
+<label> Server address: <input type="text" id="ipAddress" value="127.0.0.1"></label>
+<button onClick="connect();">Connect</button><br><br>
+<button onClick="run();">Run</button>
+<br><br>
+<button onClick="sendCommands(['new']); sendCommands(['brush.home']);">Clear Current Scene</button>
+
+<br><br>
+<textarea id="results" cols="80" rows="10"></textarea>
+
+<script>
+
+    let socket;
+
+    function connect() {
+        var ipAddress = document.getElementById("ipAddress").value;
+        socket = new WebSocket(`ws://${ipAddress}:40075/api/v1`);
+        socket.onopen = function(e) {log(`[opening ${ipAddress}]`);};
+        socket.onmessage = function(event) {log(`[message] Data received from server: ${event.data}`);};
+        socket.onerror = function(error) {log(`[error]`);};
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);}
+            else {log('[close] Connection died');}
+        };
+    }
+
+    function run() {
+        sendCommands([
+            "new",
+            "color.set.html=blue",
+            "brush.type=ink",
+            "brush.draw=1",
+            "brush.move.by=0,0,0.1",
+            "color.set.html=red",
+            "brush.type=marker",
+            "brush.draw=1"
+        ]);
+    }
+
+    function log(message) {
+        var textarea = document.getElementById("results");
+        textarea.value += `${message}\n`;
+        textarea.scrollTop = textarea.scrollHeight; // Scroll to the end
+    }
+
+    function sendCommand(command) {
+        sendCommands([command]);
+    }
+
+    function sendCommands(commands) {
+        log(commands.join('\n'));
+        socket.send(commands.join('&'));
+    }
+
+</script>
+
+</body>
+</html>

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -26,12 +27,47 @@ namespace TiltBrush
         [SerializeField] protected bool m_CenterPopupOnButton = false;
         [SerializeField] protected Vector3 m_PopupOffset;
         [SerializeField] protected string m_PopupText = "";
+        [SerializeField] protected LocalizedString m_LocalizedPopup;
         [SerializeField] protected string m_ToggleOnDescription = "";
+        [SerializeField] protected LocalizedString m_LocalizedToggleOnDescription;
         [SerializeField] protected Texture2D m_ToggleOnTexture;
         [SerializeField] protected bool m_AllowUnavailable = false;
         [SerializeField] private GameObject m_LinkedUIObject;
         protected string m_DefaultDescription;
         protected Texture2D m_DefaultTexture;
+
+        public string ToggleOnDescription
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedToggleOnDescription.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_ToggleOnDescription;
+                }
+            }
+        }
+
+        public string PopupText
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedPopup.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_PopupText;
+                }
+            }
+        }
+
 
         public void SetCommandParameters(int iCommandParam, int iCommandParam2 = -1)
         {
@@ -93,9 +129,9 @@ namespace TiltBrush
                     {
                         SetButtonActivated(true);
 
-                        if (m_ToggleOnDescription != "")
+                        if (ToggleOnDescription != "")
                         {
-                            SetDescriptionText(m_ToggleOnDescription);
+                            SetDescriptionText(ToggleOnDescription);
                         }
                         if (m_ToggleOnTexture != null)
                         {
@@ -106,7 +142,7 @@ namespace TiltBrush
                     {
                         SetButtonActivated(false);
 
-                        if (m_ToggleOnDescription != "")
+                        if (ToggleOnDescription != "")
                         {
                             SetDescriptionText(m_DefaultDescription);
                         }
@@ -143,7 +179,7 @@ namespace TiltBrush
                     if (panel != null)
                     {
                         panel.CreatePopUp(m_Command, m_CommandParam, m_CommandParam2, m_PopupOffset,
-                            m_PopupText);
+                            PopupText);
                         if (m_CenterPopupOnButton)
                         {
                             panel.PositionPopUp(transform.position +
