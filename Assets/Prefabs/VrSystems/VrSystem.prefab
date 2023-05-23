@@ -729,8 +729,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4000013585580318}
+  - component: {fileID: 6299537005687282328}
   - component: {fileID: 2050387273726649813}
-  - component: {fileID: 5431124212578847327}
   m_Layer: 0
   m_Name: VrSystem
   m_TagString: Untagged
@@ -755,6 +755,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6299537005687282328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000014130305538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Camera: {fileID: 20000011692615516}
+  m_OriginBaseGameObject: {fileID: 1000014130305538}
+  m_CameraFloorOffsetObject: {fileID: 528820638706216730}
+  m_RequestedTrackingOriginMode: 2
+  m_CameraYOffset: 1.36144
 --- !u!114 &2050387273726649813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -783,23 +800,6 @@ MonoBehaviour:
   - SteamVR_Fade
   - SteamVR_ExternalCamera
   _fixPostEffectsAlpha: 0
---- !u!114 &5431124212578847327
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000014130305538}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2483b9bd782f9449a5972b61b7d51a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_CameraFloorOffsetObject: {fileID: 528820638706216730}
-  m_RequestedTrackingMode: 2
-  m_TrackingOriginMode: 1
-  m_TrackingSpace: 1
-  m_CameraYOffset: 1.36144
 --- !u!1 &528820638706216730
 GameObject:
   m_ObjectHideFlags: 0
