@@ -45,6 +45,11 @@ namespace TiltBrush
         public float Min => m_SafeLimits ? m_safeMin : m_unsafeMin;
         public float Max => m_SafeLimits ? m_safeMax : m_unsafeMax;
 
+        public void SetMax(float max)
+        {
+            SetMax(max, max);
+        }
+
         public void SetMax(float safeMax, float unsafeMax)
         {
             maxText.text = FormatValue(safeMax);
@@ -56,6 +61,11 @@ namespace TiltBrush
                 m_CurrentValue = safeMax;
                 SetSliderPositionToReflectValue();
             }
+        }
+
+        public void SetMin(float min)
+        {
+            SetMin(min, min);
         }
 
         public void SetMin(float safeMin, float unsafeMin)
@@ -138,6 +148,10 @@ namespace TiltBrush
         private void _UpdateValueAbsolute(float fValue)
         {
             valueText.text = FormatValue(fValue);
+            if (SliderType == SliderTypes.Int)
+            {
+                fValue = Mathf.FloorToInt(fValue);
+            }
             onUpdateValue.Invoke(new Vector3(m_Param1, m_Param2, fValue));
             m_CurrentValue = Mathf.InverseLerp(Min, Max, fValue);
             SetSliderPositionToReflectValue();

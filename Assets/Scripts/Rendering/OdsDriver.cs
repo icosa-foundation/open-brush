@@ -176,43 +176,49 @@ namespace TiltBrush
         {
             if (m_odsCamera.FrameCount >= m_framesToCapture)
             {
-                if (m_framesToCapture > 0)
+                if (App.Config.m_SdkMode == SdkMode.Ods)
                 {
-                    // We rendered everything.
-                    if ((Application.platform == RuntimePlatform.WindowsPlayer) ||
-                        (Application.platform == RuntimePlatform.WindowsEditor))
+                    if (m_framesToCapture > 0)
                     {
-                        System.Diagnostics.Process.Start("explorer.exe", "/open," + m_outputFolder);
-                    }
+                        // We rendered everything.
+                        if ((Application.platform == RuntimePlatform.WindowsPlayer) ||
+                            (Application.platform == RuntimePlatform.WindowsEditor))
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", "/open," + m_outputFolder);
+                        }
 
-                    System.Diagnostics.Process proc = new System.Diagnostics.Process();
-                    proc.StartInfo.FileName = Path.GetFullPath(TiltBrush.FfmpegPipe.GetFfmpegExe());
-                    proc.StartInfo.Arguments = System.String.Format(
-                        @"-y -framerate {0} -f image2 -i ""{1}_%06d.png"" " +
-                        @"-c:v " + FfmpegPipe.GetVideoEncoder() + @" -r {0} -pix_fmt yuv420p ""{2}""",
-                        m_fps,
-                        m_imagesPath,
-                        m_videoPath);
-                    Debug.LogFormat("{0} {1}", proc.StartInfo.FileName, proc.StartInfo.Arguments);
-                    proc.StartInfo.CreateNoWindow = false;
-                    proc.StartInfo.ErrorDialog = true;
-                    proc.StartInfo.UseShellExecute = false;
-                    proc.StartInfo.RedirectStandardError = true;
-                    proc.Start();
+                        System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                        proc.StartInfo.FileName = Path.GetFullPath(TiltBrush.FfmpegPipe.GetFfmpegExe());
+                        proc.StartInfo.Arguments = System.String.Format(
+                            @"-y -framerate {0} -f image2 -i ""{1}_%06d.png"" " +
+                            @"-c:v " + FfmpegPipe.GetVideoEncoder() + @" -r {0} -pix_fmt yuv420p ""{2}""",
+                            m_fps,
+                            m_imagesPath,
+                            m_videoPath);
+                        Debug.LogFormat("{0} {1}", proc.StartInfo.FileName, proc.StartInfo.Arguments);
+                        proc.StartInfo.CreateNoWindow = false;
+                        proc.StartInfo.ErrorDialog = true;
+                        proc.StartInfo.UseShellExecute = false;
+                        proc.StartInfo.RedirectStandardError = true;
+                        proc.Start();
 
-                    UnityEngine.Debug.Log(proc.StandardError.ReadToEnd());
+                        UnityEngine.Debug.Log(proc.StandardError.ReadToEnd());
 
 #if USD_SUPPORTED
-                    if (m_PathSerializer != null)
-                    {
-                        m_PathSerializer.Stop();
-                    }
+                        if (m_PathSerializer != null)
+                        {
+                            m_PathSerializer.Stop();
+                        }
 #endif
 
-                    proc.Close();
-                    Application.Quit();
-                    Debug.Break();
+                        proc.Close();
+                        Application.Quit();
+                        Debug.Break();
+                    }
+                    return;
+
                 }
+                gameObject.SetActive(false);
                 return;
             }
 

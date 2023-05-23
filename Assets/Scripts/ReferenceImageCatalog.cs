@@ -359,7 +359,7 @@ namespace TiltBrush
                 foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") { continue; }
+                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".svg") { continue; }
                     try
                     {
                         m_Images.Add(oldImagesByPath[filePath]);

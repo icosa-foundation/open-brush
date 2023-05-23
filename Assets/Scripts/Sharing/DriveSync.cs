@@ -47,11 +47,12 @@ namespace TiltBrush
         public enum SyncedFolderType
         {
             Sketches = 0,
-            Snapshots,
-            Videos,
-            MediaLibrary,
-            Exports,
-            Num,
+            Snapshots = 1,
+            Videos = 2,
+            MediaLibrary = 3,
+            Exports = 4,
+            Scripts = 5,
+            Num = 6
         }
 
         private class SyncedFolder
@@ -63,6 +64,7 @@ namespace TiltBrush
             public DirectoryInfo Local;
             public SyncType SyncType;
             public bool Recursive;
+            public string[] IncludeExtensions;
             public string[] ExcludeExtensions;
             public SyncedFolderType FolderType;
 
@@ -492,6 +494,18 @@ namespace TiltBrush
                     SyncedFolderType.Snapshots,
                     token));
             }
+            if (IsFolderOfTypeSynced(SyncedFolderType.Scripts))
+            {
+                folderSyncs.Add(AddSyncedFolderAsync(
+                    "Scripts",
+                    ApiManager.Instance.UserScriptsPath(),
+                    deviceRootId,
+                    SyncType.UploadAndDownload,
+                    SyncedFolderType.Scripts,
+                    token,
+                    recursive: true,
+                    includeExtensions: new[] { ".lua", ".html" }));
+            }
 
             if (!App.Config.IsMobileHardware)
             {
@@ -585,15 +599,14 @@ namespace TiltBrush
             m_Transfers.Clear();
         }
 
+        public bool SyncPossible() => m_GoogleIdentity.LoggedIn && SyncEnabled && !DriveIsLowOnSpace && !m_IsCancelling;
+
         /// Syncs the local files with the device's Google Drive folder. If a sync is already in progress
         /// it will be cancelled before a new sync is performed. The sync prepares the transfers required
         /// to sync and then the actual transfers happen in the Update function.
         public async Task SyncLocalFilesAsync()
         {
-            if (!m_GoogleIdentity.LoggedIn || !SyncEnabled || DriveIsLowOnSpace || m_IsCancelling)
-            {
-                return;
-            }
+            if (!SyncPossible()) return;
 
             if (m_SyncTask != null)
             {
@@ -635,7 +648,9 @@ namespace TiltBrush
             SyncedFolderType folderType,
             CancellationToken token,
             bool recursive = false,
-            string[] excludeExtensions = null)
+            string[] includeExtensions = null,
+            string[] excludeExtensions = null
+            )
         {
             var folder = new SyncedFolder()
             {
@@ -647,6 +662,7 @@ namespace TiltBrush
                 Recursive = recursive,
                 ParentDriveId = parentId,
                 ExcludeExtensions = excludeExtensions,
+                IncludeExtensions = includeExtensions,
                 FolderType = folderType,
             };
             m_Folders.Add(folder);
@@ -747,6 +763,15 @@ namespace TiltBrush
                 }
             }
             var localFiles = folder.Local.GetFiles().ToDictionary(x => x.Name);
+            if (folder.IncludeExtensions != null)
+            {
+                localFiles = localFiles.Values
+                    .Where(x => folder.IncludeExtensions.Contains(Path.GetExtension(x.Name)))
+                    .ToDictionary(x => x.Name);
+                driveFiles = driveFiles.Values
+                    .Where(x => folder.IncludeExtensions.Contains(Path.GetExtension(x.Name)))
+                    .ToDictionary(x => x.Name);
+            }
             if (folder.ExcludeExtensions != null)
             {
                 localFiles = localFiles.Values
@@ -935,6 +960,18 @@ namespace TiltBrush
                     break;
                 case ".3gp":
                     metadata.MimeType = "video/3gpp";
+                    break;
+                case ".webm":
+                    metadata.MimeType = "video/webm";
+                    break;
+                case ".lua":
+                    metadata.MimeType = "text/x-lua";
+                    break;
+                case ".html":
+                    metadata.MimeType = "text/html";
+                    break;
+                case ".svg":
+                    metadata.MimeType = "image/svg+xml";
                     break;
             }
 

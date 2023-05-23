@@ -94,8 +94,9 @@ namespace TiltBrush
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                var newCPs = new List<PointerManager.ControlPoint>();
-                for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                int cpCount = stroke.m_ControlPoints.Length;
+                var newCPs = new List<PointerManager.ControlPoint>(cpCount);
+                for (var i = 0; i < cpCount; i++)
                 {
                     var cp = stroke.m_ControlPoints[i];
                     cp.m_Pos = func(cp.m_Pos);
@@ -129,12 +130,13 @@ namespace TiltBrush
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
-        private static void _PositionWidget(GrabWidget widget, Vector3 position)
+        private static void _SetWidgetTransform(GrabWidget widget, Vector3 position, Quaternion rotation = default)
         {
+            var tr = TrTransform.TR(position, rotation);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(
                     widget,
-                    TrTransform.T(position),
+                    tr,
                     widget.CustomDimension,
                     true
                 )
@@ -179,6 +181,12 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
         }
 
+        private static StencilWidget _GetActiveStencil(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveStencilWidgets);
+            return WidgetManager.m_Instance.ActiveStencilWidgets[index].WidgetScript;
+        }
+
         private static CameraPathWidget _GetActiveCameraPath(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveCameraPathWidgets);
@@ -187,7 +195,8 @@ namespace TiltBrush
 
         private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
         {
-            var request = System.Net.WebRequest.Create(url);
+            var request = System.Net.WebRequest.CreateHttp(url);
+            request.UserAgent = ApiManager.WEBREQUEST_USER_AGENT;
             request.Method = "HEAD";
             var response = request.GetResponse();
             Uri uri = new Uri(url);
@@ -205,10 +214,16 @@ namespace TiltBrush
                 filename = uri.AbsolutePath.Split('/').Last();
             }
 
-            var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
-            WebClient wc = new WebClient();
-            wc.DownloadFile(uri, path);
-            return filename;
+            // TODO - make this smarter
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
+                filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4"))
+            {
+                var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
+                WebClient wc = new WebClient();
+                wc.DownloadFile(uri, path);
+                return filename;
+            }
+            return null;
         }
 
         private static void _SpectatorShowHide(string thing, bool state)

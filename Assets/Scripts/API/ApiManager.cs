@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace TiltBrush
 
     public class ApiManager : MonoBehaviour
     {
+        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -53,11 +55,23 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
-        [NonSerialized] public Vector3 BrushOrigin = new(0, 13, 3); // Good origin for monoscopic
+        public enum ForcePaintingMode
+        {
+            None,
+            ForcedOn,
+            ForcedOff,
+            ForceNewStroke,
+            WasForceNewStroke,
+        }
+
+        [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-        [NonSerialized] public Vector3 BrushPosition;
-        [NonSerialized] public Quaternion BrushRotation;
-        public bool ForcePaintingOn = false;
+        [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        [NonSerialized] public ForcePaintingMode ForcePainting;
+        [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
+        public BaseCommand ActiveUndo { get; set; }
+
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -438,22 +452,41 @@ namespace TiltBrush
             }
         }
 
+        public (string paramInfo, string Description) GetCommandInfo(string endpoint)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
+        public (string paramInfo, string Description) GetRuntimeCommandInfo(string luaName)
+        {
+            var paramInfoText = new List<string>();
+            // Convert lua name to Http Api name (split camel case parts and add ".")
+            string[] parts = Regex.Split(luaName, @"(?<!^)(?=[A-Z])");
+            string endpoint = string.Join(".", parts).ToLower();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                paramInfoText.Add($"{param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
         {
             var commandList = new Dictionary<string, (string, string)>();
             foreach (var endpoint in endpoints.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                string paramInfo = String.Join(", ", paramInfoText);
-                commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+                commandList[endpoint] = GetCommandInfo(endpoint);
             }
             return commandList;
         }
@@ -544,11 +577,22 @@ namespace TiltBrush
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
                 .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
+
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
             string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
             html = html.Replace("{{commandsJson}}", commandsJson);
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript))
+            );
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript))
+            );
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
+            );
 
             return html;
         }
@@ -629,6 +673,30 @@ namespace TiltBrush
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+
+        // TODO Find a better home for this. It won't always be API specific
+        public CHRFont TextFont {
+            get
+            {
+                if (m_TextFont == null)
+                {
+                    TextFont = Resources.Load<CHRFont>("arcade");
+                }
+                return m_TextFont;
+            }
+
+            set
+            {
+                m_TextFont = value;
+            }
+        }
+        private CHRFont m_TextFont;
+
+        public void SetTextFont(string chrData)
+        {
+            TextFont.DataRaw = chrData;
+            TextFont.Initialize();
+        }
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
@@ -875,6 +943,24 @@ namespace TiltBrush
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        // Undo currently only affects stroke creation
+        // but any command can be supported as long as you set it's parent to ActiveUndo
+        // Mainly used by lua scripts at the moment.
+
+        public void StartUndo()
+        {
+            ActiveUndo = new BaseCommand();
+        }
+
+        public void EndUndo()
+        {
+            if (ActiveUndo != null && ActiveUndo.HasChildren)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
+            }
+            ActiveUndo = null;
         }
     }
 }

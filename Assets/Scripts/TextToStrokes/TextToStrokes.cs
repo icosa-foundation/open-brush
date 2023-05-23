@@ -28,9 +28,9 @@ namespace TiltBrush
             _font = font;
         }
 
-        public List<List<Vector3>> Build(string text)
+        public List<List<TrTransform>> Build(string text)
         {
-            var shape = new List<List<Vector3>>();
+            var shape = new List<List<TrTransform>>();
             Vector2 offset = Vector2.zero;
             foreach (var character in text)
             {
@@ -40,23 +40,33 @@ namespace TiltBrush
                     offset.x = 0;
                     continue;
                 }
-                // try
-                // {
-                List<List<Vector2>> letter = _font.Outlines[character];
+                List<List<Vector2>> letter;
+                if (_font.Outlines.ContainsKey(character))
+                {
+                    letter = _font.Outlines[character];
+                }
+                else
+                {
+                    letter = new List<List<Vector2>>();
+                }
                 // Offset letter outline by the current total offset
                 shape.AddRange(
                     letter.Select(
                         path => path.Select(
-                            point => new Vector3(point.x + offset.x, point.y + offset.y, 0)
+                            point => TrTransform.T(new Vector3(point.x + offset.x, point.y + offset.y, 0))
                         ).ToList()
                     ).ToList()
                 );
-                offset.x += _font.Widths[character];
-                // }
-                // catch (Ex e)
-                // {
-                //     
-                // }
+                if (_font.Outlines.ContainsKey(character))
+                {
+                    offset.x += _font.Widths[character];
+                }
+                else
+                {
+                    // This is mainly to handle missing space characters.
+                    // Is this a sane general default?
+                    offset.x += 0.75f;
+                }
             }
             return shape;
         }

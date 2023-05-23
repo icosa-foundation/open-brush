@@ -1269,9 +1269,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1711ff795b0eac4da4815318e17b3fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MaxPointers: 256
+  m_MaxPointers: 512
   m_MainPointerPrefab: {fileID: 133060, guid: 9b51341e2f5f13c4e8421b42c44de1ef, type: 3}
   m_AuxPointerPrefab: {fileID: 130268, guid: 7731b9109b4c6e84eaee3f77c6c6c6e1, type: 3}
+  m_DummyPointerPrefab: {fileID: 130268, guid: 98cf8986464c312458b068a83aa98c0a, type: 3}
   m_DefaultPointerAngle: 25
   m_DebugViewControlPoints: 0
   m_StraightEdgeGuide: {fileID: 622940449}
@@ -7671,13 +7672,11 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    #
-    FPS High: ~~~~ (> ~~)
+    # FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (<
-    ~~)
+    # FPS Low: ~~~~ (< ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9068,6 +9067,7 @@ Transform:
   - {fileID: 128408298}
   - {fileID: 8282789105019930893}
   - {fileID: 402490430}
+  - {fileID: 621655958}
   - {fileID: 1804317401}
   m_Father: {fileID: 1796800572}
   m_RootOrder: 0
@@ -9338,6 +9338,12 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 95a90b84ee174bd489f097b871d49986,
     type: 3}
   m_PrefabInstance: {fileID: 2135251106}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &621655958 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+    type: 3}
+  m_PrefabInstance: {fileID: 7492514809570787495}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &622614087
 PrefabInstance:
@@ -17073,6 +17079,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MainCanvas: {fileID: 1843608206}
   m_SelectionCanvas: {fileID: 1830711221}
+  m_CanvasTransformPrefab: {fileID: 3644847496883318441, guid: 546467450645e1140902522a7f7baf56,
+    type: 3}
 --- !u!1 &1372392204
 GameObject:
   m_ObjectHideFlags: 0
@@ -17805,10 +17813,8 @@ MonoBehaviour:
     type: 3}
   m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
-  m_UnityXRNeo3ControlsPrefab: {fileID: 1000010438099326, guid: c43e2e934a9409148ad8bfdfeeb98e40,
-    type: 3}
-  m_UnityXRPhoenixControlsPrefab: {fileID: 1000010438099326, guid: 6ec600b382b3e3a4380fae76343440be,
-    type: 3}
+  m_UnityXRNeo3ControlsPrefab: {fileID: 0}
+  m_UnityXRPhoenixControlsPrefab: {fileID: 0}
   m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
     type: 3}
   m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
@@ -27895,8 +27901,7 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If
-    you enjoy the app, please consider donating in the settings menu!'
+    If you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -28441,6 +28446,9 @@ MonoBehaviour:
       type: 3}
   - m_Type: 0
     m_StencilPrefab: {fileID: 7435273578356639229, guid: 5f54d1338beef174ea5bd7dbe2262304,
+      type: 3}
+  - m_Type: 9
+    m_StencilPrefab: {fileID: 114000010150538192, guid: ecebdb0665594e5fa660d0791b73b7f9,
       type: 3}
   m_StencilAttractDist: 0.5
   m_StencilAttachHysteresis: 0.1
@@ -33759,6 +33767,75 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5983820992036084963}
   m_Mesh: {fileID: 4300000, guid: ac9696c1336a5b544bb7bd003bf1408d, type: 3}
+--- !u!1001 &7492514809570787495
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 593121476}
+    m_Modifications:
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701361, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7492514809118701362, guid: 4cc8817a1d87e2247a553ebb5a78735a,
+        type: 3}
+      propertyPath: m_Name
+      value: ScriptedTool
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4cc8817a1d87e2247a553ebb5a78735a, type: 3}
 --- !u!33 &8282789105004247304
 MeshFilter:
   m_ObjectHideFlags: 0

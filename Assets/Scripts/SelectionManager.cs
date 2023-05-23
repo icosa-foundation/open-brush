@@ -27,6 +27,7 @@ namespace TiltBrush
     public class SelectionManager : MonoBehaviour
     {
         public static SelectionManager m_Instance;
+
         private SnapGrid3D m_SnapGridVisualization;
 
         [SerializeField] private SelectionWidget m_SelectionWidget;
@@ -279,6 +280,57 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+
+        // Mainly stored for use in scripts
+        private Stroke m_LastSelectedStroke;
+        private Stroke m_LastStroke;
+
+        private GrabWidget m_LastSelectedWidget;
+        private ImageWidget m_LastSelectedImage;
+        private VideoWidget m_LastSelectedVideo;
+        private ModelWidget m_LastSelectedModel;
+        private StencilWidget m_LastSelectedStencil;
+
+        private List<TrTransform> m_LastSelectedStrokeCP;
+
+        private List<TrTransform> m_LastStrokeCP;
+
+
+        public Stroke LastSelectedStroke
+        {
+            get => m_LastSelectedStroke;
+            set => m_LastSelectedStroke = value;
+        }
+
+        public GrabWidget LastSelectedWidget
+        {
+            get => m_LastSelectedWidget;
+            set => m_LastSelectedWidget = value;
+        }
+
+        public ImageWidget LastSelectedImage
+        {
+            get => m_LastSelectedImage;
+            set => m_LastSelectedImage = value;
+        }
+
+        public VideoWidget LastSelectedVideo
+        {
+            get => m_LastSelectedVideo;
+            set => m_LastSelectedVideo = value;
+        }
+
+        public ModelWidget LastSelectedModel
+        {
+            get => m_LastSelectedModel;
+            set => m_LastSelectedModel = value;
+        }
+
+        public StencilWidget LastSelectedStencil
+        {
+            get => m_LastSelectedStencil;
+            set => m_LastSelectedStencil = value;
+        }
 
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
@@ -651,6 +703,7 @@ namespace TiltBrush
                 Debug.Assert(!groupStrokes.Contains(stroke));
                 groupStrokes.Add(stroke);
             }
+            if (strokes.Any()) LastSelectedStroke = strokes.Last();
 
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -714,6 +767,17 @@ namespace TiltBrush
             {
                 SelectWidget(widget);
             }
+
+            var lastWidget = widgets.LastOrDefault();
+            LastSelectedWidget = lastWidget != null ? lastWidget : LastSelectedWidget;
+            var imageWidget = widgets.LastOrDefault(w => w is ImageWidget) as ImageWidget;
+            LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
+            var videoWidget = widgets.LastOrDefault(w => w is VideoWidget) as VideoWidget;
+            LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
+            var modelWidget = widgets.LastOrDefault(w => w is ModelWidget) as ModelWidget;
+            LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
+            var stencilWidget = widgets.LastOrDefault(w => w is StencilWidget) as StencilWidget;
+            LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
 
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -1112,7 +1176,49 @@ namespace TiltBrush
             )
             .ToList();
 
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            if (SnappingAngle == 0) return Quaternion.identity;
+            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle; }
+            Vector3 euler = rotation.eulerAngles;
+            float y = euler.y;
+            euler = new Vector3(round(euler.x), 0, round(euler.z));
+            rotation = Quaternion.Euler(euler);
+            rotation = Quaternion.Euler(0, round(y), 0) * rotation;
+            return rotation;
+        }
 
+        // All transforms are in canvas space
+        public Vector3 SnapToGrid_CS(Vector3 position)
+        {
+            float gridSize = SnappingGridSize;
+            if (gridSize == 0) return position;
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(position.x),
+                round(position.y),
+                round(position.z)
+            );
+            return roundedCanvasPos;
+        }
+
+        public Vector3 SnapToGrid_GS(Vector3 position_GS)
+        {
+            if (SnappingGridSize == 0) return position_GS;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
+            float round(float val) { return Mathf.Round(val / SnappingGridSize) * SnappingGridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+        public float ScalarSnap(float val)
+        {
+            if (SnappingGridSize == 0) return val;
+            return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
+        }
     }
 
 } // namespace TiltBrush

@@ -37,9 +37,9 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("strokes.select", "Select multiple strokes by index.")]
-        public static void SelectStrokes(int start, int end)
+        public static void SelectStrokes(int from, int to)
         {
-            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var strokes = SketchMemoryScript.GetStrokesBetween(from, to);
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
 
@@ -128,7 +128,7 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("selection.points.addnoise", "Moves the position of all control points in the selection using a noise function")]
+        [ApiEndpoint("selection.points.perlin", "Moves the position of all control points in the selection using a noise function")]
         public static void PerlinNoiseSelection(string axis, Vector3 scale)
         {
             Enum.TryParse(axis.ToUpper(), out Axis _axis);
@@ -156,9 +156,9 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("strokes.join", "Joins all strokes between the two indices (inclusive)")]
-        public static void JoinStrokes(int start, int end)
+        public static void JoinStrokes(int from, int to)
         {
-            var strokesToJoin = SketchMemoryScript.GetStrokesBetween(start, end);
+            var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)

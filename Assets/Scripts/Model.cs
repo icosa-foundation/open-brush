@@ -556,6 +556,28 @@ namespace TiltBrush
             }
         }
 
+        GameObject LoadSvg(List<string> warningsOut)
+        {
+
+            try
+            {
+                var reader = new SvgMeshReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+
+        }
+
         ///  Load model using FBX SDK.
         GameObject LoadFbx(List<string> warningsOut)
         {
@@ -793,6 +815,10 @@ namespace TiltBrush
                 else if (ext == ".off")
                 {
                     go = LoadOff(warnings);
+                }
+                else if (ext == ".svg")
+                {
+                    go = LoadSvg(warnings);
                 }
                 else
                 {

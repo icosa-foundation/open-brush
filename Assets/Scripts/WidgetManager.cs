@@ -511,23 +511,6 @@ namespace TiltBrush
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
         }
 
-        public int? GetIndexOfCameraPath(CameraPathWidget path)
-        {
-            int index = 0;
-            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
-            {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
-                {
-                    if (m_CameraPathWidgets[i].WidgetScript == path)
-                    {
-                        return index;
-                    }
-                    ++index;
-                }
-            }
-            return null;
-        }
-
         public CameraPathWidget CreatePathWidget()
         {
             CreateWidgetCommand command =
@@ -832,15 +815,18 @@ namespace TiltBrush
             }
         }
 
-        public void MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot)
+        public bool MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot, IEnumerable<StencilWidget> stencilsToIgnore = null)
         {
             // Early out if stencils are disabled.
             if (m_StencilsDisabled && !App.UserConfig.Flags.GuideToggleVisiblityOnly)
             {
-                return;
+                return false;
             }
 
             Vector3 samplePos = pos;
+
+
+            bool stencilWasUsed = false;
 
             // If we're painting, we have a different path for magnetization that relies on the
             // previous frame.
@@ -849,7 +835,7 @@ namespace TiltBrush
                 // If we don't have an active stencil, we're done here.
                 if (m_ActiveStencil == null)
                 {
-                    return;
+                    return false;
                 }
 
                 // Using the 0 index of m_StencilContactInfos as a shortcut.
@@ -859,6 +845,7 @@ namespace TiltBrush
                 m_ActiveStencil.SetInUse(true);
                 pos = m_StencilContactInfos[0].pos;
                 rot = Quaternion.LookRotation(m_StencilContactInfos[0].normal);
+                stencilWasUsed = true;
             }
             else
             {
@@ -871,9 +858,11 @@ namespace TiltBrush
                 int iPrimaryIndex = -1;
                 float fBestScore = 0;
                 int sIndex = 0;
-                foreach (var stencil in m_StencilWidgets)
+
+                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets.Select(w => w.WidgetScript);
+                if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
+                foreach (var sw in widgetsToCheck)
                 {
-                    StencilWidget sw = stencil.WidgetScript;
                     Debug.Assert(sw != null);
 
                     // Reset tint
@@ -881,13 +870,14 @@ namespace TiltBrush
 
                     // Does a rough check to see if the stencil might overlap. OverlapSphereNonAlloc is
                     // shockingly slow, which is why we don't use it.
-                    Collider collider = stencil.m_WidgetScript.GrabCollider;
+                    Collider collider = sw.GrabCollider;
                     float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
                     if (centerDist >
                         (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
                     {
                         continue;
                     }
+
                     m_StencilContactInfos[sIndex].widget = sw;
 
                     FindClosestPointOnWidgetSurface(samplePos, ref m_StencilContactInfos[sIndex]);
@@ -930,6 +920,7 @@ namespace TiltBrush
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
                     rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal);
+                    stencilWasUsed = true;
                 }
 
                 if (prevStencil != m_ActiveStencil)
@@ -938,7 +929,7 @@ namespace TiltBrush
                 }
             }
 
-            return;
+            return stencilWasUsed;
         }
 
         bool FindClosestPointOnCollider(
@@ -1040,7 +1031,8 @@ namespace TiltBrush
             }
         }
 
-        public List<GrabWidget> GetAllUnselectedActiveWidgets()
+        // If canvas is null then return all widgets
+        public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas = null)
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
@@ -1058,9 +1050,16 @@ namespace TiltBrush
                 for (int i = 0; i < list.Count; ++i)
                 {
                     GrabWidget w = list[i].m_WidgetScript;
-                    if (!w.Pinned && w.transform.parent == App.Scene.MainCanvas.transform &&
-                        w.gameObject.activeSelf)
+                    if (!w.Pinned && w.gameObject.activeSelf)
                     {
+                        if (
+                            // If canvas == null then get all unselected widgets
+                            (canvas == null && w.transform.parent != App.Scene.SelectionCanvas.transform) ||
+
+                            // Or else only on the specified canvas
+                            w.transform.parent != canvas.transform
+
+                        ) continue;
                         widgets.Add(w);
                     }
                 }
@@ -1572,6 +1571,14 @@ namespace TiltBrush
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<StencilWidget>> ActiveStencilWidgets =>
+            m_StencilWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+
+        public int GetActiveWidgetIndex(ImageWidget widget) => ActiveImageWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(ModelWidget widget) => ActiveModelWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(VideoWidget widget) => ActiveVideoWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(CameraPathWidget widget) => ActiveCameraPathWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(StencilWidget widget) => ActiveStencilWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
 
     }
 }

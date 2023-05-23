@@ -27,6 +27,7 @@ namespace TiltBrush
     public class BaseCommand : IDisposable
     {
         protected List<BaseCommand> m_Children;
+        public bool HasChildren => m_Children.Count > 0;
 
         protected static Vector3 GetPositionForCommand(Stroke stroke)
         {

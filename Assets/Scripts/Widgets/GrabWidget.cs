@@ -397,6 +397,30 @@ namespace TiltBrush
             return Axis.Invalid;
         }
 
+        // Return the bounds
+        public virtual Bounds GetBounds()
+        {
+            if (m_BoxCollider != null)
+            {
+                TrTransform boxColliderToCanvasXf = TrTransform.FromTransform(m_BoxCollider.transform);
+                Bounds bounds = new Bounds(boxColliderToCanvasXf * m_BoxCollider.center, Vector3.zero);
+
+                // Transform the corners of the widget bounds into canvas space and extend the total bounds
+                // to encapsulate them.
+                for (int i = 0; i < 8; i++)
+                {
+                    bounds.Encapsulate(boxColliderToCanvasXf * (m_BoxCollider.center + Vector3.Scale(
+                        m_BoxCollider.size,
+                        new Vector3((i & 1) == 0 ? -0.5f : 0.5f,
+                            (i & 2) == 0 ? -0.5f : 0.5f,
+                            (i & 4) == 0 ? -0.5f : 0.5f))));
+                }
+
+                return bounds;
+            }
+            return new Bounds();
+        }
+
         // Return the bounds in selection canvas space.
         public virtual Bounds GetBounds_SelectionCanvasSpace()
         {
@@ -993,8 +1017,9 @@ namespace TiltBrush
             }
         }
 
-        public void HideNow()
+        public void HideNow(bool force = false)
         {
+            if (force) m_CurrentState = State.Tossed;
             if (m_CurrentState == State.Tossed)
             {
                 m_TossTimer = 0;
@@ -1146,6 +1171,9 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
+
+            MagnetizeToStencils(ref xf_GS);
+
             if (m_RecordMovements)
             {
                 TrTransform newXf = TrTransform.FromTransform(
@@ -1175,6 +1203,26 @@ namespace TiltBrush
             m_bWasSnapping = SnapEnabled;
 
             OnEndUpdateWithDesiredTransform();
+        }
+
+        protected virtual bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            var pos = xf_GS.translation;
+            var rot = xf_GS.rotation;
+
+            bool usedStencil = WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot, GetStencilsToIgnore());
+            if (usedStencil)
+            {
+                xf_GS.translation = pos;
+                // If we're magnetizing to a stencil, we want to flip the widget
+                xf_GS.rotation = rot * Quaternion.Euler(0, 180, 0);
+            }
+            return usedStencil;
+        }
+
+        protected virtual IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget>();
         }
 
         virtual public TrTransform GetGrabbedTrTransform()
@@ -1250,7 +1298,32 @@ namespace TiltBrush
 
             return outXf_GS;
         }
-        private int GetBestSnapRotationIndex(Quaternion rot)
+
+        private Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
+        public static Vector3 SnapToGrid(Vector3 position)
+        {
+            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+
+
+        protected int GetBestSnapRotationIndex(Quaternion rot)
         {
             float fNearestDot = 0.0f;
             int iNearestIndex = -1;

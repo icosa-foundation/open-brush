@@ -227,6 +227,28 @@ namespace TiltBrush
             ApiManager.Instance.BrushPosition = position;
         }
 
+        [ApiEndpoint("brush.move.to.hand", "Moves the brush to the given hand (l or r")]
+        public static void BrushMoveToHand(string hand, bool alsoRotate = false)
+        {
+            Transform tr;
+            if (hand.ToLower().StartsWith("l"))
+            {
+                tr = InputManager.Wand.Transform;
+
+            }
+            else
+            {
+                tr = PointerManager.m_Instance.MainPointer.transform;
+            }
+
+            ApiManager.Instance.BrushPosition = tr.position;
+
+            if (alsoRotate)
+            {
+                ApiManager.Instance.BrushRotation = tr.rotation;
+            }
+        }
+
         [ApiEndpoint("brush.move.by", "Moves the brush by the given amount")]
         public static void BrushMoveBy(Vector3 offset)
         {
@@ -247,12 +269,8 @@ namespace TiltBrush
         {
             Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var end = directionVector * distance;
-            var path = new List<List<Vector3>>
-            {
-                new List<Vector3>{Vector3.zero, end}
-            };
-            var origin = ApiManager.Instance.BrushPosition;
-            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, origin);
+            var path = new List<List<TrTransform>> {new List<TrTransform>{TrTransform.identity, TrTransform.T(end)}};
+            DrawStrokes.DrawNestedTrList(path, TrTransform.T(ApiManager.Instance.BrushPosition));
             ApiManager.Instance.BrushPosition += end;
         }
 
@@ -316,7 +334,7 @@ namespace TiltBrush
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.back, Vector3.up);
         }
 
-        [ApiEndpoint("brush.home", "Resets the brush position and direction")]
+        [ApiEndpoint("brush.home.reset", "Resets the brush position and direction")]
         public static void BrushHome()
         {
             ApiManager.Instance.ResetBrushTransform();
@@ -358,15 +376,45 @@ namespace TiltBrush
             return image;
         }
 
+        [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
+        public static VideoWidget ImportVideo(string location)
+        {
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            {
+                location = _DownloadMediaFileFromUrl(location, "Videos");
+            }
+            location = Path.Combine(App.VideoLibraryPath(), location);
+
+            // TODO don't use "turtle" coordinates
+            var tr = new TrTransform();
+            tr.translation = ApiManager.Instance.BrushPosition;
+            tr.rotation = ApiManager.Instance.BrushRotation;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, tr);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var videoWidget = cmd.Widget as VideoWidget;
+            if (videoWidget != null)
+            {
+                var video = new ReferenceVideo(location);
+                videoWidget.SetVideo(video);
+                videoWidget.Show(true);
+                cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
+                // videoWidget.VideoController.Playing = true;
+                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => {}));
+            }
+            return videoWidget;
+        }
+
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
-        public static void ImportImage(string location)
+        public static ImageWidget ImportImage(string location)
         {
             if (location.StartsWith("http://") || location.StartsWith("https://"))
             {
                 location = _DownloadMediaFileFromUrl(location, "Images");
             }
 
-            var image = _LoadReferenceImage(location);
+            ReferenceImage image = _LoadReferenceImage(location);
+
+            // TODO don't use "turtle" coordinates
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;
@@ -386,6 +434,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            return imageWidget;
         }
 
         [ApiEndpoint("environment.type", "Sets the current environment")]
@@ -407,7 +456,6 @@ namespace TiltBrush
         {
             ClearLayerCommand cmd = new ClearLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-
         }
 
         [ApiEndpoint("layer.delete", "Deletes a layer")]
@@ -449,62 +497,191 @@ namespace TiltBrush
             App.Scene.ToggleLayerVisibility(layer);
         }
 
-        [ApiEndpoint("model.select", "Selects a widget by index.")]
-        private static void SelectModel(int index)
+        [ApiEndpoint("model.select", "Selects a 3d model by index.")]
+        public static void SelectModel(int index)
         {
             SelectWidget(_GetActiveModel(index));
         }
 
-        private static void SelectWidget(GrabWidget widget)
+        public static void SelectWidget(GrabWidget widget)
         {
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
-        [ApiEndpoint("model.position", "Move a model to the given coordinates")]
-        public static void PositionModel(int index, Vector3 position)
+        public static void DeleteWidget(GrabWidget widget)
         {
-            _PositionWidget(_GetActiveModel(index), position);
+            widget.HideNow(force: true);
         }
 
-        [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
-        public static void ForcePainting(bool active)
+        [ApiEndpoint("model.set.position", "Move a 3d model to the given coordinates")]
+        public static void PositionModel(int index, Vector3 position)
         {
-            ApiManager.Instance.ForcePaintingOn = active;
+            _SetWidgetTransform(_GetActiveModel(index), position);
+        }
+
+        [ApiEndpoint("symmetry.set.position", "Move the symmetry widget to the given coordinates")]
+        public static void SymmetrySetPosition(Vector3 position)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, position);
+        }
+
+        [ApiEndpoint("symmetry.set.rotation", "Sets the symmetry widget rotation")]
+        public static void SymmetrySetRotation(Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, Coords.AsCanvas[widget.transform].translation, rotation);
+        }
+
+        [ApiEndpoint("symmetry.set.transform", "Sets the position and rotation of the symmetry widget")]
+        public static void SymmetrySetTransform(Vector3 position, Vector3 rotation)
+        {
+            SymmetrySetTransform(position, Quaternion.Euler(rotation));
+        }
+        public static void SymmetrySetTransform(Vector3 position, Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, position, rotation);
+        }
+
+        [ApiEndpoint("brush.force.painting.on", "Start painting even if the trigger isn't pressed")]
+        public static void ForcePaintingOn(bool active)
+        {
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOn;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
+        }
+
+        [ApiEndpoint("brush.force.painting.off", "Stop painting even if the trigger is pressed")]
+        public static void ForcePaintingOff(bool active)
+        {
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOff;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
+        }
+
+        [ApiEndpoint("brush.new.stroke", "Ends the current stroke and starts a new one next frame")]
+        public static void ForceNewStroke()
+        {
+            ApiManager.Instance.PreviousForcePaintingMode = ApiManager.Instance.ForcePainting;
+            ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForceNewStroke;
+        }
+
+        [ApiEndpoint("image.select", "Selects an image by index.")]
+        public static void SelectImage(int index)
+        {
+            SelectWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint("image.delete", "Deletes an image by index.")]
+        public static void DeleteImage(int index)
+        {
+            DeleteWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint("video.delete", "Deletes a video by index.")]
+        public static void DeleteVideo(int index)
+        {
+            DeleteWidget(_GetActiveVideo(index));
+        }
+
+        [ApiEndpoint("model.delete", "Deletes a 3d model by index.")]
+        public static void DeleteModel(int index)
+        {
+            DeleteWidget(_GetActiveModel(index));
+        }
+
+        [ApiEndpoint("guide.delete", "Deletes a guide by index.")]
+        public static void DeleteGuide(int index)
+        {
+            DeleteWidget(_GetActiveStencil(index));
         }
 
         [ApiEndpoint("image.position", "Move an image to the given coordinates")]
         public static void PositionImage(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveImage(index), position);
+            _SetWidgetTransform(_GetActiveImage(index), position);
         }
 
-        // WIP
-        // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
-        // public static void ImportVideo(string location)
-        // {
-        //     if (location.StartsWith("http://") || location.StartsWith("https://"))
-        //     {
-        //         location = _DownloadMediaFileFromUrl(location, "Videos");
-        //     }
-        //     location = DownloadMediaFileFromUrl(location, "Videos");
-        //
-        //     location = Path.Combine("Videos", location);
-        //     var video = new TiltVideo();
-        //     video.FilePath = location;
-        //     VideoWidget.FromTiltVideo(video);
-        //     // var tr = new TrTransform();
-        //     // tr.translation = ApiManager.Instance.BrushPosition;
-        //     // tr.rotation = ApiManager.Instance.BrushRotation;
-        //     // CreateWidgetCommand createCommand = new CreateWidgetCommand(
-        //     //     WidgetManager.m_Instance.ImageWidgetPrefab, tr);
-        //     // SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-        //     // videoWidget.Show(true);
-        //     // createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
-        //     //
-        //     // WidgetManager.m_Instance.WidgetsDormant = false;
-        //     // SketchControlsScript.m_Instance.EatGazeObjectInput();
-        //     // SelectionManager.m_Instance.RemoveFromSelection(false);
-        // }
+        [ApiEndpoint("image.formEncode", "Converts an image to a string suitable for use in a form")]
+        public static string FormEncodeImage(int index)
+        {
+            var path = _GetActiveImage(index).ReferenceImage.FileFullPath;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
+        }
+
+        [ApiEndpoint("image.base64Decode", "Saves an image based on a base64 encoded string")]
+        public static string SaveBase64(string base64, string filename)
+        {
+            var bytes = Convert.FromBase64String(base64);
+            if (bytes.Length > 4 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+            {
+                if (!filename.ToLower().EndsWith(".png"))
+                {
+                    filename += ".png";
+                }
+            }
+            else if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            {
+                if (!filename.ToLower().EndsWith(".jpg") && !filename.ToLower().EndsWith(".jpeg"))
+                {
+                    filename += ".jpg";
+                }
+            }
+            var path = Path.Combine(App.ReferenceImagePath(), filename);
+            File.WriteAllBytes(path, bytes);
+            return path;
+        }
+
+
+        [ApiEndpoint("scripts.toolscript.activate", "Activate the given tool script")]
+        public static void ActivateToolScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.ToolScript, scriptName);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.ScriptedTool);
+        }
+
+        [ApiEndpoint("scripts.toolscript.deactivate", "Dectivate the tool script")]
+        public static void DectivateToolScript()
+        {
+            SketchSurfacePanel.m_Instance.EnableDefaultTool();
+        }
+
+        [ApiEndpoint("scripts.symmetryscript.activate", "Activate the given symmetry script")]
+        public static void ActivateSymmetryScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.SymmetryScript, scriptName);
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+        }
+
+        [ApiEndpoint("scripts.symmetryscript.deactivate", "Dectivate the symmetry script")]
+        public static void DectivateSymmetryScript()
+        {
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+        }
+
+        [ApiEndpoint("scripts.pointerscript.activate", "Activate the given pointer script")]
+        public static void ActivatePointerScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.PointerScript, scriptName);
+            LuaManager.Instance.PointerScriptsEnabled = true;
+        }
+
+        [ApiEndpoint("scripts.pointerscript.deactivate", "Dectivate the pointer script")]
+        public static void DectivatePointerScript()
+        {
+            LuaManager.Instance.PointerScriptsEnabled = false;
+        }
 
         [ApiEndpoint("guide.add", "Adds a guide to the scene")]
         public static void AddGuide(string type)
@@ -519,7 +696,7 @@ namespace TiltBrush
                 case "sphere":
                     stencilType = StencilType.Sphere;
                     break;
-                case "capsure":
+                case "capsule":
                     stencilType = StencilType.Capsule;
                     break;
                 case "cone":
@@ -539,7 +716,24 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
         }
 
+        [ApiEndpoint("guide.select", "Selects a guide by index.")]
+        public static void SelectGuide(int index)
+        {
+            SelectWidget(_GetActiveStencil(index));
+        }
 
+        [ApiEndpoint("guide.position", "Move a guide to the given coordinates")]
+        public static void PositionGuide(int index, Vector3 position)
+        {
+            _SetWidgetTransform(_GetActiveStencil(index), position);
+        }
 
+        [ApiEndpoint("guide.scale", "Sets the (non-uniform) scale of a guide")]
+        public static void ScaleGuide(int index, Vector3 scale)
+        {
+            var stencil = _GetActiveStencil(index);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(stencil, stencil.LocalTransform, scale));
+        }
     }
 }

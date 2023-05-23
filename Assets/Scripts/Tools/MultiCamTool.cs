@@ -1791,7 +1791,7 @@ namespace TiltBrush
         // Snapshot
         //
 
-        IEnumerator TakeScreenshotAsync(string saveName)
+        public IEnumerator TakeScreenshotAsync(string saveName)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other

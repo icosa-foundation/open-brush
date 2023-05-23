@@ -3,6 +3,8 @@
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git?nocache=12#upm",
+    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git?nocache=12#upm",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.editorcoroutines": "1.0.0",
@@ -18,10 +20,12 @@
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",
+    "com.unity.vectorgraphics": "https://github.com/icosa-gallery/com.unity.vectorgraphics.git#open-brush",
     "com.unity.xr.core-utils": "2.1.1",
     "com.unity.xr.management": "4.2.1",
     "com.unity.xr.oculus": "3.2.2",
     "com.unity.xr.openxr": "1.6.0",
+    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git",
     "org.nuget.google.apis": "1.57.0",
     "org.nuget.google.apis.auth": "1.57.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
@@ -78,6 +82,17 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
+      ]
+    },
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ixxy.polyhydra.core",
+        "com.nition.unity-octree",
+        "com.openupm"
+    "com.unity.vectorgraphics": "https://github.com/icosa-gallery/com.unity.vectorgraphics.git#open-brush",
+    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git",
       ]
     },
     {

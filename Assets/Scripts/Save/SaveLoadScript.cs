@@ -371,6 +371,16 @@ namespace TiltBrush
             return fileInfo;
         }
 
+        public DiskSceneFileInfo GetSceneFileInfoFromName(string name)
+        {
+            DiskSceneFileInfo fileInfo = new DiskSceneFileInfo(name);
+            if (m_LastSceneFile.Valid)
+            {
+                fileInfo.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            return fileInfo;
+        }
+
         /// Save a snapshot directly to a location.
         /// The snapshot's AssetId is the source of truth
         public IEnumerator<Timeslice> SaveSnapshot(SceneFileInfo fileInfo, SketchSnapshot snapshot)
@@ -397,6 +407,13 @@ namespace TiltBrush
         public IEnumerator<Timeslice> SaveNewName(bool tiltasaurusMode = false)
         {
             return SaveLow(GetNewNameSceneFileInfo(tiltasaurusMode));
+        }
+
+        public IEnumerator<Timeslice> SaveAs(string filename)
+        {
+            string path = Path.Join(m_SaveDir, filename);
+            Debug.Log($"SaveAs: {path}");
+            return SaveLow(GetSceneFileInfoFromName(path));
         }
 
         /// In order to for this to work properly:
@@ -690,11 +707,25 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
-                        foreach (var layer in jsonData.Layers.Skip(1))  // Skip the main canvas
+                        for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
-                            var canvas = App.Scene.AddLayerNow();
+                            var layer = jsonData.Layers[i];
+                            CanvasScript canvas = i == 0 ? App.Scene.MainCanvas : App.Scene.AddLayerNow();
                             canvas.gameObject.name = layer.Name;
                             canvas.gameObject.SetActive(layer.Visible);
+
+                            // Assume that layers with a scale of 0 are from legacy sketches with no layer transform stored
+                            // and that they should be set to 1
+                            // nb. The correct place to do this would be somewhere in the deserialization code
+                            // But after failing with DefaultValueHandling.Populate and custom JsonConverters
+                            // I'm just going to do it here
+                            if (layer.Transform.scale == 0)
+                            {
+                                TrTransform tr = layer.Transform;
+                                tr.scale = 1;
+                                layer.Transform = tr;
+                            }
+                            canvas.Pose = layer.Transform;
                         }
                     }
                 }

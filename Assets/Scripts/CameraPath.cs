@@ -742,6 +742,43 @@ namespace TiltBrush
             }
         }
 
+        public void RefreshEntirePath()
+        {
+            SetKnotsActive(true);
+
+            // foreach (var knot in AllKnots)
+            // {
+            //    knot.RefreshVisuals();
+            // }
+
+            // for (int i = 0; i < PositionKnots.Count; ++i)
+            // {
+            //     RefreshFromPathKnotMovement(i);
+            // }
+
+            for (int i = 0; i < Segments.Count; ++i)
+            {
+                RefreshSegment(i);
+            }
+            for (int i = 0; i < RotationKnots.Count; ++i)
+            {
+                RefreshRotationKnot(i);
+            }
+            for (int i = 0; i < SpeedKnots.Count; ++i)
+            {
+                RefreshSpeedKnot(i);
+            }
+            for (int i = 0; i < FovKnots.Count; ++i)
+            {
+                RefreshFovKnot(i);
+            }
+            for (int i = 0; i < AllKnots.Count; ++i)
+            {
+                AllKnots[i].ActivateTint(true);
+                AllKnots[i].SetActivePathVisuals(true);
+            }
+        }
+
         public void RefreshFromPathKnotMovement(int pathKnotIndex)
         {
             // Segments need to be updated before knots.
@@ -1816,6 +1853,19 @@ namespace TiltBrush
             Gizmos.DrawLine(a10, b10);
             Gizmos.DrawLine(a01, b01);
             Gizmos.DrawLine(a11, b11);
+        }
+
+        public List<TrTransform> AsTrList(float step)
+        {
+            var points = new List<TrTransform>();
+            for (float t = 0; t < Segments.Count; t += step)
+            {
+                points.Add(TrTransform.TR(
+                    GetPosition(new PathT(t)),
+                    GetRotation(new PathT(t))
+                ));
+            }
+            return points;
         }
     }
 

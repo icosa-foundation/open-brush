@@ -970,9 +970,14 @@ MonoBehaviour:
   m_DescriptionZScale: 10
   m_Nob: {fileID: 4471627121253469398}
   m_Mesh: {fileID: 4471627121255601424}
-  opIndex: 0
-  paramIndex: 0
+  m_Param1: 0
+  m_Param2: 0
+  m_safeMin: 0
+  m_safeMax: 1
+  m_unsafeMin: 0
+  m_unsafeMax: 1
   m_SafeLimits: 1
+  m_InitialValue: 0.5
   minText: {fileID: 7444929264988374951}
   maxText: {fileID: 791795469446217164}
   valueText: {fileID: 6988663123546496789}
