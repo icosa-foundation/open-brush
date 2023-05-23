@@ -28401,7 +28401,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ModelWidgetPrefab: {fileID: 11463750, guid: b5359da988546d54b8669e6822c35884,
     type: 3}
-  m_EditableModelWidgetPrefab: {fileID: 0}
+  m_EditableModelWidgetPrefab: {fileID: 11463750, guid: a2b9131cdba3eea4491a57c60f03034e,
+    type: 3}
   m_WidgetPinPrefab: {fileID: 110786, guid: 5ef4f27d78e2433439e1bbdc1d15c980, type: 3}
   m_ImageWidgetPrefab: {fileID: 11466202, guid: 6d552c9f635cf0f41ae59c1222d8442f,
     type: 3}
