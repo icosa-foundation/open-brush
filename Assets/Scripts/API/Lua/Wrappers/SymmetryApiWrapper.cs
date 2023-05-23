@@ -27,7 +27,7 @@ namespace TiltBrush
         public static Vector3 wandOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastWandPos(0))).translation;
         public static Vector3 direction => PointerManager.m_Instance.SymmetryWidget.transform.rotation * Vector3.forward;
         public static void Mirror() => ApiMethods.SymmetryPlane();
-        public static void DoubleMirror() => ApiMethods.SymmetryFour();
+        public static void Multimirror() => ApiMethods.MultiMirror();
         public static void TwoHandeded() => ApiMethods.SymmetryTwoHanded();
         public static void SummonWidget() => ApiMethods.SummonMirror();
         public static void Spin(float xSpeed, float ySpeed, float zSpeed) => PointerManager.m_Instance.SymmetryWidget.Spin(xSpeed, ySpeed, zSpeed);

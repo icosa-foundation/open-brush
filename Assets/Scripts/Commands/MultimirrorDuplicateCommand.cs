@@ -58,7 +58,7 @@ namespace TiltBrush
             {
                 TrTransform strokeTransform_GS = Coords.AsGlobal[stroke.StrokeTransform];
                 TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     (TrTransform, TrTransform) trAndFix_WS;
@@ -83,7 +83,7 @@ namespace TiltBrush
             {
                 TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
                 TrTransform tr_GS;
-                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     var duplicatedWidget = widget.Clone();

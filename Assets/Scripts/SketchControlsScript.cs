@@ -1404,7 +1404,7 @@ namespace TiltBrush
                     var cur = PointerManager.m_Instance.CurrentSymmetryMode;
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
-                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
+                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.MultiMirror
                         : (cur == SymmetryMode.MultiMirror) ? SymmetryMode.TwoHanded
                         : (cur == SymmetryMode.TwoHanded) ? SymmetryMode.ScriptedSymmetryMode
                         : SymmetryMode.None;

@@ -56,7 +56,19 @@ namespace TiltBrush
             return widget;
         }
 
-        private static void _ImportModel(string location, bool editable)
+        [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
+        public static ModelWidget ImportEditableModel(string location)
+        {
+            return _ImportModel(location, true);
+        }
+
+        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models or Google Poly ID")]
+        public static ModelWidget ImportModel(string location)
+        {
+            return _ImportModel(location, false);
+        }
+
+        private static ModelWidget _ImportModel(string location, bool editable)
         {
             const string modelsFolder = "Models";
 
@@ -64,7 +76,7 @@ namespace TiltBrush
             {
                 location = location.Substring(5);
                 ApiManager.Instance.LoadPolyModel(location);
-                return;
+                return null; // TODO
             }
 
             if (location.StartsWith("http://") || location.StartsWith("https://"))
@@ -103,12 +115,13 @@ namespace TiltBrush
                 else
                 {
                     Debug.LogWarning("Failed to create EditableModelWidget");
-                    return;
+                    return null;
                 }
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
+                return widget;
             }
             else
             {
@@ -127,12 +140,13 @@ namespace TiltBrush
                 else
                 {
                     Debug.LogWarning("Failed to create EditableModelWidget");
-                    return;
+                    return null;
                 }
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
+                return widget;
             }
         }
 
@@ -148,11 +162,9 @@ namespace TiltBrush
         {
             var tr = _CurrentTransform();
 
-            var positions = new List<List<Vector3>>();
-            var rotations = new List<List<Quaternion>>();
-
             var widget = _GetModelIdByIndex(index);
             var poly = widget.m_PolyMesh;
+            var alltrs = new List<List<TrTransform>>(poly.Halfedges.Count);
 
             foreach (var halfedge in poly.Halfedges)
             {
@@ -160,10 +172,14 @@ namespace TiltBrush
                 float lineLength = 0;
                 var faceVerts = new List<Vector3> { halfedge.Vertex.Position, halfedge.Prev.Vertex.Position };
                 faceVerts.Add(faceVerts[0]);
-                positions.Add(faceVerts);
-                rotations.Add(Enumerable.Repeat(orientation, faceVerts.Count).ToList());
+                var trs = new List<TrTransform>(faceVerts.Count);
+                for (var i = 0; i < faceVerts.Count; i++)
+                {
+                    var vert = faceVerts[i];
+                    trs.Add(TrTransform.TR(vert, orientation));
+                }
             }
-            DrawStrokes.MultiPositionPathsToStrokes(positions, rotations, null, tr.translation);
+            DrawStrokes.DrawNestedTrList(alltrs, tr);
         }
 
         [ApiEndpoint("editablemodel.stroke.faces", "Create brush strokes for all the Faces on an editable model")]
@@ -176,6 +192,7 @@ namespace TiltBrush
 
             var widget = _GetModelIdByIndex(index);
             var poly = widget.m_PolyMesh;
+            var alltrs = new List<List<TrTransform>>(poly.Halfedges.Count);
 
             foreach (var face in poly.Faces)
             {
@@ -183,10 +200,14 @@ namespace TiltBrush
                 float lineLength = 0;
                 var faceVerts = face.GetVertices();
                 faceVerts.Add(faceVerts[0]);
-                positions.Add(faceVerts.Select(v => tr.rotation * v.Position).ToList());
-                rotations.Add(Enumerable.Repeat(orientation, faceVerts.Count).ToList());
+                var trs = new List<TrTransform>(faceVerts.Count);
+                for (var i = 0; i < faceVerts.Count; i++)
+                {
+                    var vert = faceVerts[i];
+                    trs.Add(TrTransform.TR(tr.rotation * vert.Position, orientation));
+                }
             }
-            DrawStrokes.MultiPositionPathsToStrokes(positions, rotations, null, tr.translation);
+            DrawStrokes.DrawNestedTrList(alltrs, tr);
         }
 
         [ApiEndpoint("editablemodel.createfrom.strokepath", "Creates a new editable model from a brush stroke's path")]

@@ -65,8 +65,6 @@ namespace TiltBrush
             Brightness
         }
 
-        [NonSerialized] public bool m_SymmetryColorShiftEnabled = false;
-
         [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
@@ -176,7 +174,6 @@ namespace TiltBrush
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
 
-        public Transform SymmetryWidget => m_SymmetryWidget;
         public SymmetryWidget SymmetryWidget => m_SymmetryWidget.GetComponent<SymmetryWidget>();
 
         /// This array is horrible. It is sort-of a preallocated pool of pointers,
@@ -235,12 +232,7 @@ namespace TiltBrush
 
         // Used for Polyhydra Symmetry
         private TrTransform m_bestface_OS;
-        private List<Matrix4x4> m_CustomMirrorMatrices;
-        private List<Color> m_SymmetryPointerColors;
-        private Vector2[] m_CustomMirrorDomain;
 
-        // Used for Polyhydra Symmetry
-        private TrTransform m_bestface_OS;
         // ---- events
 
         public event Action<TiltBrush.BrushDescriptor> OnMainPointerBrushChange
@@ -362,7 +354,6 @@ namespace TiltBrush
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
-        public List<Color> SymmetryPointerColors => m_SymmetryPointerColors.ToList();
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
 
         public List<Color> SymmetryPointerColors
@@ -1520,38 +1511,20 @@ namespace TiltBrush
             );
         }
 
-        private static float CalcColorWaveform(float x, ColorShiftMode mode, float freq)
+        private static float CalcColorWaveform(float x, WaveGenerator.Mode mode, float freq)
         {
             // Input is 0 to +1, output is -1 to +1
             return mode switch
             {
-                ColorShiftMode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
-                ColorShiftMode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
-                ColorShiftMode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
-                ColorShiftMode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
-                ColorShiftMode.Noise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
+                WaveGenerator.Mode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
+                WaveGenerator.Mode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
+                WaveGenerator.Mode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
+                WaveGenerator.Mode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
+                WaveGenerator.Mode.WhiteNoise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
                 _ => x
             };
         }
 
-        public static float _CalcColorShiftH(float x, float mod, ColorShiftComponentSetting settings)
-        {
-            // Expects x to vary from -1 to +1
-            return Mathf.LerpUnclamped(
-                x,
-                x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq));
-        }
-
-        public static float _CalcColorShiftSV(float x, float mod, ColorShiftComponentSetting settings)
-        {
-            // Expects x to vary from -1 to +1
-            return Mathf.LerpUnclamped(
-                x,
-                x + settings.amp / 2,
-                CalcColorWaveform(mod, settings.mode, settings.freq)
-            );
-        }
 
 
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)

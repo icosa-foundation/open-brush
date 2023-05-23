@@ -4,7 +4,7 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SelectionApiWrapper
     {
-        public static void Duplicate() => ApiMethods.Duplicate();
+        public static void Duplicate() => ApiMethods.DuplicateSelection();
         public static void Group() => ApiMethods.ToggleGroupStrokesAndWidgets();
         public static void Invert() => ApiMethods.InvertSelection();
         public static void Flip() => ApiMethods.FlipSelection();

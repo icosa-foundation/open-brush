@@ -20,6 +20,9 @@ namespace TiltBrush
 {
     public class CustomStencil : StencilWidget
     {
+
+        public Mesh m_DefaultMesh;
+
         public override Vector3 Extents
         {
             get
@@ -41,11 +44,24 @@ namespace TiltBrush
 
         protected override void Awake()
         {
-            base.Awake();
             m_Type = StencilType.Custom;
+            base.Awake();
             EditableModelManager.SetCustomStencil(this, PreviewPolyhedron.m_Instance.m_PolyMesh);
         }
 
+        public void SetCustomStencil(Mesh mesh = null)
+        {
+            var collider = GetComponentInChildren<MeshCollider>();
+            collider.sharedMesh = mesh ?? m_DefaultMesh;
+            collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
+        }
+
+        public void SetColliderScale(float scale)
+        {
+            var collider = GetComponentInChildren<MeshCollider>();
+            collider.transform.localScale = Vector3.one * scale * 0.5f; // Compensate for the prefab having a scale of 2
+        }
+        
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             var collider = GetComponentInChildren<MeshCollider>();
