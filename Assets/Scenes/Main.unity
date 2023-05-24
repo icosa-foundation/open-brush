@@ -7175,7 +7175,7 @@ Transform:
   - {fileID: 587566168}
   - {fileID: 562640338}
   m_Father: {fileID: 593121476}
-  m_RootOrder: 20
+  m_RootOrder: 21
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &402490431
 MonoBehaviour:
@@ -7672,11 +7672,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9066,8 +9068,8 @@ Transform:
   - {fileID: 1251041024}
   - {fileID: 128408298}
   - {fileID: 8282789105019930893}
-  - {fileID: 402490430}
   - {fileID: 621655958}
+  - {fileID: 402490430}
   - {fileID: 1804317401}
   m_Father: {fileID: 1796800572}
   m_RootOrder: 0
@@ -27901,7 +27903,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -28698,7 +28701,7 @@ Transform:
   - {fileID: 996567219}
   - {fileID: 1839718901}
   m_Father: {fileID: 593121476}
-  m_RootOrder: 21
+  m_RootOrder: 22
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1804317402
 MonoBehaviour:
@@ -34230,6 +34233,11 @@ PrefabInstance:
       propertyPath: m_Home
       value: 
       objectReference: {fileID: 94678610}
+    - target: {fileID: 8923540458886705829, guid: e26dd31bb70849e4da9f0b1230a62278,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e26dd31bb70849e4da9f0b1230a62278, type: 3}
 --- !u!4 &9123593761565215834
