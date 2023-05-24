@@ -805,6 +805,7 @@ namespace TiltBrush
             Debug.Assert(!groupWidgets.Contains(widget));
             groupWidgets.Add(widget);
         }
+
         public void DeselectWidgets(IEnumerable<GrabWidget> widgets, CanvasScript targetCanvas = null)
         {
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget

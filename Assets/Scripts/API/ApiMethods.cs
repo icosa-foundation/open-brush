@@ -71,13 +71,6 @@ namespace TiltBrush
             cam.transform.position = position;
         }
 
-        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
-        public static void MoveSpectatorBy(Vector3 amount)
-        {
-            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-            cam.transform.position += amount;
-        }
-
         [ApiEndpoint("user.move.to", "Moves the user to the given position")]
         public static void MoveUserTo(Vector3 position)
         {
@@ -88,11 +81,20 @@ namespace TiltBrush
             App.Scene.Pose = pose;
         }
 
+        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
+        public static void MoveSpectatorBy(Vector3 amount)
+        {
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.position += amount;
+        }
+
         [ApiEndpoint("user.move.by", "Moves the user by the given amount")]
         public static void MoveUserBy(Vector3 amount)
         {
             TrTransform pose = App.Scene.Pose;
             pose.translation -= amount;
+            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
+            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
         }
 

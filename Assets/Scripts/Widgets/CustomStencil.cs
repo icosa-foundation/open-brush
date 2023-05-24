@@ -67,7 +67,6 @@ namespace TiltBrush
             var collider = GetComponentInChildren<MeshCollider>();
             surfacePos = collider.ClosestPoint(pos);
             surfaceNorm = Vector3.zero;
-            Vector3 vCenterToPos = pos - transform.position;
             RaycastHit hit;
             if (Physics.Raycast(pos, surfacePos - pos, out hit))
             {

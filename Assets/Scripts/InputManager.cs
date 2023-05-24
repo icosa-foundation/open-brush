@@ -748,6 +748,11 @@ namespace TiltBrush
 
         public float GetMouseWheel()
         {
+            if (App.Config.IsMobileHardware)
+            {
+                return 0.0f;
+            }
+
             return Mouse.current.scroll.x.ReadValue();
         }
 

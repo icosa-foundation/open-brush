@@ -30,7 +30,6 @@ using WebSocketServer;
 
 namespace TiltBrush
 {
-
     public class ApiManager : MonoBehaviour
     {
         public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
