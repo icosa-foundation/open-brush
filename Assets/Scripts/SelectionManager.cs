@@ -1139,8 +1139,8 @@ namespace TiltBrush
         public Vector3 SnapToGrid_GS(Vector3 position_GS)
         {
             float gridSize = SnappingGridSize;
-            if (gridSize == 0) return position;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            if (gridSize == 0) return position_GS;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
                 !m_EnableSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
