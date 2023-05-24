@@ -50,6 +50,11 @@ namespace TiltBrush
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 
+        public static void ImportSkybox(string location)
+        {
+            ApiMethods.ImportSkybox(location);
+        }
+
         private static CustomLights _CustomLights => LightsControlScript.m_Instance.CustomLightsFromScene;
 
         public static ColorApiWrapper ambientLightColor
