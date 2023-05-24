@@ -44,7 +44,6 @@ namespace TiltBrush
         protected override void Awake()
         {
             m_Type = StencilType.Custom;
-            // SetCustomStencil(m_DefaultMesh);
             base.Awake();
         }
 

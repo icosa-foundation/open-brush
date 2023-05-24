@@ -353,9 +353,8 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1);
         // }
 
-        // TODO Test this
-        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection")]
-        public static void Duplicate()
+        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection (uses symmetry mirrors if active")]
+        public static void DuplicateSelection()
         {
             var rEnum = SketchControlsScript.GlobalCommands.Duplicate;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
