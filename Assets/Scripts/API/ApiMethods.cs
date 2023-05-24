@@ -404,6 +404,25 @@ namespace TiltBrush
             return videoWidget;
         }
 
+        [ApiEndpoint("skybox.import", "Sets the skybox from either a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
+        public static void ImportSkybox(string location)
+        {
+            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            {
+                location = _DownloadMediaFileFromUrl(location, "Images");
+            }
+
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            var path = Path.Combine(App.MediaLibraryPath(), "Images", location);
+            if (File.Exists(path))     {
+                var fileData = File.ReadAllBytes(path);
+                tex.LoadImage(fileData);
+                var mat = Resources.Load<Material>("Environments/CustomSkybox");
+                mat.mainTexture = tex;
+                RenderSettings.skybox = mat;
+            }
+        }
+
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
         public static ImageWidget ImportImage(string location)
         {

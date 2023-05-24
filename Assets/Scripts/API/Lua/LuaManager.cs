@@ -331,6 +331,7 @@ namespace TiltBrush
 
         public void LogLuaErrorRaisedByScript(string msg)
         {
+            Debug.LogError($"Lua error: {msg}");
             ControllerConsoleScript.m_Instance.AddNewLine(msg, true, true);
         }
 
