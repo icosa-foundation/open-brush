@@ -1087,17 +1087,6 @@ namespace TiltBrush
                 m_SnapGridVisualization.enabled = false;
             }
         }
-        public Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            if (SnappingAngle == 0) return Quaternion.identity;
-            float round(float val) { return Mathf.Round(val / SnappingAngle) * SnappingAngle; }
-            Vector3 euler = rotation.eulerAngles;
-            float y = euler.y;
-            euler = new Vector3(round(euler.x), 0, round(euler.z));
-            rotation = Quaternion.Euler(euler);
-            rotation = Quaternion.Euler(0, round(y), 0) * rotation;
-            return rotation;
-        }
 
         // All transforms are in canvas space
         public Vector3 SnapToGrid_CS(Vector3 position)
@@ -1113,6 +1102,8 @@ namespace TiltBrush
             return roundedCanvasPos;
         }
 
+        // Input is in global space, the snapping is done in canvas space
+        // And the result is returned in global space
         public Vector3 SnapToGrid_GS(Vector3 position_GS)
         {
             if (SnappingGridSize == 0) return position_GS;
@@ -1125,11 +1116,35 @@ namespace TiltBrush
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
+
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SnappingAngle;
+            if (snapAngle == 0) return rotation;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
         public float ScalarSnap(float val)
         {
             if (SnappingGridSize == 0) return val;
             return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
         }
+
+        // Used by align/distribute etc
+        // Controls which widget types should be affected
+        // Currently it's "any subclass of MediaWidget or StencilWidget"
+        public List<GrabWidget> GetValidSelectedWidgets() => SelectedWidgets
+            .Where(widget =>
+                widget.GetType().IsSubclassOf(typeof(MediaWidget)) ||
+                widget.GetType().IsSubclassOf(typeof(StencilWidget))
+            )
+            .ToList();
+
     }
 
 } // namespace TiltBrush
+

@@ -32,7 +32,7 @@ namespace TiltBrush
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
-        private bool m_PolyCallbackActive;
+        protected bool m_PolyCallbackActive;
 
         private int m_NumVertsTrackedByWidgetManager;
 
@@ -137,19 +137,24 @@ namespace TiltBrush
             Model = null;
         }
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
             clone.Model = this.Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(this.m_Size);
+            clone.SetSignedWidgetSize(size);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -313,13 +318,12 @@ namespace TiltBrush
         {
             base.OnShow();
 
-            if (m_Model != null && m_Model.m_Valid)
-            {
-                SetSignedWidgetSize(0.0f);
-            }
-
             if (!m_LoadingFromSketch)
             {
+                if (m_Model != null && m_Model.m_Valid)
+                {
+                    SetSignedWidgetSize(0.0f);
+                }
                 m_IntroAnimState = IntroAnimState.In;
                 Debug.Assert(!IsMoving(), "Shouldn't have velocity!");
                 ClearVelocities();
@@ -540,8 +544,8 @@ namespace TiltBrush
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, string assetId = null)
+        protected static void CreateModel(Model model, TrTransform xf, bool pin,
+                                          bool isNonRawTransform, uint groupId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;

@@ -69,7 +69,7 @@ namespace TiltBrush
         }
 
 
-        protected override bool IsButtonActive()
+        public override bool IsButtonActive()
         {
             return IsToggledOn;
         }

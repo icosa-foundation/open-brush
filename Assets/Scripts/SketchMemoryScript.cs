@@ -190,7 +190,22 @@ namespace TiltBrush
 
         public Stroke GetStrokeAtIndex(int index)
         {
-            return m_Instance.m_MemoryList.ElementAt(index);
+            // Supports Python-style negative indexing
+            try
+            {
+                if (index < 0)
+                {
+                    return m_Instance.m_MemoryList.ElementAt(m_Instance.m_MemoryList.Count - Mathf.Abs(index));
+                }
+                if (index >= 0)
+                {
+                    return m_Instance.m_MemoryList.ElementAt(index);
+                }
+            }
+            catch (IndexOutOfRangeException e)
+            {
+            }
+            return null;
         }
 
         public Stroke MostRecentStroke
@@ -1275,6 +1290,8 @@ namespace TiltBrush
 
         public static List<Stroke> GetStrokesBetween(int start, int end)
         {
+            if (m_Instance.StrokeCount == 0) return new List<Stroke>();
+
             int index0, index1;
             int lastStrokeIndex = m_Instance.StrokeCount - 1;
             if (start < 0)
@@ -1308,17 +1325,20 @@ namespace TiltBrush
             var result = new List<Stroke>();
             int i = index0;
             var node = GetNodeAtIndex(index0);
-            while (i < index1)
+
+            while (i <= index1)
             {
                 result.Add(node.Value);
+                i++;
+                if (i > index1) break;
                 node = node.Next;
                 if (node == null)
                 {
                     Debug.LogError($"Aborting early due to no next stroke in linked list");
                     break;
                 }
-                i++;
             }
+
             return result;
         }
     }

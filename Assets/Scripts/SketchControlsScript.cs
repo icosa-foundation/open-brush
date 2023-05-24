@@ -773,6 +773,7 @@ namespace TiltBrush
         {
             get { return GetComponent<IconTextureAtlas>(); }
         }
+        public GrabWidget CurrentGrabWidget => m_CurrentGrabWidget;
         public bool AutoOrientAfterRotation
         {
             get => m_AutoOrientAfterRotation;
@@ -5003,7 +5004,7 @@ namespace TiltBrush
                 case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode;
-                case GlobalCommands.AutoOrient: return AutoOrientAfterRotation;
+                case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
                 case GlobalCommands.Music: return VisualizerManager.m_Instance.VisualsRequested;

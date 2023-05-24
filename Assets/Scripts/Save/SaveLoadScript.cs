@@ -219,7 +219,10 @@ namespace TiltBrush
             m_Instance = this;
             m_JsonSerializer = new JsonSerializer();
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
-            m_JsonSerializer.Error += HandleDeserializationError;
+            if (!Application.isEditor)
+            {
+                m_JsonSerializer.Error += HandleDeserializationError;
+            }
 
             ResetLastFilename();
 
@@ -628,7 +631,7 @@ namespace TiltBrush
             }
             using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
             {
-                var jsonData = DeserializeMetadata(jsonReader);
+                SketchMetadata jsonData = DeserializeMetadata(jsonReader);
                 if (LastMetadataError != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(
@@ -743,7 +746,7 @@ namespace TiltBrush
                 }
 
 
-                // It's proving to be rather complex to merge widgets/models etc. 
+                // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
 

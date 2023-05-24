@@ -962,9 +962,7 @@ namespace TiltBrush
         {
             if (m_InitialMaterials == null)
             {
-                m_WidgetRenderers = GetComponentsInChildren<Renderer>();
-                m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
-                m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
+                CloneInitialMaterials(null);
             }
 
             foreach (var renderer in m_WidgetRenderers)
@@ -999,7 +997,7 @@ namespace TiltBrush
         /// It is necessary to call this function when cloning a widget as the widget will be selected
         /// and the clone will not have these values set, although they will be expected when deselection
         /// happens.
-        protected void CloneInitialMaterials(GrabWidget other)
+        protected virtual void CloneInitialMaterials(GrabWidget other)
         {
             m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
@@ -1300,6 +1298,30 @@ namespace TiltBrush
 
             return outXf_GS;
         }
+
+        private Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
+        public static Vector3 SnapToGrid(Vector3 position)
+        {
+            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
+            Vector3 roundedCanvasPos = new Vector3(
+                round(localCanvasPos.x),
+                round(localCanvasPos.y),
+                round(localCanvasPos.z)
+            );
+            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+        }
+
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {

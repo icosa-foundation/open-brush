@@ -360,6 +360,12 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint("selection.delete", "Deletes the current selection")]
+        public static void DeleteSelection()
+        {
+            SelectionManager.m_Instance.DeleteSelection();
+        }
+
         // TODO explicit group/ungroup
         [ApiEndpoint("selection.group", "Groups the current selection")]
         public static void ToggleGroupStrokesAndWidgets()
@@ -434,6 +440,12 @@ namespace TiltBrush
         {
             var rEnum = SketchControlsScript.GlobalCommands.SelectAll;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
+        [ApiEndpoint("select.none", "Deselects all strokes and widgets in the scene")]
+        public static void SelectNone()
+        {
+            SelectionManager.m_Instance.ClearActiveSelection();
         }
 
         [ApiEndpoint("selection.flip", "Mirrors the current selection")]
