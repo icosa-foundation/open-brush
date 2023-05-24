@@ -136,6 +136,7 @@ namespace TiltBrush
             // Set our model to null so its usage count is decremented.
             Model = null;
         }
+
         public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, m_Size);
