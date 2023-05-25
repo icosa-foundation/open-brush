@@ -219,6 +219,7 @@ namespace TiltBrush
                 tex.LoadImage(fileData);
                 var mat = Resources.Load<Material>("Environments/CustomSkybox");
                 mat.mainTexture = tex;
+                mat.SetColor("_Tint", m_CustomSkyboxTint);
                 RenderSettings.skybox = mat;
             }
             else
