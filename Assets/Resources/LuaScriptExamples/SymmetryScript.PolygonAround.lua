@@ -28,7 +28,7 @@ function Main()
         radius = Symmetry:Polygon(angle, sides)
 
         pointer = Transform:New(
-            Symmetry.brushOffset:ScaleBy(radius, 1, radius),
+            Symmetry.brushOffset:Scale(radius, 1, radius),
             Rotation:New(0, angle * Math.rad2Deg, 0)
         )
         pointers:Insert(pointer)
