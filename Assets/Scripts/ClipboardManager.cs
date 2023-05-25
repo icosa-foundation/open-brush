@@ -64,8 +64,10 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHapticsPulse(controller, 3, 0.15f, 0.07f);
             AudioManager.m_Instance.PlayDuplicateSound(InputManager.m_Instance.GetControllerPosition(controller));
 
-            // Duplicate selection works differently if the multimirror is active
-            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
+            // Duplicate selection works differently for multimirrors etc
+            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror ||
+                PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.CustomSymmetryMode ||
+                PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode)
             {
                 // Multimirrored dups never use the offset transform
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(

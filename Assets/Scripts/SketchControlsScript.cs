@@ -4685,7 +4685,9 @@ namespace TiltBrush
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
 
                         // TODO - this code has never taken imported models etc into account
-                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror
+                            || PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode
+                            || PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                         {
                             selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
                         }
@@ -5052,6 +5054,7 @@ namespace TiltBrush
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
                 case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
+                case GlobalCommands.CustomSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;

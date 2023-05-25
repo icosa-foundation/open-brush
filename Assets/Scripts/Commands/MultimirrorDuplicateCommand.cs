@@ -39,9 +39,21 @@ namespace TiltBrush
 
             m_SelectedStrokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             m_DuplicatedStrokes = new List<Stroke>();
-            List<Matrix4x4> matrices;
+            List<Matrix4x4> matrices = null;
 
-            matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
+            switch (PointerManager.m_Instance.CurrentSymmetryMode)
+            {
+                case PointerManager.SymmetryMode.MultiMirror:
+                    matrices = PointerManager.m_Instance.CustomMirrorMatrices.ToList();
+                    break;
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    var tr_CS = new List<TrTransform>();
+                    PointerManager.m_Instance.CalcScriptedTransforms(out tr_CS);
+                    matrices = tr_CS.Select(tr => tr.ToMatrix4x4()).ToList();
+                    break;
+                case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    break;
+            }
 
             if (m_StampMode)
             {

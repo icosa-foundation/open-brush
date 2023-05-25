@@ -172,7 +172,8 @@ namespace TiltBrush
             // It's a bit obnoxious to do this when the user's grabbing it. Maybe we should
             // also not do this when the canvas is being manipulated?
             if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel
-                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode)
             {
                 // Doing the rotation in object space makes it easier to prove that the
                 // plane normal will never be affected.
