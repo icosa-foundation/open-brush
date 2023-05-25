@@ -1525,22 +1525,6 @@ namespace TiltBrush
             );
         }
 
-        private static float CalcColorWaveform(float x, WaveGenerator.Mode mode, float freq)
-        {
-            // Input is 0 to +1, output is -1 to +1
-            return mode switch
-            {
-                WaveGenerator.Mode.SineWave => Mathf.Cos(x * freq * Mathf.PI * 2f),
-                WaveGenerator.Mode.TriangleWave => Mathf.Abs((x * freq * 4) % 4 - 2) - 1,
-                WaveGenerator.Mode.SawtoothWave => (x * freq % 1 - 0.5f) * 2f,
-                WaveGenerator.Mode.SquareWave => (x * freq) % 1 < 0.5f ? -1 : 1,
-                WaveGenerator.Mode.WhiteNoise => (Mathf.PerlinNoise(x * freq * 2, 0) * 3f) - 1.5f,
-                _ => x
-            };
-        }
-
-
-
         public float GenerateJitteredSize(BrushDescriptor desc, float currentSize)
         {
             float range = desc.m_BrushSizeRange.y - desc.m_BrushSizeRange.x;
