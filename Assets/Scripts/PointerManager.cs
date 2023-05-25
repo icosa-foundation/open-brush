@@ -53,7 +53,10 @@ namespace TiltBrush
             Saturation,
             Brightness
         }
-        [NonSerialized] public bool m_SymmetryColorShiftEnabled = false;
+
+        [NonSerialized] public bool m_SymmetryLockedToController = false;
+
+        [NonSerialized] public bool m_SymmetryColorShiftEnabled = true;
 
         [Serializable]
         public struct ColorShiftComponentSetting
@@ -67,10 +70,10 @@ namespace TiltBrush
         {
             mode = WaveGenerator.Mode.SineWave, amp = 0, freq = 1
         };
+
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingHue = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingSaturation = m_defaultColorShiftComponentSetting;
         [NonSerialized] public ColorShiftComponentSetting m_SymmetryColorShiftSettingBrightness = m_defaultColorShiftComponentSetting;
-
 
         // Modifying this struct has implications for binary compatibility.
         // The layout should match the most commonly-seen layout in the binary file.
@@ -760,18 +763,17 @@ namespace TiltBrush
             }
         }
 
-        public List<TrTransform> GetScriptedTransforms()
+        public bool CalcScriptedTransforms(out List<TrTransform> trs_CS)
         {
-            var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
-            if (result == null) return new List<TrTransform>();
-            List<TrTransform> transforms = result.AsSingleTrList();
-            if (transforms.Count != m_NumActivePointers)
-            {
-                ChangeNumActivePointers(transforms.Count);
-            }
-
-            var trs_CS = new List<TrTransform>();
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+            if (result == null)
+            {
+                trs_CS = new List<TrTransform>{TrTransform.identity};
+                return false;
+            }
+            List<TrTransform> transforms = result.AsSingleTrList();
+            trs_CS = new List<TrTransform>(transforms.Count);
             bool needsDummyPointer = true;
 
             foreach (var tr in transforms)
@@ -817,6 +819,21 @@ namespace TiltBrush
                 }
                 trs_CS.Add(newTr_CS);
             }
+            return needsDummyPointer;
+        }
+
+
+        public List<TrTransform> GetScriptedPointerTransforms()
+        {
+            var trs_CS = new List<TrTransform>();
+            bool needsDummyPointer = CalcScriptedTransforms(out trs_CS);
+
+            if (trs_CS.Count != m_NumActivePointers)
+            {
+                ChangeNumActivePointers(trs_CS.Count);
+            }
+
+            Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
             // If none of the pointers match the normal pointer location then we need to show a dummy pointer
             var dummyPointer = rAttachPoint_GS.GetComponentInChildren<PointerScript>()?.gameObject;
@@ -864,7 +881,7 @@ namespace TiltBrush
                 case SymmetryMode.ScriptedSymmetryMode:
                     var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
                     LuaManager.Instance.InitScript(script);
-                    var trs = GetScriptedTransforms();
+                    var trs = GetScriptedPointerTransforms();
                     active = trs.Count;
                     break;
                 case SymmetryMode.DebugMultiple:
@@ -960,7 +977,7 @@ namespace TiltBrush
                     {
                         TrTransform scriptedTr;
                         {
-                            scriptedTr = GetScriptedTransforms()[child];
+                            scriptedTr = GetScriptedPointerTransforms()[child];
                             // convert from canvas to world coords
                             scriptedTr *= App.Scene.Pose.inverse;
                         }
@@ -1046,7 +1063,7 @@ namespace TiltBrush
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
                         TrTransform pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                        var trs = GetScriptedTransforms();
+                        var trs = GetScriptedPointerTransforms();
                         int pointerIndex = 0;
                         foreach (var tr in trs)
                         {
@@ -1276,11 +1293,11 @@ namespace TiltBrush
         {
             return GenerateJitteredColor(m_lastChosenColor, colorLuminanceMin);
         }
+
         public Color GenerateJitteredColor(Color currentColor, float colorLuminanceMin)
         {
             return ColorPickerUtils.ClampLuminance(CalculateJitteredColor(currentColor), colorLuminanceMin);
         }
-
 
         public Color CalculateJitteredColor(Color currentColor)
         {
@@ -1459,6 +1476,11 @@ namespace TiltBrush
                                 canvas.transform.GetUniformScale());
                             break;
                     }
+                }
+
+                if (m_SymmetryColorShiftEnabled)
+                {
+                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                 }
 
                 bool resetColors = true;
