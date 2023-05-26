@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
-
+using TMPro;
 namespace TiltBrush
 {
 
@@ -21,12 +21,14 @@ namespace TiltBrush
     {
         [SerializeField] private Transform m_BG;
         [SerializeField] private GameObject m_RightCap;
+        [SerializeField] private GameObject m_LeftCap;
         [SerializeField] private Renderer[] m_TintVisuals;
-        [SerializeField] private TextMesh[] m_Text;
+        [SerializeField] private TextMeshPro[] m_Text;
         [SerializeField] private Color m_UnavailableColor;
         [Tooltip("Position the origin of the description on the right edge " +
             "of UI component rather than at it's center.")]
         [SerializeField] private bool m_PlaceOnRightEdge;
+        [SerializeField] private bool m_SwitchCaps;
         [SerializeField] private float m_DefaultScale = .4235f;
 
         public float YOffset { set { m_YOffset = value; } }
@@ -35,7 +37,7 @@ namespace TiltBrush
         private Color m_StandardColor = Color.white;
         private float m_YOffset = 0;
 
-        public void SetDescription(string[] strings)
+        public void SetDescription(params string[] strings)
         {
             // Measure length of description by getting render bounds when mesh is axis-aligned.
             float fTextWidth = 0;
@@ -47,11 +49,20 @@ namespace TiltBrush
                     continue;
                 }
                 string s = strings[i];
-                TextMesh textMesh = m_Text[i];
+                TextMeshPro textMesh = m_Text[i];
                 textMesh.text = s;
                 fTextWidth = Mathf.Max(fTextWidth,
                     TextMeasureScript.m_Instance.GetTextWidth(
-                        textMesh.characterSize, textMesh.fontSize, textMesh.font, ("  " + s)));
+                        textMesh.fontSize, textMesh.font, ("  " + s)));
+
+                if (m_SwitchCaps)
+                {
+                    var currentTextPos = textMesh.rectTransform.localPosition;
+                    var offsetX = currentTextPos.x;
+                    textMesh.rectTransform.pivot = Vector2.one;
+                    textMesh.rectTransform.localPosition = new Vector3(offsetX, currentTextPos.y, currentTextPos.z);
+                    textMesh.horizontalAlignment = HorizontalAlignmentOptions.Right;
+                }
             }
 
             if (m_PlaceOnRightEdge)
@@ -66,9 +77,20 @@ namespace TiltBrush
             vBGScale.x = fTextWidth;
             m_BG.localScale = vBGScale;
 
-            if (m_RightCap)
+            if (!m_SwitchCaps && m_RightCap)
             {
                 m_RightCap.transform.localPosition = Vector3.right * fTextWidth;
+            }
+
+            // Hack for new dynamic controller hints when hint is on left side of controller.
+            if (m_SwitchCaps && m_LeftCap)
+            {
+                // Position box
+                m_RightCap.transform.localPosition = Vector3.zero;
+                m_BG.localPosition = Vector3.left * fTextWidth;
+                m_LeftCap.transform.localPosition = Vector3.left * fTextWidth;
+
+
             }
 
             AdjustDescriptionScale();

@@ -96,7 +96,7 @@ namespace TiltBrush
                         {
                             Debug.LogWarningFormat(
                                 "{0} {1}: Should never happen: batch updated in the future: {2}",
-                                BrushCatalog.m_Instance.GetBrush(m_BrushGuid).m_Description, i,
+                                BrushCatalog.m_Instance.GetBrush(m_BrushGuid).Description, i,
                                 timeSinceLastUpdate);
                             // A cheesy way of forcing timeSinceLastUpdate to 0
                             batch.DelayedUpdateMesh();

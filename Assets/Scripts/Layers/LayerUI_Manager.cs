@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush.Layers
 {
@@ -22,6 +23,9 @@ namespace TiltBrush.Layers
     {
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
+
+        [SerializeField] private LocalizedString m_MainLayerName;
+        [SerializeField] private LocalizedString m_AdditionalLayerName;
 
         public List<GameObject> m_Widgets;
         private List<CanvasScript> m_Canvases;
@@ -48,7 +52,7 @@ namespace TiltBrush.Layers
                 widget.GetComponentInChildren<TMPro.TextMeshPro>().text = canvas.name;
                 if (i == 0)
                 {
-                    widget.GetComponentInChildren<TMPro.TextMeshPro>().text = "Main Layer";
+                    widget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
                     widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
                     widget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
                     widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
@@ -74,7 +78,6 @@ namespace TiltBrush.Layers
         // Subscribes to events
         private void OnEnable()
         {
-            ResetUI();
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }

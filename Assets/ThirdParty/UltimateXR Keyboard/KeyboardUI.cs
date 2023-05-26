@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -211,12 +212,28 @@ namespace TiltBrush
             }
 
             // Count the number of lines we are adding:
-            // int newLineCount = newContent.GetOccurrenceCount("\n", false);
+            int newLineCount = GetOccurrenceCount(newContent, "\n", false);
             ConsoleContent    += newContent;
-            // _currentLineCount += newLineCount;
+            CurrentLine = ConsoleContent.Split($"\n").Last();
+            _currentLineCount += newLineCount;
 
             // Check if we exceeded the maximum line amount
             CheckMaxLines();
+        }
+
+        public static int GetOccurrenceCount(string input, string key, bool caseSensitive = true)
+        {
+            if (string.IsNullOrEmpty(input) || string.IsNullOrEmpty(key))
+            {
+                return 0;
+            }
+
+            if (caseSensitive)
+            {
+                return (input.Length - input.Replace(key, string.Empty).Length) / key.Length;
+            }
+
+            return (input.Length - input.ToLower().Replace(key.ToLower(), string.Empty).Length) / key.Length;
         }
 
         /// <summary>

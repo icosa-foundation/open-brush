@@ -115,7 +115,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Close
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -132,6 +150,9 @@ MonoBehaviour:
   m_ButtonType: 3
   m_GotoPage: 0
   m_InactiveColor: {r: 0, g: 0, b: 0, a: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2617002625324559686
 GameObject:
   m_ObjectHideFlags: 0
@@ -432,7 +453,6 @@ MonoBehaviour:
   m_TopBorder: {fileID: 8644332587409793350}
   m_BottomBorder: {fileID: 8644332587409793350}
   m_WindowText: {fileID: 0}
-  m_WindowSubText: {fileID: 0}
   m_CharacterWidth: 0.175
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
@@ -604,16 +624,6 @@ PrefabInstance:
     - target: {fileID: 1934243545717122, guid: ef7eb6dda2db50c4bbf6c682e4a21736, type: 3}
       propertyPath: m_Name
       value: Keyboard
-      objectReference: {fileID: 0}
-    - target: {fileID: 114387715371604348, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
-        type: 3}
-      propertyPath: _multiline
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114387715371604348, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
-        type: 3}
-      propertyPath: _previewCaps
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224560323429904302, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}

@@ -1,10 +1,13 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="UxrKeyboardKeyUI.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
 using UnityEngine.UI;
 
 
@@ -97,10 +100,11 @@ namespace TiltBrush
         [SerializeField] private string                     _printNoShift;
         [SerializeField] private string                     _printAltGr;
         [SerializeField] private string                     _forceLabel;
-        [SerializeField] private Text                       _singleLayoutValue;
-        [SerializeField] private Text                       _multipleLayoutValueTopLeft;
-        [SerializeField] private Text                       _multipleLayoutValueBottomLeft;
-        [SerializeField] private Text                       _multipleLayoutValueBottomRight;
+        [SerializeField] private LocalizedString            _LocalizedLabel;
+        [SerializeField] private TMPro.TMP_Text             _singleLayoutValue;
+        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueTopLeft;
+        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomLeft;
+        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomRight;
         [SerializeField] private List<KeyboardToggleSymbolsPage> _toggleSymbols;
 
         // Hidden in the custom inspector
@@ -412,105 +416,63 @@ namespace TiltBrush
                 return;
             }
 
-            if (_keyType == KeyboardKeyType.Printable)
+            switch (_keyType)
             {
-                if (_layout == KeyboardKeyLayoutType.SingleChar)
-                {
+                case KeyboardKeyType.Printable when _layout == KeyboardKeyLayoutType.SingleChar:
+                    {
+                        if (_singleLayoutValue)
+                        {
+                            _singleLayoutValue.text = _printShift.Length > 0 && (_keyboard.ShiftEnabled || _keyboard.CapsLockEnabled) ? _printShift : _printNoShift;
+                        }
+                        break;
+                    }
+                case KeyboardKeyType.Printable:
+                    {
+                        if (_multipleLayoutValueTopLeft)
+                        {
+                            _multipleLayoutValueTopLeft.text = _printShift;
+                        }
+                        if (_multipleLayoutValueBottomLeft)
+                        {
+                            _multipleLayoutValueBottomLeft.text = _printNoShift;
+                        }
+                        if (_multipleLayoutValueBottomRight)
+                        {
+                            _multipleLayoutValueBottomRight.text = _printAltGr;
+                        }
+                        break;
+                    }
+                case KeyboardKeyType.Tab:
+                case KeyboardKeyType.Shift:
+                case KeyboardKeyType.CapsLock:
+                case KeyboardKeyType.Control:
+                case KeyboardKeyType.Alt:
+                case KeyboardKeyType.AltGr:
+                case KeyboardKeyType.Enter:
+                case KeyboardKeyType.Backspace:
+                case KeyboardKeyType.Del:
+                case KeyboardKeyType.Escape:
                     if (_singleLayoutValue)
                     {
-                        _singleLayoutValue.text = _printShift.Length > 0 && (_keyboard.ShiftEnabled || _keyboard.CapsLockEnabled) ? _printShift : _printNoShift;
+                        _singleLayoutValue.text = GetLocalizedKeyName(_keyType);
                     }
-                }
-                else
-                {
-                    if (_multipleLayoutValueTopLeft)
-                    {
-                        _multipleLayoutValueTopLeft.text = _printShift;
-                    }
-                    if (_multipleLayoutValueBottomLeft)
-                    {
-                        _multipleLayoutValueBottomLeft.text = _printNoShift;
-                    }
-                    if (_multipleLayoutValueBottomRight)
-                    {
-                        _multipleLayoutValueBottomRight.text = _printAltGr;
-                    }
-                }
+                    break;
+                case KeyboardKeyType.ToggleSymbols:
+                    _singleLayoutValue.text = NextToggleSymbolsPage != null    ? NextToggleSymbolsPage.Label :
+                        CurrentToggleSymbolsPage != null ? CurrentToggleSymbolsPage.Label : string.Empty;
+                    break;
             }
-            else if (_keyType == KeyboardKeyType.Tab)
+        }
+        private string GetLocalizedKeyName(KeyboardKeyType fallbackText)
+        {
+            try
             {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Tab";
-                }
+                var locString = _LocalizedLabel.GetLocalizedString();
+                return locString;
             }
-            else if (_keyType == KeyboardKeyType.Shift)
+            catch
             {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Shift";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.CapsLock)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Caps Lock";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.Control)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Ctrl";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.Alt)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Alt";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.AltGr)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Alt Gr";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.Enter)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Enter";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.Backspace)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Backspace";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.Del)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Del";
-                }
-            }
-            else if (_keyType == KeyboardKeyType.ToggleSymbols)
-            {
-                _singleLayoutValue.text = NextToggleSymbolsPage != null    ? NextToggleSymbolsPage.Label :
-                                          CurrentToggleSymbolsPage != null ? CurrentToggleSymbolsPage.Label : string.Empty;
-            }
-            else if (_keyType == KeyboardKeyType.Escape)
-            {
-                if (_singleLayoutValue)
-                {
-                    _singleLayoutValue.text = "Esc";
-                }
+                return fallbackText.ToString();
             }
         }
 

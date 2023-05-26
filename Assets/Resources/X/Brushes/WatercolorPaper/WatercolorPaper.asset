@@ -23,7 +23,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: d103b60decb58764196c8c0c831c4db9, type: 3}
-  m_Description: Watercolor Paper
+  m_Description: BRUSH_WATERCOLORPAPER
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81209159253024768
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -71,3 +80,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
