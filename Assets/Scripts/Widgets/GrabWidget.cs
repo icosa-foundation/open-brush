@@ -1140,6 +1140,8 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
+            MagnetizeToStencils(ref xf_GS);
+
             if (m_RecordMovements)
             {
                 TrTransform newXf = TrTransform.FromTransform(
@@ -1169,6 +1171,26 @@ namespace TiltBrush
             m_bWasSnapping = SnapEnabled;
 
             OnEndUpdateWithDesiredTransform();
+        }
+
+        protected virtual bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            var pos = xf_GS.translation;
+            var rot = xf_GS.rotation;
+
+            bool usedStencil = WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot, GetStencilsToIgnore());
+            if (usedStencil)
+            {
+                xf_GS.translation = pos;
+                // If we're magnetizing to a stencil, we want to flip the widget
+                xf_GS.rotation = rot * Quaternion.Euler(0, 180, 0);
+            }
+            return usedStencil;
+        }
+
+        protected virtual IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget>();
         }
 
         virtual public TrTransform GetGrabbedTrTransform()
