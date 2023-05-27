@@ -9721,6 +9721,7 @@ GameObject:
   - component: {fileID: 652605559}
   - component: {fileID: 652605562}
   - component: {fileID: 652605560}
+  - component: {fileID: 652605573}
   - component: {fileID: 652605563}
   - component: {fileID: 652605565}
   - component: {fileID: 652605566}
@@ -10506,6 +10507,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba223429cfccd914bb3b358738b234bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &652605573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652605543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6bd3c22c0bd4929a870f09c44aba4f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
+  m_DefaultImages:
+  - DefaultBackgroundImages/panorama.jpg
+  - DefaultBackgroundImages/stereopanorama.jpg
+  - DefaultBackgroundImages/ATTRIBUTION.txt
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,

@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace TiltBrush
 {

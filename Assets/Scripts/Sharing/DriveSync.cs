@@ -477,6 +477,13 @@ namespace TiltBrush
                         recursive: true));
                 }
                 folderSyncs.Add(AddSyncedFolderAsync(
+                    "BackgroundImages",
+                    App.BackgroundImagesLibraryPath(),
+                    mediaLibrary.Id,
+                    SyncType.Upload,
+                    SyncedFolderType.MediaLibrary,
+                    token));
+                folderSyncs.Add(AddSyncedFolderAsync(
                     "Videos",
                     App.VideoLibraryPath(),
                     mediaLibrary.Id,

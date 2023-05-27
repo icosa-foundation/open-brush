@@ -2686,8 +2686,9 @@ namespace TiltBrush
             if (RenderSettings.skybox)
             {
                 Quaternion sceneQuaternion = App.Instance.m_SceneTransform.rotation;
+                string propName = SceneSettings.m_Instance.HasCustomSkybox() ? "_Rotation" : "_SkyboxRotation";
                 RenderSettings.skybox.SetVector(
-                    "_SkyboxRotation",
+                    propName,
                     new Vector4(sceneQuaternion.x, sceneQuaternion.y, sceneQuaternion.z, sceneQuaternion.w));
             }
 

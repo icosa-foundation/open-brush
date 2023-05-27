@@ -115,8 +115,8 @@ namespace TiltBrush
 
         private List<LightTransition> m_TransitionLights;
         private int m_RequestInstantSceneSwitch;
-        private string m_CustomSkybox;
-        private Color m_CustomSkyboxTint = Color.gray;
+        private string m_CustomSkyboxTextureName;
+        private Material m_CustomSkyboxMaterial;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -211,16 +211,26 @@ namespace TiltBrush
 
         public void LoadCustomSkybox(string filename)
         {
+            m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            var path = Path.Combine(App.MediaLibraryPath(), "Images", filename);
+            var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
                 tex.LoadImage(fileData);
-                var mat = Resources.Load<Material>("Environments/CustomSkybox");
-                mat.mainTexture = tex;
-                mat.SetColor("_Tint", m_CustomSkyboxTint);
-                RenderSettings.skybox = mat;
+                float aspectRatio = tex.width / tex.height;
+                Material mat;
+                if (aspectRatio > 1.5)
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                }
+                else
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
+                }
+                m_CustomSkyboxMaterial.mainTexture = tex;
+                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+                RenderSettings.skybox = m_CustomSkyboxMaterial;
             }
             else
             {
@@ -320,7 +330,6 @@ namespace TiltBrush
             m_CustomFogColor = (Color)custom.FogColor;
             m_CustomFogDensity = custom.FogDensity;
             m_CustomReflectionIntensity = custom.ReflectionIntensity;
-            m_CustomSkybox = custom.Skybox;
 
             bool hasCustomGradient = custom.GradientColors != null;
             if (hasCustomGradient)
@@ -338,6 +347,7 @@ namespace TiltBrush
             // Set InGradient after the colors have been defined.  This call sends a message to all those
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
+            LoadCustomSkybox(custom.Skybox);
         }
 
         public void UpdateReflectionIntensity()
@@ -461,6 +471,10 @@ namespace TiltBrush
                     {
                         RenderSettings.skybox.SetVector("_GradientDirection", Vector3.up);
                     }
+                    if (HasCustomSkybox())
+                    {
+                        RenderSettings.skybox = m_CustomSkyboxMaterial;
+                    }
                 }
             }
             else
@@ -576,7 +590,6 @@ namespace TiltBrush
                     break;
                 case TransitionState.Scene:
                     m_HasCustomLights = false;
-                    if (m_CustomSkybox != null) RenderSettings.skybox.SetColor("_Tint", m_CustomSkyboxTint);
                     break;
             }
 
@@ -771,7 +784,7 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (!string.IsNullOrEmpty(m_CustomSkybox)) LoadCustomSkybox(m_CustomSkybox);
+                if (HasCustomSkybox()) LoadCustomSkybox(m_CustomSkyboxTextureName);
 
                 if (FadingToDesiredEnvironment != null)
                 {
@@ -833,7 +846,7 @@ namespace TiltBrush
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
                         ReflectionIntensity = RenderSettings.reflectionIntensity,
-                        Skybox = m_CustomSkybox
+                        Skybox = m_CustomSkyboxTextureName
                     };
             }
         }
@@ -875,6 +888,11 @@ namespace TiltBrush
             {
                 SkyboxChanged();
             }
+        }
+
+        public bool HasCustomSkybox()
+        {
+            return !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
         }
     }
 } // namespace TiltBrush
