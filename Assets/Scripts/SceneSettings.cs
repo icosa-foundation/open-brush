@@ -573,6 +573,12 @@ namespace TiltBrush
                 }
                 m_LoadingCustomEnvironment = false;
                 m_CurrentEnvironment = m_DesiredEnvironment;
+
+                if (HasCustomSkybox())
+                {
+                    RenderSettings.skybox = m_CustomSkyboxMaterial;
+                    RenderSettings.skybox.SetColor("_Tint", Color.gray);
+                }
             }
         }
 
