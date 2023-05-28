@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -26,7 +27,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnloadedTexture;
         [SerializeField] private Texture2D m_LoadedTexture;
         [SerializeField] private Texture2D m_ErrorTexture;
-        [SerializeField] private string m_LoadHelpText;
+        [SerializeField] private LocalizedString m_LoadHelpText;
         protected Model m_Model;
         protected Model m_ModelPreviewModel;
         protected int m_ModelIndex;
@@ -178,7 +179,7 @@ namespace TiltBrush
         // the extra description.
         virtual public string UnloadedExtraDescription()
         {
-            return m_LoadHelpText;
+            return m_LoadHelpText.GetLocalizedString();
         }
         virtual public string LoadedExtraDescription()
         {

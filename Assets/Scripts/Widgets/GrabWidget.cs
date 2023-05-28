@@ -1565,8 +1565,11 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            InputManager.GetControllerGeometry(m_InteractingController)
-                .TogglePadSnapHint(SnapEnabled, show);
+            // TODO:Mike 'SnapEnabled' is controlled by the new snap panel, rather than button input.
+            // This breaks using this button to quickly toggle on a grabbed object.
+            // Disabling icon for now to avoid confusion.
+            // InputManager.GetControllerGeometry(m_InteractingController)
+            //     .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1

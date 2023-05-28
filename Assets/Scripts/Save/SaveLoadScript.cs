@@ -38,15 +38,15 @@ namespace TiltBrush
 
         public static SaveLoadScript m_Instance;
 
-        public static IEnumerable<DiskSceneFileInfo> IterScenes(DirectoryInfo di)
+        public static IEnumerable<DiskSceneFileInfo> IterScenes(DirectoryInfo di, bool makeReadOnly = false)
         {
             foreach (var sub in di.GetFiles("*" + TILT_SUFFIX))
             {
-                yield return new DiskSceneFileInfo(sub.FullName);
+                yield return new DiskSceneFileInfo(sub.FullName, readOnly: makeReadOnly);
             }
             foreach (var sub in di.GetDirectories("*" + TILT_SUFFIX))
             {
-                yield return new DiskSceneFileInfo(sub.FullName);
+                yield return new DiskSceneFileInfo(sub.FullName, readOnly: makeReadOnly);
             }
         }
 

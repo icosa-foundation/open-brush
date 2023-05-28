@@ -112,7 +112,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Straightedge
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5144088976007168
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -133,10 +142,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1341592587687888
 GameObject:
   m_ObjectHideFlags: 0
@@ -250,7 +280,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: More Tools...
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_MORE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5144350784462848
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -270,11 +309,32 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: More Tools
+  m_PopupText: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5148146801549312
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1391616033735084
 GameObject:
   m_ObjectHideFlags: 0
@@ -387,7 +447,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Mirror
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143986307833856
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -408,11 +477,32 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_LongPressDuration: 0.3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1432011501656938
 GameObject:
   m_ObjectHideFlags: 0
@@ -525,7 +615,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Selection
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143817222856704
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -541,6 +640,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 21
   m_EatGazeInputOnPress: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1535987629817004
 GameObject:
   m_ObjectHideFlags: 0
@@ -653,7 +755,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Dropper
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143517279789056
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -669,6 +780,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 13
   m_EatGazeInputOnPress: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1543516286980528
 GameObject:
   m_ObjectHideFlags: 0
@@ -734,7 +848,16 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
       type: 3}
     m_Command: 32
-  m_PanelDescription: Tools
+  m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5142890986315776
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.25, y: 1, z: 0}
@@ -770,6 +893,9 @@ MonoBehaviour:
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &114015073128241692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -931,7 +1057,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Eraser
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143299389890560
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -947,6 +1082,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 11
   m_EatGazeInputOnPress: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1879202676365686
 GameObject:
   m_ObjectHideFlags: 0
@@ -1059,7 +1197,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Teleport
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143754866139136
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1075,6 +1222,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 17
   m_EatGazeInputOnPress: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1762075770379121108
 GameObject:
   m_ObjectHideFlags: 0
@@ -1187,7 +1337,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Repaint
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5143592097783808
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1203,6 +1362,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 18
   m_EatGazeInputOnPress: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1936695874305319046
 GameObject:
   m_ObjectHideFlags: 0
@@ -1443,7 +1605,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Snip
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5144456485117952
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1459,6 +1630,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 11000
   m_EatGazeInputOnPress: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3085799252407642216
 GameObject:
   m_ObjectHideFlags: 0
@@ -1794,7 +1968,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Fly
+  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_FLY
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 5144159373205504
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -1810,6 +1993,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 25
   m_EatGazeInputOnPress: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &6084773226596406212
 GameObject:
   m_ObjectHideFlags: 0
@@ -2273,26 +2459,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 8559047527123235848}
     m_Modifications:
-    - target: {fileID: 5053456529424186463, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
-        type: 3}
-      propertyPath: m_ButtonTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: a4bdb2bf04c6548b58e1a7ee3cc4d556, type: 3}
-    - target: {fileID: 5053456529424186463, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
-        type: 3}
-      propertyPath: m_ToggleOnTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: a4bdb2bf04c6548b58e1a7ee3cc4d556, type: 3}
-    - target: {fileID: 5057020332640527455, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
-        type: 3}
-      propertyPath: m_ButtonTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
-    - target: {fileID: 5057020332640527455, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
-        type: 3}
-      propertyPath: m_ToggleOnTexture
-      value: 
-      objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
     - target: {fileID: 6495778419652451853, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
       propertyPath: m_ShowOnToolType

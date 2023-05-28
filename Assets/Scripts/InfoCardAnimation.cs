@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -29,7 +30,7 @@ namespace TiltBrush
         }
 
         [SerializeField] private Transform m_Mesh;
-        [SerializeField] private TextMesh m_Text;
+        [SerializeField] private TextMeshPro m_Text;
         [SerializeField] private float m_IntroStateDuration;
         [SerializeField] private float m_FallingStateDistance;
         [SerializeField] private float m_IntroPopAmount;
@@ -82,7 +83,7 @@ namespace TiltBrush
             m_Text.text = sText;
 
             // Measure length of button description by getting render bounds when mesh is axis-aligned.
-            float fTextWidth = TextMeasureScript.m_Instance.GetTextWidth(m_Text.characterSize,
+            float fTextWidth = TextMeasureScript.m_Instance.GetTextWidth(
                 m_Text.fontSize, m_Text.font, ("     " + sText));
 
             Vector3 vBGScale = m_Mesh.localScale;

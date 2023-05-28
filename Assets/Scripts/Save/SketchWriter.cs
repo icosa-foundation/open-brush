@@ -161,33 +161,32 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled)
+                if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
                 {
-                    if (stroke.Canvas == App.Scene.SelectionCanvas)
+
+                    if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
                     {
-                        
-                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
-                        {
                             snapshot.frameIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item1;
                             snapshot.trackIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item2;
-                            
-                        }
-                        else
-                        {
-                            // Previous canvas has been deleted?
-                            snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
-                            snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
-                          
-                       
-                        }
+
                     }
                     else
                     {
-                        // Don't use the method in SceneScript as they count deleted layers
+                        // Previous canvas has been deleted?
+                            snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
+                            snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
+
+
+                    }
+                    yield return snapshot;
+                }
+                else if (stroke.IsGeometryEnabled && canvasToIndexMap.ContainsKey(stroke.Canvas))
+                {
+                    // Don't use the method in SceneScript as they count deleted layers
                         snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
                         snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
-                        
-                       
+
+
                     }
                     Debug.Log("SAVING STROKE " + snapshot.trackIndex.ToString() + " " + snapshot.frameIndex.ToString());
                     yield return snapshot;
@@ -270,7 +269,7 @@ namespace TiltBrush
                     writer.UInt32(copy.trackIndex);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0){
-           
+
                     writer.UInt32(copy.frameIndex);
                 }
 
@@ -437,9 +436,9 @@ namespace TiltBrush
                    UInt32 thisTrack = 0;
                    int MaxTrack = 0,MaxFrame = 0;
 
-                
 
-                   
+
+
                 // for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 // {
                 //    uint bit = (fields & ~(fields - 1));
@@ -463,7 +462,7 @@ namespace TiltBrush
 
                 // Debug.Log("MAX FRAME AND MAX TRACK "  + MaxTrack.ToString() + " " + MaxFrame.ToString());
 
-             
+
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
