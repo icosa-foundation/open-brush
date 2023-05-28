@@ -271,7 +271,8 @@ namespace TiltBrush
                 bool skyboxChanged = (m_InGradient && m_CurrentEnvironment.m_RenderSettings.m_SkyboxCubemap != null) ||
                     m_CurrentEnvironment.m_SkyboxColorA != m_SkyColorA ||
                     m_CurrentEnvironment.m_SkyboxColorB != m_SkyColorB ||
-                    m_GradientSkew != Quaternion.identity;
+                    m_GradientSkew != Quaternion.identity ||
+                    HasCustomSkybox();
                 return skyboxChanged ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogColor != RenderSettings.fogColor ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogDensity != FogDensity ||
