@@ -15,7 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Superla.RadianceHDR;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -217,9 +219,18 @@ namespace TiltBrush
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
-                tex.LoadImage(fileData);
+
+                if (path.EndsWith(".hdr"))
+                {
+                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
+                    tex = hdr.texture;
+                }
+                else
+                {
+                    tex.LoadImage(fileData);
+                }
+
                 float aspectRatio = tex.width / tex.height;
-                Material mat;
                 if (aspectRatio > 1.5)
                 {
                     m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
@@ -231,6 +242,7 @@ namespace TiltBrush
                 m_CustomSkyboxMaterial.mainTexture = tex;
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
             }
             else
             {
@@ -348,7 +360,6 @@ namespace TiltBrush
             // Set InGradient after the colors have been defined.  This call sends a message to all those
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
-            LoadCustomSkybox(custom.Skybox);
         }
 
         public void UpdateReflectionIntensity()
@@ -791,7 +802,14 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (HasCustomSkybox()) LoadCustomSkybox(m_CustomSkyboxTextureName);
+                if (HasCustomSkybox())
+                {
+                    LoadCustomSkybox(m_CustomSkyboxTextureName);
+                }
+                else
+                {
+                    RenderSettings.ambientMode = AmbientMode.Flat;
+                }
 
                 if (FadingToDesiredEnvironment != null)
                 {

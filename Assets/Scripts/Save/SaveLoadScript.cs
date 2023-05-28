@@ -671,6 +671,8 @@ namespace TiltBrush
                             environment, forceTransition: true,
                             keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
                         );
+                        // This will have been overwritten by Set
+                        SceneSettings.m_Instance.LoadCustomSkybox(jsonData.Environment.Skybox);
                     }
                     else
                     {
