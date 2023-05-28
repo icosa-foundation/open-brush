@@ -104,7 +104,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Rotation: 0
+    - _Rotation: -0
     - _SkyExponent: 1.5
     - _SrcBlend: 1
     - _SunSize: 1
@@ -122,6 +122,5 @@ Material:
     - _SkyboxRotation: {r: 0, g: 0, b: 0, a: 1}
     - _SpecularColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     - _SunTint: {r: 1, g: 0.925, b: 0.737, a: 1}
-    - _Tint: {r: 0, g: 0, b: 0, a: 1}
-    - _TintX: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_BuildTextureStacks: []
