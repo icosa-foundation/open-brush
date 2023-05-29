@@ -154,25 +154,23 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled)
+                if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
                 {
-                    if (stroke.Canvas == App.Scene.SelectionCanvas)
+                    if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
                     {
-                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
-                        {
-                            snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
-                        }
-                        else
-                        {
-                            // Previous canvas has been deleted?
-                            snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
-                        }
+                        snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
                     }
                     else
                     {
-                        // Don't use the method in SceneScript as they count deleted layers
-                        snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
+                        // Previous canvas has been deleted?
+                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
                     }
+                    yield return snapshot;
+                }
+                else if (stroke.IsGeometryEnabled && canvasToIndexMap.ContainsKey(stroke.Canvas))
+                {
+                    // Don't use the method in SceneScript as they count deleted layers
+                    snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
                     yield return snapshot;
                 }
                 else

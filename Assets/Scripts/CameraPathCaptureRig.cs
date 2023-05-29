@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -21,6 +22,9 @@ namespace TiltBrush
     {
         [SerializeField] private GameObject m_Object;
         [SerializeField] private GameObject m_Camera;
+
+        [SerializeField] private LocalizedString m_PathRecorded;
+        [SerializeField] private LocalizedString m_PathCancelled;
 
         private CameraPathPreviewWidget m_Widget;
         private ScreenshotManager m_Manager;
@@ -118,7 +122,7 @@ namespace TiltBrush
 
         public void StopRecordingPath(bool saveCapture)
         {
-            string message = saveCapture ? "Path Recorded!" : "Recording Canceled";
+            string message = saveCapture ? m_PathRecorded.GetLocalizedString() : m_PathCancelled.GetLocalizedString();
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
             if (saveCapture)

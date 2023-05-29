@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using UnityEngine.Events;
 
 namespace TiltBrush
@@ -22,17 +21,62 @@ namespace TiltBrush
     // carries less baggage that it doesn't need from OptionButton.
     public class ToggleButton : OptionButton
     {
-        public bool m_IsToggledOn;
         public UnityEvent m_OnToggle;
+
+        private bool m_IsToggledOn;
+        public bool IsToggledOn
+        {
+            get => m_IsToggledOn;
+            set
+            {
+                m_IsToggledOn = value;
+                UpdateToggleStateVisuals();
+            }
+        }
+
+        // I expected UpdateVisuals to handle this but it's hard to untangle everything it does
+        // so it's simpler to duplicate the important bits in a method specific to ToggleButton
+        private void UpdateToggleStateVisuals()
+        {
+            // m_ToggleActive = m_IsToggledOn;
+            if (m_IsToggledOn)
+            {
+                SetButtonActivated(true);
+
+                if (m_ToggleOnDescription != "")
+                {
+                    SetDescriptionText(m_ToggleOnDescription);
+                }
+                if (m_ToggleOnTexture != null)
+                {
+                    SetButtonTexture(m_ToggleOnTexture);
+                }
+            }
+            else
+            {
+                SetButtonActivated(false);
+
+                if (m_ToggleOnDescription != "")
+                {
+                    SetDescriptionText(m_DefaultDescription);
+                }
+                if (m_ToggleOnTexture != null)
+                {
+                    SetButtonTexture(m_DefaultTexture);
+                }
+            }
+
+        }
+
 
         protected override bool IsButtonActive()
         {
-            return m_IsToggledOn;
+            return IsToggledOn;
         }
 
         override protected void OnButtonPressed()
         {
-            m_IsToggledOn = !m_IsToggledOn;
+            IsToggledOn = !IsToggledOn;
             m_OnToggle.Invoke();
         }
     }
