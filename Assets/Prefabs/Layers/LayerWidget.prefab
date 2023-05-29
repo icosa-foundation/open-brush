@@ -103,11 +103,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PanelButton_Clear
       objectReference: {fileID: 0}
-    - target: {fileID: 8029199270954784939, guid: 9db6de3a1141ff24ea3a40222f25246f,
-        type: 3}
-      propertyPath: m_Layer
-      value: 16
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9db6de3a1141ff24ea3a40222f25246f, type: 3}
 --- !u!4 &6149778988406935922 stripped
@@ -182,11 +177,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: PanelButton_Delete
-      objectReference: {fileID: 0}
-    - target: {fileID: 4317228714540023563, guid: 1c86458d1a7525744b384f8816d516f5,
-        type: 3}
-      propertyPath: m_Layer
-      value: 16
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c86458d1a7525744b384f8816d516f5, type: 3}
@@ -263,11 +253,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PanelButton_Squash
       objectReference: {fileID: 0}
-    - target: {fileID: 7597534324047289298, guid: 3044e302be7567d43b7cb6b660b75b41,
-        type: 3}
-      propertyPath: m_Layer
-      value: 16
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3044e302be7567d43b7cb6b660b75b41, type: 3}
 --- !u!4 &3493262292775186642 stripped
@@ -343,11 +328,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PanelButton_Layer
       objectReference: {fileID: 0}
-    - target: {fileID: 7853234119872618238, guid: 7595d1b7ee185294da9aa0a8889ed6d8,
-        type: 3}
-      propertyPath: m_Layer
-      value: 16
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7595d1b7ee185294da9aa0a8889ed6d8, type: 3}
 --- !u!4 &3737109993340061038 stripped
@@ -367,11 +347,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: PanelButton_Hide
-      objectReference: {fileID: 0}
-    - target: {fileID: 1215067258630681599, guid: 372c04dc31129fd43bfcb500fbbaff68,
-        type: 3}
-      propertyPath: m_Layer
-      value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 1351469801826090186, guid: 372c04dc31129fd43bfcb500fbbaff68,
         type: 3}

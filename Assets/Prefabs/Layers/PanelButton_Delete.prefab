@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4304274965644470863}
   - component: {fileID: 4254916550001450455}
   - component: {fileID: 444151169322757034}
-  m_Layer: 5
+  m_Layer: 16
   m_Name: PanelButton_Delete
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 4317228714540023563}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.001, y: 0.495, z: -0.037}
-  m_LocalScale: {x: 0.16174501, y: 0.16174501, z: 0.24549817}
+  m_LocalScale: {x: 0.161745, y: 0.161745, z: 0.2454982}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -112,8 +112,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Delete
+  m_DescriptionText: LAYERS_PANEL_DELETE_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7874528715448320
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c7e34f427cbbf7745a1aeca950177a6f, type: 3}
@@ -132,8 +150,29 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 1
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: Delete Layer?
-  m_ToggleOnDescription: Are you sure you want to delete this layer?
+  m_PopupText: LAYERS_PANEL_DELETE_BUTTON_POPUP
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7874610038808576
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: LAYERS_PANEL_DELETE_BUTTON_TOGGLE_DESCRIPTION
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7874683799838720
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []

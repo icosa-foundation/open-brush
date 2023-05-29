@@ -261,7 +261,7 @@ namespace TiltBrush
             {
                 string searchString = brushDescription.Trim();
                 StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.m_Description.Equals(searchString, comparison));
+                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.Description.Equals(searchString, comparison));
             }
         }
 

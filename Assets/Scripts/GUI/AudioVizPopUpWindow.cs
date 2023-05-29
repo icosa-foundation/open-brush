@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -21,8 +23,9 @@ namespace TiltBrush
     {
         [SerializeField] private GameObject m_CloseButton;
         [SerializeField] private float m_AudioFoundDuration;
-        [SerializeField] private string m_AudioFoundText;
-        [SerializeField] private TextMesh m_StatusText;
+
+        [SerializeField] private LocalizedString m_AudioFoundText;
+        [SerializeField] private TextMeshPro m_StatusText;
         [SerializeField] private int m_MaxStatusLength;
         [SerializeField] private Renderer m_HintText;
         [SerializeField] private float m_AudioSearchHintDelay = 2.0f;
@@ -62,7 +65,7 @@ namespace TiltBrush
 
                 if (AudioCaptureManager.m_Instance.IsCapturingAudio)
                 {
-                    m_WindowText.text = m_AudioFoundText;
+                    m_WindowText.text = m_AudioFoundText.GetLocalizedString();
                     m_AudioFoundTimer = m_AudioFoundDuration;
                     m_AudioSearchTimer = 0.0f;
                     m_AudioFound = true;

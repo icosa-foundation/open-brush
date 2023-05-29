@@ -113,7 +113,7 @@ MonoBehaviour:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: f74f6eac3e3e3c640b1a343ec46ba2dd, type: 3}
@@ -258,8 +258,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a60d28ec89bd0c4e88bc60222cfcbaf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_PanelType: 11
   m_Collider: {fileID: 6504288}
   m_Mesh: {fileID: 138864}
@@ -296,7 +296,7 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1106918886213026712, guid: 07da76f6641f4254a8e66e6eb62bb0e6,
       type: 3}
     m_Command: 99
-  m_PanelDescription: 
+  m_PanelDescription:
   m_PanelDescriptionPrefab: {fileID: 0}
   m_PanelDescriptionOffset: {x: 2.25, y: 0, z: 0}
   m_PanelDescriptionColor: {r: 1, g: 1, b: 1, a: 1}
@@ -429,8 +429,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &116946
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,8 +767,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29c7cf785cea60442ad3d31e7b01ad81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Your Sketches
@@ -895,12 +895,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6f4bc4516de64ce4e81679185dcd5d54, type: 3}
@@ -1374,12 +1374,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6f4bc4516de64ce4e81679185dcd5d54, type: 3}
@@ -1570,12 +1570,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6f4bc4516de64ce4e81679185dcd5d54, type: 3}
@@ -1788,8 +1788,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29c7cf785cea60442ad3d31e7b01ad81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Favorite Sketches
@@ -2193,12 +2193,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6f4bc4516de64ce4e81679185dcd5d54, type: 3}
@@ -2490,12 +2490,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 6f4bc4516de64ce4e81679185dcd5d54, type: 3}
@@ -3434,12 +3434,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbae3ff4457df6f4ea3af0389871cb9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
@@ -4164,12 +4164,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c247e1fc5473c884a9dd9cf29ae40d51, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: edd2e08d6f610b840828462609546014, type: 3}
@@ -4188,8 +4188,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -4717,8 +4717,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29c7cf785cea60442ad3d31e7b01ad81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Featured Sketches
@@ -5447,8 +5447,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0278ab0b9144784db8dad7f91bd1d11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Speed: -180
 --- !u!1 &1000012812392858
 GameObject:
@@ -5633,8 +5633,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -6401,12 +6401,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -6425,8 +6425,8 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -7243,12 +7243,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e671d005f5b41df4f8e5776601c1609f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_DescriptionText:
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -7267,8 +7267,8 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -7803,8 +7803,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -8161,12 +8161,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: Sign out of Poly
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -8185,8 +8185,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0.24, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -8380,8 +8380,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0278ab0b9144784db8dad7f91bd1d11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Speed: -180
 --- !u!1 &1672029381864338
 GameObject:
@@ -8824,12 +8824,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Close Sketchbook
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -8848,8 +8848,8 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -8961,12 +8961,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Drive Backup Full
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -8985,8 +8985,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -10165,8 +10165,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8daae932e00bdb749b4f667b08f50ca8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &5708433634109880750
 GameObject:
   m_ObjectHideFlags: 0
@@ -10435,12 +10435,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Drive Backup Complete
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -10459,8 +10459,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -10655,12 +10655,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Drive Backup Disabled
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -10679,8 +10679,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -10864,12 +10864,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: Sign out of Poly
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -10888,8 +10888,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0.24, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -11017,8 +11017,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29c7cf785cea60442ad3d31e7b01ad81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Backed-up Sketches
@@ -11393,12 +11393,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0.5
   m_DescriptionText: Backing up on Drive
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -11417,8 +11417,8 @@ MonoBehaviour:
   m_RequiresPopup: 1
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText: 
-  m_ToggleOnDescription: 
+  m_PopupText:
+  m_ToggleOnDescription:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -11842,7 +11842,7 @@ PrefabInstance:
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
       propertyPath: m_ButtonTexture
-      value: 
+      value:
       objectReference: {fileID: 2800000, guid: f74f6eac3e3e3c640b1a343ec46ba2dd, type: 3}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
@@ -11862,7 +11862,7 @@ PrefabInstance:
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
+      value:
       objectReference: {fileID: 2478559423573741591}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8,
         type: 3}
@@ -11902,8 +11902,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1001 &4345932546781916119
 PrefabInstance:
   m_ObjectHideFlags: 0

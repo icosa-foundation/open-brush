@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,12 +41,16 @@ namespace TiltBrush
 
         [SerializeField] private Texture2D m_LoadingImageTexture;
         [SerializeField] private Texture2D m_UnknownImageTexture;
-        [SerializeField] private TextMesh m_PanelText;
         [SerializeField] private TextMeshPro m_PanelTextPro;
-        [SerializeField] private string m_PanelTextStandard;
-        [SerializeField] private string m_PanelTextShowcase;
-        [SerializeField] private string m_PanelTextLiked;
-        [SerializeField] private string m_PanelTextDrive;
+        [SerializeField] private LocalizedString m_PanelTextStandard;
+        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedString(); } }
+        [SerializeField] private LocalizedString m_PanelTextShowcase;
+        public string PanelTextShowcase { get { return m_PanelTextShowcase.GetLocalizedString(); } }
+
+        [SerializeField] private LocalizedString m_PanelTextLiked;
+        public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedString(); } }
+        [SerializeField] private LocalizedString m_PanelTextDrive;
+        public string PanelTextDrive { get { return m_PanelTextDrive.GetLocalizedString(); } }
         [SerializeField] private GameObject m_NoSketchesMessage;
         [SerializeField] private GameObject m_NoDriveSketchesMessage;
         [SerializeField] private GameObject m_NoLikesMessage;
@@ -303,14 +308,7 @@ namespace TiltBrush
                 ResetPageIndex();
                 RefreshPage();
 
-                if (m_PanelText)
-                {
-                    m_PanelText.text = CurrentSketchSet.Title;
-                }
-                if (m_PanelTextPro)
-                {
-                    m_PanelTextPro.text = CurrentSketchSet.Title;
-                }
+                m_PanelTextPro.text = CurrentSketchSet.Title;
             }
         }
 
