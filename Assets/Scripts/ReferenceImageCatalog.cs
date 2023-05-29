@@ -359,7 +359,7 @@ namespace TiltBrush
                 foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".svg") { continue; }
+                    if (!ValidExtension(ext)) { continue; }
                     try
                     {
                         m_Images.Add(oldImagesByPath[filePath]);
@@ -407,6 +407,11 @@ namespace TiltBrush
             {
                 CatalogChanged();
             }
+        }
+
+        protected virtual bool ValidExtension(string ext)
+        {
+            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

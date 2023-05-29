@@ -46,5 +46,10 @@ namespace TiltBrush
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
         }
+
+        protected override bool ValidExtension(string ext)
+        {
+            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".hdr";
+        }
     }
 } // namespace TiltBrush
