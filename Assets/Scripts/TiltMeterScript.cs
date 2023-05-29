@@ -14,6 +14,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -21,7 +22,7 @@ namespace TiltBrush
     [Serializable]
     public struct TiltMeterState
     {
-        public string m_Description;
+        public LocalizedString m_Description;
         public Color m_Color;
     }
 
@@ -30,7 +31,7 @@ namespace TiltBrush
         static public TiltMeterScript m_Instance;
 
         [SerializeField] private TiltMeterState[] m_MeterStates;
-        [SerializeField] private string m_MaxMeterDescription;
+        [SerializeField] private LocalizedString m_MaxMeterDescription;
         [SerializeField] private bool m_BrushSizeAffectsCost = false;
         [SerializeField] private float m_WidgetCostScalar = 0.002f;
 
@@ -114,10 +115,10 @@ namespace TiltBrush
                 }
                 else
                 {
-                    return m_MaxMeterDescription;
+                    return m_MaxMeterDescription.GetLocalizedString();
                 }
             }
-            return m_MeterStates[iCappedIndex].m_Description;
+            return m_MeterStates[iCappedIndex].m_Description.GetLocalizedString();
         }
 
         public void ResetMeter()
