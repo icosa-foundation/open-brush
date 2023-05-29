@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -52,7 +53,7 @@ namespace TiltBrush
         public class InfoLine
         {
             public GameObject m_Line;
-            public TextMesh m_TextMesh;
+            public TextMeshPro m_TextMesh;
             public Renderer m_Renderer;
             public float m_LineWidth;
         }
@@ -92,7 +93,7 @@ namespace TiltBrush
                 GameObject rLine = (GameObject)Instantiate(m_InfoLinePrefab);
                 rLine.transform.parent = m_RenderablesParent;
                 m_InfoLines[i].m_Line = rLine;
-                m_InfoLines[i].m_TextMesh = rLine.GetComponent<TextMesh>();
+                m_InfoLines[i].m_TextMesh = rLine.GetComponent<TextMeshPro>();
                 m_InfoLines[i].m_Renderer = rLine.GetComponent<Renderer>();
 
                 Vector3 vLocalPos = m_BaseLineLocalPositionOffset;

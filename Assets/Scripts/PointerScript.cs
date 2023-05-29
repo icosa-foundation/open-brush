@@ -659,7 +659,7 @@ namespace TiltBrush
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
-                line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.m_Description);
+                line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
