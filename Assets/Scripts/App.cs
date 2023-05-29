@@ -65,6 +65,7 @@ namespace TiltBrush
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
         public const string kReferenceImagesSeeded = "Reference Images seeded";
         public const string kShapeRecipesSeeded = "Shape Recipes seeded";
+        public const string kBackgroundImagesSeeded = "Background Images seeded";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -1982,6 +1983,34 @@ namespace TiltBrush
         /// Creates the Reference Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
+        public static bool InitBackgroundImagesPath(string[] defaultBackgroundImages)
+        {
+            string path = BackgroundImagesLibraryPath();
+            if (!Directory.Exists(path))
+            {
+                if (!FileUtils.InitializeDirectoryWithUserError(path))
+                {
+                    return false;
+                }
+            }
+
+            // Populate the reference images folder exactly once.
+            int seeded = PlayerPrefs.GetInt(kBackgroundImagesSeeded);
+            if (seeded == 0)
+            {
+                foreach (string fileName in defaultBackgroundImages)
+                {
+                    FileUtils.WriteBytesFromResources(fileName,
+                        Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", ""))));
+                }
+                PlayerPrefs.SetInt(kBackgroundImagesSeeded, 1);
+            }
+            return true;
+        }
+
+        /// Creates the Reference Images directory and copies in the provided default images.
+        /// Returns true if the directory already exists or if it is created successfully, false if the
+        /// directory could not be created.
         public static bool InitReferenceImagePath(string[] defaultImages)
         {
             string path = ReferenceImagePath();
@@ -2092,6 +2121,11 @@ namespace TiltBrush
         public static string VideoLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "Videos");
+        }
+
+        public static string BackgroundImagesLibraryPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "BackgroundImages");
         }
 
         static public string UserSketchPath()

@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor.Localization.Plugins.XLIFF.V20;
 using UnityEngine;
 
 namespace TiltBrush
@@ -372,7 +373,7 @@ namespace TiltBrush
 
         private static ReferenceImage _LoadReferenceImage(string location)
         {
-            location = Path.Combine(App.MediaLibraryPath(), "Images", location);
+            location = Path.Combine(App.ReferenceImagePath(), location);
             var image = new ReferenceImage(location);
             image.SynchronousLoad();
             return image;
@@ -406,23 +407,14 @@ namespace TiltBrush
             return videoWidget;
         }
 
-        [ApiEndpoint("skybox.import", "Sets the skybox from either a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]
+        [ApiEndpoint("skybox.import", "Sets the skybox from either a url or a filename in Media Library\\BackgroundImages (Images loaded from a url are saved locally first)")]
         public static void ImportSkybox(string location)
         {
             if (location.StartsWith("http://") || location.StartsWith("https://"))
             {
-                location = _DownloadMediaFileFromUrl(location, "Images");
+                location = _DownloadMediaFileFromUrl(location, "BackgroundImages");
             }
-
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            var path = Path.Combine(App.MediaLibraryPath(), "Images", location);
-            if (File.Exists(path))     {
-                var fileData = File.ReadAllBytes(path);
-                tex.LoadImage(fileData);
-                var mat = Resources.Load<Material>("Environments/CustomSkybox");
-                mat.mainTexture = tex;
-                RenderSettings.skybox = mat;
-            }
+            SceneSettings.m_Instance.LoadCustomSkybox(location);
         }
 
         [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)")]

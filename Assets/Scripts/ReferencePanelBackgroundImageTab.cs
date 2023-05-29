@@ -17,16 +17,16 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class ReferencePanelImageTab : ReferencePanelTab
+    public class ReferencePanelBackgroundImageTab : ReferencePanelTab
     {
-        public class ImageIcon : ReferenceIcon
+        public class BackgroundImageIcon : ReferenceIcon
         {
             public ReferencePanel Parent { get; set; }
             public bool TextureAssigned { get; set; }
 
-            public LoadReferenceImageButton ImageButton
+            public LoadBackgroundImageButton BackgroundImageButton
             {
-                get { return Button as LoadReferenceImageButton; }
+                get { return Button as LoadBackgroundImageButton; }
             }
 
             public override void Refresh(int iCatalog)
@@ -34,9 +34,9 @@ namespace TiltBrush
                 Button.SetButtonTexture(Parent.UnknownImageTexture, 1);
 
                 //set sketch index relative to page based index
-                var image = ReferenceImageCatalog.m_Instance.IndexToImage(iCatalog);
-                ImageButton.ReferenceImage = image;
-                ImageButton.RefreshDescription();
+                var image = BackgroundImageCatalog.m_Instance.IndexToImage(iCatalog);
+                BackgroundImageButton.ReferenceImage = image;
+                BackgroundImageButton.RefreshDescription();
 
                 //init icon according to availability of sketch
                 if (image != null)
@@ -58,19 +58,19 @@ namespace TiltBrush
 
         public override IReferenceItemCatalog Catalog
         {
-            get { return ReferenceImageCatalog.m_Instance; }
+            get { return BackgroundImageCatalog.m_Instance; }
         }
         public override ReferenceButton.Type ReferenceButtonType
         {
-            get { return ReferenceButton.Type.Images; }
+            get { return ReferenceButton.Type.BackgroundImages; }
         }
         protected override Type ButtonType
         {
-            get { return typeof(LoadReferenceImageButton); }
+            get { return typeof(LoadBackgroundImageButton); }
         }
         protected override Type IconType
         {
-            get { return typeof(ImageIcon); }
+            get { return typeof(BackgroundImageIcon); }
         }
 
         public override void RefreshTab(bool selected)
@@ -80,7 +80,7 @@ namespace TiltBrush
             {
                 if (m_AutoLoadImages)
                 {
-                    ReferenceImageCatalog.m_Instance.RequestLoadImages(m_IndexOffset,
+                    BackgroundImageCatalog.m_Instance.RequestLoadImages(m_IndexOffset,
                         m_IndexOffset + m_Icons.Length);
                 }
                 m_AllIconTexturesAssigned = false;
@@ -92,7 +92,7 @@ namespace TiltBrush
             base.InitTab();
             foreach (var icon in m_Icons)
             {
-                (icon as ImageIcon).Parent = GetComponentInParent<ReferencePanel>();
+                (icon as BackgroundImageIcon).Parent = GetComponentInParent<ReferencePanel>();
             }
         }
 
@@ -106,12 +106,12 @@ namespace TiltBrush
                 //poll sketch catalog until icons have loaded
                 for (int i = 0; i < m_Icons.Length; ++i)
                 {
-                    var imageIcon = m_Icons[i] as ImageIcon;
+                    var imageIcon = m_Icons[i] as BackgroundImageIcon;
                     if (!imageIcon.TextureAssigned)
                     {
                         int iMapIndex = m_IndexOffset + i;
                         float aspect;
-                        Texture2D rTexture = ReferenceImageCatalog.m_Instance.GetImageIcon(iMapIndex, out aspect);
+                        Texture2D rTexture = BackgroundImageCatalog.m_Instance.GetImageIcon(iMapIndex, out aspect);
                         if (rTexture != null)
                         {
                             imageIcon.Button.SetButtonTexture(rTexture, aspect);
@@ -133,7 +133,7 @@ namespace TiltBrush
             {
                 StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
                     OverlayType.LoadImages,
-                    ReferenceImageCatalog.m_Instance.LoadAllImagesCoroutine(),
+                    BackgroundImageCatalog.m_Instance.LoadAllImagesCoroutine(),
                     fadeDuration: 0.25f));
                 m_tabAccessed = true;
             }

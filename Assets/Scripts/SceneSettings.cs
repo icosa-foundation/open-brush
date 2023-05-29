@@ -15,7 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Superla.RadianceHDR;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -115,8 +117,8 @@ namespace TiltBrush
 
         private List<LightTransition> m_TransitionLights;
         private int m_RequestInstantSceneSwitch;
-        private string m_CustomSkybox;
-        private Color m_CustomSkyboxTint = Color.gray;
+        private string m_CustomSkyboxTextureName;
+        private Material m_CustomSkyboxMaterial;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -211,16 +213,36 @@ namespace TiltBrush
 
         public void LoadCustomSkybox(string filename)
         {
+            m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            var path = Path.Combine(App.MediaLibraryPath(), "Images", filename);
+            var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
-                tex.LoadImage(fileData);
-                var mat = Resources.Load<Material>("Environments/CustomSkybox");
-                mat.mainTexture = tex;
-                mat.SetColor("_Tint", m_CustomSkyboxTint);
-                RenderSettings.skybox = mat;
+
+                if (path.EndsWith(".hdr"))
+                {
+                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
+                    tex = hdr.texture;
+                }
+                else
+                {
+                    tex.LoadImage(fileData);
+                }
+
+                float aspectRatio = tex.width / tex.height;
+                if (aspectRatio > 1.5)
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                }
+                else
+                {
+                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
+                }
+                m_CustomSkyboxMaterial.mainTexture = tex;
+                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+                RenderSettings.skybox = m_CustomSkyboxMaterial;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
             }
             else
             {
@@ -261,7 +283,8 @@ namespace TiltBrush
                 bool skyboxChanged = (m_InGradient && m_CurrentEnvironment.m_RenderSettings.m_SkyboxCubemap != null) ||
                     m_CurrentEnvironment.m_SkyboxColorA != m_SkyColorA ||
                     m_CurrentEnvironment.m_SkyboxColorB != m_SkyColorB ||
-                    m_GradientSkew != Quaternion.identity;
+                    m_GradientSkew != Quaternion.identity ||
+                    HasCustomSkybox();
                 return skyboxChanged ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogColor != RenderSettings.fogColor ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogDensity != FogDensity ||
@@ -320,7 +343,6 @@ namespace TiltBrush
             m_CustomFogColor = (Color)custom.FogColor;
             m_CustomFogDensity = custom.FogDensity;
             m_CustomReflectionIntensity = custom.ReflectionIntensity;
-            m_CustomSkybox = custom.Skybox;
 
             bool hasCustomGradient = custom.GradientColors != null;
             if (hasCustomGradient)
@@ -461,6 +483,10 @@ namespace TiltBrush
                     {
                         RenderSettings.skybox.SetVector("_GradientDirection", Vector3.up);
                     }
+                    if (HasCustomSkybox())
+                    {
+                        RenderSettings.skybox = m_CustomSkyboxMaterial;
+                    }
                 }
             }
             else
@@ -559,6 +585,12 @@ namespace TiltBrush
                 }
                 m_LoadingCustomEnvironment = false;
                 m_CurrentEnvironment = m_DesiredEnvironment;
+
+                if (HasCustomSkybox())
+                {
+                    RenderSettings.skybox = m_CustomSkyboxMaterial;
+                    RenderSettings.skybox.SetColor("_Tint", Color.gray);
+                }
             }
         }
 
@@ -576,7 +608,6 @@ namespace TiltBrush
                     break;
                 case TransitionState.Scene:
                     m_HasCustomLights = false;
-                    if (m_CustomSkybox != null) RenderSettings.skybox.SetColor("_Tint", m_CustomSkyboxTint);
                     break;
             }
 
@@ -771,7 +802,14 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (!string.IsNullOrEmpty(m_CustomSkybox)) LoadCustomSkybox(m_CustomSkybox);
+                if (HasCustomSkybox())
+                {
+                    LoadCustomSkybox(m_CustomSkyboxTextureName);
+                }
+                else
+                {
+                    RenderSettings.ambientMode = AmbientMode.Flat;
+                }
 
                 if (FadingToDesiredEnvironment != null)
                 {
@@ -833,7 +871,7 @@ namespace TiltBrush
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
                         ReflectionIntensity = RenderSettings.reflectionIntensity,
-                        Skybox = m_CustomSkybox
+                        Skybox = m_CustomSkyboxTextureName
                     };
             }
         }
@@ -875,6 +913,11 @@ namespace TiltBrush
             {
                 SkyboxChanged();
             }
+        }
+
+        public bool HasCustomSkybox()
+        {
+            return !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
         }
     }
 } // namespace TiltBrush

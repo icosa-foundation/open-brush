@@ -3184,6 +3184,10 @@ MonoBehaviour:
     m_Localized: Rename Sketch
     m_Metadata:
       m_Items: []
-  references:
+  - m_Id: 106429517453328384
+    m_Localized: "Background Images\t"
+    m_Metadata:
+      m_Items: []
+    references:
     version: 2
     RefIds: []
