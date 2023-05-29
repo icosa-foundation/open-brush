@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
     public class ReferencePanel : ModalPanel
     {
         [Header("Reference Panel")]
-        [SerializeField] private TextMesh m_PanelText;
+        [SerializeField] private TextMeshPro m_PanelText;
         [SerializeField] private GameObject m_NoData;
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private ReferencePanelTab[] m_Tabs;

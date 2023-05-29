@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4129315277569005284}
   - component: {fileID: 4137345068356748778}
   - component: {fileID: 4169653906974077554}
-  - component: {fileID: 341085520313206041}
+  - component: {fileID: 1165318027596807106}
   m_Layer: 16
   m_Name: PanelButton_Add
   m_TagString: Untagged
@@ -98,7 +98,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &341085520313206041
+--- !u!114 &1165318027596807106
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -113,6 +113,15 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Add New Layer
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7879279536480256
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
@@ -126,3 +135,6 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
+  references:
+    version: 2
+    RefIds: []
