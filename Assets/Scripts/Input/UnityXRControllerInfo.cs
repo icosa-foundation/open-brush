@@ -80,6 +80,10 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                     bindingGroup = actionSet.WMRControllerScheme.bindingGroup;
                     break;
+                case ControllerStyle.Neo3:
+                case ControllerStyle.Phoenix:
+                    bindingGroup = actionSet.PicoControllerScheme.bindingGroup;
+                    break;
                 default:
                     break;
             }
@@ -111,6 +115,16 @@ namespace TiltBrush
             return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
+        public override void Update()
+        {
+            base.Update();
+
+            if (!FindAction("PadTouch").inProgress)
+            {
+                padAxisPrevious = Vector2.zero;
+            }
+        }
+
         public override Vector2 GetPadValueDelta()
         {
             var action = FindAction("ThumbAxis");
@@ -123,26 +137,26 @@ namespace TiltBrush
             else
             {
                 action = FindAction("PadAxis");
-                if (!action.inProgress)
+                if (FindAction("PadTouch").IsPressed())
                 {
-                    padAxisPrevious = Vector2.zero;
-                    return padAxisPrevious;
-                }
+                    Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
+                    Vector2 padAxisCurrent = action.ReadValue<Vector2>();
 
-                Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                Vector2 padAxisCurrent = action.ReadValue<Vector2>();
+                    if (padAxisPrevious == Vector2.zero)
+                    {
+                        padAxisPrevious = padAxisCurrent;
+                    }
 
-                if (padAxisPrevious == Vector2.zero)
-                {
+                    var delta = padAxisCurrent - padAxisPrevious;
                     padAxisPrevious = padAxisCurrent;
+
+                    delta.x = Mathf.Clamp(delta.x, range.x, range.y);
+                    delta.y = Mathf.Clamp(delta.y, range.x, range.y);
+                    return delta * kInputScrollScalar;
                 }
 
-                var delta = padAxisCurrent - padAxisPrevious;
-                padAxisPrevious = padAxisCurrent;
-
-                delta.x = Mathf.Clamp(delta.x, range.x, range.y);
-                delta.y = Mathf.Clamp(delta.y, range.x, range.y);
-                return delta * kInputScrollScalar;
+                //padAxisPrevious = Vector2.zero;
+                return Vector2.zero;
             }
         }
 
@@ -175,6 +189,11 @@ namespace TiltBrush
         {
             switch (input)
             {
+                case VrInput.Directional:
+                case VrInput.Thumbstick:
+                    return FindAction("ThumbTouch").inProgress;
+                case VrInput.Touchpad:
+                    return FindAction("PadTouch").inProgress;
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
@@ -183,10 +202,8 @@ namespace TiltBrush
                 case VrInput.Button03:
                 case VrInput.Button05:
                     return FindAction("SecondaryTouch").inProgress;
-                case VrInput.Touchpad:
-                case VrInput.Directional:
-                case VrInput.Thumbstick:
-                    return FindAction("PadTouch").inProgress;
+
+
             }
             return false;
         }
@@ -203,6 +220,7 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
+                    return FindAction("ThumbButton").IsPressed();
                 case VrInput.Touchpad:
                     return FindAction("PadButton").IsPressed();
                 case VrInput.Trigger:
@@ -235,6 +253,8 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
+                    selectedAction = "ThumbButton";
+                    break;
                 case VrInput.Touchpad:
                     selectedAction = "PadButton";
                     break;

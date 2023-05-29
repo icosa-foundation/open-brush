@@ -121,7 +121,7 @@ namespace TiltBrush
         [Header("Video Processing")]
         [SerializeField] private TextMeshPro m_VideoRecordTimer;
         [SerializeField] private GameObject m_VideoSavingRoot;
-        [SerializeField] private string m_VideoSavingText = "Loading Video...";
+        [SerializeField] private string m_VideoSavingText = "Finalizing Video...";
         [SerializeField] private string m_VideoPlaybackText = "Video Preview";
         [SerializeField] private string m_VideoPreviewToolText;
         [SerializeField] private string m_VideoReadyToolText;
@@ -2099,7 +2099,6 @@ namespace TiltBrush
                 return;
             }
             // Limit shipping version to a single gif preset
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 m_iGifPreset = (m_iGifPreset + i + m_AutoGifPresets.Length) % m_AutoGifPresets.Length;
@@ -2117,7 +2116,6 @@ namespace TiltBrush
                     }
                 }
             }
-#endif
         }
 
         // This version rotates in an arc around the subject.

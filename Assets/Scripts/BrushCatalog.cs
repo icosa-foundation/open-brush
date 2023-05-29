@@ -199,7 +199,7 @@ namespace TiltBrush
             {
                 // Is this brush excluded?
                 bool? excluded = excludeTags?.Intersect(brush.m_Tags).Any();
-                if (excluded == true || includeTags == null)
+                if (excluded == true || includeTags == null || brush.m_Tags.Contains("broken"))
                 {
                     return false;
                 }
@@ -261,7 +261,7 @@ namespace TiltBrush
             {
                 string searchString = brushDescription.Trim();
                 StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.m_Description.Equals(searchString, comparison));
+                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.Description.Equals(searchString, comparison));
             }
         }
 

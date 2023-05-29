@@ -85,25 +85,22 @@ namespace TiltBrush
             m_PreviewCubeScript.SetSampleQuadTexture(buttonTexture);
             SetButtonTexture(buttonTexture);
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
-                SetDescriptionText(rBrush.m_Description, rBrush.m_DescriptionExtra);
+                SetDescriptionText(rBrush.Description, rBrush.m_DescriptionExtra);
             }
             else
             {
-                SetDescriptionText(rBrush.m_Description);
+                SetDescriptionText(rBrush.Description);
             }
-#else
-            SetDescriptionText(rBrush.m_Description);
-#endif
             m_AudioReactiveIcon.SetActive(rBrush.m_AudioReactive &&
                 VisualizerManager.m_Instance.VisualsRequested);
             // Play standard click sound if brush doesn't have a custom button sound
             m_ButtonHasPressedAudio = (rBrush.m_ButtonAudio == null);
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
-#endif
+            if (App.Config.m_WasExperimentalAtStartup)
+            {
+                m_ExperimentalIcon.SetActive(App.Instance.IsBrushExperimental(rBrush));
+            }
         }
 
         override protected void OnDescriptionActivated()

@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush.Layers
 {
@@ -23,12 +24,14 @@ namespace TiltBrush.Layers
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
+        [SerializeField] private LocalizedString m_MainLayerName;
+        [SerializeField] private LocalizedString m_AdditionalLayerName;
+
         public List<GameObject> m_Widgets;
         private List<CanvasScript> m_Canvases;
 
         private void Start()
         {
-            m_Canvases = new List<CanvasScript>();
             ResetUI();
         }
 
@@ -49,7 +52,7 @@ namespace TiltBrush.Layers
                 if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
                 if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
                 widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? "Main Layer" : $"Layer {i}";
+                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
                 // Active button means hidden layer
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
                 m_Canvases.Add(canvas);
@@ -95,7 +98,7 @@ namespace TiltBrush.Layers
         public void ClearLayerContents(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
 
         public void AddLayer()

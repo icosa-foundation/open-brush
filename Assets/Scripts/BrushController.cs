@@ -50,8 +50,7 @@ namespace TiltBrush
             m_ActiveBrush = brush;
 
             // Reset our tool when the user picks a new brush unless it is repainting.
-            if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RepaintTool &&
-                SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RebrushTool)
+            if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RepaintTool)
             {
                 SketchSurfacePanel.m_Instance.EnableDefaultTool();
             }

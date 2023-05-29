@@ -15,18 +15,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "TriggerButton",
+                    "name": "TriggerTouch",
                     "type": "Button",
-                    "id": "6ed563ff-a250-4d2f-8b14-d1fe360a2470",
+                    "id": "3544fe23-65ae-415c-ab58-721dfc92223b",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "TriggerTouch",
+                    "name": "TriggerButton",
                     "type": "Button",
-                    "id": "3544fe23-65ae-415c-ab58-721dfc92223b",
+                    "id": "6ed563ff-a250-4d2f-8b14-d1fe360a2470",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -42,6 +42,24 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "ThumbTouch",
+                    "type": "Button",
+                    "id": "a60af1a4-4788-4357-b518-15aa69bc63ae",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ThumbButton",
+                    "type": "Button",
+                    "id": "936cd676-3b26-4be7-b763-ca1e078a4134",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "PadAxis",
                     "type": "Value",
                     "id": "a081885f-255a-4817-a12c-b6d9dd842582",
@@ -51,18 +69,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "PadButton",
+                    "name": "PadTouch",
                     "type": "Button",
-                    "id": "f65d1a3b-57ec-4f58-b5e9-476f9ddbcaa7",
+                    "id": "680cd601-aae8-4fb8-8d1d-51eb23c17941",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "PadTouch",
+                    "name": "PadButton",
                     "type": "Button",
-                    "id": "680cd601-aae8-4fb8-8d1d-51eb23c17941",
+                    "id": "f65d1a3b-57ec-4f58-b5e9-476f9ddbcaa7",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -174,7 +192,7 @@
                     "path": "<XRController>{RightHand}/grip",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -196,7 +214,7 @@
                     "path": "<XRController>{RightHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -225,17 +243,6 @@
                 },
                 {
                     "name": "",
-                    "id": "0acf7b79-2507-4ee7-95a4-7476c9d380d2",
-                    "path": "<XRController>{RightHand}/triggerTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "TriggerTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "59a64469-581c-4de0-8720-ce44496452c6",
                     "path": "<XRController>{RightHand}/secondaryButton",
                     "interactions": "",
@@ -253,61 +260,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "PrimaryButton",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "d38db390-e23f-499c-b7e2-5424fae71eb5",
-                    "path": "<XRController>{RightHand}/touchpadTouch",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b2c72d2f-d8e2-4f8f-976b-76d343580c0d",
-                    "path": "<XRController>{RightHand}/trackpadTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ac7c1ff5-f16e-4d6d-a7ca-b3fb7297e6c5",
-                    "path": "<XRController>{RightHand}/thumbstickTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "25445e46-6ad3-4aef-b447-f33be3ea01ee",
-                    "path": "<XRController>{RightHand}/thumbstickClicked",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadButton",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "946e923e-f3b0-4b4c-86aa-b93d7e2f05ca",
-                    "path": "<XRController>{RightHand}/joystickClicked",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadButton",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -372,7 +324,7 @@
                     "path": "<XRController>{RightHand}/trackpadClicked",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "SecondaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -383,7 +335,7 @@
                     "path": "<XRController>{RightHand}/trackpad/x",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "SecondaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -405,7 +357,7 @@
                     "path": "<XRController>{RightHand}/trackpadClicked",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "PrimaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -416,7 +368,7 @@
                     "path": "<XRController>{RightHand}/trackpad/x",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "PrimaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -429,6 +381,116 @@
                     "processors": "",
                     "groups": "Index Controller",
                     "action": "GripButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0acf7b79-2507-4ee7-95a4-7476c9d380d2",
+                    "path": "<XRController>{RightHand}/triggerTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TriggerTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9d0e8b94-112b-40d5-8661-3fc0555b8843",
+                    "path": "<XRController>{RightHand}/thumbstickTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "WMR Fake Touch Stick",
+                    "id": "14af07ba-2d9b-4c44-9859-b7769a09a429",
+                    "path": "FakeThumbTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "7a22d229-cdab-4470-bf65-168027897a67",
+                    "path": "<XRController>{RightHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "WMR Controller",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Pico Fake Touch Stick",
+                    "id": "c06f2c67-89b0-4a07-837a-82088de64a3b",
+                    "path": "FakeThumbTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "d34cd581-4276-4743-827c-37150dbee7e1",
+                    "path": "<PXR_Controller>{RightHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Pico Controller",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "cb95e5ed-9a25-4ded-a4ae-6ba6d75337de",
+                    "path": "<XRController>{RightHand}/thumbstickClicked",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9cd99233-045d-487e-9abc-69fd11fd023d",
+                    "path": "<XRController>{RightHand}/joystickClicked",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d38db390-e23f-499c-b7e2-5424fae71eb5",
+                    "path": "<XRController>{RightHand}/touchpadTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b2c72d2f-d8e2-4f8f-976b-76d343580c0d",
+                    "path": "<XRController>{RightHand}/trackpadTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -448,18 +510,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "TriggerButton",
+                    "name": "TriggerTouch",
                     "type": "Button",
-                    "id": "0234ab5e-3ce9-4679-98a0-fc488101d967",
+                    "id": "914734cd-5995-4916-b266-800c79239de4",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "TriggerTouch",
+                    "name": "TriggerButton",
                     "type": "Button",
-                    "id": "914734cd-5995-4916-b266-800c79239de4",
+                    "id": "0234ab5e-3ce9-4679-98a0-fc488101d967",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -475,6 +537,24 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "ThumbTouch",
+                    "type": "Button",
+                    "id": "13471dc6-969a-4a0b-9993-79d0b9651ec0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ThumbButton",
+                    "type": "Button",
+                    "id": "d54dffe8-18ae-4385-a8c2-2ccb238b749c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "PadAxis",
                     "type": "Value",
                     "id": "ce8f3b76-f6a2-4f34-810e-0d25b17edeba",
@@ -484,18 +564,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "PadButton",
+                    "name": "PadTouch",
                     "type": "Button",
-                    "id": "92125b9c-717c-4d2b-830d-40d45f19e488",
+                    "id": "f719a045-3f3b-4061-a603-65486c14ac6a",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "PadTouch",
+                    "name": "PadButton",
                     "type": "Button",
-                    "id": "f719a045-3f3b-4061-a603-65486c14ac6a",
+                    "id": "92125b9c-717c-4d2b-830d-40d45f19e488",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -607,7 +687,7 @@
                     "path": "<XRController>{LeftHand}/grip",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripAxis",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -618,7 +698,7 @@
                     "path": "<XRController>{LeftHand}/gripPressed",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller",
+                    "groups": "HTC Vive Controller;Oculus Touch Controller;WMR Controller;Pico Controller",
                     "action": "GripButton",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -647,17 +727,6 @@
                 },
                 {
                     "name": "",
-                    "id": "0eff34a3-b731-49fe-b613-0ab518b11f1b",
-                    "path": "<XRController>{LeftHand}/triggerTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "TriggerTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "7904b06f-c66c-4f23-8f3c-0d7b0048ba88",
                     "path": "<XRController>{LeftHand}/secondaryButton",
                     "interactions": "",
@@ -680,63 +749,8 @@
                 },
                 {
                     "name": "",
-                    "id": "094e043e-aa39-42cc-979d-4121c9492f66",
-                    "path": "<XRController>{LeftHand}/touchpadTouch",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "2c77ac70-3fc9-496e-93c8-eb8f5ea4ff4a",
-                    "path": "<XRController>{LeftHand}/trackpadTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "11ed09ea-9d13-40c3-851e-001d13a11f90",
-                    "path": "<XRController>{LeftHand}/thumbstickTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadTouch",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "e2bda33b-a593-44d7-a4ff-9f17e469d3be",
-                    "path": "<XRController>{LeftHand}/thumbstickClicked",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadButton",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "7d663301-739f-4527-b71e-9e419eda5c00",
                     "path": "<XRController>{LeftHand}/touchpadClick",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PadButton",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "d15cbbc8-5139-449a-a348-6cda45ffd92a",
-                    "path": "<XRController>{LeftHand}/joystickClicked",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -778,7 +792,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "Vive Pad Right",
+                    "name": "Pad Right",
                     "id": "4870119a-fffc-449f-bb51-3ae912068789",
                     "path": "VivePadButton(min=0.1,max=1)",
                     "interactions": "",
@@ -794,7 +808,7 @@
                     "path": "<XRController>{LeftHand}/trackpadClicked",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "SecondaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -805,7 +819,7 @@
                     "path": "<XRController>{LeftHand}/trackpad/x",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "SecondaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -827,7 +841,7 @@
                     "path": "<XRController>{LeftHand}/trackpadClicked",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "PrimaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -838,7 +852,7 @@
                     "path": "<XRController>{LeftHand}/trackpad/x",
                     "interactions": "",
                     "processors": "",
-                    "groups": "HTC Vive Controller",
+                    "groups": "HTC Vive Controller;WMR Controller",
                     "action": "PrimaryButton",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -862,6 +876,116 @@
                     "processors": "",
                     "groups": "Index Controller",
                     "action": "GripButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1ecd47a9-b1ce-4b93-814f-479b8307f5c4",
+                    "path": "<XRController>{LeftHand}/thumbstickClicked",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "eb7bacce-0c1e-4abe-90d5-a5878eaeb77f",
+                    "path": "<XRController>{LeftHand}/joystickClicked",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bdd1b94d-85df-4f6a-a8e5-774d5c3798e5",
+                    "path": "<XRController>{LeftHand}/thumbstickTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "WMR Fake Touch Stick",
+                    "id": "38aec861-f52a-40ad-8cd0-78d9190e4ad7",
+                    "path": "FakeThumbTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "390be3fc-352b-432a-a56e-5a05308e48a9",
+                    "path": "<XRController>{LeftHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "WMR Controller",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Pico Fake Touch Stick",
+                    "id": "36c10d64-6df2-494d-8d52-b1c2b7c588c2",
+                    "path": "FakeThumbTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ThumbTouch",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "axis",
+                    "id": "9709929c-d770-4fe1-9b8f-a7745801012d",
+                    "path": "<PXR_Controller>{LeftHand}/thumbstick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Pico Controller",
+                    "action": "ThumbTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "094e043e-aa39-42cc-979d-4121c9492f66",
+                    "path": "<XRController>{LeftHand}/touchpadTouch",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2c77ac70-3fc9-496e-93c8-eb8f5ea4ff4a",
+                    "path": "<XRController>{LeftHand}/trackpadTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PadTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0eff34a3-b731-49fe-b613-0ab518b11f1b",
+                    "path": "<XRController>{LeftHand}/triggerTouched",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TriggerTouch",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -908,6 +1032,17 @@
             "devices": [
                 {
                     "devicePath": "<WMRSpatialController>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        },
+        {
+            "name": "Pico Controller",
+            "bindingGroup": "Pico Controller",
+            "devices": [
+                {
+                    "devicePath": "<PXR_Controller>",
                     "isOptional": false,
                     "isOR": false
                 }

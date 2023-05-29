@@ -27,6 +27,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2648746681971917433}
   m_Father: {fileID: 4492044765854677289}
@@ -84,6 +85,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4492044765706507693}
   m_Father: {fileID: 4492044767078796625}
@@ -116,6 +118,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4492044767078796625}
   m_RootOrder: 1
@@ -151,6 +154,8 @@ GameObject:
   - component: {fileID: 4492044767078796625}
   - component: {fileID: 4492044767078796462}
   - component: {fileID: 4003205861538169308}
+  - component: {fileID: 1717152978}
+  - component: {fileID: 1717152979}
   m_Layer: 0
   m_Name: HttpServer
   m_TagString: Untagged
@@ -168,6 +173,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4492044765854677289}
   - {fileID: 4492044765921076689}
@@ -199,6 +205,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3129917865c64490b8b93df59ca75fb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ForcePaintingOn: 0
+  m_startupScriptName: startup.sketchscript
+--- !u!114 &1717152978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4492044767078796463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c9acfb4340bf4549a26cb8f6891ebcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SpectatorCamTarget: {fileID: 0}
+--- !u!114 &1717152979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4492044767078796463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ac217db4dad5436d9927ea08182cd9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  address: 127.0.0.1
+  port: 40075
+  onOpen:
+    m_PersistentCalls:
+      m_Calls: []
+  onMessage:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4003205861538169308}
+        m_TargetAssemblyTypeName: TiltBrush.ApiManager, Assembly-CSharp
+        m_MethodName: ReceiveWebSocketMessage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onClose:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &8659939412555803041
 PrefabInstance:
   m_ObjectHideFlags: 0

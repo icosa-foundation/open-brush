@@ -131,10 +131,11 @@ namespace TiltBrush
                     {
                         ActiveCanvasChanged?.Invoke(prev, m_ActiveCanvas);
                         // This will be incredibly irritating, but until we have some other feedback...
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
-                            fPopScalar: 0.5f, false);
+                        // TODO:Mike - replace this popup (console?)
+                        // OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        //     InputManager.ControllerName.Brush,
+                        //     string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
+                        //     fPopScalar: 0.5f, false);
                     }
                 }
             }
@@ -326,13 +327,13 @@ namespace TiltBrush
                 AddLayerNow();
             }
 
-            if (layerIndex == -1) return App.Scene.MainCanvas;
+            if (layerIndex == -1 || layerIndex >= m_LayerCanvases.Count) return App.Scene.MainCanvas;
             return m_LayerCanvases[layerIndex];
         }
 
         public void ClearLayerContents(CanvasScript canvas)
         {
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas.BatchManager));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 

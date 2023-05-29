@@ -171,7 +171,7 @@ namespace TiltBrush
         {
             var settings = SceneSettings.m_Instance;
             payload.env.guid = settings.GetDesiredPreset().m_Guid;
-            payload.env.description = settings.GetDesiredPreset().m_Description;
+            payload.env.description = settings.GetDesiredPreset().Description;
             if (includeSkyCubemap)
             {
                 // Most of the environment payload is very small data but if the skybox cubemap is included
@@ -250,7 +250,7 @@ namespace TiltBrush
 
         static void BuildBrushMeshesFromExportCanvas(SceneStatePayload payload)
         {
-            foreach (var exportGroup in ExportUtils.ExportMainCanvas().SplitByGroup())
+            foreach (var exportGroup in ExportAllCanvasesIgnoreLayers().SplitByGroup())
             {
                 payload.groups.Add(BuildGroupPayload(payload, exportGroup));
             }

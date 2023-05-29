@@ -25,6 +25,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using WebSocketServer;
 
 namespace TiltBrush
 {
@@ -51,10 +52,10 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
-        [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
+        [NonSerialized] public Vector3 BrushOrigin = new(0, 13, 3); // Good origin for monoscopic
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
-        [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
-        [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        [NonSerialized] public Vector3 BrushPosition;
+        [NonSerialized] public Quaternion BrushRotation;
         public bool ForcePaintingOn = false;
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
@@ -84,6 +85,7 @@ namespace TiltBrush
             PopulateExampleScripts();
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
+            ResetBrushTransform();
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -157,6 +159,13 @@ namespace TiltBrush
 
             App.Instance.StateChanged += RunStartupScript;
 
+        }
+
+        public void ResetBrushTransform()
+        {
+            // Resets the "turtle" transform back to it's original values
+            BrushPosition = BrushOrigin;
+            BrushRotation = BrushInitialRotation;
         }
 
         public void RunStartupScript(App.AppState oldState, App.AppState newState)
@@ -511,15 +520,15 @@ namespace TiltBrush
         private string ScriptTemplateSubstitution(string html)
         {
             string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.m_Description != "")
+                .Where(x => x.Description != "")
                 .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.m_Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
+                .Select(x => x.Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
                 .ToArray();
             string brushesJson = JsonConvert.SerializeObject(brushNameList);
             html = html.Replace("{{brushesJson}}", brushesJson);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.m_Description.Replace(" ", ""))
+                .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
             string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
@@ -528,6 +537,14 @@ namespace TiltBrush
             html = html.Replace("{{commandsJson}}", commandsJson);
 
             return html;
+        }
+
+        public void ReceiveWebSocketMessage(WebSocketMessage message)
+        {
+            foreach (var cmd in message.data.Split("&"))
+            {
+                EnqueueCommand(cmd);
+            }
         }
 
         string ApiCommandCallback(HttpListenerRequest request)

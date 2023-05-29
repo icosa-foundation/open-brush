@@ -68,7 +68,7 @@ namespace TiltBrush
         public float m_GrabDistance;
         public float m_CollisionRadius = 1.2f;
 
-        public CanvasScript m_previousCanvas;
+        [NonSerialized] public CanvasScript m_PreviousCanvas;
 
         [SerializeField] private bool m_AllowTwoHandGrab = false;
         [SerializeField] private bool m_DestroyOnHide = false;
@@ -783,7 +783,7 @@ namespace TiltBrush
         {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
             GrabWidget clone = GameObject.Instantiate(this);
-            clone.m_previousCanvas = m_previousCanvas;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.parent = transform.parent;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
@@ -1568,8 +1568,11 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            InputManager.GetControllerGeometry(m_InteractingController)
-                .TogglePadSnapHint(SnapEnabled, show);
+            // TODO:Mike 'SnapEnabled' is controlled by the new snap panel, rather than button input.
+            // This breaks using this button to quickly toggle on a grabbed object.
+            // Disabling icon for now to avoid confusion.
+            // InputManager.GetControllerGeometry(m_InteractingController)
+            //     .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1

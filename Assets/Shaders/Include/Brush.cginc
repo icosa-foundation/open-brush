@@ -20,7 +20,6 @@ uniform float4x4 xf_CS;
 uniform float4x4 xf_I_CS;
 uniform uint _BatchID;  // NOTOOLKIT
 #include "Ods.cginc"  // NOTOOLKIT
-#include "ColorSpaceConvert.cginc"
 
 // Unity only guarantees signed 2.8 for fixed4.
 // In practice, 2*exp(_EmissionGain * 10) = 180, so we need to use float4
@@ -103,6 +102,35 @@ float4 ParticleVertexToWorld(float4 vertex) {
 }
 #endif
 
+//
+// For Toolkit support
+//
+
+float4 SrgbToLinear(float4 color) {
+  // Approximation http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+  float3 sRGB = color.rgb;
+  color.rgb = sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+  return color;
+}
+
+float4 SrgbToLinear_Large(float4 color) {
+    float4 linearColor = SrgbToLinear(color);
+  color.r = color.r < 1.0 ? linearColor.r : color.r;
+  color.g = color.g < 1.0 ? linearColor.g : color.g;
+  color.b = color.b < 1.0 ? linearColor.b : color.b;
+  return color;
+}
+
+float4 LinearToSrgb(float4 color) {
+  // Approximation http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+  float3 linearColor = color.rgb;
+  float3 S1 = sqrt(linearColor);
+  float3 S2 = sqrt(S1);
+  float3 S3 = sqrt(S2);
+  color.rgb = 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * linearColor;
+  return color;
+}
+
 // TB mesh colors are sRGB. TBT mesh colors are linear.
 // TOOLKIT: float4 TbVertToSrgb(float4 color) { return LinearToSrgb(color); }
 // TOOLKIT: float4 TbVertToLinear(float4 color) { return color; }
@@ -112,7 +140,7 @@ float4 TbVertToLinear(float4 color) { return SrgbToLinear(color); } // NOTOOLKIT
 // Conversions to and from native colorspace.
 // Note that SrgbToLinear_Large only converts to linear in the 0:1 range
 // because Linear HDR values don't work with the Tilt Brush bloom filter
-#ifndef TBT_GAMMA_TARGET
+#ifdef TBT_LINEAR_TARGET
 float4 SrgbToNative(float4 color) { return SrgbToLinear_Large(color); }
 float4 TbVertToNative(float4 color) { return TbVertToLinear(color); }
 float4 NativeToSrgb(float4 color) { return LinearToSrgb(color); }

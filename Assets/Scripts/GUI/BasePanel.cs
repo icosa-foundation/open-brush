@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization;
 using TMPro;
 
 namespace TiltBrush
@@ -105,6 +106,7 @@ namespace TiltBrush
             CameraPath,
             BrushLab,
             Scripts = 6000,
+            SnapSettings = 8000,
             StencilSettings = 20200,
             LayersPanel = 15000
         }
@@ -128,6 +130,24 @@ namespace TiltBrush
 
         [SerializeField] protected PopupMapKey[] m_PanelPopUpMap;
         [SerializeField] protected string m_PanelDescription;
+        [SerializeField] protected LocalizedString m_LocalizedPanelDescription;
+
+        public string PanelDescription
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedPanelDescription.GetLocalizedString();
+                    return locString;
+                }
+                catch
+                {
+                    return m_PanelDescription;
+                }
+            }
+        }
+
         [SerializeField] protected GameObject m_PanelDescriptionPrefab;
 
         [SerializeField] protected Vector3 m_PanelDescriptionOffset;
@@ -489,7 +509,7 @@ namespace TiltBrush
                 m_PanelDescriptionTextMeshPro = m_PanelDescriptionObject.GetComponent<TextMeshPro>();
                 if (m_PanelDescriptionTextMeshPro)
                 {
-                    m_PanelDescriptionTextMeshPro.text = m_PanelDescription;
+                    m_PanelDescriptionTextMeshPro.text = PanelDescription;
                     m_PanelDescriptionTextMeshPro.color = m_PanelDescriptionColor;
                 }
             }

@@ -16,6 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -31,6 +33,7 @@ namespace TiltBrush
         const string kExportReadmeBody = @"[InternetShortcut]
 URL=" + kExportDocumentationUrl;
 #endif
+        const string kExportSuccess = "EXPORT_SUCCESS";
 
         // Returns a writable name for the export file, creating any directories as necessary;
         // or null on failure.
@@ -124,7 +127,6 @@ URL=" + kExportDocumentationUrl;
 #if LATK_SUPPORTED
             if (App.PlatformConfig.EnableExportLatk) { progress.SetWork("latk"); }
 #endif
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental)
             {
                 progress.SetWork("wrl");
@@ -133,7 +135,6 @@ URL=" + kExportDocumentationUrl;
       progress.SetWork("obj");
 #endif
             }
-#endif
             if (App.PlatformConfig.EnableExportGlb) { progress.SetWork("glb"); }
 
             string filename;
@@ -180,7 +181,6 @@ URL=" + kExportDocumentationUrl;
             progress.CompleteWork("latk");
 #endif
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
             if (Config.IsExperimental &&
                 (filename = MakeExportPath(parent, basename, "wrl")) != null)
             {
@@ -211,7 +211,6 @@ URL=" + kExportDocumentationUrl;
       progress.CompleteWork("obj");
     }
 #endif
-#endif
 
             if (App.PlatformConfig.EnableExportGlb)
             {
@@ -239,7 +238,7 @@ URL=" + kExportDocumentationUrl;
             }
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, basename + " exported!");
+                InputManager.ControllerName.Brush, basename + $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
             ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);
