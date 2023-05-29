@@ -26,7 +26,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: a59fca343a215574999d575e84cf4769, type: 3}
-  m_Description: Bubbles
+  m_Description: BRUSH_BUBBLES
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81203094671122432
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 7ab8111e7e1e03b4eabb715553238b94, type: 3}
@@ -77,3 +86,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 1
+  references:
+    version: 2
+    RefIds: []

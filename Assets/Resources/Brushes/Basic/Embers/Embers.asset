@@ -27,7 +27,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: f73a16644bc3f564fa5f3e0b87b6c435, type: 3}
-  m_Description: Embers
+  m_Description: BRUSH_EMBERS
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81204427818065920
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 1fee02a510b518046bea624a4c407be3, type: 3}
@@ -78,3 +87,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 1
+  references:
+    version: 2
+    RefIds: []

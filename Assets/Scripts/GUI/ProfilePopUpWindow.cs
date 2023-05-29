@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -37,8 +38,8 @@ namespace TiltBrush
         [SerializeField] private GameObject m_SketchfabConfirmSignOutElements;
         [SerializeField] private Renderer m_GooglePhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
-        [SerializeField] private TMPro.TextMeshPro m_GoogleNameText;
-        [SerializeField] private TMPro.TextMeshPro m_SketchfabNameText;
+        [SerializeField] private TextMeshPro m_GoogleNameText;
+        [SerializeField] private TextMeshPro m_SketchfabNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
         [SerializeField] private GameObject m_Accounts;
@@ -57,7 +58,7 @@ namespace TiltBrush
 
         [SerializeField] private GameObject m_BackupCompleteElements;
         [SerializeField] private GameObject m_BackingUpElements;
-        [SerializeField] private TextMesh m_BackingUpProgress;
+        [SerializeField] private TextMeshPro m_BackingUpProgress;
 
         [Header("Mobile State Members")]
         [SerializeField] private GameObject m_ConfirmLoginElements;
