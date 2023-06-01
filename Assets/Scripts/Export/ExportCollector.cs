@@ -273,39 +273,50 @@ namespace TiltBrush
                     GeometryPool geometry = batch.pool;
                     List<Stroke> strokes = batch.strokes;
 
-                    string legacyUniqueName = $"{desc.m_DurableName}_{desc.m_Guid}_{group.id}_i{batchIndex}";
-                    string friendlyGeometryName = $"brush_{desc.m_DurableName}_g{group.id}_b{batchIndex}";
-
-                    UnityEngine.Profiling.Profiler.BeginSample("ConvertToMetersAndChangeBasis");
-                    ExportUtils.ConvertUnitsAndChangeBasis(geometry, payload);
-                    UnityEngine.Profiling.Profiler.EndSample();
-
-                    if (payload.reverseWinding)
+                    int strokeIndex = 0;
+                    foreach (var stroke in strokes)
                     {
-                        // Note: this triangle flip intentionally un-does the Unity FBX import flip.
-                        ExportUtils.ReverseTriangleWinding(geometry, 1, 2);
+                        Color32 color = geometry.m_Colors[geometry.m_Tris[stroke.m_BatchSubset.m_iTriIndex]];
+
+                        string legacyUniqueName = $"{desc.m_DurableName}_{desc.m_Guid}_{group.id}_i{batchIndex}_s{strokeIndex}_c{color.r:X2}{color.g:X2}{color.b:X2}{color.a:X2}";
+                        string friendlyGeometryName = $"brush_{desc.m_DurableName}_g{group.id}_b{batchIndex}_s{strokeIndex}_c{color.r:X2}{color.g:X2}{color.b:X2}{color.a:X2}";
+
+                        UnityEngine.Profiling.Profiler.BeginSample("ConvertToMetersAndChangeBasis");
+                        ExportUtils.ConvertUnitsAndChangeBasis(geometry, payload);
+                        UnityEngine.Profiling.Profiler.EndSample();
+
+                        if (payload.reverseWinding)
+                        {
+                            // Note: this triangle flip intentionally un-does the Unity FBX import flip.
+                            ExportUtils.ReverseTriangleWinding(geometry, 1, 2);
+                        }
+
+                        if (App.PlatformConfig.EnableExportMemoryOptimization &&
+                            payload.temporaryDirectory != null)
+                        {
+                            string filename = Path.Combine(
+                                payload.temporaryDirectory,
+                                legacyUniqueName + ".Gpoo");
+                            geometry.MakeGeometryNotResident(filename);
+                        }
+
+                        List<Stroke> oneStroke = new List<Stroke>(1);
+                        oneStroke.Add(stroke);
+                        brush.m_desc.ColorParams["Color"] = new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
+
+                        group.brushMeshes.Add(new ExportUtils.BrushMeshPayload(
+                            payload.groupIdMapping.GetId(exportGroup.m_group))
+                        {
+                            legacyUniqueName = legacyUniqueName,
+                            // This is the only instance of the mesh, so the node doesn't need an extra instance id
+                            nodeName = friendlyGeometryName,
+                            xform = Matrix4x4.identity,
+                            geometry = geometry,
+                            geometryName = friendlyGeometryName,
+                            exportableMaterial = brush.m_desc,
+                            strokes = oneStroke,
+                        });
                     }
-
-                    if (App.PlatformConfig.EnableExportMemoryOptimization &&
-                        payload.temporaryDirectory != null)
-                    {
-                        string filename = Path.Combine(
-                            payload.temporaryDirectory,
-                            legacyUniqueName + ".Gpoo");
-                        geometry.MakeGeometryNotResident(filename);
-                    }
-                    group.brushMeshes.Add(new ExportUtils.BrushMeshPayload(
-                        payload.groupIdMapping.GetId(exportGroup.m_group))
-                    {
-                        legacyUniqueName = legacyUniqueName,
-                        // This is the only instance of the mesh, so the node doesn't need an extra instance id
-                        nodeName = friendlyGeometryName,
-                        xform = Matrix4x4.identity,
-                        geometry = geometry,
-                        geometryName = friendlyGeometryName,
-                        exportableMaterial = brush.m_desc,
-                        strokes = strokes,
-                    });
                 }
             }
             return group;

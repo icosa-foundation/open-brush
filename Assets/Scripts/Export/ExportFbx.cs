@@ -98,14 +98,14 @@ class FbxExportGlobals : IDisposable {
     // Since TBT can't detect reference-equality of FbxMaterial, we have to help it by
     // making name-equality the same as reference-equality. IOW distinct materials need
     // distinct names.
-    if (m_createdMaterials.TryGetValue(exportableMaterial, out FbxSurfaceMaterial mtl)) {
-      return mtl;
-    } else {
+    // if (m_createdMaterials.TryGetValue(exportableMaterial, out FbxSurfaceMaterial mtl)) {
+    //   return mtl;
+    // } else {
       FbxSurfaceMaterial newMtl = ExportFbx.CreateFbxMaterial(
           this, meshNamespace, exportableMaterial, m_createdMaterialNames);
       m_createdMaterials[exportableMaterial] = newMtl;
       return newMtl;
-    }
+    // }
   }
 }
 
@@ -260,7 +260,9 @@ public static class ExportFbx {
     FbxSurfaceLambert material = FbxSurfaceLambert.Create(G.m_scene, materialName);
 
     material.Ambient.Set(new FbxDouble3(0, 0, 0));
-    material.Diffuse.Set(new FbxDouble3(1.0, 1.0, 1.0));
+    Color color = Color.white;
+    exportableMaterial.ColorParams.TryGetValue("Color", out color);
+    material.Diffuse.Set(new FbxDouble3(color.r, color.g, color.b));
     if (exportableMaterial.EmissiveFactor > 0) {
       material.EmissiveFactor.Set(exportableMaterial.EmissiveFactor);
       material.Emissive.Set(new FbxDouble3(1.0, 1.0, 1.0));
