@@ -5,7 +5,8 @@
     <application
         android:allowBackup="false"
         tools:replace="android:allowBackup"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:preserveLegacyExternalStorage="true">
         <activity
             android:launchMode="singleTask"
             android:name="com.unity3d.player.UnityPlayerActivity">
