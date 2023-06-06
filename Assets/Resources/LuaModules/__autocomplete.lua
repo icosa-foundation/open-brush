@@ -610,7 +610,7 @@ function Vector3.Project(a, b) end
 function Vector3.ProjectOnPlane(vector, planeNormal) end
 function Vector3.Reflect(a, b) end
 function Vector3.RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
-function Vector3.Scale(a, b) end
+function Vector3.ScaleBy(a, b) end
 function Vector3.SignedAngle(from, to, axis) end
 function Vector3.Slerp(a, b, t) end
 function Vector3.SlerpUnclamped(a, b, t) end
