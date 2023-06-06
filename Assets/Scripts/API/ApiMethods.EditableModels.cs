@@ -19,16 +19,6 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("model.import", "Imports a 3d model; given a url, a filename in Media Library\\Models or Google Poly ID")]
-        public static ModelWidget ImportModel(string location)
-        {
-            _ImportModel(location, false);
-        }
-
-        private static void _ImportModel(string location, bool editable)
-        {
-            const string modelsFolder = "Models";
-
         [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         public static ModelWidget ImportModel(string location)
         {
@@ -36,7 +26,6 @@ namespace TiltBrush
             {
                 location = location.Substring(5);
                 ApiManager.Instance.LoadPolyModel(location);
-                return;
                 return null; // TODO
             }
 
@@ -47,7 +36,6 @@ namespace TiltBrush
                 // TODO Try deriving from MIME types
                 if (location.EndsWith(".off") || location.EndsWith(".obj"))
                 {
-                    location = _DownloadMediaFileFromUrl(location, modelsFolder);
                     location = _DownloadMediaFileFromUrl(location, App.ModelLibraryPath());
                 }
                 else
@@ -64,10 +52,6 @@ namespace TiltBrush
 
             model.LoadModel();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, true
-
-            model.LoadModel();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
             );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
@@ -81,7 +65,6 @@ namespace TiltBrush
             else
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
-                return;
                 return null;
             }
 
