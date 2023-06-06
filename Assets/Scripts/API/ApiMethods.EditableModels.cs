@@ -20,7 +20,7 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         [ApiEndpoint("model.import", "Imports a 3d model; given a url, a filename in Media Library\\Models or Google Poly ID")]
-        public static void ImportModel(string location)
+        public static ModelWidget ImportModel(string location)
         {
             _ImportModel(location, false);
         }
@@ -29,11 +29,15 @@ namespace TiltBrush
         {
             const string modelsFolder = "Models";
 
+        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
+        public static ModelWidget ImportModel(string location)
+        {
             if (location.StartsWith("poly:"))
             {
                 location = location.Substring(5);
                 ApiManager.Instance.LoadPolyModel(location);
                 return;
+                return null; // TODO
             }
 
             if (location.StartsWith("http://") || location.StartsWith("https://"))
@@ -44,6 +48,7 @@ namespace TiltBrush
                 if (location.EndsWith(".off") || location.EndsWith(".obj"))
                 {
                     location = _DownloadMediaFileFromUrl(location, modelsFolder);
+                    location = _DownloadMediaFileFromUrl(location, App.ModelLibraryPath());
                 }
                 else
                 {
@@ -56,9 +61,14 @@ namespace TiltBrush
             string relativePath = location;
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
+
             model.LoadModel();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, true
+
+            model.LoadModel();
+            CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
             );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             ModelWidget widget = createCommand.Widget as ModelWidget;
@@ -72,11 +82,13 @@ namespace TiltBrush
             {
                 Debug.LogWarning("Failed to create EditableModelWidget");
                 return;
+                return null;
             }
 
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            return widget;
         }
     }
 }

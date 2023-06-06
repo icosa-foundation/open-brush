@@ -49,7 +49,7 @@ namespace TiltBrush
                 InputManager.ControllerName.Brush).transform;
             m_Canvas = App.ActiveCanvas;
             m_SpawnXf = spawnXf;
-            m_EndXf = TrTransform.TRS(
+            m_EndXf = forceTransform ? m_SpawnXf : TrTransform.TRS(
                 Vector3.Lerp(m_SpawnXf.translation, controller.position, m_SpawnAggression),
                 controller.rotation,
                 m_SpawnXf.scale);
