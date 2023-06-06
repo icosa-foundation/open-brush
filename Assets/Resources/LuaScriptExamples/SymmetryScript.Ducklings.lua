@@ -15,7 +15,7 @@ end
 function Main()
 
     if Brush.triggerIsPressedThisFrame then
-        Brush:SetBufferSize(1)
+        Brush:SetHistorySize(1)
         Brush:ForceNewStroke()
         initialHsv = Brush.colorHsv
     end
@@ -23,7 +23,7 @@ function Main()
     pointers = Path:New()
     Symmetry:ClearColors()
 
-    Brush:SetBufferSize(copies * delay)
+    Brush:SetHistorySize(copies * delay)
     for i = 0, copies - 1 do
         pointer = Transform:New(Vector3:Lerp(Brush.position, Brush:GetPastPosition(i * delay), mix))
         pointers:Insert(pointer)

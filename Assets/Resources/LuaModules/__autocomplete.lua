@@ -176,8 +176,8 @@ function Guide.NewCustom(transform, model) end
 function Guide.Select() end
 function Guide.Delete() end
 function Guide.Scale(scale) end
-function Headset.ResizeBuffer(size) end
-function Headset.SetBufferSize(size) end
+function Headset.ResizeHistory(size) end
+function Headset.SetHistorySize(size) end
 function Headset.PastPosition(count) end
 function Headset.PastRotation(count) end
 Image.index = nil
@@ -651,8 +651,8 @@ Wand.rotation = nil
 Wand.direction = nil
 Wand.pressure = nil
 Wand.speed = nil
-function Wand.ResizeBuffer(size) end
-function Wand.SetBufferSize(size) end
+function Wand.ResizeHistory(size) end
+function Wand.SetHistorySize(size) end
 function Wand.PastPosition(back) end
 function Wand.PastRotation(back) end
 function Waveform.Sine(time, frequency) end
