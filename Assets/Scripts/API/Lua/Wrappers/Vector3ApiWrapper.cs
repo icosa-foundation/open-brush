@@ -65,7 +65,7 @@ namespace TiltBrush
         public static Vector3 Reflect(Vector3 a, Vector3 b) => Vector3.Reflect(a, b);
         public static Vector3 RotateTowards(Vector3 current, Vector3 target, float maxRadiansDelta, float maxMagnitudeDelta) =>
             Vector3.RotateTowards(current, target, maxMagnitudeDelta, maxMagnitudeDelta);
-        public static Vector3 Scale(Vector3 a, Vector3 b) => Vector3.Scale(a, b);
+        public static Vector3 ScaleBy(Vector3 a, Vector3 b) => Vector3.Scale(a, b);
         public static float SignedAngle(Vector3 from, Vector3 to, Vector3 axis) => Vector3.SignedAngle(from, to, axis);
         public static Vector3 Slerp(Vector3 a, Vector3 b, float t) => Vector3.Lerp(a, b, t);
         public static Vector3 SlerpUnclamped(Vector3 a, Vector3 b, float t) => Vector3.Lerp(a, b, t);
