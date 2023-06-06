@@ -220,7 +220,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 199434}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7d0b1933e6839443a2050b4306ef453, type: 3}
+  m_Script: {fileID: 11500000, guid: e1917707763d45dd81f3f1b0d6270f31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_PanelType: 8000
@@ -825,7 +825,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
@@ -992,7 +992,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
@@ -2313,8 +2313,8 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+      - m_Target: {fileID: 114019824221785570}
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleSnapSelectedRotationAngles
         m_Mode: 1
         m_Arguments:
@@ -2475,8 +2475,8 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+      - m_Target: {fileID: 114019824221785570}
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleSnapSelectionToGrid
         m_Mode: 1
         m_Arguments:
@@ -2637,7 +2637,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
