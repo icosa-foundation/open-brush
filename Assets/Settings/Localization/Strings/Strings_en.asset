@@ -3100,6 +3100,10 @@ MonoBehaviour:
     m_Localized: Smoke
     m_Metadata:
       m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "Repaint Selected"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

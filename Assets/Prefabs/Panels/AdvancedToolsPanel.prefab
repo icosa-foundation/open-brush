@@ -2788,8 +2788,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
         type: 3}
+      propertyPath: m_DescriptionText
+      value: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 109424659466551296
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}

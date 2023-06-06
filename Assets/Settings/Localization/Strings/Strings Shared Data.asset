@@ -2911,6 +2911,10 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 109424659466551296
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
