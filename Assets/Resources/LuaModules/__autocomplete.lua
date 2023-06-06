@@ -619,8 +619,8 @@ function Vector3.Add(x, y, z) end
 function Vector3.Subtract(b) end
 function Vector3.Subtract(x, y, z) end
 function Vector3.Multiply(b) end
-function Vector3.Scale(b) end
-function Vector3.Scale(x, y, z) end
+function Vector3.ScaleBy(b) end
+function Vector3.ScaleBy(x, y, z) end
 function Vector3.Divide(b) end
 function Vector3.NotEquals(b) end
 function Vector3.NotEquals(x, y, z) end

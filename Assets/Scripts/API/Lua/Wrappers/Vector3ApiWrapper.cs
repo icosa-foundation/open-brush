@@ -88,8 +88,8 @@ namespace TiltBrush
         public Vector3 Subtract(Vector3 b) => _Vector3 - b;
         public Vector3 Subtract(float x, float y, float z) => _Vector3 - new Vector3(x, y, z);
         public Vector3 Multiply(float b) => _Vector3 * b;
-        public Vector3 Scale(Vector3 b) => Vector3.Scale(_Vector3, b);
-        public Vector3 Scale(float x, float y, float z) => Vector3.Scale(_Vector3, new Vector3(x, y, z));
+        public Vector3 ScaleBy(Vector3 b) => Vector3.Scale(_Vector3, b);
+        public Vector3 ScaleBy(float x, float y, float z) => Vector3.Scale(_Vector3, new Vector3(x, y, z));
         public Vector3 Divide(float b) => _Vector3 / b;
         public bool Equals(Vector3 b) => _Vector3 == b;
         public bool Equals(float x, float y, float z) => _Vector3 == new Vector3(x, y, z);
