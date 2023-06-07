@@ -33,13 +33,13 @@ namespace TiltBrush
             switch (btn.m_ButtonType)
             {
                 case SnapSettingsPanelToggleType.LockSnapTranslateX:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationX = btn.ToggleState;
+                    SelectionManager.m_Instance.m_DisableSnapTranslationX = btn.ToggleState;
                     break;
                 case SnapSettingsPanelToggleType.LockSnapTranslateY:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationY = btn.ToggleState;
+                    SelectionManager.m_Instance.m_DisableSnapTranslationY = btn.ToggleState;
                     break;
                 case SnapSettingsPanelToggleType.LockSnapTranslateZ:
-                    SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
+                    SelectionManager.m_Instance.m_DisableSnapTranslationZ = btn.ToggleState;
                     break;
             }
         }

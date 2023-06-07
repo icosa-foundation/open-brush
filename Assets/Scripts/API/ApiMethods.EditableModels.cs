@@ -86,7 +86,7 @@ namespace TiltBrush
                 // TODO Try deriving from MIME types
                 if (location.EndsWith(".off") || location.EndsWith(".obj"))
                 {
-                    location = _DownloadMediaFileFromUrl(location, modelsFolder);
+                    location = _DownloadMediaFileFromUrl(location, App.ModelLibraryPath());
                 }
                 else
                 {
@@ -127,7 +127,7 @@ namespace TiltBrush
             {
                 model.LoadModel();
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, true
+                    WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
                 );
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
                 ModelWidget widget = createCommand.Widget as ModelWidget;

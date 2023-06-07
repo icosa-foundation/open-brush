@@ -220,9 +220,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 199434}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7d0b1933e6839443a2050b4306ef453, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: e1917707763d45dd81f3f1b0d6270f31, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
   m_PanelType: 8000
   m_Collider: {fileID: 6531256}
   m_Mesh: {fileID: 160772}
@@ -238,7 +238,7 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 10142251554152448
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -290,8 +290,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6311d8a25dba6a443be8afe87803c545, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_ShowDuration: 0.25
   m_GrabDistance: 0.5
   m_CollisionRadius: 0.95
@@ -327,8 +327,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1000012292180826
 GameObject:
   m_ObjectHideFlags: 0
@@ -423,8 +423,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1aaefde5afe80784e908d27fcb05a101, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_OffsetOverride: -1
 --- !u!1 &1000013998383226
 GameObject:
@@ -618,8 +618,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b355573aff342a999e2625a502d2c4d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
@@ -628,17 +628,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 10142405791293440
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -786,27 +786,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Y Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -825,7 +825,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
@@ -835,7 +835,7 @@ MonoBehaviour:
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument:
           m_BoolArgument: 0
         m_CallState: 2
   m_InitialToggleState: 1
@@ -953,27 +953,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle X Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -992,7 +992,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
@@ -1002,7 +1002,7 @@ MonoBehaviour:
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument:
           m_BoolArgument: 0
         m_CallState: 2
   m_InitialToggleState: 1
@@ -1103,8 +1103,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1195,8 +1195,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_TrackedObjects:
   - rid: 8021623547164098591
   references:
@@ -1220,7 +1220,7 @@ MonoBehaviour:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
             m_KeyId: 10149812609196032
-            m_Key: 
+            m_Key:
           m_FallbackState: 0
           m_WaitForCompletion: 0
           m_LocalVariables: []
@@ -1315,8 +1315,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1506,8 +1506,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b355573aff342a999e2625a502d2c4d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: SNAP_PANEL_SNAPGRID_BUTTON_DESCRIPTION
@@ -1516,17 +1516,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 10149921501716480
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1658,8 +1658,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1831,8 +1831,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1923,8 +1923,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_TrackedObjects:
   - rid: 8021623547164098593
   references:
@@ -1948,7 +1948,7 @@ MonoBehaviour:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
             m_KeyId: 10160187903811584
-            m_Key: 
+            m_Key:
           m_FallbackState: 0
           m_WaitForCompletion: 0
           m_LocalVariables: []
@@ -2044,8 +2044,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -2136,8 +2136,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_TrackedObjects:
   - rid: 8021623547164098589
   references:
@@ -2161,7 +2161,7 @@ MonoBehaviour:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
             m_KeyId: 10149748172103680
-            m_Key: 
+            m_Key:
           m_FallbackState: 0
           m_WaitForCompletion: 0
           m_LocalVariables: []
@@ -2274,27 +2274,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Snap Selected Rotation Angles
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -2313,8 +2313,8 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+      - m_Target: {fileID: 114019824221785570}
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleSnapSelectedRotationAngles
         m_Mode: 1
         m_Arguments:
@@ -2322,7 +2322,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument:
           m_BoolArgument: 0
         m_CallState: 2
   references:
@@ -2436,27 +2436,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Snap Selected to Grid
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -2475,8 +2475,8 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TiltBrush.TransformPanel, Assembly-CSharp
+      - m_Target: {fileID: 114019824221785570}
+        m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleSnapSelectionToGrid
         m_Mode: 1
         m_Arguments:
@@ -2484,7 +2484,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument:
           m_BoolArgument: 0
         m_CallState: 2
   references:
@@ -2598,27 +2598,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b524ddd4396c48dd8ad2a5a340a2252c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Z Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -2637,7 +2637,7 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 114019824221785570}
         m_TargetAssemblyTypeName: TiltBrush.SnapSettingsPanel, Assembly-CSharp
         m_MethodName: HandleToggle
         m_Mode: 2
@@ -2647,7 +2647,7 @@ MonoBehaviour:
             Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument:
           m_BoolArgument: 0
         m_CallState: 2
   m_InitialToggleState: 1
