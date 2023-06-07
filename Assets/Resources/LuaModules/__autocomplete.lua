@@ -176,8 +176,8 @@ function Guide.NewCustom(transform, model) end
 function Guide.Select() end
 function Guide.Delete() end
 function Guide.Scale(scale) end
-function Headset.ResizeBuffer(size) end
-function Headset.SetBufferSize(size) end
+function Headset.ResizeHistory(size) end
+function Headset.SetHistorySize(size) end
 function Headset.PastPosition(count) end
 function Headset.PastRotation(count) end
 Image.index = nil
@@ -610,7 +610,7 @@ function Vector3.Project(a, b) end
 function Vector3.ProjectOnPlane(vector, planeNormal) end
 function Vector3.Reflect(a, b) end
 function Vector3.RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
-function Vector3.Scale(a, b) end
+function Vector3.ScaleBy(a, b) end
 function Vector3.SignedAngle(from, to, axis) end
 function Vector3.Slerp(a, b, t) end
 function Vector3.SlerpUnclamped(a, b, t) end
@@ -619,8 +619,8 @@ function Vector3.Add(x, y, z) end
 function Vector3.Subtract(b) end
 function Vector3.Subtract(x, y, z) end
 function Vector3.Multiply(b) end
-function Vector3.Scale(b) end
-function Vector3.Scale(x, y, z) end
+function Vector3.ScaleBy(b) end
+function Vector3.ScaleBy(x, y, z) end
 function Vector3.Divide(b) end
 function Vector3.NotEquals(b) end
 function Vector3.NotEquals(x, y, z) end
@@ -651,8 +651,8 @@ Wand.rotation = nil
 Wand.direction = nil
 Wand.pressure = nil
 Wand.speed = nil
-function Wand.ResizeBuffer(size) end
-function Wand.SetBufferSize(size) end
+function Wand.ResizeHistory(size) end
+function Wand.SetHistorySize(size) end
 function Wand.PastPosition(back) end
 function Wand.PastRotation(back) end
 function Waveform.Sine(time, frequency) end
