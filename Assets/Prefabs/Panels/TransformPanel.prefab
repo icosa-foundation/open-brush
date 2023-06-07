@@ -259,6 +259,15 @@ MonoBehaviour:
       type: 3}
     m_Command: 14
   m_PanelDescription: Transform
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.15, y: 1.3, z: 0}
@@ -302,6 +311,9 @@ MonoBehaviour:
   m_LabelForRotationY: {fileID: 8555349481716374173}
   m_LabelForRotationZ: {fileID: 8963769559412800881}
   m_LabelForScale: {fileID: 6065908374879938499}
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &11478692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1161,7 +1173,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: 'Align by:'
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -1202,6 +1232,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &928319322709728017
 GameObject:
   m_ObjectHideFlags: 0
@@ -1315,10 +1348,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Z Scale Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -1344,10 +1395,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 5
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1370403766173214790
 GameObject:
   m_ObjectHideFlags: 0
@@ -1461,7 +1515,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Distribute Y
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 44f3269eef7c6c44096fe5169f3fa78f, type: 3}
@@ -1491,6 +1563,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 4
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1486810327820868835
 GameObject:
   m_ObjectHideFlags: 0
@@ -1604,10 +1679,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle X Scale Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -1633,10 +1726,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1823090999997260608
 GameObject:
   m_ObjectHideFlags: 0
@@ -1750,7 +1846,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Distribute X
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 1fe91b8cd3f20974485e06675c0fd325, type: 3}
@@ -1780,6 +1894,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2163259087345142590
 GameObject:
   m_ObjectHideFlags: 0
@@ -2198,7 +2315,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: 'Distribute by:'
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -2241,6 +2376,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3070778157975306061
 GameObject:
   m_ObjectHideFlags: 0
@@ -2354,7 +2492,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Align Y
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: cc1d17877d7389b44801df67468ccde7, type: 3}
@@ -2384,6 +2540,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3707623995977433544
 GameObject:
   m_ObjectHideFlags: 0
@@ -2497,10 +2656,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Z Position Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -2526,10 +2703,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3716093229231901993
 GameObject:
   m_ObjectHideFlags: 0
@@ -2643,10 +2823,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Y Position Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -2672,10 +2870,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3897681355709531774
 GameObject:
   m_ObjectHideFlags: 0
@@ -3134,7 +3335,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Align Rotation
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: caf848d41f930b1438aa12c6edcfbb21, type: 3}
@@ -3165,6 +3384,9 @@ MonoBehaviour:
   m_InitialToggleState: 0
   m_TextureOn: {fileID: 2800000, guid: 08eb6ec4e0dd15d4e96281aba0e32f1b, type: 3}
   m_TextureOff: {fileID: 2800000, guid: c7e34f427cbbf7745a1aeca950177a6f, type: 3}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4164900104539230067
 GameObject:
   m_ObjectHideFlags: 0
@@ -3278,7 +3500,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Align Z
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 445754a7de3c6c344b56c9ad8e7cf35f, type: 3}
@@ -3308,6 +3548,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4426313726690244711
 GameObject:
   m_ObjectHideFlags: 0
@@ -3594,10 +3837,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle X Rotation Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -3623,10 +3884,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4563334062437857873
 GameObject:
   m_ObjectHideFlags: 0
@@ -3912,7 +4176,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Distribute Z
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 9d80003cd31a95a4ca931106a7f1a2cf, type: 3}
@@ -3942,6 +4224,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 5
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &6506482824853779451
 GameObject:
   m_ObjectHideFlags: 0
@@ -4055,10 +4340,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Y Rotation Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -4084,10 +4387,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 4
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &6966366432298858523
 GameObject:
   m_ObjectHideFlags: 0
@@ -4201,10 +4507,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle X Scale Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -4230,10 +4554,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 3
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7287428377725511766
 GameObject:
   m_ObjectHideFlags: 0
@@ -4347,10 +4674,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle X Position Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -4376,10 +4721,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7822382850470734326
 GameObject:
   m_ObjectHideFlags: 0
@@ -4493,10 +4841,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Z Rotation Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -4522,10 +4888,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 5
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8057831726370996320
 GameObject:
   m_ObjectHideFlags: 0
@@ -4676,10 +5045,28 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Toggle Y Scale Lock
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -4705,10 +5092,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_InitialToggleState: 1
-  m_TextureOn: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
-  m_TextureOff: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_InitialToggleState: 0
+  m_TextureOn: {fileID: 2800000, guid: 47c05a72da0035c41bae4c38a177f40b, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 5c5ad7d30a5daf049a4d927ddd367487, type: 3}
   m_ButtonType: 4
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8273283968852598108
 GameObject:
   m_ObjectHideFlags: 0
@@ -4822,7 +5212,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Align X
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: a89618c20322f9a4ea2d3bd94af1b43a, type: 3}
@@ -4852,6 +5260,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   m_ButtonType: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1001 &278301698944944293
 PrefabInstance:
   m_ObjectHideFlags: 0
