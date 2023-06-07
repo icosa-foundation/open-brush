@@ -7672,11 +7672,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -9505,6 +9507,7 @@ GameObject:
   - component: {fileID: 652605562}
   - component: {fileID: 652605560}
   - component: {fileID: 652605573}
+  - component: {fileID: 652605574}
   - component: {fileID: 652605563}
   - component: {fileID: 652605565}
   - component: {fileID: 652605566}
@@ -10299,7 +10302,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 652605543}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f6e58f9207a40aa81b0b703cd8cc441, type: 3}
+  m_Script: {fileID: 11500000, guid: d6bd3c22c0bd4929a870f09c44aba4f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
@@ -10307,6 +10310,18 @@ MonoBehaviour:
   - DefaultBackgroundImages/panorama.jpg
   - DefaultBackgroundImages/stereopanorama.jpg
   - DefaultBackgroundImages/ATTRIBUTION.txt
+--- !u!114 &652605574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652605543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6e58f9207a40aa81b0b703cd8cc441, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Materials:
   - {fileID: 2100000, guid: 6d1406f44cadf7f449141eaa97f23094, type: 2}
   - {fileID: 2100000, guid: f45e71efac2a5234885e87c7f2aedf64, type: 2}
@@ -27906,7 +27921,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
