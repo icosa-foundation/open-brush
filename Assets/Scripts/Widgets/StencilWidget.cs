@@ -195,8 +195,8 @@ namespace TiltBrush
         public virtual void RaycastToNearest(Vector3 pos, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             // Not supported except on SDFs
-            surfacePos = Vector3.zero;
-            surfaceNorm = Vector3.zero;
+            surfacePos = transform.position;
+            surfaceNorm = transform.forward;
         }
 
         override public Vector2 GetWidgetSizeRange()

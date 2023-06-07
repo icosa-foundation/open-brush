@@ -14,14 +14,11 @@
 
 using System;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
     public class SdfStencil : StencilWidget
     {
-        private Vector3[] m_SampleDirections;
-
         public override Vector3 Extents
         {
             get
@@ -43,23 +40,9 @@ namespace TiltBrush
 
         protected override void Awake()
         {
-            const int SAMPLES = 32;
-            const float FOCUS_AMOUNT = 1f;
-
             base.Awake();
             m_Type = StencilType.SDF;
             WidgetManager.m_Instance.m_SDFManager.transform.SetParent(transform);
-            m_SampleDirections = new Vector3[SAMPLES];
-            var sample = Random.insideUnitCircle;
-            for (var i = 0; i < SAMPLES; i++)
-            {
-                m_SampleDirections[i] = Vector3.forward + new Vector3(
-                    (sample.x - 0.5f) / FOCUS_AMOUNT,
-                    (sample.y - 0.5f) / FOCUS_AMOUNT,
-                    0f
-                );
-            }
-
         }
 
         protected override void OnHideStart()
@@ -68,27 +51,41 @@ namespace TiltBrush
             WidgetManager.m_Instance.m_SDFManager.transform.SetParent(WidgetManager.m_Instance.transform);
         }
 
-        private void CastSingleDirection(Vector3 origin, Vector3 dir, out Vector3 pos, out Vector3 normal)
+        private bool CastSingleDirection(Vector3 origin, Vector3 dir, out Vector3 pos, out Vector3 normal)
         {
-            WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(origin, dir, out pos, out normal);
+            return WidgetManager.m_Instance.m_SDFManager.Mapper.Raymarch(origin, dir, out pos, out normal);
+        }
+
+        override protected void OnUpdate()
+        {
+            base.OnUpdate();
+            var lr = GetComponentInChildren<LineRenderer>(includeInactive: true);
+            lr.gameObject.SetActive(false);
         }
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            Vector3 pos, normal = Vector3.zero;
             surfacePos = origin;
             surfaceNorm = transform.forward;
-            float nearestDistance = Mathf.Infinity;
-            foreach (var dir in m_SampleDirections)
+            var dir = Vector3.back * WidgetManager.m_Instance.StencilAttractDist * 4f;
+            var ray = (rot * dir);
+            var lr = GetComponentInChildren<LineRenderer>(includeInactive: true);
+            if (CastSingleDirection(origin, ray, out surfacePos, out surfaceNorm))
             {
-                CastSingleDirection(origin, -((rot * App.Scene.Pose.rotation) * dir), out pos, out normal);
-                float d = (pos - origin).sqrMagnitude;
-                if (d < nearestDistance && d < .2 && d > 0)
+                lr.gameObject.SetActive(true);
+                lr.transform.position = surfacePos;
+                lr.transform.rotation = Quaternion.LookRotation(surfaceNorm, Vector3.up);
+                lr.SetPositions(new []
                 {
-                    surfacePos = pos;
-                    surfaceNorm = normal;
-                    nearestDistance = d;
-                }
+                    surfacePos,
+                    origin
+                });
+            }
+            else
+            {
+                lr.gameObject.SetActive(false);
+                surfacePos = transform.position;
+                surfaceNorm = transform.forward;
             }
         }
 
