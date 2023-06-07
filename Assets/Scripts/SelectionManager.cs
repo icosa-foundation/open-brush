@@ -89,9 +89,9 @@ namespace TiltBrush
         [NonSerialized] public bool m_LockRotationX = false;
         [NonSerialized] public bool m_LockRotationY = false;
         [NonSerialized] public bool m_LockRotationZ = false;
-        [NonSerialized] public bool m_DisableSnapTranslationX = false;
-        [NonSerialized] public bool m_DisableSnapTranslationY = false;
-        [NonSerialized] public bool m_DisableSnapTranslationZ = false;
+        [NonSerialized] public bool m_EnableSnapTranslationX = false;
+        [NonSerialized] public bool m_EnableSnapTranslationY = false;
+        [NonSerialized] public bool m_EnableSnapTranslationZ = false;
 
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
@@ -1063,9 +1063,9 @@ namespace TiltBrush
             if (gridSize == 0) return position;
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                m_DisableSnapTranslationX ? position.x : round(position.x),
-                m_DisableSnapTranslationY ? position.y : round(position.y),
-                m_DisableSnapTranslationZ ? position.z : round(position.z)
+                !m_EnableSnapTranslationX ? round(position.x) : position.x,
+                !m_EnableSnapTranslationY ? round(position.y) : position.y,
+                !m_EnableSnapTranslationZ ? round(position.z) : position.z
             );
             return roundedCanvasPos;
         }
@@ -1079,9 +1079,9 @@ namespace TiltBrush
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                m_DisableSnapTranslationX ? localCanvasPos.x : round(localCanvasPos.x),
-                m_DisableSnapTranslationY ? localCanvasPos.y : round(localCanvasPos.y),
-                m_DisableSnapTranslationZ ? localCanvasPos.z : round(localCanvasPos.z)
+                !m_EnableSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
+                !m_EnableSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
+                !m_EnableSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
