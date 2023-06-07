@@ -37,6 +37,7 @@ namespace TiltBrush
         private bool m_SurfaceIsDrawable = true;
 
         [NonSerialized] public bool m_UpdatedToolThisFrame = false;
+        [NonSerialized] public BaseCommand m_LastCommand;
 
         public bool IsSurfaceDrawable() { return m_SurfaceIsDrawable; }
         public bool IsSketchSurfaceToolActive()
@@ -101,6 +102,7 @@ namespace TiltBrush
         }
 
         bool m_AddedNewPoseListener = false;
+
         void Update()
         {
             // Do this here instead of OnEnable() to ensure that our event handler gets

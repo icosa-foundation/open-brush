@@ -168,6 +168,7 @@ namespace TiltBrush
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
+            RepaintOptions = 11500,
             OpenNumericInputPopup = 12000
         }
 
@@ -5010,6 +5011,7 @@ namespace TiltBrush
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.OpenScriptParametersPopup:
+                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
