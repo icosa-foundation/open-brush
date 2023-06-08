@@ -428,7 +428,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Description
+  m_text: "Parameters\t"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -532,9 +532,9 @@ MonoBehaviour:
       data:
         m_Localized:
           m_TableReference:
-            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+            m_TableCollectionName: 
           m_TableEntryReference:
-            m_KeyId: 18090455927169024
+            m_KeyId: 0
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
@@ -648,6 +648,10 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
+    - target: {fileID: 11488472, guid: a5c1c72b25e95a34fadfdb03c9ab2b1b, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 76070518675529728
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a5c1c72b25e95a34fadfdb03c9ab2b1b, type: 3}
 --- !u!4 &672854963316639820 stripped
@@ -672,6 +676,11 @@ PrefabInstance:
         type: 3}
       propertyPath: SliderType
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -810,6 +819,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -942,6 +956,11 @@ PrefabInstance:
         type: 3}
       propertyPath: SliderType
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -1080,6 +1099,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -1203,6 +1227,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7625513260310874408}
     m_Modifications:
+    - target: {fileID: 791795469446217164, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_margin.z
+      value: -0.09427565
+      objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: m_Param1
@@ -1212,6 +1241,11 @@ PrefabInstance:
         type: 3}
       propertyPath: SliderType
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -1323,6 +1357,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7444929264988374951, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_margin.x
+      value: -0.07100835
+      objectReference: {fileID: 0}
+    - target: {fileID: 7824979537496111407, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.236
+      objectReference: {fileID: 0}
+    - target: {fileID: 8879551121032234077, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.252
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 73f56870960b5564e8849fe39bdfd7c2, type: 3}
 --- !u!4 &5861095619915200191 stripped
@@ -1338,10 +1387,25 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7625513260310874408}
     m_Modifications:
+    - target: {fileID: 791795469446217164, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_margin.x
+      value: -0.05868972
+      objectReference: {fileID: 0}
+    - target: {fileID: 791795469446217164, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_margin.z
+      value: -0.05513242
+      objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
       propertyPath: SliderType
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_DisplayDecimalPlaces
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}

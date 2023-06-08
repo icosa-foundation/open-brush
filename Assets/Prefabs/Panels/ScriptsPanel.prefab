@@ -220,8 +220,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b27269fe6a844a75b6b2e6b8a77a8cd3, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_PanelType: 6000
   m_Collider: {fileID: 6531256}
   m_Mesh: {fileID: 160772}
@@ -232,6 +232,15 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 197348, guid: 637831851e146a44987a438cafccb5a3, type: 3}
     m_Command: 6005
   m_PanelDescription: Scripts
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.15, y: 1.3, z: 0}
@@ -270,6 +279,9 @@ MonoBehaviour:
   SymmetryScriptButton: {fileID: 1090007126676559718}
   PointerScriptButton: {fileID: 5067221232058941735}
   ToolScriptButton: {fileID: 7766592774551079244}
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &11478692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -280,8 +292,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6311d8a25dba6a443be8afe87803c545, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_ShowDuration: 0.25
   m_GrabDistance: 0.5
   m_CollisionRadius: 0.95
@@ -317,8 +329,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1000011220362354
 GameObject:
   m_ObjectHideFlags: 0
@@ -427,12 +439,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Browser Script Docs
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 524d978d6b53123478aa58e5dae54302, type: 3}
@@ -451,11 +481,32 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
-  m_ToggleOnDescription:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000012292180826
 GameObject:
   m_ObjectHideFlags: 0
@@ -550,8 +601,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1aaefde5afe80784e908d27fcb05a101, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_OffsetOverride: -1
 --- !u!1 &1000013998383226
 GameObject:
@@ -744,12 +795,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Scripted Symmetry
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: ae726261e9135b949960e30cad75ad98, type: 3}
@@ -768,11 +837,32 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
-  m_ToggleOnDescription:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2492171513165248992
 GameObject:
   m_ObjectHideFlags: 0
@@ -881,12 +971,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: ScriptedTool
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 77bf8765016e8ff4080d523e18a50722, type: 3}
@@ -901,6 +1009,9 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 6001
   m_EatGazeInputOnPress: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2749541579361842396
 GameObject:
   m_ObjectHideFlags: 0
@@ -1009,12 +1120,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d24b89fbd7e49a59e0c07ded4dd0713, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Enable Background Scripts
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: c883bdb8f477f3046a6d23cb6a7ecc6d, type: 3}
@@ -1033,8 +1162,26 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: Distable Background Scripts
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -1050,9 +1197,12 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: TiltBrush.ToggleButton, Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2755315113598949995
 GameObject:
   m_ObjectHideFlags: 0
@@ -1161,12 +1311,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2ed6d236b89d49779ebef77c34f573f3, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Sync Scripts To Google Drive
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 74b69b441ba6f02428eee063b312f920, type: 3}
@@ -1191,9 +1359,12 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3393086703176475465
 GameObject:
   m_ObjectHideFlags: 0
@@ -1284,8 +1455,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1474,12 +1645,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d24b89fbd7e49a59e0c07ded4dd0713, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Scripted Pointer
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 8e733c6b71b90e94c8b99c3c58de9b65, type: 3}
@@ -1498,8 +1687,26 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
-  m_ToggleOnDescription:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -1507,7 +1714,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114019824221785570}
-        m_TargetAssemblyTypeName:
+        m_TargetAssemblyTypeName: 
         m_MethodName: TogglePointerScript
         m_Mode: 2
         m_Arguments:
@@ -1515,9 +1722,12 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: TiltBrush.ToggleButton, Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5592403202113238480
 GameObject:
   m_ObjectHideFlags: 0
@@ -1626,12 +1836,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Browser Scripts List
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 48d2cb1ede29e6641ae42708c0b50379, type: 3}
@@ -1650,11 +1878,32 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
-  m_ToggleOnDescription:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5604652129882141491
 GameObject:
   m_ObjectHideFlags: 0
@@ -1763,12 +2012,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: 'Browser Script Examples '
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: bb3e0ae640e0a3b4395424f6fc0b2b4b, type: 3}
@@ -1787,11 +2054,32 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
-  m_ToggleOnDescription:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5618818405423078661
 GameObject:
   m_ObjectHideFlags: 0
@@ -1900,12 +2188,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d24b89fbd7e49a59e0c07ded4dd0713, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Turn On
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 91ed8e5a179f78b4d906849f0df5b5a7, type: 3}
@@ -1924,8 +2230,26 @@ MonoBehaviour:
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: Turn Off
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 2800000, guid: e0f15e7cc24155c479af772d960d6758, type: 3}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
@@ -1941,9 +2265,12 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5707646182526392998
 GameObject:
   m_ObjectHideFlags: 0
@@ -2087,12 +2414,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Copy Example to User Scripts Folder
-  m_DescriptionTextExtra:
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 518d8419e77177d40893904be6ce3be5, type: 3}
@@ -2117,9 +2462,12 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8396393438827596146
 GameObject:
   m_ObjectHideFlags: 0
@@ -2168,8 +2516,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a5876b6577b4348b7f7e944c33633be, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_TextMesh: {fileID: 3047350849631400696}
   m_CopyToUserScriptsFolder: {fileID: 7668091804574848421}
   m_ToggleBackgroundScript: {fileID: 7481746012544075901}
@@ -2268,7 +2616,7 @@ PrefabInstance:
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value:
+      value: 
       objectReference: {fileID: 4993253603190713467}
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
@@ -2373,12 +2721,22 @@ PrefabInstance:
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: ScriptButton
-      value:
+      value: 
       objectReference: {fileID: 5067221232058941735}
     - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_CommandParam
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableEntryReference.m_KeyId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableReference.m_TableCollectionName
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2398,7 +2756,7 @@ PrefabInstance:
     - target: {fileID: 7296547097667072494, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
     - target: {fileID: 7296547097677267980, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2438,12 +2796,32 @@ PrefabInstance:
     - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: e3e38bcdcd69dc7429af6e669ecc3848, type: 3}
     - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
       propertyPath: m_DescriptionText
       value: Parameters
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableEntryReference.m_KeyId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableReference.m_TableCollectionName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525759816367303735, guid: 71757eb1eb6bebe489a852e972821df3,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7630606763700834929, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
@@ -2623,7 +3001,7 @@ PrefabInstance:
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
@@ -2638,7 +3016,7 @@ PrefabInstance:
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value:
+      value: 
       objectReference: {fileID: 4993253603190713467}
     - target: {fileID: 6664509643795662505, guid: 7ea94042a47c5b44da7d07a8817650a1,
         type: 3}
@@ -2748,7 +3126,7 @@ PrefabInstance:
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: ScriptButton
-      value:
+      value: 
       objectReference: {fileID: 1090007126676559718}
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2759,6 +3137,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_CommandParam
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableEntryReference.m_KeyId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableReference.m_TableCollectionName
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2778,7 +3166,7 @@ PrefabInstance:
     - target: {fileID: 7296547097667072494, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
     - target: {fileID: 7296547097677267980, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2873,7 +3261,7 @@ PrefabInstance:
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: ScriptButton
-      value:
+      value: 
       objectReference: {fileID: 7766592774551079244}
     - target: {fileID: 5998275858240843432, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2884,6 +3272,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_CommandParam
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableEntryReference.m_KeyId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6818735547008959197, guid: 0c15a130d8773f245b4f8bb732800d2c,
+        type: 3}
+      propertyPath: m_LocalizedPopup.m_TableReference.m_TableCollectionName
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7129280630602156961, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
@@ -2903,7 +3301,7 @@ PrefabInstance:
     - target: {fileID: 7296547097667072494, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
       propertyPath: m_ButtonTexture
-      value:
+      value: 
       objectReference: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
     - target: {fileID: 7296547097677267980, guid: 0c15a130d8773f245b4f8bb732800d2c,
         type: 3}
