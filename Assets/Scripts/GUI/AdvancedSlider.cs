@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq.Expressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -221,13 +222,19 @@ namespace TiltBrush
                 if (App.VrSdk.AnalogIsStick(InputManager.ControllerName.Brush))
                 {
                     float v = InputManager.m_Instance.GetBrushScrollAmount();
+                    Action callback;
                     if (Mathf.Abs(v) > 0.05f)
                     {
                         var newValue = m_CurrentValue + (v * 0.01f);
                         UpdateValue(newValue);
+                        callback = () => InputManager.Brush.Geometry.ShowSliderValue(true, m_CurrentValue);
                     }
+                    else
+                    {
+                        callback = () => InputManager.Brush.Geometry.ShowSliderValue(false, m_CurrentValue);
+                    }
+                    m_Manager.GetPanelForPopUps().m_OverrideControllerMaterial = callback;
                 }
             }
-        }
-    }
+        } }
 } // namespace TiltBrush

@@ -10050,6 +10050,9 @@ MonoBehaviour:
   m_ToggleSelectionOff: {fileID: 2100000, guid: f0ee027198fd2c1459a784e290ec6dc8,
     type: 2}
   m_SelectionOptions: {fileID: 2100000, guid: 82283fdea54186f4ea48a9af6bad05cd, type: 2}
+  m_ChangeSliderValue: {fileID: 2100000, guid: 01c52e08e0aa424489c7c00821661fc8, type: 2}
+  m_ChangeSliderValueActive: {fileID: 2100000, guid: c96e03eaefd23334a99e0fc4a23a307e,
+    type: 2}
 --- !u!114 &652605560
 MonoBehaviour:
   m_ObjectHideFlags: 0
