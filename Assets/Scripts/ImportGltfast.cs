@@ -52,7 +52,7 @@ namespace TiltBrush
             return result;
         }
 
-        public static async void StartSyncImport(
+        public static async Task StartSyncImport(
             string localPath,
             string assetLocation,
             Model model,

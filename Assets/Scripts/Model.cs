@@ -19,9 +19,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TiltBrushToolkit;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
+
 
 namespace TiltBrush
 {
@@ -497,18 +499,22 @@ namespace TiltBrush
 #endif
         }
 
-        void LoadGltf(List<string> warnings)
+        async Task LoadGltf(List<string> warnings)
         {
             string localPath = m_Location.AbsolutePath;
             string assetLocation = Path.GetDirectoryName(localPath);
             try
             {
-                ImportGltfast.StartSyncImport(
+               
+                Task t = ImportGltfast.StartSyncImport(
                     localPath,
                     assetLocation,
                     this,
                     warnings
                 );
+          
+                await t;
+                
             }
             catch (Exception ex)
             {
@@ -620,9 +626,16 @@ namespace TiltBrush
             return true;
         }
 
-        public void LoadModel()
+        public async Task LoadModelAsync()
+        {
+            Task t = StartCreatePrefab(null);
+            await t;
+          
+        }
+         public  void LoadModel()
         {
             StartCreatePrefab(null);
+            
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -634,7 +647,7 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private void StartCreatePrefab(GameObject go)
+        private async Task StartCreatePrefab(GameObject go)
         {
             if (m_Valid)
             {
@@ -664,8 +677,13 @@ namespace TiltBrush
                 else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
+
+                    
                     // If we pulled this from Poly, it's going to be a gltf file.
-                    LoadGltf(warnings);
+                    Task t = LoadGltf(warnings);
+                    await t;
+                  
+
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
