@@ -78,12 +78,13 @@ public class SpriteExtruder : MonoBehaviour
         for (var pathIndex = 0; pathIndex < paths.Length; pathIndex++)
         {
             var path = paths[pathIndex];
-            Mesh m = new Mesh();
 
             // convert polygon to triangles
             Triangulator triangulator = new Triangulator(path);
             int[] tris = triangulator.Triangulate();
+
             Vector3[] vertices = new Vector3[path.Length * 2];
+            var triangles = new List<int>(tris.Length * 2);
 
             for (int i = 0; i < path.Length; i++)
             {
@@ -95,43 +96,57 @@ public class SpriteExtruder : MonoBehaviour
                 vertices[i + path.Length].y = path[i].y;
                 vertices[i + path.Length].z = backDistance; // back vertex
             }
-            int[] triangles = new int[tris.Length * 2 + path.Length * 6];
-            int count_tris = 0;
+
             for (int i = 0; i < tris.Length; i += 3)
             {
-                triangles[i] = tris[i];
-                triangles[i + 1] = tris[i + 1];
-                triangles[i + 2] = tris[i + 2];
+                triangles.Add(tris[i]);
+                triangles.Add(tris[i + 1]);
+                triangles.Add(tris[i + 2]);
             } // front vertices
-            count_tris += tris.Length;
+
             for (int i = 0; i < tris.Length; i += 3)
             {
-                triangles[count_tris + i] = tris[i + 2] + path.Length;
-                triangles[count_tris + i + 1] = tris[i + 1] + path.Length;
-                triangles[count_tris + i + 2] = tris[i] + path.Length;
+                triangles.Add(tris[i + 2] + path.Length);
+                triangles.Add(tris[i + 1] + path.Length);
+                triangles.Add(tris[i] + path.Length);
             } // back vertices
-            count_tris += tris.Length;
-            for (int i = 0; i < path.Length; i++)
-            {
-                // triangles around the perimeter of the object
-                int n = (i + 1) % path.Length;
-                triangles[count_tris] = i;
-                triangles[count_tris + 1] = n;
-                triangles[count_tris + 2] = i + path.Length;
-                triangles[count_tris + 3] = n;
-                triangles[count_tris + 4] = n + path.Length;
-                triangles[count_tris + 5] = i + path.Length;
-                count_tris += 6;
-            }
+
             int count = allVertices.Count;
-            allTriangles.AddRange(triangles.Select(i => i += count).ToList());
+            allTriangles.AddRange(triangles.Select(i => i + count).ToList());
             allVertices.AddRange(vertices);
+
+            var sideVertices = new Vector3[path.Length * 4];
+            triangles = new List<int>(path.Length * 6);
+
+            int j = 0;
+            // triangles around the perimeter of the object
+            for (int i = 0; i < path.Length * 4; i += 4)
+            {
+                // Copy the front and back vertices
+                sideVertices[i] = vertices[j];
+                sideVertices[i + 1] = vertices[(j + 1) % path.Length];
+                sideVertices[i + 2] = vertices[j + path.Length];
+                sideVertices[i + 3] = vertices[(j + 1) % path.Length + path.Length];
+                j++;
+
+                triangles.Add(i);
+                triangles.Add(i + 1);
+                triangles.Add(i + 2);
+
+                triangles.Add(i + 3);
+                triangles.Add(i + 2);
+                triangles.Add(i + 1);
+            }
+
+            count = allVertices.Count;
+            allTriangles.AddRange(triangles.Select(i => i + count).ToList());
+            allVertices.AddRange(sideVertices);
         }
 
         Mesh mesh = new Mesh();
         mesh.vertices = allVertices.ToArray();
         mesh.triangles = allTriangles.ToArray();
-        // mesh.RecalculateNormals();
+        mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         mesh.Optimize();
         return mesh;
