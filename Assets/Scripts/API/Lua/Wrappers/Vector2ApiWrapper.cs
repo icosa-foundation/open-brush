@@ -34,8 +34,16 @@ namespace TiltBrush
             set => _Vector2[index] = value;
         }
 
-        public float x => _Vector2.x;
-        public float y => _Vector2.y;
+        public float x
+        {
+            get => _Vector2.x;
+            set => _Vector2.x = value;
+        }
+        public float y
+        {
+            get => _Vector2.y;
+            set => _Vector2.y = value;
+        }
         public static float Angle(Vector2 a, Vector2 b) => Vector2.Angle(a, b);
         public static Vector2 ClampMagnitude(Vector2 v, float maxLength) => Vector2.ClampMagnitude(v, maxLength);
         public static float Distance(Vector2 a, Vector2 b) => Vector2.Distance(a, b);
@@ -78,9 +86,9 @@ namespace TiltBrush
         public Vector2 Subtract(Vector2 b) => _Vector2 - b;
         public Vector2 Subtract(float x, float y) => _Vector2 - new Vector2(x, y);
         public Vector2 Multiply(float b) => _Vector2 * b;
-        public Vector2 Multiply(float x, float y) => _Vector2 * new Vector2(x, y);
+        public Vector2 ScaleBy(Vector2 b) => Vector2.Scale(_Vector2, b);
+        public Vector2 ScaleBy(float x, float y) => _Vector2 * new Vector2(x, y);
         public Vector2 Divide(float b) => _Vector2 / b;
-        public Vector2 Divide(float x, float y) => _Vector2 / new Vector2(x, y);
         public bool Equals(Vector2 b) => _Vector2 == b;
         public bool Equals(float x, float y) => _Vector2 == new Vector2(x, y);
         public bool NotEquals(Vector2 b) => _Vector2 != b;

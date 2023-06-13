@@ -40,9 +40,21 @@ namespace TiltBrush
             set => _Vector3[index] = value;
         }
 
-        public float x => _Vector3.x;
-        public float y => _Vector3.y;
-        public float z => _Vector3.z;
+        public float x
+        {
+            get => _Vector3.x;
+            set => _Vector3.x = value;
+        }
+        public float y
+        {
+            get => _Vector3.y;
+            set => _Vector3.y = value;
+        }
+        public float z
+        {
+            get => _Vector3.z;
+            set => _Vector3.z = value;
+        }
         public float magnitude => _Vector3.magnitude;
         public Vector3 normalized => _Vector3.normalized;
         public float sqrMagnitude => _Vector3.sqrMagnitude;
