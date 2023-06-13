@@ -42,6 +42,22 @@ namespace TiltBrush
             }
         }
 
+        public void Extrude(float depth, ColorApiWrapper color = null)
+        {
+            var extruder = _ImageWidget.GetComponent<SpriteExtruder>();
+            if (depth <= 0)
+            {
+                extruder.Clear();
+            }
+            else
+            {
+                color ??= new ColorApiWrapper(Color.gray);
+                extruder.extrudeColor = color._Color;
+                extruder.backDistance = depth;
+                extruder.Generate();
+            }
+        }
+
         public Quaternion rotation
         {
             get => transform.rotation;
