@@ -1264,12 +1264,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'You can continue without a VR headset. Choose a sketch below to enter
-    Viewing Mode.
-
-
-    Navigate using the mouse to look, Use W,A,S,D keys to move
-    forwards and sideways. Q and E move up and down.'
+  m_text: "You can continue without a VR headset. Choose a sketch below to enter
+    Viewing Mode with the following controls:\n\nMouse: look around (press I to invert
+    up/down) \nW,A,S,D: move forward/back/left/right\nQ,E: move up/down\nHold shift
+    to move faster"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
   m_sharedMaterial: {fileID: 2133298, guid: fce54057bad3d2d4cb3c36ee394be518, type: 2}
@@ -1296,8 +1294,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
-  m_fontSizeBase: 18
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1332,7 +1330,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: -48.209274, y: -86.94563, z: -40.70897, w: -38.724518}
+  m_margin: {x: -61.764145, y: -95.308304, z: -53.75923, w: -38.724518}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

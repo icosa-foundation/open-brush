@@ -130,7 +130,9 @@ namespace TiltBrush.LachlanSleight
                 }
 
                 Vector3 cameraTranslation = Vector3.zero;
-                const float movementSpeed = 0.25f;
+
+                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode);
+                float movementSpeed = isSprinting ? 0.3f : 0.05f;
                 if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward))
                 {
                     cameraTranslation = Vector3.forward;
@@ -163,8 +165,8 @@ namespace TiltBrush.LachlanSleight
                 if (cameraTranslation != Vector3.zero)
                 {
                     TrTransform newScene = App.Scene.Pose;
-                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation * cameraTranslation;
-                    newScene.translation -= sceneTranslation * movementSpeed;
+                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation * (cameraTranslation * movementSpeed);
+                    newScene.translation -= sceneTranslation;
                     newScene = SketchControlsScript.MakeValidScenePose(newScene, BoundsRadius);
                     App.Scene.Pose = newScene;
                 }
