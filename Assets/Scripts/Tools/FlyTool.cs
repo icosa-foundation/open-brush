@@ -15,6 +15,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TiltBrush.LachlanSleight
 {
@@ -106,8 +107,65 @@ namespace TiltBrush.LachlanSleight
 
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
-            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly) ||
-                InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.Forward))
+            if (!App.VrSdk.IsHmdInitialized())
+            {
+                if (Mouse.current.leftButton.isPressed)
+                {
+
+                    Vector2 mv = InputManager.m_Instance.GetMouseMoveDelta();
+                    Vector3 cameraRotation = App.VrSdk.GetVrCamera().transform.rotation.eulerAngles;
+                    cameraRotation.y += mv.x;
+                    if (cameraRotation.y <= -180)
+                    {
+                        cameraRotation.y += 360;
+                    }
+                    else if (cameraRotation.y > 180)
+                    {
+                        cameraRotation.y -= 360;
+                    }
+
+                    cameraRotation.x += mv.y;
+                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
+                }
+
+                Vector3 cameraTranslation = Vector3.zero;
+                const float movementSpeed = 0.25f;
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward))
+                {
+                    cameraTranslation = Vector3.forward;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards))
+                {
+                    cameraTranslation = Vector3.back;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
+                {
+                    cameraTranslation = Vector3.up;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
+                {
+                    cameraTranslation = Vector3.down;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft))
+                {
+                    cameraTranslation = Vector3.left;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight))
+                {
+                    cameraTranslation = Vector3.right;
+                }
+
+                if (cameraTranslation != Vector3.zero)
+                {
+                    TrTransform newScene = App.Scene.Pose;
+                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation * cameraTranslation;
+                    newScene.translation -= sceneTranslation * movementSpeed;
+                    newScene = SketchControlsScript.MakeValidScenePose(newScene, BoundsRadius);
+                    App.Scene.Pose = newScene;
+                }
+            }
+
+            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly))
             {
                 Vector3 position;
                 Vector3 vMovement;

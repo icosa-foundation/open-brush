@@ -133,8 +133,8 @@ namespace TiltBrush
             Save,
             Load,
 
-            Forward,
-            Backward,
+            CameraMoveForward,
+            CameraMoveBackwards,
 
             PositionMonoCamera,
 
@@ -154,6 +154,11 @@ namespace TiltBrush
             TossWidget,
 
             ToggleProfile,
+            CameraMoveLeft,
+            CameraMoveRight,
+            CameraMoveUp,
+            CameraMoveDown,
+            FlyMode
         }
 
         // Standard mapping of keyboard shortcut to actual keyboard keys.
@@ -199,8 +204,8 @@ namespace TiltBrush
             { (int)KeyboardShortcut.Save, new[] { Key.S } },
             { (int)KeyboardShortcut.Load, new[] { Key.L } },
 
-            { (int)KeyboardShortcut.Forward, new[] { Key.N } },
-            { (int)KeyboardShortcut.Backward, new[] { Key.M } },
+            { (int)KeyboardShortcut.CameraMoveForward, new[] { Key.N } },
+            { (int)KeyboardShortcut.CameraMoveBackwards, new[] { Key.M } },
 
             { (int)KeyboardShortcut.PositionMonoCamera, new[] { Key.LeftAlt, Key.RightAlt } },
 
@@ -213,6 +218,18 @@ namespace TiltBrush
             { (int)KeyboardShortcut.ToggleGVRAudio, new[] { Key.Backquote } },
 
             { (int)KeyboardShortcut.TossWidget, new[] { Key.Y } },
+        };
+
+        // Separate keymap for when we launch but no VR headset is detected.
+        private static readonly KeyMap m_NoHeadsetKeyMap = new KeyMap
+        {
+            { (int)KeyboardShortcut.CameraMoveForward, new[] { Key.W } },
+            { (int)KeyboardShortcut.CameraMoveBackwards, new[] { Key.S } },
+            { (int)KeyboardShortcut.CameraMoveLeft, new[] { Key.A } },
+            { (int)KeyboardShortcut.CameraMoveRight, new[] { Key.D } },
+            { (int)KeyboardShortcut.CameraMoveUp, new[] { Key.Q } },
+            { (int)KeyboardShortcut.CameraMoveDown, new[] { Key.E } },
+            { (int)KeyboardShortcut.FlyMode, new[] { Key.F } },
         };
 
         // Separate keymap for when demo mode is enabled.
@@ -229,7 +246,11 @@ namespace TiltBrush
         {
             get
             {
-                if (DemoManager.m_Instance.DemoModeEnabled)
+                if (!App.VrSdk.IsHmdInitialized())
+                {
+                    return m_NoHeadsetKeyMap;
+                }
+                else if (DemoManager.m_Instance.DemoModeEnabled)
                 {
                     return m_DemoKeyMap;
                 }
