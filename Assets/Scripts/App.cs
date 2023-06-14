@@ -1881,7 +1881,7 @@ namespace TiltBrush
                 StartupError = true;
                 CreateFailedToDetectVrDialog(
                     "Failed to find Documents folder.\nIn Windows, try modifying your Controlled Folder Access settings.",
-                    allowViewing:false
+                    allowViewing: false
                 );
             }
         }
