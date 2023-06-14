@@ -13,15 +13,14 @@
 // limitations under the License.
 
 using TMPro;
-using Unity.XR.CoreUtils;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.XR;
 
 namespace TiltBrush
 {
     public class InitNoHeadsetMode : MonoBehaviour
     {
+
+        public GameObject m_SketchLoadingUi;
 
         void Start()
         {
@@ -42,9 +41,6 @@ namespace TiltBrush
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
-            // SketchControlsScript.m_Instance.IssueGlobalCommand(
-            //     SketchControlsScript.GlobalCommands.Load, sketchIndex, 0
-            // );
 
             var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
             SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
@@ -54,6 +50,11 @@ namespace TiltBrush
             }
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             Destroy(gameObject);
+        }
+
+        public void ShowSketchSelectorUi(bool active = true)
+        {
+            m_SketchLoadingUi.SetActive(active);
         }
     }
 }

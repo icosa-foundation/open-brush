@@ -38,6 +38,7 @@ namespace TiltBrush.LachlanSleight
         private float m_StopThresholdSpeed = 0.01f;
 
         private bool m_Armed = false;
+        private bool m_InvertLook = false;
 
         private Vector3 m_Velocity;
 
@@ -124,7 +125,7 @@ namespace TiltBrush.LachlanSleight
                         cameraRotation.y -= 360;
                     }
 
-                    cameraRotation.x += mv.y;
+                    cameraRotation.x -= m_InvertLook ? -mv.y : mv.y;
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
 
@@ -153,6 +154,10 @@ namespace TiltBrush.LachlanSleight
                 else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight))
                 {
                     cameraTranslation = Vector3.right;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
+                {
+                    m_InvertLook = !m_InvertLook;
                 }
 
                 if (cameraTranslation != Vector3.zero)

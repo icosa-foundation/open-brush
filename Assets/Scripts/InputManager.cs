@@ -157,7 +157,8 @@ namespace TiltBrush
             CameraMoveRight,
             CameraMoveUp,
             CameraMoveDown,
-            FlyMode
+            FlyMode,
+            InvertLook
         }
 
         // Standard mapping of keyboard shortcut to actual keyboard keys.
@@ -229,6 +230,7 @@ namespace TiltBrush
             { (int)KeyboardShortcut.CameraMoveUp, new[] { Key.Q } },
             { (int)KeyboardShortcut.CameraMoveDown, new[] { Key.E } },
             { (int)KeyboardShortcut.FlyMode, new[] { Key.F } },
+            { (int)KeyboardShortcut.InvertLook, new[] { Key.I } },
         };
 
         // Separate keymap for when demo mode is enabled.
