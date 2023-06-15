@@ -32,6 +32,12 @@ namespace TiltBrush
                 var sketchName = userSketchSet.GetSketchName(i);
                 dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
             }
+            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            for (int i = 0; i < curatedSketchSet.NumSketches; i++)
+            {
+                var sketchName = curatedSketchSet.GetSketchName(i);
+                dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
+            }
         }
 
         public void Init()
@@ -43,11 +49,25 @@ namespace TiltBrush
             var index = dropdown.value;
 
             var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
-            SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
-            if (rInfo != null)
+            if (index < sketchSet.NumSketches)
             {
-                SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                if (rInfo != null)
+                {
+                    SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                }
             }
+            else
+            {
+                index -= sketchSet.NumSketches;
+                sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+                var rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                if (rInfo != null)
+                {
+                    SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                }
+            }
+
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             Destroy(gameObject);
         }
