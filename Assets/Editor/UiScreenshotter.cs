@@ -40,8 +40,14 @@ namespace TiltBrush
         static void GenerateBrushScreenShots()
         {
             if (!IsPlaying()) return;
-
             DelayedGenerateBrushScreenShots();
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
+        static void GenerateEnvironmentScreenshots()
+        {
+            if (!IsPlaying()) return;
+            DelayedGenerateEnvironmentScreenshots();
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Panel Screenshots")]
@@ -67,6 +73,25 @@ namespace TiltBrush
             var env = EnvironmentCatalog.m_Instance.GetEnvironment(blackGuid);
             SceneSettings.m_Instance.SetDesiredPreset(env,
                 keepSceneTransform: true, forceTransition: false, hasCustomLights: false, skipFade: true);
+        }
+
+        async static void DelayedGenerateEnvironmentScreenshots()
+        {
+            ApiMethods.ViewOnly();
+            PanelManager.m_Instance.HideAllPanels();
+            await Task.Delay(1000);
+            var cam = Camera.main;
+            cam.transform.position = new Vector3(0, 10, -5);
+            cam.transform.rotation = Quaternion.identity;
+            cam.fieldOfView = 110;
+            cam.aspect = 1;
+            foreach (var env in EnvironmentCatalog.m_Instance.AllEnvironments)
+            {
+                SceneSettings.m_Instance.SetDesiredPreset(env,
+                    keepSceneTransform: true, forceTransition: false, hasCustomLights: false, skipFade: true);
+                await Task.Delay(1000);
+                SaveCurrentView(cam, $"environment-{env.Description}.png", 1024, 1024);
+            }
         }
 
         async static void DelayedGenerateBrushScreenShots()
