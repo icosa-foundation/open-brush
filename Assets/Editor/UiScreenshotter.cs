@@ -26,19 +26,30 @@ namespace TiltBrush
     public class UiScreenshotter : Editor
     {
 
-        [MenuItem("Open Brush/Info/Generate UI Screenshots")]
-        static void Generate()
+        private static bool IsPlaying()
         {
             if (!Application.isPlaying)
             {
                 Debug.LogError("You can only run this whilst in Play Mode");
-                return;
+                return false;
             }
+            return true;
+        }
 
-            var blackGuid = Guid.Parse("580b4529-ac50-4fe9-b8d2-635765a14893");
-            var env = EnvironmentCatalog.m_Instance.GetEnvironment(blackGuid);
-            SceneSettings.m_Instance.SetDesiredPreset(env,
-                keepSceneTransform: true, forceTransition: false, hasCustomLights: false, skipFade: true);
+        [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots")]
+        static void GenerateBrushScreenShots()
+        {
+            if (!IsPlaying()) return;
+
+            DelayedGenerateBrushScreenShots();
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Panel Screenshots")]
+        static void GeneratePanelScreenshots()
+        {
+            if (!IsPlaying()) return;
+
+            SetupBlackEnvironment();
 
             foreach (BasePanel.PanelType panelType in (BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType)))
             {
@@ -47,16 +58,44 @@ namespace TiltBrush
                     PanelManager.m_Instance.OpenPanel(panelType, TrTransform.T(new Vector3(0, 50, 2)));
                 }
             }
-            DelayedTasks();
+            DelayedGeneratePanelScreenshots();
         }
 
-        async static void DelayedTasks()
+        private static void SetupBlackEnvironment()
+        {
+            var blackGuid = Guid.Parse("580b4529-ac50-4fe9-b8d2-635765a14893");
+            var env = EnvironmentCatalog.m_Instance.GetEnvironment(blackGuid);
+            SceneSettings.m_Instance.SetDesiredPreset(env,
+                keepSceneTransform: true, forceTransition: false, hasCustomLights: false, skipFade: true);
+        }
+
+        async static void DelayedGenerateBrushScreenShots()
+        {
+            await Task.Delay(3000);
+            var cam = InitScreenshotCamera();
+
+            var path = new List<TrTransform>();
+            var origin = new Vector3(-1.25f, 100, 4);
+            for (float i = 0; i < 3; i += 0.1f)
+            {
+                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i/3), 0)));
+            }
+
+            foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
+            {
+                PointerManager.m_Instance.SetBrushForAllPointers(brush);
+                await Task.Delay(100);
+                DrawStrokes.DrawSingleTrList(path, TrTransform.T(origin), 1f, 0.2f, true);
+                SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                ApiMethods.DeleteStroke(0);
+            }
+        }
+
+        async static void DelayedGeneratePanelScreenshots()
         {
             await Task.Delay(3000);
 
-            var cam = Camera.main;
-            cam.transform.position = new Vector3(0, 100, 0);
-            cam.transform.rotation = Quaternion.identity;
+            var cam = InitScreenshotCamera();
 
             int count = ((BasePanel.PanelType[])Enum.GetValues(typeof(BasePanel.PanelType))).Length;
             Debug.Log($"Starting {count} panel screenshots");
@@ -108,6 +147,14 @@ namespace TiltBrush
                     originalTransform.ToTransform(panel.transform);
                 }
             }
+        }
+
+        private static Camera InitScreenshotCamera()
+        {
+            var cam = Camera.main;
+            cam.transform.position = new Vector3(0, 100, 0);
+            cam.transform.rotation = Quaternion.identity;
+            return cam;
         }
 
         static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
