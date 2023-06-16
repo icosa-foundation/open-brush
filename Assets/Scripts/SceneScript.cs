@@ -328,7 +328,7 @@ namespace TiltBrush
             // Subtract one to use it as index into m_LayerCanvases, which only stores extra layers
             return m_LayerCanvases[layerIndex - 1];
         }
-        
+
         public void ClearLayerContents(CanvasScript canvas)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
