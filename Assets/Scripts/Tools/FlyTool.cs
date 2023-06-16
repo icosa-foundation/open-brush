@@ -125,7 +125,7 @@ namespace TiltBrush
                     mv = InputManager.m_Instance.GetMouseMoveDelta();
                 }
 
-                var virtualButtons = new Dictionary<char, bool>{{ 'W', false }, { 'A', false }, { 'S', false }, { 'D', false }};
+                var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
 
                 if (m_IsTouchScreen)
                 {

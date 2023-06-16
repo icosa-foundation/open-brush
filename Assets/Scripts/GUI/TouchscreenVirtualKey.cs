@@ -21,7 +21,7 @@ namespace TiltBrush
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if(!_button.interactable) return;
+            if (!_button.interactable) return;
             m_IsPressed = true;
         }
 
