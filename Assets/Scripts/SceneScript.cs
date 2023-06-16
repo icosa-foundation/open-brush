@@ -319,18 +319,16 @@ namespace TiltBrush
         public CanvasScript GetOrCreateLayer(int layerIndex)
         {
             // Layers are numbered 0=Main then 1, 2, 3
-            // Subtract one so we can use them as indices into m_LayerCanvases
-            // which only stores extra layers
-            layerIndex -= 1;
-            for (int i = m_LayerCanvases.Count; i < layerIndex; i++)
-            {
+            if (layerIndex == 0)
+                return App.Scene.MainCanvas;
+
+            for (var i = m_LayerCanvases.Count; i < layerIndex; ++i)
                 AddLayerNow();
-            }
 
-            if (layerIndex == -1 || layerIndex >= m_LayerCanvases.Count) return App.Scene.MainCanvas;
-            return m_LayerCanvases[layerIndex];
+            // Subtract one to use it as index into m_LayerCanvases, which only stores extra layers
+            return m_LayerCanvases[layerIndex - 1];
         }
-
+        
         public void ClearLayerContents(CanvasScript canvas)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
