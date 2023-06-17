@@ -934,18 +934,29 @@ namespace TiltBrush
             }
         }
 
-        public void ToggleBackgroundScript(string scriptToToggle)
+        public void ToggleBackgroundScript(string scriptName)
         {
-            var script = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
-            if (m_ActiveBackgroundScripts.ContainsKey(scriptToToggle))
+            bool isActive = m_ActiveBackgroundScripts.ContainsKey(scriptName);
+            ActivateBackgroundScript(scriptName, !isActive);
+        }
+
+        public void ActivateBackgroundScript(string scriptName, bool active)
+        {
+            var script = Scripts[LuaApiCategory.BackgroundScript][scriptName];
+            if (active)
             {
-                m_ActiveBackgroundScripts.Remove(scriptToToggle);
-                // Only call EndScript if background scripts are enabled globally
-                if (BackgroundScriptsEnabled) EndScript(script);
+                if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                {
+                    m_ActiveBackgroundScripts.Remove(scriptName);
+                    // Only call EndScript if background scripts are enabled globally
+                    if (BackgroundScriptsEnabled) EndScript(script);
+                }
                 return;
             }
             // Wasn't present - so add it
-            m_ActiveBackgroundScripts[scriptToToggle] = script;
+            m_ActiveBackgroundScripts[scriptName] = script;
+            // Reinit if already present
+            // Do we really want this or not?
             if (BackgroundScriptsEnabled) InitScript(script);
         }
 
