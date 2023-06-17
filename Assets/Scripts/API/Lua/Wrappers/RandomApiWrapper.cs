@@ -26,7 +26,14 @@ namespace TiltBrush
         public static Quaternion rotation => Random.rotation;
         public static Quaternion rotationUniform => Random.rotationUniform;
         public static float value => Random.value;
-        public static Color colorHSV => Random.ColorHSV();
+        public static Color color => Random.ColorHSV();
+        public static Color ColorHSV(
+            float hueMin, float hueMax,
+            float saturationMin, float saturationMax,
+            float valueMin, float valueMax)
+        {
+            return Random.ColorHSV(hueMin, hueMax, saturationMin, saturationMax, valueMin, valueMax);
+        }
         public static void InitState(int seed) => Random.InitState(seed);
         public static float Range(int min, int max) => Random.Range(min, max);
         public static float Range(float min, float max) => Random.Range(min, max);
