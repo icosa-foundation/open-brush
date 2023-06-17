@@ -664,7 +664,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.toolscript.deactivate", "Dectivate the tool script")]
-        public static void DectivateToolScript()
+        public static void DeactivateToolScript()
         {
             SketchSurfacePanel.m_Instance.EnableDefaultTool();
         }
@@ -677,7 +677,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.symmetryscript.deactivate", "Dectivate the symmetry script")]
-        public static void DectivateSymmetryScript()
+        public static void DeactivateSymmetryScript()
         {
             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
         }
@@ -690,10 +690,35 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.pointerscript.deactivate", "Dectivate the pointer script")]
-        public static void DectivatePointerScript()
+        public static void DeactivatePointerScript()
         {
             LuaManager.Instance.PointerScriptsEnabled = false;
         }
+
+        [ApiEndpoint("scripts.backgroundscript.activate", "Activate the given background script")]
+        public static void ActivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.deactivate", "Dectivate the given background script")]
+        public static void DeactivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.activateall", "Dectivate all background scripts")]
+        public static void ActivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(true);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.deactivateall", "Dectivate all background scripts")]
+        public static void DectivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(false);
+        }
+
 
         [ApiEndpoint("guide.add", "Adds a guide to the scene")]
         public static void AddGuide(string type)
