@@ -114,14 +114,14 @@
     }
 
     function configureMultiSelect(id, items) {
-        let temp, item, a, i;
-        label = document.getElementById(id);
-        template = document.getElementById("backgroundScriptTemplate");
-        row = template.content.querySelector("div");
-        for (i = 0; i < items.length; i++) {
-            var name = items[i];
-            a = document.importNode(row, true);
-            var btns = a.getElementsByTagName("button");
+        let label = document.getElementById(id);
+        let template = document.getElementById("backgroundScriptTemplate");
+        let row = template.content.querySelector("div");
+        // Loop in reverse as we insert each row at the start of #backgroundScripts
+        for (let i = items.length - 1; i >= 0 ; i--) {
+            let name = items[i];
+            let a = document.importNode(row, true);
+            let btns = a.getElementsByTagName("button");
             btns[0].insertAdjacentText("beforebegin", `${name}: `);
             btns[0].name = name;
             btns[1].name = name;
