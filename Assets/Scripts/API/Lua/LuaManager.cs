@@ -945,19 +945,20 @@ namespace TiltBrush
             var script = Scripts[LuaApiCategory.BackgroundScript][scriptName];
             if (active)
             {
+                m_ActiveBackgroundScripts[scriptName] = script;
+                // Reinit if already present
+                // Do we really want this or not?
+                if (BackgroundScriptsEnabled) InitScript(script);
+            }
+            else
+            {
                 if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
                 {
                     m_ActiveBackgroundScripts.Remove(scriptName);
                     // Only call EndScript if background scripts are enabled globally
                     if (BackgroundScriptsEnabled) EndScript(script);
                 }
-                return;
             }
-            // Wasn't present - so add it
-            m_ActiveBackgroundScripts[scriptName] = script;
-            // Reinit if already present
-            // Do we really want this or not?
-            if (BackgroundScriptsEnabled) InitScript(script);
         }
 
         public bool CopyActiveScriptToUserScriptFolder(LuaApiCategory category)
