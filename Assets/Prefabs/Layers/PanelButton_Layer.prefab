@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5069320005170579603
+--- !u!1 &1268327976928988088
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,23 +8,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6997752879239116658}
-  - component: {fileID: 680039501961658428}
-  - component: {fileID: 8837682298200604984}
-  m_Layer: 0
+  - component: {fileID: 279097035752024481}
+  - component: {fileID: 4038085715780760098}
+  - component: {fileID: 6004913305505129852}
+  m_Layer: 16
   m_Name: Label
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &6997752879239116658
+--- !u!224 &279097035752024481
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5069320005170579603}
+  m_GameObject: {fileID: 1268327976928988088}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.02856348}
   m_LocalScale: {x: 0.0043131993, y: 0.023587814, z: 0.010000001}
@@ -38,13 +38,13 @@ RectTransform:
   m_AnchoredPosition: {x: 0.059430286, y: -0.5937499}
   m_SizeDelta: {x: 95.8, y: 112}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!23 &680039501961658428
+--- !u!23 &4038085715780760098
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5069320005170579603}
+  m_GameObject: {fileID: 1268327976928988088}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -80,13 +80,13 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &8837682298200604984
+--- !u!114 &6004913305505129852
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5069320005170579603}
+  m_GameObject: {fileID: 1268327976928988088}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
@@ -170,7 +170,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 680039501961658428}
+  m_renderer: {fileID: 4038085715780760098}
   m_maskType: 0
 --- !u!1 &7853234119872618238
 GameObject:
@@ -185,7 +185,7 @@ GameObject:
   - component: {fileID: 7831321253995760570}
   - component: {fileID: 7789303732033715234}
   - component: {fileID: 4798737524918308570}
-  m_Layer: 5
+  m_Layer: 16
   m_Name: PanelButton_Layer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -204,7 +204,7 @@ Transform:
   m_LocalScale: {x: 0.875, y: 0.16, z: 0.377405}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6997752879239116658}
+  - {fileID: 279097035752024481}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -285,11 +285,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Make Active
+  m_DescriptionText: LAYERS_PANEL_ACTIVE_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7874341855010816
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 57ec9586d21ff9142abf94cca6f69ef3, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -302,3 +320,6 @@ MonoBehaviour:
   activated: 0
   activatedButtonTexture: {fileID: 2800000, guid: cb24e09af3011724b893f07ef052b01a,
     type: 3}
+  references:
+    version: 2
+    RefIds: []

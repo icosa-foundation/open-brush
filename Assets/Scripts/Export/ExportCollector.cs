@@ -171,7 +171,7 @@ namespace TiltBrush
         {
             var settings = SceneSettings.m_Instance;
             payload.env.guid = settings.GetDesiredPreset().m_Guid;
-            payload.env.description = settings.GetDesiredPreset().m_Description;
+            payload.env.description = settings.GetDesiredPreset().Description;
             if (includeSkyCubemap)
             {
                 // Most of the environment payload is very small data but if the skybox cubemap is included

@@ -333,7 +333,16 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
     m_Command: 5
-  m_PanelDescription: Layers
+  m_PanelDescription: LAYERS_PANEL_DESCRIPTION
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 7872343826997248
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 0.75, y: 1, z: 0}
@@ -368,6 +377,9 @@ MonoBehaviour:
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &11455360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,6 +441,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9aeb2c80443c4314bb3cbe128f0857a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_MainLayerName:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81184247687733248
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_AdditionalLayerName:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81184440202092544
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_Widgets:
   - {fileID: 8931799926426736621}
   - {fileID: 8049365247439104534}
@@ -438,6 +468,9 @@ MonoBehaviour:
   - {fileID: 4607754664015214748}
   - {fileID: 522565082401551463}
   - {fileID: 5142255780986780541}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000013585526572
 GameObject:
   m_ObjectHideFlags: 0
@@ -633,8 +666,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Copy Selection to Current Layer
+  m_DescriptionText: LAYERS_PANEL_COPYLAYER_BUTTON_DESCRIPTION
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81183732522344448
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 518d8419e77177d40893904be6ce3be5, type: 3}
@@ -662,6 +713,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3064214241829522109
 GameObject:
   m_ObjectHideFlags: 0
@@ -1109,10 +1163,110 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 2140785740937076938, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
         type: 3}
-      propertyPath: activated
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 2.8576
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: -0.262
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalRotation.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629242930406565158, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
         type: 3}
@@ -1528,7 +1682,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -1553,3 +1725,6 @@ MonoBehaviour:
     m_Texture: {fileID: 2800000, guid: ff3938a5f23ea46409dd9389f1a1cd97, type: 3}
   DisplayTextLabel: 0
   DisplayIcon: 1
+  references:
+    version: 2
+    RefIds: []

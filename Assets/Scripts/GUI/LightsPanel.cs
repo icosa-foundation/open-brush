@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -30,6 +31,9 @@ namespace TiltBrush
     public class LightsPanel : BasePanel
     {
         [SerializeField] private LightButton[] m_LightButtons;
+        [SerializeField] private LocalizedString m_AmbientLightName;
+        [SerializeField] private LocalizedString m_ShadowLightName;
+        [SerializeField] private LocalizedString m_NoShadowLightName;
         [SerializeField] private LightGizmo m_MainLightGizmoPrefab;
         [SerializeField] private LightGizmo m_SecondaryLightGizmoPrefab;
         [SerializeField] private float m_LightSize = 0.6f;
@@ -476,11 +480,11 @@ namespace TiltBrush
             switch (mode)
             {
                 case LightMode.Ambient:
-                    return "Fill Light";
+                    return m_AmbientLightName.GetLocalizedString();
                 case LightMode.Shadow:
-                    return "Main Light";
+                    return m_ShadowLightName.GetLocalizedString();
                 case LightMode.NoShadow:
-                    return "Secondary Light";
+                    return m_NoShadowLightName.GetLocalizedString();
             }
             return "";
         }

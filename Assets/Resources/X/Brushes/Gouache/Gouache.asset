@@ -24,7 +24,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 11400000, guid: 4465b5ef3605bec42b3e6b04508ddb6b, type: 2}
   m_LooksIdentical: 1
   m_ButtonTexture: {fileID: 2800000, guid: d242d268c0d3f1b44846a4788383cbf6, type: 3}
-  m_Description: Gouache
+  m_Description: BRUSH_GOUACHE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81204982288277504
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -72,3 +81,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
