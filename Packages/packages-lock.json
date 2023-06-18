@@ -6,6 +6,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.icosa.cscore": {
+      "version": "https://github.com/icosa-gallery/com.icosa.cscore.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "f015e162fc0ad26bb843b9757d503f18361854df"
+    },
     "com.meta.xr.sdk.utilities": {
       "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
       "depth": 0,

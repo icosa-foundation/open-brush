@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.icosa.cscore": "https://github.com/icosa-gallery/com.icosa.cscore.git#upm",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
