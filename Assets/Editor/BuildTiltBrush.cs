@@ -110,9 +110,12 @@ static class BuildTiltBrush
         {
             // Mono
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneOSX),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.Android),
 
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneOSX),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
 
 #if OCULUS_SUPPORTED
@@ -1090,7 +1093,19 @@ static class BuildTiltBrush
                     targetXrPluginsRequired = new string[] { "Unity.XR.Oculus.OculusLoader" };
                     break;
                 case XrSdkMode.OpenXR:
-                    targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    switch (tiltOptions.Target)
+                    {
+                        // A bit weird but we're using XrSdkMode.OpenXR to also handle "no headset but not monoscopic"
+                        case BuildTarget.StandaloneOSX:
+                        case BuildTarget.iOS:
+                            break;
+                        case BuildTarget.StandaloneLinux64:
+                        case BuildTarget.StandaloneWindows:
+                        case BuildTarget.StandaloneWindows64:
+                        case BuildTarget.Android:
+                            targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                            break;
+                    }
                     break;
                 case XrSdkMode.Pico:
                     targetXrPluginsRequired = new string[] { "Unity.XR.PXR.PXR_Loader" };
