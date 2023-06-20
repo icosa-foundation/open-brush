@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.atteneder.gltfast": "5.0.0",
+    "com.atteneder.gltfast": "5.0.4",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",

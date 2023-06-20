@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.atteneder.gltfast": {
-      "version": "5.0.0",
+      "version": "5.0.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {
