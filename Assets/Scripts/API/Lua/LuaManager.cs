@@ -25,6 +25,7 @@ using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using System.Reflection;
+using MoonSharp.Interpreter.Interop;
 #endif
 
 namespace TiltBrush
@@ -476,25 +477,127 @@ namespace TiltBrush
             }
             target[fnName] = t;
 #if UNITY_EDITOR
+
+            string makeNiceTypename(string typeName)
+            {
+                switch (typeName)
+                {
+                    case "System.Boolean":
+                        typeName = "boolean";
+                        break;
+                    case "System.Single":
+                        typeName = "number";
+                        break;
+                    case "System.String":
+                        typeName = "string";
+                        break;
+                    case "System.Int32":
+                        typeName = "number";
+                        break;
+                    case "TiltBrush.TrTransform":
+                        typeName = "Transform";
+                        break;
+                    case "UnityEngine.Vector2":
+                        typeName = "Vector2";
+                        break;
+                    case "UnityEngine.Vector3":
+                        typeName = "Vector3";
+                        break;
+                    case "System.Collections.Generic.List`1[UnityEngine.Vector3]":
+                        typeName = "table_Vector3";
+                        break;
+                    case "System.Collections.Generic.List`1[UnityEngine.Vector2]":
+                        typeName = "table_Vector2";
+                        break;
+                    case "System.ValueTuple`2[System.Single,UnityEngine.Vector3]":
+                        typeName = "Path";
+                        break;
+                    case "System.Collections.Generic.List`1[UnityEngine.Color]":
+                        typeName = "table_Color";
+                        break;
+                    case "System.Collections.Generic.List`1[System.String]":
+                        typeName = "table_string";
+                        break;
+                    case "System.Collections.Generic.List`1[TiltBrush.TrTransform]":
+                        typeName = "table_Transform";
+                        break;
+                    case "System.Collections.Generic.List`1[TiltBrush.Path]":
+                        typeName = "table_Path";
+                        break;
+                    case "UnityEngine.Quaternion":
+                        typeName = "Rotation";
+                        break;
+                    case "UnityEngine.Color":
+                        typeName = "Color";
+                        break;
+                }
+
+                typeName = typeName.Replace("TiltBrush.", "");
+                typeName = typeName.Replace("ApiWrapper", "");
+                return typeName;
+            }
+
+            bool isHidden(ICustomAttributeProvider info)
+            {
+                // Ignore MoonSharpHidden and MoonSharpVisible if false
+                if (info.GetCustomAttributes(typeof(MoonSharpHiddenAttribute), true).Length > 0) return true;
+                var vis = info.GetCustomAttributes(typeof(MoonSharpVisibleAttribute), true);
+                if (vis.Length > 0) if (!((MoonSharpVisibleAttribute)vis[0]).Visible) return true;
+                return false;
+            }
+
             if (Application.isEditor && AutoCompleteEntries!=null)
             {
+
+                string className = t.ToString()
+                    .Replace("ApiWrapper", "")
+                    .Replace("TiltBrush.", "");
+
+                AutoCompleteEntries.Add($"---Properties for type {className}");
+                AutoCompleteEntries.Add("");
+
                 foreach (var prop in t.GetProperties())
                 {
+                    if (isHidden(prop)) continue;
+
+                    if (prop.PropertyType != typeof(void))
+                    {
+                        var typeName = prop.PropertyType.ToString();
+                        AutoCompleteEntries.Add($"---@type {makeNiceTypename(typeName)}");
+                    }
                     AutoCompleteEntries.Add($"{fnName}.{prop.Name} = nil");
+                    AutoCompleteEntries.Add("");
                 }
+
+                AutoCompleteEntries.Add($"---Methods for type {className} ");
+                AutoCompleteEntries.Add("");
+
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
-                    .Where(x =>
-                        x.Name.ToString() != "Equals" &&
-                        x.Name.ToString() != "GetHashCode" &&
-                        x.Name.ToString() != "GetType" &&
-                        x.Name.ToString() != "ToString"))
+                             .Where(x =>
+                                 x.Name.ToString() != "Equals" &&
+                                 x.Name.ToString() != "GetHashCode" &&
+                                 x.Name.ToString() != "GetType" &&
+                                 x.Name.ToString() != "ToString"))
                 {
-                    string paramNames = "";
-                    var paramNameList = prop.GetParameters().Select(p => p.Name);
-                    paramNames = string.Join(", ", paramNameList);
-                    AutoCompleteEntries.Add($"function {fnName}.{prop.Name}({paramNames}) end");
+                    if (isHidden(prop)) continue;
+
+                    var paramNameList = new List<string>();
+                    foreach (var param in prop.GetParameters())
+                    {
+                        var typeName = param.ParameterType.ToString();
+                        paramNameList.Add(param.Name);
+                        AutoCompleteEntries.Add($"---@param {param.Name} {makeNiceTypename(typeName)}");
+                    }
+                    if (prop.ReturnType != typeof(void))
+                    {
+                        var returnTypeName = prop.ReturnType.ToString();
+                        AutoCompleteEntries.Add($"---@return {makeNiceTypename(returnTypeName)}");
+                    }
+                    AutoCompleteEntries.Add($"function {fnName}:{prop.Name}({string.Join(", ", paramNameList)}) end");
+                    AutoCompleteEntries.Add("");
                 }
             }
+            AutoCompleteEntries.Add("");
 #endif
         }
 
@@ -597,7 +700,7 @@ namespace TiltBrush
             }
             if (multipathWrapper != null)
             {
-                multipathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+                multipathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
             }
             return multipathWrapper;
         }
@@ -612,7 +715,7 @@ namespace TiltBrush
                 pathWrapper = result.ToObject<PathApiWrapper>();
                 if (pathWrapper != null)
                 {
-                    pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+                    pathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
                 }
             }
             catch (InvalidCastException e)

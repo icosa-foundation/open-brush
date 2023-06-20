@@ -22,6 +22,6 @@ function Main()
     )
 
     if App.frames % rate == 0 then
-        path:Draw(Path:New({startPoint, endPoint}))
+        Path:New({startPoint, endPoint}):Draw()
     end
 end

@@ -1,687 +1,2692 @@
+---@type Vector3
 Tool.startPosition = nil
+
+---@type Vector3
 Tool.endPosition = nil
+
+---@type Vector3
 Tool.vector = nil
+
+---@type Rotation
 Tool.rotation = nil
+
+---Properties for type App
+
+---@type number
 App.time = nil
+
+---@type number
 App.frames = nil
+
+---@type number
 App.currentScale = nil
+
+---@type string
 App.environment = nil
+
+---@type string
 App.clipboardText = nil
+
+---@type UnityEngine.Texture2D
 App.clipboardImage = nil
-function App.Physics(active) end
-function App.Undo() end
-function App.Redo() end
-function App.AddListener(a) end
-function App.ResetPanels() end
-function App.ShowScriptsFolder() end
-function App.ShowExportFolder() end
-function App.ShowSketchesFolder(a) end
-function App.StraightEdge(a) end
-function App.AutoOrient(a) end
-function App.ViewOnly(a) end
-function App.AutoSimplify(a) end
-function App.Disco(a) end
-function App.Profiling(a) end
-function App.PostProcessing(a) end
-function App.DraftingVisible() end
-function App.DraftingTransparent() end
-function App.DraftingHidden() end
-function App.Watermark(a) end
-function App.ReadFile(path) end
-function App.Error(message) end
-function App.SetFont(fontData) end
-function App.TakeSnapshot(tr, filename, width, height, superSampling) end
-function App.Take360Snapshot(tr, filename, width) end
+
+---Methods for type App 
+
+---@param active boolean
+---@return boolean
+function App:Physics(active) end
+
+function App:Undo() end
+
+function App:Redo() end
+
+---@param a string
+function App:AddListener(a) end
+
+function App:ResetPanels() end
+
+function App:ShowScriptsFolder() end
+
+function App:ShowExportFolder() end
+
+---@param a number
+function App:ShowSketchesFolder(a) end
+
+---@param a boolean
+function App:StraightEdge(a) end
+
+---@param a boolean
+function App:AutoOrient(a) end
+
+---@param a boolean
+function App:ViewOnly(a) end
+
+---@param a boolean
+function App:AutoSimplify(a) end
+
+---@param a boolean
+function App:Disco(a) end
+
+---@param a boolean
+function App:Profiling(a) end
+
+---@param a boolean
+function App:PostProcessing(a) end
+
+function App:DraftingVisible() end
+
+function App:DraftingTransparent() end
+
+function App:DraftingHidden() end
+
+---@param a boolean
+function App:Watermark(a) end
+
+---@param path string
+---@return string
+function App:ReadFile(path) end
+
+---@param message string
+function App:Error(message) end
+
+---@param fontData string
+function App:SetFont(fontData) end
+
+---@param tr Transform
+---@param filename string
+---@param width number
+---@param height number
+---@param superSampling number
+function App:TakeSnapshot(tr, filename, width, height, superSampling) end
+
+---@param tr Transform
+---@param filename string
+---@param width number
+function App:Take360Snapshot(tr, filename, width) end
+
+
+---Properties for type Brush
+
+---@type number
 Brush.timeSincePressed = nil
+
+---@type number
 Brush.timeSinceReleased = nil
+
+---@type boolean
 Brush.triggerIsPressed = nil
+
+---@type boolean
 Brush.triggerIsPressedThisFrame = nil
+
+---@type number
 Brush.distanceMoved = nil
+
+---@type number
 Brush.distanceDrawn = nil
+
+---@type Vector3
 Brush.position = nil
+
+---@type Rotation
 Brush.rotation = nil
+
+---@type Vector3
 Brush.direction = nil
+
+---@type number
 Brush.size = nil
+
+---@type number
 Brush.pressure = nil
+
+---@type string
 Brush.type = nil
+
+---@type number
 Brush.speed = nil
+
+---@type Color
 Brush.colorRgb = nil
+
+---@type Vector3
 Brush.colorHsv = nil
+
+---@type string
 Brush.colorHtml = nil
+
+---@type Color
 Brush.lastColorPicked = nil
+
+---@type Path
 Brush.currentPath = nil
+
+---@type Vector3
 Brush.LastColorPickedHsv = nil
-function Brush.JitterColor() end
-function Brush.ResizeHistory(size) end
-function Brush.SetHistorySize(size) end
-function Brush.GetPastPosition(back) end
-function Brush.GetPastRotation(back) end
-function Brush.ForcePaintingOn(active) end
-function Brush.ForcePaintingOff(active) end
-function Brush.ForceNewStroke() end
+
+---Methods for type Brush 
+
+function Brush:JitterColor() end
+
+---@param size number
+function Brush:ResizeHistory(size) end
+
+---@param size number
+function Brush:SetHistorySize(size) end
+
+---@param back number
+---@return Vector3
+function Brush:GetPastPosition(back) end
+
+---@param back number
+---@return Rotation
+function Brush:GetPastRotation(back) end
+
+---@param active boolean
+function Brush:ForcePaintingOn(active) end
+
+---@param active boolean
+function Brush:ForcePaintingOff(active) end
+
+function Brush:ForceNewStroke() end
+
+
+---Properties for type CameraPath
+
+---@type number
 CameraPath.index = nil
+
+---@type boolean
 CameraPath.active = nil
+
+---@type Transform
 CameraPath.transform = nil
+
+---@type Vector3
 CameraPath.position = nil
+
+---@type Rotation
 CameraPath.rotation = nil
+
+---@type number
 CameraPath.scale = nil
-function CameraPath.RenderActivePath() end
-function CameraPath.ShowAll() end
-function CameraPath.HideAll() end
-function CameraPath.PreviewActivePath(active) end
-function CameraPath.Delete() end
-function CameraPath.New() end
-function CameraPath.FromPath(path, looped) end
-function CameraPath.AsPath(step) end
-function CameraPath.Duplicate() end
-function CameraPath.InsertPosition(position, rotation, smoothing) end
-function CameraPath.InsertPosition(t, rotation, smoothing) end
-function CameraPath.InsertRotation(pos, rot) end
-function CameraPath.InsertRotation(t, rot) end
-function CameraPath.InsertFov(pos, fov) end
-function CameraPath.InsertFov(t, fov) end
-function CameraPath.InsertSpeed(pos, speed) end
-function CameraPath.InsertSpeed(t, speed) end
-function CameraPath.Extend(position, rotation, smoothing, atStart) end
-function CameraPath.Loop() end
-function CameraPath.RecordActivePath() end
-function CameraPath.Sample(time, loop, pingpong) end
-function CameraPath.Simplify(tolerance, smoothing) end
+
+---Methods for type CameraPath 
+
+function CameraPath:RenderActivePath() end
+
+function CameraPath:ShowAll() end
+
+function CameraPath:HideAll() end
+
+---@param active boolean
+function CameraPath:PreviewActivePath(active) end
+
+function CameraPath:Delete() end
+
+---@return CameraPath
+function CameraPath:New() end
+
+---@param path IPath
+---@param looped boolean
+---@return CameraPath
+function CameraPath:FromPath(path, looped) end
+
+---@param step number
+---@return Path
+function CameraPath:AsPath(step) end
+
+---@return CameraPathWidget
+function CameraPath:Duplicate() end
+
+---@param position Vector3
+---@param rotation Rotation
+---@param smoothing number
+---@return number
+function CameraPath:InsertPosition(position, rotation, smoothing) end
+
+---@param t number
+---@param rotation Rotation
+---@param smoothing number
+---@return number
+function CameraPath:InsertPosition(t, rotation, smoothing) end
+
+---@param pos Vector3
+---@param rot Rotation
+---@return number
+function CameraPath:InsertRotation(pos, rot) end
+
+---@param t number
+---@param rot Rotation
+---@return number
+function CameraPath:InsertRotation(t, rot) end
+
+---@param pos Vector3
+---@param fov number
+---@return number
+function CameraPath:InsertFov(pos, fov) end
+
+---@param t number
+---@param fov number
+---@return number
+function CameraPath:InsertFov(t, fov) end
+
+---@param pos Vector3
+---@param speed number
+---@return number
+function CameraPath:InsertSpeed(pos, speed) end
+
+---@param t number
+---@param speed number
+---@return number
+function CameraPath:InsertSpeed(t, speed) end
+
+---@param position Vector3
+---@param rotation Rotation
+---@param smoothing number
+---@param atStart boolean
+function CameraPath:Extend(position, rotation, smoothing, atStart) end
+
+function CameraPath:Loop() end
+
+function CameraPath:RecordActivePath() end
+
+---@param time number
+---@param loop boolean
+---@param pingpong boolean
+---@return Transform
+function CameraPath:Sample(time, loop, pingpong) end
+
+---@param tolerance number
+---@param smoothing number
+---@return CameraPath
+function CameraPath:Simplify(tolerance, smoothing) end
+
+
+---Properties for type Color
+
+---@type number
 Color.Item = nil
+
+---@type number
 Color.r = nil
+
+---@type number
 Color.g = nil
+
+---@type number
 Color.b = nil
+
+---@type number
 Color.a = nil
+
+---@type number
 Color.grayscale = nil
+
+---@type Color
 Color.gamma = nil
+
+---@type Color
 Color.linear = nil
+
+---@type number
 Color.maxColorComponent = nil
+
+---@type Color
 Color.black = nil
+
+---@type Color
 Color.blue = nil
+
+---@type Color
 Color.clear = nil
+
+---@type Color
 Color.cyan = nil
+
+---@type Color
 Color.gray = nil
+
+---@type Color
 Color.green = nil
+
+---@type Color
 Color.grey = nil
+
+---@type Color
 Color.magenta = nil
+
+---@type Color
 Color.red = nil
+
+---@type Color
 Color.white = nil
+
+---@type Color
 Color.yellow = nil
-function Color.New(r, g, b) end
-function Color.New(html) end
-function Color.Greyscale(col) end
-function Color.MaxColorComponent(col) end
-function Color.ToHtmlString(col) end
-function Color.ParseHtmlString(html) end
-function Color.Lerp(a, b, t) end
-function Color.LerpUnclamped(a, b, t) end
-function Color.HsvToRgb(h, s, v) end
-function Color.RgbToHsv(rgb) end
-function Color.Add(b) end
-function Color.Add(r, g, b) end
-function Color.Subtract(b) end
-function Color.Subtract(r, g, b) end
-function Color.Multiply(b) end
-function Color.Multiply(r, g, b) end
-function Color.Divide(b) end
-function Color.NotEquals(b) end
-function Color.NotEquals(r, g, b) end
-function Color.Add(a, b) end
-function Color.Subtract(a, b) end
-function Color.Multiply(a, b) end
-function Color.Divide(a, b) end
-function Color.NotEquals(a, b) end
-function Easing.linear(t) end
-function Easing.inQuad(t) end
-function Easing.outQuad(t) end
-function Easing.inOutQuad(t) end
-function Easing.inCubic(t) end
-function Easing.outCubic(t) end
-function Easing.inOutCubic(t) end
-function Easing.inQuart(t) end
-function Easing.outQuart(t) end
-function Easing.inOutQuart(t) end
-function Easing.inQuint(t) end
-function Easing.outQuint(t) end
-function Easing.inOutQuint(t) end
-function Easing.inSine(t) end
-function Easing.outSine(t) end
-function Easing.inOutSine(t) end
-function Easing.inExpo(t) end
-function Easing.outExpo(t) end
-function Easing.inOutExpo(t) end
-function Easing.inCirc(t) end
-function Easing.outCirc(t) end
-function Easing.inOutCirc(t) end
-function Easing.inElastic(t) end
-function Easing.outElastic(t) end
-function Easing.inOutElastic(t) end
-function Easing.inBack(t) end
-function Easing.outBack(t) end
-function Easing.inOutBack(t) end
-function Easing.inBounce(t) end
-function Easing.outBounce(t) end
-function Easing.inOutBounce(t) end
+
+---Methods for type Color 
+
+---@param r number
+---@param g number
+---@param b number
+---@return Color
+function Color:New(r, g, b) end
+
+---@param html string
+---@return Color
+function Color:New(html) end
+
+---@param col Color
+---@return number
+function Color:Greyscale(col) end
+
+---@param col Color
+---@return number
+function Color:MaxColorComponent(col) end
+
+---@param col Color
+---@return string
+function Color:ToHtmlString(col) end
+
+---@param html string
+---@return Color
+function Color:ParseHtmlString(html) end
+
+---@param a Color
+---@param b Color
+---@param t number
+---@return Color
+function Color:Lerp(a, b, t) end
+
+---@param a Color
+---@param b Color
+---@param t number
+---@return Color
+function Color:LerpUnclamped(a, b, t) end
+
+---@param h number
+---@param s number
+---@param v number
+---@return Color
+function Color:HsvToRgb(h, s, v) end
+
+---@param rgb Color
+---@return Vector3
+function Color:RgbToHsv(rgb) end
+
+---@param b Color
+---@return Color
+function Color:Add(b) end
+
+---@param r number
+---@param g number
+---@param b number
+---@return Color
+function Color:Add(r, g, b) end
+
+---@param b Color
+---@return Color
+function Color:Subtract(b) end
+
+---@param r number
+---@param g number
+---@param b number
+---@return Color
+function Color:Subtract(r, g, b) end
+
+---@param b number
+---@return Color
+function Color:Multiply(b) end
+
+---@param r number
+---@param g number
+---@param b number
+---@return Color
+function Color:Multiply(r, g, b) end
+
+---@param b number
+---@return Color
+function Color:Divide(b) end
+
+---@param b Color
+---@return boolean
+function Color:NotEquals(b) end
+
+---@param r number
+---@param g number
+---@param b number
+---@return boolean
+function Color:NotEquals(r, g, b) end
+
+---@param a Color
+---@param b Color
+---@return Color
+function Color:Add(a, b) end
+
+---@param a Color
+---@param b Color
+---@return Color
+function Color:Subtract(a, b) end
+
+---@param a Color
+---@param b number
+---@return Color
+function Color:Multiply(a, b) end
+
+---@param a Color
+---@param b number
+---@return Color
+function Color:Divide(a, b) end
+
+---@param a Color
+---@param b Color
+---@return boolean
+function Color:NotEquals(a, b) end
+
+
+---Properties for type Easing
+
+---Methods for type Easing 
+
+---@param t number
+---@return number
+function Easing:linear(t) end
+
+---@param t number
+---@return number
+function Easing:inQuad(t) end
+
+---@param t number
+---@return number
+function Easing:outQuad(t) end
+
+---@param t number
+---@return number
+function Easing:inOutQuad(t) end
+
+---@param t number
+---@return number
+function Easing:inCubic(t) end
+
+---@param t number
+---@return number
+function Easing:outCubic(t) end
+
+---@param t number
+---@return number
+function Easing:inOutCubic(t) end
+
+---@param t number
+---@return number
+function Easing:inQuart(t) end
+
+---@param t number
+---@return number
+function Easing:outQuart(t) end
+
+---@param t number
+---@return number
+function Easing:inOutQuart(t) end
+
+---@param t number
+---@return number
+function Easing:inQuint(t) end
+
+---@param t number
+---@return number
+function Easing:outQuint(t) end
+
+---@param t number
+---@return number
+function Easing:inOutQuint(t) end
+
+---@param t number
+---@return number
+function Easing:inSine(t) end
+
+---@param t number
+---@return number
+function Easing:outSine(t) end
+
+---@param t number
+---@return number
+function Easing:inOutSine(t) end
+
+---@param t number
+---@return number
+function Easing:inExpo(t) end
+
+---@param t number
+---@return number
+function Easing:outExpo(t) end
+
+---@param t number
+---@return number
+function Easing:inOutExpo(t) end
+
+---@param t number
+---@return number
+function Easing:inCirc(t) end
+
+---@param t number
+---@return number
+function Easing:outCirc(t) end
+
+---@param t number
+---@return number
+function Easing:inOutCirc(t) end
+
+---@param t number
+---@return number
+function Easing:inElastic(t) end
+
+---@param t number
+---@return number
+function Easing:outElastic(t) end
+
+---@param t number
+---@return number
+function Easing:inOutElastic(t) end
+
+---@param t number
+---@return number
+function Easing:inBack(t) end
+
+---@param t number
+---@return number
+function Easing:outBack(t) end
+
+---@param t number
+---@return number
+function Easing:inOutBack(t) end
+
+---@param t number
+---@return number
+function Easing:inBounce(t) end
+
+---@param t number
+---@return number
+function Easing:outBounce(t) end
+
+---@param t number
+---@return number
+function Easing:inOutBounce(t) end
+
+
+---Properties for type Guide
+
+---@type number
 Guide.index = nil
+
+---@type Transform
 Guide.transform = nil
+
+---@type Vector3
 Guide.position = nil
+
+---@type Rotation
 Guide.rotation = nil
+
+---@type number
 Guide.scale = nil
-function Guide.NewCube(transform) end
-function Guide.NewSphere(transform) end
-function Guide.NewCapsule(transform) end
-function Guide.NewCone(transform) end
-function Guide.NewEllipsoid(transform) end
-function Guide.NewCustom(transform, model) end
-function Guide.Select() end
-function Guide.Delete() end
-function Guide.Scale(scale) end
-function Headset.ResizeHistory(size) end
-function Headset.SetHistorySize(size) end
-function Headset.PastPosition(count) end
-function Headset.PastRotation(count) end
+
+---Methods for type Guide 
+
+---@param transform Transform
+---@return Guide
+function Guide:NewCube(transform) end
+
+---@param transform Transform
+---@return Guide
+function Guide:NewSphere(transform) end
+
+---@param transform Transform
+---@return Guide
+function Guide:NewCapsule(transform) end
+
+---@param transform Transform
+---@return Guide
+function Guide:NewCone(transform) end
+
+---@param transform Transform
+---@return Guide
+function Guide:NewEllipsoid(transform) end
+
+---@param transform Transform
+---@param model Model
+---@return Guide
+function Guide:NewCustom(transform, model) end
+
+function Guide:Select() end
+
+function Guide:Delete() end
+
+---@param scale Vector3
+function Guide:Scale(scale) end
+
+
+---Properties for type Headset
+
+---Methods for type Headset 
+
+---@param size number
+function Headset:ResizeHistory(size) end
+
+---@param size number
+function Headset:SetHistorySize(size) end
+
+---@param count number
+---@return Vector3
+function Headset:PastPosition(count) end
+
+---@param count number
+---@return Rotation
+function Headset:PastRotation(count) end
+
+
+---Properties for type Image
+
+---@type number
 Image.index = nil
+
+---@type Transform
 Image.transform = nil
+
+---@type Vector3
 Image.position = nil
+
+---@type Rotation
 Image.rotation = nil
+
+---@type number
 Image.scale = nil
-function Image.Import(location) end
-function Image.Select() end
-function Image.Delete() end
-function Image.FormEncode() end
-function Image.SaveBase64(base64, filename) end
+
+---Methods for type Image 
+
+---@param depth number
+---@param color Color
+function Image:Extrude(depth, color) end
+
+---@param location string
+---@return Image
+function Image:Import(location) end
+
+function Image:Select() end
+
+function Image:Delete() end
+
+---@return string
+function Image:FormEncode() end
+
+---@param base64 string
+---@param filename string
+---@return string
+function Image:SaveBase64(base64, filename) end
+
+
+---Properties for type Layer
+
+---@type number
 Layer.index = nil
+
+---@type boolean
 Layer.active = nil
+
+---@type Transform
 Layer.transform = nil
+
+---@type Vector3
 Layer.position = nil
+
+---@type Rotation
 Layer.rotation = nil
+
+---@type number
 Layer.scale = nil
-function Layer.New() end
-function Layer.CenterPivot() end
-function Layer.ShowPivot() end
-function Layer.HidePivot() end
-function Layer.Clear() end
-function Layer.Delete() end
-function Layer.Squash(other) end
-function Layer.SquashTo(destinationLayer) end
-function Layer.Show() end
-function Layer.Hide() end
-function Layer.Toggle() end
+
+---Methods for type Layer 
+
+---@return Layer
+function Layer:New() end
+
+function Layer:CenterPivot() end
+
+function Layer:ShowPivot() end
+
+function Layer:HidePivot() end
+
+function Layer:Clear() end
+
+function Layer:Delete() end
+
+---@return Layer
+function Layer:Squash() end
+
+---@param destinationLayer Layer
+---@return Layer
+function Layer:SquashTo(destinationLayer) end
+
+function Layer:Show() end
+
+function Layer:Hide() end
+
+function Layer:Toggle() end
+
+
+---Properties for type Math
+
+---@type number
 Math.deg2Rad = nil
+
+---@type number
 Math.epsilon = nil
+
+---@type number
 Math.positiveInfinity = nil
+
+---@type number
 Math.negativeInfinity = nil
+
+---@type number
 Math.pi = nil
+
+---@type number
 Math.rad2Deg = nil
-function Math.Abs(f) end
-function Math.Acos(f) end
-function Math.Approximately(a, b) end
-function Math.Asin(f) end
-function Math.Atan(f) end
-function Math.Atan2(y, x) end
-function Math.Ceil(f) end
-function Math.Clamp(value, min, max) end
-function Math.Clamp01(value) end
-function Math.ClosestPowerOfTwo(value) end
-function Math.Cos(f) end
-function Math.DeltaAngle(current, target) end
-function Math.Exp(power) end
-function Math.Floor(f) end
-function Math.InverseLerp(a, b, value) end
-function Math.IsPowerOfTwo(value) end
-function Math.Lerp(a, b, t) end
-function Math.LerpAngle(a, b, t) end
-function Math.LerpUnclamped(a, b, t) end
-function Math.Log(f, p) end
-function Math.Log10(f) end
-function Math.Max(a, b) end
-function Math.Max(values) end
-function Math.Min(a, b) end
-function Math.Min(values) end
-function Math.MoveTowards(current, target, maxDelta) end
-function Math.NextPowerOfTwo(value) end
-function Math.PerlinNoise(x, y) end
-function Math.PingPong(t, length) end
-function Math.Pow(f, p) end
-function Math.Repeater(t, length) end
-function Math.Round(f) end
-function Math.Sign(f) end
-function Math.Sin(f) end
-function Math.Sqrt(f) end
-function Math.SmoothStep(from, to, t) end
-function Math.Tan(f) end
-function Math.Sinh(f) end
-function Math.Cosh(f) end
-function Math.Tanh(f) end
+
+---Methods for type Math 
+
+---@param f number
+---@return number
+function Math:Abs(f) end
+
+---@param f number
+---@return number
+function Math:Acos(f) end
+
+---@param a number
+---@param b number
+---@return boolean
+function Math:Approximately(a, b) end
+
+---@param f number
+---@return number
+function Math:Asin(f) end
+
+---@param f number
+---@return number
+function Math:Atan(f) end
+
+---@param y number
+---@param x number
+---@return number
+function Math:Atan2(y, x) end
+
+---@param f number
+---@return number
+function Math:Ceil(f) end
+
+---@param value number
+---@param min number
+---@param max number
+---@return number
+function Math:Clamp(value, min, max) end
+
+---@param value number
+---@return number
+function Math:Clamp01(value) end
+
+---@param value number
+---@return number
+function Math:ClosestPowerOfTwo(value) end
+
+---@param f number
+---@return number
+function Math:Cos(f) end
+
+---@param current number
+---@param target number
+---@return number
+function Math:DeltaAngle(current, target) end
+
+---@param power number
+---@return number
+function Math:Exp(power) end
+
+---@param f number
+---@return number
+function Math:Floor(f) end
+
+---@param a number
+---@param b number
+---@param value number
+---@return number
+function Math:InverseLerp(a, b, value) end
+
+---@param value number
+---@return boolean
+function Math:IsPowerOfTwo(value) end
+
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function Math:Lerp(a, b, t) end
+
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function Math:LerpAngle(a, b, t) end
+
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function Math:LerpUnclamped(a, b, t) end
+
+---@param f number
+---@param p number
+---@return number
+function Math:Log(f, p) end
+
+---@param f number
+---@return number
+function Math:Log10(f) end
+
+---@param a number
+---@param b number
+---@return number
+function Math:Max(a, b) end
+
+---@param values System.Single[]
+---@return number
+function Math:Max(values) end
+
+---@param a number
+---@param b number
+---@return number
+function Math:Min(a, b) end
+
+---@param values System.Single[]
+---@return number
+function Math:Min(values) end
+
+---@param current number
+---@param target number
+---@param maxDelta number
+---@return number
+function Math:MoveTowards(current, target, maxDelta) end
+
+---@param value number
+---@return number
+function Math:NextPowerOfTwo(value) end
+
+---@param x number
+---@param y number
+---@return number
+function Math:PerlinNoise(x, y) end
+
+---@param t number
+---@param length number
+---@return number
+function Math:PingPong(t, length) end
+
+---@param f number
+---@param p number
+---@return number
+function Math:Pow(f, p) end
+
+---@param t number
+---@param length number
+---@return number
+function Math:Repeater(t, length) end
+
+---@param f number
+---@return number
+function Math:Round(f) end
+
+---@param f number
+---@return number
+function Math:Sign(f) end
+
+---@param f number
+---@return number
+function Math:Sin(f) end
+
+---@param f number
+---@return number
+function Math:Sqrt(f) end
+
+---@param from number
+---@param to number
+---@param t number
+---@return number
+function Math:SmoothStep(from, to, t) end
+
+---@param f number
+---@return number
+function Math:Tan(f) end
+
+---@param f number
+---@return number
+function Math:Sinh(f) end
+
+---@param f number
+---@return number
+function Math:Cosh(f) end
+
+---@param f number
+---@return number
+function Math:Tanh(f) end
+
+
+---Properties for type Model
+
+---@type number
 Model.index = nil
+
+---@type Transform
 Model.transform = nil
+
+---@type Vector3
 Model.position = nil
+
+---@type Rotation
 Model.rotation = nil
+
+---@type number
 Model.scale = nil
-function Model.Import(location) end
-function Model.Select() end
-function Model.Delete() end
-MultiPath.Space = nil
+
+---Methods for type Model 
+
+---@param location string
+---@return Model
+function Model:Import(location) end
+
+function Model:Select() end
+
+function Model:Delete() end
+
+
+---Properties for type MultiPath
+
+---@type number
 MultiPath.count = nil
+
+---@type number
 MultiPath.pointCount = nil
-function MultiPath.AsSingleTrList() end
-function MultiPath.AsMultiTrList() end
-function MultiPath.New() end
-function MultiPath.New(pathList) end
-function MultiPath.Draw() end
-function MultiPath.FromText(text) end
-function MultiPath.Insert(path) end
-function MultiPath.InsertPoint(transform) end
-function MultiPath.TransformBy(transform) end
-function MultiPath.TranslateBy(amount) end
-function MultiPath.RotateBy(amount) end
-function MultiPath.ScaleBy(scale) end
-function MultiPath.Center() end
-function MultiPath.Normalize(scale) end
-function MultiPath.Resample(spacing) end
-function MultiPath.Join() end
-function MultiPath.Longest() end
-Path.Space = nil
+
+---Methods for type MultiPath 
+
+---@return MultiPath
+function MultiPath:New() end
+
+---@param pathList System.Collections.Generic.List`1[Path]
+---@return MultiPath
+function MultiPath:New(pathList) end
+
+function MultiPath:Draw() end
+
+---@param text string
+---@return MultiPath
+function MultiPath:FromText(text) end
+
+---@param path Path
+function MultiPath:Insert(path) end
+
+---@param transform Transform
+function MultiPath:InsertPoint(transform) end
+
+---@param transform Transform
+function MultiPath:TransformBy(transform) end
+
+---@param amount Vector3
+function MultiPath:TranslateBy(amount) end
+
+---@param amount Rotation
+function MultiPath:RotateBy(amount) end
+
+---@param scale Vector3
+function MultiPath:ScaleBy(scale) end
+
+function MultiPath:Center() end
+
+---@param scale number
+function MultiPath:Normalize(scale) end
+
+---@param spacing number
+function MultiPath:Resample(spacing) end
+
+---@return Path
+function MultiPath:Join() end
+
+---@return Path
+function MultiPath:Longest() end
+
+
+---Properties for type Path
+
+---@type Transform
 Path.Item = nil
+
+---@type Transform
 Path.last = nil
+
+---@type number
 Path.count = nil
-function Path.AsSingleTrList() end
-function Path.AsMultiTrList() end
-function Path.New() end
-function Path.New(transformList) end
-function Path.New(positionList) end
-function Path.GetDirection(index) end
-function Path.GetNormal(index) end
-function Path.GetTangent(index) end
-function Path.Draw() end
-function Path.Insert(transform) end
-function Path.TransformBy(transform) end
-function Path.TranslateBy(amount) end
-function Path.RotateBy(amount) end
-function Path.ScaleBy(scale) end
-function Path.Center() end
-function Path.StartingFrom(index) end
-function Path.FindClosest(point) end
-function Path.FindMinimumX() end
-function Path.FindMinimumY() end
-function Path.FindMinimumZ() end
-function Path.FindMaximumX() end
-function Path.FindMaximumY() end
-function Path.FindMaximumZ() end
-function Path._FindMinimum(axis) end
-function Path._FindMaximum(axis) end
-function Path.Normalize(scale) end
-function Path._CalculateCenterAndScale(path) end
-function Path.Subdivide(trs, parts) end
-function Path.Resample(trs, spacing) end
-function Path.Resample(spacing) end
-function Path.Subdivide(parts) end
-function Path.Hermite(start, end, startTangent, endTangent, resolution, tangentStrength) end
-Path2d.Space = nil
+
+---Methods for type Path 
+
+---@return Path
+function Path:New() end
+
+---@param transformList table_Transform
+---@return Path
+function Path:New(transformList) end
+
+---@param positionList table_Vector3
+---@return Path
+function Path:New(positionList) end
+
+---@param index number
+---@return Vector3
+function Path:GetDirection(index) end
+
+---@param index number
+---@return Vector3
+function Path:GetNormal(index) end
+
+---@param index number
+---@return Vector3
+function Path:GetTangent(index) end
+
+function Path:Draw() end
+
+---@param transform Transform
+function Path:Insert(transform) end
+
+---@param transform Transform
+function Path:TransformBy(transform) end
+
+---@param amount Vector3
+function Path:TranslateBy(amount) end
+
+---@param amount Rotation
+function Path:RotateBy(amount) end
+
+---@param scale Vector3
+function Path:ScaleBy(scale) end
+
+function Path:Center() end
+
+---@param index number
+function Path:StartingFrom(index) end
+
+---@param point Vector3
+---@return number
+function Path:FindClosest(point) end
+
+---@return number
+function Path:FindMinimumX() end
+
+---@return number
+function Path:FindMinimumY() end
+
+---@return number
+function Path:FindMinimumZ() end
+
+---@return number
+function Path:FindMaximumX() end
+
+---@return number
+function Path:FindMaximumY() end
+
+---@return number
+function Path:FindMaximumZ() end
+
+---@param scale number
+function Path:Normalize(scale) end
+
+---@param trs table_Transform
+---@param parts number
+---@return table_Transform
+function Path:Subdivide(trs, parts) end
+
+---@param trs table_Transform
+---@param spacing number
+---@return table_Transform
+function Path:Resample(trs, spacing) end
+
+---@param spacing number
+function Path:Resample(spacing) end
+
+---@param parts number
+function Path:Subdivide(parts) end
+
+---@param startTransform Transform
+---@param endTransform Transform
+---@param startTangent Vector3
+---@param endTangent Vector3
+---@param resolution number
+---@param tangentStrength number
+---@return Path
+function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
+
+
+---Properties for type Path2d
+
+---@type number
 Path2d.count = nil
-function Path2d.AsSingleTrList() end
-function Path2d.AsMultiTrList() end
-function Path2d.New() end
-function Path2d.New(transformList) end
-function Path2d.New(positionList) end
-function Path2d.Insert(transform) end
-function Path2d.OnX() end
-function Path2d.OnY() end
-function Path2d.OnZ() end
-function Path2d.TransformBy(transform) end
-function Path2d.TranslateBy(amount) end
-function Path2d.RotateBy(amount) end
-function Path2d.ScaleBy(scale) end
-function Path2d.Center() end
-function Path2d.StartingFrom(index) end
-function Path2d.FindClosest(point) end
-function Path2d.FindMinimumX() end
-function Path2d.FindMinimumY() end
-function Path2d.FindMinimumZ() end
-function Path2d.FindMaximumX() end
-function Path2d.FindMaximumY() end
-function Path2d.FindMaximumZ() end
-function Path2d._FindMinimum(axis) end
-function Path2d._FindMaximum(axis) end
-function Path2d.Normalize(scale) end
-function Path2d._CalculateCenterAndScale(path) end
-function Path2d.Polygon(sides) end
-function Path2d.Resample(spacing) end
+
+---Methods for type Path2d 
+
+---@return Path2d
+function Path2d:New() end
+
+---@param transformList table_Vector2
+---@return Path2d
+function Path2d:New(transformList) end
+
+---@param positionList table_Vector3
+---@return Path2d
+function Path2d:New(positionList) end
+
+---@param transform Vector2
+function Path2d:Insert(transform) end
+
+---@return Path
+function Path2d:OnX() end
+
+---@return Path
+function Path2d:OnY() end
+
+---@return Path
+function Path2d:OnZ() end
+
+---@param transform Transform
+function Path2d:TransformBy(transform) end
+
+---@param amount Vector2
+function Path2d:TranslateBy(amount) end
+
+---@param amount Rotation
+function Path2d:RotateBy(amount) end
+
+---@param scale Vector2
+function Path2d:ScaleBy(scale) end
+
+function Path2d:Center() end
+
+---@param index number
+function Path2d:StartingFrom(index) end
+
+---@param point Vector2
+---@return number
+function Path2d:FindClosest(point) end
+
+---@return number
+function Path2d:FindMinimumX() end
+
+---@return number
+function Path2d:FindMinimumY() end
+
+---@return number
+function Path2d:FindMinimumZ() end
+
+---@return number
+function Path2d:FindMaximumX() end
+
+---@return number
+function Path2d:FindMaximumY() end
+
+---@return number
+function Path2d:FindMaximumZ() end
+
+---@param scale number
+function Path2d:Normalize(scale) end
+
+---@param sides number
+---@return Path2d
+function Path2d:Polygon(sides) end
+
+---@param spacing number
+function Path2d:Resample(spacing) end
+
+
+---Properties for type Random
+
+---@type Vector2
 Random.insideUnitCircle = nil
+
+---@type Vector3
 Random.insideUnitSphere = nil
+
+---@type Vector3
 Random.onUnitSphere = nil
+
+---@type Rotation
 Random.rotation = nil
+
+---@type Rotation
 Random.rotationUniform = nil
+
+---@type number
 Random.value = nil
-Random.colorHSV = nil
-function Random.InitState(seed) end
-function Random.Range(min, max) end
-function Random.Range(min, max) end
+
+---@type Color
+Random.color = nil
+
+---Methods for type Random 
+
+---@param hueMin number
+---@param hueMax number
+---@param saturationMin number
+---@param saturationMax number
+---@param valueMin number
+---@param valueMax number
+---@return Color
+function Random:ColorHSV(hueMin, hueMax, saturationMin, saturationMax, valueMin, valueMax) end
+
+---@param seed number
+function Random:InitState(seed) end
+
+---@param min number
+---@param max number
+---@return number
+function Random:Range(min, max) end
+
+---@param min number
+---@param max number
+---@return number
+function Random:Range(min, max) end
+
+
+---Properties for type Rotation
+
+---@type number
 Rotation.Item = nil
+
+---@type number
 Rotation.x = nil
+
+---@type number
 Rotation.y = nil
+
+---@type number
 Rotation.z = nil
+
+---@type Rotation
 Rotation.zero = nil
+
+---@type Rotation
 Rotation.left = nil
+
+---@type Rotation
 Rotation.right = nil
+
+---@type Rotation
 Rotation.up = nil
+
+---@type Rotation
 Rotation.down = nil
+
+---@type Rotation
 Rotation.anticlockwise = nil
+
+---@type Rotation
 Rotation.clockwise = nil
+
+---@type Rotation
 Rotation.normalized = nil
+
+---@type number
 Rotation.kEpsilon = nil
-function Rotation.New(x, y, z) end
-function Rotation.SetFromToRotation(fromDirection, toDirection) end
-function Rotation.SetLookRotation(view) end
-function Rotation.SetLookRotation(view, up) end
-function Rotation.ToAngleAxis() end
-function Rotation.Angle(a, b) end
-function Rotation.AngleAxis(angle, axis) end
-function Rotation.Dot(a, b) end
-function Rotation.FromToRotation(from, to) end
-function Rotation.Inverse(a) end
-function Rotation.Lerp(a, b, t) end
-function Rotation.LerpUnclamped(a, b, t) end
-function Rotation.LookRotation(forward) end
-function Rotation.LookRotation(forward, up) end
-function Rotation.Normalize(a) end
-function Rotation.RotateTowards(from, to, maxDegreesDelta) end
-function Rotation.Slerp(a, b, t) end
-function Rotation.SlerpUnclamped(a, b, t) end
-function Rotation.Multiply(b) end
-function Rotation.Multiply(x, y, z) end
-function Rotation.Scale(a) end
-function Rotation.Multiply(a, b) end
-function Selection.Duplicate() end
-function Selection.Group() end
-function Selection.Invert() end
-function Selection.Flip() end
-function Selection.Recolor() end
-function Selection.Rebrush() end
-function Selection.Resize() end
-function Selection.Trim(count) end
-function Selection.SelectAll() end
+
+---Methods for type Rotation 
+
+---@param x number
+---@param y number
+---@param z number
+---@return Rotation
+function Rotation:New(x, y, z) end
+
+---@param fromDirection Vector3
+---@param toDirection Vector3
+---@return Rotation
+function Rotation:SetFromToRotation(fromDirection, toDirection) end
+
+---@param view Vector3
+---@return Rotation
+function Rotation:SetLookRotation(view) end
+
+---@param view Vector3
+---@param up Vector3
+---@return Rotation
+function Rotation:SetLookRotation(view, up) end
+
+---@return Path
+function Rotation:ToAngleAxis() end
+
+---@param a Rotation
+---@param b Rotation
+---@return number
+function Rotation:Angle(a, b) end
+
+---@param angle number
+---@param axis Vector3
+---@return Rotation
+function Rotation:AngleAxis(angle, axis) end
+
+---@param a Rotation
+---@param b Rotation
+---@return number
+function Rotation:Dot(a, b) end
+
+---@param from Vector3
+---@param to Vector3
+---@return Rotation
+function Rotation:FromToRotation(from, to) end
+
+---@param a Rotation
+---@return Rotation
+function Rotation:Inverse(a) end
+
+---@param a Rotation
+---@param b Rotation
+---@param t number
+---@return Rotation
+function Rotation:Lerp(a, b, t) end
+
+---@param a Rotation
+---@param b Rotation
+---@param t number
+---@return Rotation
+function Rotation:LerpUnclamped(a, b, t) end
+
+---@param forward Vector3
+---@return Rotation
+function Rotation:LookRotation(forward) end
+
+---@param forward Vector3
+---@param up Vector3
+---@return Rotation
+function Rotation:LookRotation(forward, up) end
+
+---@param a Rotation
+---@return Rotation
+function Rotation:Normalize(a) end
+
+---@param from Rotation
+---@param to Rotation
+---@param maxDegreesDelta number
+---@return Rotation
+function Rotation:RotateTowards(from, to, maxDegreesDelta) end
+
+---@param a Rotation
+---@param b Rotation
+---@param t number
+---@return Rotation
+function Rotation:Slerp(a, b, t) end
+
+---@param a Rotation
+---@param b Rotation
+---@param t number
+---@return Rotation
+function Rotation:SlerpUnclamped(a, b, t) end
+
+---@param b Rotation
+---@return Rotation
+function Rotation:Multiply(b) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return Rotation
+function Rotation:Multiply(x, y, z) end
+
+---@param a number
+---@return Rotation
+function Rotation:Scale(a) end
+
+---@param a Rotation
+---@param b Rotation
+---@return Rotation
+function Rotation:Multiply(a, b) end
+
+
+---Properties for type Selection
+
+---Methods for type Selection 
+
+function Selection:Duplicate() end
+
+function Selection:Group() end
+
+function Selection:Invert() end
+
+function Selection:Flip() end
+
+function Selection:Recolor() end
+
+function Selection:Rebrush() end
+
+function Selection:Resize() end
+
+---@param count number
+function Selection:Trim(count) end
+
+function Selection:SelectAll() end
+
+
+---Properties for type Sketch
+
+---@type CameraPathList
 Sketch.cameraPaths = nil
+
+---@type StrokeList
 Sketch.strokes = nil
+
+---@type LayerList
 Sketch.layers = nil
+
+---@type ImageList
 Sketch.images = nil
+
+---@type VideoList
 Sketch.videos = nil
+
+---@type ModelList
 Sketch.models = nil
+
+---@type GuideList
 Sketch.guides = nil
+
+---@type EnvironmentList
 Sketch.environments = nil
+
+---@type Color
 Sketch.ambientLightColor = nil
+
+---@type Color
 Sketch.mainLightColor = nil
+
+---@type Color
 Sketch.secondaryLightColor = nil
+
+---@type Rotation
 Sketch.mainLightRotation = nil
+
+---@type Rotation
 Sketch.secondaryLightRotation = nil
-function Sketch.Open(name) end
-function Sketch.Save(overwrite) end
-function Sketch.SaveAs(name) end
-function Sketch.Export() end
-function Sketch.NewSketch() end
-function Sketch.ImportSkybox(location) end
+
+---Methods for type Sketch 
+
+---@param name string
+function Sketch:Open(name) end
+
+---@param overwrite boolean
+function Sketch:Save(overwrite) end
+
+---@param name string
+function Sketch:SaveAs(name) end
+
+function Sketch:Export() end
+
+function Sketch:NewSketch() end
+
+---@param location string
+function Sketch:ImportSkybox(location) end
+
+
+---Properties for type Spectator
+
+---@type Vector3
 Spectator.position = nil
+
+---@type Rotation
 Spectator.rotation = nil
-function Spectator.Turn(angle) end
-function Spectator.TurnX(angle) end
-function Spectator.TurnZ(angle) end
-function Spectator.Direction(direction) end
-function Spectator.LookAt(position) end
-function Spectator.Mode(mode) end
-function Spectator.Show(type) end
-function Spectator.Hide(type) end
-function Spectator.Toggle() end
-function Spectator.On() end
-function Spectator.Off() end
-function Spectator.LockToScene(locked) end
+
+---Methods for type Spectator 
+
+---@param angle number
+function Spectator:Turn(angle) end
+
+---@param angle number
+function Spectator:TurnX(angle) end
+
+---@param angle number
+function Spectator:TurnZ(angle) end
+
+---@param direction Vector3
+function Spectator:Direction(direction) end
+
+---@param position Vector3
+function Spectator:LookAt(position) end
+
+---@param mode string
+function Spectator:Mode(mode) end
+
+---@param type string
+function Spectator:Show(type) end
+
+---@param type string
+function Spectator:Hide(type) end
+
+function Spectator:Toggle() end
+
+function Spectator:On() end
+
+function Spectator:Off() end
+
+---@param locked boolean
+function Spectator:LockToScene(locked) end
+
+
+---Properties for type Stroke
+
+---@type Path
 Stroke.path = nil
+
+---@type string
 Stroke.brushType = nil
+
+---@type number
 Stroke.brushSize = nil
+
+---@type Color
 Stroke.brushColor = nil
+
+---@type Layer
 Stroke.layer = nil
+
+---@type Transform
 Stroke.Item = nil
+
+---@type number
 Stroke.count = nil
-function Stroke.ChangeMaterial(brushName) end
-function Stroke.Delete() end
-function Stroke.Select() end
-function Stroke.SelectMultiple(from, to) end
-function Stroke.Join(from, to) end
-function Stroke.JoinPrevious() end
-function Stroke.Import(name) end
-function Svg.ParsePathString(svgPath) end
-function Svg.ParseDocument(svg, offsetPerPath, includeColors) end
-function Svg.DrawPathString(svg, tr) end
-function Svg.DrawDocument(svg, tr) end
+
+---Methods for type Stroke 
+
+---@param brushName string
+function Stroke:ChangeMaterial(brushName) end
+
+function Stroke:Delete() end
+
+function Stroke:Select() end
+
+---@param from number
+---@param to number
+function Stroke:SelectMultiple(from, to) end
+
+---@param from number
+---@param to number
+function Stroke:Join(from, to) end
+
+function Stroke:JoinPrevious() end
+
+---@param name string
+function Stroke:Import(name) end
+
+
+---Properties for type Svg
+
+---Methods for type Svg 
+
+---@param svgPath string
+---@return MultiPath
+function Svg:ParsePathString(svgPath) end
+
+---@param svg string
+---@param offsetPerPath number
+---@param includeColors boolean
+---@return MultiPath
+function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
+
+---@param svg string
+---@param tr Transform
+function Svg:DrawPathString(svg, tr) end
+
+---@param svg string
+---@param tr Transform
+function Svg:DrawDocument(svg, tr) end
+
+
+---Properties for type Symmetry
+
+---@type Transform
 Symmetry.transform = nil
+
+---@type Vector3
 Symmetry.position = nil
+
+---@type Rotation
 Symmetry.rotation = nil
+
+---@type Vector3
 Symmetry.brushOffset = nil
+
+---@type Vector3
 Symmetry.wandOffset = nil
+
+---@type Vector3
 Symmetry.direction = nil
-function Symmetry.Mirror() end
-function Symmetry.DoubleMirror() end
-function Symmetry.TwoHandeded() end
-function Symmetry.SummonWidget() end
-function Symmetry.Spin(xSpeed, ySpeed, zSpeed) end
-function Symmetry.Ellipse(angle, minorRadius) end
-function Symmetry.Square(angle) end
-function Symmetry.Superellipse(angle, n, a, b) end
-function Symmetry.Rsquare(angle, halfSideLength, cornerRadius) end
-function Symmetry.Polygon(angle, numSides, radius) end
-function Symmetry.ClearColors(colors) end
-function Symmetry.AddColor(color) end
-function Symmetry.SetColors(colors) end
-function Symmetry.GetColors() end
-function Symmetry.AddBrush(brush) end
-function Symmetry.ClearBrushes(brushes) end
-function Symmetry.SetBrushes(brushes) end
-function Symmetry.GetBrushNames() end
-function Symmetry.GetBrushGuids() end
-function Symmetry.PathToPolar(path) end
-function Timer.Set(fn, interval, delay, repeats) end
-function Timer.Unset(fn) end
+
+---Methods for type Symmetry 
+
+function Symmetry:Mirror() end
+
+function Symmetry:DoubleMirror() end
+
+function Symmetry:TwoHandeded() end
+
+function Symmetry:SummonWidget() end
+
+---@param xSpeed number
+---@param ySpeed number
+---@param zSpeed number
+function Symmetry:Spin(xSpeed, ySpeed, zSpeed) end
+
+---@param angle number
+---@param minorRadius number
+---@return number
+function Symmetry:Ellipse(angle, minorRadius) end
+
+---@param angle number
+---@return number
+function Symmetry:Square(angle) end
+
+---@param angle number
+---@param n number
+---@param a number
+---@param b number
+---@return number
+function Symmetry:Superellipse(angle, n, a, b) end
+
+---@param angle number
+---@param halfSideLength number
+---@param cornerRadius number
+---@return number
+function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
+
+---@param angle number
+---@param numSides number
+---@param radius number
+---@return number
+function Symmetry:Polygon(angle, numSides, radius) end
+
+---@param colors table_Color
+function Symmetry:ClearColors(colors) end
+
+---@param color Color
+function Symmetry:AddColor(color) end
+
+---@param colors table_Color
+function Symmetry:SetColors(colors) end
+
+---@return table_Color
+function Symmetry:GetColors() end
+
+---@param brush string
+function Symmetry:AddBrush(brush) end
+
+---@param brushes table_string
+function Symmetry:ClearBrushes(brushes) end
+
+---@param brushes table_string
+function Symmetry:SetBrushes(brushes) end
+
+---@return table_string
+function Symmetry:GetBrushNames() end
+
+---@return table_string
+function Symmetry:GetBrushGuids() end
+
+---@param path IPath
+---@return Path
+function Symmetry:PathToPolar(path) end
+
+
+---Properties for type Timer
+
+---Methods for type Timer 
+
+---@param fn MoonSharp.Interpreter.Closure
+---@param interval number
+---@param delay number
+---@param repeats number
+function Timer:Set(fn, interval, delay, repeats) end
+
+---@param fn MoonSharp.Interpreter.Closure
+function Timer:Unset(fn) end
+
+
+---Properties for type Transform
+
+---@type Transform
 Transform.inverse = nil
+
+---@type Vector3
 Transform.up = nil
+
+---@type Vector3
 Transform.down = nil
+
+---@type Vector3
 Transform.right = nil
+
+---@type Vector3
 Transform.left = nil
+
+---@type Vector3
 Transform.forward = nil
+
+---@type Vector3
 Transform.back = nil
+
+---@type Vector3
 Transform.position = nil
+
+---@type Rotation
 Transform.rotation = nil
+
+---@type number
 Transform.scale = nil
+
+---@type Transform
 Transform.zero = nil
-function Transform.TransformBy(transform) end
-function Transform.TranslateBy(translation) end
-function Transform.RotateBy(rotation) end
-function Transform.ScaleBy(scale) end
-function Transform.New(translation, rotation, scale) end
-function Transform.New(translation, scale) end
-function Transform.New(scale) end
-function Transform.New(x, y, z) end
-function Transform.Multiply(b) end
-function Transform.Multiply(a, b) end
+
+---Methods for type Transform 
+
+---@param transform Transform
+---@return Transform
+function Transform:TransformBy(transform) end
+
+---@param translation Vector3
+---@return Transform
+function Transform:TranslateBy(translation) end
+
+---@param rotation Rotation
+---@return Transform
+function Transform:RotateBy(rotation) end
+
+---@param scale number
+---@return Transform
+function Transform:ScaleBy(scale) end
+
+---@param translation Vector3
+---@param rotation Rotation
+---@param scale number
+---@return Transform
+function Transform:New(translation, rotation, scale) end
+
+---@param translation Vector3
+---@param scale number
+---@return Transform
+function Transform:New(translation, scale) end
+
+---@param scale number
+---@return Transform
+function Transform:New(scale) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return Transform
+function Transform:New(x, y, z) end
+
+---@param b Transform
+---@return Transform
+function Transform:Multiply(b) end
+
+---@param a Transform
+---@param b Transform
+---@return Transform
+function Transform:Multiply(a, b) end
+
+
+---Properties for type Turtle
+
+---@type Transform
 Turtle.transform = nil
+
+---@type Vector3
 Turtle.position = nil
+
+---@type Rotation
 Turtle.rotation = nil
-function Turtle.MoveTo(position) end
-function Turtle.MoveBy(amount) end
-function Turtle.Move(amount) end
-function Turtle.Draw(amount) end
-function Turtle.DrawPolygon(sides, radius, angle) end
-function Turtle.DrawText(text) end
-function Turtle.DrawSvg(svg) end
-function Turtle.TurnY(angle) end
-function Turtle.TurnX(angle) end
-function Turtle.TurnZ(angle) end
-function Turtle.LookAt(amount) end
-function Turtle.LookForwards() end
-function Turtle.LookUp() end
-function Turtle.LookDown() end
-function Turtle.LookLeft() end
-function Turtle.LookRight() end
-function Turtle.LookBackwards() end
-function Turtle.HomeReset() end
-function Turtle.HomeSet() end
-function Turtle.TransformPush() end
-function Turtle.TransformPop() end
+
+---Methods for type Turtle 
+
+---@param position Vector3
+function Turtle:MoveTo(position) end
+
+---@param amount Vector3
+function Turtle:MoveBy(amount) end
+
+---@param amount number
+function Turtle:Move(amount) end
+
+---@param amount number
+function Turtle:Draw(amount) end
+
+---@param sides number
+---@param radius number
+---@param angle number
+function Turtle:DrawPolygon(sides, radius, angle) end
+
+---@param text string
+function Turtle:DrawText(text) end
+
+---@param svg string
+function Turtle:DrawSvg(svg) end
+
+---@param angle number
+function Turtle:TurnY(angle) end
+
+---@param angle number
+function Turtle:TurnX(angle) end
+
+---@param angle number
+function Turtle:TurnZ(angle) end
+
+---@param amount Vector3
+function Turtle:LookAt(amount) end
+
+function Turtle:LookForwards() end
+
+function Turtle:LookUp() end
+
+function Turtle:LookDown() end
+
+function Turtle:LookLeft() end
+
+function Turtle:LookRight() end
+
+function Turtle:LookBackwards() end
+
+function Turtle:HomeReset() end
+
+function Turtle:HomeSet() end
+
+function Turtle:TransformPush() end
+
+function Turtle:TransformPop() end
+
+
+---Properties for type User
+
+---@type Vector3
 User.position = nil
+
+---@type Rotation
 User.rotation = nil
+
+---Methods for type User 
+
+
+---Properties for type Vector2
+
+---@type number
 Vector2.Item = nil
+
+---@type number
 Vector2.x = nil
+
+---@type number
 Vector2.y = nil
+
+---@type Vector2
 Vector2.down = nil
+
+---@type Vector2
 Vector2.left = nil
+
+---@type Vector2
 Vector2.negativeInfinity = nil
+
+---@type Vector2
 Vector2.one = nil
+
+---@type Vector2
 Vector2.positiveInfinity = nil
+
+---@type Vector2
 Vector2.right = nil
+
+---@type Vector2
 Vector2.up = nil
+
+---@type Vector2
 Vector2.zero = nil
-function Vector2.New(x, y) end
-function Vector2.Angle(a, b) end
-function Vector2.ClampMagnitude(v, maxLength) end
-function Vector2.Distance(a, b) end
-function Vector2.Magnitude(a) end
-function Vector2.SqrMagnitude(a) end
-function Vector2.Dot(a, b) end
-function Vector2.Lerp(a, b, t) end
-function Vector2.LerpUnclamped(a, b, t) end
-function Vector2.Max(a, b) end
-function Vector2.Min(a, b) end
-function Vector2.MoveTowards(current, target, maxDistanceDelta) end
-function Vector2.Normalized(a) end
-function Vector2.Reflect(a, b) end
-function Vector2.Scale(a, b) end
-function Vector2.SignedAngle(from, to, axis) end
-function Vector2.Slerp(a, b, t) end
-function Vector2.SlerpUnclamped(a, b, t) end
-function Vector2.PointOnCircle(degrees) end
-function Vector2.OnX() end
-function Vector2.OnY() end
-function Vector2.OnZ() end
-function Vector2.Add(b) end
-function Vector2.Add(x, y) end
-function Vector2.Subtract(b) end
-function Vector2.Subtract(x, y) end
-function Vector2.Multiply(b) end
-function Vector2.Multiply(x, y) end
-function Vector2.Divide(b) end
-function Vector2.Divide(x, y) end
-function Vector2.NotEquals(b) end
-function Vector2.NotEquals(x, y) end
-function Vector2.Add(a, b) end
-function Vector2.Subtract(a, b) end
-function Vector2.Multiply(a, b) end
-function Vector2.Divide(a, b) end
-function Vector2.NotEquals(a, b) end
+
+---Methods for type Vector2 
+
+---@param x number
+---@param y number
+---@return Vector2
+function Vector2:New(x, y) end
+
+---@param a Vector2
+---@param b Vector2
+---@return number
+function Vector2:Angle(a, b) end
+
+---@param v Vector2
+---@param maxLength number
+---@return Vector2
+function Vector2:ClampMagnitude(v, maxLength) end
+
+---@param a Vector2
+---@param b Vector2
+---@return number
+function Vector2:Distance(a, b) end
+
+---@param a Vector2
+---@return number
+function Vector2:Magnitude(a) end
+
+---@param a Vector2
+---@return number
+function Vector2:SqrMagnitude(a) end
+
+---@param a Vector2
+---@param b Vector2
+---@return number
+function Vector2:Dot(a, b) end
+
+---@param a Vector2
+---@param b Vector2
+---@param t number
+---@return Vector2
+function Vector2:Lerp(a, b, t) end
+
+---@param a Vector2
+---@param b Vector2
+---@param t number
+---@return Vector2
+function Vector2:LerpUnclamped(a, b, t) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Max(a, b) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Min(a, b) end
+
+---@param current Vector2
+---@param target Vector2
+---@param maxDistanceDelta number
+---@return Vector2
+function Vector2:MoveTowards(current, target, maxDistanceDelta) end
+
+---@param a Vector2
+---@return Vector2
+function Vector2:Normalized(a) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Reflect(a, b) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Scale(a, b) end
+
+---@param from Vector2
+---@param to Vector2
+---@param axis Vector2
+---@return number
+function Vector2:SignedAngle(from, to, axis) end
+
+---@param a Vector2
+---@param b Vector2
+---@param t number
+---@return Vector2
+function Vector2:Slerp(a, b, t) end
+
+---@param a Vector2
+---@param b Vector2
+---@param t number
+---@return Vector2
+function Vector2:SlerpUnclamped(a, b, t) end
+
+---@param degrees number
+---@return Vector2
+function Vector2:PointOnCircle(degrees) end
+
+---@return Vector3
+function Vector2:OnX() end
+
+---@return Vector3
+function Vector2:OnY() end
+
+---@return Vector3
+function Vector2:OnZ() end
+
+---@param b Vector2
+---@return Vector2
+function Vector2:Add(b) end
+
+---@param x number
+---@param y number
+---@return Vector2
+function Vector2:Add(x, y) end
+
+---@param b Vector2
+---@return Vector2
+function Vector2:Subtract(b) end
+
+---@param x number
+---@param y number
+---@return Vector2
+function Vector2:Subtract(x, y) end
+
+---@param b number
+---@return Vector2
+function Vector2:Multiply(b) end
+
+---@param b Vector2
+---@return Vector2
+function Vector2:ScaleBy(b) end
+
+---@param x number
+---@param y number
+---@return Vector2
+function Vector2:ScaleBy(x, y) end
+
+---@param b number
+---@return Vector2
+function Vector2:Divide(b) end
+
+---@param b Vector2
+---@return boolean
+function Vector2:NotEquals(b) end
+
+---@param x number
+---@param y number
+---@return boolean
+function Vector2:NotEquals(x, y) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Add(a, b) end
+
+---@param a Vector2
+---@param b Vector2
+---@return Vector2
+function Vector2:Subtract(a, b) end
+
+---@param a Vector2
+---@param b number
+---@return Vector2
+function Vector2:Multiply(a, b) end
+
+---@param a Vector2
+---@param b number
+---@return Vector2
+function Vector2:Divide(a, b) end
+
+---@param a Vector2
+---@param b Vector2
+---@return boolean
+function Vector2:NotEquals(a, b) end
+
+
+---Properties for type Vector3
+
+---@type number
 Vector3.Item = nil
+
+---@type number
 Vector3.x = nil
+
+---@type number
 Vector3.y = nil
+
+---@type number
 Vector3.z = nil
+
+---@type number
 Vector3.magnitude = nil
+
+---@type Vector3
 Vector3.normalized = nil
+
+---@type number
 Vector3.sqrMagnitude = nil
+
+---@type Vector3
 Vector3.back = nil
+
+---@type Vector3
 Vector3.down = nil
+
+---@type Vector3
 Vector3.forward = nil
+
+---@type Vector3
 Vector3.left = nil
+
+---@type Vector3
 Vector3.negativeInfinity = nil
+
+---@type Vector3
 Vector3.one = nil
+
+---@type Vector3
 Vector3.positiveInfinity = nil
+
+---@type Vector3
 Vector3.right = nil
+
+---@type Vector3
 Vector3.up = nil
+
+---@type Vector3
 Vector3.zero = nil
-function Vector3.New(x, y, z) end
-function Vector3.Angle(a, b) end
-function Vector3.ClampMagnitude(v, maxLength) end
-function Vector3.Cross(a, b) end
-function Vector3.Distance(a, b) end
-function Vector3.Magnitude(a) end
-function Vector3.SqrMagnitude(a) end
-function Vector3.Dot(a, b) end
-function Vector3.Lerp(a, b, t) end
-function Vector3.LerpUnclamped(a, b, t) end
-function Vector3.Max(a, b) end
-function Vector3.Min(a, b) end
-function Vector3.MoveTowards(current, target, maxDistanceDelta) end
-function Vector3.Normalize(a) end
-function Vector3.Project(a, b) end
-function Vector3.ProjectOnPlane(vector, planeNormal) end
-function Vector3.Reflect(a, b) end
-function Vector3.RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
-function Vector3.ScaleBy(a, b) end
-function Vector3.SignedAngle(from, to, axis) end
-function Vector3.Slerp(a, b, t) end
-function Vector3.SlerpUnclamped(a, b, t) end
-function Vector3.Add(b) end
-function Vector3.Add(x, y, z) end
-function Vector3.Subtract(b) end
-function Vector3.Subtract(x, y, z) end
-function Vector3.Multiply(b) end
-function Vector3.ScaleBy(b) end
-function Vector3.ScaleBy(x, y, z) end
-function Vector3.Divide(b) end
-function Vector3.NotEquals(b) end
-function Vector3.NotEquals(x, y, z) end
-function Vector3.Add(a, b) end
-function Vector3.Subtract(a, b) end
-function Vector3.Multiply(a, b) end
-function Vector3.Divide(a, b) end
-function Vector3.NotEquals(a, b) end
+
+---Methods for type Vector3 
+
+---@param x number
+---@param y number
+---@param z number
+---@return Vector3
+function Vector3:New(x, y, z) end
+
+---@param a Vector3
+---@param b Vector3
+---@return number
+function Vector3:Angle(a, b) end
+
+---@param v Vector3
+---@param maxLength number
+---@return Vector3
+function Vector3:ClampMagnitude(v, maxLength) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Cross(a, b) end
+
+---@param a Vector3
+---@param b Vector3
+---@return number
+function Vector3:Distance(a, b) end
+
+---@param a Vector3
+---@return number
+function Vector3:Magnitude(a) end
+
+---@param a Vector3
+---@return number
+function Vector3:SqrMagnitude(a) end
+
+---@param a Vector3
+---@param b Vector3
+---@return number
+function Vector3:Dot(a, b) end
+
+---@param a Vector3
+---@param b Vector3
+---@param t number
+---@return Vector3
+function Vector3:Lerp(a, b, t) end
+
+---@param a Vector3
+---@param b Vector3
+---@param t number
+---@return Vector3
+function Vector3:LerpUnclamped(a, b, t) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Max(a, b) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Min(a, b) end
+
+---@param current Vector3
+---@param target Vector3
+---@param maxDistanceDelta number
+---@return Vector3
+function Vector3:MoveTowards(current, target, maxDistanceDelta) end
+
+---@param a Vector3
+---@return Vector3
+function Vector3:Normalize(a) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Project(a, b) end
+
+---@param vector Vector3
+---@param planeNormal Vector3
+---@return Vector3
+function Vector3:ProjectOnPlane(vector, planeNormal) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Reflect(a, b) end
+
+---@param current Vector3
+---@param target Vector3
+---@param maxRadiansDelta number
+---@param maxMagnitudeDelta number
+---@return Vector3
+function Vector3:RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:ScaleBy(a, b) end
+
+---@param from Vector3
+---@param to Vector3
+---@param axis Vector3
+---@return number
+function Vector3:SignedAngle(from, to, axis) end
+
+---@param a Vector3
+---@param b Vector3
+---@param t number
+---@return Vector3
+function Vector3:Slerp(a, b, t) end
+
+---@param a Vector3
+---@param b Vector3
+---@param t number
+---@return Vector3
+function Vector3:SlerpUnclamped(a, b, t) end
+
+---@param b Vector3
+---@return Vector3
+function Vector3:Add(b) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return Vector3
+function Vector3:Add(x, y, z) end
+
+---@param b Vector3
+---@return Vector3
+function Vector3:Subtract(b) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return Vector3
+function Vector3:Subtract(x, y, z) end
+
+---@param b number
+---@return Vector3
+function Vector3:Multiply(b) end
+
+---@param b Vector3
+---@return Vector3
+function Vector3:ScaleBy(b) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return Vector3
+function Vector3:ScaleBy(x, y, z) end
+
+---@param b number
+---@return Vector3
+function Vector3:Divide(b) end
+
+---@param b Vector3
+---@return boolean
+function Vector3:NotEquals(b) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return boolean
+function Vector3:NotEquals(x, y, z) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Add(a, b) end
+
+---@param a Vector3
+---@param b Vector3
+---@return Vector3
+function Vector3:Subtract(a, b) end
+
+---@param a Vector3
+---@param b number
+---@return Vector3
+function Vector3:Multiply(a, b) end
+
+---@param a Vector3
+---@param b number
+---@return Vector3
+function Vector3:Divide(a, b) end
+
+---@param a Vector3
+---@param b Vector3
+---@return boolean
+function Vector3:NotEquals(a, b) end
+
+
+---Properties for type Video
+
+---@type number
 Video.index = nil
+
+---@type Transform
 Video.transform = nil
+
+---@type Vector3
 Video.position = nil
+
+---@type Rotation
 Video.rotation = nil
+
+---@type number
 Video.scale = nil
-function Video.Import(location) end
-function Video.Select() end
-function Video.Delete() end
+
+---Methods for type Video 
+
+---@param location string
+---@return Video
+function Video:Import(location) end
+
+function Video:Select() end
+
+function Video:Delete() end
+
+
+---Properties for type Visualizer
+
+---@type number
 Visualizer.sampleRate = nil
+
+---@type number
 Visualizer.duration = nil
-function Visualizer.EnableScripting(name) end
-function Visualizer.DisableScripting() end
-function Visualizer.SetWaveform(data) end
-function Visualizer.SetFft(data1, data2, data3, data4) end
-function Visualizer.SetBeats(x, y, z, w) end
-function Visualizer.SetBeatAccumulators(x, y, z, w) end
-function Visualizer.SetBandPeak(peak) end
+
+---Methods for type Visualizer 
+
+---@param name string
+function Visualizer:EnableScripting(name) end
+
+function Visualizer:DisableScripting() end
+
+---@param data System.Single[]
+function Visualizer:SetWaveform(data) end
+
+---@param data1 System.Single[]
+---@param data2 System.Single[]
+---@param data3 System.Single[]
+---@param data4 System.Single[]
+function Visualizer:SetFft(data1, data2, data3, data4) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function Visualizer:SetBeats(x, y, z, w) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function Visualizer:SetBeatAccumulators(x, y, z, w) end
+
+---@param peak number
+function Visualizer:SetBandPeak(peak) end
+
+
+---Properties for type Wand
+
+---@type Vector3
 Wand.position = nil
+
+---@type Rotation
 Wand.rotation = nil
+
+---@type Vector3
 Wand.direction = nil
+
+---@type number
 Wand.pressure = nil
+
+---@type Vector3
 Wand.speed = nil
-function Wand.ResizeHistory(size) end
-function Wand.SetHistorySize(size) end
-function Wand.PastPosition(back) end
-function Wand.PastRotation(back) end
-function Waveform.Sine(time, frequency) end
-function Waveform.Cosine(time, frequency) end
-function Waveform.Triangle(time, frequency) end
-function Waveform.Sawtooth(time, frequency) end
-function Waveform.Square(time, frequency) end
-function Waveform.Pulse(time, frequency, pulseWidth) end
-function Waveform.Exponent(time, frequency) end
-function Waveform.Power(time, frequency, power) end
-function Waveform.Parabolic(time, frequency) end
-function Waveform.ExponentialSawtooth(time, frequency, exponent) end
-function Waveform.PerlinNoise(time, frequency) end
-function Waveform.WhiteNoise() end
-function Waveform.BrownNoise(previous) end
-function Waveform.BlueNoise(previous) end
-function Waveform.Sine(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Cosine(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Triangle(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Sawtooth(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Square(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Exponent(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Parabolic(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
-function Waveform.Power(time, frequency, power, duration, sampleRate, amplitude) end
-function Waveform.ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
-function Waveform.PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
-function Waveform.WhiteNoise(duration, sampleRate, amplitude) end
-function Waveform.BrownNoise(previous, duration, sampleRate, amplitude) end
-function Waveform.BlueNoise(previous, duration, sampleRate, amplitude) end
-function WebRequest.Get(url, onSuccess, onError, headers, context) end
-function WebRequest.Post(url, postData, onSuccess, onError, headers, context) end
+
+---Methods for type Wand 
+
+---@param size number
+function Wand:ResizeHistory(size) end
+
+---@param size number
+function Wand:SetHistorySize(size) end
+
+---@param back number
+---@return Vector3
+function Wand:PastPosition(back) end
+
+---@param back number
+---@return Rotation
+function Wand:PastRotation(back) end
+
+
+---Properties for type Waveform
+
+---Methods for type Waveform 
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Sine(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Cosine(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Triangle(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Sawtooth(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Square(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@param pulseWidth number
+---@return number
+function Waveform:Pulse(time, frequency, pulseWidth) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Exponent(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@param power number
+---@return number
+function Waveform:Power(time, frequency, power) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:Parabolic(time, frequency) end
+
+---@param time number
+---@param frequency number
+---@param exponent number
+---@return number
+function Waveform:ExponentialSawtooth(time, frequency, exponent) end
+
+---@param time number
+---@param frequency number
+---@return number
+function Waveform:PerlinNoise(time, frequency) end
+
+---@return number
+function Waveform:WhiteNoise() end
+
+---@param previous number
+---@return number
+function Waveform:BrownNoise(previous) end
+
+---@param previous number
+---@return number
+function Waveform:BlueNoise(previous) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param pulseWidth number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param power number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param exponent number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
+
+---@param time number
+---@param frequency number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
+
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:WhiteNoise(duration, sampleRate, amplitude) end
+
+---@param previous number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:BrownNoise(previous, duration, sampleRate, amplitude) end
+
+---@param previous number
+---@param duration number
+---@param sampleRate number
+---@param amplitude number
+---@return System.Single[]
+function Waveform:BlueNoise(previous, duration, sampleRate, amplitude) end
+
+
+---Properties for type WebRequest
+
+---Methods for type WebRequest 
+
+---@param url string
+---@param onSuccess MoonSharp.Interpreter.Closure
+---@param onError MoonSharp.Interpreter.Closure
+---@param headers MoonSharp.Interpreter.Table
+---@param context MoonSharp.Interpreter.DynValue
+function WebRequest:Get(url, onSuccess, onError, headers, context) end
+
+---@param url string
+---@param postData MoonSharp.Interpreter.Table
+---@param onSuccess MoonSharp.Interpreter.Closure
+---@param onError MoonSharp.Interpreter.Closure
+---@param headers MoonSharp.Interpreter.Table
+---@param context MoonSharp.Interpreter.DynValue
+function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
+
+

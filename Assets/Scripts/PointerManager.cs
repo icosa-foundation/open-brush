@@ -163,6 +163,7 @@ namespace TiltBrush
         /// active simultaneously. eg, 4-way symmetry is not allowed during timeline edit mode;
         /// floating-panel mode doesn't actually _use_ the Wand's pointer, etc.
         private PointerData[] m_Pointers;
+        private List<PointerScript> m_ScriptedPointers;
         private bool m_InPlaybackMode;
 
         private PointerData m_MainPointerData;
@@ -268,7 +269,7 @@ namespace TiltBrush
 
         /// Number of pointers reserved for user (including symmetry)
         /// TODO: handle more intelligently.  Depends on user's access to e.g. 4-way symmetry.
-        private int NumUserPointers { get { return 2; } }
+        private int NumUserPointers { get { return m_NumActivePointers; } }
 
         public SymmetryMode CurrentSymmetryMode
         {
@@ -437,6 +438,7 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
+            m_ScriptedPointers = new List<PointerScript>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
             {
@@ -471,6 +473,15 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
+        }
+
+        public PointerScript CreateScriptedPointer()
+        {
+            GameObject obj = (GameObject)Instantiate(m_AuxPointerPrefab, transform, true);
+            var script = obj.GetComponent<PointerScript>();
+            script.ChildIndex = m_ScriptedPointers.Count - 1;
+            m_ScriptedPointers.Add(script);
+            return script;
         }
 
         void Start()
@@ -561,6 +572,10 @@ namespace TiltBrush
                 {
                     m_Pointers[i].m_Script.MonoscopicLineDepth = fPointerLift;
                     m_Pointers[i].m_Script.UpdatePointer();
+                }
+                for (int i = 0; i < m_ScriptedPointers.Count; ++i)
+                {
+                    m_ScriptedPointers[i].UpdatePointer();
                 }
             }
 
@@ -779,7 +794,7 @@ namespace TiltBrush
             foreach (var tr in transforms)
             {
                 TrTransform newTr_CS = TrTransform.identity;
-                switch (result.Space)
+                switch (result._Space)
                 {
                     case ScriptCoordSpace.Default:
                     {
@@ -1267,13 +1282,7 @@ namespace TiltBrush
                 m_lastChosenColor = PointerColor;
             }
 
-            if (JitterEnabled)
-            {
-                // Bypass the code in the PointerColor setter
-                // Size is jittered in PointerScript. Should we also do color there?
-                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
-            }
-
+            HandleColorJitter();
 
             if (m_StraightEdgeEnabled)
             {
@@ -1478,14 +1487,10 @@ namespace TiltBrush
                     }
                 }
 
-                if (m_SymmetryColorShiftEnabled)
-                {
-                    script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
-                }
-
                 bool resetColors = true;
                 bool resetBrushes = true;
-                if (m_SymmetryColorShiftEnabled || CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                // TODO Better logic around when to set and revert colors
+                if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
                 {
                     if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
                     {
@@ -1541,6 +1546,8 @@ namespace TiltBrush
             {
                 var pointer = m_Pointers[i].m_Script;
                 // XXX: when would an active pointer not be creating a line?
+                // Well - actually! When a plugin can override line creation per pointer...
+                // And also perhaps multiplayer
                 if (pointer.IsCreatingStroke())
                 {
                     bool bDiscardLine = discard || pointer.ShouldDiscardCurrentLine();
@@ -1566,6 +1573,16 @@ namespace TiltBrush
                         pointer.DetachLine(bDiscardLine, null, flags);
                     }
                 }
+            }
+        }
+
+        public void HandleColorJitter()
+        {
+            if (JitterEnabled)
+            {
+                // Bypass the code in the PointerColor setter
+                // Size is jittered in PointerScript. Should we also do color there?
+                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
         }
     }

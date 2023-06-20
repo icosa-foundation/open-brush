@@ -244,7 +244,7 @@ namespace TiltBrush
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
             var tr_CS = new TrTransform();
 
-            switch (result.Space)
+            switch (result._Space)
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:

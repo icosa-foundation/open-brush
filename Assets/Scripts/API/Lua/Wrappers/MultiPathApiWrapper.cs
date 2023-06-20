@@ -10,7 +10,7 @@ namespace TiltBrush
     {
 
         [MoonSharpHidden]
-        public ScriptCoordSpace Space { get; set; }
+        public ScriptCoordSpace _Space { get; set; }
 
         [MoonSharpHidden]
         public List<TrTransform> AsSingleTrList() => _MultiPath.SelectMany(p => p).ToList();

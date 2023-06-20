@@ -8,7 +8,7 @@ namespace TiltBrush
 {
     public interface IPathApiWrapper
     {
-        public ScriptCoordSpace Space { get; set; }
+        public ScriptCoordSpace _Space { get; set; }
         public List<TrTransform> AsSingleTrList();
         public List<List<TrTransform>> AsMultiTrList();
 
@@ -19,7 +19,7 @@ namespace TiltBrush
     {
 
         [MoonSharpHidden]
-        public ScriptCoordSpace Space { get; set; }
+        public ScriptCoordSpace _Space { get; set; }
 
         [MoonSharpHidden]
         public List<TrTransform> AsSingleTrList() => _Path;
@@ -336,7 +336,7 @@ namespace TiltBrush
             _Path = Subdivide(_Path, parts);
         }
 
-        public static PathApiWrapper Hermite(TrTransform start, TrTransform end, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
+        public static PathApiWrapper Hermite(TrTransform startTransform, TrTransform endTransform, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 
             Vector3 tangentInDirection(TrTransform p1, TrTransform p2, Vector3 tangent)
@@ -350,11 +350,11 @@ namespace TiltBrush
 
             List<TrTransform> path = new List<TrTransform>(resolution + 2);
 
-            startTangent = tangentInDirection(start, end, startTangent) * tangentStrength;
-            endTangent = tangentInDirection(end, start, endTangent) * tangentStrength;
+            startTangent = tangentInDirection(startTransform, endTransform, startTangent) * tangentStrength;
+            endTangent = tangentInDirection(endTransform, startTransform, endTangent) * tangentStrength;
 
             Quaternion startOrientation = Quaternion.LookRotation(startTangent.normalized);
-            TrTransform trStart = TrTransform.TR(start.translation, startOrientation);
+            TrTransform trStart = TrTransform.TR(startTransform.translation, startOrientation);
             path.Add(trStart);
 
             for (int i = 0; i <= resolution; i++)
@@ -367,20 +367,20 @@ namespace TiltBrush
                 float h10 = t3 - 2 * t2 + t;
                 float h01 = -2 * t3 + 3 * t2;
                 float h11 = t3 - t2;
-                Vector3 position = h00 * start.translation + h10 * startTangent + h01 * end.translation + h11 * endTangent;
+                Vector3 position = h00 * startTransform.translation + h10 * startTangent + h01 * endTransform.translation + h11 * endTangent;
 
                 // TODO this ain't right
                 Quaternion orientation = Quaternion.LookRotation(path.Count < 1 ?
                     startTangent.normalized :
                     (path[^1].translation - position).normalized);
 
-                float scale = Mathf.Lerp(start.scale, end.scale, t);
+                float scale = Mathf.Lerp(startTransform.scale, endTransform.scale, t);
 
                 path.Add(TrTransform.TRS(position, orientation, scale));
             }
 
             Quaternion finalOrientation = Quaternion.LookRotation(endTangent.normalized);
-            TrTransform trEnd = TrTransform.TR(end.translation, finalOrientation);
+            TrTransform trEnd = TrTransform.TR(endTransform.translation, finalOrientation);
             path.Add(trEnd);
 
             return new PathApiWrapper(path);

@@ -11,7 +11,7 @@ namespace TiltBrush
     {
 
         [MoonSharpHidden]
-        public ScriptCoordSpace Space { get; set; }
+        public ScriptCoordSpace _Space { get; set; }
 
         [MoonSharpHidden]
         public List<TrTransform> AsSingleTrList() => _Path2d.Select(v => TrTransform.T(new Vector3(v.x, v.y, 0))).ToList();
