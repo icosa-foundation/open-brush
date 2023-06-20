@@ -115,21 +115,21 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        public CanvasScript Squash(LayerApiWrapper other)
+        public LayerApiWrapper Squash()
         {
             int destinationIndex = index - 1;
             if (destinationIndex >= 0)
             {
-                return SquashTo(SketchApiWrapper.layers[destinationIndex]._CanvasScript);
+                return SquashTo(SketchApiWrapper.layers[destinationIndex]);
             }
             return null;
         }
 
-        public CanvasScript SquashTo(CanvasScript destinationLayer)
+        public LayerApiWrapper SquashTo(LayerApiWrapper destinationLayer)
         {
             SquashLayerCommand cmd = new SquashLayerCommand(
                 _CanvasScript,
-                destinationLayer
+                destinationLayer._CanvasScript
             );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             return destinationLayer;
