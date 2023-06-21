@@ -64,7 +64,11 @@ namespace TiltBrush
             var go = new GameObject();
             if (success)
             {
-                gltf.InstantiateMainScene(go.transform);
+                success = await gltf.InstantiateMainSceneAsync(go.transform);
+            }
+
+            if (success)
+            {
                 var result = new GltfImportResult();
                 result.root = go;
                 result.materialCollector = importMaterialCollector;
