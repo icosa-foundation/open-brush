@@ -473,7 +473,7 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-           
+
                 Task<bool> okTask = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
@@ -510,10 +510,11 @@ namespace TiltBrush
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-          ;
-            if (model == null){return false;}
+            ;
+            if (model == null) { return false; }
 
-            if (!model.m_Valid) { 
+            if (!model.m_Valid)
+            {
                 Task t = model.LoadModelAsync();
                 await t;
             }
@@ -549,7 +550,7 @@ namespace TiltBrush
         static void CreateModel(Model model, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, string assetId = null)
         {
-        
+
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;

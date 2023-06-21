@@ -505,16 +505,16 @@ namespace TiltBrush
             string assetLocation = Path.GetDirectoryName(localPath);
             try
             {
-               
+
                 Task t = ImportGltfast.StartSyncImport(
                     localPath,
                     assetLocation,
                     this,
                     warnings
                 );
-          
+
                 await t;
-                
+
             }
             catch (Exception ex)
             {
@@ -630,12 +630,12 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-          
+
         }
-         public  void LoadModel()
+        public void LoadModel()
         {
             StartCreatePrefab(null);
-            
+
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -678,11 +678,11 @@ namespace TiltBrush
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
 
-                    
+
                     // If we pulled this from Poly, it's going to be a gltf file.
                     Task t = LoadGltf(warnings);
                     await t;
-                  
+
 
                 }
                 else if (ext == ".fbx" || ext == ".obj")
