@@ -456,6 +456,20 @@ namespace TiltBrush
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
 
+        [ApiEndpoint("panel.open", "Opens a given panel")]
+        public static void OpenPanel(string name, float x, float y, float z)
+        {
+            BasePanel.PanelType panelType = (BasePanel.PanelType)Enum.Parse(typeof(BasePanel.PanelType), name, true);
+            SketchControlsScript.m_Instance.OpenPanelOfType(panelType, TrTransform.T(new Vector3(x, y, z)), true);
+        }
+
+        public static void ClosePanel(string name)
+        {
+            BasePanel.PanelType panelType = (BasePanel.PanelType)Enum.Parse(typeof(BasePanel.PanelType), name, true);
+            PanelManager.m_Instance.HidePanel(panelType);
+        }
+
+
         [ApiEndpoint("layer.add", "Adds a new layer")]
         public static void AddLayer()
         {
