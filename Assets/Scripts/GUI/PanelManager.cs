@@ -2524,6 +2524,19 @@ namespace TiltBrush
         {
             App.BrushColor.CurrentColor = col;
         }
+
+        public void AttachPanelToWand(BasePanel.PanelType type)
+        {
+            var panel = GetPanelByType(type);
+            panel.AttachToWand();
+        }
+
+        public void DetachPanelFromWand(BasePanel.PanelType type, TrTransform tr)
+        {
+            var panel = GetPanelByType(type);
+            panel.DetachFromWand(tr);
+        }
+
     }
 
 } // namespace TiltBrush
