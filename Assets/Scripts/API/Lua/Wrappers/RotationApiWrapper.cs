@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("Represents a rotation or orientation in 3D space")]
     [MoonSharpUserData]
     public class RotationApiWrapper
     {

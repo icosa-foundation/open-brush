@@ -4,6 +4,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Functions related to SVG images")]
     [MoonSharpUserData]
     public static class SvgApiWrapper
     {

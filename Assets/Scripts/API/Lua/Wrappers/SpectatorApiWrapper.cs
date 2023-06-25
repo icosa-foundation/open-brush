@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("The spectator camera")]
     [MoonSharpUserData]
     public static class SpectatorApiWrapper
     {

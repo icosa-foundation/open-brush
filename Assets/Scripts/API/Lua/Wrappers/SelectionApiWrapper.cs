@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Various actions related to selections of strokes and widgets")]
     [MoonSharpUserData]
     public static class SelectionApiWrapper
     {

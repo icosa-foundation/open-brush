@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("The user's brush")]
     [MoonSharpUserData]
     public static class BrushApiWrapper
     {

@@ -4,6 +4,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Functions for controlling the mirror symmetry mode")]
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {

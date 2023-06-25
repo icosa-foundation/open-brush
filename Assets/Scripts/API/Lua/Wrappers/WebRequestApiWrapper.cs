@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Functions to call remote websites or APIs")]
     [MoonSharpUserData]
     public static class WebRequestApiWrapper
     {

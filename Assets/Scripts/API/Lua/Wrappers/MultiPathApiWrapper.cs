@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("Multiple disconnected path segments")]
     [MoonSharpUserData]
     public class MultiPathApiWrapper : IPathApiWrapper
     {

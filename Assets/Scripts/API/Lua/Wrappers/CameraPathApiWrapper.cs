@@ -5,6 +5,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A camera path and it's position, speed or FOV knots")]
     [MoonSharpUserData]
     public class CameraPathApiWrapper
     {

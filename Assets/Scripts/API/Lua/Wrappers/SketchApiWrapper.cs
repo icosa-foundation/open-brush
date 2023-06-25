@@ -4,6 +4,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Represents the current sketch")]
     [MoonSharpUserData]
     public static class SketchApiWrapper
     {

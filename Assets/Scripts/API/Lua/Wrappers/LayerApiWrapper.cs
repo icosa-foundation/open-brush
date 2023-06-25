@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A layer in the current sketch")]
     [MoonSharpUserData]
     public class LayerApiWrapper
     {

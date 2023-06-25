@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A video widget")]
     [MoonSharpUserData]
     public class VideoApiWrapper
     {

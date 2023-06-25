@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("A reference image widget")]
     [MoonSharpUserData]
     public class ImageApiWrapper
     {

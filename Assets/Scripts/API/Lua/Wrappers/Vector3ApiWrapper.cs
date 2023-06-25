@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("A position or offset in 3D space")]
     [MoonSharpUserData]
     public class Vector3ApiWrapper
     {

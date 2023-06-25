@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A guide widget")]
     [MoonSharpUserData]
     public class GuideApiWrapper
     {

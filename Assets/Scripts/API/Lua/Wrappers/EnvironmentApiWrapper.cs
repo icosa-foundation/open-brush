@@ -2,6 +2,7 @@
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("The background, skybox and props")]
     [MoonSharpUserData]
     public class EnvironmentApiWrapper
     {

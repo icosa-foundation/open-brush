@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("Various properties and methods that effect the entire app")]
     [MoonSharpUserData]
     public static class AppApiWrapper
     {
@@ -16,63 +17,91 @@ namespace TiltBrush
         public static float frames => UnityEngine.Time.frameCount;
 
         [LuaDocsDescription("Determines if physics simulation is active")]
+        [LuaDocsExample("App:Physics(true)")]
         public static bool Physics(bool active) => UnityEngine.Physics.autoSimulation = active;
 
         [LuaDocsDescription("The current scale of the scene")]
         public static float currentScale => App.Scene.Pose.scale;
 
         [LuaDocsDescription("Undo the last action")]
+        [LuaDocsExample("App:Undo()")]
         public static void Undo() => ApiMethods.Undo();
 
         [LuaDocsDescription("Redo the previously undone action")]
+        [LuaDocsExample("App:Redo()")]
         public static void Redo() => ApiMethods.Redo();
 
-        [LuaDocsDescription("Add a listener")]
-        public static void AddListener(string a) => ApiMethods.AddListener(a);
+        [LuaDocsDescription("Adds a url that should be sent the data for each stroke as soon as the user finishes drawing it")]
+        [LuaDocsExample(@"App:AddListener(""http://example.com"")")]
+        [LuaDocsParameter("url", "The url to send the stroke data to")]
+        public static void AddListener(string url) => ApiMethods.AddListener(url);
 
         [LuaDocsDescription("Reset all panels")]
+        [LuaDocsExample("App:ResetPanels()")]
         public static void ResetPanels() => ApiMethods.ResetAllPanels();
 
         [LuaDocsDescription("Show the user scripts folder")]
+        [LuaDocsExample("App:ShowScriptsFolder()")]
         public static void ShowScriptsFolder() => ApiMethods.OpenUserScriptsFolder();
 
         [LuaDocsDescription("Show the export folder")]
+        [LuaDocsExample("App:ShowExportFolder()")]
         public static void ShowExportFolder() => ApiMethods.OpenExportFolder();
 
         [LuaDocsDescription("Show the sketches folder")]
-        public static void ShowSketchesFolder(int a) => ApiMethods.ShowSketchFolder(a);
+        [LuaDocsExample("App:ShowSketchesFolder(1)")]
+        [LuaDocsParameter("a", "The index to show the sketches folder")]
+        public static void ShowSketchesFolder(int index) => ApiMethods.ShowSketchFolder(index);
 
         [LuaDocsDescription("Activate or deactivate straight edge mode")]
+        [LuaDocsExample("App:StraightEdge(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void StraightEdge(bool active) => LuaApiMethods.StraightEdge(active);
 
         [LuaDocsDescription("Activate or deactivate auto orientation mode")]
+        [LuaDocsExample("App:AutoOrient(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void AutoOrient(bool active) => LuaApiMethods.AutoOrient(active);
 
         [LuaDocsDescription("Activate or deactivate view only mode")]
+        [LuaDocsExample("App:ViewOnly(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void ViewOnly(bool active) => LuaApiMethods.ViewOnly(active);
 
         [LuaDocsDescription("Activate or deactivate auto simplification mode")]
+        [LuaDocsExample("App:AutoSimplify(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void AutoSimplify(bool active) => LuaApiMethods.AutoSimplify(active);
 
         [LuaDocsDescription("Activate or deactivate disco mode")]
+        [LuaDocsExample("App:Disco(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void Disco(bool active) => LuaApiMethods.Disco(active);
 
         [LuaDocsDescription("Activate or deactivate profiling mode")]
+        [LuaDocsExample("App:Profiling(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void Profiling(bool active) => LuaApiMethods.Profiling(active);
 
         [LuaDocsDescription("Activate or deactivate post-processing")]
+        [LuaDocsExample("App:PostProcessing(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void PostProcessing(bool active) => LuaApiMethods.PostProcessing(active);
 
         [LuaDocsDescription("Set the drafting mode to visible")]
+        [LuaDocsExample("App:DraftingVisible()")]
         public static void DraftingVisible() => ApiMethods.DraftingVisible();
 
         [LuaDocsDescription("Set the drafting mode to transparent")]
+        [LuaDocsExample("App:DraftingTransparent()")]
         public static void DraftingTransparent() => ApiMethods.DraftingTransparent();
 
         [LuaDocsDescription("Set the drafting mode to hidden")]
+        [LuaDocsExample("App:DraftingHidden()")]
         public static void DraftingHidden() => ApiMethods.DraftingHidden();
 
-        [LuaDocsDescription("Get or set the current environment")]
+        [LuaDocsDescription("Get or set the current environment by name")]
+        // [LuaDocsExample("App.environment = ""Space"")]
         public static string environment
         {
             get => SceneSettings.m_Instance.CurrentEnvironment.Description;
@@ -80,6 +109,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Activate or deactivate the watermark")]
+        [LuaDocsExample("App:Watermark(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
         public static void Watermark(bool active) => LuaApiMethods.Watermark(active);
 
         // TODO Unified API for tools and panels
@@ -87,6 +118,7 @@ namespace TiltBrush
         // public static void SketchOrigin(bool active) => )LuaApiMethods.SketchOrigin)(active);
 
         [LuaDocsDescription("Get or set the clipboard text")]
+        // [LuaDocsExample("App.clipboardText = ""Hello, World!"")]
         public static string clipboardText
         {
             get => SystemClipboard.GetClipboardText();
@@ -99,6 +131,8 @@ namespace TiltBrush
         // }
 
         [LuaDocsDescription("Read the contents of a file")]
+        [LuaDocsExample(@"App:ReadFile(""path/to/file.txt"")")]
+        [LuaDocsParameter("path", "The file path to read from. It must be relative to and contined within the Scripts folder")]
         public static string ReadFile(string path)
         {
             bool valid = false;
@@ -125,10 +159,14 @@ namespace TiltBrush
             return contents;
         }
 
-        [LuaDocsDescription("Log a Lua error message")]
+        [LuaDocsDescription("Displays an error message on the back of the user's brush controller")]
+        [LuaDocsExample(@"App:Error(""This is an error message."")")]
+        [LuaDocsParameter("message", "The error message to display")]
         public static void Error(string message) => LuaManager.Instance.LogLuaErrorRaisedByScript(message);
 
-        [LuaDocsDescription("Set the font for the text")]
+        [LuaDocsDescription("Set the font used for drawing text")]
+        [LuaDocsExample(@"App:SetFont(""fontData"")")]
+        [LuaDocsParameter("fontData", "Font data in .chr format")]
         public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
         [LuaDocsDescription("Take a snapshot of your scene and save it to your Snapshots folder")]
@@ -180,6 +218,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
+        [LuaDocsExample(@"App:Take360Snapshot(Transform:New(0, 12, 3), ""my360snapshot.png"", 4096)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
         [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
         [LuaDocsParameter("width", "The width of the image")]

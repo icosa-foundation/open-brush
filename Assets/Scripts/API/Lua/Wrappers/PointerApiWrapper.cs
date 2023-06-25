@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("An independently controllable brush that can paint independently of user actions")]
     [MoonSharpUserData]
     public class PointerApiWrapper
     {

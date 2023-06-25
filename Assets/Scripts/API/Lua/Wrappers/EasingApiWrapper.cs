@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
     // From https://gist.github.com/Kryzarel
-
+    [LuaDocsDescription("Each easing function takes a value between 0 and 1 and modifies it to speed up or slow down at either end")]
     [MoonSharpUserData]
     public static class EasingApiWrapper
     {

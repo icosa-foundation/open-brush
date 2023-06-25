@@ -17,6 +17,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("An RGB color")]
     [MoonSharpUserData]
     public class ColorApiWrapper
     {

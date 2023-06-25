@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Timers can be used to call functions at a predetermined time (or multiple times)")]
     [MoonSharpUserData]
     public static class TimerApiWrapper
     {

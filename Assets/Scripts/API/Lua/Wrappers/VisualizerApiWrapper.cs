@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Settings and controls for audio visualization mode")]
     [MoonSharpUserData]
     public static class VisualizerApiWrapper
     {

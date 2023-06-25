@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("The user's headset")]
     [MoonSharpUserData]
     public static class HeadsetApiWrapper
     {

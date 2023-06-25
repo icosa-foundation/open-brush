@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("The turtle can be used to draw strokes in a classic LOGO style for moving and turning in space")]
     [MoonSharpUserData]
     public static class TurtleApiWrapper
     {

@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("A specific brush stroke")]
     [MoonSharpUserData]
     public class StrokeApiWrapper
     {

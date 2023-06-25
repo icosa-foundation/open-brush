@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Functions to generate a variety of waveforms")]
     [MoonSharpUserData]
     public static class WaveformApiWrapper
     {

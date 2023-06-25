@@ -17,6 +17,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    [LuaDocsDescription("Various functions for generating random data")]
     [MoonSharpUserData]
     public static class RandomApiWrapper
     {

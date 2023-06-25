@@ -3,6 +3,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
+    [LuaDocsDescription("Various maths functions")]
     [MoonSharpUserData]
     public static class MathApiWrapper
     {

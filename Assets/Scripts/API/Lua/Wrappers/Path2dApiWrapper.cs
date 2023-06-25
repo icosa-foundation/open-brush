@@ -6,6 +6,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
+    [LuaDocsDescription("A set of Vector2 points forming a 2D path")]
     [MoonSharpUserData]
     public class Path2dApiWrapper : IPathApiWrapper
     {

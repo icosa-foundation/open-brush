@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A 3D model widget")]
     [MoonSharpUserData]
     public class ModelApiWrapper
     {

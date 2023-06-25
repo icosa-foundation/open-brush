@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Represents the user's wand (the controller that isn't the brush controller)")]
     [MoonSharpUserData]
     public static class WandApiWrapper
     {
