@@ -10,7 +10,7 @@ namespace TiltBrush
         public static TrTransform transform
         {
             get => TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
-            set => ApiMethods.SymmetrySetTransform(value.translation, value.rotation);
+            set => ApiMethods._SymmetrySetTransform(value.translation, value.rotation);
         }
         public static Vector3 position
         {
@@ -20,7 +20,7 @@ namespace TiltBrush
         public static Quaternion rotation
         {
             get => PointerManager.m_Instance.SymmetryWidget.transform.rotation;
-            set => ApiMethods.SymmetrySetRotation(value);
+            set => ApiMethods._SymmetrySetRotation(value);
         }
 
         public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
