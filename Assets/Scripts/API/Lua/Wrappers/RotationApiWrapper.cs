@@ -70,6 +70,7 @@ namespace TiltBrush
             _Quaternion.SetLookRotation(view, up);
             return _Quaternion;
         }
+        
         public (float angle, Vector3 axis) ToAngleAxis()
         {
             _Quaternion.ToAngleAxis(out float angle, out Vector3 axis);
