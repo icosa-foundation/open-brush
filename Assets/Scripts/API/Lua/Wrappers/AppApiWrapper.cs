@@ -20,13 +20,13 @@ namespace TiltBrush
         public static void ShowScriptsFolder() => ApiMethods.OpenUserScriptsFolder();
         public static void ShowExportFolder() => ApiMethods.OpenExportFolder();
         public static void ShowSketchesFolder(int a) => ApiMethods.ShowSketchFolder(a);
-        public static void StraightEdge(bool a) => LuaApiMethods.StraightEdge(a);
-        public static void AutoOrient(bool a) => LuaApiMethods.AutoOrient(a);
-        public static void ViewOnly(bool a) => LuaApiMethods.ViewOnly(a);
-        public static void AutoSimplify(bool a) => LuaApiMethods.AutoSimplify(a);
-        public static void Disco(bool a) => LuaApiMethods.Disco(a);
-        public static void Profiling(bool a) => LuaApiMethods.Profiling(a);
-        public static void PostProcessing(bool a) => LuaApiMethods.PostProcessing(a);
+        public static void StraightEdge(bool active) => LuaApiMethods.StraightEdge(active);
+        public static void AutoOrient(bool active) => LuaApiMethods.AutoOrient(active);
+        public static void ViewOnly(bool active) => LuaApiMethods.ViewOnly(active);
+        public static void AutoSimplify(bool active) => LuaApiMethods.AutoSimplify(active);
+        public static void Disco(bool active) => LuaApiMethods.Disco(active);
+        public static void Profiling(bool active) => LuaApiMethods.Profiling(active);
+        public static void PostProcessing(bool active) => LuaApiMethods.PostProcessing(active);
         public static void DraftingVisible() => ApiMethods.DraftingVisible();
         public static void DraftingTransparent() => ApiMethods.DraftingTransparent();
         public static void DraftingHidden() => ApiMethods.DraftingHidden();
@@ -35,19 +35,20 @@ namespace TiltBrush
             get => SceneSettings.m_Instance.CurrentEnvironment.Description;
             set => ApiMethods.SetEnvironment(value);
         }
-        public static void Watermark(bool a) => LuaApiMethods.Watermark(a);
+        public static void Watermark(bool active) => LuaApiMethods.Watermark(active);
         // TODO Unified API for tools and panels
-        // public static void SettingsPanel(bool a) => )LuaApiMethods.SettingsPanel)(a);
-        // public static void SketchOrigin(bool a) => )LuaApiMethods.SketchOrigin)(a);
+        // public static void SettingsPanel(bool active) => )LuaApiMethods.SettingsPanel)(active);
+        // public static void SketchOrigin(bool active) => )LuaApiMethods.SketchOrigin)(active);
 
         public static string clipboardText {
             get => SystemClipboard.GetClipboardText();
             set => SystemClipboard.SetClipboardText(value);
         }
-        public static Texture2D clipboardImage {
-            get => SystemClipboard.GetClipboardImage();
-            // set => SystemClipboard.SetClipboardImage(value);
-        }
+        
+        // public static Texture2D clipboardImage {
+        //     get => SystemClipboard.GetClipboardImage();
+        //     // set => SystemClipboard.SetClipboardImage(value);
+        // }
 
         public static string ReadFile(string path)
         {
