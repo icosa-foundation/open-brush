@@ -14,7 +14,9 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using MoonSharp.Interpreter;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,27 +34,64 @@ namespace TiltBrush
             }
 
             Script script = new Script();
-            LuaManager.AutoCompleteEntries = new List<string>();
+            LuaManager.ApiDocClasses = new List<ApiDocClass>();
 
-            // Manually add some entries that aren't added the standard way
-            LuaManager.AutoCompleteEntries.Add("---@type Vector3");
-            LuaManager.AutoCompleteEntries.Add("Tool.startPosition = nil");
-            LuaManager.AutoCompleteEntries.Add("");
-            LuaManager.AutoCompleteEntries.Add("---@type Vector3");
-            LuaManager.AutoCompleteEntries.Add("Tool.endPosition = nil");
-            LuaManager.AutoCompleteEntries.Add("");
-            LuaManager.AutoCompleteEntries.Add("---@type Vector3");
-            LuaManager.AutoCompleteEntries.Add("Tool.vector = nil");
-            LuaManager.AutoCompleteEntries.Add("");
-            LuaManager.AutoCompleteEntries.Add("---@type Rotation");
-            LuaManager.AutoCompleteEntries.Add("Tool.rotation = nil");
-            LuaManager.AutoCompleteEntries.Add("");
+            string docsPath = Path.Join(App.SupportPath(), "API Docs");
+            if (!Directory.Exists(docsPath))
+            {
+                Directory.CreateDirectory(docsPath);
+            }
 
-
-            string filePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
             LuaManager.Instance.RegisterApiClasses(script);
-            File.WriteAllLines(filePath, LuaManager.AutoCompleteEntries);
-            LuaManager.AutoCompleteEntries = null;
+            
+            // Manually add some entries that aren't added the standard way
+            var vectorProp = new ApiDocType
+            {
+                PrimitiveType = ApiDocPrimitiveType.UserData,
+                CustomTypeName = "Vector3"
+            };
+            var rotationProp = new ApiDocType
+            {
+                PrimitiveType = ApiDocPrimitiveType.UserData,
+                CustomTypeName = "Rotation"
+            };
+            var toolApiDocClass = new ApiDocClass
+            {
+                Name = "Tool",
+                Methods = new List<ApiDocMethod>(),
+                Properties = new List<ApiDocProperty>
+                {
+                    new() {Name="startPosition", PropertyType = vectorProp},
+                    new() {Name="endPosition", PropertyType = vectorProp},
+                    new() {Name="vector", PropertyType = vectorProp},
+                    new() {Name="rotation", PropertyType = rotationProp},
+                }
+            };
+            LuaManager.ApiDocClasses.Add(toolApiDocClass);
+
+            // JSON docs if needed
+            // var json = JsonConvert.SerializeObject(LuaManager.ApiDocClasses, Formatting.Indented);
+            // File.WriteAllText(Path.Join(docsPath, "docs.json"), json);
+
+            // Generate __autocomplete.lua
+            var autocomplete = new StringBuilder();
+            string autocompleteFilePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
+            foreach (var klass in LuaManager.ApiDocClasses)
+            {
+                autocomplete.Append(klass.AutocompleteSerialize());
+            }
+            File.WriteAllText(autocompleteFilePath, autocomplete.ToString());
+            LuaManager.Instance.CopyLuaModules(); // Update the copy in User docs (also done on app start)
+
+            // Generate markdown docs
+            foreach (var klass in LuaManager.ApiDocClasses)
+            {
+                var markDown = klass.MarkdownSerialize();
+                File.WriteAllText(Path.Join(docsPath, $"{klass.Name}.md"), markDown);
+            }
+            
+            // Done
+            LuaManager.ApiDocClasses = null;
             Debug.Log($"Finished Generating Lua Autocomplete");
         }
     }

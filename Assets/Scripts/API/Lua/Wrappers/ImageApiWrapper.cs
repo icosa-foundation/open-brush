@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [MoonSharpUserData]
@@ -88,6 +89,11 @@ namespace TiltBrush
         public void Select() => ApiMethods.SelectWidget(_ImageWidget);
         public void Delete() => ApiMethods.DeleteWidget(_ImageWidget);
         public string FormEncode() => ApiMethods.FormEncodeImage(index);
+        
+        [LuaDocsDescription("Saves an image as a png based on base64 data")]
+        [LuaDocsExample(@"App:SaveBase64(someData, ""image.png"")")]
+        [LuaDocsParameter("base64", "The base64 data for the image")]
+        [LuaDocsParameter("filename", "The filename to save as")]
         public string SaveBase64(string base64, string filename) => ApiMethods.SaveBase64(base64, filename);
     }
 }

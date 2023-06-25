@@ -82,7 +82,7 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         // Used when called via MenuItem("Open Brush/API/Generate Lua Autocomplete File")
-        public static List<string> AutoCompleteEntries;
+        public static List<ApiDocClass> ApiDocClasses;
 #endif
 
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
@@ -103,6 +103,8 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
+        
+        public string LuaModulesPath => Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
 
         public struct ScriptTrTransform
         {
@@ -145,26 +147,16 @@ namespace TiltBrush
                 ActiveScripts[category] = 0;
             }
 
-            var modulesPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
-            if (!Directory.Exists(modulesPath))
+            if (!Directory.Exists(LuaModulesPath))
             {
-                Directory.CreateDirectory(modulesPath);
+                Directory.CreateDirectory(LuaModulesPath);
             }
 
             // Allow includes from Scripts/LuaModules
             Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(modulesPath, "?.lua") };
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(LuaModulesPath, "?.lua") };
 
-            // Copy built-in Lua Libraries to User's LuaModules directory
-            var libraries = Resources.LoadAll<TextAsset>("LuaModules");
-            foreach (var library in libraries)
-            {
-                var newFilename = Path.Join(modulesPath, $"{library.name}.lua");
-                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
-                {
-                    FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
-                }
-            }
+            CopyLuaModules();
 
             LoadExampleScripts();
             LoadUserScripts();
@@ -182,6 +174,20 @@ namespace TiltBrush
                 m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+        
+        public void CopyLuaModules()
+        {
+            // Copy built-in Lua Libraries to User's LuaModules directory
+            var libraries = Resources.LoadAll<TextAsset>("LuaModules");
+            foreach (var library in libraries)
+            {
+                var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
+                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
+                {
+                    FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
+                }
             }
         }
 
@@ -477,66 +483,7 @@ namespace TiltBrush
             }
             target[fnName] = t;
 #if UNITY_EDITOR
-
-            string makeNiceTypename(string typeName)
-            {
-                switch (typeName)
-                {
-                    case "System.Boolean":
-                        typeName = "boolean";
-                        break;
-                    case "System.Single":
-                        typeName = "number";
-                        break;
-                    case "System.String":
-                        typeName = "string";
-                        break;
-                    case "System.Int32":
-                        typeName = "number";
-                        break;
-                    case "TiltBrush.TrTransform":
-                        typeName = "Transform";
-                        break;
-                    case "UnityEngine.Vector2":
-                        typeName = "Vector2";
-                        break;
-                    case "UnityEngine.Vector3":
-                        typeName = "Vector3";
-                        break;
-                    case "System.Collections.Generic.List`1[UnityEngine.Vector3]":
-                        typeName = "table_Vector3";
-                        break;
-                    case "System.Collections.Generic.List`1[UnityEngine.Vector2]":
-                        typeName = "table_Vector2";
-                        break;
-                    case "System.ValueTuple`2[System.Single,UnityEngine.Vector3]":
-                        typeName = "Path";
-                        break;
-                    case "System.Collections.Generic.List`1[UnityEngine.Color]":
-                        typeName = "table_Color";
-                        break;
-                    case "System.Collections.Generic.List`1[System.String]":
-                        typeName = "table_string";
-                        break;
-                    case "System.Collections.Generic.List`1[TiltBrush.TrTransform]":
-                        typeName = "table_Transform";
-                        break;
-                    case "System.Collections.Generic.List`1[TiltBrush.Path]":
-                        typeName = "table_Path";
-                        break;
-                    case "UnityEngine.Quaternion":
-                        typeName = "Rotation";
-                        break;
-                    case "UnityEngine.Color":
-                        typeName = "Color";
-                        break;
-                }
-
-                typeName = typeName.Replace("TiltBrush.", "");
-                typeName = typeName.Replace("ApiWrapper", "");
-                return typeName;
-            }
-
+            
             bool isHidden(ICustomAttributeProvider info)
             {
                 // Ignore MoonSharpHidden and MoonSharpVisible if false
@@ -545,32 +492,74 @@ namespace TiltBrush
                 if (vis.Length > 0) if (!((MoonSharpVisibleAttribute)vis[0]).Visible) return true;
                 return false;
             }
-
-            if (Application.isEditor && AutoCompleteEntries!=null)
+            
+            if (Application.isEditor && ApiDocClasses != null)
             {
+                string GetClassDescription()
+                {
+                    var attr = Attribute.GetCustomAttribute(t, typeof(LuaDocsDescriptionAttribute));
+                    if (attr == null) return "";
+                    return ((LuaDocsDescriptionAttribute)attr).Description;
+                }
+                
+                string GetPropertyDescription(MemberInfo m)
+                {
+                    var attr = m.GetCustomAttribute<LuaDocsDescriptionAttribute>();
+                    if (attr == null) return "";
+                    return attr.Description;
+                }
+                
+                string GetMethodDescription(MethodBase m)
+                {
+                    var attr = m.GetCustomAttribute<LuaDocsDescriptionAttribute>();
+                    if (attr == null) return "";
+                    return attr.Description;
+                }
+                
+                string GetMethodExample(MethodBase m)
+                {
+                    var attr = m.GetCustomAttribute<LuaDocsExampleAttribute>();
+                    if (attr == null) return "";
+                    return attr.Example;
+                }
+        
+                Dictionary<string, string> GetMethodParameters(MethodBase m)
+                {
+                    var attrs = m.GetCustomAttributes<LuaDocsParameterAttribute>();
+                    var paramsDict = new Dictionary<string, string>();
+                    foreach (var attr in attrs)
+                    {
+                        paramsDict[attr.Name] = attr.Description;
+                    }
+                    return paramsDict;
+                }
 
+                
                 string className = t.ToString()
                     .Replace("ApiWrapper", "")
                     .Replace("TiltBrush.", "");
 
-                AutoCompleteEntries.Add($"---Properties for type {className}");
-                AutoCompleteEntries.Add("");
+                var apiDocClass = new ApiDocClass
+                {
+                    Name = className,
+                    Description = GetClassDescription(),
+                    Properties = new List<ApiDocProperty>(),
+                    Methods = new List<ApiDocMethod>()
+                };
 
                 foreach (var prop in t.GetProperties())
                 {
                     if (isHidden(prop)) continue;
 
-                    if (prop.PropertyType != typeof(void))
+                    var typeName = prop.PropertyType.ToString();
+                    var property = new ApiDocProperty
                     {
-                        var typeName = prop.PropertyType.ToString();
-                        AutoCompleteEntries.Add($"---@type {makeNiceTypename(typeName)}");
-                    }
-                    AutoCompleteEntries.Add($"{fnName}.{prop.Name} = nil");
-                    AutoCompleteEntries.Add("");
+                        Name = prop.Name,
+                        Description = GetPropertyDescription(prop),
+                        PropertyType = ApiDocType.CsharpTypeToDocsType(typeName)
+                    };
+                    apiDocClass.Properties.Add(property);
                 }
-
-                AutoCompleteEntries.Add($"---Methods for type {className} ");
-                AutoCompleteEntries.Add("");
 
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
                              .Where(x =>
@@ -580,24 +569,39 @@ namespace TiltBrush
                                  x.Name.ToString() != "ToString"))
                 {
                     if (isHidden(prop)) continue;
+                    
+                    var method = new ApiDocMethod
+                    {
+                        Name = prop.Name,
+                        Description = GetMethodDescription(prop),
+                        Example = GetMethodExample(prop),
+                        Parameters = new List<ApiDocParameter>()
+                    };
 
                     var paramNameList = new List<string>();
+                    var paramDict = GetMethodParameters(prop);
                     foreach (var param in prop.GetParameters())
                     {
                         var typeName = param.ParameterType.ToString();
                         paramNameList.Add(param.Name);
-                        AutoCompleteEntries.Add($"---@param {param.Name} {makeNiceTypename(typeName)}");
+                        string description;
+                        if (!paramDict.TryGetValue(param.Name, out description)) description = "";
+                        var parameter = new ApiDocParameter
+                        {
+                            Name = param.Name,
+                            Description = description,
+                            ParameterType = ApiDocType.CsharpTypeToDocsType(typeName)
+                        };
+                        method.Parameters.Add(parameter);
                     }
-                    if (prop.ReturnType != typeof(void))
-                    {
-                        var returnTypeName = prop.ReturnType.ToString();
-                        AutoCompleteEntries.Add($"---@return {makeNiceTypename(returnTypeName)}");
-                    }
-                    AutoCompleteEntries.Add($"function {fnName}:{prop.Name}({string.Join(", ", paramNameList)}) end");
-                    AutoCompleteEntries.Add("");
+                    
+                    var returnTypeName = prop.ReturnType.ToString();
+                    method.ReturnType = ApiDocType.CsharpTypeToDocsType(returnTypeName);
+                    
+                    apiDocClass.Methods.Add(method);
                 }
+                ApiDocClasses.Add(apiDocClass);
             }
-            AutoCompleteEntries.Add("");
 #endif
         }
 
@@ -875,7 +879,7 @@ namespace TiltBrush
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
         }
-
+        
         public void EnablePointerScript(bool enable)
         {
             PointerScriptsEnabled = enable;
