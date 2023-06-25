@@ -16,16 +16,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MoonSharp.Interpreter;
-using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class LuaAutocompleteGenerator : Editor
+    public class LuaDocsGenerator : Editor
     {
-        [MenuItem("Open Brush/API/Generate Lua Autocomplete File")]
-        static void Generate()
+        [MenuItem("Open Brush/API/Generate Lua Docs")]
+        static void GenerateDocs()
         {
             if (!Application.isPlaying)
             {
@@ -34,32 +33,18 @@ namespace TiltBrush
             }
 
             Script script = new Script();
-            LuaManager.ApiDocClasses = new List<ApiDocClass>();
-
-            string docsPath = Path.Join(App.SupportPath(), "API Docs");
-            if (!Directory.Exists(docsPath))
-            {
-                Directory.CreateDirectory(docsPath);
-            }
+            LuaManager.ApiDocClasses = new List<LuaDocsClass>();
 
             LuaManager.Instance.RegisterApiClasses(script);
             
             // Manually add some entries that aren't added the standard way
-            var vectorProp = new ApiDocType
-            {
-                PrimitiveType = ApiDocPrimitiveType.UserData,
-                CustomTypeName = "Vector3"
-            };
-            var rotationProp = new ApiDocType
-            {
-                PrimitiveType = ApiDocPrimitiveType.UserData,
-                CustomTypeName = "Rotation"
-            };
-            var toolApiDocClass = new ApiDocClass
+            var vectorProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Vector3"};
+            var rotationProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation"};
+            var toolApiDocClass = new LuaDocsClass
             {
                 Name = "Tool",
-                Methods = new List<ApiDocMethod>(),
-                Properties = new List<ApiDocProperty>
+                Methods = new List<LuaDocsMethod>(),
+                Properties = new List<LuaDocsProperty>
                 {
                     new() {Name="startPosition", PropertyType = vectorProp},
                     new() {Name="endPosition", PropertyType = vectorProp},
@@ -84,10 +69,12 @@ namespace TiltBrush
             LuaManager.Instance.CopyLuaModules(); // Update the copy in User docs (also done on app start)
 
             // Generate markdown docs
+            string docsPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaDocs");
+            if (!Directory.Exists(docsPath)) Directory.CreateDirectory(docsPath);
             foreach (var klass in LuaManager.ApiDocClasses)
             {
                 var markDown = klass.MarkdownSerialize();
-                File.WriteAllText(Path.Join(docsPath, $"{klass.Name}.md"), markDown);
+                File.WriteAllText(Path.Join(docsPath, $"{klass.Name.ToLower()}.md"), markDown);
             }
             
             // Done

@@ -1,21 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
-using UnityEngine;
 
 namespace TiltBrush
 {
     [Serializable]
-    public class ApiDocClass
+    public class LuaDocsClass
     {
         public string Name;
         public string Description;
 
-        public List<ApiDocProperty> Properties;
-        public List<ApiDocMethod> Methods;
+        public List<LuaDocsProperty> Properties;
+        public List<LuaDocsMethod> Methods;
         
         // 0=name 1=description 2=properties 3=methods
         private string markdownTemplate = @"
@@ -92,14 +90,14 @@ namespace TiltBrush
             return json;
         }
         
-        public static ApiDocClass Deserialize(string json)
+        public static LuaDocsClass Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<ApiDocClass>(json);
+            return JsonConvert.DeserializeObject<LuaDocsClass>(json);
         }
     }
 
     [Serializable]
-    public enum ApiDocPrimitiveType
+    public enum LuaDocsPrimitiveType
     {
         Boolean,
         String,
@@ -112,121 +110,121 @@ namespace TiltBrush
     }
     
     [Serializable]
-    public class ApiDocType
+    public class LuaDocsType
     {
-        public ApiDocPrimitiveType PrimitiveType;
+        public LuaDocsPrimitiveType PrimitiveType;
         [CanBeNull] public string CustomTypeName;
         public bool IsTable;
         
-        public static ApiDocType CsharpTypeToDocsType(string reflectedType)
+        public static LuaDocsType CsharpTypeToDocsType(string reflectedType)
         {
             var docsType = reflectedType switch
             {
-                "System.Boolean" => new ApiDocType
+                "System.Boolean" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Boolean
+                    PrimitiveType = LuaDocsPrimitiveType.Boolean
                 },
-                "System.Single" => new ApiDocType
+                "System.Single" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Number
+                    PrimitiveType = LuaDocsPrimitiveType.Number
                 },
-                "System.String" => new ApiDocType
+                "System.String" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.String
+                    PrimitiveType = LuaDocsPrimitiveType.String
                 },
-                "System.Int32" => new ApiDocType
+                "System.Int32" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Number
+                    PrimitiveType = LuaDocsPrimitiveType.Number
                 },
-                "MoonSharp.Interpreter.Closure" => new ApiDocType
+                "MoonSharp.Interpreter.Closure" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Function,
+                    PrimitiveType = LuaDocsPrimitiveType.Function,
                 },
-                "MoonSharp.Interpreter.Table" => new ApiDocType
+                "MoonSharp.Interpreter.Table" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Table,
+                    PrimitiveType = LuaDocsPrimitiveType.Table,
                 },
-                "MoonSharp.Interpreter.DynValue" => new ApiDocType
+                "MoonSharp.Interpreter.DynValue" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Table,
+                    PrimitiveType = LuaDocsPrimitiveType.Table,
                 },
-                "TiltBrush.TrTransform" => new ApiDocType
+                "TiltBrush.TrTransform" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Transform"
                 },
-                "UnityEngine.Vector2" => new ApiDocType
+                "UnityEngine.Vector2" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Vector2"
                 },
-                "UnityEngine.Vector3" => new ApiDocType
+                "UnityEngine.Vector3" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Vector3"
                 },
-                "System.Single[]" => new ApiDocType
+                "System.Single[]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Number,
+                    PrimitiveType = LuaDocsPrimitiveType.Number,
                     IsTable = true
                 },
-                "System.Collections.Generic.List`1[UnityEngine.Vector3]" => new ApiDocType
+                "System.Collections.Generic.List`1[UnityEngine.Vector3]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Vector3",
                     IsTable = true
                 },
-                "System.Collections.Generic.List`1[UnityEngine.Vector2]" => new ApiDocType
+                "System.Collections.Generic.List`1[UnityEngine.Vector2]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Vector2",
                     IsTable = true
                 },
-                "System.ValueTuple`2[System.Single,UnityEngine.Vector3]" => new ApiDocType
+                "System.ValueTuple`2[System.Single,UnityEngine.Vector3]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Number, Vector3"
                 },
-                "System.Collections.Generic.List`1[UnityEngine.Color]" => new ApiDocType
+                "System.Collections.Generic.List`1[UnityEngine.Color]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Color",
                     IsTable = true
                 },
-                "System.Collections.Generic.List`1[System.String]" => new ApiDocType
+                "System.Collections.Generic.List`1[System.String]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.String,
+                    PrimitiveType = LuaDocsPrimitiveType.String,
                     IsTable = true
                 },
-                "System.Collections.Generic.List`1[TiltBrush.TrTransform]" => new ApiDocType
+                "System.Collections.Generic.List`1[TiltBrush.TrTransform]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Transform",
                     IsTable = true
                 },
-                "System.Collections.Generic.List`1[TiltBrush.PathApiWrapper]" => new ApiDocType
+                "System.Collections.Generic.List`1[TiltBrush.PathApiWrapper]" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Path",
                     IsTable = true
                 },
-                "UnityEngine.Quaternion" => new ApiDocType
+                "UnityEngine.Quaternion" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Rotation"
                 },
-                "UnityEngine.Color" => new ApiDocType
+                "UnityEngine.Color" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = "Color"
                 },
-                "System.Void" => new ApiDocType
+                "System.Void" => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.Nil,
+                    PrimitiveType = LuaDocsPrimitiveType.Nil,
                 },
-                _ => new ApiDocType
+                _ => new LuaDocsType
                 {
-                    PrimitiveType = ApiDocPrimitiveType.UserData,
+                    PrimitiveType = LuaDocsPrimitiveType.UserData,
                     CustomTypeName = reflectedType
                         .Replace("TiltBrush.", "")
                         .Replace("ApiWrapper", "")
@@ -239,7 +237,7 @@ namespace TiltBrush
         public string TypeAsLuaString()
         {
             string luaString;
-            if (PrimitiveType == ApiDocPrimitiveType.DynValue)
+            if (PrimitiveType == LuaDocsPrimitiveType.DynValue)
             {
                 // Hmmmm...
                 luaString = "Any";
@@ -258,20 +256,31 @@ namespace TiltBrush
             }
             return luaString;
         }
+
+        public string TypeAsMarkdownString()
+        {
+            string markdown = TypeAsLuaString();
+            if (!string.IsNullOrEmpty(CustomTypeName) && !IsTable)
+            {
+                // Make types into links to the class docs
+                markdown = $@"<a href=""{markdown.ToLower()}.md"">{markdown}</a>";
+            }
+            return markdown;
+        }
     }
     
     [Serializable]
-    public class ApiDocParameter
+    public class LuaDocsParameter
     {
         public string Name;
-        public ApiDocType ParameterType;
+        public LuaDocsType ParameterType;
         public string Description;
         
         // 0=name 1=type 2=description
         private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
         public string MarkdownSerialize()
         {
-            return string.Format(markdownTemplate, Name, ParameterType.TypeAsLuaString(), Description);
+            return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), Description);
         }
         
         public string AutocompleteSerialize()
@@ -281,11 +290,11 @@ namespace TiltBrush
     }
     
     [Serializable]
-    public class ApiDocMethod
+    public class LuaDocsMethod
     {
         public string Name;
-        public List<ApiDocParameter> Parameters;
-        public ApiDocType ReturnType;
+        public List<LuaDocsParameter> Parameters;
+        public LuaDocsType ReturnType;
         public string Description;
         public string Example;
 
@@ -326,7 +335,7 @@ namespace TiltBrush
 
 ";
             }
-            return string.Format(markdownTemplate, className, Name, Description, ReturnType.TypeAsLuaString(), parameters, example);
+            return string.Format(markdownTemplate, className, Name, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
         }
         
         public string AutocompleteSerialize(string className)
@@ -339,7 +348,7 @@ namespace TiltBrush
             }
 
             string returnTypeAnnotation = "";
-            if (ReturnType.PrimitiveType != ApiDocPrimitiveType.Nil)
+            if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
             {
                 returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()}";
             }
@@ -351,10 +360,10 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
     }
 
     [Serializable]
-    public class ApiDocProperty
+    public class LuaDocsProperty
     {
         public string Name;
-        public ApiDocType PropertyType;
+        public LuaDocsType PropertyType;
         public string Description;
         
         // 0=name 1=type 2=description
@@ -362,7 +371,7 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
         
         public string MarkdownSerialize()
         {
-            return string.Format(markdownTemplate, Name, PropertyType.TypeAsLuaString(), Description);
+            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), Description);
         }
 
         public string AutocompleteSerialize(string className)

@@ -1,15 +1,18 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using MoonSharp.Interpreter;
 using ODS;
 using UnityAsyncAwaitUtil;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [MoonSharpUserData]
     public static class AppApiWrapper
     {
+        [LuaDocsDescription("The time in seconds since Open Brush was launched")]
         public static float time => UnityEngine.Time.realtimeSinceStartup;
+
+        [LuaDocsDescription("The number of frames that have been rendered since Open Brush was launched")]
         public static float frames => UnityEngine.Time.frameCount;
         public static bool Physics(bool active) => UnityEngine.Physics.autoSimulation = active;
         public static float currentScale => App.Scene.Pose.scale;
@@ -80,6 +83,12 @@ namespace TiltBrush
 
         public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
+        [LuaDocsDescription("Take a snapshot of your scene and save it to your Snapshots folder")]
+        [LuaDocsExample(@"App:TakeSnapshop(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, true)")]
+        [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
+        [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
+        [LuaDocsParameter("width", "Image width")]
+        [LuaDocsParameter("height", "Image height")]
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)
         {
             bool saveAsPng;

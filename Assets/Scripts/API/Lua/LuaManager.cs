@@ -82,7 +82,7 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         // Used when called via MenuItem("Open Brush/API/Generate Lua Autocomplete File")
-        public static List<ApiDocClass> ApiDocClasses;
+        public static List<LuaDocsClass> ApiDocClasses;
 #endif
 
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
@@ -539,12 +539,12 @@ namespace TiltBrush
                     .Replace("ApiWrapper", "")
                     .Replace("TiltBrush.", "");
 
-                var apiDocClass = new ApiDocClass
+                var apiDocClass = new LuaDocsClass
                 {
                     Name = className,
                     Description = GetClassDescription(),
-                    Properties = new List<ApiDocProperty>(),
-                    Methods = new List<ApiDocMethod>()
+                    Properties = new List<LuaDocsProperty>(),
+                    Methods = new List<LuaDocsMethod>()
                 };
 
                 foreach (var prop in t.GetProperties())
@@ -552,11 +552,11 @@ namespace TiltBrush
                     if (isHidden(prop)) continue;
 
                     var typeName = prop.PropertyType.ToString();
-                    var property = new ApiDocProperty
+                    var property = new LuaDocsProperty
                     {
                         Name = prop.Name,
                         Description = GetPropertyDescription(prop),
-                        PropertyType = ApiDocType.CsharpTypeToDocsType(typeName)
+                        PropertyType = LuaDocsType.CsharpTypeToDocsType(typeName)
                     };
                     apiDocClass.Properties.Add(property);
                 }
@@ -570,12 +570,12 @@ namespace TiltBrush
                 {
                     if (isHidden(prop)) continue;
                     
-                    var method = new ApiDocMethod
+                    var method = new LuaDocsMethod
                     {
                         Name = prop.Name,
                         Description = GetMethodDescription(prop),
                         Example = GetMethodExample(prop),
-                        Parameters = new List<ApiDocParameter>()
+                        Parameters = new List<LuaDocsParameter>()
                     };
 
                     var paramNameList = new List<string>();
@@ -586,17 +586,17 @@ namespace TiltBrush
                         paramNameList.Add(param.Name);
                         string description;
                         if (!paramDict.TryGetValue(param.Name, out description)) description = "";
-                        var parameter = new ApiDocParameter
+                        var parameter = new LuaDocsParameter
                         {
                             Name = param.Name,
                             Description = description,
-                            ParameterType = ApiDocType.CsharpTypeToDocsType(typeName)
+                            ParameterType = LuaDocsType.CsharpTypeToDocsType(typeName)
                         };
                         method.Parameters.Add(parameter);
                     }
                     
                     var returnTypeName = prop.ReturnType.ToString();
-                    method.ReturnType = ApiDocType.CsharpTypeToDocsType(returnTypeName);
+                    method.ReturnType = LuaDocsType.CsharpTypeToDocsType(returnTypeName);
                     
                     apiDocClass.Methods.Add(method);
                 }
