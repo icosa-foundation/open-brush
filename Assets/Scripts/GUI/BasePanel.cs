@@ -1651,5 +1651,20 @@ namespace TiltBrush
           }
         }
         /**/
+
+        public void DetachFromWand(TrTransform tr, float initialTransitionAmount = 0)
+        {
+            m_WandTransitionTarget = tr;
+            m_Fixed = false;
+            m_TransitionState = FixedTransitionState.Floating;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void AttachToWand(float initialTransitionAmount = 0)
+        {
+            m_Fixed = true;
+            m_TransitionState = FixedTransitionState.Fixed;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
     }
 } // namespace TiltBrush
