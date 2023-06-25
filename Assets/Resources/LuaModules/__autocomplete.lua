@@ -1,14 +1,3 @@
----@type Vector3
-Tool.startPosition = nil
-
----@type Vector3
-Tool.endPosition = nil
-
----@type Vector3
-Tool.vector = nil
-
----@type Rotation
-Tool.rotation = nil
 
 ---Properties for type App
 
@@ -27,60 +16,66 @@ App.environment = nil
 ---@type string
 App.clipboardText = nil
 
----@type UnityEngine.Texture2D
-App.clipboardImage = nil
 
----Methods for type App 
+---Methods for type App
 
 ---@param active boolean
 ---@return boolean
 function App:Physics(active) end
 
+
 function App:Undo() end
+
 
 function App:Redo() end
 
 ---@param a string
 function App:AddListener(a) end
 
+
 function App:ResetPanels() end
 
+
 function App:ShowScriptsFolder() end
+
 
 function App:ShowExportFolder() end
 
 ---@param a number
 function App:ShowSketchesFolder(a) end
 
----@param a boolean
-function App:StraightEdge(a) end
+---@param active boolean
+function App:StraightEdge(active) end
 
----@param a boolean
-function App:AutoOrient(a) end
+---@param active boolean
+function App:AutoOrient(active) end
 
----@param a boolean
-function App:ViewOnly(a) end
+---@param active boolean
+function App:ViewOnly(active) end
 
----@param a boolean
-function App:AutoSimplify(a) end
+---@param active boolean
+function App:AutoSimplify(active) end
 
----@param a boolean
-function App:Disco(a) end
+---@param active boolean
+function App:Disco(active) end
 
----@param a boolean
-function App:Profiling(a) end
+---@param active boolean
+function App:Profiling(active) end
 
----@param a boolean
-function App:PostProcessing(a) end
+---@param active boolean
+function App:PostProcessing(active) end
+
 
 function App:DraftingVisible() end
 
+
 function App:DraftingTransparent() end
+
 
 function App:DraftingHidden() end
 
----@param a boolean
-function App:Watermark(a) end
+---@param active boolean
+function App:Watermark(active) end
 
 ---@param path string
 ---@return string
@@ -103,7 +98,6 @@ function App:TakeSnapshot(tr, filename, width, height, superSampling) end
 ---@param filename string
 ---@param width number
 function App:Take360Snapshot(tr, filename, width) end
-
 
 ---Properties for type Brush
 
@@ -164,7 +158,9 @@ Brush.currentPath = nil
 ---@type Vector3
 Brush.LastColorPickedHsv = nil
 
----Methods for type Brush 
+
+---Methods for type Brush
+
 
 function Brush:JitterColor() end
 
@@ -188,8 +184,8 @@ function Brush:ForcePaintingOn(active) end
 ---@param active boolean
 function Brush:ForcePaintingOff(active) end
 
-function Brush:ForceNewStroke() end
 
+function Brush:ForceNewStroke() end
 
 ---Properties for type CameraPath
 
@@ -211,18 +207,24 @@ CameraPath.rotation = nil
 ---@type number
 CameraPath.scale = nil
 
----Methods for type CameraPath 
+
+---Methods for type CameraPath
+
 
 function CameraPath:RenderActivePath() end
 
+
 function CameraPath:ShowAll() end
+
 
 function CameraPath:HideAll() end
 
 ---@param active boolean
 function CameraPath:PreviewActivePath(active) end
 
+
 function CameraPath:Delete() end
+
 
 ---@return CameraPath
 function CameraPath:New() end
@@ -235,6 +237,7 @@ function CameraPath:FromPath(path, looped) end
 ---@param step number
 ---@return Path
 function CameraPath:AsPath(step) end
+
 
 ---@return CameraPathWidget
 function CameraPath:Duplicate() end
@@ -287,7 +290,9 @@ function CameraPath:InsertSpeed(t, speed) end
 ---@param atStart boolean
 function CameraPath:Extend(position, rotation, smoothing, atStart) end
 
+
 function CameraPath:Loop() end
+
 
 function CameraPath:RecordActivePath() end
 
@@ -301,7 +306,6 @@ function CameraPath:Sample(time, loop, pingpong) end
 ---@param smoothing number
 ---@return CameraPath
 function CameraPath:Simplify(tolerance, smoothing) end
-
 
 ---Properties for type Color
 
@@ -365,7 +369,8 @@ Color.white = nil
 ---@type Color
 Color.yellow = nil
 
----Methods for type Color 
+
+---Methods for type Color
 
 ---@param r number
 ---@param g number
@@ -483,11 +488,7 @@ function Color:Divide(a, b) end
 ---@param b Color
 ---@return boolean
 function Color:NotEquals(a, b) end
-
-
----Properties for type Easing
-
----Methods for type Easing 
+---Methods for type Easing
 
 ---@param t number
 ---@return number
@@ -613,7 +614,6 @@ function Easing:outBounce(t) end
 ---@return number
 function Easing:inOutBounce(t) end
 
-
 ---Properties for type Guide
 
 ---@type number
@@ -631,7 +631,8 @@ Guide.rotation = nil
 ---@type number
 Guide.scale = nil
 
----Methods for type Guide 
+
+---Methods for type Guide
 
 ---@param transform Transform
 ---@return Guide
@@ -658,17 +659,15 @@ function Guide:NewEllipsoid(transform) end
 ---@return Guide
 function Guide:NewCustom(transform, model) end
 
+
 function Guide:Select() end
+
 
 function Guide:Delete() end
 
 ---@param scale Vector3
 function Guide:Scale(scale) end
-
-
----Properties for type Headset
-
----Methods for type Headset 
+---Methods for type Headset
 
 ---@param size number
 function Headset:ResizeHistory(size) end
@@ -683,7 +682,6 @@ function Headset:PastPosition(count) end
 ---@param count number
 ---@return Rotation
 function Headset:PastRotation(count) end
-
 
 ---Properties for type Image
 
@@ -702,7 +700,8 @@ Image.rotation = nil
 ---@type number
 Image.scale = nil
 
----Methods for type Image 
+
+---Methods for type Image
 
 ---@param depth number
 ---@param color Color
@@ -712,9 +711,12 @@ function Image:Extrude(depth, color) end
 ---@return Image
 function Image:Import(location) end
 
+
 function Image:Select() end
 
+
 function Image:Delete() end
+
 
 ---@return string
 function Image:FormEncode() end
@@ -723,7 +725,6 @@ function Image:FormEncode() end
 ---@param filename string
 ---@return string
 function Image:SaveBase64(base64, filename) end
-
 
 ---Properties for type Layer
 
@@ -745,20 +746,28 @@ Layer.rotation = nil
 ---@type number
 Layer.scale = nil
 
----Methods for type Layer 
+
+---Methods for type Layer
+
 
 ---@return Layer
 function Layer:New() end
 
+
 function Layer:CenterPivot() end
+
 
 function Layer:ShowPivot() end
 
+
 function Layer:HidePivot() end
+
 
 function Layer:Clear() end
 
+
 function Layer:Delete() end
+
 
 ---@return Layer
 function Layer:Squash() end
@@ -767,12 +776,14 @@ function Layer:Squash() end
 ---@return Layer
 function Layer:SquashTo(destinationLayer) end
 
+
 function Layer:Show() end
+
 
 function Layer:Hide() end
 
-function Layer:Toggle() end
 
+function Layer:Toggle() end
 
 ---Properties for type Math
 
@@ -794,7 +805,8 @@ Math.pi = nil
 ---@type number
 Math.rad2Deg = nil
 
----Methods for type Math 
+
+---Methods for type Math
 
 ---@param f number
 ---@return number
@@ -899,7 +911,7 @@ function Math:Log10(f) end
 ---@return number
 function Math:Max(a, b) end
 
----@param values System.Single[]
+---@param values number[]
 ---@return number
 function Math:Max(values) end
 
@@ -908,7 +920,7 @@ function Math:Max(values) end
 ---@return number
 function Math:Min(a, b) end
 
----@param values System.Single[]
+---@param values number[]
 ---@return number
 function Math:Min(values) end
 
@@ -980,7 +992,6 @@ function Math:Cosh(f) end
 ---@return number
 function Math:Tanh(f) end
 
-
 ---Properties for type Model
 
 ---@type number
@@ -998,16 +1009,18 @@ Model.rotation = nil
 ---@type number
 Model.scale = nil
 
----Methods for type Model 
+
+---Methods for type Model
 
 ---@param location string
 ---@return Model
 function Model:Import(location) end
 
+
 function Model:Select() end
 
-function Model:Delete() end
 
+function Model:Delete() end
 
 ---Properties for type MultiPath
 
@@ -1017,14 +1030,17 @@ MultiPath.count = nil
 ---@type number
 MultiPath.pointCount = nil
 
----Methods for type MultiPath 
+
+---Methods for type MultiPath
+
 
 ---@return MultiPath
 function MultiPath:New() end
 
----@param pathList System.Collections.Generic.List`1[Path]
+---@param pathList Path[]
 ---@return MultiPath
 function MultiPath:New(pathList) end
+
 
 function MultiPath:Draw() end
 
@@ -1050,6 +1066,7 @@ function MultiPath:RotateBy(amount) end
 ---@param scale Vector3
 function MultiPath:ScaleBy(scale) end
 
+
 function MultiPath:Center() end
 
 ---@param scale number
@@ -1058,12 +1075,13 @@ function MultiPath:Normalize(scale) end
 ---@param spacing number
 function MultiPath:Resample(spacing) end
 
+
 ---@return Path
 function MultiPath:Join() end
 
+
 ---@return Path
 function MultiPath:Longest() end
-
 
 ---Properties for type Path
 
@@ -1076,16 +1094,18 @@ Path.last = nil
 ---@type number
 Path.count = nil
 
----Methods for type Path 
+
+---Methods for type Path
+
 
 ---@return Path
 function Path:New() end
 
----@param transformList table_Transform
+---@param transformList Transform[]
 ---@return Path
 function Path:New(transformList) end
 
----@param positionList table_Vector3
+---@param positionList Vector3[]
 ---@return Path
 function Path:New(positionList) end
 
@@ -1100,6 +1120,7 @@ function Path:GetNormal(index) end
 ---@param index number
 ---@return Vector3
 function Path:GetTangent(index) end
+
 
 function Path:Draw() end
 
@@ -1118,6 +1139,7 @@ function Path:RotateBy(amount) end
 ---@param scale Vector3
 function Path:ScaleBy(scale) end
 
+
 function Path:Center() end
 
 ---@param index number
@@ -1127,20 +1149,26 @@ function Path:StartingFrom(index) end
 ---@return number
 function Path:FindClosest(point) end
 
+
 ---@return number
 function Path:FindMinimumX() end
+
 
 ---@return number
 function Path:FindMinimumY() end
 
+
 ---@return number
 function Path:FindMinimumZ() end
+
 
 ---@return number
 function Path:FindMaximumX() end
 
+
 ---@return number
 function Path:FindMaximumY() end
+
 
 ---@return number
 function Path:FindMaximumZ() end
@@ -1148,14 +1176,14 @@ function Path:FindMaximumZ() end
 ---@param scale number
 function Path:Normalize(scale) end
 
----@param trs table_Transform
+---@param trs Transform[]
 ---@param parts number
----@return table_Transform
+---@return Transform[]
 function Path:Subdivide(trs, parts) end
 
----@param trs table_Transform
+---@param trs Transform[]
 ---@param spacing number
----@return table_Transform
+---@return Transform[]
 function Path:Resample(trs, spacing) end
 
 ---@param spacing number
@@ -1173,33 +1201,37 @@ function Path:Subdivide(parts) end
 ---@return Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
 
-
 ---Properties for type Path2d
 
 ---@type number
 Path2d.count = nil
 
----Methods for type Path2d 
+
+---Methods for type Path2d
+
 
 ---@return Path2d
 function Path2d:New() end
 
----@param transformList table_Vector2
+---@param transformList Vector2[]
 ---@return Path2d
 function Path2d:New(transformList) end
 
----@param positionList table_Vector3
+---@param positionList Vector3[]
 ---@return Path2d
 function Path2d:New(positionList) end
 
 ---@param transform Vector2
 function Path2d:Insert(transform) end
 
+
 ---@return Path
 function Path2d:OnX() end
 
+
 ---@return Path
 function Path2d:OnY() end
+
 
 ---@return Path
 function Path2d:OnZ() end
@@ -1216,6 +1248,7 @@ function Path2d:RotateBy(amount) end
 ---@param scale Vector2
 function Path2d:ScaleBy(scale) end
 
+
 function Path2d:Center() end
 
 ---@param index number
@@ -1225,20 +1258,26 @@ function Path2d:StartingFrom(index) end
 ---@return number
 function Path2d:FindClosest(point) end
 
+
 ---@return number
 function Path2d:FindMinimumX() end
+
 
 ---@return number
 function Path2d:FindMinimumY() end
 
+
 ---@return number
 function Path2d:FindMinimumZ() end
+
 
 ---@return number
 function Path2d:FindMaximumX() end
 
+
 ---@return number
 function Path2d:FindMaximumY() end
+
 
 ---@return number
 function Path2d:FindMaximumZ() end
@@ -1252,7 +1291,6 @@ function Path2d:Polygon(sides) end
 
 ---@param spacing number
 function Path2d:Resample(spacing) end
-
 
 ---Properties for type Random
 
@@ -1277,7 +1315,8 @@ Random.value = nil
 ---@type Color
 Random.color = nil
 
----Methods for type Random 
+
+---Methods for type Random
 
 ---@param hueMin number
 ---@param hueMax number
@@ -1300,7 +1339,6 @@ function Random:Range(min, max) end
 ---@param max number
 ---@return number
 function Random:Range(min, max) end
-
 
 ---Properties for type Rotation
 
@@ -1343,7 +1381,8 @@ Rotation.normalized = nil
 ---@type number
 Rotation.kEpsilon = nil
 
----Methods for type Rotation 
+
+---Methods for type Rotation
 
 ---@param x number
 ---@param y number
@@ -1365,7 +1404,8 @@ function Rotation:SetLookRotation(view) end
 ---@return Rotation
 function Rotation:SetLookRotation(view, up) end
 
----@return Path
+
+---@return Number, Vector3
 function Rotation:ToAngleAxis() end
 
 ---@param a Rotation
@@ -1453,31 +1493,34 @@ function Rotation:Scale(a) end
 ---@param b Rotation
 ---@return Rotation
 function Rotation:Multiply(a, b) end
+---Methods for type Selection
 
-
----Properties for type Selection
-
----Methods for type Selection 
 
 function Selection:Duplicate() end
 
+
 function Selection:Group() end
+
 
 function Selection:Invert() end
 
+
 function Selection:Flip() end
+
 
 function Selection:Recolor() end
 
+
 function Selection:Rebrush() end
+
 
 function Selection:Resize() end
 
 ---@param count number
 function Selection:Trim(count) end
 
-function Selection:SelectAll() end
 
+function Selection:SelectAll() end
 
 ---Properties for type Sketch
 
@@ -1520,7 +1563,8 @@ Sketch.mainLightRotation = nil
 ---@type Rotation
 Sketch.secondaryLightRotation = nil
 
----Methods for type Sketch 
+
+---Methods for type Sketch
 
 ---@param name string
 function Sketch:Open(name) end
@@ -1531,13 +1575,14 @@ function Sketch:Save(overwrite) end
 ---@param name string
 function Sketch:SaveAs(name) end
 
+
 function Sketch:Export() end
+
 
 function Sketch:NewSketch() end
 
 ---@param location string
 function Sketch:ImportSkybox(location) end
-
 
 ---Properties for type Spectator
 
@@ -1547,7 +1592,8 @@ Spectator.position = nil
 ---@type Rotation
 Spectator.rotation = nil
 
----Methods for type Spectator 
+
+---Methods for type Spectator
 
 ---@param angle number
 function Spectator:Turn(angle) end
@@ -1573,15 +1619,17 @@ function Spectator:Show(type) end
 ---@param type string
 function Spectator:Hide(type) end
 
+
 function Spectator:Toggle() end
 
+
 function Spectator:On() end
+
 
 function Spectator:Off() end
 
 ---@param locked boolean
 function Spectator:LockToScene(locked) end
-
 
 ---Properties for type Stroke
 
@@ -1606,12 +1654,15 @@ Stroke.Item = nil
 ---@type number
 Stroke.count = nil
 
----Methods for type Stroke 
+
+---Methods for type Stroke
 
 ---@param brushName string
 function Stroke:ChangeMaterial(brushName) end
 
+
 function Stroke:Delete() end
+
 
 function Stroke:Select() end
 
@@ -1623,15 +1674,12 @@ function Stroke:SelectMultiple(from, to) end
 ---@param to number
 function Stroke:Join(from, to) end
 
+
 function Stroke:JoinPrevious() end
 
 ---@param name string
 function Stroke:Import(name) end
-
-
----Properties for type Svg
-
----Methods for type Svg 
+---Methods for type Svg
 
 ---@param svgPath string
 ---@return MultiPath
@@ -1650,7 +1698,6 @@ function Svg:DrawPathString(svg, tr) end
 ---@param svg string
 ---@param tr Transform
 function Svg:DrawDocument(svg, tr) end
-
 
 ---Properties for type Symmetry
 
@@ -1672,13 +1719,18 @@ Symmetry.wandOffset = nil
 ---@type Vector3
 Symmetry.direction = nil
 
----Methods for type Symmetry 
+
+---Methods for type Symmetry
+
 
 function Symmetry:Mirror() end
 
+
 function Symmetry:DoubleMirror() end
 
+
 function Symmetry:TwoHandeded() end
+
 
 function Symmetry:SummonWidget() end
 
@@ -1715,51 +1767,49 @@ function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
 ---@return number
 function Symmetry:Polygon(angle, numSides, radius) end
 
----@param colors table_Color
+---@param colors Color[]
 function Symmetry:ClearColors(colors) end
 
 ---@param color Color
 function Symmetry:AddColor(color) end
 
----@param colors table_Color
+---@param colors Color[]
 function Symmetry:SetColors(colors) end
 
----@return table_Color
+
+---@return Color[]
 function Symmetry:GetColors() end
 
 ---@param brush string
 function Symmetry:AddBrush(brush) end
 
----@param brushes table_string
+---@param brushes string[]
 function Symmetry:ClearBrushes(brushes) end
 
----@param brushes table_string
+---@param brushes string[]
 function Symmetry:SetBrushes(brushes) end
 
----@return table_string
+
+---@return string[]
 function Symmetry:GetBrushNames() end
 
----@return table_string
+
+---@return string[]
 function Symmetry:GetBrushGuids() end
 
 ---@param path IPath
 ---@return Path
 function Symmetry:PathToPolar(path) end
+---Methods for type Timer
 
-
----Properties for type Timer
-
----Methods for type Timer 
-
----@param fn MoonSharp.Interpreter.Closure
+---@param fn function
 ---@param interval number
 ---@param delay number
 ---@param repeats number
 function Timer:Set(fn, interval, delay, repeats) end
 
----@param fn MoonSharp.Interpreter.Closure
+---@param fn function
 function Timer:Unset(fn) end
-
 
 ---Properties for type Transform
 
@@ -1796,7 +1846,8 @@ Transform.scale = nil
 ---@type Transform
 Transform.zero = nil
 
----Methods for type Transform 
+
+---Methods for type Transform
 
 ---@param transform Transform
 ---@return Transform
@@ -1844,7 +1895,6 @@ function Transform:Multiply(b) end
 ---@return Transform
 function Transform:Multiply(a, b) end
 
-
 ---Properties for type Turtle
 
 ---@type Transform
@@ -1856,7 +1906,8 @@ Turtle.position = nil
 ---@type Rotation
 Turtle.rotation = nil
 
----Methods for type Turtle 
+
+---Methods for type Turtle
 
 ---@param position Vector3
 function Turtle:MoveTo(position) end
@@ -1893,26 +1944,35 @@ function Turtle:TurnZ(angle) end
 ---@param amount Vector3
 function Turtle:LookAt(amount) end
 
+
 function Turtle:LookForwards() end
+
 
 function Turtle:LookUp() end
 
+
 function Turtle:LookDown() end
+
 
 function Turtle:LookLeft() end
 
+
 function Turtle:LookRight() end
+
 
 function Turtle:LookBackwards() end
 
+
 function Turtle:HomeReset() end
+
 
 function Turtle:HomeSet() end
 
+
 function Turtle:TransformPush() end
 
-function Turtle:TransformPop() end
 
+function Turtle:TransformPop() end
 
 ---Properties for type User
 
@@ -1922,7 +1982,6 @@ User.position = nil
 ---@type Rotation
 User.rotation = nil
 
----Methods for type User 
 
 
 ---Properties for type Vector2
@@ -1960,7 +2019,8 @@ Vector2.up = nil
 ---@type Vector2
 Vector2.zero = nil
 
----Methods for type Vector2 
+
+---Methods for type Vector2
 
 ---@param x number
 ---@param y number
@@ -2059,11 +2119,14 @@ function Vector2:SlerpUnclamped(a, b, t) end
 ---@return Vector2
 function Vector2:PointOnCircle(degrees) end
 
+
 ---@return Vector3
 function Vector2:OnX() end
 
+
 ---@return Vector3
 function Vector2:OnY() end
+
 
 ---@return Vector3
 function Vector2:OnZ() end
@@ -2137,7 +2200,6 @@ function Vector2:Divide(a, b) end
 ---@return boolean
 function Vector2:NotEquals(a, b) end
 
-
 ---Properties for type Vector3
 
 ---@type number
@@ -2191,7 +2253,8 @@ Vector3.up = nil
 ---@type Vector3
 Vector3.zero = nil
 
----Methods for type Vector3 
+
+---Methods for type Vector3
 
 ---@param x number
 ---@param y number
@@ -2382,7 +2445,6 @@ function Vector3:Divide(a, b) end
 ---@return boolean
 function Vector3:NotEquals(a, b) end
 
-
 ---Properties for type Video
 
 ---@type number
@@ -2400,16 +2462,18 @@ Video.rotation = nil
 ---@type number
 Video.scale = nil
 
----Methods for type Video 
+
+---Methods for type Video
 
 ---@param location string
 ---@return Video
 function Video:Import(location) end
 
+
 function Video:Select() end
 
-function Video:Delete() end
 
+function Video:Delete() end
 
 ---Properties for type Visualizer
 
@@ -2419,20 +2483,22 @@ Visualizer.sampleRate = nil
 ---@type number
 Visualizer.duration = nil
 
----Methods for type Visualizer 
+
+---Methods for type Visualizer
 
 ---@param name string
 function Visualizer:EnableScripting(name) end
 
+
 function Visualizer:DisableScripting() end
 
----@param data System.Single[]
+---@param data number[]
 function Visualizer:SetWaveform(data) end
 
----@param data1 System.Single[]
----@param data2 System.Single[]
----@param data3 System.Single[]
----@param data4 System.Single[]
+---@param data1 number[]
+---@param data2 number[]
+---@param data3 number[]
+---@param data4 number[]
 function Visualizer:SetFft(data1, data2, data3, data4) end
 
 ---@param x number
@@ -2449,7 +2515,6 @@ function Visualizer:SetBeatAccumulators(x, y, z, w) end
 
 ---@param peak number
 function Visualizer:SetBandPeak(peak) end
-
 
 ---Properties for type Wand
 
@@ -2468,7 +2533,8 @@ Wand.pressure = nil
 ---@type Vector3
 Wand.speed = nil
 
----Methods for type Wand 
+
+---Methods for type Wand
 
 ---@param size number
 function Wand:ResizeHistory(size) end
@@ -2483,11 +2549,7 @@ function Wand:PastPosition(back) end
 ---@param back number
 ---@return Rotation
 function Wand:PastRotation(back) end
-
-
----Properties for type Waveform
-
----Methods for type Waveform 
+---Methods for type Waveform
 
 ---@param time number
 ---@param frequency number
@@ -2547,6 +2609,7 @@ function Waveform:ExponentialSawtooth(time, frequency, exponent) end
 ---@return number
 function Waveform:PerlinNoise(time, frequency) end
 
+
 ---@return number
 function Waveform:WhiteNoise() end
 
@@ -2563,7 +2626,7 @@ function Waveform:BlueNoise(previous) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2571,7 +2634,7 @@ function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2579,7 +2642,7 @@ function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2587,7 +2650,7 @@ function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2595,7 +2658,7 @@ function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2603,7 +2666,7 @@ function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2611,7 +2674,7 @@ function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2620,7 +2683,7 @@ function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) en
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2629,7 +2692,7 @@ function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, ampli
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2638,7 +2701,7 @@ function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude)
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
 
 ---@param time number
@@ -2646,47 +2709,57 @@ function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, s
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:WhiteNoise(duration, sampleRate, amplitude) end
 
 ---@param previous number
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:BrownNoise(previous, duration, sampleRate, amplitude) end
 
 ---@param previous number
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
----@return System.Single[]
+---@return number[]
 function Waveform:BlueNoise(previous, duration, sampleRate, amplitude) end
-
-
----Properties for type WebRequest
-
----Methods for type WebRequest 
+---Methods for type WebRequest
 
 ---@param url string
----@param onSuccess MoonSharp.Interpreter.Closure
----@param onError MoonSharp.Interpreter.Closure
----@param headers MoonSharp.Interpreter.Table
----@param context MoonSharp.Interpreter.DynValue
+---@param onSuccess function
+---@param onError function
+---@param headers table
+---@param context table
 function WebRequest:Get(url, onSuccess, onError, headers, context) end
 
 ---@param url string
----@param postData MoonSharp.Interpreter.Table
----@param onSuccess MoonSharp.Interpreter.Closure
----@param onError MoonSharp.Interpreter.Closure
----@param headers MoonSharp.Interpreter.Table
----@param context MoonSharp.Interpreter.DynValue
+---@param postData table
+---@param onSuccess function
+---@param onError function
+---@param headers table
+---@param context table
 function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
+
+---Properties for type Tool
+
+---@type Vector3
+Tool.startPosition = nil
+
+---@type Vector3
+Tool.endPosition = nil
+
+---@type Vector3
+Tool.vector = nil
+
+---@type Rotation
+Tool.rotation = nil
 
 
