@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("A camera path and it's position, speed or FOV knots")]
@@ -56,10 +57,10 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Accesses the Transform of the Camera Path")]
+        [LuaDocsDescription("The transform of the camera path")]
         public TrTransform transform
         {
-            get =>  App.Scene.MainCanvas.AsCanvas[_CameraPathWidget.transform];
+            get => App.Scene.MainCanvas.AsCanvas[_CameraPathWidget.transform];
             set
             {
                 value = App.Scene.Pose * value;
@@ -74,7 +75,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("The 3D position of the Camera Path (usually but not always it's first position knot)")]
+        [LuaDocsDescription("The 3D position of the Camera Path (usually but not always its first position knot)")]
         public Vector3 position
         {
             get => transform.translation;
@@ -102,6 +103,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The scale of the camera path")]
         public float scale
         {
             get => transform.scale;
@@ -117,14 +119,23 @@ namespace TiltBrush
 
         [LuaDocsDescription("Renders the currently active path")]
         public static void RenderActivePath() => ApiMethods.RenderCameraPath();
+
+        [LuaDocsDescription("Shows all camera paths")]
         public static void ShowAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
+
+        [LuaDocsDescription("Hides all camera paths")]
         public static void HideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
+
+        [LuaDocsDescription("Previews the active path")]
         public static void PreviewActivePath(bool active) => WidgetManager.m_Instance.FollowingPath = active;
+
+        [LuaDocsDescription("Deletes the camera path")]
         public void Delete()
         {
             WidgetManager.m_Instance.DeleteCameraPath(_CameraPathWidget);
         }
 
+        [LuaDocsDescription("Creates a new camera path")]
         public static CameraPathApiWrapper New()
         {
             var wrapper = new CameraPathApiWrapper();
@@ -132,6 +143,7 @@ namespace TiltBrush
             return wrapper;
         }
 
+        [LuaDocsDescription("Creates a camera path from a Path and whether it should be looped")]
         public static CameraPathApiWrapper FromPath(IPathApiWrapper path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
@@ -150,6 +162,7 @@ namespace TiltBrush
             return new CameraPathApiWrapper(widget);
         }
 
+        [LuaDocsDescription("Converts the camera path to a path with the specified step size")]
         public PathApiWrapper AsPath(float step)
         {
             return new PathApiWrapper(
@@ -157,7 +170,7 @@ namespace TiltBrush
             );
         }
 
-
+        [LuaDocsDescription("Duplicates the camera path")]
         public CameraPathWidget Duplicate()
         {
             CameraPathMetadata metadata = _CameraPathWidget.AsSerializable();
@@ -166,6 +179,7 @@ namespace TiltBrush
             return widget;
         }
 
+        [LuaDocsDescription("Inserts a new position knot. (Position must be close to the existing path)")]
         public int InsertPosition(Vector3 position, Quaternion rotation, float smoothing)
         {
             if (_CameraPathWidget.Path.ProjectPositionOnToPath(position, out PathT pathT, out Vector3 error))
@@ -175,6 +189,7 @@ namespace TiltBrush
             return -1;
         }
 
+        [LuaDocsDescription("Inserts a new position knot into the path at the specified time")]
         public int InsertPosition(float t, Quaternion rotation, float smoothing)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
@@ -205,6 +220,7 @@ namespace TiltBrush
             return knotIndex;
         }
 
+        [LuaDocsDescription("Inserts a rotation knot at the specified position close to the existing path")]
         public int InsertRotation(Vector3 pos, Quaternion rot)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
@@ -215,6 +231,7 @@ namespace TiltBrush
             return -1;
         }
 
+        [LuaDocsDescription("Inserts a rotation knot at the specified time")]
         public int InsertRotation(float t, Quaternion rot)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
@@ -223,6 +240,7 @@ namespace TiltBrush
             return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
+        [LuaDocsDescription("Inserts a field of view knot at the specified position close to the existing path")]
         public int InsertFov(Vector3 pos, float fov)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
@@ -231,6 +249,7 @@ namespace TiltBrush
             return -1;
         }
 
+        [LuaDocsDescription("Inserts a fov knot at the specified time")]
         public int InsertFov(float t, float fov)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
@@ -240,6 +259,7 @@ namespace TiltBrush
             return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
+        [LuaDocsDescription("Inserts a speed knot at the specified position close to the existing path")]
         public int InsertSpeed(Vector3 pos, float speed)
         {
             pos = App.Scene.MainCanvas.Pose.MultiplyPoint(pos);
@@ -357,7 +377,7 @@ namespace TiltBrush
                 {
                     // Vector3 tangent = (inputPoints[i - 1] - inputPoints[lastSplinePointIndex]).normalized;
                     float segmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[i - 1]).magnitude;
-                    newPoints.Add(TrTransform.TRS(inputPoints[i - 1], inputRots[i], segmentLength * smoothing ));
+                    newPoints.Add(TrTransform.TRS(inputPoints[i - 1], inputRots[i], segmentLength * smoothing));
 
                     prevDirection = currentDirection;
                     lastSplinePointIndex = i - 1;
@@ -365,10 +385,8 @@ namespace TiltBrush
             }
 
             float lastSegmentLength = (inputPoints[lastSplinePointIndex] - inputPoints[inputPoints.Count - 1]).magnitude;
-            newPoints.Add(TrTransform.TRS(inputPoints[inputPoints.Count - 1], inputRots[inputRots.Count - 1], lastSegmentLength * smoothing ));
+            newPoints.Add(TrTransform.TRS(inputPoints[inputPoints.Count - 1], inputRots[inputRots.Count - 1], lastSegmentLength * smoothing));
             return FromPath(new PathApiWrapper(newPoints), _CameraPathWidget.Path.PathLoops);
         }
     }
 }
-
-
