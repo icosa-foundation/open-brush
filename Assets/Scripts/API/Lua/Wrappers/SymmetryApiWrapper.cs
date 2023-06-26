@@ -13,11 +13,15 @@ namespace TiltBrush
             get => TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
             set => ApiMethods._SymmetrySetTransform(value.translation, value.rotation);
         }
+
+        [LuaDocsDescription("The 3D position of the Symmetry Widget")]
         public static Vector3 position
         {
             get => PointerManager.m_Instance.SymmetryWidget.transform.position;
             set => ApiMethods.SymmetrySetPosition(value);
         }
+
+        [LuaDocsDescription("The 3D orientation of the Symmetry Widget")]
         public static Quaternion rotation
         {
             get => PointerManager.m_Instance.SymmetryWidget.transform.rotation;

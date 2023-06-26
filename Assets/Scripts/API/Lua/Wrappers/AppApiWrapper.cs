@@ -114,6 +114,7 @@ namespace TiltBrush
         public static void Watermark(bool active) => LuaApiMethods.Watermark(active);
 
         // TODO Unified API for tools and panels
+        // [LuaDocsDescription("Shows or hides the settings panel")]
         // public static void SettingsPanel(bool active) => )LuaApiMethods.SettingsPanel)(active);
         // public static void SketchOrigin(bool active) => )LuaApiMethods.SketchOrigin)(active);
 
@@ -124,7 +125,8 @@ namespace TiltBrush
             get => SystemClipboard.GetClipboardText();
             set => SystemClipboard.SetClipboardText(value);
         }
-        
+
+        // [LuaDocsDescription("Gets the current image in the clipboard")]
         // public static Texture2D clipboardImage {
         //     get => SystemClipboard.GetClipboardImage();
         //     // set => SystemClipboard.SetClipboardImage(value);

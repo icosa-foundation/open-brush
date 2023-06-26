@@ -151,6 +151,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D position of this pointer")]
         public Vector3 position
         {
             get => transform.translation;
@@ -164,6 +165,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D orientation of the Pointer")]
         public Quaternion rotation
         {
             get => transform.rotation;

@@ -71,6 +71,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D position of the Camera Path (usually but not always it's first position knot)")]
         public Vector3 position
         {
             get => transform.translation;
@@ -84,6 +85,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D orientation of the Brush Camera Path")]
         public Quaternion rotation
         {
             get => transform.rotation;

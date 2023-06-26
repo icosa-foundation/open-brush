@@ -17,11 +17,14 @@ namespace TiltBrush
         public static void Toggle() => ApiMethods.ToggleSpectator();
         public static void On() => ApiMethods.EnableSpectator();
         public static void Off() => ApiMethods.DisableSpectator();
+        [LuaDocsDescription("The 3D position of the Spectator Camera Widget")]
         public static Vector3 position
         {
             get => SketchControlsScript.m_Instance.GetDropCampWidget().transform.position;
             set => SketchControlsScript.m_Instance.GetDropCampWidget().transform.position = value;
         }
+
+        [LuaDocsDescription("The 3D orientation of the Spectator Camera")]
         public static Quaternion rotation
         {
             get => SketchControlsScript.m_Instance.GetDropCampWidget().transform.rotation;

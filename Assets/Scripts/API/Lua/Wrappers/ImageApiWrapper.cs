@@ -31,6 +31,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D position of the Image Widget")]
         public Vector3 position
         {
             get => transform.translation;
@@ -60,6 +61,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D orientation of the Image Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;

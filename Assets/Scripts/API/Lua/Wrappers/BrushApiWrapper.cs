@@ -13,7 +13,11 @@ namespace TiltBrush
         public static bool triggerIsPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.IsActiveThisFrame;
         public static float distanceMoved => SketchSurfacePanel.m_Instance.ActiveTool.DistanceMoved_CS;
         public static float distanceDrawn => SketchSurfacePanel.m_Instance.ActiveTool.DistanceDrawn_CS;
+
+        [LuaDocsDescription("The 3D position of the Brush Controller's tip")]
         public static Vector3 position => LuaManager.Instance.GetPastBrushPos(0);
+
+        [LuaDocsDescription("The 3D orientation of the Brush Controller's tip")]
         public static Quaternion rotation => LuaManager.Instance.GetPastBrushRot(0);
         public static Vector3 direction => LuaManager.Instance.GetPastBrushRot(0) * Vector3.back;
         public static float size
@@ -51,9 +55,17 @@ namespace TiltBrush
         }
         public static void JitterColor() => LuaApiMethods.JitterColor();
         public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;
+
+        [LuaDocsDescription("Clears the history and sets it's size")]
         public static void ResizeHistory(int size) => LuaManager.Instance.ResizeBrushBuffer(size);
+
+        [LuaDocsDescription("Sets the size of the history. Only clears it if the size has changed")]
         public static void SetHistorySize(int size) => LuaManager.Instance.SetBrushBufferSize(size);
+
+        [LuaDocsDescription("Recalls previous positions of the Brush from the history buffer")]
         public static Vector3 GetPastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
+
+        [LuaDocsDescription("Recalls previous orientations of the Brush from the history buffer")]
         public static Quaternion GetPastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
         public static void ForcePaintingOn(bool active) => ApiMethods.ForcePaintingOn(active);
         public static void ForcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);

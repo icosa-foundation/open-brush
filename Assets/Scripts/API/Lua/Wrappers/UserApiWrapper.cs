@@ -2,9 +2,12 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("Represents the user and their position in the sketch")]
     [MoonSharpUserData]
     public static class UserApiWrapper
     {
+        [LuaDocsDescription(@"The 3D position of the user (specifically where they have moved to using Fly, Teleport etc
+ - not their headset or controller position)")]
         public static Vector3 position
         {
             get => App.Scene.Pose.translation;
@@ -17,6 +20,8 @@ namespace TiltBrush
                 App.Scene.Pose = pose;
             }
         }
+
+        [LuaDocsDescription("The 3D orientation of the User (usually only a rotation around the Y axis unless you've set it manually or disabled axis locking")]
         public static Quaternion rotation
         {
             get => App.Scene.Pose.rotation;

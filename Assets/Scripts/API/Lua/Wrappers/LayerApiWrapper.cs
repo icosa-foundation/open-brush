@@ -59,6 +59,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D position of the Layer (specifically the position of it's anchor point")]
         public Vector3 position
         {
             get => (App.Scene.Pose.inverse * _CanvasScript.Pose).translation;
@@ -72,6 +73,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D orientation of the Layer")]
         public Quaternion rotation
         {
             get => (App.Scene.Pose.inverse * _CanvasScript.Pose).rotation;
