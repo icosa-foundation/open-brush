@@ -24,6 +24,7 @@ namespace TiltBrush
             _CameraPathWidget = cameraPathWidget;
         }
 
+        [LuaDocsDescription("Returns the index of this Camera Path in Sketch.cameraPaths")]
         public int index
         {
             get
@@ -38,6 +39,7 @@ namespace TiltBrush
             return $"CameraPath({_CameraPathWidget})";
         }
 
+        [LuaDocsDescription("Gets or sets whether this Camera Path is active")]
         public bool active
         {
             get => WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript == _CameraPathWidget;
@@ -54,6 +56,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Accesses the Transform of the Camera Path")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_CameraPathWidget.transform];
@@ -112,6 +115,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Renders the currently active path")]
         public static void RenderActivePath() => ApiMethods.RenderCameraPath();
         public static void ShowAll() => WidgetManager.m_Instance.CameraPathsVisible = true;
         public static void HideAll() => WidgetManager.m_Instance.CameraPathsVisible = false;
@@ -152,6 +156,7 @@ namespace TiltBrush
                 _CameraPathWidget.Path.AsTrList(step)
             );
         }
+
 
         public CameraPathWidget Duplicate()
         {
