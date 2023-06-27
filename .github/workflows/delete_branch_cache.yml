@@ -12,6 +12,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Cleanup
         run: |
