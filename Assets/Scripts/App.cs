@@ -72,8 +72,9 @@ namespace TiltBrush
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";
 
         private const string kFileMoveContents =
-            "All your " + kAppDisplayName + " files have been moved to\n" +
-            "/sdcard/" + kAppFolderName + ".\n";
+            "Due to a change in Android security policy all your " + kAppDisplayName + " files have been moved to\n" +
+            "Quest 2\\Internal shared storage\\Android\\data\\com.Icosa.OpenBrush\n" +
+            "Visit the Open Brush Docs for more information: https://docs.openbrush.app";
 
         public enum AppState
         {
@@ -1858,8 +1859,8 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
-                    m_OldUserPath = Application.persistentDataPath;
+                    m_UserPath = Application.persistentDataPath;
+                    m_OldUserPath = "/sdcard/";
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
