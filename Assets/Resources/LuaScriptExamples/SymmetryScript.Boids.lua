@@ -79,7 +79,7 @@ end
 
 function randomFloat(x)
     -- Returns a random float in the range [-x, x]
-    return -x + (2 * x) * math.random()
+    return -x + (2 * x) * Random.value
 end
 
 function Main()

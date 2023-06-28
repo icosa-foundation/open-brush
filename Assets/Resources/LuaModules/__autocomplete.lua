@@ -382,13 +382,13 @@ function Color:New(r, g, b) end
 ---@return Color
 function Color:New(html) end
 
----@param col Color
+---@param color Color
 ---@return number
-function Color:Greyscale(col) end
+function Color:Greyscale(color) end
 
----@param col Color
+---@param color Color
 ---@return number
-function Color:MaxColorComponent(col) end
+function Color:MaxColorComponent(color) end
 
 ---@param col Color
 ---@return string

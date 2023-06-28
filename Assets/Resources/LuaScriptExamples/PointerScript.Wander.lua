@@ -32,9 +32,9 @@ function WhileTriggerPressed()
 
     -- Wandering path based on a noise field
     currentPos = currentPos:Add(
-        speed * (-0.5 + Math.perlinNoise(currentPos.y, currentPos.z)),
-        speed * (-0.5 + Math.perlinNoise(currentPos.x, currentPos.z)),
-        speed * (-0.5 + Math.perlinNoise(currentPos.x, currentPos.y))
+        speed * (-0.5 + Math:PerlinNoise(currentPos.y, currentPos.z)),
+        speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.z)),
+        speed * (-0.5 + Math:PerlinNoise(currentPos.x, currentPos.y))
     )
 
     return Transform:New(currentPos, Brush.rotation)

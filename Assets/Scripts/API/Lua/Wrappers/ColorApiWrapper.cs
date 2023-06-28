@@ -39,7 +39,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Creates a new instance of a color with the specified RGB values")]
-        [LuaDocsExample("myColor = Color:New(0.5, 0, 1")]
+        [LuaDocsExample("myColor = Color:New(0.5, 0, 1)")]
         [LuaDocsParameter("r", "The red component of the color. Default is 0")]
         [LuaDocsParameter("g", "The green component of the color. Default is 0")]
         [LuaDocsParameter("b", "The blue component of the color. Default is 0")]
@@ -101,13 +101,13 @@ namespace TiltBrush
         [LuaDocsExample("grayAmount = myColor:Greyscale()")]
         [LuaDocsParameter("col", "The color")]
         [LuaDocsReturnValue("value of the color")]
-        public static float Greyscale(Color col) => col.grayscale;
+        public static float Greyscale(Color color) => color.grayscale;
 
         [LuaDocsDescription("Gets the maximum color component value of the specified color")]
         [LuaDocsExample("amount = myColor:MaxColorComponent()")]
         [LuaDocsParameter("col", "The color")]
         [LuaDocsReturnValue("color component value of the color")]
-        public static float MaxColorComponent(Color col) => col.maxColorComponent;
+        public static float MaxColorComponent(Color color) => color.maxColorComponent;
 
         [LuaDocsDescription("Converts the specified color to its HTML string representation")]
         [LuaDocsExample("htmlColor = myColor:ToHtmlString()")]
@@ -197,12 +197,13 @@ namespace TiltBrush
         public static Color yellow => Color.yellow;
 
         [LuaDocsDescription("Adds the specified color to this color")]
+        [LuaDocsExample("newColor = color1:Add(color2)")]
         [LuaDocsParameter("b", "The color to add")]
         [LuaDocsReturnValue("color")]
         public Color Add(Color b) => _Color + b;
 
         [LuaDocsDescription("Adds the specified RGB values to this color")]
-        [LuaDocsExample("newColor = color1:Add(color2)")]
+        [LuaDocsExample("newColor = color1:Add(0.5, 0, 0.1)")]
         [LuaDocsParameter("r", "The red component value to add")]
         [LuaDocsParameter("g", "The green component value to add")]
         [LuaDocsParameter("b", "The blue component value to add")]

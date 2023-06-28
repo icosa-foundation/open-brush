@@ -556,7 +556,9 @@ namespace TiltBrush
                     {
                         Name = prop.Name,
                         Description = GetPropertyDescription(prop),
-                        PropertyType = LuaDocsType.CsharpTypeToDocsType(typeName)
+                        PropertyType = LuaDocsType.CsharpTypeToDocsType(typeName),
+                        ReadWrite = prop.CanWrite,
+                        Static = prop.IsStatic()
                     };
                     apiDocClass.Properties.Add(property);
                 }
@@ -575,7 +577,9 @@ namespace TiltBrush
                         Name = prop.Name,
                         Description = GetMethodDescription(prop),
                         Example = GetMethodExample(prop),
-                        Parameters = new List<LuaDocsParameter>()
+                        Parameters = new List<LuaDocsParameter>(),
+                        Static = prop.IsStatic
+
                     };
 
                     var paramNameList = new List<string>();

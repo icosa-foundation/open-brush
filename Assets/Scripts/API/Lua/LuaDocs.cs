@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using UnityEngine;
 
 namespace TiltBrush
 {
+    public static class PropertyInfoExtensions
+    {
+        public static bool IsStatic(this PropertyInfo source, bool nonPublic = false)
+            => source.GetAccessors(nonPublic).Any(x => x.IsStatic);
+    }
+
     [Serializable]
     public class LuaDocsClass
     {
@@ -66,7 +73,7 @@ namespace TiltBrush
 ## Properties
 
 <table>
-<thead><tr><th width=""225"">Name</th><th width=""160"">Return Type</th><th>Description</th></tr></thead>
+<thead><tr><th width=""225"">Name</th><th width=""160"">Return Type</th><th width=""80"">Read/Write?</th><th width=""80"">Static?</th><th>Description</th></tr></thead>
 <tbody>
 {properties}
 <tr><td></td><td></td><td></td></tr></tbody></table>
@@ -309,25 +316,29 @@ namespace TiltBrush
         public LuaDocsType ReturnType;
         public string Description;
         public string Example;
+        public bool Static;
 
-        // 0=classname 1=methodname 2=description 3=returnType 4=parameters 5=example
+        // 0=classname 1=methodname 2=method signature 3=description 4=returnType 5=parameters 6=example
         private string markdownTemplate = @"
-### {0}:{1}
+### {0}:{1}({2})
 
-{2}
+{3}
 
-**Returns:** {3}
-
-{4}
+**Returns:** {4}
 
 {5}
+
+{6}
 ";
         public string MarkdownSerialize(string className)
         {
             string parameters = "";
+            string methodSignature = "";
+
             if (Parameters.Count > 0)
             {
                 parameters = String.Join("\n", Parameters.Select(m => m.MarkdownSerialize()));
+                methodSignature = String.Join(", ", Parameters.Select(m => m.Name));
                 parameters = $@"
 **Parameters:**
 
@@ -361,8 +372,8 @@ namespace TiltBrush
             {
                 Debug.LogWarning($"Missing Description for method {Name}");
             }
-
-            return string.Format(markdownTemplate, className, Name, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
+            className = Static ? className : lowerCaseFirstChar(className);
+            return string.Format(markdownTemplate, className, Name, methodSignature, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
         }
         
         public string AutocompleteSerialize(string className)
@@ -379,7 +390,7 @@ namespace TiltBrush
             {
                 returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()}";
             }
-            
+
             return $@"{parameters}{returnTypeAnnotation}
 function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))}) end
 ";
@@ -392,9 +403,11 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
         public string Name;
         public LuaDocsType PropertyType;
         public string Description;
-        
-        // 0=name 1=type 2=description
-        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
+        public bool ReadWrite;
+        public bool Static;
+
+        // 0=name 1=type 2=ReadWrite 3=Static 4=description
+        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>";
         
         public string MarkdownSerialize()
         {
@@ -402,7 +415,9 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
             {
                 Debug.LogWarning($"Missing Description for property {Name}");
             }
-            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), Description);
+            string readwrite = ReadWrite ? "Read/Write" : "Read-only";
+            string staticYN = Static ? "Yes" : "No";
+            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), readwrite, staticYN, Description);
         }
 
         public string AutocompleteSerialize(string className)

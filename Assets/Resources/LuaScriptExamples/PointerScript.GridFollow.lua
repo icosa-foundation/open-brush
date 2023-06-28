@@ -30,16 +30,16 @@ function WhileTriggerPressed()
 
         -- Store whether the vector is positive or negative in each axis
         signs = Vector3:New(
-            Math.Sign(vector.x),
-            Math.Sign(vector.y),
-            Math.Sign(vector.z)
+            Math:Sign(vector.x),
+            Math:Sign(vector.y),
+            Math:Sign(vector.z)
         )
 
         -- Make them all positive
         vector = Vector3:New(
-            Math.Abs(vector.x),
-            Math.Abs(vector.y),
-            Math.Abs(vector.z)
+            Math:Abs(vector.x),
+            Math:Abs(vector.y),
+            Math:Abs(vector.z)
         )
 
         -- Zero out all directions except the biggest

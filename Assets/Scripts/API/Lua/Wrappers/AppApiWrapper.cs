@@ -178,7 +178,7 @@ namespace TiltBrush
         [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
         [LuaDocsParameter("width", "Image width")]
         [LuaDocsParameter("height", "Image height")]
-        [LuaDocsParameter("supersampling", "The amount of supersampling to apply (between 0.125 and 4.0)")]
+        [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)
         {
             bool saveAsPng;

@@ -63,5 +63,5 @@ function patch(cell, gridSize)
 end
 
 function GetHeight(x, y)
-    return Math.perlinNoise(x * scale, y * scale) * height + offset
+    return Math:PerlinNoise(x * scale, y * scale) * height + offset
 end

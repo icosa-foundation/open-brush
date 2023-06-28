@@ -26,5 +26,5 @@ function WhileTriggerPressed()
 end
 
 function getHeight(x, y)
-    return Math.perlinNoise(x * scale, y * scale) * height + offset
+    return Math:PerlinNoise(x * scale, y * scale) * height + offset
 end
