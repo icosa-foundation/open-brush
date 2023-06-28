@@ -18,6 +18,8 @@ namespace TiltBrush
 
         [LuaDocsDescription("Determines if physics simulation is active")]
         [LuaDocsExample("App:Physics(true)")]
+        [LuaDocsParameter("active", "True means on, false means off (the default is off)")]
+
         public static bool Physics(bool active) => UnityEngine.Physics.autoSimulation = active;
 
         [LuaDocsDescription("The current scale of the scene")]
@@ -40,18 +42,17 @@ namespace TiltBrush
         [LuaDocsExample("App:ResetPanels()")]
         public static void ResetPanels() => ApiMethods.ResetAllPanels();
 
-        [LuaDocsDescription("Show the user scripts folder")]
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Scripts folder on the desktop (Mac/Windows only)")]
         [LuaDocsExample("App:ShowScriptsFolder()")]
         public static void ShowScriptsFolder() => ApiMethods.OpenUserScriptsFolder();
 
-        [LuaDocsDescription("Show the export folder")]
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Export folder on the desktop (Mac/Windows only)")]
         [LuaDocsExample("App:ShowExportFolder()")]
         public static void ShowExportFolder() => ApiMethods.OpenExportFolder();
 
-        [LuaDocsDescription("Show the sketches folder")]
-        [LuaDocsExample("App:ShowSketchesFolder(1)")]
-        [LuaDocsParameter("a", "The index to show the sketches folder")]
-        public static void ShowSketchesFolder(int index) => ApiMethods.ShowSketchFolder(index);
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Sketches folder on the desktop (Mac/Windows only)")]
+        [LuaDocsExample("App:ShowSketchesFolder()")]
+        public static void ShowSketchesFolder() => ApiMethods.ShowSketchFolder();
 
         [LuaDocsDescription("Activate or deactivate straight edge mode")]
         [LuaDocsExample("App:StraightEdge(true)")]
@@ -177,6 +178,7 @@ namespace TiltBrush
         [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
         [LuaDocsParameter("width", "Image width")]
         [LuaDocsParameter("height", "Image height")]
+        [LuaDocsParameter("supersampling", "The amount of supersampling to apply (between 0.125 and 4.0)")]
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f)
         {
             bool saveAsPng;

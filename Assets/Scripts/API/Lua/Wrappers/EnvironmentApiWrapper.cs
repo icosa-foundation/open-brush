@@ -8,6 +8,7 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public Environment _Environment;
+
         public EnvironmentApiWrapper(Environment environment)
         {
             _Environment = environment;

@@ -20,6 +20,16 @@ namespace TiltBrush
     }
 
     [AttributeUsage(AttributeTargets.Method)]
+    public class LuaDocsReturnValueAttribute : LuaDocsAttributeBase
+    {
+        public string Description;
+        public LuaDocsReturnValueAttribute(string description)
+        {
+            Description = description;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
     public class LuaDocsExampleAttribute : LuaDocsAttributeBase
     {
         public string Example;

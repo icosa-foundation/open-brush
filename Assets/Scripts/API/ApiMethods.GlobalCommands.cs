@@ -257,12 +257,13 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
-        [ApiEndpoint("showfolder.sketch", "Opens the user's Sketches folder on the desktop")]
-        public static void ShowSketchFolder(int index)
+        [ApiEndpoint("showfolder.sketch", "Opens a Explorer/Finder window outside of VR showing the user's Sketches folder on the desktop (Mac/Windows only)")]
+        public static void ShowSketchFolder()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
-            // TODO 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
+            // TODO iParam1 0 is the first sketch. Do we need to support the other folders?
+            // TODO iParam2 0 is User folder. Do we need to support the other SketchSetTypes?
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 0, 0);
         }
 
         [ApiEndpoint("guides.disable", "Toggles guides on and off")]

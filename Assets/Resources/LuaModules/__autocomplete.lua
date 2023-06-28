@@ -29,8 +29,8 @@ function App:Undo() end
 
 function App:Redo() end
 
----@param a string
-function App:AddListener(a) end
+---@param url string
+function App:AddListener(url) end
 
 
 function App:ResetPanels() end
@@ -41,8 +41,8 @@ function App:ShowScriptsFolder() end
 
 function App:ShowExportFolder() end
 
----@param a number
-function App:ShowSketchesFolder(a) end
+
+function App:ShowSketchesFolder() end
 
 ---@param active boolean
 function App:StraightEdge(active) end
@@ -152,11 +152,11 @@ Brush.colorHtml = nil
 ---@type Color
 Brush.lastColorPicked = nil
 
----@type Path
-Brush.currentPath = nil
-
 ---@type Vector3
 Brush.LastColorPickedHsv = nil
+
+---@type Path
+Brush.currentPath = nil
 
 
 ---Methods for type Brush
@@ -252,37 +252,37 @@ function CameraPath:InsertPosition(position, rotation, smoothing) end
 ---@param rotation Rotation
 ---@param smoothing number
 ---@return number
-function CameraPath:InsertPosition(t, rotation, smoothing) end
+function CameraPath:InsertPositionAtTime(t, rotation, smoothing) end
 
----@param pos Vector3
----@param rot Rotation
+---@param position Vector3
+---@param rotation Rotation
 ---@return number
-function CameraPath:InsertRotation(pos, rot) end
+function CameraPath:InsertRotation(position, rotation) end
 
 ---@param t number
----@param rot Rotation
+---@param rotation Rotation
 ---@return number
-function CameraPath:InsertRotation(t, rot) end
+function CameraPath:InsertRotationAtTime(t, rotation) end
 
----@param pos Vector3
+---@param position Vector3
 ---@param fov number
 ---@return number
-function CameraPath:InsertFov(pos, fov) end
+function CameraPath:InsertFov(position, fov) end
 
 ---@param t number
 ---@param fov number
 ---@return number
-function CameraPath:InsertFov(t, fov) end
+function CameraPath:InsertFovAtTime(t, fov) end
 
----@param pos Vector3
+---@param position Vector3
 ---@param speed number
 ---@return number
-function CameraPath:InsertSpeed(pos, speed) end
+function CameraPath:InsertSpeed(position, speed) end
 
 ---@param t number
 ---@param speed number
 ---@return number
-function CameraPath:InsertSpeed(t, speed) end
+function CameraPath:InsertSpeedAtTime(t, speed) end
 
 ---@param position Vector3
 ---@param rotation Rotation
@@ -492,127 +492,127 @@ function Color:NotEquals(a, b) end
 
 ---@param t number
 ---@return number
-function Easing:linear(t) end
+function Easing:Linear(t) end
 
 ---@param t number
 ---@return number
-function Easing:inQuad(t) end
+function Easing:InQuad(t) end
 
 ---@param t number
 ---@return number
-function Easing:outQuad(t) end
+function Easing:OutQuad(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutQuad(t) end
+function Easing:InOutQuad(t) end
 
 ---@param t number
 ---@return number
-function Easing:inCubic(t) end
+function Easing:InCubic(t) end
 
 ---@param t number
 ---@return number
-function Easing:outCubic(t) end
+function Easing:OutCubic(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutCubic(t) end
+function Easing:InOutCubic(t) end
 
 ---@param t number
 ---@return number
-function Easing:inQuart(t) end
+function Easing:InQuart(t) end
 
 ---@param t number
 ---@return number
-function Easing:outQuart(t) end
+function Easing:OutQuart(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutQuart(t) end
+function Easing:InOutQuart(t) end
 
 ---@param t number
 ---@return number
-function Easing:inQuint(t) end
+function Easing:InQuint(t) end
 
 ---@param t number
 ---@return number
-function Easing:outQuint(t) end
+function Easing:OutQuint(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutQuint(t) end
+function Easing:InOutQuint(t) end
 
 ---@param t number
 ---@return number
-function Easing:inSine(t) end
+function Easing:InSine(t) end
 
 ---@param t number
 ---@return number
-function Easing:outSine(t) end
+function Easing:OutSine(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutSine(t) end
+function Easing:InOutSine(t) end
 
 ---@param t number
 ---@return number
-function Easing:inExpo(t) end
+function Easing:InExpo(t) end
 
 ---@param t number
 ---@return number
-function Easing:outExpo(t) end
+function Easing:OutExpo(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutExpo(t) end
+function Easing:InOutExpo(t) end
 
 ---@param t number
 ---@return number
-function Easing:inCirc(t) end
+function Easing:InCirc(t) end
 
 ---@param t number
 ---@return number
-function Easing:outCirc(t) end
+function Easing:OutCirc(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutCirc(t) end
+function Easing:InOutCirc(t) end
 
 ---@param t number
 ---@return number
-function Easing:inElastic(t) end
+function Easing:InElastic(t) end
 
 ---@param t number
 ---@return number
-function Easing:outElastic(t) end
+function Easing:OutElastic(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutElastic(t) end
+function Easing:InOutElastic(t) end
 
 ---@param t number
 ---@return number
-function Easing:inBack(t) end
+function Easing:InBack(t) end
 
 ---@param t number
 ---@return number
-function Easing:outBack(t) end
+function Easing:OutBack(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutBack(t) end
+function Easing:InOutBack(t) end
 
 ---@param t number
 ---@return number
-function Easing:inBounce(t) end
+function Easing:InBounce(t) end
 
 ---@param t number
 ---@return number
-function Easing:outBounce(t) end
+function Easing:OutBounce(t) end
 
 ---@param t number
 ---@return number
-function Easing:inOutBounce(t) end
+function Easing:InOutBounce(t) end
 
 ---Properties for type Guide
 
@@ -675,13 +675,13 @@ function Headset:ResizeHistory(size) end
 ---@param size number
 function Headset:SetHistorySize(size) end
 
----@param count number
+---@param back number
 ---@return Vector3
-function Headset:PastPosition(count) end
+function Headset:PastPosition(back) end
 
----@param count number
+---@param back number
 ---@return Rotation
-function Headset:PastRotation(count) end
+function Headset:PastRotation(back) end
 
 ---Properties for type Image
 
@@ -1051,8 +1051,17 @@ function MultiPath:FromText(text) end
 ---@param path Path
 function MultiPath:Insert(path) end
 
+---@param path Path
+---@param index number
+function MultiPath:Insert(path, index) end
+
 ---@param transform Transform
 function MultiPath:InsertPoint(transform) end
+
+---@param transform Transform
+---@param pathIndex number
+---@param pointIndex number
+function MultiPath:InsertPoint(transform, pathIndex, pointIndex) end
 
 ---@param transform Transform
 function MultiPath:TransformBy(transform) end
@@ -1085,14 +1094,14 @@ function MultiPath:Longest() end
 
 ---Properties for type Path
 
+---@type number
+Path.count = nil
+
 ---@type Transform
 Path.Item = nil
 
 ---@type Transform
 Path.last = nil
-
----@type number
-Path.count = nil
 
 
 ---Methods for type Path
@@ -1126,6 +1135,10 @@ function Path:Draw() end
 
 ---@param transform Transform
 function Path:Insert(transform) end
+
+---@param transform Transform
+---@param index number
+function Path:Insert(transform, index) end
 
 ---@param transform Transform
 function Path:TransformBy(transform) end
@@ -1181,11 +1194,6 @@ function Path:Normalize(scale) end
 ---@return Transform[]
 function Path:Subdivide(trs, parts) end
 
----@param trs Transform[]
----@param spacing number
----@return Transform[]
-function Path:Resample(trs, spacing) end
-
 ---@param spacing number
 function Path:Resample(spacing) end
 
@@ -1206,6 +1214,12 @@ function Path:Hermite(startTransform, endTransform, startTangent, endTangent, re
 ---@type number
 Path2d.count = nil
 
+---@type Transform
+Path2d.Item = nil
+
+---@type Transform
+Path2d.last = nil
+
 
 ---Methods for type Path2d
 
@@ -1223,6 +1237,10 @@ function Path2d:New(positionList) end
 
 ---@param transform Vector2
 function Path2d:Insert(transform) end
+
+---@param transform Vector2
+---@param index number
+function Path2d:Insert(transform, index) end
 
 
 ---@return Path
@@ -1268,19 +1286,11 @@ function Path2d:FindMinimumY() end
 
 
 ---@return number
-function Path2d:FindMinimumZ() end
-
-
----@return number
 function Path2d:FindMaximumX() end
 
 
 ---@return number
 function Path2d:FindMaximumY() end
-
-
----@return number
-function Path2d:FindMaximumZ() end
 
 ---@param scale number
 function Path2d:Normalize(scale) end

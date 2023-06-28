@@ -23,7 +23,7 @@ namespace TiltBrush
 
         public TrTransform transform
         {
-            get =>  App.Scene.MainCanvas.AsCanvas[_ModelWidget.transform];
+            get => App.Scene.MainCanvas.AsCanvas[_ModelWidget.transform];
             set
             {
                 value = App.Scene.Pose * value;
@@ -59,6 +59,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The scale of the Model Widget")]
         public float scale
         {
             get => transform.scale;
@@ -72,8 +73,13 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Method to import a new model at a specific location. Returns a wrapper of the imported model's API")]
         public static ModelApiWrapper Import(string location) => new ModelApiWrapper(ApiMethods.ImportModel(location));
+
+        [LuaDocsDescription("Method to select the current Model Widget in the API")]
         public void Select() => ApiMethods.SelectWidget(_ModelWidget);
+
+        [LuaDocsDescription("Method to delete the current Model Widget from the API")]
         public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
     }
 }

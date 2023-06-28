@@ -80,6 +80,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Applies the current jitter settings to the brush color")]
+        [LuaDocsExample("Brush:JitterColor()")]
         public static void JitterColor() => LuaApiMethods.JitterColor();
 
         [LuaDocsDescription("The last color picked by the brush.")]
@@ -126,6 +127,7 @@ namespace TiltBrush
         public static void ForcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
 
         [LuaDocsDescription("Forces the start of a new stroke - will stop painting this frame and start again the next.")]
+        [LuaDocsExample("Brush:ForceNewStroke(true)")]
         public static void ForceNewStroke() => ApiMethods.ForceNewStroke();
 
         [LuaDocsDescription("Gets or sets the current path of the brush. Assumes a stroke is in progress.")]

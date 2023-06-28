@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -81,6 +82,12 @@ namespace TiltBrush
 {methods}
 ";
             }
+
+            if (string.IsNullOrEmpty(Description))
+            {
+                Debug.LogWarning($"Missing Description for class {Name}");
+            }
+
             return string.Format(markdownTemplate, Name, Description, properties, methods);
         }
 
@@ -265,6 +272,7 @@ namespace TiltBrush
                 // Make types into links to the class docs
                 markdown = $@"<a href=""{markdown.ToLower()}.md"">{markdown}</a>";
             }
+
             return markdown;
         }
     }
@@ -280,6 +288,10 @@ namespace TiltBrush
         private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
         public string MarkdownSerialize()
         {
+            if (string.IsNullOrEmpty(Description))
+            {
+                Debug.LogWarning($"Missing Description for parameter {Name}");
+            }
             return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), Description);
         }
         
@@ -325,6 +337,11 @@ namespace TiltBrush
 
 ";
             }
+            if (string.IsNullOrEmpty(Description))
+            {
+                Debug.LogWarning($"Missing Description for method {className}.{Name}");
+            }
+
             string example = "";
             if (!string.IsNullOrEmpty(Example))
             {
@@ -335,6 +352,16 @@ namespace TiltBrush
 
 ";
             }
+            else
+            {
+                Debug.LogWarning($"Missing Example for {className}.{Name}");
+            }
+
+            if (string.IsNullOrEmpty(Description))
+            {
+                Debug.LogWarning($"Missing Description for method {Name}");
+            }
+
             return string.Format(markdownTemplate, className, Name, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
         }
         
@@ -371,6 +398,10 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
         
         public string MarkdownSerialize()
         {
+            if (string.IsNullOrEmpty(Description))
+            {
+                Debug.LogWarning($"Missing Description for property {Name}");
+            }
             return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), Description);
         }
 

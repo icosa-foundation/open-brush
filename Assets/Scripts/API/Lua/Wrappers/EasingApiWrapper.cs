@@ -22,86 +22,225 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class EasingApiWrapper
     {
-        public static float linear(float t) => t;
+        [LuaDocsDescription("Linear easing function")]
+        [LuaDocsExample("value = Easing:Linear(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The input is returned unchanged")]
+        public static float Linear(float t) => t;
 
-        public static float inQuad(float t) => t * t;
-        public static float outQuad(float t) => 1 - inQuad(1 - t);
-        public static float inOutQuad(float t)
+        [LuaDocsDescription("InQuad easing function")]
+        [LuaDocsExample("value = Easing:InQuad(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InQuad(float t) => t * t;
+
+        [LuaDocsDescription("OutQuad easing function")]
+        [LuaDocsExample("value = Easing:OutQuad(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutQuad(float t) => 1 - InQuad(1 - t);
+
+        [LuaDocsDescription("InOutQuad easing function")]
+        [LuaDocsExample("value = Easing:InOutQuad(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutQuad(float t)
         {
-            if (t < 0.5) return inQuad(t * 2) / 2;
-            return 1 - inQuad((1 - t) * 2) / 2;
+            if (t < 0.5) return InQuad(t * 2) / 2;
+            return 1 - InQuad((1 - t) * 2) / 2;
         }
 
-        public static float inCubic(float t) => t * t * t;
-        public static float outCubic(float t) => 1 - inCubic(1 - t);
-        public static float inOutCubic(float t)
+        [LuaDocsDescription("InCubic easing function")]
+        [LuaDocsExample("value = Easing:InCubic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InCubic(float t) => t * t * t;
+
+        [LuaDocsDescription("OutCubic easing function")]
+        [LuaDocsExample("value = Easing:OutCubic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutCubic(float t) => 1 - InCubic(1 - t);
+
+        [LuaDocsDescription("InOutCubic easing function")]
+        [LuaDocsExample("value = Easing:InOutCubic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutCubic(float t)
         {
-            if (t < 0.5) return inCubic(t * 2) / 2;
-            return 1 - inCubic((1 - t) * 2) / 2;
+            if (t < 0.5) return InCubic(t * 2) / 2;
+            return 1 - InCubic((1 - t) * 2) / 2;
         }
 
-        public static float inQuart(float t) => t * t * t * t;
-        public static float outQuart(float t) => 1 - inQuart(1 - t);
-        public static float inOutQuart(float t)
+        [LuaDocsDescription("InQuart easing function")]
+        [LuaDocsExample("value = Easing:InQuart(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InQuart(float t) => t * t * t * t;
+
+        [LuaDocsDescription("OutQuart easing function")]
+        [LuaDocsExample("value = Easing:OutQuart(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutQuart(float t) => 1 - InQuart(1 - t);
+
+        [LuaDocsDescription("InQuart easing function")]
+        [LuaDocsExample("value = Easing:InQuart(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutQuart(float t)
         {
-            if (t < 0.5) return inQuart(t * 2) / 2;
-            return 1 - inQuart((1 - t) * 2) / 2;
+            if (t < 0.5) return InQuart(t * 2) / 2;
+            return 1 - InQuart((1 - t) * 2) / 2;
         }
 
-        public static float inQuint(float t) => t * t * t * t * t;
-        public static float outQuint(float t) => 1 - inQuint(1 - t);
-        public static float inOutQuint(float t)
+        [LuaDocsDescription("InQuint easing function")]
+        [LuaDocsExample("value = Easing:InQuint(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InQuint(float t) => t * t * t * t * t;
+
+        [LuaDocsDescription("OutQuint easing function")]
+        [LuaDocsExample("value = Easing:OutQuint(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutQuint(float t) => 1 - InQuint(1 - t);
+
+        [LuaDocsDescription("InOutQuint easing function")]
+        [LuaDocsExample("value = Easing:InOutQuint(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutQuint(float t)
         {
-            if (t < 0.5) return inQuint(t * 2) / 2;
-            return 1 - inQuint((1 - t) * 2) / 2;
+            if (t < 0.5) return InQuint(t * 2) / 2;
+            return 1 - InQuint((1 - t) * 2) / 2;
         }
 
-        public static float inSine(float t) => -Mathf.Cos(t * Mathf.PI / 2);
-        public static float outSine(float t) => Mathf.Sin(t * Mathf.PI / 2);
-        public static float inOutSine(float t) => (Mathf.Cos(t * Mathf.PI) - 1) / -2;
+        [LuaDocsDescription("InSine easing function")]
+        [LuaDocsExample("value = Easing:InSine(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InSine(float t) => -Mathf.Cos(t * Mathf.PI / 2);
 
-        public static float inExpo(float t) => Mathf.Pow(2, 10 * (t - 1));
-        public static float outExpo(float t) => 1 - inExpo(1 - t);
-        public static float inOutExpo(float t)
+        [LuaDocsDescription("OutSine easing function")]
+        [LuaDocsExample("value = Easing:OutSine(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutSine(float t) => Mathf.Sin(t * Mathf.PI / 2);
+
+        [LuaDocsDescription("InOutSine easing function")]
+        [LuaDocsExample("value = Easing:InOutSine(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutSine(float t) => (Mathf.Cos(t * Mathf.PI) - 1) / -2;
+
+        [LuaDocsDescription("InExpo easing function")]
+        [LuaDocsExample("value = Easing:InExpo(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InExpo(float t) => Mathf.Pow(2, 10 * (t - 1));
+
+        [LuaDocsDescription("OutExpo easing function")]
+        [LuaDocsExample("value = Easing:OutExpo(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutExpo(float t) => 1 - InExpo(1 - t);
+
+        [LuaDocsDescription("InOutExpo easing function")]
+        [LuaDocsExample("value = Easing:InOutExpo(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutExpo(float t)
         {
-            if (t < 0.5) return inExpo(t * 2) / 2;
-            return 1 - inExpo((1 - t) * 2) / 2;
+            if (t < 0.5) return InExpo(t * 2) / 2;
+            return 1 - InExpo((1 - t) * 2) / 2;
         }
 
-        public static float inCirc(float t) => -(Mathf.Sqrt(1 - t * t) - 1);
-        public static float outCirc(float t) => 1 - inCirc(1 - t);
-        public static float inOutCirc(float t)
+        [LuaDocsDescription("InCirc easing function")]
+        [LuaDocsExample("value = Easing:InCirc(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InCirc(float t) => -(Mathf.Sqrt(1 - t * t) - 1);
+
+        [LuaDocsDescription("OutCirc easing function")]
+        [LuaDocsExample("value = Easing:OutCirc(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutCirc(float t) => 1 - InCirc(1 - t);
+
+        [LuaDocsDescription("InOutCirc easing function")]
+        [LuaDocsExample("value = Easing:InOutCirc(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutCirc(float t)
         {
-            if (t < 0.5) return inCirc(t * 2) / 2;
-            return 1 - inCirc((1 - t) * 2) / 2;
+            if (t < 0.5) return InCirc(t * 2) / 2;
+            return 1 - InCirc((1 - t) * 2) / 2;
         }
 
-        public static float inElastic(float t) => 1 - outElastic(1 - t);
-        public static float outElastic(float t)
+        [LuaDocsDescription("InElastic easing function")]
+        [LuaDocsExample("value = Easing:InElastic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InElastic(float t) => 1 - OutElastic(1 - t);
+
+        [LuaDocsDescription("OutElastic easing function")]
+        [LuaDocsExample("value = Easing:OutElastic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutElastic(float t)
         {
             float p = 0.3f;
             return Mathf.Pow(2, -10 * t) * Mathf.Sin((t - p / 4) * (2 * Mathf.PI) / p) + 1;
         }
-        public static float inOutElastic(float t)
+
+        [LuaDocsDescription("InOutElastic easing function")]
+        [LuaDocsExample("value = Easing:InOutElastic(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutElastic(float t)
         {
-            if (t < 0.5) return inElastic(t * 2) / 2;
-            return 1 - inElastic((1 - t) * 2) / 2;
+            if (t < 0.5) return InElastic(t * 2) / 2;
+            return 1 - InElastic((1 - t) * 2) / 2;
         }
 
-        public static float inBack(float t)
+        [LuaDocsDescription("InBack easing function")]
+        [LuaDocsExample("value = Easing:InBack(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InBack(float t)
         {
             float s = 1.70158f;
             return t * t * ((s + 1) * t - s);
         }
-        public static float outBack(float t) => 1 - inBack(1 - t);
-        public static float inOutBack(float t)
+
+        [LuaDocsDescription("OutBack easing function")]
+        [LuaDocsExample("value = Easing:OutBack(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutBack(float t) => 1 - InBack(1 - t);
+
+        [LuaDocsDescription("InOutBack easing function")]
+        [LuaDocsExample("value = Easing:InOutBack(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutBack(float t)
         {
-            if (t < 0.5) return inBack(t * 2) / 2;
-            return 1 - inBack((1 - t) * 2) / 2;
+            if (t < 0.5) return InBack(t * 2) / 2;
+            return 1 - InBack((1 - t) * 2) / 2;
         }
 
-        public static float inBounce(float t) => 1 - outBounce(1 - t);
-        public static float outBounce(float t)
+        [LuaDocsDescription("InBounce easing function")]
+        [LuaDocsExample("value = Easing:InBounce(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the in direction only")]
+        public static float InBounce(float t) => 1 - OutBounce(1 - t);
+
+        [LuaDocsDescription("OutBounce easing function")]
+        [LuaDocsExample("value = Easing:OutBounce(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in the out direction only")]
+        public static float OutBounce(float t)
         {
             float div = 2.75f;
             float mult = 7.5625f;
@@ -126,10 +265,15 @@ namespace TiltBrush
                 return mult * t * t + 0.984375f;
             }
         }
-        public static float inOutBounce(float t)
+
+        [LuaDocsDescription("InOutBounce easing function")]
+        [LuaDocsExample("value = Easing:InOutBounce(value)")]
+        [LuaDocsParameter("t", "The input value between 0 and 1")]
+        [LuaDocsReturnValue("The value smoothed in and out")]
+        public static float InOutBounce(float t)
         {
-            if (t < 0.5) return inBounce(t * 2) / 2;
-            return 1 - inBounce((1 - t) * 2) / 2;
+            if (t < 0.5) return InBounce(t * 2) / 2;
+            return 1 - InBounce((1 - t) * 2) / 2;
         }
     }
 }

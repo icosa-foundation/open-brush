@@ -55,13 +55,29 @@ namespace TiltBrush
         public static Path2dApiWrapper New(List<Vector2> transformList) => new Path2dApiWrapper(transformList);
         public static Path2dApiWrapper New(List<Vector3> positionList) => new Path2dApiWrapper(positionList);
 
+        [LuaDocsDescription("Returns the number of points in this path")]
         public int count => _Path2d?.Count ?? 0;
+
+        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path2d[index]);
+
+        public TransformApiWrapper last => new TransformApiWrapper(_Path2d[^1]);
+
+        [LuaDocsDescription("Inserts a new point at the end of the path")]
         public void Insert(Vector2 transform) => _Path2d.Add(transform);
 
+        [LuaDocsDescription("Inserts a new point at the given path index")]
+        public void Insert(Vector2 transform, int index) => _Path2d.Insert(index, transform);
+
+        [LuaDocsDescription("Converts the 2D path to a 3D path on the YZ plane (i.e. with all x values set to 0)")]
         public PathApiWrapper OnX() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(0, v.x, v.y)).ToList());
+
+        [LuaDocsDescription("Converts the 2D path to a 3D path on the XZ plane (i.e. with all y values set to 0)")]
         public PathApiWrapper OnY() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, 0, v.y)).ToList());
+
+        [LuaDocsDescription("Converts the 2D path to a 3D path on the XY plane (i.e. with all z values set to 0)")]
         public PathApiWrapper OnZ() => PathApiWrapper.New(_Path2d.Select(v => new Vector3(v.x, v.y, 0)).ToList());
 
+        [LuaDocsDescription("Transforms all points in the path by the given amount")]
         public void TransformBy(TrTransform transform)
         {
             for (int i = 0; i < _Path2d.Count; i++)
@@ -69,8 +85,14 @@ namespace TiltBrush
                 _Path2d[i] = transform * _Path2d[i];
             }
         }
+
+        [LuaDocsDescription("Changes the position of all points in the path by a given amount")]
         public void TranslateBy(Vector2 amount) => TransformBy(TrTransform.T(amount));
+
+        [LuaDocsDescription("Rotates all points in the path around the origin by a given amount")]
         public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+
+        [LuaDocsDescription("Scales all points the path away or towards the origin")]
         public void ScaleBy(Vector2 scale)
         {
             // Supports non-uniform scaling
@@ -85,6 +107,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
         public void Center()
         {
             (Vector2 center, float _) = _CalculateCenterAndScale(_Path2d);
@@ -98,12 +121,14 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Reorders the points so that point at the given index is shifted to be the first point")]
         public void StartingFrom(int index)
         {
             if (_Path2d == null) return;
             _Path2d = _Path2d.Skip(index).Concat(_Path2d.Take(index)).ToList();
         }
 
+        [LuaDocsDescription("Returns the index of the point closest to the given position")]
         public int FindClosest(Vector2 point)
         {
             if (_Path2d == null) return 0;
@@ -112,12 +137,15 @@ namespace TiltBrush
             ).i;
         }
 
+        [LuaDocsDescription("Returns the index of the point with the smallest X value")]
         public int FindMinimumX() => _FindMinimum(Axis.X);
+        [LuaDocsDescription("Returns the index of the point with the smallest Y value")]
         public int FindMinimumY() => _FindMinimum(Axis.Y);
-        public int FindMinimumZ() => _FindMinimum(Axis.Z);
+
+        [LuaDocsDescription("Returns the index of the point with the biggest X value")]
         public int FindMaximumX() => _FindMaximum(Axis.X);
+        [LuaDocsDescription("Returns the index of the point with the biggest Y value")]
         public int FindMaximumY() => _FindMaximum(Axis.Y);
-        public int FindMaximumZ() => _FindMaximum(Axis.Z);
 
         [MoonSharpHidden]
         public int _FindMinimum(Axis axis)
@@ -138,6 +166,7 @@ namespace TiltBrush
                 .index;
         }
 
+        [LuaDocsDescription("Scales and shifts all points so that they fit in a 1 unit square at the origin")]
         public void Normalize(float scale = 1)
         {
             if (_Path2d == null) return;

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("A layer in the current sketch")]
@@ -20,19 +21,25 @@ namespace TiltBrush
             _CanvasScript = canvasScript;
         }
 
+        [LuaDocsDescription("Gets the index of the layer in the layer canvases")]
         public int index => App.Scene.LayerCanvases.ToList().IndexOf(_CanvasScript);
 
+        [LuaDocsDescription("Creates and returns a new instance of a Layer")]
+        [LuaDocsReturnValue("The new instance of LayerApiWrapper")]
         public static LayerApiWrapper New()
         {
             var instance = new LayerApiWrapper();
             return instance;
         }
 
+        [LuaDocsDescription("Returns a string that represents the current layer")]
+        [LuaDocsReturnValue("A string that represents the current layer")]
         public override string ToString()
         {
             return $"Layer({_CanvasScript.name})";
         }
 
+        [LuaDocsDescription("Gets or sets a value indicating whether the layer is active")]
         public bool active
         {
             get => App.Scene.ActiveCanvas == _CanvasScript;
@@ -49,6 +56,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Gets or sets the transform of the layer")]
         public TrTransform transform
         {
             get => App.Scene.Pose.inverse * _CanvasScript.Pose;
@@ -73,7 +81,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("The 3D orientation of the Layer")]
+        [LuaDocsDescription("Gets or sets the rotation of the layer in 3D space")]
         public Quaternion rotation
         {
             get => (App.Scene.Pose.inverse * _CanvasScript.Pose).rotation;
@@ -87,6 +95,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Gets or sets the scale of the layer")]
         public float scale
         {
             get => transform.scale;
@@ -100,24 +109,31 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Centers the pivot of the layer")]
         public void CenterPivot() => _CanvasScript.CenterPivot();
 
+        [LuaDocsDescription("Shows the pivot of the layer")]
         public void ShowPivot() => _CanvasScript.ShowGizmo();
 
-        public void HidePivot() =>_CanvasScript.HideGizmo();
+        [LuaDocsDescription("Hides the pivot of the layer")]
+        public void HidePivot() => _CanvasScript.HideGizmo();
 
+        [LuaDocsDescription("Clears the layer")]
         public void Clear()
         {
             ClearLayerCommand cmd = new ClearLayerCommand(_CanvasScript);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
+        [LuaDocsDescription("Deletes the layer")]
         public void Delete()
         {
             DeleteLayerCommand cmd = new DeleteLayerCommand(_CanvasScript);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
+        [LuaDocsDescription("Squashes the layer and returns the resulting LayerApiWrapper instance")]
+        [LuaDocsReturnValue("The resulting LayerApiWrapper instance")]
         public LayerApiWrapper Squash()
         {
             int destinationIndex = index - 1;
@@ -128,6 +144,9 @@ namespace TiltBrush
             return null;
         }
 
+        [LuaDocsDescription("Squashes the layer to the specified destination layer and returns the destination layer")]
+        [LuaDocsParameter("destinationLayer", "The destination layer")]
+        [LuaDocsReturnValue("The destination layer")]
         public LayerApiWrapper SquashTo(LayerApiWrapper destinationLayer)
         {
             SquashLayerCommand cmd = new SquashLayerCommand(
@@ -138,16 +157,19 @@ namespace TiltBrush
             return destinationLayer;
         }
 
+        [LuaDocsDescription("Shows the layer")]
         public void Show()
         {
             App.Scene.ShowLayer(_CanvasScript);
         }
 
+        [LuaDocsDescription("Hides the layer")]
         public void Hide()
         {
             App.Scene.HideLayer(_CanvasScript);
         }
 
+        [LuaDocsDescription("Toggles the visibility of the layer")]
         public void Toggle()
         {
             App.Scene.ToggleLayerVisibility(_CanvasScript);

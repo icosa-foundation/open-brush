@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -67,10 +66,6 @@ namespace TiltBrush
         public static PathApiWrapper New(List<TrTransform> transformList) => new PathApiWrapper(transformList);
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
-        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
-        public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
-        public int count => _Path?.Count ?? 0;
-
         public override string ToString()
         {
             return _Path == null ? "Empty Path" : $"Path with {count} points)";
@@ -107,33 +102,58 @@ namespace TiltBrush
             return ((toPrevious + toNext) / 2).normalized;
         }
 
+        [LuaDocsDescription("Returns a vector representing the direction of the path at the given point")]
         public Vector3 GetDirection(int index)
         {
             if (_DirectionVectors == null) _CalculateVectors();
             return _DirectionVectors[index];
         }
 
+        [LuaDocsDescription("Returns a vector representing the normal of the path at the given point")]
         public Vector3 GetNormal(int index)
         {
             if (_Normals == null) _CalculateVectors();
             return _Normals[index];
         }
 
+
+        [LuaDocsDescription("Returns a vector representing the tangent of the path at the given point")]
         public Vector3 GetTangent(int index)
         {
             if (_Normals == null) _CalculateVectors();
             return _Tangents[index];
         }
 
+        [LuaDocsDescription("Draws this path as a brush stroke using current settings")]
         public void Draw() => LuaApiMethods.DrawPath(this);
+
+        [LuaDocsDescription("Returns the number of points in this path")]
+        public int count => _Path?.Count ?? 0;
+
+        public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
+
+        [LuaDocsDescription("Returns the last point in this path")]
+        public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
+
+        [LuaDocsDescription("Inserts a new point at the end of the path")]
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
+        [LuaDocsDescription("Inserts a new point at the given path index")]
+        public void Insert(TrTransform transform, int index) => _Path.Insert(index, transform);
+
+        [LuaDocsDescription("Transforms all points in the path by the given amount")]
         public void TransformBy(TrTransform transform)
         {
             LuaApiMethods.TransformPath(this, transform);
         }
+
+        [LuaDocsDescription("Changes the position of all points in the path by a given amount")]
         public void TranslateBy(Vector3 amount) => TransformBy(TrTransform.T(amount));
+
+        [LuaDocsDescription("Rotates all points in the path around the origin by a given amount")]
         public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+
+        [LuaDocsDescription("Scales all points the path away or towards the origin")]
         public void ScaleBy(Vector3 scale)
         {
             // Supports non-uniform scaling
@@ -143,6 +163,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
         public void Center()
         {
             (Vector3 center, float _) = _CalculateCenterAndScale(_Path);
@@ -156,12 +177,14 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Reorders the points so that point at the given index is shifted to be the first point")]
         public void StartingFrom(int index)
         {
             if (_Path == null) return;
             _Path = _Path.Skip(index).Concat(_Path.Take(index)).ToList();
         }
 
+        [LuaDocsDescription("Returns the index of the point closest to the given position")]
         public int FindClosest(Vector3 point)
         {
             if (_Path == null) return 0;
@@ -170,11 +193,18 @@ namespace TiltBrush
             ).i;
         }
 
+        [LuaDocsDescription("Returns the index of the point with the smallest X value")]
         public int FindMinimumX() => _FindMinimum(Axis.X);
+        [LuaDocsDescription("Returns the index of the point with the smallest Y value")]
         public int FindMinimumY() => _FindMinimum(Axis.Y);
+        [LuaDocsDescription("Returns the index of the point with the smallest Z value")]
         public int FindMinimumZ() => _FindMinimum(Axis.Z);
+
+        [LuaDocsDescription("Returns the index of the point with the biggest X value")]
         public int FindMaximumX() => _FindMaximum(Axis.X);
+        [LuaDocsDescription("Returns the index of the point with the biggest Y value")]
         public int FindMaximumY() => _FindMaximum(Axis.Y);
+        [LuaDocsDescription("Returns the index of the point with the biggest Z value")]
         public int FindMaximumZ() => _FindMaximum(Axis.Z);
 
         [MoonSharpHidden]
@@ -196,6 +226,7 @@ namespace TiltBrush
                 .index;
         }
 
+        [LuaDocsDescription("Scales and shifts all points so that they fit in a 1 unit cube at the origin")]
         public void Normalize(float scale = 1)
         {
             if (_Path == null) return;
@@ -290,6 +321,7 @@ namespace TiltBrush
             return subdividedPath;
         }
 
+        [MoonSharpHidden]
         public static List<TrTransform> Resample(List<TrTransform> trs, float spacing)
         {
             if (trs == null || trs.Count < 2 || spacing <= 0) return trs;
@@ -327,16 +359,19 @@ namespace TiltBrush
             return resampledPath;
         }
 
+        [LuaDocsDescription("Resamples the path at a specified spacing")]
         public void Resample(float spacing)
         {
            _Path = Resample(_Path, spacing);
         }
 
+        [LuaDocsDescription("Splits each path segment into smaller parts")]
         public void Subdivide(int parts)
         {
             _Path = Subdivide(_Path, parts);
         }
 
+        [LuaDocsDescription("Generates a hermite spline")]
         public static PathApiWrapper Hermite(TrTransform startTransform, TrTransform endTransform, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 
