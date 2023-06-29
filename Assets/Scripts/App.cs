@@ -1900,7 +1900,9 @@ namespace TiltBrush
 
             try
             {
-                Directory.Move(m_OldUserPath, m_UserPath);
+                // Moving does not work across different mount points, have to copy and delete.
+                CopyDirectory(m_OldUserPath, m_UserPath, true);
+                Directory.Delete(m_OldUserPath, true);
                 // Recreate the old directory and put a message in there so a user used to looking in the old
                 // location can find out where to get their files.
                 Directory.CreateDirectory(m_OldUserPath);
@@ -1910,6 +1912,39 @@ namespace TiltBrush
             catch (Exception ex)
             {
                 Debug.LogException(ex);
+            }
+        }
+
+        static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)
+        {
+            // Get information about the source directory
+            var dir = new DirectoryInfo(sourceDir);
+
+            // Check if the source directory exists
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+
+            // Cache directories before we start copying
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // Create the destination directory
+            Directory.CreateDirectory(destinationDir);
+
+            // Get the files in the source directory and copy to the destination directory
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath);
+            }
+
+            // If recursive and copying subdirectories, recursively call this method
+            if (recursive)
+            {
+                foreach (DirectoryInfo subDir in dirs)
+                {
+                    string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                    CopyDirectory(subDir.FullName, newDestinationDir, true);
+                }
             }
         }
 
