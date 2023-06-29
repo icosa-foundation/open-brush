@@ -7,6 +7,7 @@ namespace TiltBrush
     public static class HeadsetApiWrapper
     {
         [LuaDocsDescription("Clears the history and sets it's size")]
+        [LuaDocsExample("Headset.size = 4")]
         [LuaDocsParameter("size", "How many frames of position/rotation to remember")]
         public static void ResizeHistory(int size) => LuaManager.Instance.ResizeHeadBuffer(size);
 

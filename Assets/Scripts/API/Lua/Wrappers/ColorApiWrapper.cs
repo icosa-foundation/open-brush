@@ -73,47 +73,46 @@ namespace TiltBrush
             set => _Color[index] = value;
         }
 
-        [LuaDocsDescription("Gets the red component of the color")]
+        [LuaDocsDescription("The red component")]
         public float r => _Color.r;
 
-        [LuaDocsDescription("Gets the green component of the color")]
+        [LuaDocsDescription("The green component")]
         public float g => _Color.g;
 
-        [LuaDocsDescription("Gets the blue component of the color")]
+        [LuaDocsDescription("The blue component")]
         public float b => _Color.b;
 
-        [LuaDocsDescription("Gets the alpha component of the color")]
+        [LuaDocsDescription("The alpha component")]
         public float a => _Color.a;
 
-        [LuaDocsDescription("Gets the grayscale value of the color")]
+        [LuaDocsDescription("The grayscale value")]
         public float grayscale => _Color.grayscale;
 
-        [LuaDocsDescription("Gets the gamma color space representation of the color")]
+        [LuaDocsDescription("The gamma color space representation")]
         public Color gamma => _Color.gamma;
 
-        [LuaDocsDescription("Gets the linear color space representation of the color")]
+        [LuaDocsDescription("The linear color space representation")]
         public Color linear => _Color.linear;
 
-        [LuaDocsDescription("Gets the maximum color component value of the color")]
+        [LuaDocsDescription("The maximum color component value")]
         public float maxColorComponent => _Color.maxColorComponent;
 
-        [LuaDocsDescription("Calculates the grayscale value of the specified color")]
-        [LuaDocsExample("grayAmount = myColor:Greyscale()")]
-        [LuaDocsParameter("col", "The color")]
-        [LuaDocsReturnValue("value of the color")]
-        public static float Greyscale(Color color) => color.grayscale;
 
-        [LuaDocsDescription("Gets the maximum color component value of the specified color")]
-        [LuaDocsExample("amount = myColor:MaxColorComponent()")]
-        [LuaDocsParameter("col", "The color")]
-        [LuaDocsReturnValue("color component value of the color")]
-        public static float MaxColorComponent(Color color) => color.maxColorComponent;
+        [LuaDocsDescription("The HTML hex string of the color (for example \"A4D0FF\")")]
+        public string html => ColorUtility.ToHtmlStringRGB(_Color);
 
-        [LuaDocsDescription("Converts the specified color to its HTML string representation")]
-        [LuaDocsExample("htmlColor = myColor:ToHtmlString()")]
-        [LuaDocsParameter("col", "The color")]
-        [LuaDocsReturnValue("string representation of the color")]
-        public static string ToHtmlString(Color col) => ColorUtility.ToHtmlStringRGB(col);
+        [LuaDocsDescription("The grayscale value")]
+        public float greyscale => _Color.grayscale;
+
+        [LuaDocsDescription("The hue, saturation and brightess")]
+        public Vector3 hsv
+        {
+            get
+            {
+                Color.RGBToHSV(_Color, out float h, out float s, out float v);
+                return new Vector3(h, s, v);
+            }
+        }
 
         [LuaDocsDescription("Parses the specified HTML string and returns the color")]
         [LuaDocsExample("myColor = Color:ParseHtmlString(htmlColor)")]
@@ -153,15 +152,15 @@ namespace TiltBrush
             Mathf.Clamp01(v)
         );
 
-        [LuaDocsDescription("Converts an RGB color to an HSV color")]
-        [LuaDocsExample("myVector = Color:RgbToHsv(myColor")]
-        [LuaDocsParameter("rgb", "The RGB color")]
-        [LuaDocsReturnValue("color represented as a Vector3, where x is the hue, y is the saturation, and z is the value")]
-        public static Vector3 RgbToHsv(Color rgb)
-        {
-            Color.RGBToHSV(rgb, out float h, out float s, out float v);
-            return new Vector3(h, s, v);
-        }
+        [LuaDocsDescription("Converts an HSV Vector3 to an RGB color")]
+        [LuaDocsExample("newColor = Color:HsvToRgb(myHsv)")]
+        [LuaDocsParameter("hsv", "A Vector3 with xyz representing hsv. All values between 0 and 1")]
+        [LuaDocsReturnValue("color")]
+        public static Color HsvToRgb(Vector3 hsv) => Color.HSVToRGB(
+            Mathf.Clamp01(hsv.x),
+            Mathf.Clamp01(hsv.y),
+            Mathf.Clamp01(hsv.z)
+        );
 
         [LuaDocsDescription("Gets the black color")]
         public static Color black => Color.black;
@@ -198,9 +197,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("Adds the specified color to this color")]
         [LuaDocsExample("newColor = color1:Add(color2)")]
-        [LuaDocsParameter("b", "The color to add")]
+        [LuaDocsParameter("other", "The color to add")]
         [LuaDocsReturnValue("color")]
-        public Color Add(Color b) => _Color + b;
+        public Color Add(Color other) => _Color + other;
 
         [LuaDocsDescription("Adds the specified RGB values to this color")]
         [LuaDocsExample("newColor = color1:Add(0.5, 0, 0.1)")]
@@ -212,9 +211,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("Subtracts the specified color from this color")]
         [LuaDocsExample("newColor = color1:Subtract(color2)")]
-        [LuaDocsParameter("b", "The color to subtract")]
+        [LuaDocsParameter("other", "The color to subtract")]
         [LuaDocsReturnValue("color")]
-        public Color Subtract(Color b) => _Color - b;
+        public Color Subtract(Color other) => _Color - other;
 
         [LuaDocsDescription("Subtracts the specified RGB values from this color")]
         [LuaDocsExample("newColor = color1:Subtract(0.5, 0.25, 0)")]
@@ -226,9 +225,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("Multiplies this color by the specified value")]
         [LuaDocsExample("newColor = color1:Multiply(0.5)")]
-        [LuaDocsParameter("b", "The value to multiply")]
+        [LuaDocsParameter("value", "The value to multiply")]
         [LuaDocsReturnValue("color")]
-        public Color Multiply(float b) => _Color * b;
+        public Color Multiply(float value) => _Color * value;
 
         [LuaDocsDescription("Multiplies this color by the specified RGB values")]
         [LuaDocsExample("newColor = color1:Multiply(0.85, 0, 0)")]
@@ -240,15 +239,15 @@ namespace TiltBrush
 
         [LuaDocsDescription("Divides this color by the specified value")]
         [LuaDocsExample("newColor = color1:Divide(0.5)")]
-        [LuaDocsParameter("b", "The value to divide")]
+        [LuaDocsParameter("value", "The value to divide")]
         [LuaDocsReturnValue("color")]
-        public Color Divide(float b) => _Color / b;
+        public Color Divide(float value) => _Color / value;
 
         [LuaDocsDescription("Determines whether this color is equal to the specified color")]
         [LuaDocsExample("if color1:Equals(color2) then print(\"colors are the same\") end")]
-        [LuaDocsParameter("b", "The color to compare")]
+        [LuaDocsParameter("other", "The color to compare")]
         [LuaDocsReturnValue("true if this color is equal to the specified color; otherwise, false")]
-        public bool Equals(Color b) => _Color == b;
+        public bool Equals(Color other) => _Color == other;
 
         [LuaDocsDescription("Determines whether this color is equal to the specified RGB values")]
         [LuaDocsExample("if color1:Equals(1, 0, 0) then print(\"the color is red\") end")]
@@ -260,9 +259,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("Determines whether this color is not equal to the specified color")]
         [LuaDocsExample("if color1:NotEquals(color2) then print(\"colors are different\") end")]
-        [LuaDocsParameter("b", "The color to compare")]
+        [LuaDocsParameter("other", "The color to compare")]
         [LuaDocsReturnValue("true if this color is not equal to the specified color; otherwise, false")]
-        public bool NotEquals(Color b) => _Color != b;
+        public bool NotEquals(Color other) => _Color != other;
 
         [LuaDocsDescription("Determines whether this color is not equal to the specified RGB values")]
         [LuaDocsExample("if color1:NotEquals(0, 1, 0) then print(\"color is not green\") end")]
@@ -271,47 +270,5 @@ namespace TiltBrush
         [LuaDocsParameter("b", "The blue component value to compare")]
         [LuaDocsReturnValue("true if this color is not equal to the specified RGB values; otherwise, false")]
         public bool NotEquals(float r, float g, float b) => _Color != new Color(r, g, b);
-
-        [LuaDocsDescription("Adds two colors together")]
-        [LuaDocsExample("newColor = Color:Add(color1, color2)")]
-        [LuaDocsParameter("a", "The first color")]
-        [LuaDocsParameter("b", "The second color")]
-        [LuaDocsReturnValue("color")]
-        public static Color Add(Color a, Color b) => a + b;
-
-        [LuaDocsDescription("Subtracts the second color from the first color")]
-        [LuaDocsExample("newColor = Color:Subtract(color1, color2)")]
-        [LuaDocsParameter("a", "The first color")]
-        [LuaDocsParameter("b", "The second color")]
-        [LuaDocsReturnValue("color")]
-        public static Color Subtract(Color a, Color b) => a - b;
-
-        [LuaDocsDescription("Multiplies the color by the specified value")]
-        [LuaDocsExample("newColor = Color:Multiply(color1, color2)")]
-        [LuaDocsParameter("a", "The color")]
-        [LuaDocsParameter("b", "The value to multiply")]
-        [LuaDocsReturnValue("color")]
-        public static Color Multiply(Color a, float b) => a * b;
-
-        [LuaDocsDescription("Divides the color by the specified value")]
-        [LuaDocsExample("newColor = Color:Divide(color1, color2)")]
-        [LuaDocsParameter("a", "The color")]
-        [LuaDocsParameter("b", "The value to divide")]
-        [LuaDocsReturnValue("color")]
-        public static Color Divide(Color a, float b) => a / b;
-
-        [LuaDocsDescription("Determines whether two colors are equal")]
-        [LuaDocsExample("colorsAreSame = Color:Equals(color1, color2)")]
-        [LuaDocsParameter("a", "The first color")]
-        [LuaDocsParameter("b", "The second color")]
-        [LuaDocsReturnValue("true if the two colors are equal; otherwise, false")]
-        public static bool Equals(Color a, Color b) => a == b;
-
-        [LuaDocsDescription("Determines whether two colors are not equal")]
-        [LuaDocsExample("colorsAreDifferent = Color:NotEquals(color1, color2)")]
-        [LuaDocsParameter("a", "The first color")]
-        [LuaDocsParameter("b", "The second color")]
-        [LuaDocsReturnValue("true if the two colors are not equal; otherwise, false")]
-        public static bool NotEquals(Color a, Color b) => a != b;
     }
 }

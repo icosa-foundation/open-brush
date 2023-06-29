@@ -82,11 +82,7 @@ namespace TiltBrush
         public static TrTransform zero => TrTransform.identity;
 
         // Operators
-        public TrTransform Multiply(TrTransform b) => _TrTransform * b;
-        public bool Equals(TrTransform b) => _TrTransform == b;
-
-        // Static Operators
-        public static TrTransform Multiply(TrTransform a, TrTransform b) => a * b;
-        public static bool Equals(TrTransform a, TrTransform b) => a == b;
+        public TrTransform Multiply(TrTransform other) => _TrTransform * other;
+        public bool Equals(TrTransform other) => _TrTransform == other;
     }
 }

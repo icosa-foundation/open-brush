@@ -21,20 +21,42 @@ namespace TiltBrush
         public string Description;
 
         public List<LuaDocsProperty> Properties;
+        public List<LuaDocsProperty> StaticProperties => Properties.Where(p => p.Static).ToList();
+        public List<LuaDocsProperty> InstanceProperties => Properties.Where(p => !p.Static).ToList();
         public List<LuaDocsMethod> Methods;
+        public List<LuaDocsMethod> StaticMethods => Methods.Where(p => p.Static).ToList();
+        public List<LuaDocsMethod> InstanceMethods => Methods.Where(p => !p.Static).ToList();
         
-        // 0=name 1=description 2=properties 3=methods
-        private string markdownTemplate = @"
+        // 0=name 1=description 2=static properties 3=instance properties 4=static methods 5=instance methods
+        private string markdownTemplateForClass = @"
 # {0}
 
 ## Summary
-
 {1}
-
 {2}
-
 {3}
+{4}
+{5}
 ";
+
+        private string markdownTemplateForProperties = @"
+## {0} Properties
+
+<table>
+<thead><tr><th width=""225"">Name</th><th width=""160"">Return Type</th><th width=""80"">Read/Write?</th><th>Description</th></tr></thead>
+<tbody>
+{1}
+</tbody></table>
+
+";
+
+        // 0=Static or Instance heading. 1=methods
+        private string markdownTemplateForMethods = @"
+## {0} Methods
+
+        {1}
+    ";
+
         public string AutocompleteSerialize()
         {
             string properties = "";
@@ -63,31 +85,48 @@ namespace TiltBrush
 
         public string MarkdownSerialize()
         {
-            string properties = "";
-            string methods = "";
-            
-            if (Properties.Count > 0)
+            string staticProperties = "";
+            string instanceProperties = "";
+
+            if (StaticProperties.Count > 0)
             {
-                properties = String.Join("\n", Properties.Select(p => p.MarkdownSerialize()));
-                properties = $@"
-## Properties
-
-<table>
-<thead><tr><th width=""225"">Name</th><th width=""160"">Return Type</th><th width=""80"">Read/Write?</th><th width=""80"">Static?</th><th>Description</th></tr></thead>
-<tbody>
-{properties}
-<tr><td></td><td></td><td></td></tr></tbody></table>
-
-";
+                staticProperties = String.Format(
+                    markdownTemplateForProperties,
+                    "Class",
+                    String.Join("\n", StaticProperties.Select(p => p.MarkdownSerialize()))
+                );
             }
-            if (Methods.Count > 0)
-            {
-                methods = String.Join("\n", Methods.Select(m => m.MarkdownSerialize(Name)));
-                methods = $@"
-## Methods
 
-{methods}
-";
+            if (InstanceProperties.Count > 0)
+            {
+                instanceProperties = String.Format(
+                    markdownTemplateForProperties,
+                    "Instance",
+                    String.Join("\n", InstanceProperties.Select(p => p.MarkdownSerialize()))
+                );
+            }
+
+            foreach (var property in Properties)
+            {
+                if (string.IsNullOrEmpty(property.Description))
+                {
+                    Debug.LogWarning($"Missing Description for property {Name}.{property.Name}");
+                }
+            }
+
+            string staticMethods = "";
+            string instanceMethods = "";
+
+            if (StaticMethods.Count > 0)
+            {
+                staticMethods = String.Join("\n", StaticMethods.Select(m => m.MarkdownSerialize(Name)));
+                staticMethods = String.Format(markdownTemplateForMethods, "Class", staticMethods);
+            }
+
+            if (InstanceMethods.Count > 0)
+            {
+                instanceMethods = String.Join("\n", InstanceMethods.Select(m => m.MarkdownSerialize(Name)));
+                instanceMethods = String.Format(markdownTemplateForMethods, "Instance", instanceMethods);
             }
 
             if (string.IsNullOrEmpty(Description))
@@ -95,7 +134,7 @@ namespace TiltBrush
                 Debug.LogWarning($"Missing Description for class {Name}");
             }
 
-            return string.Format(markdownTemplate, Name, Description, properties, methods);
+            return string.Format(markdownTemplateForClass, Name, Description, staticProperties, instanceProperties, staticMethods, instanceMethods);
         }
 
         public string JsonSerialize()
@@ -295,10 +334,6 @@ namespace TiltBrush
         private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
         public string MarkdownSerialize()
         {
-            if (string.IsNullOrEmpty(Description))
-            {
-                Debug.LogWarning($"Missing Description for parameter {Name}");
-            }
             return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), Description);
         }
         
@@ -348,9 +383,18 @@ namespace TiltBrush
 
 ";
             }
+
             if (string.IsNullOrEmpty(Description))
             {
-                Debug.LogWarning($"Missing Description for method {className}.{Name}");
+                Debug.LogWarning($"Missing Description for method {className}:{Name}");
+            }
+
+            foreach (var parameter in Parameters)
+            {
+                if (string.IsNullOrEmpty(parameter.Description))
+                {
+                    Debug.LogWarning($"Missing Parameter Description for {parameter.Name} on {className}:{Name}");
+                }
             }
 
             string example = "";
@@ -365,13 +409,10 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogWarning($"Missing Example for {className}.{Name}");
+                Debug.LogWarning($"Missing Example for {className}:{Name}");
             }
 
-            if (string.IsNullOrEmpty(Description))
-            {
-                Debug.LogWarning($"Missing Description for method {Name}");
-            }
+            string lowerCaseFirstChar(string s) => String.IsNullOrEmpty(s) ? s : Char.ToLower(s[0]) + s.Substring(1);
             className = Static ? className : lowerCaseFirstChar(className);
             return string.Format(markdownTemplate, className, Name, methodSignature, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
         }
@@ -406,18 +447,13 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
         public bool ReadWrite;
         public bool Static;
 
-        // 0=name 1=type 2=ReadWrite 3=Static 4=description
-        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>";
+        // 0=name 1=type 2=ReadWrite 3=description
+        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>";
         
         public string MarkdownSerialize()
         {
-            if (string.IsNullOrEmpty(Description))
-            {
-                Debug.LogWarning($"Missing Description for property {Name}");
-            }
             string readwrite = ReadWrite ? "Read/Write" : "Read-only";
-            string staticYN = Static ? "Yes" : "No";
-            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), readwrite, staticYN, Description);
+            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), readwrite, Description);
         }
 
         public string AutocompleteSerialize(string className)

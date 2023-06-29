@@ -82,25 +82,17 @@ namespace TiltBrush
         public static Vector2 zero => Vector2.zero;
 
         // Operators
-        public Vector2 Add(Vector2 b) => _Vector2 + b;
+        public Vector2 Add(Vector2 other) => _Vector2 + other;
         public Vector2 Add(float x, float y) => _Vector2 + new Vector2(x, y);
-        public Vector2 Subtract(Vector2 b) => _Vector2 - b;
+        public Vector2 Subtract(Vector2 other) => _Vector2 - other;
         public Vector2 Subtract(float x, float y) => _Vector2 - new Vector2(x, y);
-        public Vector2 Multiply(float b) => _Vector2 * b;
-        public Vector2 ScaleBy(Vector2 b) => Vector2.Scale(_Vector2, b);
+        public Vector2 Multiply(float value) => _Vector2 * value;
+        public Vector2 ScaleBy(Vector2 other) => Vector2.Scale(_Vector2, other);
         public Vector2 ScaleBy(float x, float y) => _Vector2 * new Vector2(x, y);
-        public Vector2 Divide(float b) => _Vector2 / b;
-        public bool Equals(Vector2 b) => _Vector2 == b;
+        public Vector2 Divide(float value) => _Vector2 / value;
+        public bool Equals(Vector2 other) => _Vector2 == other;
         public bool Equals(float x, float y) => _Vector2 == new Vector2(x, y);
-        public bool NotEquals(Vector2 b) => _Vector2 != b;
+        public bool NotEquals(Vector2 other) => _Vector2 != other;
         public bool NotEquals(float x, float y) => _Vector2 != new Vector2(x, y);
-
-        // Static Operators
-        public static Vector2 Add(Vector2 a, Vector2 b) => a + b;
-        public static Vector2 Subtract(Vector2 a, Vector2 b) => a - b;
-        public static Vector2 Multiply(Vector2 a, float b) => a * b;
-        public static Vector2 Divide(Vector2 a, float b) => a / b;
-        public static bool Equals(Vector2 a, Vector2 b) => a == b;
-        public static bool NotEquals(Vector2 a, Vector2 b) => a != b;
     }
 }

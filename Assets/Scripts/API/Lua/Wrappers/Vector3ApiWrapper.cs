@@ -96,26 +96,17 @@ namespace TiltBrush
 
 
         // Operators
-        public Vector3 Add(Vector3 b) => _Vector3 + b;
+        public Vector3 Add(Vector3 other) => _Vector3 + other;
         public Vector3 Add(float x, float y, float z) => _Vector3 + new Vector3(x, y, z);
-        public Vector3 Subtract(Vector3 b) => _Vector3 - b;
+        public Vector3 Subtract(Vector3 other) => _Vector3 - other;
         public Vector3 Subtract(float x, float y, float z) => _Vector3 - new Vector3(x, y, z);
-        public Vector3 Multiply(float b) => _Vector3 * b;
-        public Vector3 ScaleBy(Vector3 b) => Vector3.Scale(_Vector3, b);
+        public Vector3 Multiply(float value) => _Vector3 * value;
+        public Vector3 ScaleBy(Vector3 other) => Vector3.Scale(_Vector3, other);
         public Vector3 ScaleBy(float x, float y, float z) => Vector3.Scale(_Vector3, new Vector3(x, y, z));
-        public Vector3 Divide(float b) => _Vector3 / b;
-        public bool Equals(Vector3 b) => _Vector3 == b;
+        public Vector3 Divide(float value) => _Vector3 / value;
+        public bool Equals(Vector3 other) => _Vector3 == other;
         public bool Equals(float x, float y, float z) => _Vector3 == new Vector3(x, y, z);
-        public bool NotEquals(Vector3 b) => _Vector3 != b;
+        public bool NotEquals(Vector3 other) => _Vector3 != other;
         public bool NotEquals(float x, float y, float z) => _Vector3 != new Vector3(x, y, z);
-
-
-        // Static Operators
-        public static Vector3 Add(Vector3 a, Vector3 b) => a + b;
-        public static Vector3 Subtract(Vector3 a, Vector3 b) => a - b;
-        public static Vector3 Multiply(Vector3 a, float b) => a * b;
-        public static Vector3 Divide(Vector3 a, float b) => a / b;
-        public static bool Equals(Vector3 a, Vector3 b) => a == b;
-        public static bool NotEquals(Vector3 a, Vector3 b) => a != b;
     }
 }

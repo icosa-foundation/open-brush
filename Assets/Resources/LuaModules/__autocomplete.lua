@@ -336,6 +336,15 @@ Color.linear = nil
 ---@type number
 Color.maxColorComponent = nil
 
+---@type string
+Color.html = nil
+
+---@type number
+Color.greyscale = nil
+
+---@type Vector3
+Color.hsv = nil
+
 ---@type Color
 Color.black = nil
 
@@ -382,18 +391,6 @@ function Color:New(r, g, b) end
 ---@return Color
 function Color:New(html) end
 
----@param color Color
----@return number
-function Color:Greyscale(color) end
-
----@param color Color
----@return number
-function Color:MaxColorComponent(color) end
-
----@param col Color
----@return string
-function Color:ToHtmlString(col) end
-
 ---@param html string
 ---@return Color
 function Color:ParseHtmlString(html) end
@@ -416,13 +413,13 @@ function Color:LerpUnclamped(a, b, t) end
 ---@return Color
 function Color:HsvToRgb(h, s, v) end
 
----@param rgb Color
----@return Vector3
-function Color:RgbToHsv(rgb) end
-
----@param b Color
+---@param hsv Vector3
 ---@return Color
-function Color:Add(b) end
+function Color:HsvToRgb(hsv) end
+
+---@param other Color
+---@return Color
+function Color:Add(other) end
 
 ---@param r number
 ---@param g number
@@ -430,9 +427,9 @@ function Color:Add(b) end
 ---@return Color
 function Color:Add(r, g, b) end
 
----@param b Color
+---@param other Color
 ---@return Color
-function Color:Subtract(b) end
+function Color:Subtract(other) end
 
 ---@param r number
 ---@param g number
@@ -440,9 +437,9 @@ function Color:Subtract(b) end
 ---@return Color
 function Color:Subtract(r, g, b) end
 
----@param b number
+---@param value number
 ---@return Color
-function Color:Multiply(b) end
+function Color:Multiply(value) end
 
 ---@param r number
 ---@param g number
@@ -450,44 +447,19 @@ function Color:Multiply(b) end
 ---@return Color
 function Color:Multiply(r, g, b) end
 
----@param b number
+---@param value number
 ---@return Color
-function Color:Divide(b) end
+function Color:Divide(value) end
 
----@param b Color
+---@param other Color
 ---@return boolean
-function Color:NotEquals(b) end
+function Color:NotEquals(other) end
 
 ---@param r number
 ---@param g number
 ---@param b number
 ---@return boolean
 function Color:NotEquals(r, g, b) end
-
----@param a Color
----@param b Color
----@return Color
-function Color:Add(a, b) end
-
----@param a Color
----@param b Color
----@return Color
-function Color:Subtract(a, b) end
-
----@param a Color
----@param b number
----@return Color
-function Color:Multiply(a, b) end
-
----@param a Color
----@param b number
----@return Color
-function Color:Divide(a, b) end
-
----@param a Color
----@param b Color
----@return boolean
-function Color:NotEquals(a, b) end
 ---Methods for type Easing
 
 ---@param t number
@@ -1485,9 +1457,9 @@ function Rotation:Slerp(a, b, t) end
 ---@return Rotation
 function Rotation:SlerpUnclamped(a, b, t) end
 
----@param b Rotation
+---@param other Rotation
 ---@return Rotation
-function Rotation:Multiply(b) end
+function Rotation:Multiply(other) end
 
 ---@param x number
 ---@param y number
@@ -1495,14 +1467,9 @@ function Rotation:Multiply(b) end
 ---@return Rotation
 function Rotation:Multiply(x, y, z) end
 
----@param a number
+---@param amount number
 ---@return Rotation
-function Rotation:Scale(a) end
-
----@param a Rotation
----@param b Rotation
----@return Rotation
-function Rotation:Multiply(a, b) end
+function Rotation:Scale(amount) end
 ---Methods for type Selection
 
 
@@ -1896,14 +1863,9 @@ function Transform:New(scale) end
 ---@return Transform
 function Transform:New(x, y, z) end
 
----@param b Transform
+---@param other Transform
 ---@return Transform
-function Transform:Multiply(b) end
-
----@param a Transform
----@param b Transform
----@return Transform
-function Transform:Multiply(a, b) end
+function Transform:Multiply(other) end
 
 ---Properties for type Turtle
 
@@ -2141,74 +2103,49 @@ function Vector2:OnY() end
 ---@return Vector3
 function Vector2:OnZ() end
 
----@param b Vector2
+---@param other Vector2
 ---@return Vector2
-function Vector2:Add(b) end
+function Vector2:Add(other) end
 
 ---@param x number
 ---@param y number
 ---@return Vector2
 function Vector2:Add(x, y) end
 
----@param b Vector2
+---@param other Vector2
 ---@return Vector2
-function Vector2:Subtract(b) end
+function Vector2:Subtract(other) end
 
 ---@param x number
 ---@param y number
 ---@return Vector2
 function Vector2:Subtract(x, y) end
 
----@param b number
+---@param value number
 ---@return Vector2
-function Vector2:Multiply(b) end
+function Vector2:Multiply(value) end
 
----@param b Vector2
+---@param other Vector2
 ---@return Vector2
-function Vector2:ScaleBy(b) end
+function Vector2:ScaleBy(other) end
 
 ---@param x number
 ---@param y number
 ---@return Vector2
 function Vector2:ScaleBy(x, y) end
 
----@param b number
+---@param value number
 ---@return Vector2
-function Vector2:Divide(b) end
+function Vector2:Divide(value) end
 
----@param b Vector2
+---@param other Vector2
 ---@return boolean
-function Vector2:NotEquals(b) end
+function Vector2:NotEquals(other) end
 
 ---@param x number
 ---@param y number
 ---@return boolean
 function Vector2:NotEquals(x, y) end
-
----@param a Vector2
----@param b Vector2
----@return Vector2
-function Vector2:Add(a, b) end
-
----@param a Vector2
----@param b Vector2
----@return Vector2
-function Vector2:Subtract(a, b) end
-
----@param a Vector2
----@param b number
----@return Vector2
-function Vector2:Multiply(a, b) end
-
----@param a Vector2
----@param b number
----@return Vector2
-function Vector2:Divide(a, b) end
-
----@param a Vector2
----@param b Vector2
----@return boolean
-function Vector2:NotEquals(a, b) end
 
 ---Properties for type Vector3
 
@@ -2382,9 +2319,9 @@ function Vector3:Slerp(a, b, t) end
 ---@return Vector3
 function Vector3:SlerpUnclamped(a, b, t) end
 
----@param b Vector3
+---@param other Vector3
 ---@return Vector3
-function Vector3:Add(b) end
+function Vector3:Add(other) end
 
 ---@param x number
 ---@param y number
@@ -2392,9 +2329,9 @@ function Vector3:Add(b) end
 ---@return Vector3
 function Vector3:Add(x, y, z) end
 
----@param b Vector3
+---@param other Vector3
 ---@return Vector3
-function Vector3:Subtract(b) end
+function Vector3:Subtract(other) end
 
 ---@param x number
 ---@param y number
@@ -2402,13 +2339,13 @@ function Vector3:Subtract(b) end
 ---@return Vector3
 function Vector3:Subtract(x, y, z) end
 
----@param b number
+---@param value number
 ---@return Vector3
-function Vector3:Multiply(b) end
+function Vector3:Multiply(value) end
 
----@param b Vector3
+---@param other Vector3
 ---@return Vector3
-function Vector3:ScaleBy(b) end
+function Vector3:ScaleBy(other) end
 
 ---@param x number
 ---@param y number
@@ -2416,44 +2353,19 @@ function Vector3:ScaleBy(b) end
 ---@return Vector3
 function Vector3:ScaleBy(x, y, z) end
 
----@param b number
+---@param value number
 ---@return Vector3
-function Vector3:Divide(b) end
+function Vector3:Divide(value) end
 
----@param b Vector3
+---@param other Vector3
 ---@return boolean
-function Vector3:NotEquals(b) end
+function Vector3:NotEquals(other) end
 
 ---@param x number
 ---@param y number
 ---@param z number
 ---@return boolean
 function Vector3:NotEquals(x, y, z) end
-
----@param a Vector3
----@param b Vector3
----@return Vector3
-function Vector3:Add(a, b) end
-
----@param a Vector3
----@param b Vector3
----@return Vector3
-function Vector3:Subtract(a, b) end
-
----@param a Vector3
----@param b number
----@return Vector3
-function Vector3:Multiply(a, b) end
-
----@param a Vector3
----@param b number
----@return Vector3
-function Vector3:Divide(a, b) end
-
----@param a Vector3
----@param b Vector3
----@return boolean
-function Vector3:NotEquals(a, b) end
 
 ---Properties for type Video
 

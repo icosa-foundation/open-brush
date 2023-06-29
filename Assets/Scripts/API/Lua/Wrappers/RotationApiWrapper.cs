@@ -94,14 +94,10 @@ namespace TiltBrush
         public static Quaternion SlerpUnclamped(Quaternion a, Quaternion b, float t) => Quaternion.SlerpUnclamped(a, b, t);
 
         // Operators
-        public Quaternion Multiply(Quaternion b) => _Quaternion * b;
+        public Quaternion Multiply(Quaternion other) => _Quaternion * other;
         public Quaternion Multiply(float x, float y, float z) => _Quaternion * Quaternion.Euler(x, y, z);
-        public Quaternion Scale(float a) => _Quaternion * Quaternion.Euler(x * a, y * a, z * a);
-        public bool Equals(Quaternion b) => _Quaternion == b;
+        public Quaternion Scale(float amount) => _Quaternion * Quaternion.Euler(x * amount, y * amount, z * amount);
+        public bool Equals(Quaternion other) => _Quaternion == other;
         public bool Equals(float x, float y, float z) => _Quaternion ==  Quaternion.Euler(x, y, z);
-
-        // Static Operators
-        public static Quaternion Multiply(Quaternion a, Quaternion b) => a * b;
-        public static bool Equals(Quaternion a, Quaternion b) => a == b;
     }
 }
