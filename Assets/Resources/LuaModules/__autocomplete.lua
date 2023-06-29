@@ -391,10 +391,6 @@ function Color:New(r, g, b) end
 ---@return Color
 function Color:New(html) end
 
----@param html string
----@return Color
-function Color:ParseHtmlString(html) end
-
 ---@param a Color
 ---@param b Color
 ---@param t number

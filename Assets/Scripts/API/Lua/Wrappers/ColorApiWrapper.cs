@@ -35,7 +35,8 @@ namespace TiltBrush
 
         public ColorApiWrapper(string html)
         {
-            _Color = ParseHtmlString(html);
+            var success = ColorUtility.TryParseHtmlString(html, out Color color);
+            _Color = success ? color : Color.magenta;
         }
 
         [LuaDocsDescription("Creates a new instance of a color with the specified RGB values")]
@@ -53,7 +54,7 @@ namespace TiltBrush
         [LuaDocsDescription("Creates a new instance of the Color with the color parsed from the specified HTML string")]
         [LuaDocsExample("myColor = Color:New(\"D3B322\")")]
         [LuaDocsParameter("html", "The HTML string representing the color")]
-        [LuaDocsReturnValue("instance of the Color")]
+        [LuaDocsReturnValue("Returns the color. Invalid html inputs return bright magenta (r=1, g=0, b=1)")]
         public static ColorApiWrapper New(string html)
         {
             return new ColorApiWrapper(html);
@@ -114,16 +115,6 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Parses the specified HTML string and returns the color")]
-        [LuaDocsExample("myColor = Color:ParseHtmlString(htmlColor)")]
-        [LuaDocsParameter("html", "The HTML string representing the color")]
-        [LuaDocsReturnValue("The color parsed from the HTML string, or magenta if the parsing fails")]
-        public static Color ParseHtmlString(string html)
-        {
-            var success = ColorUtility.TryParseHtmlString(html, out Color color);
-            return success ? color : Color.magenta;
-        }
-
         [LuaDocsDescription("Performs a linear interpolation between two colors")]
         [LuaDocsExample("newColor = Color:Lerp(color1, color2, 0.5)")]
         [LuaDocsParameter("a", "The start color")]
@@ -162,37 +153,37 @@ namespace TiltBrush
             Mathf.Clamp01(hsv.z)
         );
 
-        [LuaDocsDescription("Gets the black color")]
+        [LuaDocsDescription("The color black")]
         public static Color black => Color.black;
 
-        [LuaDocsDescription("Gets the blue color")]
+        [LuaDocsDescription("The color blue")]
         public static Color blue => Color.blue;
 
-        [LuaDocsDescription("Gets the clear color")]
+        [LuaDocsDescription("The color clear")]
         public static Color clear => Color.clear;
 
-        [LuaDocsDescription("Gets the cyan color")]
+        [LuaDocsDescription("The color cyan")]
         public static Color cyan => Color.cyan;
 
-        [LuaDocsDescription("Gets the gray color")]
+        [LuaDocsDescription("The color gray")]
         public static Color gray => Color.gray;
 
-        [LuaDocsDescription("Gets the green color")]
+        [LuaDocsDescription("The color green")]
         public static Color green => Color.green;
 
-        [LuaDocsDescription("Gets the grey color")]
+        [LuaDocsDescription("The color grey")]
         public static Color grey => Color.grey;
 
-        [LuaDocsDescription("Gets the magenta color")]
+        [LuaDocsDescription("The color magenta")]
         public static Color magenta => Color.magenta;
 
-        [LuaDocsDescription("Gets the red color")]
+        [LuaDocsDescription("The color red")]
         public static Color red => Color.red;
 
-        [LuaDocsDescription("Gets the white color")]
+        [LuaDocsDescription("The color white")]
         public static Color white => Color.white;
 
-        [LuaDocsDescription("Gets the yellow color")]
+        [LuaDocsDescription("The color yellow")]
         public static Color yellow => Color.yellow;
 
         [LuaDocsDescription("Adds the specified color to this color")]
