@@ -27,7 +27,11 @@ namespace TiltBrush
         Del,
         ToggleSymbols,
         ToggleViewPassword,
-        Escape
+        Escape,
+        CursorLeft,
+        CursorRight,
+        CursorUp,
+        CursorDown
     }
 
     public enum KeyboardKeyLayoutType
@@ -452,6 +456,10 @@ namespace TiltBrush
                 case KeyboardKeyType.Backspace:
                 case KeyboardKeyType.Del:
                 case KeyboardKeyType.Escape:
+                case KeyboardKeyType.CursorLeft:
+                case KeyboardKeyType.CursorRight:
+                case KeyboardKeyType.CursorUp:
+                case KeyboardKeyType.CursorDown:
                     if (_singleLayoutValue)
                     {
                         _singleLayoutValue.text = GetLocalizedKeyName(_keyType);

@@ -475,6 +475,18 @@ namespace TiltBrush
                     CurrentLine    = CurrentLine.Substring(0, CurrentLine.Length - 1);
                 }
             }
+            else if (key.KeyType == KeyboardKeyType.CursorLeft)
+            {
+            }
+            else if (key.KeyType == KeyboardKeyType.CursorRight)
+            {
+            }
+            else if (key.KeyType == KeyboardKeyType.CursorUp)
+            {
+            }
+            else if (key.KeyType == KeyboardKeyType.CursorDown)
+            {
+            }
             else if (key.KeyType == KeyboardKeyType.Del)
             {
             }
