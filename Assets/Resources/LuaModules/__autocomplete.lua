@@ -976,9 +976,9 @@ Model.scale = nil
 
 ---Methods for type Model
 
----@param location string
+---@param filename string
 ---@return Model
-function Model:Import(location) end
+function Model:Import(filename) end
 
 
 function Model:Select() end
@@ -1033,8 +1033,8 @@ function MultiPath:TransformBy(transform) end
 ---@param amount Vector3
 function MultiPath:TranslateBy(amount) end
 
----@param amount Rotation
-function MultiPath:RotateBy(amount) end
+---@param rotation Rotation
+function MultiPath:RotateBy(rotation) end
 
 ---@param scale Vector3
 function MultiPath:ScaleBy(scale) end
@@ -1042,8 +1042,8 @@ function MultiPath:ScaleBy(scale) end
 
 function MultiPath:Center() end
 
----@param scale number
-function MultiPath:Normalize(scale) end
+---@param size number
+function MultiPath:Normalize(size) end
 
 ---@param spacing number
 function MultiPath:Resample(spacing) end
@@ -1150,13 +1150,8 @@ function Path:FindMaximumY() end
 ---@return number
 function Path:FindMaximumZ() end
 
----@param scale number
-function Path:Normalize(scale) end
-
----@param trs Transform[]
----@param parts number
----@return Transform[]
-function Path:Subdivide(trs, parts) end
+---@param size number
+function Path:Normalize(size) end
 
 ---@param spacing number
 function Path:Resample(spacing) end
@@ -1550,8 +1545,8 @@ function Sketch:Export() end
 
 function Sketch:NewSketch() end
 
----@param location string
-function Sketch:ImportSkybox(location) end
+---@param filename string
+function Sketch:ImportSkybox(filename) end
 
 ---Properties for type Spectator
 

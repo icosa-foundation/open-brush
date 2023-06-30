@@ -107,7 +107,8 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
+        [LuaDocsDescription("Moves all points on the path so that their common center is the origin")]
+        [LuaDocsExample("myPath:Center()")]
         public void Center()
         {
             (Vector2 center, float _) = _CalculateCenterAndScale(_Path2d);

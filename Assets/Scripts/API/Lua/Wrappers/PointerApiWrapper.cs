@@ -125,7 +125,11 @@ namespace TiltBrush
         public float pressure
         {
             get => _Pressure;
-            set => _Pressure = value;
+            set
+            {
+                _Pressure = value;
+                _Pointer.SetPressure(_Pressure);
+            }
         }
 
         private void _UpdateDrawingState()

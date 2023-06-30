@@ -47,24 +47,32 @@ namespace TiltBrush
             _MultiPath = new List<List<TrTransform>> { path._Path };
         }
 
+        [LuaDocsDescription(@"Creates a new empty MultiPath")]
+        [LuaDocsExample(@"MultiPathApiWrapper:New()")]
         public static MultiPathApiWrapper New() => new MultiPathApiWrapper();
+
+        [LuaDocsDescription(@"Creates a new MultiPath from a list of Paths")]
+        [LuaDocsExample(@"MultiPathApiWrapper:New(pathList)")]
+        [LuaDocsParameter(@"pathList", "A list of pathApiWrapper objects.")]
         public static MultiPathApiWrapper New(List<PathApiWrapper> pathList) => new MultiPathApiWrapper(pathList);
 
-        [LuaDocsDescription("Draws this path as a brush stroke using current settings")]
+        [LuaDocsDescription("Draws this multipath using current settings")]
+        [LuaDocsExample("myPaths:Draw()")]
         public void Draw() => LuaApiMethods.DrawPath(this);
 
-        [LuaDocsDescription("Creates a new MultiPath that draws the shape of the given text. Use App:SetFont to set the letter shapes")]
+        [LuaDocsDescription("Creates a new MultiPath from a text")]
+        [LuaDocsExample(@"MultiPathApiWrapper.FromText('example')")]
+        [LuaDocsParameter(@"text", "Input text to generate a path.")]
         public static MultiPathApiWrapper FromText(string text)
         {
             var builder = new TextToStrokes(ApiManager.Instance.TextFont);
             return new MultiPathApiWrapper(builder.Build(text));
         }
 
-
-        [LuaDocsDescription("Returns number of paths contained in the multipath")]
+        [LuaDocsDescription("Gets the number of paths in the multipath")]
         public int count => _MultiPath?.Count ?? 0;
 
-        [LuaDocsDescription("Returns the number of points in all paths in the multipath")]
+        [LuaDocsDescription("Gets the number of points in all paths in the multipath")]
         public int pointCount => _MultiPath?.Sum(l => l.Count) ?? 0;
 
         public override string ToString()
@@ -72,19 +80,32 @@ namespace TiltBrush
             return _MultiPath == null ? "Empty Path" : $"MultiPath with {count} paths and {pointCount} points";
         }
 
-        [LuaDocsDescription("Inserts the given path at the end of the multipath")]
+        [LuaDocsDescription("Inserts a path at the end of the multipath")]
+        [LuaDocsExample(@"myPaths:Insert(myPath)")]
+        [LuaDocsParameter(@"path", "The path to be inserted.")]
         public void Insert(PathApiWrapper path) => _MultiPath.Add(path._Path);
 
-        [LuaDocsDescription("Inserts a new path at the given index")]
+        [LuaDocsDescription("Inserts a path at the specified index of the multipath")]
+        [LuaDocsExample(@"myPaths:Insert(myPath, 3)")]
+        [LuaDocsParameter(@"path", "The path to be inserted")]
+        [LuaDocsParameter(@"index", "Inserts the new path at this position in the list of paths")]
         public void Insert(PathApiWrapper path, int index) => _MultiPath.Insert(index, path._Path);
 
         [LuaDocsDescription("Inserts a point at the end of the last path in the multipath")]
+        [LuaDocsExample(@"myPaths:InsertPoint(myTransform)")]
+        [LuaDocsParameter(@"transform", "The point to be inserted")]
         public void InsertPoint(TrTransform transform) => _MultiPath[^1].Add(transform);
 
-        [LuaDocsDescription("Inserts a point at the given index of the given path")]
+        [LuaDocsDescription("Inserts a point at the specified index of the specified path")]
+        [LuaDocsExample(@"myPaths:InsertPoint(myTransform, 3, 0)")]
+        [LuaDocsParameter(@"transform", "The point to be inserted")]
+        [LuaDocsParameter(@"pathIndex", "Index of the path to add the point to")]
+        [LuaDocsParameter(@"pointIndex", "Inserts the point at this index in the list of points")]
         public void InsertPoint(TrTransform transform, int pathIndex, int pointIndex) => _MultiPath[pathIndex].Insert(pointIndex, transform);
 
-        [LuaDocsDescription("Transforms all paths in the multipath")]
+        [LuaDocsDescription("Transforms the whole set of paths")]
+        [LuaDocsExample(@"myPaths:TransformBy(myTransform)")]
+        [LuaDocsParameter(@"transform", "A Transform specifying the translation, rotation and scale to apply")]
         public void TransformBy(TrTransform transform)
         {
             for (var i = 0; i < _MultiPath.Count; i++)
@@ -97,13 +118,19 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Translates all paths by a given offset")]
+        [LuaDocsDescription("Translates the whole set of paths by a given amount")]
+        [LuaDocsExample(@"myPaths:TranslateBy(Vector3.up:Multiply(4))")]
+        [LuaDocsParameter(@"amount", "The amount to move the paths by")]
         public void TranslateBy(Vector3 amount) => TransformBy(TrTransform.T(amount));
 
-        [LuaDocsDescription("Rotates all paths by a specified amount around the origin")]
-        public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
+        [LuaDocsDescription("Rotates the whole set of paths by a specified amount")]
+        [LuaDocsExample(@"myPaths:RotateBy(Rotation.anticlockwise)")]
+        [LuaDocsParameter(@"rotation", "The amount to rotate the paths by")]
+        public void RotateBy(Quaternion rotation) => TransformBy(TrTransform.R(rotation));
 
-        [LuaDocsDescription("Scales all paths by a specified amount towards or away from the origin")]
+        [LuaDocsDescription("Scales the whole set of paths by a specified factor")]
+        [LuaDocsExample(@"myPaths:ScaleBy(vector3)")]
+        [LuaDocsParameter(@"scale", "The amount to scale the paths by")]
         public void ScaleBy(Vector3 scale)
         {
             for (var i = 0; i < _MultiPath.Count; i++)
@@ -118,6 +145,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
+        [LuaDocsExample(@"myPaths:Center()")]
         public void Center()
         {
             var allPoints = _MultiPath.SelectMany(p => p).ToList();
@@ -136,13 +164,15 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Scales all paths to fit inside a 1x1x1 cube at the origin")]
-        public void Normalize(float scale = 1)
+        [LuaDocsDescription("Scales the whole multipath to fit inside a cube of given size at the origin")]
+        [LuaDocsExample(@"myPaths:Normalize(1.5)")]
+        [LuaDocsParameter(@"size", "The size of the cube to fit inside")]
+        public void Normalize(float size = 1)
         {
             if (_MultiPath == null) return;
             var allPoints = _MultiPath.SelectMany(p => p).ToList();
             (Vector3 center, float unitScale) = PathApiWrapper._CalculateCenterAndScale(allPoints);
-            scale *= unitScale;
+            size *= unitScale;
 
             // Apply the scale factor to each Vector3 in the input list
             for (var i = 0; i < _MultiPath.Count; i++)
@@ -151,29 +181,35 @@ namespace TiltBrush
                 for (var j = 0; j < _MultiPath[i].Count; j++)
                 {
                     var tr = path[j];
-                    tr.translation = (tr.translation - center) * scale;
+                    tr.translation = (tr.translation - center) * size;
                     path[j] = tr;
                 }
             }
         }
 
-        [LuaDocsDescription("Resamples the multipath at a specified spacing")]
+        [LuaDocsDescription("Resamples all paths with a specified spacing between points")]
+        [LuaDocsExample(@"myPaths:Resample(0.2)")]
+        [LuaDocsParameter(@"spacing", "The distance between each new point")]
         public void Resample(float spacing)
         {
             if (_MultiPath == null || spacing <= 0) return;
             for (var i = 0; i < _MultiPath.Count; i++)
             {
-                _MultiPath[i] = PathApiWrapper.Resample(_MultiPath[i], spacing);
+                _MultiPath[i] = PathApiWrapper._Resample(_MultiPath[i], spacing);
             }
         }
 
-        [LuaDocsDescription("Joins all the paths in the multipath and returns a single Path")]
+        [LuaDocsDescription("Joins all the paths in order connecting each end to the following start")]
+        [LuaDocsExample(@"myPaths:Join()")]
+        [LuaDocsReturnValue(@"A single path")]
         public PathApiWrapper Join()
         {
             return new PathApiWrapper(_MultiPath.SelectMany(p => p).ToList());
         }
 
         [LuaDocsDescription("Returns the longest path in the multipath")]
+        [LuaDocsExample(@"path = myPaths:Longest()")]
+        [LuaDocsReturnValue(@"The path with the most control points")]
         public PathApiWrapper Longest()
         {
             var empty = new List<TrTransform>();

@@ -62,8 +62,18 @@ namespace TiltBrush
             _Path = transformList;
         }
 
+        [LuaDocsDescription("Returns a new empty Path")]
+        [LuaDocsExample("myPath = Path:New()")]
         public static PathApiWrapper New() => new PathApiWrapper();
+
+        [LuaDocsDescription("Creates a path from a list of Transforms")]
+        [LuaDocsExample("myPath = Path:New({transform1, transform2, transform3})")]
+        [LuaDocsParameter("transformList", "The list of transforms")]
         public static PathApiWrapper New(List<TrTransform> transformList) => new PathApiWrapper(transformList);
+
+        [LuaDocsDescription("Creates a path from a list of Vector3 positions")]
+        [LuaDocsExample("myPath = Path:New({position1, position2, position3})")]
+        [LuaDocsParameter("transformList", "The list of positions")]
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
         public override string ToString()
@@ -103,6 +113,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns a vector representing the direction of the path at the given point")]
+        [LuaDocsExample("myPath:GetDirection(3)")]
+        [LuaDocsParameter("index", "Index of control point to use")]
         public Vector3 GetDirection(int index)
         {
             if (_DirectionVectors == null) _CalculateVectors();
@@ -110,14 +122,17 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns a vector representing the normal of the path at the given point")]
+        [LuaDocsExample("myPath:GetNormal(3)")]
+        [LuaDocsParameter("index", "Index of control point to use")]
         public Vector3 GetNormal(int index)
         {
             if (_Normals == null) _CalculateVectors();
             return _Normals[index];
         }
 
-
         [LuaDocsDescription("Returns a vector representing the tangent of the path at the given point")]
+        [LuaDocsExample("myPath:GetTangent(3)")]
+        [LuaDocsParameter("index", "Index of control point to use")]
         public Vector3 GetTangent(int index)
         {
             if (_Normals == null) _CalculateVectors();
@@ -125,35 +140,50 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Draws this path as a brush stroke using current settings")]
+        [LuaDocsExample("myPath:Draw()")]
         public void Draw() => LuaApiMethods.DrawPath(this);
 
         [LuaDocsDescription("Returns the number of points in this path")]
         public int count => _Path?.Count ?? 0;
 
+        [LuaDocsDescription("Returns the Transform of the point at the specified index")]
         public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
 
         [LuaDocsDescription("Returns the last point in this path")]
         public TransformApiWrapper last => new TransformApiWrapper(_Path[^1]);
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
+        [LuaDocsExample("myPath:Insert(Transform:New(pos, rot)")]
+        [LuaDocsParameter("transform", "The transform to be inserted at the end of the path")]
         public void Insert(TrTransform transform) => _Path.Add(transform);
 
-        [LuaDocsDescription("Inserts a new point at the given path index")]
+        [LuaDocsDescription("Inserts a new point at the specified index")]
+        [LuaDocsExample("myPath:Insert(transform, index)")]
+        [LuaDocsParameter("transform", "The transform to be inserted")]
+        [LuaDocsParameter("index", "The index at which to insert the transform")]
         public void Insert(TrTransform transform, int index) => _Path.Insert(index, transform);
 
-        [LuaDocsDescription("Transforms all points in the path by the given amount")]
+        [LuaDocsDescription("Transforms all points in the path by the specific amount")]
+        [LuaDocsExample("myPath:TransformBy(transform)")]
+        [LuaDocsParameter("transform", "The transform to be applied to all points in the path")]
         public void TransformBy(TrTransform transform)
         {
             LuaApiMethods.TransformPath(this, transform);
         }
 
         [LuaDocsDescription("Changes the position of all points in the path by a given amount")]
+        [LuaDocsExample("myPath:TranslateBy(Vector3:up)")]
+        [LuaDocsParameter("amount", "The distance to move the points")]
         public void TranslateBy(Vector3 amount) => TransformBy(TrTransform.T(amount));
 
         [LuaDocsDescription("Rotates all points in the path around the origin by a given amount")]
+        [LuaDocsExample("myPath:RotateBy(Rotation.New(45, 0, 0)")]
+        [LuaDocsParameter("amount", "The amount by which to rotate the path")]
         public void RotateBy(Quaternion amount) => TransformBy(TrTransform.R(amount));
 
-        [LuaDocsDescription("Scales all points the path away or towards the origin")]
+        [LuaDocsDescription("Scales the path")]
+        [LuaDocsExample("myPath:ScaleBy(Vector3:New(2, 1, 1)")]
+        [LuaDocsParameter("scale", "The scaling factor to apply to the path")]
         public void ScaleBy(Vector3 scale)
         {
             // Supports non-uniform scaling
@@ -163,7 +193,8 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
+        [LuaDocsDescription("Moves all points on the path so that their common center is the origin")]
+        [LuaDocsExample("myPath:Center()")]
         public void Center()
         {
             (Vector3 center, float _) = _CalculateCenterAndScale(_Path);
@@ -178,6 +209,8 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Reorders the points so that point at the given index is shifted to be the first point")]
+        [LuaDocsExample("myPath:StartingFrom(3)")]
+        [LuaDocsParameter(@"index", "The index of the point to make the new first point")]
         public void StartingFrom(int index)
         {
             if (_Path == null) return;
@@ -185,26 +218,38 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the index of the point closest to the given position")]
+        [LuaDocsExample("myPath:FindClosest(Vector3:New(10, 2, 4)")]
+        [LuaDocsParameter("point", "The 3D position that we are seeking the closest to")]
         public int FindClosest(Vector3 point)
         {
             if (_Path == null) return 0;
-            return _Path.Select((x, i) => new {i, x}).Aggregate(
+            return _Path.Select((x, i) => new { i, x }).Aggregate(
                 (acc, x) => (x.x.translation - point).sqrMagnitude < (acc.x.translation - point).sqrMagnitude ? x : acc
             ).i;
         }
 
         [LuaDocsDescription("Returns the index of the point with the smallest X value")]
+        [LuaDocsExample("myPath:FindMinimumX()")]
         public int FindMinimumX() => _FindMinimum(Axis.X);
+
         [LuaDocsDescription("Returns the index of the point with the smallest Y value")]
+        [LuaDocsExample("myPath:FindMinimumY()")]
         public int FindMinimumY() => _FindMinimum(Axis.Y);
+
         [LuaDocsDescription("Returns the index of the point with the smallest Z value")]
+        [LuaDocsExample("myPath:FindMinimumZ()")]
         public int FindMinimumZ() => _FindMinimum(Axis.Z);
 
         [LuaDocsDescription("Returns the index of the point with the biggest X value")]
+        [LuaDocsExample("myPath:FindMaximumX()")]
         public int FindMaximumX() => _FindMaximum(Axis.X);
+
         [LuaDocsDescription("Returns the index of the point with the biggest Y value")]
+        [LuaDocsExample("myPath:FindMaximumY()")]
         public int FindMaximumY() => _FindMaximum(Axis.Y);
+
         [LuaDocsDescription("Returns the index of the point with the biggest Z value")]
+        [LuaDocsExample("myPath:FindMaximumZ()")]
         public int FindMaximumZ() => _FindMaximum(Axis.Z);
 
         [MoonSharpHidden]
@@ -226,18 +271,20 @@ namespace TiltBrush
                 .index;
         }
 
-        [LuaDocsDescription("Scales and shifts all points so that they fit in a 1 unit cube at the origin")]
-        public void Normalize(float scale = 1)
+        [LuaDocsDescription("Scales and shifts all points so that they fit in a cube of the given size at the origin")]
+        [LuaDocsExample("myPath:Normalize(size)")]
+        [LuaDocsParameter("size", "The size of the cube to fit the path into")]
+        public void Normalize(float size = 1)
         {
             if (_Path == null) return;
             (Vector3 center, float unitScale) = _CalculateCenterAndScale(_Path);
-            scale *= unitScale;
+            size *= unitScale;
 
             // Apply the scale factor to each Vector3 in the input list
             for (var i = 0; i < _Path.Count; i++)
             {
                 var tr = _Path[i];
-                tr.translation = (tr.translation - center) * scale;
+                tr.translation = (tr.translation - center) * size;
                 _Path[i] = tr;
             }
         }
@@ -275,7 +322,7 @@ namespace TiltBrush
             return (center, scale);
         }
 
-        public static List<TrTransform> Subdivide(List<TrTransform> trs, int parts)
+        private static List<TrTransform> _Subdivide(List<TrTransform> trs, int parts)
         {
             if (trs == null || trs.Count < 2 || parts < 1) return trs;
             List<TrTransform> subdividedPath = new List<TrTransform>();
@@ -322,7 +369,7 @@ namespace TiltBrush
         }
 
         [MoonSharpHidden]
-        public static List<TrTransform> Resample(List<TrTransform> trs, float spacing)
+        public static List<TrTransform> _Resample(List<TrTransform> trs, float spacing)
         {
             if (trs == null || trs.Count < 2 || spacing <= 0) return trs;
             List<TrTransform> resampledPath = new List<TrTransform>();
@@ -359,19 +406,33 @@ namespace TiltBrush
             return resampledPath;
         }
 
-        [LuaDocsDescription("Resamples the path at a specified spacing")]
+        [LuaDocsDescription(@"Resamples the path at a specified spacing")]
+        [LuaDocsExample(@"myPath:Resample(spacing)")]
+        [LuaDocsParameter(@"spacing", "The space between points in the new pat")]
+        [LuaDocsReturnValue(@"The resampled path")]
         public void Resample(float spacing)
         {
-           _Path = Resample(_Path, spacing);
+            _Path = _Resample(_Path, spacing);
         }
 
-        [LuaDocsDescription("Splits each path segment into smaller parts")]
+        [LuaDocsDescription(@"Subdivides the path into given number of parts.")]
+        [LuaDocsExample(@"myPath:Subdivide(parts)")]
+        [LuaDocsParameter(@"parts", "Number of parts to subdivide into")]
+        [LuaDocsReturnValue(@"The new subdivided path")]
         public void Subdivide(int parts)
         {
-            _Path = Subdivide(_Path, parts);
+            _Path = _Subdivide(_Path, parts);
         }
 
-        [LuaDocsDescription("Generates a hermite spline")]
+        [LuaDocsDescription(@"Generates a hermite spline")]
+        [LuaDocsExample(@"myPath:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength)")]
+        [LuaDocsParameter(@"startTransform", "Starting transformation")]
+        [LuaDocsParameter(@"endTransform", "End transformation")]
+        [LuaDocsParameter(@"startTangent", "Starting tangent")]
+        [LuaDocsParameter(@"endTangent", "End tangent")]
+        [LuaDocsParameter(@"resolution", "Resolution of the spline")]
+        [LuaDocsParameter(@"tangentStrength", "Strength of the tangent")]
+        [LuaDocsReturnValue(@"Instance of PathApiWrapper")]
         public static PathApiWrapper Hermite(TrTransform startTransform, TrTransform endTransform, Vector3 startTangent, Vector3 endTangent, int resolution, float tangentStrength = 1f)
         {
 
@@ -421,6 +482,5 @@ namespace TiltBrush
 
             return new PathApiWrapper(path);
         }
-
     }
 }
