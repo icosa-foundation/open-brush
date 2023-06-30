@@ -352,9 +352,6 @@ Color.black = nil
 Color.blue = nil
 
 ---@type Color
-Color.clear = nil
-
----@type Color
 Color.cyan = nil
 
 ---@type Color
@@ -741,7 +738,6 @@ function Layer:Delete() end
 function Layer:Squash() end
 
 ---@param destinationLayer Layer
----@return Layer
 function Layer:SquashTo(destinationLayer) end
 
 
@@ -806,11 +802,11 @@ function Math:Atan2(y, x) end
 ---@return number
 function Math:Ceil(f) end
 
----@param value number
+---@param f number
 ---@param min number
 ---@param max number
 ---@return number
-function Math:Clamp(value, min, max) end
+function Math:Clamp(f, min, max) end
 
 ---@param value number
 ---@return number
@@ -824,10 +820,10 @@ function Math:ClosestPowerOfTwo(value) end
 ---@return number
 function Math:Cos(f) end
 
----@param current number
----@param target number
+---@param a number
+---@param b number
 ---@return number
-function Math:DeltaAngle(current, target) end
+function Math:DeltaAngle(a, b) end
 
 ---@param power number
 ---@return number
@@ -837,38 +833,38 @@ function Math:Exp(power) end
 ---@return number
 function Math:Floor(f) end
 
----@param a number
----@param b number
----@param value number
+---@param min number
+---@param max number
+---@param t number
 ---@return number
-function Math:InverseLerp(a, b, value) end
+function Math:InverseLerp(min, max, t) end
 
 ---@param value number
 ---@return boolean
 function Math:IsPowerOfTwo(value) end
 
----@param a number
----@param b number
+---@param min number
+---@param max number
 ---@param t number
 ---@return number
-function Math:Lerp(a, b, t) end
+function Math:Lerp(min, max, t) end
 
+---@param min number
+---@param max number
 ---@param a number
----@param b number
----@param t number
 ---@return number
-function Math:LerpAngle(a, b, t) end
+function Math:LerpAngle(min, max, a) end
 
----@param a number
----@param b number
+---@param min number
+---@param max number
 ---@param t number
 ---@return number
-function Math:LerpUnclamped(a, b, t) end
+function Math:LerpUnclamped(min, max, t) end
 
 ---@param f number
----@param p number
+---@param b number
 ---@return number
-function Math:Log(f, p) end
+function Math:Log(f, b) end
 
 ---@param f number
 ---@return number

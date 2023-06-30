@@ -25,6 +25,7 @@ namespace TiltBrush
         public int index => App.Scene.LayerCanvases.ToList().IndexOf(_CanvasScript);
 
         [LuaDocsDescription("Creates and returns a new instance of a Layer")]
+        [LuaDocsExample(@"Layer:New()")]
         [LuaDocsReturnValue("The new instance of LayerApiWrapper")]
         public static LayerApiWrapper New()
         {
@@ -109,45 +110,56 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Centers the pivot of the layer")]
+        [LuaDocsDescription("Move the pivot point of the layer to the average center of it's contents")]
+        [LuaDocsExample(@"myLayer:CenterPivot()")]
         public void CenterPivot() => _CanvasScript.CenterPivot();
 
-        [LuaDocsDescription("Shows the pivot of the layer")]
+        [LuaDocsDescription("Shows a visible widget indicating the pivot point of the layer")]
+        [LuaDocsExample(@"myLayer:ShowPivot()")]
         public void ShowPivot() => _CanvasScript.ShowGizmo();
 
-        [LuaDocsDescription("Hides the pivot of the layer")]
+        [LuaDocsDescription("Hides the visible widget indicating the pivot point of the layer")]
+        [LuaDocsExample(@"myLayer:HidePivot()")]
         public void HidePivot() => _CanvasScript.HideGizmo();
 
-        [LuaDocsDescription("Clears the layer")]
+        [LuaDocsDescription("Deletes all content from the layer")]
+        [LuaDocsExample(@"myLayer:Clear()")]
         public void Clear()
         {
             ClearLayerCommand cmd = new ClearLayerCommand(_CanvasScript);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [LuaDocsDescription("Deletes the layer")]
+        [LuaDocsDescription("Deletes the layer and all it's content")]
+        [LuaDocsExample(@"myLayer:Delete()")]
         public void Delete()
         {
             DeleteLayerCommand cmd = new DeleteLayerCommand(_CanvasScript);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [LuaDocsDescription("Squashes the layer and returns the resulting LayerApiWrapper instance")]
+        [LuaDocsDescription("Combines this layer and the one above it. If this layer is the first layer do nothing")]
         [LuaDocsReturnValue("The resulting LayerApiWrapper instance")]
+        [LuaDocsExample(@"combinedLayer = myLayer:Squash()")]
         public LayerApiWrapper Squash()
         {
             int destinationIndex = index - 1;
             if (destinationIndex >= 0)
             {
-                return SquashTo(SketchApiWrapper.layers[destinationIndex]);
+                return _SquashTo(SketchApiWrapper.layers[destinationIndex]);
             }
-            return null;
+            return this;
         }
 
-        [LuaDocsDescription("Squashes the layer to the specified destination layer and returns the destination layer")]
+        [LuaDocsDescription("Combines this layer with the specified layer")]
         [LuaDocsParameter("destinationLayer", "The destination layer")]
-        [LuaDocsReturnValue("The destination layer")]
-        public LayerApiWrapper SquashTo(LayerApiWrapper destinationLayer)
+        [LuaDocsExample(@"myLayer:SquashTo(otherLayer)")]
+        public void SquashTo(LayerApiWrapper destinationLayer)
+        {
+            _SquashTo(destinationLayer);
+        }
+
+        private LayerApiWrapper _SquashTo(LayerApiWrapper destinationLayer)
         {
             SquashLayerCommand cmd = new SquashLayerCommand(
                 _CanvasScript,
@@ -158,18 +170,21 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Shows the layer")]
+        [LuaDocsExample(@"myLayer:Show()")]
         public void Show()
         {
             App.Scene.ShowLayer(_CanvasScript);
         }
 
         [LuaDocsDescription("Hides the layer")]
+        [LuaDocsExample(@"myLayer:Hide()")]
         public void Hide()
         {
             App.Scene.HideLayer(_CanvasScript);
         }
 
         [LuaDocsDescription("Toggles the visibility of the layer")]
+        [LuaDocsExample(@"myLayer:Toggle()")]
         public void Toggle()
         {
             App.Scene.ToggleLayerVisibility(_CanvasScript);

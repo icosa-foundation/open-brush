@@ -159,9 +159,6 @@ namespace TiltBrush
         [LuaDocsDescription("The color blue")]
         public static Color blue => Color.blue;
 
-        [LuaDocsDescription("The color clear")]
-        public static Color clear => Color.clear;
-
         [LuaDocsDescription("The color cyan")]
         public static Color cyan => Color.cyan;
 
