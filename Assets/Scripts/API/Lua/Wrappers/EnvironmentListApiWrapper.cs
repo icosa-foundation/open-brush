@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of available environments. (You don't instantiate this yourself. Access this via Sketch.environments ")]
+    [LuaDocsDescription("The list of available environments. (You don't instantiate this yourself. Access this via Sketch.environments)")]
     [MoonSharpUserData]
     public class EnvironmentListApiWrapper
     {

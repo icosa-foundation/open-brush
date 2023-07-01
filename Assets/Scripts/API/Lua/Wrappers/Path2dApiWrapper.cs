@@ -212,17 +212,17 @@ namespace TiltBrush
         [LuaDocsDescription("Scales and shifts all points so that they fit in a 1 unit square at the origin")]
         [LuaDocsExample("myPath:Normalize(size)")]
         [LuaDocsParameter("size", "The size of the square to fit the path into")]
-        public void Normalize(float scale = 1)
+        public void Normalize(float size = 1)
         {
             if (_Path2d == null) return;
             (Vector2 center, float unitScale) = _CalculateCenterAndScale(_Path2d);
-            scale *= unitScale;
+            size *= unitScale;
 
             // Apply the scale factor to each Vector2 in the input list
             for (var i = 0; i < _Path2d.Count; i++)
             {
                 var v = _Path2d[i];
-                v = (v - center) * scale;
+                v = (v - center) * size;
                 _Path2d[i] = v;
             }
         }
@@ -258,6 +258,7 @@ namespace TiltBrush
 
         [LuaDocsDescription(@"Generates a regular polygon path")]
         [LuaDocsExample(@"myPath = Path2d:Polygon(6)")]
+        [LuaDocsParameter("sides", "The number of sides for the polygon")]
         [LuaDocsReturnValue(@"The new path")]
         public static Path2dApiWrapper Polygon(int sides)
         {

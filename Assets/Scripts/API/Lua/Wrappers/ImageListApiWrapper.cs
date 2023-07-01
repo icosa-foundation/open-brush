@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of Images in the scene. (You don't instantiate this yourself. Access this via Sketch.images ")]
+    [LuaDocsDescription("The list of Images in the scene. (You don't instantiate this yourself. Access this via Sketch.images)")]
     [MoonSharpUserData]
     public class ImageListApiWrapper
     {

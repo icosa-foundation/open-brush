@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of Guides in the scene. (You don't instantiate this yourself. Access this via Sketch.guides ")]
+    [LuaDocsDescription("The list of Guides in the scene. (You don't instantiate this yourself. Access this via Sketch.guides)")]
     [MoonSharpUserData]
     public class GuideListApiWrapper
     {

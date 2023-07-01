@@ -4,7 +4,7 @@ using MoonSharp.Interpreter;
 
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of Videos in the scene. (You don't instantiate this yourself. Access this via Sketch.videos ")]
+    [LuaDocsDescription("The list of Videos in the scene. (You don't instantiate this yourself. Access this via Sketch.videos)")]
     [MoonSharpUserData]
     public class VideoListApiWrapper
     {

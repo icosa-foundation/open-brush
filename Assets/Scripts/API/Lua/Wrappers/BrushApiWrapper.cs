@@ -45,7 +45,7 @@ namespace TiltBrush
             set => ApiMethods.BrushSizeSet(value);
         }
 
-        [LuaDocsDescription("Brush pressure is determined by how far the trigger is pushed in")]
+        [LuaDocsDescription("Brush pressure is determined by how far the trigger is pressed in")]
         public static float pressure => PointerManager.m_Instance.MainPointer.GetPressure();
 
         [LuaDocsDescription("The current brush type")]

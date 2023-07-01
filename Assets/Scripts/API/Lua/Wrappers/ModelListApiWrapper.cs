@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of 3d Models in the scene. (You don't instantiate this yourself. Access this via Sketch.models ")]
+    [LuaDocsDescription("The list of 3d Models in the scene. (You don't instantiate this yourself. Access this via Sketch.models)")]
     [MoonSharpUserData]
     public class ModelListApiWrapper
     {

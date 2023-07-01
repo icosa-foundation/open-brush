@@ -6,16 +6,20 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class WandApiWrapper
     {
-        [LuaDocsDescription("The 3D position of the Wand")]
+        [LuaDocsDescription("The 3D position of the Wand Controller")]
         public static Vector3 position => LuaManager.Instance.GetPastWandPos(0);
 
         [LuaDocsDescription("The 3D orientation of the Wand")]
         public static Quaternion rotation => LuaManager.Instance.GetPastWandRot(0);
 
+        [LuaDocsDescription("The vector representing the forward direction of the wand controller")]
         public static Vector3 direction => LuaManager.Instance.GetPastWandRot(0) * Vector3.forward;
-        public static float pressure => InputManager.Wand.GetTriggerValue();
-        public static Vector3 speed => InputManager.Wand.m_Velocity;
 
+        [LuaDocsDescription("How far the trigger on the wand contrller is pressed in")]
+        public static float pressure => InputManager.Wand.GetTriggerValue();
+
+        [LuaDocsDescription("How fast the wand contrller is currently moving")]
+        public static Vector3 speed => InputManager.Wand.m_Velocity;
 
         [LuaDocsDescription("Clears the history and sets it's size")]
         public static void ResizeHistory(int size) => LuaManager.Instance.ResizeWandBuffer(size);

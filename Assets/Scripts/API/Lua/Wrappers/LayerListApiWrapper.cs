@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of Layers in the scene. (You don't instantiate this yourself. Access this via Sketch.layers ")]
+    [LuaDocsDescription("The list of Layers in the scene. (You don't instantiate this yourself. Access this via Sketch.layers)")]
     [MoonSharpUserData]
     public class LayerListApiWrapper
     {

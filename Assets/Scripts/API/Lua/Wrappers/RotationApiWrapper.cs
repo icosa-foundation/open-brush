@@ -20,6 +20,11 @@ namespace TiltBrush
             _Quaternion = rotation;
         }
 
+        [LuaDocsDescription("Creates a new Rotation")]
+        [LuaDocsExample("myRotation = Rotation:New(45, -90, 0)")]
+        [LuaDocsParameter("x", "The angle of rotation on the x axis in degrees")]
+        [LuaDocsParameter("y", "The angle of rotation on the y axis in degrees")]
+        [LuaDocsParameter("z", "The angle of rotation on the z axis in degrees")]
         public static RotationApiWrapper New(float x = 0, float y = 0, float z = 0)
         {
             var instance = new RotationApiWrapper(x, y, z);

@@ -21,6 +21,7 @@ namespace TiltBrush
             return $"CameraPath({_VideoWidget})";
         }
 
+        [LuaDocsDescription("Gets or sets the Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
@@ -59,6 +60,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Gets or sets the scale of the Video Widget")]
         public float scale
         {
             get => transform.scale;
@@ -72,8 +74,13 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]
         public static VideoApiWrapper Import(string location) => new (ApiMethods.ImportVideo(location));
+
+        [LuaDocsDescription("Adds this Video Widget to the current selection")]
         public void Select() => ApiMethods.SelectWidget(_VideoWidget);
+
+        [LuaDocsDescription("Deletes this Video Widget")]
         public void Delete() => ApiMethods.DeleteWidget(_VideoWidget);
     }
 }

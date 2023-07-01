@@ -3,7 +3,7 @@ using MoonSharp.Interpreter;
 
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of Camera Paths in the scene. (You don't instantiate this yourself. Access this via Sketch.cameraPaths ")]
+    [LuaDocsDescription("The list of Camera Paths in the scene. (You don't instantiate this yourself. Access this via Sketch.cameraPaths)")]
     [MoonSharpUserData]
     public class CameraPathListApiWrapper
     {

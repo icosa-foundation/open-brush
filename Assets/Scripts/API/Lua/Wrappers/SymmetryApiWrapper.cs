@@ -8,6 +8,7 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
+        [LuaDocsDescription("The transform of the Symmetry Widget")]
         public static TrTransform transform
         {
             get => TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
@@ -28,18 +29,35 @@ namespace TiltBrush
             set => ApiMethods._SymmetrySetRotation(value);
         }
 
+        [LuaDocsDescription("")]
         public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
         public static Vector3 wandOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastWandPos(0))).translation;
+
+        [LuaDocsDescription("")]
         public static Vector3 direction => PointerManager.m_Instance.SymmetryWidget.transform.rotation * Vector3.forward;
+
+        [LuaDocsDescription("")]
         public static void Mirror() => ApiMethods.SymmetryPlane();
+
+        [LuaDocsDescription("")]
         public static void DoubleMirror() => ApiMethods.SymmetryFour();
+
+        [LuaDocsDescription("")]
         public static void TwoHandeded() => ApiMethods.SymmetryTwoHanded();
+
+        [LuaDocsDescription("")]
         public static void SummonWidget() => ApiMethods.SummonMirror();
+
+        [LuaDocsDescription("")]
         public static void Spin(float xSpeed, float ySpeed, float zSpeed) => PointerManager.m_Instance.SymmetryWidget.Spin(xSpeed, ySpeed, zSpeed);
+
+        [LuaDocsDescription("")]
         public static float Ellipse(float angle, float minorRadius)
         {
             return minorRadius / Mathf.Sqrt(Mathf.Pow(minorRadius * Mathf.Cos(angle), 2) + Mathf.Pow(Mathf.Sin(angle), 2));
         }
+
+        [LuaDocsDescription("")]
         public static float Square(float angle)
         {
             const float halfEdgeLength = 0.5f;
@@ -48,6 +66,8 @@ namespace TiltBrush
             float maxComponent = Mathf.Max(x, y);
             return halfEdgeLength / maxComponent;
         }
+
+        [LuaDocsDescription("")]
         public static float Superellipse(float angle, float n, float a = 1f, float b = 1f)
         {
             float cosTheta = Mathf.Cos(angle);
@@ -57,6 +77,8 @@ namespace TiltBrush
             float radius = Mathf.Pow(Mathf.Pow(a, n) * cosThetaN + Mathf.Pow(b, n) * sinThetaN, -1 / n);
             return radius;
         }
+
+        [LuaDocsDescription("")]
         public static float Rsquare(float angle, float halfSideLength, float cornerRadius)
         {
             float x = Mathf.Abs(Mathf.Cos(angle));
@@ -78,6 +100,7 @@ namespace TiltBrush
             return halfSideLength / maxComponent;
         }
 
+        [LuaDocsDescription("")]
         public static float Polygon(float angle, int numSides, float radius=1f)
         {
             // Calculate the angle of each sector in the polygon
@@ -104,26 +127,31 @@ namespace TiltBrush
             return distanceToEdge;
         }
 
+        [LuaDocsDescription("")]
         public static void ClearColors(List<Color> colors)
         {
             PointerManager.m_Instance.SymmetryPointerColors.Clear();
         }
 
+        [LuaDocsDescription("")]
         public static void AddColor(Color color)
         {
             PointerManager.m_Instance.SymmetryPointerColors.Add(color);
         }
 
+        [LuaDocsDescription("")]
         public static void SetColors(List<Color> colors)
         {
             PointerManager.m_Instance.SymmetryPointerColors = colors;
         }
 
+        [LuaDocsDescription("")]
         public static List<Color> GetColors()
         {
             return PointerManager.m_Instance.SymmetryPointerColors;
         }
 
+        [LuaDocsDescription("")]
         public static void AddBrush(string brush)
         {
             PointerManager.m_Instance.SymmetryPointerBrushes.Add(
@@ -131,11 +159,13 @@ namespace TiltBrush
             );
         }
 
+        [LuaDocsDescription("")]
         public static void ClearBrushes(List<string> brushes)
         {
             PointerManager.m_Instance.SymmetryPointerBrushes .Clear();
         }
 
+        [LuaDocsDescription("")]
         public static void SetBrushes(List<string> brushes)
         {
             PointerManager.m_Instance.SymmetryPointerBrushes = brushes.Select(
@@ -143,6 +173,7 @@ namespace TiltBrush
             ).Where(x => x != null).ToList();
         }
 
+        [LuaDocsDescription("")]
         public static List<string> GetBrushNames()
         {
             return PointerManager.m_Instance.SymmetryPointerBrushes.Select(
@@ -150,6 +181,7 @@ namespace TiltBrush
             ).ToList();
         }
 
+        [LuaDocsDescription("")]
         public static List<string> GetBrushGuids()
         {
             return PointerManager.m_Instance.SymmetryPointerBrushes.Select(
@@ -157,6 +189,7 @@ namespace TiltBrush
             ).ToList();
         }
 
+        [LuaDocsDescription("")]
         public static PathApiWrapper PathToPolar(IPathApiWrapper path)
         {
             return new PathApiWrapper(Path2dToPolar(path.AsSingleTrList().Select(x =>

@@ -6,13 +6,13 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SpectatorApiWrapper
     {
-        [LuaDocsDescription("Changes the rotation of the spectator camera to a specific direction vector")]
-        public static void Direction(Vector3 direction) => ApiMethods.SpectatorDirection(direction);
-
         [LuaDocsDescription("Changes the rotation of the spectator camera to look towards a specific point")]
+        [LuaDocsExample("Spectator:LookAt(5, -4, 10)")]
+        [LuaDocsParameter("position", "The point in the scene to look towards")]
         public static void LookAt(Vector3 position) => ApiMethods.SpectatorLookAt(position);
 
         [LuaDocsDescription("Sets the spectator camera's movement mode to stationary")]
+        [LuaDocsExample("Spectator:Stationary()")]
         public static void Stationary()
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
@@ -20,6 +20,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Sets the spectator camera's movement mode to slowFollow")]
+        [LuaDocsExample("Spectator:SlowFollow()")]
         public static void SlowFollow()
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
@@ -27,6 +28,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Sets the spectator camera's movement mode to wobble")]
+        [LuaDocsExample("Spectator:Wobble()")]
         public static void Wobble()
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
@@ -34,6 +36,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Sets the spectator camera's movement mode to circular")]
+        [LuaDocsExample("Spectator:Circular()")]
         public static void Circular()
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
