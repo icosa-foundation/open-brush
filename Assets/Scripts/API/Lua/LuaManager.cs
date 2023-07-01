@@ -746,7 +746,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Spectator", typeof(SpectatorApiWrapper));
             RegisterApiClass(script, "Stroke", typeof(StrokeApiWrapper));
             RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
-            // RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
+            RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
             RegisterApiClass(script, "Transform", typeof(TransformApiWrapper));
             // RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));
