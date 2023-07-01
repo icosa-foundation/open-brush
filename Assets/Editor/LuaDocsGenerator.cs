@@ -41,7 +41,7 @@ namespace TiltBrush
 
             // List wrappers aren't places in the script's namespace but we do want to register them
             // so we can generate docs for them.
-            LuaDocsRegistration.RegisterForDocs(typeof(CameraPathApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(CameraPathListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(EnvironmentListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(GuideListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(ImageListApiWrapper), false);
