@@ -182,12 +182,5 @@ namespace TiltBrush
         {
             App.Scene.HideLayer(_CanvasScript);
         }
-
-        [LuaDocsDescription("Toggles the visibility of the layer")]
-        [LuaDocsExample(@"myLayer:Toggle()")]
-        public void Toggle()
-        {
-            App.Scene.ToggleLayerVisibility(_CanvasScript);
-        }
     }
 }

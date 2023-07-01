@@ -137,6 +137,9 @@ Brush.pressure = nil
 ---@type string
 Brush.type = nil
 
+---@type string[]
+Brush.types = nil
+
 ---@type number
 Brush.speed = nil
 
@@ -746,9 +749,6 @@ function Layer:Show() end
 
 function Layer:Hide() end
 
-
-function Layer:Toggle() end
-
 ---Properties for type Math
 
 ---@type number
@@ -1186,20 +1186,20 @@ Path2d.last = nil
 ---@return Path2d
 function Path2d:New() end
 
----@param transformList Vector2[]
+---@param positionList Vector2[]
 ---@return Path2d
-function Path2d:New(transformList) end
+function Path2d:New(positionList) end
 
 ---@param positionList Vector3[]
 ---@return Path2d
 function Path2d:New(positionList) end
 
----@param transform Vector2
-function Path2d:Insert(transform) end
+---@param point Vector2
+function Path2d:Insert(point) end
 
----@param transform Vector2
+---@param point Vector2
 ---@param index number
-function Path2d:Insert(transform, index) end
+function Path2d:Insert(point, index) end
 
 
 ---@return Path
@@ -1347,9 +1347,6 @@ Rotation.clockwise = nil
 ---@type Rotation
 Rotation.normalized = nil
 
----@type number
-Rotation.kEpsilon = nil
-
 
 ---Methods for type Rotation
 
@@ -1374,7 +1371,7 @@ function Rotation:SetLookRotation(view) end
 function Rotation:SetLookRotation(view, up) end
 
 
----@return Number, Vector3
+---@return System.Collections.Generic.List`1[System.Single]
 function Rotation:ToAngleAxis() end
 
 ---@param a Rotation
@@ -1447,16 +1444,6 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@param other Rotation
 ---@return Rotation
 function Rotation:Multiply(other) end
-
----@param x number
----@param y number
----@param z number
----@return Rotation
-function Rotation:Multiply(x, y, z) end
-
----@param amount number
----@return Rotation
-function Rotation:Scale(amount) end
 ---Methods for type Selection
 
 
@@ -1550,23 +1537,41 @@ function Sketch:ImportSkybox(filename) end
 
 ---Properties for type Spectator
 
+---@type boolean
+Spectator.canSeeWidgets = nil
+
+---@type boolean
+Spectator.canSeeStrokes = nil
+
+---@type boolean
+Spectator.canSeeSelection = nil
+
+---@type boolean
+Spectator.canSeeHeadset = nil
+
+---@type boolean
+Spectator.canSeePanels = nil
+
+---@type boolean
+Spectator.canSeeUi = nil
+
+---@type boolean
+Spectator.canSeeUsertools = nil
+
+---@type boolean
+Spectator.active = nil
+
 ---@type Vector3
 Spectator.position = nil
 
 ---@type Rotation
 Spectator.rotation = nil
 
+---@type boolean
+Spectator.lockedToScene = nil
+
 
 ---Methods for type Spectator
-
----@param angle number
-function Spectator:Turn(angle) end
-
----@param angle number
-function Spectator:TurnX(angle) end
-
----@param angle number
-function Spectator:TurnZ(angle) end
 
 ---@param direction Vector3
 function Spectator:Direction(direction) end
@@ -1574,26 +1579,17 @@ function Spectator:Direction(direction) end
 ---@param position Vector3
 function Spectator:LookAt(position) end
 
----@param mode string
-function Spectator:Mode(mode) end
 
----@param type string
-function Spectator:Show(type) end
-
----@param type string
-function Spectator:Hide(type) end
+function Spectator:Stationary() end
 
 
-function Spectator:Toggle() end
+function Spectator:SlowFollow() end
 
 
-function Spectator:On() end
+function Spectator:Wobble() end
 
 
-function Spectator:Off() end
-
----@param locked boolean
-function Spectator:LockToScene(locked) end
+function Spectator:Circular() end
 
 ---Properties for type Stroke
 
@@ -1632,17 +1628,23 @@ function Stroke:Select() end
 
 ---@param from number
 ---@param to number
-function Stroke:SelectMultiple(from, to) end
+function Stroke:SelectRange(from, to) end
 
 ---@param from number
 ---@param to number
-function Stroke:Join(from, to) end
+---@return Stroke
+function Stroke:JoinRange(from, to) end
 
 
-function Stroke:JoinPrevious() end
+---@return Stroke
+function Stroke:JoinToPrevious() end
+
+---@param stroke2 Stroke
+---@return Stroke
+function Stroke:Join(stroke2) end
 
 ---@param name string
-function Stroke:Import(name) end
+function Stroke:MergeFrom(name) end
 ---Methods for type Svg
 
 ---@param svgPath string
@@ -2656,19 +2658,3 @@ function WebRequest:Get(url, onSuccess, onError, headers, context) end
 ---@param headers table
 ---@param context table
 function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
-
----Properties for type Tool
-
----@type Vector3
-Tool.startPosition = nil
-
----@type Vector3
-Tool.endPosition = nil
-
----@type Vector3
-Tool.vector = nil
-
----@type Rotation
-Tool.rotation = nil
-
-

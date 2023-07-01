@@ -62,7 +62,7 @@ namespace TiltBrush
             _Path = transformList;
         }
 
-        [LuaDocsDescription("Returns a new empty Path")]
+        [LuaDocsDescription("Creates a new empty Path")]
         [LuaDocsExample("myPath = Path:New()")]
         public static PathApiWrapper New() => new PathApiWrapper();
 
@@ -73,7 +73,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("Creates a path from a list of Vector3 positions")]
         [LuaDocsExample("myPath = Path:New({position1, position2, position3})")]
-        [LuaDocsParameter("transformList", "The list of positions")]
+        [LuaDocsParameter("positionList", "The list of positions")]
         public static PathApiWrapper New(List<Vector3> positionList) => new PathApiWrapper(positionList);
 
         public override string ToString()
@@ -146,7 +146,7 @@ namespace TiltBrush
         [LuaDocsDescription("Returns the number of points in this path")]
         public int count => _Path?.Count ?? 0;
 
-        [LuaDocsDescription("Returns the Transform of the point at the specified index")]
+        [LuaDocsDescription("Returns the point at the specified index")]
         public TransformApiWrapper this[int index] => new TransformApiWrapper(_Path[index]);
 
         [LuaDocsDescription("Returns the last point in this path")]

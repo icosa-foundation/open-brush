@@ -30,6 +30,9 @@ namespace TiltBrush
             pointer.SetPressure(_Pressure);
         }
 
+        [LuaDocsDescription(@"Creates a new pointer for drawing")]
+        [LuaDocsExample(@"Pointer:New()")]
+        [LuaDocsReturnValue(@"The new pointer")]
         public static PointerApiWrapper New()
         {
             var pointer = PointerManager.m_Instance.CreateScriptedPointer();
@@ -41,6 +44,7 @@ namespace TiltBrush
             return $"Pointer({_Pointer})";
         }
 
+        [LuaDocsDescription(@"True if the pointer is currently drawing a stroke, otherwise false")]
         public bool isDrawing
         {
             get
@@ -54,6 +58,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"Sets the layer that the pointer will draw on. Must be set before starting a new stroke")]
         public LayerApiWrapper layer
         {
             get
@@ -71,6 +76,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"Sets the color of the strokes created by this pointer. Must be set before starting a new stroke")]
         public ColorApiWrapper color
         {
             get
@@ -88,6 +94,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"Sets the brush type the pointer will draw. Must be set before starting a new stroke")]
         public string brush
         {
             get
@@ -105,6 +112,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"Sets the size of the brush strokes this pointer will draw. Must be set before starting a new stroke")]
         public float size
         {
             get
@@ -122,6 +130,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"Sets the pressure of the stroke being drawn")]
         public float pressure
         {
             get => _Pressure;
@@ -145,6 +154,7 @@ namespace TiltBrush
             _WasDrawing = _IsDrawing;
         }
 
+        [LuaDocsDescription(@"The position and orientation of the pointer")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_Pointer.transform];
@@ -183,17 +193,18 @@ namespace TiltBrush
             }
         }
 
-        public float scale
-        {
-            get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
-        }
+        // TODO Does scaling a pointer do anything?
+        // public float scale
+        // {
+        //     get => transform.scale;
+        //     set
+        //     {
+        //         var tr_CS = transform;
+        //         var newTransform = TrTransform.S(value);
+        //         newTransform = App.Scene.Pose * newTransform;
+        //         tr_CS.scale = newTransform.scale;
+        //         transform = tr_CS;
+        //     }
+        // }
     }
 }

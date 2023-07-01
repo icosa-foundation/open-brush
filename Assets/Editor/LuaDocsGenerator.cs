@@ -21,6 +21,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+
     public class LuaDocsGenerator : Editor
     {
         [MenuItem("Open Brush/API/Generate Lua Docs")]
@@ -33,10 +34,22 @@ namespace TiltBrush
             }
 
             Script script = new Script();
-            LuaManager.ApiDocClasses = new List<LuaDocsClass>();
 
+            // Initializing this list triggers the docs generation via RegisterApiClasses
+            LuaDocsRegistration.ApiDocClasses = new List<LuaDocsClass>();
             LuaManager.Instance.RegisterApiClasses(script);
-            
+
+            // List wrappers aren't places in the script's namespace but we do want to register them
+            // so we can generate docs for them.
+            LuaDocsRegistration.RegisterForDocs(typeof(CameraPathApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(EnvironmentListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(GuideListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(ImageListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(LayerListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(ModelListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VideoListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(StrokeListApiWrapper), false);
+
             // Manually add some entries that aren't added the standard way
             var vectorProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Vector3"};
             var rotationProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation"};
@@ -52,17 +65,21 @@ namespace TiltBrush
                     new() {Name="rotation", PropertyType = rotationProp},
                 }
             };
-            LuaManager.ApiDocClasses.Add(toolApiDocClass);
+            LuaDocsRegistration.ApiDocClasses.Add(toolApiDocClass);
 
             // JSON docs if needed
-            // var json = JsonConvert.SerializeObject(LuaManager.ApiDocClasses, Formatting.Indented);
+            // var json = JsonConvert.SerializeObject(LuaDocsRegistration.ApiDocClasses, Formatting.Indented);
             // File.WriteAllText(Path.Join(docsPath, "docs.json"), json);
 
             // Generate __autocomplete.lua
             var autocomplete = new StringBuilder();
             string autocompleteFilePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
-            foreach (var klass in LuaManager.ApiDocClasses)
+            foreach (var klass in LuaDocsRegistration.ApiDocClasses)
             {
+                // Only top level classes are included in autocomplete
+                // This excludes all ListWrapper classes which can't be instantiated directly
+                // And don't have any useful static members
+                if (!klass.IsTopLevelClass) continue;
                 autocomplete.Append(klass.AutocompleteSerialize());
             }
             File.WriteAllText(autocompleteFilePath, autocomplete.ToString());
@@ -71,14 +88,14 @@ namespace TiltBrush
             // Generate markdown docs
             string docsPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaDocs");
             if (!Directory.Exists(docsPath)) Directory.CreateDirectory(docsPath);
-            foreach (var klass in LuaManager.ApiDocClasses)
+            foreach (var klass in LuaDocsRegistration.ApiDocClasses)
             {
                 var markDown = klass.MarkdownSerialize();
                 File.WriteAllText(Path.Join(docsPath, $"{klass.Name.ToLower()}.md"), markDown);
             }
             
             // Done
-            LuaManager.ApiDocClasses = null;
+            LuaDocsRegistration.ApiDocClasses = null;
             Debug.Log($"Finished Generating Lua Autocomplete");
         }
     }

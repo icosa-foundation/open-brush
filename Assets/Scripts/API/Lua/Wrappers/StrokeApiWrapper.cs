@@ -10,6 +10,7 @@ namespace TiltBrush
     public class StrokeApiWrapper
     {
         public Stroke _Stroke;
+
         private PathApiWrapper m_Path;
         public PathApiWrapper path
         {
@@ -66,23 +67,6 @@ namespace TiltBrush
             return _Stroke == null ? "Empty Stroke" : $"{brushType} stroke on {layer._CanvasScript.name})";
         }
 
-        // public Transform this[int index] => SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
-        // public Stroke last => this[count - 1];
-        // public Stroke this[int index] => SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
-        // public Stroke last => this[count - 1];
-        // public  Stroke main => this[0];
-        // public int index => SketchMemoryScript.m_Instance.GetAllActiveStrokes().IndexOf(this._Stroke);
-
-        // public static StrokesApiWrapper New(StrokesApiWrapper stroke)
-        // {
-        //     var instance = new StrokesApiWrapper(stroke);
-        //     return instance;
-        // }
-        // public void add(int index) => ApiMethods.AddPointToStroke(index);
-        // public void quantize() => ApiMethods.QuantizeSelection(index);
-        // public void addNoise(Vector3 a) => ApiMethods.PerlinNoiseSelection(a);
-
-
         // Highly experimental
         public void ChangeMaterial(string brushName)
         {
@@ -101,23 +85,49 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The number of control points in this stroke")]
         public int count => _Stroke?.m_ControlPoints.Length ?? 0;
 
+        [LuaDocsDescription("Deletes the current stroke")]
+        [LuaDocsExample("myStroke:Delete()")]
         public void Delete()
         {
             SketchMemoryScript.m_Instance.RemoveMemoryObject(_Stroke);
             _Stroke.Uncreate();
             _Stroke = null;
         }
+
+        [LuaDocsDescription("Adds this stroke to the current selection")]
+        [LuaDocsExample("myStroke:Select()")]
         public void Select()
         {
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { _Stroke });
         }
-        public void SelectMultiple(int from, int to) => ApiMethods.SelectStrokes(from, to);
-        public void Join(int from, int to) => ApiMethods.JoinStrokes(from, to);
-        public void JoinPrevious() => ApiMethods.JoinStroke();
-        public void Import(string name) => ApiMethods.MergeNamedFile(name);
 
+        [LuaDocsDescription("Adds multiple strokes to the current selection")]
+        [LuaDocsExample("Stroke:SelectMultiple(0, 4) --Adds the first 5 strokes on the sketch")]
+        [LuaDocsParameter("from", "Start stroke index (0 is the first stroke that was drawn")]
+        [LuaDocsParameter("to", "End stroke index")]
+        public static void SelectRange(int from, int to) => ApiMethods.SelectStrokes(from, to);
+
+        [LuaDocsDescription("Joins joins multiple strokes into one stroke")]
+        [LuaDocsExample("newStroke = Stroke:Join(0, 10)")]
+        [LuaDocsParameter("from", "Start stroke index (0 is the first stroke that was drawn")]
+        [LuaDocsParameter("to", "End stroke index")]
+        public StrokeApiWrapper JoinRange(int from, int to) => new StrokeApiWrapper(ApiMethods.JoinStrokes(from, to));
+
+        [LuaDocsDescription("Joins a stroke with the previous stroke")]
+        [LuaDocsExample("newStroke = myStroke:JoinPrevious()")]
+        public StrokeApiWrapper JoinToPrevious() => new StrokeApiWrapper(ApiMethods.JoinStroke());
+
+        [LuaDocsDescription("Joins a stroke with the previous stroke")]
+        [LuaDocsExample("newStroke = myStroke:JoinPrevious()")]
+        public StrokeApiWrapper Join(StrokeApiWrapper stroke2) => new StrokeApiWrapper(ApiMethods.JoinStrokes(_Stroke, stroke2._Stroke));
+
+        [LuaDocsDescription("Imports the file with the specified name from the user's Sketches folder and merges it's strokes into the current sketch")]
+        [LuaDocsExample("Stroke:MergeFrom(string name)")]
+        [LuaDocsParameter("name", "Name of the file to be merged")]
+        public void MergeFrom(string name) => ApiMethods.MergeNamedFile(name);
     }
 
 }

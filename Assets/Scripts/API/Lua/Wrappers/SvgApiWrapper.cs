@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using MoonSharp.Interpreter;
-using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("Functions related to SVG images")]

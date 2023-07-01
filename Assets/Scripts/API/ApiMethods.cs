@@ -211,16 +211,10 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("spectator.show", "Unhides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
-        public static void SpectatorShow(string thing)
-        {
-            _SpectatorShowHide(thing, true);
-        }
-
         [ApiEndpoint("spectator.hide", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
         public static void SpectatorHide(string thing)
         {
-            _SpectatorShowHide(thing, false);
+            _SpectatorShowHideFromFriendlyName(thing, false);
         }
 
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]

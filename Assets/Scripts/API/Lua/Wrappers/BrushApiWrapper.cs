@@ -1,5 +1,9 @@
-﻿using MoonSharp.Interpreter;
+﻿using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using MoonSharp.Interpreter;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 namespace TiltBrush
 {
@@ -50,6 +54,9 @@ namespace TiltBrush
             get => PointerManager.m_Instance.MainPointer.CurrentBrush.Description!;
             set => ApiMethods.Brush(value);
         }
+
+        [LuaDocsDescription("All available brush types")]
+        public static List<string> types => BrushCatalog.m_Instance.AllBrushes.Select(b => b.Description).ToList();
 
         [LuaDocsDescription("How fast the brush is currently moving")]
         public static float speed => PointerManager.m_Instance.MainPointer.MovementSpeed;

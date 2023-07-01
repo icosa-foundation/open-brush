@@ -14,6 +14,7 @@ namespace TiltBrush
             => source.GetAccessors(nonPublic).Any(x => x.IsStatic);
     }
 
+
     [Serializable]
     public class LuaDocsClass
     {
@@ -26,7 +27,8 @@ namespace TiltBrush
         public List<LuaDocsMethod> Methods;
         public List<LuaDocsMethod> StaticMethods => Methods.Where(p => p.Static).ToList();
         public List<LuaDocsMethod> InstanceMethods => Methods.Where(p => !p.Static).ToList();
-        
+        public bool IsTopLevelClass;
+
         // 0=name 1=description 2=static properties 3=instance properties 4=static methods 5=instance methods
         private string markdownTemplateForClass = @"
 # {0}

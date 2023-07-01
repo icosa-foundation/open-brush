@@ -80,11 +80,6 @@ namespace TiltBrush
         private ApiManager apiManager;
         private static readonly string LuaFileSearchPattern = "*.lua";
 
-#if UNITY_EDITOR
-        // Used when called via MenuItem("Open Brush/API/Generate Lua Autocomplete File")
-        public static List<LuaDocsClass> ApiDocClasses;
-#endif
-
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
         public int ScriptedWaveformSampleRate = 16000;
 
@@ -482,130 +477,9 @@ namespace TiltBrush
                 target = container;
             }
             target[fnName] = t;
+
 #if UNITY_EDITOR
-            
-            bool isHidden(ICustomAttributeProvider info)
-            {
-                // Ignore MoonSharpHidden and MoonSharpVisible if false
-                if (info.GetCustomAttributes(typeof(MoonSharpHiddenAttribute), true).Length > 0) return true;
-                var vis = info.GetCustomAttributes(typeof(MoonSharpVisibleAttribute), true);
-                if (vis.Length > 0) if (!((MoonSharpVisibleAttribute)vis[0]).Visible) return true;
-                return false;
-            }
-            
-            if (Application.isEditor && ApiDocClasses != null)
-            {
-                string GetClassDescription()
-                {
-                    var attr = Attribute.GetCustomAttribute(t, typeof(LuaDocsDescriptionAttribute));
-                    if (attr == null) return "";
-                    return ((LuaDocsDescriptionAttribute)attr).Description;
-                }
-                
-                string GetPropertyDescription(MemberInfo m)
-                {
-                    var attr = m.GetCustomAttribute<LuaDocsDescriptionAttribute>();
-                    if (attr == null) return "";
-                    return attr.Description;
-                }
-                
-                string GetMethodDescription(MethodBase m)
-                {
-                    var attr = m.GetCustomAttribute<LuaDocsDescriptionAttribute>();
-                    if (attr == null) return "";
-                    return attr.Description;
-                }
-                
-                string GetMethodExample(MethodBase m)
-                {
-                    var attr = m.GetCustomAttribute<LuaDocsExampleAttribute>();
-                    if (attr == null) return "";
-                    return attr.Example;
-                }
-        
-                Dictionary<string, string> GetMethodParameters(MethodBase m)
-                {
-                    var attrs = m.GetCustomAttributes<LuaDocsParameterAttribute>();
-                    var paramsDict = new Dictionary<string, string>();
-                    foreach (var attr in attrs)
-                    {
-                        paramsDict[attr.Name] = attr.Description;
-                    }
-                    return paramsDict;
-                }
-
-                
-                string className = t.ToString()
-                    .Replace("ApiWrapper", "")
-                    .Replace("TiltBrush.", "");
-
-                var apiDocClass = new LuaDocsClass
-                {
-                    Name = className,
-                    Description = GetClassDescription(),
-                    Properties = new List<LuaDocsProperty>(),
-                    Methods = new List<LuaDocsMethod>()
-                };
-
-                foreach (var prop in t.GetProperties())
-                {
-                    if (isHidden(prop)) continue;
-
-                    var typeName = prop.PropertyType.ToString();
-                    var property = new LuaDocsProperty
-                    {
-                        Name = prop.Name,
-                        Description = GetPropertyDescription(prop),
-                        PropertyType = LuaDocsType.CsharpTypeToDocsType(typeName),
-                        ReadWrite = prop.CanWrite,
-                        Static = prop.IsStatic()
-                    };
-                    apiDocClass.Properties.Add(property);
-                }
-
-                foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
-                             .Where(x =>
-                                 x.Name.ToString() != "Equals" &&
-                                 x.Name.ToString() != "GetHashCode" &&
-                                 x.Name.ToString() != "GetType" &&
-                                 x.Name.ToString() != "ToString"))
-                {
-                    if (isHidden(prop)) continue;
-                    
-                    var method = new LuaDocsMethod
-                    {
-                        Name = prop.Name,
-                        Description = GetMethodDescription(prop),
-                        Example = GetMethodExample(prop),
-                        Parameters = new List<LuaDocsParameter>(),
-                        Static = prop.IsStatic
-
-                    };
-
-                    var paramNameList = new List<string>();
-                    var paramDict = GetMethodParameters(prop);
-                    foreach (var param in prop.GetParameters())
-                    {
-                        var typeName = param.ParameterType.ToString();
-                        paramNameList.Add(param.Name);
-                        string description;
-                        if (!paramDict.TryGetValue(param.Name, out description)) description = "";
-                        var parameter = new LuaDocsParameter
-                        {
-                            Name = param.Name,
-                            Description = description,
-                            ParameterType = LuaDocsType.CsharpTypeToDocsType(typeName)
-                        };
-                        method.Parameters.Add(parameter);
-                    }
-                    
-                    var returnTypeName = prop.ReturnType.ToString();
-                    method.ReturnType = LuaDocsType.CsharpTypeToDocsType(returnTypeName);
-                    
-                    apiDocClass.Methods.Add(method);
-                }
-                ApiDocClasses.Add(apiDocClass);
-            }
+            LuaDocsRegistration.RegisterForDocs(t);
 #endif
         }
 
@@ -824,6 +698,11 @@ namespace TiltBrush
         public void InitScriptOnce(Script script)
         {
             script.Options.DebugPrint = LogLuaMessage;
+
+            // Ensure we don't trigger doc generation
+            // (mainly if domain reload is disabled in the editor)
+            LuaDocsRegistration.ApiDocClasses = null;
+
             RegisterApiClasses(script);
         }
 
@@ -883,7 +762,7 @@ namespace TiltBrush
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
         }
-        
+
         public void EnablePointerScript(bool enable)
         {
             PointerScriptsEnabled = enable;
