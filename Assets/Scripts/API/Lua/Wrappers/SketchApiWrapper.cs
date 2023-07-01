@@ -1,7 +1,6 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using MoonSharp.Interpreter;
-using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("Represents the current sketch")]

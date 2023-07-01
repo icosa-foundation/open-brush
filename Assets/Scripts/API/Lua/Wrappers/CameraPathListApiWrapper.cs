@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using MoonSharp.Interpreter;
-using UnityEngine;
 
 namespace TiltBrush
 {
-    [LuaDocsDescription("Wrapper class for CameraPathListApi")]
+    [LuaDocsDescription("The list of Camera Paths in the scene. (You don't instantiate this yourself. Access this via Sketch.cameraPaths ")]
     [MoonSharpUserData]
     public class CameraPathListApiWrapper
     {
