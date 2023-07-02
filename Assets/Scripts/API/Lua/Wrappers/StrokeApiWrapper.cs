@@ -116,6 +116,7 @@ namespace TiltBrush
             _Stroke.m_BatchSubset.m_ParentBatch.ReplaceMaterial(brush.Material);
         }
 
+        [LuaDocsDescription("Gets or sets a control point by index")]
         public TrTransform this[int index]
         {
             get => path._Path[index];

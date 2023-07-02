@@ -406,8 +406,8 @@ namespace TiltBrush
         [LuaDocsDescription("Simplifies the camera path")]
         [LuaDocsExample("newPath = oldPath:Simplify(1.2, 1)")]
         [LuaDocsParameter("tolerance", "The tolerance used for simplification")]
-        [LuaDocsParameter("smoothing", "The smoothing factor applied to the simplified camera path")]
-        [LuaDocsReturnValueAttribute("A new CameraPathApiWrapper instance for the simplified camera path")]
+        [LuaDocsParameter("smoothing", "The smoothing factor used for simplification")]
+        [LuaDocsReturnValue("A new simplified Camera Path")]
         public CameraPathApiWrapper Simplify(float tolerance, float smoothing)
         {
             List<Vector3> inputPoints = _CameraPathWidget.Path.PositionKnots.Select(knot => knot.transform.position).ToList();

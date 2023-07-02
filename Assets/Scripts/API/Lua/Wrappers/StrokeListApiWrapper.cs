@@ -9,10 +9,17 @@ namespace TiltBrush
     {
         [MoonSharpHidden]
         public List<Stroke> _Strokes;
+
+        [LuaDocsDescription("Returns the last stroke that was selected")]
         public StrokeApiWrapper lastSelected => new StrokeApiWrapper(SelectionManager.m_Instance.LastSelectedStroke);
+
+        [LuaDocsDescription("Returns the last Stroke")]
         public StrokeApiWrapper last => _Strokes == null || _Strokes.Count == 0 ? null : new StrokeApiWrapper(_Strokes[^1]);
 
+        [LuaDocsDescription("Returns the Stroke at the given index")]
         public StrokeApiWrapper this[int index] => new StrokeApiWrapper(_Strokes[index]);
+
+        [LuaDocsDescription("The number of strokes")]
         public int count => _Strokes?.Count ?? 0;
 
         public StrokeListApiWrapper()

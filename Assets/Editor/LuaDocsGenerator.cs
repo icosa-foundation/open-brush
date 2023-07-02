@@ -57,12 +57,13 @@ namespace TiltBrush
             {
                 Name = "Tool",
                 Methods = new List<LuaDocsMethod>(),
+                Description = "A class to interact with Scripted Tools",
                 Properties = new List<LuaDocsProperty>
                 {
-                    new() {Name="startPosition", PropertyType = vectorProp},
-                    new() {Name="endPosition", PropertyType = vectorProp},
-                    new() {Name="vector", PropertyType = vectorProp},
-                    new() {Name="rotation", PropertyType = rotationProp},
+                    new() {Name="startPosition", PropertyType = vectorProp, Description = "The position of the tool when the trigger was pressed"},
+                    new() {Name="endPosition", PropertyType = vectorProp, Description = "The position of the tool when the trigger was released"},
+                    new() {Name="vector", PropertyType = vectorProp, Description = "The vector from startPosition to endPosition"},
+                    new() {Name="rotation", PropertyType = rotationProp, Description = "The rotation from startPosition to endPosition"},
                 }
             };
             LuaDocsRegistration.ApiDocClasses.Add(toolApiDocClass);

@@ -42,19 +42,23 @@ namespace TiltBrush
 
 
         [LuaDocsDescription("Applies another transform to this transform")]
-        [LuaDocsParameter("transform", "The transform to apply to this transform")]
+        [LuaDocsExample("newTransform = myTransform:TransformBy(myOtherTransform)")]
+        [LuaDocsParameter("transform", "The transform to apply")]
         public TrTransform TransformBy(TrTransform transform) => _TrTransform * transform;
 
         [LuaDocsDescription("Applies a translation to this transform")]
-        [LuaDocsParameter("translation", "The translation to apply to this transform")]
+        [LuaDocsExample("newTransform = myTransform:TranslateBy(Vector3(1, 2, 3))")]
+        [LuaDocsParameter("translation", "The translation to apply")]
         public TrTransform TranslateBy(Vector3 translation) => _TrTransform * TrTransform.T(translation);
 
         [LuaDocsDescription("Applies a rotation to this transform")]
-        [LuaDocsParameter("rotation", "The rotation to apply to this transform")]
+        [LuaDocsExample("newTransform = myTransform:RotateBy(Rotation.New(0, 45, 0))")]
+        [LuaDocsParameter("rotation", "The rotation to apply")]
         public TrTransform RotateBy(Quaternion rotation) => _TrTransform * TrTransform.R(rotation);
 
-        [LuaDocsDescription("Applies another transform to this transform")]
-        [LuaDocsParameter("scale", "The scale to apply to this transform")]
+        [LuaDocsDescription("Applies a scale to this transform")]
+        [LuaDocsExample("newTransform = myTransform:ScaleBy(2)")]
+        [LuaDocsParameter("scale", "The scale value to apply")]
         public TrTransform ScaleBy(float scale) => _TrTransform * TrTransform.S(scale);
 
         // Convenient shorthand
@@ -73,7 +77,7 @@ namespace TiltBrush
         [LuaDocsParameter("translation", "The translation amount")]
         [LuaDocsParameter("rotation", "The rotation amount")]
         [LuaDocsParameter("scale", "The scale amount")]
-        public static TransformApiWrapper New(Vector3 translation, Quaternion rotation, float scale = 1)
+        public static TransformApiWrapper NewTRS(Vector3 translation, Quaternion rotation, float scale = 1)
         {
             var instance = new TransformApiWrapper(translation, rotation, scale);
             return instance;
@@ -95,15 +99,6 @@ namespace TiltBrush
         public static TransformApiWrapper New(Vector3 translation, float scale)
         {
             var instance = new TransformApiWrapper(translation, Quaternion.identity, scale);
-            return instance;
-        }
-
-        [LuaDocsDescription("Creates a new scale transform")]
-        [LuaDocsExample("myTransform = Transform:New(2)")]
-        [LuaDocsParameter("scale", "The scale amount")]
-        public static TransformApiWrapper New(float scale = 1)
-        {
-            var instance = new TransformApiWrapper(Vector3.zero, Quaternion.identity, scale);
             return instance;
         }
 

@@ -1661,6 +1661,108 @@ function Svg:DrawPathString(svg, tr) end
 ---@param svg string
 ---@param tr Transform
 function Svg:DrawDocument(svg, tr) end
+
+---Properties for type Symmetry
+
+---@type Transform
+Symmetry.transform = nil
+
+---@type Vector3
+Symmetry.position = nil
+
+---@type Rotation
+Symmetry.rotation = nil
+
+---@type Vector3
+Symmetry.brushOffset = nil
+
+---@type Vector3
+Symmetry.wandOffset = nil
+
+---@type Vector3
+Symmetry.direction = nil
+
+
+---Methods for type Symmetry
+
+
+function Symmetry:Mirror() end
+
+
+function Symmetry:DoubleMirror() end
+
+
+function Symmetry:TwoHandeded() end
+
+
+function Symmetry:SummonWidget() end
+
+---@param xSpeed number
+---@param ySpeed number
+---@param zSpeed number
+function Symmetry:Spin(xSpeed, ySpeed, zSpeed) end
+
+---@param angle number
+---@param minorRadius number
+---@return number
+function Symmetry:Ellipse(angle, minorRadius) end
+
+---@param angle number
+---@return number
+function Symmetry:Square(angle) end
+
+---@param angle number
+---@param n number
+---@param a number
+---@param b number
+---@return number
+function Symmetry:Superellipse(angle, n, a, b) end
+
+---@param angle number
+---@param halfSideLength number
+---@param cornerRadius number
+---@return number
+function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
+
+---@param angle number
+---@param numSides number
+---@param radius number
+---@return number
+function Symmetry:Polygon(angle, numSides, radius) end
+
+---@param colors Color[]
+function Symmetry:ClearColors(colors) end
+
+---@param color Color
+function Symmetry:AddColor(color) end
+
+---@param colors Color[]
+function Symmetry:SetColors(colors) end
+
+
+---@return Color[]
+function Symmetry:GetColors() end
+
+---@param brush string
+function Symmetry:AddBrush(brush) end
+
+---@param brushes string[]
+function Symmetry:ClearBrushes(brushes) end
+
+---@param brushes string[]
+function Symmetry:SetBrushes(brushes) end
+
+
+---@return string[]
+function Symmetry:GetBrushNames() end
+
+
+---@return string[]
+function Symmetry:GetBrushGuids() end
+
+---@param path IPath
+---@return Path
+function Symmetry:PathToPolar(path) end
 ---Methods for type Timer
 
 ---@param fn function
@@ -1730,7 +1832,7 @@ function Transform:ScaleBy(scale) end
 ---@param rotation Rotation
 ---@param scale number
 ---@return Transform
-function Transform:New(translation, rotation, scale) end
+function Transform:NewTRS(translation, rotation, scale) end
 
 ---@param translation Vector3
 ---@return Transform
@@ -1740,10 +1842,6 @@ function Transform:New(translation) end
 ---@param scale number
 ---@return Transform
 function Transform:New(translation, scale) end
-
----@param scale number
----@return Transform
-function Transform:New(scale) end
 
 ---@param x number
 ---@param y number
@@ -1817,19 +1915,17 @@ Vector2.zero = nil
 ---@return Vector2
 function Vector2:New(x, y) end
 
----@param a Vector2
----@param b Vector2
+---@param other Vector2
 ---@return number
-function Vector2:Angle(a, b) end
+function Vector2:Angle(other) end
 
 ---@param maxLength number
 ---@return Vector2
 function Vector2:ClampMagnitude(maxLength) end
 
----@param a Vector2
----@param b Vector2
+---@param other Vector2
 ---@return number
-function Vector2:Distance(a, b) end
+function Vector2:Distance(other) end
 
 ---@param a Vector2
 ---@param b Vector2
@@ -1858,25 +1954,22 @@ function Vector2:Max(a, b) end
 ---@return Vector2
 function Vector2:Min(a, b) end
 
----@param current Vector2
 ---@param target Vector2
 ---@param maxDistanceDelta number
 ---@return Vector2
-function Vector2:MoveTowards(current, target, maxDistanceDelta) end
+function Vector2:MoveTowards(target, maxDistanceDelta) end
 
----@param a Vector2
----@param b Vector2
+---@param normal Vector2
 ---@return Vector2
-function Vector2:Reflect(a, b) end
+function Vector2:Reflect(normal) end
 
 ---@param other Vector2
 ---@return Vector2
 function Vector2:Scale(other) end
 
 ---@param other Vector2
----@param axis Vector2
 ---@return number
-function Vector2:SignedAngle(other, axis) end
+function Vector2:SignedAngle(other) end
 
 ---@param a Vector2
 ---@param b Vector2
@@ -2012,10 +2105,9 @@ Vector3.zero = nil
 ---@return Vector3
 function Vector3:New(x, y, z) end
 
----@param a Vector3
----@param b Vector3
+---@param other Vector3
 ---@return number
-function Vector3:Angle(a, b) end
+function Vector3:Angle(other) end
 
 ---@param maxLength number
 ---@return Vector3
@@ -2026,10 +2118,9 @@ function Vector3:ClampMagnitude(maxLength) end
 ---@return Vector3
 function Vector3:Cross(a, b) end
 
----@param a Vector3
----@param b Vector3
+---@param other Vector3
 ---@return number
-function Vector3:Distance(a, b) end
+function Vector3:Distance(other) end
 
 ---@param a Vector3
 ---@param b Vector3
@@ -2053,36 +2144,32 @@ function Vector3:Max(a, b) end
 ---@return Vector3
 function Vector3:Min(a, b) end
 
----@param current Vector3
 ---@param target Vector3
 ---@param maxDistanceDelta number
 ---@return Vector3
-function Vector3:MoveTowards(current, target, maxDistanceDelta) end
+function Vector3:MoveTowards(target, maxDistanceDelta) end
 
 ---@param other Vector3
 ---@return Vector3
 function Vector3:Project(other) end
 
----@param vector Vector3
 ---@param planeNormal Vector3
 ---@return Vector3
-function Vector3:ProjectOnPlane(vector, planeNormal) end
+function Vector3:ProjectOnPlane(planeNormal) end
 
----@param other Vector3
+---@param normal Vector3
 ---@return Vector3
-function Vector3:Reflect(other) end
+function Vector3:Reflect(normal) end
 
----@param current Vector3
 ---@param target Vector3
 ---@param maxRadiansDelta number
 ---@param maxMagnitudeDelta number
 ---@return Vector3
-function Vector3:RotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta) end
+function Vector3:RotateTowards(target, maxRadiansDelta, maxMagnitudeDelta) end
 
----@param a Vector3
----@param b Vector3
+---@param other Vector3
 ---@return Vector3
-function Vector3:ScaleBy(a, b) end
+function Vector3:ScaleBy(other) end
 
 ---@param other Vector3
 ---@param axis Vector3
@@ -2124,10 +2211,6 @@ function Vector3:Subtract(x, y, z) end
 ---@param value number
 ---@return Vector3
 function Vector3:Multiply(value) end
-
----@param other Vector3
----@return Vector3
-function Vector3:ScaleBy(other) end
 
 ---@param x number
 ---@param y number
@@ -2190,8 +2273,8 @@ Visualizer.duration = nil
 
 ---Methods for type Visualizer
 
----@param name string
-function Visualizer:EnableScripting(name) end
+
+function Visualizer:EnableScripting() end
 
 
 function Visualizer:DisableScripting() end
@@ -2422,19 +2505,17 @@ function Waveform:PerlinNoise(time, frequency, duration, sampleRate, amplitude) 
 ---@return number[]
 function Waveform:WhiteNoise(duration, sampleRate, amplitude) end
 
----@param previous number
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
 ---@return number[]
-function Waveform:BrownNoise(previous, duration, sampleRate, amplitude) end
+function Waveform:BrownNoise(duration, sampleRate, amplitude) end
 
----@param previous number
 ---@param duration number
 ---@param sampleRate number
 ---@param amplitude number
 ---@return number[]
-function Waveform:BlueNoise(previous, duration, sampleRate, amplitude) end
+function Waveform:BlueNoise(duration, sampleRate, amplitude) end
 ---Methods for type WebRequest
 
 ---@param url string

@@ -22,15 +22,23 @@ namespace TiltBrush
         public static Vector3 speed => InputManager.Wand.m_Velocity;
 
         [LuaDocsDescription("Clears the history and sets it's size")]
+        [LuaDocsExample("Wand.ResizeHistory(100)")]
+        [LuaDocsParameter("size", "The size of the history buffer")]
         public static void ResizeHistory(int size) => LuaManager.Instance.ResizeWandBuffer(size);
 
         [LuaDocsDescription("Sets the size of the history. Only clears it if the size has changed")]
+        [LuaDocsExample("Wand.SetHistorySize(100)")]
+        [LuaDocsParameter("size", "The size of the history buffer")]
         public static void SetHistorySize(int size) => LuaManager.Instance.SetWandBufferSize(size);
 
         [LuaDocsDescription("Recalls previous positions of the Wand from the history buffer")]
+        [LuaDocsExample("myPosition = Wand.PastPosition(5)")]
+        [LuaDocsParameter("back", "How far back in the history to get the position from")]
         public static Vector3 PastPosition(int back) => LuaManager.Instance.GetPastWandPos(back);
 
         [LuaDocsDescription("Recalls previous orientations of the Wand from the history buffer")]
+        [LuaDocsExample("myRotation = Wand.PastRotation(5)")]
+        [LuaDocsParameter("back", "How far back in the history to get the rotation from")]
         public static Quaternion PastRotation(int back) => LuaManager.Instance.GetPastWandRot(back);
     }
 }
