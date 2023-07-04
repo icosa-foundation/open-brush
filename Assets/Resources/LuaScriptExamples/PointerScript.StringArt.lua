@@ -25,5 +25,5 @@ function WhileTriggerPressed()
     end
 
     --Leave the actual pointer position unchanged
-    return Transform.zero
+    return Transform.identity
 end

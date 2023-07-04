@@ -27,5 +27,5 @@ function OnTriggerReleased()
             path:Draw()
         end
     end
-    return Transform.zero
+    return Transform.identity
 end

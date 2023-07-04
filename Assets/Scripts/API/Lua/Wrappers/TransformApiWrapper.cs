@@ -77,7 +77,7 @@ namespace TiltBrush
         [LuaDocsParameter("translation", "The translation amount")]
         [LuaDocsParameter("rotation", "The rotation amount")]
         [LuaDocsParameter("scale", "The scale amount")]
-        public static TransformApiWrapper NewTRS(Vector3 translation, Quaternion rotation, float scale = 1)
+        public static TransformApiWrapper New(Vector3 translation, Quaternion rotation, float scale = 1)
         {
             var instance = new TransformApiWrapper(translation, rotation, scale);
             return instance;

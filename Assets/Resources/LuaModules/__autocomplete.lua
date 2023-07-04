@@ -1832,7 +1832,7 @@ function Transform:ScaleBy(scale) end
 ---@param rotation Rotation
 ---@param scale number
 ---@return Transform
-function Transform:NewTRS(translation, rotation, scale) end
+function Transform:New(translation, rotation, scale) end
 
 ---@param translation Vector3
 ---@return Transform
