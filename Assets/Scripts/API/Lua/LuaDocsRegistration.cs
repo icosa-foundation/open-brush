@@ -57,6 +57,13 @@ namespace TiltBrush
                     return attr.Example;
                 }
 
+                string GetReturnValueDescription(MethodBase m)
+                {
+                    var attr = m.GetCustomAttribute<LuaDocsReturnValueAttribute>();
+                    if (attr == null) return "";
+                    return attr.Description;
+                }
+
                 Dictionary<string, string> GetMethodParameters(MethodBase m)
                 {
                     var attrs = m.GetCustomAttributes<LuaDocsParameterAttribute>();
@@ -100,10 +107,10 @@ namespace TiltBrush
 
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
                              .Where(x =>
-                                 x.Name.ToString() != "Equals" &&
-                                 x.Name.ToString() != "GetHashCode" &&
-                                 x.Name.ToString() != "GetType" &&
-                                 x.Name.ToString() != "ToString"))
+                                 x.Name != "Equals" &&
+                                 x.Name != "GetHashCode" &&
+                                 x.Name != "GetType" &&
+                                 x.Name != "ToString"))
                 {
                     if (isHidden(prop)) continue;
 
@@ -111,6 +118,7 @@ namespace TiltBrush
                     {
                         Name = prop.Name,
                         Description = GetMethodDescription(prop),
+                        ReturnValueDescription = GetReturnValueDescription(prop),
                         Example = GetMethodExample(prop),
                         Parameters = new List<LuaDocsParameter>(),
                         Static = prop.IsStatic

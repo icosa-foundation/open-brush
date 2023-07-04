@@ -44,8 +44,8 @@ namespace TiltBrush
         private string markdownTemplateForProperties = @"
 ## {0} Properties
 
-<table>
-<thead><tr><th width=""225"">Name</th><th width=""160"">Return Type</th><th width=""80"">Read/Write?</th><th>Description</th></tr></thead>
+<table data-full-width=""false"">
+<thead><tr><th>Name</th><th>Return Type</th><th>Description</th></tr></thead>
 <tbody>
 {1}
 </tbody></table>
@@ -352,20 +352,21 @@ namespace TiltBrush
         public List<LuaDocsParameter> Parameters;
         public LuaDocsType ReturnType;
         public string Description;
+        public string ReturnValueDescription;
         public string Example;
         public bool Static;
 
-        // 0=classname 1=methodname 2=method signature 3=description 4=returnType 5=parameters 6=example
+        // 0=classname 1=methodname 2=method signature 3=description 4=returnType 5=returnValueDescription 6=parameters 7=example
         private string markdownTemplate = @"
 ### {0}:{1}({2})
 
 {3}
 
-**Returns:** {4}
-
-{5}
+**Returns:** {4} {5}
 
 {6}
+
+{7}
 ";
         public string MarkdownSerialize(string className)
         {
@@ -380,7 +381,7 @@ namespace TiltBrush
 **Parameters:**
 
 <table data-full-width=""false"">
-<thead><tr><th width=""217"">Name</th><th width=""134"">Type</th><th>Description</th></tr></thead>
+<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>{parameters}</tbody></table>
 
 ";
@@ -397,6 +398,16 @@ namespace TiltBrush
                 {
                     Debug.LogWarning($"Missing Parameter Description for {parameter.Name} on {className}:{Name}");
                 }
+            }
+
+            string returnValueDescription = "";
+            if (!string.IsNullOrEmpty(ReturnValueDescription))
+            {
+                returnValueDescription = $@" ({ReturnValueDescription})";
+            }
+            else if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
+            {
+                Debug.LogWarning($"Missing Return Value Description for {className}:{Name}");
             }
 
             string example = "";
@@ -416,7 +427,8 @@ namespace TiltBrush
 
             string lowerCaseFirstChar(string s) => String.IsNullOrEmpty(s) ? s : Char.ToLower(s[0]) + s.Substring(1);
             className = Static ? className : lowerCaseFirstChar(className);
-            return string.Format(markdownTemplate, className, Name, methodSignature, Description, ReturnType.TypeAsMarkdownString(), parameters, example);
+            return string.Format(markdownTemplate, className, Name, methodSignature, Description,
+                ReturnType.TypeAsMarkdownString(), returnValueDescription, parameters, example);
         }
         
         public string AutocompleteSerialize(string className)
@@ -450,12 +462,14 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
         public bool Static;
 
         // 0=name 1=type 2=ReadWrite 3=description
-        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>";
+        private string markdownTemplate = "<tr><td>{0}</td><td>{1}<br>{2}</td><td>{3}</td></tr>";
         
         public string MarkdownSerialize()
         {
             string readwrite = ReadWrite ? "Read/Write" : "Read-only";
-            return string.Format(markdownTemplate, Name, PropertyType.TypeAsMarkdownString(), readwrite, Description);
+            string name = Name;
+            if (name == "Item") name = "this[index]";
+            return string.Format(markdownTemplate, name, PropertyType.TypeAsMarkdownString(), readwrite, Description);
         }
 
         public string AutocompleteSerialize(string className)
