@@ -1,4 +1,5 @@
 Settings = {
+    description="Calls an API to generate a random SVG icon using the Iconify library",
     previewType="quad"
 }
 

@@ -36,7 +36,7 @@ function WhileTriggerPressed()
 end
 
 function quantize(val, size)
-    return Math.round(val / size) * size
+    return Math:Round(val / size) * size
 end
 
 --Generates the path for each tile
