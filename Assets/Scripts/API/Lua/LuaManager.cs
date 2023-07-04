@@ -79,6 +79,9 @@ namespace TiltBrush
         private static LuaManager m_Instance;
         private ApiManager apiManager;
         private static readonly string LuaFileSearchPattern = "*.lua";
+        private string m_UserPluginsPath;
+
+        public string UserPluginsPath() { return m_UserPluginsPath; }
 
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
         public int ScriptedWaveformSampleRate = 16000;
@@ -99,7 +102,7 @@ namespace TiltBrush
 
         private LinkedList<LuaWebRequest> m_WebRequests;
         
-        public string LuaModulesPath => Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
+        public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
         public struct ScriptTrTransform
         {
@@ -116,6 +119,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+            m_UserPluginsPath = Path.Combine(App.UserPath(), "Plugins");
+            if (!Directory.Exists(m_UserPluginsPath))
+            {
+                Directory.CreateDirectory(m_UserPluginsPath);
+            }
             Init();
         }
 
@@ -161,9 +169,9 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
 
-            if (Directory.Exists(ApiManager.Instance.UserScriptsPath()))
+            if (Directory.Exists(UserPluginsPath()))
             {
-                m_FileWatcher = new FileWatcher(ApiManager.Instance.UserScriptsPath(), "*.lua");
+                m_FileWatcher = new FileWatcher(UserPluginsPath(), "*.lua");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
                 m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
@@ -304,7 +312,7 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
-            string[] files = Directory.GetFiles(ApiManager.Instance.UserScriptsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
@@ -961,7 +969,7 @@ namespace TiltBrush
         public bool CopyScriptToUserScriptFolder(LuaApiCategory category, string scriptName)
         {
             var originalFilename = $"{category}.{scriptName}";
-            var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");
+            var newFilename = Path.Join(UserPluginsPath(), $"{originalFilename}.lua");
             if (!File.Exists(newFilename))
             {
                 FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);

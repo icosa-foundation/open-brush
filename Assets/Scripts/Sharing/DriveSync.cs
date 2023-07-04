@@ -511,7 +511,17 @@ namespace TiltBrush
                     SyncedFolderType.Scripts,
                     token,
                     recursive: true,
-                    includeExtensions: new[] { ".lua", ".html" }));
+                    includeExtensions: new[] { ".html" }));
+
+                folderSyncs.Add(AddSyncedFolderAsync(
+                    "Plugins",
+                    LuaManager.Instance.UserPluginsPath(),
+                    deviceRootId,
+                    SyncType.UploadAndDownload,
+                    SyncedFolderType.Scripts,
+                    token,
+                    recursive: true,
+                    includeExtensions: new[] { ".lua" }));
             }
 
             if (!App.Config.IsMobileHardware)

@@ -87,7 +87,7 @@ namespace TiltBrush
             LuaManager.Instance.CopyLuaModules(); // Update the copy in User docs (also done on app start)
 
             // Generate markdown docs
-            string docsPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaDocs");
+            string docsPath = Path.Join(LuaManager.Instance.UserPluginsPath(), "LuaDocs");
             if (!Directory.Exists(docsPath)) Directory.CreateDirectory(docsPath);
             foreach (var klass in LuaDocsRegistration.ApiDocClasses)
             {

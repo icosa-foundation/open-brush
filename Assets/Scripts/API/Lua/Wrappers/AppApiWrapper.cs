@@ -143,7 +143,7 @@ namespace TiltBrush
             valid = !Path.IsPathRooted(path);
             if (valid)
             {
-                path = Path.Join(ApiManager.Instance.UserScriptsPath(), path);
+                path = Path.Join(LuaManager.Instance.UserPluginsPath(), path);
                 // Check path is a subdirectory of User folder
                 valid = _IsSubdirectory(path, App.UserPath());
             }
