@@ -76,7 +76,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]
-        [LuaDocsExample(@"myVideo = Video.Import(""myVideo.mp4""")]
+        [LuaDocsExample(@"myVideo = Video.Import(""myVideo.mp4"")")]
         [LuaDocsParameter("location", "The filename of the video file to import from the user's MediaLibrary/Videos folder")]
         public static VideoApiWrapper Import(string location) => new (ApiMethods.ImportVideo(location));
 

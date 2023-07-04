@@ -2,7 +2,7 @@ using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
-    [LuaDocsDescription("A position or offset in 2D space")]
+    [LuaDocsDescription("A position or offset in 2D space. See https://docs.unity3d.com/ScriptReference/Vector2.html for more detail on many of these methods or properties")]
     [MoonSharpUserData]
     public class Vector2ApiWrapper
     {
