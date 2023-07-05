@@ -36,7 +36,7 @@ function WhileTriggerPressed()
 end
 
 function quantize(val, size)
-    return Math.round(val / size) * size
+    return Math:Round(val / size) * size
 end
 
 --Generates the path for each tile
@@ -63,5 +63,5 @@ function patch(cell, gridSize)
 end
 
 function GetHeight(x, y)
-    return Math.perlinNoise(x * scale, y * scale) * height + offset
+    return Math:PerlinNoise(x * scale, y * scale) * height + offset
 end

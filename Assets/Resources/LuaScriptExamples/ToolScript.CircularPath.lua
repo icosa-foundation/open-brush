@@ -18,7 +18,7 @@ function OnTriggerReleased()
         rotation = Rotation:New(0, -a, 0)
         path.Insert(Transform:New(position, rotation, ((Math.pi * 0.5) / sides) * radius))
     end
-    path:Transform(TransformBy:New(Tool.startPosition, Tool.rotation));
+    path:TransformBy(Transform:New(Tool.startPosition, Tool.rotation));
     CameraPath:FromPath(path, true)
 
     -- Create the camera path knot by knot
@@ -31,7 +31,7 @@ function OnTriggerReleased()
         cameraPath:Extend(position, rotation, 0.75 * radius)
     end
     cameraPath:Loop()
-    cameraPath.transform = Transform:New(tool.startPosition, tool.rotation)
+    cameraPath.transform = Transform:New(Tool.startPosition, Tool.rotation)
     cameraPath.active = true
 
 end

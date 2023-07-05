@@ -79,7 +79,16 @@
         <button onclick='activatePointerScript()'>Activate</button>
         <button onclick='deactivatePointerScript()'>Deactivate</button>
         <br><br>
-
+        <h3 id="backgroundScripts">Background Scripts:</h3>
+        <template id="backgroundScriptTemplate">
+            <div>
+                <button onclick='activateBackgroundScript(this.name)'>On</button>
+                <button onclick='deactivateBackgroundScript(this.name)'>Off</button>
+            </div>
+        </template>
+        <br>
+        <button onclick='activateAllBackgroundScripts()'>Enable Active Scripts</button>
+        <button onclick='deactivateAllBackgroundScripts()'>Disable All Scripts</button>
         <br><br>
         <h4>Actions:</h4>
         <button onclick="sendCommand('save');">Save Current Scene</button>
@@ -104,6 +113,22 @@
         }
     }
 
+    function configureMultiSelect(id, items) {
+        let label = document.getElementById(id);
+        let template = document.getElementById("backgroundScriptTemplate");
+        let row = template.content.querySelector("div");
+        // Loop in reverse as we insert each row at the start of #backgroundScripts
+        for (let i = items.length - 1; i >= 0 ; i--) {
+            let name = items[i];
+            let a = document.importNode(row, true);
+            let btns = a.getElementsByTagName("button");
+            btns[0].insertAdjacentText("beforebegin", `${name}: `);
+            btns[0].name = name;
+            btns[1].name = name;
+            document.getElementById("backgroundScripts").after(a);
+        }
+    }
+
     var items = {{brushesJson}};
     configureSelect("brush.type", items, "Light");
 
@@ -118,6 +143,9 @@
 
     var items = {{pointerScripts}};
     configureSelect("pointerScripts", items, items[0]);
+
+    var items = {{backgroundScripts}};
+    configureMultiSelect("backgroundScripts", items);
 
     function sendCommand(command) {
         var xmlHttp = new XMLHttpRequest();
@@ -153,6 +181,22 @@
     }
     function deactivatePointerScript() {
         sendCommand('scripts.pointerscript.deactivate');
+    }
+
+    function activateBackgroundScript(item) {
+        sendCommand('scripts.backgroundscript.activate=' + item);
+    }
+
+    function deactivateBackgroundScript(item) {
+        sendCommand('scripts.backgroundscript.deactivate=' + item);
+    }
+
+    function activateAllBackgroundScripts() {
+        sendCommand('scripts.backgroundscript.activateall');
+    }
+
+    function deactivateAllBackgroundScripts() {
+        sendCommand('scripts.backgroundscript.deactivateall');
     }
 
     function setCam() {

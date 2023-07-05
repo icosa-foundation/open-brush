@@ -2,7 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
-
+    [LuaDocsDescription("The skybox for the current environment")]
     [MoonSharpUserData]
     public class SkyboxApiWrapper
     {

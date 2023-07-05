@@ -1,4 +1,7 @@
-Settings = {previewType="quad"}
+Settings = {
+    description="Calls an API to generate a random SVG icon using the Multiavatar library",
+    previewType="quad"
+}
 
 function Start()
     requestNewAvatar()

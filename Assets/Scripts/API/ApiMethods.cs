@@ -211,16 +211,10 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("spectator.show", "Unhides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
-        public static void SpectatorShow(string thing)
-        {
-            _SpectatorShowHide(thing, true);
-        }
-
         [ApiEndpoint("spectator.hide", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
         public static void SpectatorHide(string thing)
         {
-            _SpectatorShowHide(thing, false);
+            _SpectatorShowHideFromFriendlyName(thing, false);
         }
 
         [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
@@ -456,6 +450,51 @@ namespace TiltBrush
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
         }
 
+        public static BasePanel.PanelType _PanelByName(string name)
+        {
+            BasePanel.PanelType panelType = (BasePanel.PanelType)Enum.Parse(typeof(BasePanel.PanelType), name, true);
+            return panelType;
+        }
+
+        [ApiEndpoint("panel.open", "Opens a given panel")]
+        public static void OpenPanel(string name, float x, float y, float z)
+        {
+            SketchControlsScript.m_Instance.OpenPanelOfType(_PanelByName(name), TrTransform.T(new Vector3(x, y, z)), true);
+        }
+
+        [ApiEndpoint("panel.close", "Closes a given panel")]
+        public static void ClosePanel(string name)
+        {
+            PanelManager.m_Instance.HidePanel(_PanelByName(name));
+        }
+
+        [ApiEndpoint("panel.position", "Sets position of a given panel")]
+        public static void PositionPanel(string name, Vector3 position)
+        {
+            var panel = PanelManager.m_Instance.GetPanelByType(_PanelByName(name));
+            panel.transform.position = position;
+        }
+
+        [ApiEndpoint("panel.rotation", "Sets rotation of a given panel")]
+        public static void RotatePanel(string name, Vector3 rotation)
+        {
+            var panel = PanelManager.m_Instance.GetPanelByType(_PanelByName(name));
+            panel.transform.position = rotation;
+        }
+
+        [ApiEndpoint("panel.attach", "Attaches the given panel to the user's wand")]
+        public static void AttachPanel(string name)
+        {
+            PanelManager.m_Instance.AttachPanelToWand(_PanelByName(name));
+        }
+
+        [ApiEndpoint("panel.detach", "Detaches the given panel from the user's wand")]
+        public static void DetachPanel(string name, Vector3 position)
+        {
+            var tr = TrTransform.T(position);
+            PanelManager.m_Instance.DetachPanelFromWand(_PanelByName(name), tr);
+        }
+
         [ApiEndpoint("layer.add", "Adds a new layer")]
         public static void AddLayer()
         {
@@ -539,18 +578,24 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("symmetry.set.rotation", "Sets the symmetry widget rotation")]
-        public static void SymmetrySetRotation(Quaternion rotation)
+        public static void SymmetrySetRotation(Vector3 rotation)
         {
-            var widget = PointerManager.m_Instance.SymmetryWidget;
-            _SetWidgetTransform(widget, Coords.AsCanvas[widget.transform].translation, rotation);
+            _SymmetrySetRotation(Quaternion.Euler(rotation));
         }
 
         [ApiEndpoint("symmetry.set.transform", "Sets the position and rotation of the symmetry widget")]
         public static void SymmetrySetTransform(Vector3 position, Vector3 rotation)
         {
-            SymmetrySetTransform(position, Quaternion.Euler(rotation));
+            _SymmetrySetTransform(position, Quaternion.Euler(rotation));
         }
-        public static void SymmetrySetTransform(Vector3 position, Quaternion rotation)
+
+        public static void _SymmetrySetRotation(Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, widget.transform.position, rotation);
+        }
+
+        public static void _SymmetrySetTransform(Vector3 position, Quaternion rotation)
         {
             var widget = PointerManager.m_Instance.SymmetryWidget;
             _SetWidgetTransform(widget, position, rotation);
@@ -664,7 +709,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.toolscript.deactivate", "Dectivate the tool script")]
-        public static void DectivateToolScript()
+        public static void DeactivateToolScript()
         {
             SketchSurfacePanel.m_Instance.EnableDefaultTool();
         }
@@ -677,7 +722,7 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.symmetryscript.deactivate", "Dectivate the symmetry script")]
-        public static void DectivateSymmetryScript()
+        public static void DeactivateSymmetryScript()
         {
             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
         }
@@ -690,10 +735,35 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("scripts.pointerscript.deactivate", "Dectivate the pointer script")]
-        public static void DectivatePointerScript()
+        public static void DeactivatePointerScript()
         {
             LuaManager.Instance.PointerScriptsEnabled = false;
         }
+
+        [ApiEndpoint("scripts.backgroundscript.activate", "Activate the given background script")]
+        public static void ActivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.deactivate", "Dectivate the given background script")]
+        public static void DeactivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.activateall", "Dectivate all background scripts")]
+        public static void ActivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(true);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.deactivateall", "Dectivate all background scripts")]
+        public static void DectivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(false);
+        }
+
 
         [ApiEndpoint("guide.add", "Adds a guide to the scene")]
         public static void AddGuide(string type)

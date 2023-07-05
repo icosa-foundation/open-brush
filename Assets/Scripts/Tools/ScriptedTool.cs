@@ -134,7 +134,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty("Tool.startPosition", m_FirstPositionClicked_CS.translation);
+                SetApiProperty(LuaNames.ToolScriptStartPosition, m_FirstPositionClicked_CS.translation);
                 ApiManager.Instance.StartUndo();
                 DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
@@ -220,9 +220,9 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty("Tool.endPosition", rAttachPoint_CS.translation);
-                    SetApiProperty("Tool.vector", drawnVector_CS);
-                    SetApiProperty("Tool.rotation", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
+                    SetApiProperty(LuaNames.ToolScriptEndPosition, rAttachPoint_CS.translation);
+                    SetApiProperty(LuaNames.ToolScriptVector, drawnVector_CS);
+                    SetApiProperty(LuaNames.ToolScriptRotation, Quaternion.LookRotation(drawnVector_CS, Vector3.up));
                     DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
                     ApiManager.Instance.EndUndo();
                 }
@@ -244,7 +244,7 @@ namespace TiltBrush
             var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
             var tr_CS = new TrTransform();
 
-            switch (result.Space)
+            switch (result._Space)
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:

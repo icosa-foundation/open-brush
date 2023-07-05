@@ -28,7 +28,7 @@ function Main()
         angle = (Symmetry.rotation.y * Math.deg2Rad) + i * theta
         radius = Symmetry:Superellipse(angle, n, eccentricity)
         if n < 1 then
-            radius = radius * Math.pow(1 + (1-n), 2)
+            radius = radius * Math:Pow(1 + (1-n), 2)
         end
 
         pointer = Transform:New(

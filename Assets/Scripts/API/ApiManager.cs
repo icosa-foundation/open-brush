@@ -592,6 +592,9 @@ namespace TiltBrush
             html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(
                 LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript))
             );
+            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(
+                LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript))
+            );
 
             return html;
         }

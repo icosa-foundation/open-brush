@@ -19,7 +19,7 @@ function WhileTriggerPressed()
     Brush:ForcePaintingOff(wave > spacing)
 
     --Leave the pointer position unchanged
-    return Transform.zero
+    return Transform.identity
 end
 
 function End()

@@ -227,37 +227,49 @@ namespace TiltBrush
             return null;
         }
 
-        private static void _SpectatorShowHide(string thing, bool state)
+        public static bool _GetSpectatorLayerState(string friendlyName)
         {
-            // Friendly names to layer names
-            string layerName = null;
-            switch (thing.Trim().ToLower())
+            var layerName = _SpectatorConvertFriendlyName(friendlyName);
+            var layer = LayerMask.NameToLayer(layerName);
+            if (layer == -1) return false;
+            int mask = 1 << layer;
+            Camera cam = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
+            if (cam == null) return false;
+            return (cam.cullingMask & mask) != 0;
+        }
+
+        public static void _SpectatorShowHideFromFriendlyName(string friendlyName, bool state)
+        {
+            var layerName = _SpectatorConvertFriendlyName(friendlyName);
+            _SpectatorShowHide(layerName, state);
+        }
+
+        private static string _SpectatorConvertFriendlyName(string friendlyName)
+        {
+            switch (friendlyName.Trim().ToLower())
             {
                 case "widgets":
-                    layerName = "GrabWidgets";
-                    break;
+                    return "GrabWidgets";
                 case "strokes":
-                    layerName = "MainCanvas";
-                    break;
+                    return "MainCanvas";
                 case "selection":
-                    layerName = "SelectionCanvas";
-                    break;
+                    return "SelectionCanvas";
                 case "headset":
-                    layerName = "HeadMesh";
-                    break;
+                    return "HeadMesh";
                 case "panels":
-                    layerName = "Panels";
-                    break;
+                    return "Panels";
                 case "ui":
-                    layerName = "UI";
-                    break;
+                    return "UI";
                 case "usertools":
-                    layerName = "UserTools";
-                    break;
+                    return "UserTools";
+                default:
+                    return "";
             }
+        }
 
-            if (layerName == null) return;
-
+        private static void _SpectatorShowHide(string layerName, bool state)
+        {
+            if (string.IsNullOrEmpty(layerName)) return;
             int mask = 1 << LayerMask.NameToLayer(layerName);
             Camera cam = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
             if (state)
@@ -269,6 +281,5 @@ namespace TiltBrush
                 cam.cullingMask = ~(~cam.cullingMask | mask);
             }
         }
-
     }
 }

@@ -2,11 +2,16 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("The turtle can be used to draw strokes in a classic LOGO style for moving and turning in space")]
     [MoonSharpUserData]
     public static class TurtleApiWrapper
     {
         public static TrTransform transform => TrTransform.TR(position, rotation);
+
+        [LuaDocsDescription("The current 3D position of the turtle")]
         public static Vector3 position => ApiManager.Instance.BrushPosition;
+
+        [LuaDocsDescription("The current 3D orientation of the Turtle")]
         public static Quaternion rotation => ApiManager.Instance.BrushRotation;
         public static void MoveTo(Vector3 position) => ApiMethods.BrushMoveTo(position);
         public static void MoveBy(Vector3 amount) => ApiMethods.BrushMoveBy(amount);

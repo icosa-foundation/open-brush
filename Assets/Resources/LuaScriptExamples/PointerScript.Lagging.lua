@@ -4,9 +4,9 @@
 }
 
 Parameters = {
-    delay={label="Delay", type="int", min=0, max=100, default=20},
-    frequency={label="Frequency", type="float", min=0, max=50, default=20},
-    amplitude={label="Amplitude", type="float", min=0.001, max=5, default=0.5},
+    delay={label="Delay", type="int", min=0, max=30, default=6},
+    frequency={label="Frequency", type="float", min=0, max=20, default=5},
+    amplitude={label="Amplitude", type="float", min=0.001, max=2, default=0.5},
 }
 
 function WhileTriggerPressed()

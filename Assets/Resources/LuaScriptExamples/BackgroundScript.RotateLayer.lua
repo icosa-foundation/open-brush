@@ -9,18 +9,18 @@ Parameters = {
 }
 
 function Start()
-    originalRotation = layer:GetRotation(layerNumber)
-    rotation = Rotation.zero
     layer = Sketch.layers.active
+    originalRotation = layer.rotation
+    rotation = Rotation.zero
     layer:CenterPivot(layerNumber)
     layer:ShowPivot(layerNumber)
 end
 
 function Main()
     rotation = Rotation:New(
-            rotation.x + speedX,
-            rotation.y + speedY,
-            rotation.z + speedZ
+        rotation.x + speedX,
+        rotation.y + speedY,
+        rotation.z + speedZ
     )
     layer.rotation = rotation
 end

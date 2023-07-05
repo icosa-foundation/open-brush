@@ -25,6 +25,7 @@ using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using System.Reflection;
+using MoonSharp.Interpreter.Interop;
 #endif
 
 namespace TiltBrush
@@ -50,6 +51,7 @@ namespace TiltBrush
 
     public static class LuaNames
     {
+        // By using properties instead of constants, it makes it easier to track down usages in the editor
 
         // Special Tables
 
@@ -59,6 +61,7 @@ namespace TiltBrush
         public static string Brushes => "Brushes";
 
         // Special Methods
+
         public static string Main => "Main";
         public static string Start => "Start";
         public static string End => "End";
@@ -70,6 +73,13 @@ namespace TiltBrush
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
 
+        // Injected Toolscript properties
+
+        public static string ToolScriptStartPosition => "Tool.startPosition";
+        public static string ToolScriptEndPosition => "Tool.endPosition";
+        public static string ToolScriptVector => "Tool.vector";
+        public static string ToolScriptRotation => "Tool.rotation";
+
     }
 
     public class LuaManager : MonoBehaviour
@@ -78,11 +88,9 @@ namespace TiltBrush
         private static LuaManager m_Instance;
         private ApiManager apiManager;
         private static readonly string LuaFileSearchPattern = "*.lua";
+        private string m_UserPluginsPath;
 
-#if UNITY_EDITOR
-        // Used when called via MenuItem("Open Brush/API/Generate Lua Autocomplete File")
-        public static List<string> AutoCompleteEntries;
-#endif
+        public string UserPluginsPath() { return m_UserPluginsPath; }
 
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
         public int ScriptedWaveformSampleRate = 16000;
@@ -102,6 +110,8 @@ namespace TiltBrush
         public static LuaManager Instance => m_Instance;
 
         private LinkedList<LuaWebRequest> m_WebRequests;
+        
+        public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
 
         public struct ScriptTrTransform
         {
@@ -118,6 +128,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+            m_UserPluginsPath = Path.Combine(App.UserPath(), "Plugins");
+            if (!Directory.Exists(m_UserPluginsPath))
+            {
+                Directory.CreateDirectory(m_UserPluginsPath);
+            }
             Init();
         }
 
@@ -144,26 +159,16 @@ namespace TiltBrush
                 ActiveScripts[category] = 0;
             }
 
-            var modulesPath = Path.Join(ApiManager.Instance.UserScriptsPath(), "LuaModules");
-            if (!Directory.Exists(modulesPath))
+            if (!Directory.Exists(LuaModulesPath))
             {
-                Directory.CreateDirectory(modulesPath);
+                Directory.CreateDirectory(LuaModulesPath);
             }
 
             // Allow includes from Scripts/LuaModules
             Script.DefaultOptions.ScriptLoader = new FileSystemScriptLoader();
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(modulesPath, "?.lua") };
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[] { Path.Join(LuaModulesPath, "?.lua") };
 
-            // Copy built-in Lua Libraries to User's LuaModules directory
-            var libraries = Resources.LoadAll<TextAsset>("LuaModules");
-            foreach (var library in libraries)
-            {
-                var newFilename = Path.Join(modulesPath, $"{library.name}.lua");
-                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
-                {
-                    FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
-                }
-            }
+            CopyLuaModules();
 
             LoadExampleScripts();
             LoadUserScripts();
@@ -173,14 +178,28 @@ namespace TiltBrush
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
 
-            if (Directory.Exists(ApiManager.Instance.UserScriptsPath()))
+            if (Directory.Exists(UserPluginsPath()))
             {
-                m_FileWatcher = new FileWatcher(ApiManager.Instance.UserScriptsPath(), "*.lua");
+                m_FileWatcher = new FileWatcher(UserPluginsPath(), "*.lua");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
                 m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+        
+        public void CopyLuaModules()
+        {
+            // Copy built-in Lua Libraries to User's LuaModules directory
+            var libraries = Resources.LoadAll<TextAsset>("LuaModules");
+            foreach (var library in libraries)
+            {
+                var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
+                if (!File.Exists(newFilename) || library.name=="__autocomplete") // Always overwrite autocomplete
+                {
+                    FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
+                }
             }
         }
 
@@ -302,7 +321,7 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
-            string[] files = Directory.GetFiles(ApiManager.Instance.UserScriptsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
@@ -358,13 +377,18 @@ namespace TiltBrush
             }
         }
 
-        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        public static string ReformatLuaError(Script script, string fnName, string msg)
         {
             // Make the message more user friendly
             msg = msg.Replace("chunk_1:", "on line: ");
             // Replace the (line, char range) with just the line number itself
             msg = Regex.Replace(msg, @"(.+)\((\d+),.+\)(.+)", @"$1$2$3");
-            string errorMsg = $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
+            return $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
+        }
+
+        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        {
+            string errorMsg = ReformatLuaError(script, fnName, msg);
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
@@ -475,26 +499,9 @@ namespace TiltBrush
                 target = container;
             }
             target[fnName] = t;
+
 #if UNITY_EDITOR
-            if (Application.isEditor && AutoCompleteEntries!=null)
-            {
-                foreach (var prop in t.GetProperties())
-                {
-                    AutoCompleteEntries.Add($"{fnName}.{prop.Name} = nil");
-                }
-                foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
-                    .Where(x =>
-                        x.Name.ToString() != "Equals" &&
-                        x.Name.ToString() != "GetHashCode" &&
-                        x.Name.ToString() != "GetType" &&
-                        x.Name.ToString() != "ToString"))
-                {
-                    string paramNames = "";
-                    var paramNameList = prop.GetParameters().Select(p => p.Name);
-                    paramNames = string.Join(", ", paramNameList);
-                    AutoCompleteEntries.Add($"function {fnName}.{prop.Name}({paramNames}) end");
-                }
-            }
+            LuaDocsRegistration.RegisterForDocs(t);
 #endif
         }
 
@@ -597,7 +604,7 @@ namespace TiltBrush
             }
             if (multipathWrapper != null)
             {
-                multipathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+                multipathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
             }
             return multipathWrapper;
         }
@@ -612,7 +619,7 @@ namespace TiltBrush
                 pathWrapper = result.ToObject<PathApiWrapper>();
                 if (pathWrapper != null)
                 {
-                    pathWrapper.Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
+                    pathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.SymmetryScript);
                 }
             }
             catch (InvalidCastException e)
@@ -713,6 +720,11 @@ namespace TiltBrush
         public void InitScriptOnce(Script script)
         {
             script.Options.DebugPrint = LogLuaMessage;
+
+            // Ensure we don't trigger doc generation
+            // (mainly if domain reload is disabled in the editor)
+            LuaDocsRegistration.ApiDocClasses = null;
+
             RegisterApiClasses(script);
         }
 
@@ -749,6 +761,7 @@ namespace TiltBrush
             RegisterApiClass(script, "MultiPath", typeof(MultiPathApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
+            RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
             RegisterApiClass(script, "Rotation", typeof(RotationApiWrapper));
             RegisterApiClass(script, "Selection", typeof(SelectionApiWrapper));
@@ -759,7 +772,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
             RegisterApiClass(script, "Transform", typeof(TransformApiWrapper));
-            RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));
+            // RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));
             RegisterApiClass(script, "User", typeof(UserApiWrapper));
             RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
@@ -934,19 +947,31 @@ namespace TiltBrush
             }
         }
 
-        public void ToggleBackgroundScript(string scriptToToggle)
+        public void ToggleBackgroundScript(string scriptName)
         {
-            var script = Scripts[LuaApiCategory.BackgroundScript][scriptToToggle];
-            if (m_ActiveBackgroundScripts.ContainsKey(scriptToToggle))
+            bool isActive = m_ActiveBackgroundScripts.ContainsKey(scriptName);
+            ActivateBackgroundScript(scriptName, !isActive);
+        }
+
+        public void ActivateBackgroundScript(string scriptName, bool active)
+        {
+            var script = Scripts[LuaApiCategory.BackgroundScript][scriptName];
+            if (active)
             {
-                m_ActiveBackgroundScripts.Remove(scriptToToggle);
-                // Only call EndScript if background scripts are enabled globally
-                if (BackgroundScriptsEnabled) EndScript(script);
-                return;
+                m_ActiveBackgroundScripts[scriptName] = script;
+                // Reinit if already present
+                // Do we really want this or not?
+                if (BackgroundScriptsEnabled) InitScript(script);
             }
-            // Wasn't present - so add it
-            m_ActiveBackgroundScripts[scriptToToggle] = script;
-            if (BackgroundScriptsEnabled) InitScript(script);
+            else
+            {
+                if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                {
+                    m_ActiveBackgroundScripts.Remove(scriptName);
+                    // Only call EndScript if background scripts are enabled globally
+                    if (BackgroundScriptsEnabled) EndScript(script);
+                }
+            }
         }
 
         public bool CopyActiveScriptToUserScriptFolder(LuaApiCategory category)
@@ -959,7 +984,7 @@ namespace TiltBrush
         public bool CopyScriptToUserScriptFolder(LuaApiCategory category, string scriptName)
         {
             var originalFilename = $"{category}.{scriptName}";
-            var newFilename = Path.Join(ApiManager.Instance.UserScriptsPath(), $"{originalFilename}.lua");
+            var newFilename = Path.Join(UserPluginsPath(), $"{originalFilename}.lua");
             if (!File.Exists(newFilename))
             {
                 FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);

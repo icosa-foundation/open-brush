@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A 3D model widget")]
     [MoonSharpUserData]
     public class ModelApiWrapper
     {
@@ -13,6 +14,7 @@ namespace TiltBrush
             _ModelWidget = widget;
         }
 
+        [LuaDocsDescription(@"The index of the active Model Widget")]
         public int index => WidgetManager.m_Instance.GetActiveWidgetIndex(_ModelWidget);
 
         public override string ToString()
@@ -20,9 +22,10 @@ namespace TiltBrush
             return $"Model({_ModelWidget})";
         }
 
+        [LuaDocsDescription(@"The transformation of the Model Widget")]
         public TrTransform transform
         {
-            get =>  App.Scene.MainCanvas.AsCanvas[_ModelWidget.transform];
+            get => App.Scene.MainCanvas.AsCanvas[_ModelWidget.transform];
             set
             {
                 value = App.Scene.Pose * value;
@@ -30,6 +33,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"The 3D position of the Model Widget")]
         public Vector3 position
         {
             get => transform.translation;
@@ -43,6 +47,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"The 3D orientation of the Model Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
@@ -56,6 +61,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(@"The scale of the Model Widget")]
         public float scale
         {
             get => transform.scale;
@@ -69,8 +75,18 @@ namespace TiltBrush
             }
         }
 
-        public static ModelApiWrapper Import(string location) => new ModelApiWrapper(ApiMethods.ImportModel(location));
+        [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
+        [LuaDocsExample(@"ModelApiWrapper:Import(""Andy.obj"")")]
+        [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
+        [LuaDocsReturnValue(@"Returns the Model instance")]
+        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename));
+
+        [LuaDocsDescription(@"Adds this model to the current selection")]
+        [LuaDocsExample(@"myModel:Select()")]
         public void Select() => ApiMethods.SelectWidget(_ModelWidget);
+
+        [LuaDocsDescription(@"Deletes this model")]
+        [LuaDocsExample(@"myModel:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
     }
 }

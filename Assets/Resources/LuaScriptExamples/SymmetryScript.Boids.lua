@@ -38,7 +38,7 @@ function Boid:update(dt, boids)
     -- Apply the attraction to origin force
     self.velocity = self.velocity:Add(attractionToOrigin:Multiply(originForce))
 
-    self.velocity = Vector3.ClampMagnitude(self.velocity, 5)
+    self.velocity = self.velocity:ClampMagnitude(5)
     self.position = self.position:Add(self.velocity:Multiply(dt))
     self.orientation = Rotation.lookRotation(self.velocity, Vector3.up)
 end
@@ -79,7 +79,7 @@ end
 
 function randomFloat(x)
     -- Returns a random float in the range [-x, x]
-    return -x + (2 * x) * math.random()
+    return -x + (2 * x) * Random.value
 end
 
 function Main()

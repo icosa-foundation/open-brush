@@ -2,6 +2,7 @@
 using UnityEngine;
 namespace TiltBrush
 {
+    [LuaDocsDescription("A video widget")]
     [MoonSharpUserData]
     public class VideoApiWrapper
     {
@@ -13,6 +14,7 @@ namespace TiltBrush
             _VideoWidget = widget;
         }
 
+        [LuaDocsDescription("Gets the index of this Video")]
         public int index => WidgetManager.m_Instance.GetActiveWidgetIndex(_VideoWidget);
 
         public override string ToString()
@@ -20,6 +22,7 @@ namespace TiltBrush
             return $"CameraPath({_VideoWidget})";
         }
 
+        [LuaDocsDescription("Gets or sets the Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
@@ -30,6 +33,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D position of the Video Widget")]
         public Vector3 position
         {
             get => transform.translation;
@@ -43,6 +47,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The 3D orientation of the Video Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
@@ -56,6 +61,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Gets or sets the scale of the Video Widget")]
         public float scale
         {
             get => transform.scale;
@@ -69,8 +75,17 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]
+        [LuaDocsExample(@"myVideo = Video.Import(""myVideo.mp4"")")]
+        [LuaDocsParameter("location", "The filename of the video file to import from the user's MediaLibrary/Videos folder")]
         public static VideoApiWrapper Import(string location) => new (ApiMethods.ImportVideo(location));
+
+        [LuaDocsDescription("Adds this Video Widget to the current selection")]
+        [LuaDocsExample("myVideo:Select()")]
         public void Select() => ApiMethods.SelectWidget(_VideoWidget);
+
+        [LuaDocsDescription("Deletes this Video Widget")]
+        [LuaDocsExample("myVideo:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_VideoWidget);
     }
 }
