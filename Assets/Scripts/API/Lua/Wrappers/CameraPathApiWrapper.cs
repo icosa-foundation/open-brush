@@ -184,12 +184,12 @@ namespace TiltBrush
 
         [LuaDocsDescription("Duplicates the camera path")]
         [LuaDocsExample("mynewPath = myOldPath:Duplicate()")]
-        public CameraPathWidget Duplicate()
+        public CameraPathApiWrapper Duplicate()
         {
             CameraPathMetadata metadata = _CameraPathWidget.AsSerializable();
             var widget = CameraPathWidget.CreateFromSaveData(metadata);
             widget.Path.RefreshEntirePath();
-            return widget;
+            return new CameraPathApiWrapper(widget);
         }
 
         [LuaDocsDescription("Inserts a new position knot. (Position must be close to the existing path)")]

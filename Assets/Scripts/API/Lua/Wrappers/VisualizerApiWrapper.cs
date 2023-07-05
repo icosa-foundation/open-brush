@@ -51,7 +51,7 @@ namespace TiltBrush
         public static void SetBeatAccumulators(float x, float y, float z, float w) => VisualizerManager.m_Instance.InjectScriptedBeatAccumulator(new Vector4(x, y, z, w));
 
         [LuaDocsDescription("Passes the given band peak data to the audio visualizer")]
-        [LuaDocsExample("Visualizer.SetBandPeaks(0.5)")]
+        [LuaDocsExample("Visualizer.SetBandPeak(0.5)")]
         [LuaDocsParameter("peak", "The peak value")]
         public static void SetBandPeak(float peak) => VisualizerManager.m_Instance.InjectBandPeaks(new Vector4(0, peak, 0, 0));
     }

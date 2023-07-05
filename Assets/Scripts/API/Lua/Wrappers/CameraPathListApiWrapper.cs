@@ -31,10 +31,10 @@ namespace TiltBrush
 
 
         [LuaDocsDescription("Gets or sets the active Camera Path")]
-        public CameraPathWidget active
+        public CameraPathApiWrapper active
         {
-            get => WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript;
-            set => WidgetManager.m_Instance.SetCurrentCameraPath(value);
+            get => new CameraPathApiWrapper(WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript);
+            set => WidgetManager.m_Instance.SetCurrentCameraPath(value._CameraPathWidget);
         }
 
         [LuaDocsDescription("Makes all Camera Paths visible")]

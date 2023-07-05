@@ -1,5 +1,8 @@
 
----Properties for type App
+---Properties for class App
+
+---@class App
+t = Class()
 
 ---@type number
 App.time = nil
@@ -99,7 +102,10 @@ function App:TakeSnapshot(tr, filename, width, height, superSampling) end
 ---@param width number
 function App:Take360Snapshot(tr, filename, width) end
 
----Properties for type Brush
+---Properties for class Brush
+
+---@class Brush
+t = Class()
 
 ---@type number
 Brush.timeSincePressed = nil
@@ -190,7 +196,10 @@ function Brush:ForcePaintingOff(active) end
 
 function Brush:ForceNewStroke() end
 
----Properties for type CameraPath
+---Properties for class CameraPath
+
+---@class CameraPath
+t = Class()
 
 ---@type number
 CameraPath.index = nil
@@ -242,7 +251,7 @@ function CameraPath:FromPath(path, looped) end
 function CameraPath:AsPath(step) end
 
 
----@return CameraPathWidget
+---@return CameraPath
 function CameraPath:Duplicate() end
 
 ---@param position Vector3
@@ -310,7 +319,10 @@ function CameraPath:Sample(time, loop, pingpong) end
 ---@return CameraPath
 function CameraPath:Simplify(tolerance, smoothing) end
 
----Properties for type Color
+---Properties for class Color
+
+---@class Color
+t = Class()
 
 ---@type number
 Color.Item = nil
@@ -582,7 +594,10 @@ function Easing:OutBounce(t) end
 ---@return number
 function Easing:InOutBounce(t) end
 
----Properties for type Guide
+---Properties for class Guide
+
+---@class Guide
+t = Class()
 
 ---@type number
 Guide.index = nil
@@ -651,7 +666,10 @@ function Headset:PastPosition(back) end
 ---@return Rotation
 function Headset:PastRotation(back) end
 
----Properties for type Image
+---Properties for class Image
+
+---@class Image
+t = Class()
 
 ---@type number
 Image.index = nil
@@ -694,7 +712,10 @@ function Image:FormEncode() end
 ---@return string
 function Image:SaveBase64(base64, filename) end
 
----Properties for type Layer
+---Properties for class Layer
+
+---@class Layer
+t = Class()
 
 ---@type number
 Layer.index = nil
@@ -749,7 +770,10 @@ function Layer:Show() end
 
 function Layer:Hide() end
 
----Properties for type Math
+---Properties for class Math
+
+---@class Math
+t = Class()
 
 ---@type number
 Math.deg2Rad = nil
@@ -956,7 +980,10 @@ function Math:Cosh(f) end
 ---@return number
 function Math:Tanh(f) end
 
----Properties for type Model
+---Properties for class Model
+
+---@class Model
+t = Class()
 
 ---@type number
 Model.index = nil
@@ -986,7 +1013,10 @@ function Model:Select() end
 
 function Model:Delete() end
 
----Properties for type MultiPath
+---Properties for class MultiPath
+
+---@class MultiPath
+t = Class()
 
 ---@type number
 MultiPath.count = nil
@@ -1056,7 +1086,10 @@ function MultiPath:Join() end
 ---@return Path
 function MultiPath:Longest() end
 
----Properties for type Path
+---Properties for class Path
+
+---@class Path
+t = Class()
 
 ---@type number
 Path.count = nil
@@ -1168,7 +1201,10 @@ function Path:Subdivide(parts) end
 ---@return Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
 
----Properties for type Path2d
+---Properties for class Path2d
+
+---@class Path2d
+t = Class()
 
 ---@type number
 Path2d.count = nil
@@ -1261,7 +1297,49 @@ function Path2d:Polygon(sides) end
 ---@param spacing number
 function Path2d:Resample(spacing) end
 
----Properties for type Random
+---Properties for class Pointer
+
+---@class Pointer
+t = Class()
+
+---@type boolean
+Pointer.isDrawing = nil
+
+---@type Layer
+Pointer.layer = nil
+
+---@type Color
+Pointer.color = nil
+
+---@type string
+Pointer.brush = nil
+
+---@type number
+Pointer.size = nil
+
+---@type number
+Pointer.pressure = nil
+
+---@type Transform
+Pointer.transform = nil
+
+---@type Vector3
+Pointer.position = nil
+
+---@type Rotation
+Pointer.rotation = nil
+
+
+---Methods for type Pointer
+
+
+---@return Pointer
+function Pointer:New() end
+
+---Properties for class Random
+
+---@class Random
+t = Class()
 
 ---@type Vector2
 Random.insideUnitCircle = nil
@@ -1309,7 +1387,10 @@ function Random:Range(min, max) end
 ---@return number
 function Random:Range(min, max) end
 
----Properties for type Rotation
+---Properties for class Rotation
+
+---@class Rotation
+t = Class()
 
 ---@type number
 Rotation.Item = nil
@@ -1347,6 +1428,12 @@ Rotation.clockwise = nil
 ---@type Rotation
 Rotation.normalized = nil
 
+---@type number
+Rotation.angle = nil
+
+---@type Vector3
+Rotation.axis = nil
+
 
 ---Methods for type Rotation
 
@@ -1369,10 +1456,6 @@ function Rotation:SetLookRotation(view) end
 ---@param up Vector3
 ---@return Rotation
 function Rotation:SetLookRotation(view, up) end
-
-
----@return System.Collections.Generic.List`1[System.Single]
-function Rotation:ToAngleAxis() end
 
 ---@param a Rotation
 ---@param b Rotation
@@ -1473,7 +1556,10 @@ function Selection:Trim(count) end
 
 function Selection:SelectAll() end
 
----Properties for type Sketch
+---Properties for class Sketch
+
+---@class Sketch
+t = Class()
 
 ---@type CameraPathList
 Sketch.cameraPaths = nil
@@ -1535,7 +1621,10 @@ function Sketch:NewSketch() end
 ---@param filename string
 function Sketch:ImportSkybox(filename) end
 
----Properties for type Spectator
+---Properties for class Spectator
+
+---@class Spectator
+t = Class()
 
 ---@type boolean
 Spectator.canSeeWidgets = nil
@@ -1588,7 +1677,10 @@ function Spectator:Wobble() end
 
 function Spectator:Circular() end
 
----Properties for type Stroke
+---Properties for class Stroke
+
+---@class Stroke
+t = Class()
 
 ---@type Path
 Stroke.path = nil
@@ -1662,7 +1754,10 @@ function Svg:DrawPathString(svg, tr) end
 ---@param tr Transform
 function Svg:DrawDocument(svg, tr) end
 
----Properties for type Symmetry
+---Properties for class Symmetry
+
+---@class Symmetry
+t = Class()
 
 ---@type Transform
 Symmetry.transform = nil
@@ -1774,7 +1869,10 @@ function Timer:Set(fn, interval, delay, repeats) end
 ---@param fn function
 function Timer:Unset(fn) end
 
----Properties for type Transform
+---Properties for class Transform
+
+---@class Transform
+t = Class()
 
 ---@type Transform
 Transform.inverse = nil
@@ -1835,6 +1933,11 @@ function Transform:ScaleBy(scale) end
 function Transform:New(translation, rotation, scale) end
 
 ---@param translation Vector3
+---@param rotation Rotation
+---@return Transform
+function Transform:New(translation, rotation) end
+
+---@param translation Vector3
 ---@return Transform
 function Transform:New(translation) end
 
@@ -1853,7 +1956,10 @@ function Transform:New(x, y, z) end
 ---@return Transform
 function Transform:Multiply(other) end
 
----Properties for type User
+---Properties for class User
+
+---@class User
+t = Class()
 
 ---@type Vector3
 User.position = nil
@@ -1863,7 +1969,10 @@ User.rotation = nil
 
 
 
----Properties for type Vector2
+---Properties for class Vector2
+
+---@class Vector2
+t = Class()
 
 ---@type number
 Vector2.Item = nil
@@ -2043,7 +2152,10 @@ function Vector2:NotEquals(other) end
 ---@return boolean
 function Vector2:NotEquals(x, y) end
 
----Properties for type Vector3
+---Properties for class Vector3
+
+---@class Vector3
+t = Class()
 
 ---@type number
 Vector3.Item = nil
@@ -2232,7 +2344,10 @@ function Vector3:NotEquals(other) end
 ---@return boolean
 function Vector3:NotEquals(x, y, z) end
 
----Properties for type Video
+---Properties for class Video
+
+---@class Video
+t = Class()
 
 ---@type number
 Video.index = nil
@@ -2262,7 +2377,10 @@ function Video:Select() end
 
 function Video:Delete() end
 
----Properties for type Visualizer
+---Properties for class Visualizer
+
+---@class Visualizer
+t = Class()
 
 ---@type number
 Visualizer.sampleRate = nil
@@ -2303,7 +2421,10 @@ function Visualizer:SetBeatAccumulators(x, y, z, w) end
 ---@param peak number
 function Visualizer:SetBandPeak(peak) end
 
----Properties for type Wand
+---Properties for class Wand
+
+---@class Wand
+t = Class()
 
 ---@type Vector3
 Wand.position = nil

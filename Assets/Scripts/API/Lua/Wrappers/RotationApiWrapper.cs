@@ -93,6 +93,42 @@ namespace TiltBrush
         [LuaDocsDescription(@"Converts this rotation to one with the same orientation but with a magnitude of 1")]
         public Quaternion normalized => _Quaternion.normalized;
 
+        private (float, Vector3) _GetAngleAxis()
+        {
+            _Quaternion.ToAngleAxis(out float angle, out Vector3 axis);
+            return new (angle, axis);
+        }
+
+        [LuaDocsDescription(@"The angle in degrees of the angle-axis representation of this rotation")]
+        public float angle
+        {
+            get
+            {
+                var (angle, _) = _GetAngleAxis();
+                return angle;
+            }
+            set
+            {
+                var (_, axis) = _GetAngleAxis();
+                _Quaternion = Quaternion.AngleAxis(value, axis);
+            }
+        }
+
+        [LuaDocsDescription(@"The axis part of the angle-axis representation of this rotation")]
+        public Vector3 axis
+        {
+            get
+            {
+                var (_, axis) = _GetAngleAxis();
+                return axis;
+            }
+            set
+            {
+                var (angle, _) = _GetAngleAxis();
+                _Quaternion = Quaternion.AngleAxis(angle, value);
+            }
+        }
+
         [LuaDocsDescription(@"Creates a rotation which rotates from one direction to another")]
         [LuaDocsExample(@"newRot = myRotation:SetFromToRotation(Vector3:New(0, 5, 5), Vector3:New(5, 5, 0))")]
         [LuaDocsParameter("fromDirection", "The starting direction")]
@@ -123,15 +159,6 @@ namespace TiltBrush
         {
             _Quaternion.SetLookRotation(view, up);
             return _Quaternion;
-        }
-
-        [LuaDocsDescription(@"Converts a rotation to angle-axis representation")]
-        [LuaDocsExample(@"result = myRotation:ToAngleAxis()")]
-        [LuaDocsReturnValue(@"A list of 4 numbers: the angle followed by the axis vector x,y and z values")]
-        public List<float> ToAngleAxis()
-        {
-            _Quaternion.ToAngleAxis(out float angle, out Vector3 axis);
-            return new List<float> { angle, axis.x, axis.y, axis.z };
         }
 
         [LuaDocsDescription(@"Returns the angle in degrees between two rotations")]

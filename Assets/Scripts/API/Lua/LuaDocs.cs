@@ -67,7 +67,10 @@ namespace TiltBrush
             if (Properties.Count > 0)
             {
                 properties = $@"
----Properties for type {Name}
+---Properties for class {Name}
+
+---@class {Name}
+t = Class()
 
 {String.Join("\n", Properties.Select(p => p.AutocompleteSerialize(Name)))}
 

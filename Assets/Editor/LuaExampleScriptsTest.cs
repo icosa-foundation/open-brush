@@ -73,9 +73,10 @@ namespace TiltBrush
             foreach (var example in toolScripts)
             {
                 var script = example.Value;
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, -Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, -Vector3.one);
                 LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, Vector3.one);
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.identity);
                 TestAllKnown(script);
             }
 

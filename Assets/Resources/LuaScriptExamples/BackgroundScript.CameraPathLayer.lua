@@ -8,7 +8,7 @@ Parameters = {
 
 function Start()
     layer = Sketch.layers.active
-    cameraPath = CameraPath.active
+    cameraPath = Sketch.cameraPaths.active
 end
 
 function Main()

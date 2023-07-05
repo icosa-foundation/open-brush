@@ -75,6 +75,7 @@ namespace TiltBrush
 
         // Injected Toolscript properties
 
+        public static string ToolScriptStartPosition => "Tool.startPosition";
         public static string ToolScriptEndPosition => "Tool.endPosition";
         public static string ToolScriptVector => "Tool.vector";
         public static string ToolScriptRotation => "Tool.rotation";
@@ -760,6 +761,7 @@ namespace TiltBrush
             RegisterApiClass(script, "MultiPath", typeof(MultiPathApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
+            RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
             RegisterApiClass(script, "Rotation", typeof(RotationApiWrapper));
             RegisterApiClass(script, "Selection", typeof(SelectionApiWrapper));

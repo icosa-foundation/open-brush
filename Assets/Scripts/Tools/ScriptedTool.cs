@@ -134,7 +134,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty("Tool.startPosition", m_FirstPositionClicked_CS.translation);
+                SetApiProperty(LuaNames.ToolScriptStartPosition, m_FirstPositionClicked_CS.translation);
                 ApiManager.Instance.StartUndo();
                 DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
