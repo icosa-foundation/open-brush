@@ -51,6 +51,7 @@ namespace TiltBrush
 
     public static class LuaNames
     {
+        // By using properties instead of constants, it makes it easier to track down usages in the editor
 
         // Special Tables
 
@@ -60,6 +61,7 @@ namespace TiltBrush
         public static string Brushes => "Brushes";
 
         // Special Methods
+
         public static string Main => "Main";
         public static string Start => "Start";
         public static string End => "End";
@@ -70,6 +72,12 @@ namespace TiltBrush
         public static string IsExampleScriptBool => "_IsExampleScript";
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
+
+        // Injected Toolscript properties
+
+        public static string ToolScriptEndPosition => "Tool.endPosition";
+        public static string ToolScriptVector => "Tool.vector";
+        public static string ToolScriptRotation => "Tool.rotation";
 
     }
 

@@ -220,9 +220,9 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty("Tool.endPosition", rAttachPoint_CS.translation);
-                    SetApiProperty("Tool.vector", drawnVector_CS);
-                    SetApiProperty("Tool.rotation", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
+                    SetApiProperty(LuaNames.ToolScriptEndPosition, rAttachPoint_CS.translation);
+                    SetApiProperty(LuaNames.ToolScriptVector, drawnVector_CS);
+                    SetApiProperty(LuaNames.ToolScriptRotation, Quaternion.LookRotation(drawnVector_CS, Vector3.up));
                     DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
                     ApiManager.Instance.EndUndo();
                 }
