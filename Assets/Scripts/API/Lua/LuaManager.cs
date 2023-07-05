@@ -368,13 +368,18 @@ namespace TiltBrush
             }
         }
 
-        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        public static string ReformatLuaError(Script script, string fnName, string msg)
         {
             // Make the message more user friendly
             msg = msg.Replace("chunk_1:", "on line: ");
             // Replace the (line, char range) with just the line number itself
             msg = Regex.Replace(msg, @"(.+)\((\d+),.+\)(.+)", @"$1$2$3");
-            string errorMsg = $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
+            return $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
+        }
+
+        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        {
+            string errorMsg = ReformatLuaError(script, fnName, msg);
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
