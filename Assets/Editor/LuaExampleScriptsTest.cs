@@ -25,18 +25,26 @@ namespace TiltBrush
     // But still a useful smoke test for syntax errors and name changes.
     public class LuaExampleScriptsTest : Editor
     {
-        private static DynValue CallFunctionIfExists(Script script, string name)
+        private static DynValue CallFunctionIfExists(Script script, string fnName)
         {
-            var fn = script.Globals.Get(name).Function;
+            var fn = script.Globals.Get(fnName).Function;
             if (fn != null)
             {
                 try
                 {
                     return script.Call(fn);
                 }
+                catch (InterpreterException e)
+                {
+                    string msg = e.DecoratedMessage ?? e.Message;
+                    msg = LuaManager.ReformatLuaError(script, fnName, msg);
+                    Debug.LogError(msg);
+                }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Error calling {script.Globals.Get(LuaNames.ScriptNameString).String}.{name} :: {e.Message}");
+                    string msg = e.Message;
+                    msg = LuaManager.ReformatLuaError(script, fnName, msg);
+                    Debug.LogError(msg);
                 }
             }
             return null;
@@ -65,6 +73,9 @@ namespace TiltBrush
             foreach (var example in toolScripts)
             {
                 var script = example.Value;
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Vector3.one);
                 TestAllKnown(script);
             }
 
@@ -76,6 +87,7 @@ namespace TiltBrush
 
             void TestAllKnown(Script script)
             {
+                LuaManager.Instance.InitScript(script);
                 DynValue result;
                 result = CallFunctionIfExists(script, LuaNames.Start);
                 result = CallFunctionIfExists(script, LuaNames.Main);
