@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEditor;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace TiltBrush
     // But still a useful smoke test for syntax errors and name changes.
     public class LuaExampleScriptsTest : Editor
     {
-        private static DynValue CallFunctionIfExists(Script script, string fnName)
+        public static DynValue CallFunctionIfExists(Script script, string fnName)
         {
             var fn = script.Globals.Get(fnName).Function;
             if (fn != null)
@@ -53,6 +54,12 @@ namespace TiltBrush
         [MenuItem("Open Brush/API/Test Example Scripts")]
         static void DoTest()
         {
+            if (!Application.isPlaying)
+            {
+                Debug.LogError("You can only run this whilst in Play Mode");
+                return;
+            }
+
             var pointerScripts = LuaManager.Instance.Scripts[LuaApiCategory.PointerScript];
             var symmetryScripts = LuaManager.Instance.Scripts[LuaApiCategory.SymmetryScript];
             var toolScripts = LuaManager.Instance.Scripts[LuaApiCategory.ToolScript];
@@ -73,10 +80,10 @@ namespace TiltBrush
             foreach (var example in toolScripts)
             {
                 var script = example.Value;
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, -Vector3.one);
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, -Vector3.one);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, Vector3.zero);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, Vector3.one);
                 LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, Vector3.one);
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.identity);
+                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.LookRotation(Vector3.one));
                 TestAllKnown(script);
             }
 
@@ -99,4 +106,78 @@ namespace TiltBrush
             }
         }
     }
+
+    public class TestSpecificScript : EditorWindow
+    {
+        private int selectedIndex = 0;
+        private string inputText = "";
+
+        [MenuItem("Open Brush/API/Test Specific Script")]
+        static void Init()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogError("You can only run this whilst in Play Mode");
+                return;
+            }
+            TestSpecificScript window = (TestSpecificScript)GetWindow(typeof(TestSpecificScript));
+            window.Show();
+        }
+
+        void OnGUI()
+        {
+            if (!Application.isPlaying) return;
+
+            EditorGUILayout.BeginVertical();
+
+            string[] scriptNames = LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript).ToArray();
+            selectedIndex = EditorGUILayout.Popup("Dropdown", selectedIndex, scriptNames);
+
+            if (GUILayout.Button("Submit"))
+            {
+                SubmitDropDownValue(scriptNames[selectedIndex]);
+            }
+
+            inputText = EditorGUILayout.TextField("Input Text", inputText);
+
+            if (Event.current.type == EventType.KeyDown
+                && Event.current.keyCode == KeyCode.Return
+                && GUI.GetNameOfFocusedControl() == "TextField")
+            {
+                SubmitTextValue(inputText);
+                Event.current.Use(); // Consume this event, we don't want to trigger other behavior with return key.
+            }
+
+            if (GUILayout.Button("Submit Text"))
+            {
+                SubmitTextValue(inputText);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        void SubmitTextValue(string cmd)
+        {
+            Script script = new Script();
+            LuaManager.Instance.InitScriptOnce(script);
+            var result = script.DoString($"return {cmd}");
+            Debug.Log(result);
+        }
+
+        void SubmitDropDownValue(string value)
+        {
+            var script = LuaManager.Instance.Scripts[LuaApiCategory.ToolScript][value];
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.ScriptedTool);
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.ToolScript, value);
+
+            var startPoint = Vector3.up;
+            var endPoint = Vector3.up + Vector3.one;
+            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, startPoint);
+            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, endPoint);
+            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, endPoint - startPoint);
+            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.LookRotation(endPoint - startPoint));
+            LuaManager.Instance.DoToolScript(LuaNames.OnTriggerReleased, TrTransform.T(startPoint), TrTransform.T(endPoint));
+        }
+    }
+
 }
