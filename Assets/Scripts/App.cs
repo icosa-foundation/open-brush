@@ -73,7 +73,7 @@ namespace TiltBrush
 
         private const string kFileMoveContents =
             "Due to a change in Android security policy all your " + kAppDisplayName + " files have been moved to\n" +
-            "Quest 2\\Internal shared storage\\Android\\data\\com.Icosa.OpenBrush\n" +
+            "Android\\data\\com.Icosa.OpenBrush\n" +
             "Visit the Open Brush Docs for more information: https://docs.openbrush.app";
 
         public enum AppState
@@ -1898,19 +1898,30 @@ namespace TiltBrush
 
             if (Directory.Exists(m_UserPath))
             {
-                return;
+                if(File.Exists(Path.Combine(m_UserPath, "MovedFiles.txt")))
+                {
+                    // Files have previously been moved.
+                    return;
+                }
             }
 
             try
             {
                 // Moving does not work across different mount points, have to copy and delete.
-                CopyDirectory(m_OldUserPath, m_UserPath, true);
+                var movedFiles = MoveDirectory(m_OldUserPath, m_UserPath, true);
+
+                // If successful, we can delete the old directory.
                 Directory.Delete(m_OldUserPath, true);
+
                 // Recreate the old directory and put a message in there so a user used to looking in the old
                 // location can find out where to get their files.
                 Directory.CreateDirectory(m_OldUserPath);
                 string moveMessageFilename = Path.Combine(m_OldUserPath, kFileMoveFilename);
                 File.WriteAllText(moveMessageFilename, kFileMoveContents);
+
+                // Signify this operation is comlpete by storing the manifest in the new directory.
+                File.WriteAllText(Path.Combine(m_UserPath, "MovedFiles.txt"), String.Join('\n', movedFiles.ToArray()));
+
             }
             catch (Exception ex)
             {
@@ -1918,37 +1929,40 @@ namespace TiltBrush
             }
         }
 
-        static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)
+        static List<string> MoveDirectory(string sourceDir, string destinationDir, bool recursive)
         {
-            // Get information about the source directory
             var dir = new DirectoryInfo(sourceDir);
 
-            // Check if the source directory exists
+            List<string> movedFiles = new List<string>();
+
             if (!dir.Exists)
                 throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
 
-            // Cache directories before we start copying
             DirectoryInfo[] dirs = dir.GetDirectories();
 
-            // Create the destination directory
             Directory.CreateDirectory(destinationDir);
 
-            // Get the files in the source directory and copy to the destination directory
             foreach (FileInfo file in dir.GetFiles())
             {
                 string targetFilePath = Path.Combine(destinationDir, file.Name);
-                file.CopyTo(targetFilePath);
+                if(!File.Exists(targetFilePath))
+                {
+                    file.CopyTo(targetFilePath);
+                    movedFiles.Add(targetFilePath);
+                    file.Delete();
+                }
             }
 
-            // If recursive and copying subdirectories, recursively call this method
             if (recursive)
             {
                 foreach (DirectoryInfo subDir in dirs)
                 {
                     string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                    CopyDirectory(subDir.FullName, newDestinationDir, true);
+                    movedFiles.Concat<string>(MoveDirectory(subDir.FullName, newDestinationDir, recursive));
                 }
             }
+
+            return movedFiles;
         }
 
         // Return path of root directory for storing user sketches, snapshots, etc.
