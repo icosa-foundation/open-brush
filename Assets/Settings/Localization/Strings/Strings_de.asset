@@ -2736,6 +2736,86 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 95221400803737600
+    m_Localized: Pfeil hoch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Localized: Pfeil runter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Localized: Pfeil links
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Localized: Pfeil rechts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Localized: Leertaste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Localized: Umschalttaste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Localized: Linke Umschalttaste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Localized: Rechte Umschalttaste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Localized: Strg
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Localized: Linke Strg-Taste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Localized: Rechte Strg-Taste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Localized: Alt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Localized: Linke Alt-Taste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Localized: Rechte Alt-Taste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Localized: Escape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Localized: Enter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Localized: Tab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Localized: "R\xFCcktaste"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Localized: Alt Gr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Localized: Feststelltaste
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

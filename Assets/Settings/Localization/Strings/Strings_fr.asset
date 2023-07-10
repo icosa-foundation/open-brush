@@ -2669,6 +2669,86 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 95221400803737600
+    m_Localized: Haut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Localized: Bas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Localized: Gauche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Localized: Droit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Localized: Espace
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Localized: Majuscale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Localized: Majuscule gauche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Localized: Majuscule droite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Localized: "Contr\xF4le"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Localized: "Contr\xF4le gauche"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Localized: "Contr\xF4le droit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Localized: Alt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Localized: Alt gauche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Localized: Alt droite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Localized: "\xC9chap"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Localized: "Entr\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Localized: Tabulation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Localized: "Retour arri\xE8re"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Localized: AltGr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Localized: Verr Maj
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
