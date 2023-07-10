@@ -2691,6 +2691,86 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 95221400803737600
+    m_Localized: Flecha hacia arriba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Localized: Flecha hacia abajo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Localized: Flecha hacia la izquierda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Localized: Flecha hacia la derecha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Localized: Barra de espacio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Localized: Shift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Localized: Shift izquierdo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Localized: Shift derecho
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Localized: Control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Localized: Control izquierdo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Localized: Control derecho
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Localized: Alt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Localized: Alt izquierdo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Localized: Alt derecho
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Localized: Escape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Localized: Intro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Localized: Tabulador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Localized: Retroceso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Localized: Alt Gr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Localized: "Bloq May\xFAs"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
