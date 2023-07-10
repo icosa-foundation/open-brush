@@ -2995,12 +2995,16 @@ MonoBehaviour:
     m_Key: KEYBOARD_CAPSLOCK
     m_Metadata:
       m_Items: []
-  - m_Id: 106429517453328384
-    m_Key: PANEL_BACKGROUND_IMAGE_DESCRIPTION
+  - m_Id: 103924956079587328
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
     m_Metadata:
       m_Items: []
   - m_Id: 109424659466551296
     m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Key: PANEL_BACKGROUND_IMAGE_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 103943359016206336
