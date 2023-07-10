@@ -2640,6 +2640,86 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 95221400803737600
+    m_Localized: "\u4E0A\u7BAD\u5934"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Localized: "\u4E0B\u7BAD\u5934"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Localized: "\u5DE6\u7BAD\u5934"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Localized: "\u53F3\u7BAD\u5934"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Localized: "\u7A7A\u683C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Localized: Shift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Localized: "\u5DE6Shift"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Localized: "\u53F3Shift"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Localized: Control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Localized: "\u5DE6Control"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Localized: "\u53F3Control"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Localized: Alt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Localized: "\u5DE6Alt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Localized: "\u53F3Alt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Localized: ESC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Localized: "\u56DE\u8F66"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Localized: Tab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Localized: "\u9000\u683C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Localized: AltGr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Localized: "\u5927\u5199\u9501\u5B9A"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
