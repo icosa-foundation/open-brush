@@ -157,6 +157,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64317e58f822f2c4f95d40c176f63c39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OnDataChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBufferUpdated:
+    m_PersistentCalls:
+      m_Calls: []
   m_computeShader: {fileID: 7200000, guid: 0e30fa915af718c4bb87a11c35937eb0, type: 3}
   m_group: {fileID: 1620523606180717154}
   m_meshGameObject: {fileID: 1620523607090452792}
@@ -166,12 +172,12 @@ MonoBehaviour:
   m_meshRenderer: {fileID: 1360901391}
   m_mainSettings:
     m_autoUpdate: 1
-    m_outputMode: 0
+    m_outputMode: 2
     m_isAsynchronous: 0
     m_proceduralMaterial: {fileID: 0}
   m_voxelSettings:
     m_cellSizeMode: 0
-    m_cellSize: 0.1
+    m_cellSize: 0.05
     m_cellCount: 50
     m_volumeSize: 5
     m_cellDensity: 1
