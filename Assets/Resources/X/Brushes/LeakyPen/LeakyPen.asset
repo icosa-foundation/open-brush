@@ -24,7 +24,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: b71683355d97c714c9c4b01e8a4e9926, type: 3}
-  m_Description: Leaky Pen
+  m_Description: BRUSH_LEAKYPEN
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81205593624862720
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -72,3 +81,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
