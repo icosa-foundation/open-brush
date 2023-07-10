@@ -1,0 +1,3013 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Strings Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: Strings
+  m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
+  m_Entries:
+  - m_Id: 5065710952488960
+    m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5056691860905984
+    m_Key: ADMIN_PANEL_ADVANCED_PROMO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065842783657984
+    m_Key: ADMIN_PANEL_BEGINNER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065289022283776
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5067123833151488
+    m_Key: ADMIN_PANEL_MOREOPTIONS_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066003496804352
+    m_Key: ADMIN_PANEL_NEW_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5066113400152064
+    m_Key: ADMIN_PANEL_NEW_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065459298443264
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGGEDIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065626072358912
+    m_Key: ADMIN_PANEL_PROFILE_BUTTON_LOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064506084139008
+    m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065176065482752
+    m_Key: ADMIN_PANEL_SETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5065040224559104
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064085647106048
+    m_Key: ADMIN_PANEL_SHARE_BUTTON_LOGGED_OUT_EXTRA_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5064369941225472
+    m_Key: ADMIN_PANEL_SKETCHBOOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143682283708416
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_CAMERAS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143517279789056
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_DROPPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143299389890560
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_ERASER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144159373205504
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_FLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143986307833856
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144350784462848
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5148146801549312
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_MORE_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143592097783808
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_REPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143817222856704
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SELECTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144456485117952
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SNIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144088976007168
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_STRAIGHTEDGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5143754866139136
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TELEPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5142890986315776
+    m_Key: ADVANCEDTOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147011692863488
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5147092923949056
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_JITTER_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146868541267968
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146944894377984
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_REBRUSH_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145561143156736
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RECOLOR_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146583311818752
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146654665318400
+    m_Key: ADVANCEDTOOLS_PANEL_REPAINT_TRAY_RESIZE_TOGGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145130421690368
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_FLIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144771179552768
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_GROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145342544420864
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_INVERT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145273980133376
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_SELECTALL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5145968804339712
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_UNGROUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5322973046874112
+    m_Key: BACKDROP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324587094745088
+    m_Key: BACKDROP_PANEL_FOG_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325700112031744
+    m_Key: BACKDROP_PANEL_FOGCOLOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5325291863646208
+    m_Key: BACKDROP_PANEL_FOGDENSITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5329997507829760
+    m_Key: BACKDROP_PANEL_SKYBOX_COLOR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5324999763927040
+    m_Key: BACKDROP_PANEL_SKYBOX_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5330470583377920
+    m_Key: BACKDROP_PANEL_UNLOCKSKBOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335959689994240
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5336069865971712
+    m_Key: BRUSH_PANEL_AUDIOREACTOR_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5335779313950720
+    m_Key: BRUSH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5337337812459520
+    m_Key: BRUSH_PANEL_MORE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7674180243529728
+    m_Key: CAMERA_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673072670449664
+    m_Key: CAMERA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673467597725696
+    m_Key: CAMERA_PANEL_FOV_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673215754936320
+    m_Key: CAMERA_PANEL_POSTEFFECTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673684577460224
+    m_Key: CAMERA_PANEL_SMOOTHCAM_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7673323997339648
+    m_Key: CAMERA_PANEL_WATERMARK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677508033683456
+    m_Key: CAMERAPATH_PANEL_ADDFOVKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677699654656000
+    m_Key: CAMERAPATH_PANEL_ADDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676879580143616
+    m_Key: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677371119017984
+    m_Key: CAMERAPATH_PANEL_ADDROTATIONKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677444783579136
+    m_Key: CAMERAPATH_PANEL_ADDSPEEDKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7677024573038592
+    m_Key: CAMERAPATH_PANEL_DELETEKNOT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676309209325568
+    m_Key: CAMERAPATH_PANEL_DELETEPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675077484847104
+    m_Key: CAMERAPATH_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676581176385536
+    m_Key: CAMERAPATH_PANEL_RECORDPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675859500244992
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7675982082973696
+    m_Key: CAMERAPATH_PANEL_SELECTPATH_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676094104444928
+    m_Key: CAMERAPATH_PANEL_TOGGLEVISIBILITY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7676408429780992
+    m_Key: CAMERPATH_PANEL_DELETEPATH_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7678055402938368
+    m_Key: COLORPICKER_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688701444071424
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7688987650793472
+    m_Key: COLORPICKER_PANEL_JITTER_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 286778752929792
+    m_Key: CONTROLLER_CONSOLE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281134452871168
+    m_Key: WIDGET_DROPCAM_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 281373578530816
+    m_Key: WIDGET_DROPCAM_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 264453647142912
+    m_Key: DROPPER_TOOL_BRUSH_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 249453461278720
+    m_Key: ERASER_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691111650533376
+    m_Key: EXTRA_PANEL_BACKDROP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691821452599296
+    m_Key: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7689873479409664
+    m_Key: EXTRA_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690667696037888
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690784670982144
+    m_Key: EXTRA_PANEL_ENVIRONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691186472722432
+    m_Key: EXTRA_PANEL_GUIDES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7690924718792704
+    m_Key: EXTRA_PANEL_LIGHTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7691576060649472
+    m_Key: LABS_PANEL_POLY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 249886669967360
+    m_Key: FREEPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7860833050402816
+    m_Key: GUIDESETTINGS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862314168197120
+    m_Key: GUIDESETTINGS_PANEL_FRAMEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862047624372224
+    m_Key: GUIDESETTINGS_PANEL_GRIDSIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862159872335872
+    m_Key: GUIDESETTINGS_PANEL_LINEWIDTH_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7861838345379840
+    m_Key: GUIDESETTINGS_PANEL_SNAPDISTANCE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865322218168320
+    m_Key: GUIDETOOLS_PANEL_CAPSULEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865252521418752
+    m_Key: GUIDETOOLS_PANEL_CUBEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7862801433075712
+    m_Key: GUIDETOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7864726178209792
+    m_Key: GUIDETOOLS_PANEL_DRAFTING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865394515386368
+    m_Key: GUIDETOOLS_PANEL_ELLIPSOIDGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866297771335680
+    m_Key: GUIDETOOLS_PANEL_GUIDESETTINGS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865004726132736
+    m_Key: GUIDETOOLS_PANEL_PLANEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7865139518480384
+    m_Key: GUIDETOOLS_PANEL_SPHEREGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866040475951104
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866191982600192
+    m_Key: GUIDETOOLS_PANEL_TOGGLEGUIDE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870978190974976
+    m_Key: LABS_PANEL_CAMERAMODE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7866918104702976
+    m_Key: LABS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868539698126848
+    m_Key: LABS_PANEL_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867671724662784
+    m_Key: EXTRA_PANEL_LOCALMEDIA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7868186579673088
+    m_Key: LABS_PANEL_MODELPIN_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870646065012736
+    m_Key: LABS_PANEL_SCRIPTS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7870824155160576
+    m_Key: LABS_PANEL_SNAP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7869944320204800
+    m_Key: LABS_PANEL_SPECTATOR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867554347065344
+    m_Key: LABS_PANEL_TILTASAURUS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867814297444352
+    m_Key: LABS_PANEL_TILTASAURUS_PANEL_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867354345873408
+    m_Key: LABS_PANEL_TWITCH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7867485648560128
+    m_Key: LABS_PANEL_YOUTUBE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874341855010816
+    m_Key: LAYERS_PANEL_ACTIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7879279536480256
+    m_Key: LAYERS_PANEL_ADDLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874007866777600
+    m_Key: LAYERS_PANEL_CLEAR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874528715448320
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874610038808576
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874683799838720
+    m_Key: LAYERS_PANEL_DELETE_BUTTON_TOGGLE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7872343826997248
+    m_Key: LAYERS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7873280473800704
+    m_Key: LAYERS_PANEL_SHOWHIDE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7874216034279424
+    m_Key: LAYERS_PANEL_SQUASH_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7887557695873024
+    m_Key: LIGHTS_PANEL_COLOR_LABEL_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7883364289454080
+    m_Key: LIGHTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886356342349824
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886474181320704
+    m_Key: LIGHTS_PANEL_FILLLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7884096078061568
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7885974799097856
+    m_Key: LIGHTS_PANEL_MAINLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886169574187008
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7886276944175104
+    m_Key: LIGHTS_PANEL_SECONDLIGHT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 287897575133184
+    m_Key: LOADING_SCENE_OVERLAY_MESSAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892854560759808
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892372832362496
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891984230096896
+    m_Key: MEMORYWARNING_PANEL_EXCEEDED_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892226182717440
+    m_Key: MEMORYWARNING_PANEL_WARNING_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7891809302454272
+    m_Key: MEMORYWARNING_PANEL_WARNING_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892515468058624
+    m_Key: MEMORYWARNING_PANEL_WARNINGBACK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7892717637705728
+    m_Key: MEMORYWARNING_PANEL_WARNINGOK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260825024729088
+    m_Key: MULTICAM_TOOL_AUDIO_FOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260740236873728
+    m_Key: MULTICAM_TOOL_AUDIO_LOOKING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260910827606016
+    m_Key: MULTICAM_TOOL_AUDIO_NONE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261135713603584
+    m_Key: MULTICAM_TOOL_AUTH_NEEDED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 254616443981824
+    m_Key: MULTICAM_TOOL_AUTOGIF_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 252524492918784
+    m_Key: MULTICAM_TOOL_SNAPSHOT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 251895636725760
+    m_Key: MULTICAM_TOOL_SWIPE_HINT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255232243306496
+    m_Key: MULTICAM_TOOL_TIMEGIF_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 261025797672960
+    m_Key: MULTICAM_TOOL_UPLOADING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260046566100992
+    m_Key: MULTICAM_TOOL_VIDEO_PLAYBACK_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260157501247488
+    m_Key: MULTICAM_TOOL_VIDEO_PREVIEW_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 260325810278400
+    m_Key: MULTICAM_TOOL_VIDEO_READY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 259940966109184
+    m_Key: MULTICAM_TOOL_VIDEO_SAVING_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 255577010900992
+    m_Key: MULTICAM_TOOL_VIDEO_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274600943587328
+    m_Key: PIN_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931780608532480
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7939526611410944
+    m_Key: POLY_PANEL_BROWSE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934199497203712
+    m_Key: POLY_PANEL_CONNECTIONERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930206087782400
+    m_Key: POLY_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977408
+    m_Key: POLY_PANEL_FEATUREDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932977482539008
+    m_Key: POLY_PANEL_INTERNETERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932251041669120
+    m_Key: POLY_PANEL_LIKEDMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933944802287616
+    m_Key: POLY_PANEL_NOAUTHORED_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933827554713600
+    m_Key: POLY_PANEL_NOAUTHORED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933313635033088
+    m_Key: POLY_PANEL_NOLIKES_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933149889404928
+    m_Key: POLY_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933561489039360
+    m_Key: BUTTON_SIGNIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7933450197377024
+    m_Key: POLY_PANEL_NOLOGIN_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932746569326592
+    m_Key: POLY_PANEL_NOOBJECTS_OK_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932559960547328
+    m_Key: POLY_PANEL_NOOBJECTS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7934076549570560
+    m_Key: POLY_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931482930388992
+    m_Key: POLY_PANEL_SUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482240
+    m_Key: POLY_PANEL_TITLE_FEATURED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930550461112320
+    m_Key: POLY_PANEL_TITLE_LIKED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930140920881152
+    m_Key: POLY_PANEL_TITLE_STANDARD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931977472385024
+    m_Key: POLY_PANEL_USERMODELS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7931629680697344
+    m_Key: POLY_PANEL_USERSUBTITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15526523405381632
+    m_Key: POPUP_ACCOUNTS_CANCEL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15524391402909696
+    m_Key: POPUP_ACCOUNTS_DRIVELINK_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15522362785837056
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15531555001511936
+    m_Key: POPUP_ACCOUNTS_SIGNOUT_CONFIRM_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090084441858048
+    m_Key: POPUP_AUDIOVIZ_AUDIOFOUND_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090764850241536
+    m_Key: POPUP_AUDIOVIZ_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18091078533849088
+    m_Key: POPUP_AUDIOVIZ_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090455927169024
+    m_Key: POPUP_AUDIOVIZ_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18090913311825920
+    m_Key: POPUP_AUDIOVIZ_STATUS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094451278553088
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAOPTIONS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18094306084331520
+    m_Key: POPUP_CAMERAOPTIONS_CAMERAS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18095883364933632
+    m_Key: POPUP_CAMERAPATHS_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098892484452352
+    m_Key: POPUP_CANTLOADSKETCH_DESCRIPTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098764352659456
+    m_Key: POPUP_CANTLOADSKETCH_TITLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18098512052690944
+    m_Key: POPUP_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101292528115712
+    m_Key: POPUP_COLOROPTIONS_HUE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101388099526656
+    m_Key: POPUP_COLOROPTIONS_SAT_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101498871095296
+    m_Key: POPUP_COLOROPTIONS_SIZE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101440956145664
+    m_Key: POPUP_COLOROPTIONS_VAL_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520387964907520
+    m_Key: POPUP_CONFIRM_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520489844551680
+    m_Key: POPUP_DECLINE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15520598732877824
+    m_Key: POPUP_OK_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18101557633294336
+    m_Key: SNAP_PANEL_POSITION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6606866780160
+    m_Key: PROMOMANAGER_GRAB_PANEL_HINT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6887293751296
+    m_Key: PROMOMANAGER_TOSS_PANEL_HINT_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267911297142784
+    m_Key: REBRUSH_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265936560099328
+    m_Key: RECOLOR_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 265487907983360
+    m_Key: REPAINT_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13240867393536
+    m_Key: SAVELOAD_AUTOSAVE_FILENAME_PATTERN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943936175480832
+    m_Key: SCRIPTS_PANEL_COMMANDLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7940280365588480
+    m_Key: SCRIPTS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943571044540416
+    m_Key: SCRIPTS_PANEL_EXAMPLES_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7943711960571904
+    m_Key: SCRIPTS_PANEL_SCRIPTSLIST_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268509593636864
+    m_Key: SELECTION_TOOL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948298104840192
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948470994051072
+    m_Key: SETTINGS_PANEL_ABOUT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949724893814784
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949811581689856
+    m_Key: SETTINGS_PANEL_AUTOSIMPLIFY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7959094121701376
+    m_Key: SETTINGS_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949438875836416
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949356432596992
+    m_Key: SETTINGS_PANEL_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948094068727808
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7948187597512704
+    m_Key: SETTINGS_PANEL_HELP_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950172098895872
+    m_Key: SETTINGS_PANEL_POINTERANGLE_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950275601735680
+    m_Key: SETTINGS_PANEL_QUALITY_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949594065084416
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7949642022756352
+    m_Key: SETTINGS_PANEL_RULER_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7961508530855936
+    m_Key: SETTINGS_PANEL_SCENECOST_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7950347307556864
+    m_Key: SETTINGS_PANEL_SIMPLIFICATION_SLIDER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951591048716288
+    m_Key: SETTINGS_PANEL_SIMPLIFYACCEPT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7951827204808704
+    m_Key: SETTINGS_PANEL_SIMPLIFYDECLINE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7952483592413184
+    m_Key: SETTINGS_PANEL_UPDATE_SIMPLIFICATION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044507112906752
+    m_Key: SKETCHBOOK_PANEL_CLOSE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133516949626880
+    m_Key: SKETCHBOOK_PANEL_CONTACTSERVER_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052288863838208
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052489070551040
+    m_Key: SKETCHBOOK_PANEL_DRIVE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044139993866240
+    m_Key: SKETCHBOOK_PANEL_DRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054126757519360
+    m_Key: SKETCHBOOK_PANEL_DRIVEDISABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054034549940224
+    m_Key: SKETCHBOOK_PANEL_DRIVEENABLED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8054220533768192
+    m_Key: SKETCHBOOK_PANEL_DRIVEFULL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053860821868544
+    m_Key: SKETCHBOOK_PANEL_DRIVESYNCING_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052141249503232
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052215190888448
+    m_Key: SKETCHBOOK_PANEL_LIKED_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8044071635099648
+    m_Key: SKETCHBOOK_PANEL_LIKED_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051469124870144
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051592198332416
+    m_Key: SKETCHBOOK_PANEL_LOCALGALLERY_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10138131262840832
+    m_Key: SKETCHBOOK_PANEL_NEWSKETCH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132930728534016
+    m_Key: SKETCHBOOK_PANEL_NODRIVESKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133306584309760
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10133179773722624
+    m_Key: SKETCHBOOK_PANEL_NOLIKES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137908562075648
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134688972382208
+    m_Key: SKETCHBOOK_PANEL_NOLOGINDRIVE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10137717402476544
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134539248312320
+    m_Key: SKETCHBOOK_PANEL_NOLOGINPOLY_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134947404423168
+    m_Key: SKETCHBOOK_PANEL_NOPOLYCONNECTION_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10132688213876736
+    m_Key: SKETCHBOOK_PANEL_NOSKETCHES_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8053396663410688
+    m_Key: SKETCHBOOK_PANEL_ONLINEGALLERY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134789291745280
+    m_Key: SKETCHBOOK_PANEL_OUTOFDATE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8051847228792832
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8052065399709696
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8043915934146560
+    m_Key: SKETCHBOOK_PANEL_SHOWCASE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10134247853236224
+    m_Key: SKETCHBOOK_PANEL_SHOWCASEERROR_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8042722189090816
+    m_Key: SKETCHBOOK_PANEL_STANDARD_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149748172103680
+    m_Key: SNAP_PANEL_ANGLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142251554152448
+    m_Key: SNAP_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149812609196032
+    m_Key: SNAP_PANEL_GRID_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10160187903811584
+    m_Key: SNAP_PANEL_JITTER_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10142405791293440
+    m_Key: SNAP_PANEL_SNAPANGLE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10149921501716480
+    m_Key: SNAP_PANEL_SNAPGRID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 278827682140160
+    m_Key: WIDGET_SYMMETRY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 279130447974400
+    m_Key: WIDGET_SYMMETRY_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10778529927168
+    m_Key: TILTMETER_MAX_METER_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11410951278592
+    m_Key: TILTMETER_SKETCH_COST_HIGH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11531013230592
+    m_Key: TILTMETER_SKETCH_COST_HIGHEST
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11105966657536
+    m_Key: TILTMETER_SKETCH_COST_LOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11327010672640
+    m_Key: TILTMETER_SKETCH_COST_MEDIUM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11625947107328
+    m_Key: TILTMETER_SKETCH_COST_PICASSO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506686318784512
+    m_Key: TOOLS_PANEL_CAMERA_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506037610950656
+    m_Key: TOOLS_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506435650400256
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506545880903680
+    m_Key: TOOLS_PANEL_ENVRIONMENT_BUTTON_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506183434317824
+    m_Key: TOOLS_PANEL_ERASER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506869836361728
+    m_Key: TOOLS_PANEL_MIRROR_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507184623071232
+    m_Key: TOOLS_PANEL_REDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506327693209600
+    m_Key: TOOLS_PANEL_STRAIGHTEDGE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15506782473203712
+    m_Key: TOOLS_PANEL_TELEPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15507089726943232
+    m_Key: TOOLS_PANEL_UNDO_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15508321694691328
+    m_Key: TUTORIAL_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15509162824609792
+    m_Key: TUTORIAL_PANEL_DISMISS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9359005487104
+    m_Key: YOUTUBE_AUTHORIZE_MESSAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10508081205248
+    m_Key: YOUTUBE_DEFAULT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10372936536064
+    m_Key: YOUTUBE_DEFAULT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9169397780480
+    m_Key: YOUTUBE_UPLOAD_SUCCESSFUL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68763796961820672
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_JOIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68764809030598656
+    m_Key: EXTRA_PANEL_LAYERS_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768010396041216
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68768580896882688
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_POPUP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773633749745664
+    m_Key: SETTINGS_PANELMOBILE_ABOUT_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68773760459669504
+    m_Key: SETTINGS_PANELMOBILE_CONTRIBUTE_BUTTON_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68774380566544384
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTALTOGGLE_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036335840321536
+    m_Key: POPUP_WAITONDOWNLOAD_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036630477594624
+    m_Key: POPUP_YOUTUBESEARCH_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76036746777255936
+    m_Key: BUTTON_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76039048963612672
+    m_Key: BUTTON_CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044213523374080
+    m_Key: POPUP_UPLOAD_LOGINDESKTOP_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044393131859968
+    m_Key: POPUP_UPLOAD_LOGINDESKTOP_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76044674418663424
+    m_Key: POPUP_UPLOAD_CONFIRMUPLOAD_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76068346479042560
+    m_Key: POPUP_UPLOAD_UPLOADING_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069123176062976
+    m_Key: POPUP_UPLOAD_COMPLETE_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069201752154112
+    m_Key: POPUP_UPLOAD_COMPLETE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069352969396224
+    m_Key: POPUP_UPLOAD_FAILED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069430274613248
+    m_Key: POPUP_UPLOAD_FAILED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069769677692928
+    m_Key: POPUP_UPLOAD_SHARINGDISABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76069893405466624
+    m_Key: POPUP_UPLOAD_SHARINGDISABLED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070234092003328
+    m_Key: POPUP_UPLOAD_CONNECTIONERR_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070420314906624
+    m_Key: POPUP_UPLOAD_CONNECTIONERR_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070518675529728
+    m_Key: BUTTON_OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070712456568832
+    m_Key: POPUP_UPLOAD_WAIT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76070854366650368
+    m_Key: POPUP_UPLOAD_EMBEDPOLY_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071039813607424
+    m_Key: POPUP_UPLOAD_EMBEDPOLY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071162597662720
+    m_Key: POPUP_UPLOAD_BUTTON_UPLOAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071373843783680
+    m_Key: POPUP_UPLOAD_BUTTON_CANCEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071488323117056
+    m_Key: POPUP_UPLOAD_EMBEDSKETCHFAB_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76071619017629696
+    m_Key: POPUP_UPLOAD_EMBEDSKETCHFAB_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072279146553344
+    m_Key: POPUP_UPLOAD_NOTHING_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072352228106240
+    m_Key: POPUP_UPLOAD_NOTHING_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072542007779328
+    m_Key: POPUP_UPLOAD_OUTDATED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76072667581046784
+    m_Key: POPUP_UPLOAD_OUTDATED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76080842438926336
+    m_Key: POPUP_UPLOAD_MOBILELOGIN_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76081074568486912
+    m_Key: POPUP_UPLOAD_MOBILELOGIN_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084187576721408
+    m_Key: POPUP_UPLOAD_BUTTON_SAVELOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76084383412969472
+    m_Key: POPUP_UPLOAD_BUTTON_LOGIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76086604699590656
+    m_Key: POPUP_UPLOAD_COMPLETEMOBILE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094622149435392
+    m_Key: POPUP_UNLOADIMAGES_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76094798670913536
+    m_Key: POPUP_UNLOADIMAGES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095425199267840
+    m_Key: BUTTON_PROCEED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095819690336256
+    m_Key: POPUP_TILTASAURUS_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76095964649676800
+    m_Key: POPUP_TILTASAURUS_BUTTON_DESCRIPTION_REFRESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096109499965440
+    m_Key: POPUP_TILTASAURUS_BUTTON_DESCRIPTION_EXTRA_REFRESH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096615622434816
+    m_Key: BUTTON_CLOSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76096904425431040
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_MERGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097050869555200
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_TRASH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76097256218484736
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_REVEAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115339591081984
+    m_Key: POPUP_SAVEOPTIONS_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115745704566784
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_OVERWRITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115842710429696
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_OVERWRITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115933538082816
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_NEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76115996574277632
+    m_Key: POPUP_SAVEOPTIONS_BUTTON_DESCRIPTION_EXTRA_NEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116098625888256
+    m_Key: POPUP_READONLY_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116655574933504
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_TUTORIAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116867701858304
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_LABS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76116941706158080
+    m_Key: POPUP_PANELS_BUTTON_DESCRIPTION_SETTINGS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117036946219008
+    m_Key: POPUP_PANELS_BUTTON_RESET_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117383567695872
+    m_Key: POPUP_MIRROROPTIONS_BUTTON_DESCRIPTION_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117650451259392
+    m_Key: POPUP_MIRROROPTIONS_BUTTON_DESCRIPTION_SUMMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117800062083072
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_RELEASENOTES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76117892328382464
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_EXTRA_BROWSER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118256381386752
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_HELPCENTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118351730499584
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_TOS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76118538846789632
+    m_Key: POPUP_HELP_BUTTON_DESCRIPTION_PRIVACY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119468057092096
+    m_Key: POPUP_EXIT_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76119645530677248
+    m_Key: POPUP_EXIT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76120862092746752
+    m_Key: POPUP_GDRIVE_ENABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121021711179776
+    m_Key: POPUP_GDRIVE_BETATAG
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121263181455360
+    m_Key: POPUP_GRDRIVE_ENABLED_STATUSCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76121447906992128
+    m_Key: POPUP_GRDRIVE_ENABLED_STATUSPROGRESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76122859638415360
+    m_Key: POPUP_GRDRIVE_ENABLED_VIEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123261897334784
+    m_Key: POPUP_GRDRIVE_ENABLED_DISABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123531960180736
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123762810478592
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_SNAPSHOTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123842049269760
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_MEDIALIB
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76123960488026112
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_EXPORTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124083175612416
+    m_Key: POPUP_GRDRIVE_ENABLED_CHECK_VIDEOS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124177820082176
+    m_Key: POPUP_GDRIVE_DISABLED_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124332547956736
+    m_Key: POPUP_GDRIVE_DISABLED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124651742879744
+    m_Key: POPUP_GDRIVE_DISABLED_BUTTON_ENABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124790830194688
+    m_Key: POPUP_GDRIVE_FULL_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124861466468352
+    m_Key: POPUP_GDRIVE_FULL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76124975501205504
+    m_Key: POPUP_GDRIVE_FULL_BUTTON_MANAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76125091268190208
+    m_Key: POPUP_GDRIVE_FULL_BUTTON_DISABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126070290046976
+    m_Key: POPUP_CONFIRMLOAD_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126242747244544
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126335156150272
+    m_Key: POPUP_CONFIRMLOAD_TITLECOMPLEX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126452525359104
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTIONCOMPLEX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126729437503488
+    m_Key: POPUP_CONFIRMLOAD_DESCRIPTIONCOMPLEX_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76126873826418688
+    m_Key: POPUP_CONFIRMLOAD_BUTTON_DESCRIPTION_CONFIRM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76131299773440000
+    m_Key: POPUP_ACCOUNTS_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76134950436921344
+    m_Key: POPUP_ACCOUNTS_REMOVEHEADSET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76137928887689216
+    m_Key: POPUP_ACCOUNTS_GOOGLEINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138083292602368
+    m_Key: POPUP_ACCOUNTS_GOOGLEINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138395621449728
+    m_Key: POPUP_ACCOUNTS_SKETCHFABINFO_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76138521224077312
+    m_Key: POPUP_ACCOUNTS_SKETCHFABINFO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182403783614464
+    m_Key: CAMERAPATH_TOOL_PATHRECORDED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182608851525632
+    m_Key: CAMERAPATH_TOOL_PATHCANCELLED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81183732522344448
+    m_Key: LAYERS_PANEL_COPYLAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184247687733248
+    m_Key: LAYERS_PANEL_MAINLAYER_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184440202092544
+    m_Key: LAYERS_PANEL_ADDITIONALLAYER_NAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81187452349898752
+    m_Key: DROPPER_TOOL_CONFIRM_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194531575881728
+    m_Key: OVERLAY_LOADSKETCH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194664648564736
+    m_Key: OVERLAY_LOADMODEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194744055128064
+    m_Key: OVERLAY_LOADGENERIC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194843074256896
+    m_Key: OVERLAY_LOADIMAGES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194906580213760
+    m_Key: OVERLAY_EXPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194990285938688
+    m_Key: OVERLAY_LOADMEDIA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203094671122432
+    m_Key: BRUSH_BUBBLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203153294909440
+    m_Key: BRUSH_BUBBLEWAND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203246727225344
+    m_Key: BRUSH_CANDYCANE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203301878128640
+    m_Key: BRUSH_CELVINYL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203372350824448
+    m_Key: BRUSH_CHARCOAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203423919792128
+    m_Key: BRUSH_CHROMATICWAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203481385951232
+    m_Key: BRUSH_COARSEBRISTLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203567432097792
+    m_Key: BRUSH_COMET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203611405180928
+    m_Key: BRUSH_CONCAVEHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203662118510592
+    m_Key: BRUSH_DANCEFLOOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203709862273024
+    m_Key: BRUSH_DIAMOND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203777713528832
+    m_Key: BRUSH_DIGITAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203824031227904
+    m_Key: BRUSH_DISCO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203865550643200
+    m_Key: BRUSH_DOTMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203913957105664
+    m_Key: BRUSH_DOTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203958152486912
+    m_Key: BRUSH_DOUBLEFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204005120303104
+    m_Key: BRUSH_PINCHEDFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204078575149056
+    m_Key: BRUSH_PINCHEDMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204129737269248
+    m_Key: BRUSH_DRAFTING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204173685186560
+    m_Key: BRUSH_DRYBRUSH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204235328872448
+    m_Key: BRUSH_DUCTTAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204288453926912
+    m_Key: BRUSH_DUCTTAPEGEO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204382188232704
+    m_Key: BRUSH_ELECTRICITY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204427818065920
+    m_Key: BRUSH_EMBERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204493236625408
+    m_Key: BRUSH_FACETEDTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204541060079616
+    m_Key: BRUSH_FAIRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204581946155008
+    m_Key: BRUSH_FEATHER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204635582914560
+    m_Key: BRUSH_FELT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204676406075392
+    m_Key: BRUSH_FIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204735243771904
+    m_Key: BRUSH_FIRE2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204778390577152
+    m_Key: BRUSH_FLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204889594159104
+    m_Key: BRUSH_FLATGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204982288277504
+    m_Key: BRUSH_GOUACHE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205065486491648
+    m_Key: BRUSH_GUTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205104946503680
+    m_Key: BRUSH_HIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205150878326784
+    m_Key: BRUSH_TREE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205201507770368
+    m_Key: BRUSH_HYPERCOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205290808696832
+    m_Key: BRUSH_HYPERGRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205339491983360
+    m_Key: BRUSH_ICING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205378532564992
+    m_Key: BRUSH_INK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205417556369408
+    m_Key: BRUSH_INKGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205502021263360
+    m_Key: BRUSH_KEIJIROTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205552273219584
+    m_Key: BRUSH_LACEWING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205593624862720
+    m_Key: BRUSH_LEAKYPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205636259962880
+    m_Key: BRUSH_LEAVES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205679876530176
+    m_Key: BRUSH_LEAVES2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205749166432256
+    m_Key: BRUSH_LIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205790060896256
+    m_Key: BRUSH_LIGHTWIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205838656102400
+    m_Key: BRUSH_WIRELIT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205898521403392
+    m_Key: BRUSH_LOFTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205943849246720
+    m_Key: BRUSH_LOFTEDHUESHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206004192698368
+    m_Key: BRUSH_MARBLEDRAINBOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206060224405504
+    m_Key: BRUSH_MARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206102402326528
+    m_Key: BRUSH_MARKERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206156286550016
+    m_Key: BRUSH_MATTEHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206207075377152
+    m_Key: BRUSH_MUSCLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206251857960960
+    m_Key: BRUSH_MYLARTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206295621328896
+    m_Key: BRUSH_NEONPULSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206368749019136
+    m_Key: BRUSH_OILPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206416861880320
+    m_Key: BRUSH_OILPAINTGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206494716551168
+    m_Key: BRUSH_PAPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206536990941184
+    m_Key: BRUSH_PAPERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206595077857280
+    m_Key: BRUSH_BRAID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206666636877824
+    m_Key: BRUSH_PETAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206859902017536
+    m_Key: BRUSH_PLASMA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206904026095616
+    m_Key: BRUSH_RACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206946329845760
+    m_Key: BRUSH_RAIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206986301562880
+    m_Key: BRUSH_RAINBOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207025421836288
+    m_Key: BRUSH_RISINGBUBBLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207069424279552
+    m_Key: BRUSH_SHINYHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207135908192256
+    m_Key: BRUSH_SINGLESIDED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207182829871104
+    m_Key: BRUSH_SLICE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Key: BRUSH_SMOKE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207263394062336
+    m_Key: BRUSH_SMOOTHHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207308449275904
+    m_Key: BRUSH_SNOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207357476495360
+    m_Key: BRUSH_SNOWFLAKE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207400497471488
+    m_Key: BRUSH_SOFTHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207449709240320
+    m_Key: BRUSH_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207491186712576
+    m_Key: BRUSH_SPARKS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207535642140672
+    m_Key: BRUSH_SPIKES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207574603030528
+    m_Key: BRUSH_SPLATTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207648775102464
+    m_Key: BRUSH_3DPRINTING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207710548811776
+    m_Key: BRUSH_SQUAREFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207756761653248
+    m_Key: BRUSH_STARS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207807806332928
+    m_Key: BRUSH_STREAMERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207912810733568
+    m_Key: BRUSH_TAFFY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207961254944768
+    m_Key: BRUSH_TAPEREDFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208043572355072
+    m_Key: BRUSH_TAPEREDHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208094986133504
+    m_Key: BRUSH_TAPEREDHUESHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208142008475648
+    m_Key: BRUSH_TAPEREDMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208255854469120
+    m_Key: BRUSH_TAPEREDMARKERGEO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208320484499456
+    m_Key: BRUSH_TAPEREDWIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208372611309568
+    m_Key: BRUSH_GEOMTHICKDUCTTAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208728183431168
+    m_Key: BRUSH_THICKPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208800589701120
+    m_Key: BRUSH_TOON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208843535179776
+    m_Key: BRUSH_TUBEHIGHLIGHTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208895842344960
+    m_Key: BRUSH_TUBEFLAT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208961575477248
+    m_Key: BRUSH_TUBETOONINVERTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209021776322560
+    m_Key: BRUSH_TUBEMARKER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209066508574720
+    m_Key: BRUSH_UNLITHULL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209114365583360
+    m_Key: BRUSH_VELVETINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209159253024768
+    m_Key: BRUSH_WATERCOLORPAPER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209241222307840
+    m_Key: BRUSH_WATERCOLORPAPERGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209297144963072
+    m_Key: BRUSH_WAVEFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209348688764928
+    m_Key: BRUSH_WAVEFORMFFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209390745051136
+    m_Key: BRUSH_WAVEFORMPARTICLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209436215500800
+    m_Key: BRUSH_WAVEFORMTUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209474924732416
+    m_Key: BRUSH_WETPAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209522190344192
+    m_Key: BRUSH_WETPAINTGEOMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209591056621568
+    m_Key: BRUSH_DRWIGGLEZ
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209706207043584
+    m_Key: BRUSH_WIND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209742752014336
+    m_Key: BRUSH_WIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209777615069184
+    m_Key: BRUSH_WIREFRAME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212669579288576
+    m_Key: ENVIRONMENT_BLACK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212740198785024
+    m_Key: ENVIRONMENT_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212798805794816
+    m_Key: ENVIRONMENT_DRESSFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212845635198976
+    m_Key: ENVIRONMENT_EXAMPLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212886244450304
+    m_Key: ENVIRONMENT_HOT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212929865211904
+    m_Key: ENVIRONMENT_ILLUSTRATIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212976329711616
+    m_Key: ENVIRONMENT_NIGHTSKY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213029828059136
+    m_Key: ENVIRONMENT_NOLIGHTS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213093988327424
+    m_Key: ENVIRONMENT_PASSTHROUGH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213138796077056
+    m_Key: ENVIRONMENT_PEDESTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213180441321472
+    m_Key: ENVIRONMENT_PINKLEMONADE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213231821545472
+    m_Key: ENVIRONMENT_PISTACHIO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213302868860928
+    m_Key: ENVIRONMENT_SNOWMAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213342391787520
+    m_Key: ENVIRONMENT_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213390877941760
+    m_Key: ENVIRONMENT_STANDARD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213430556057600
+    m_Key: ENVIRONMENT_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81450547493494784
+    m_Key: EXPORT_SUCCESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81477322290257920
+    m_Key: OVERLAY_SUCCESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424363229184
+    m_Key: COLOR_COOL_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977920
+    m_Key: COLOR_ANTIQUE_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977921
+    m_Key: COLOR_LIGHT_CYAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977922
+    m_Key: COLOR_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977923
+    m_Key: COLOR_BEIGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977924
+    m_Key: COLOR_BISQUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977925
+    m_Key: COLOR_BLACK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977926
+    m_Key: COLOR_MIDDLE_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977927
+    m_Key: COLOR_BONE_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977928
+    m_Key: COLOR_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977929
+    m_Key: COLOR_BLUE_VIOLET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977930
+    m_Key: COLOR_BROWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977931
+    m_Key: COLOR_DEEP_BEIGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977932
+    m_Key: COLOR_ASH_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977933
+    m_Key: COLOR_CHARTREUSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977934
+    m_Key: COLOR_RAW_SIENNA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977935
+    m_Key: COLOR_CORNFLOWER_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977936
+    m_Key: COLOR_CORNSILK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977937
+    m_Key: COLOR_CRIMSON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977938
+    m_Key: COLOR_CYAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977939
+    m_Key: COLOR_DARK_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977940
+    m_Key: COLOR_DARK_TEAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977941
+    m_Key: COLOR_DARK_OCHRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977942
+    m_Key: COLOR_DARK_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977943
+    m_Key: COLOR_DARK_KHAKI
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977944
+    m_Key: COLOR_DARK_MAGENTA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977945
+    m_Key: COLOR_DARK_OLIVE_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977946
+    m_Key: COLOR_DARK_ORANGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977947
+    m_Key: COLOR_DARK_ORCHID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977948
+    m_Key: COLOR_DARK_RED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977949
+    m_Key: COLOR_DARK_SALMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977950
+    m_Key: COLOR_DARK_SEA_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977951
+    m_Key: COLOR_DARK_SLATE_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977952
+    m_Key: COLOR_NEUTRAL_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977953
+    m_Key: COLOR_DARK_TURQUOISE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977954
+    m_Key: COLOR_DARK_VIOLET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977955
+    m_Key: COLOR_DEEP_PINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977956
+    m_Key: COLOR_DEEP_SKY_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977957
+    m_Key: COLOR_DIM_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977958
+    m_Key: COLOR_CERULEAN_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977959
+    m_Key: COLOR_CARMINE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977960
+    m_Key: COLOR_FLORAL_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977961
+    m_Key: COLOR_FOREST_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977962
+    m_Key: COLOR_SILVER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977963
+    m_Key: COLOR_GHOST_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977964
+    m_Key: COLOR_CADMIUM_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977965
+    m_Key: COLOR_OCHRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977966
+    m_Key: COLOR_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977967
+    m_Key: COLOR_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977968
+    m_Key: COLOR_GREEN_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977969
+    m_Key: COLOR_HONEYDEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977970
+    m_Key: COLOR_HOT_PINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977971
+    m_Key: COLOR_RED_OXIDE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977972
+    m_Key: COLOR_INDIGO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977973
+    m_Key: COLOR_IVORY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977974
+    m_Key: COLOR_KHAKI
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977975
+    m_Key: COLOR_LAVENDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977976
+    m_Key: COLOR_PALE_LAVENDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977977
+    m_Key: COLOR_LUMINOUS_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977978
+    m_Key: COLOR_PALE_LEMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977979
+    m_Key: COLOR_LIGHT_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977980
+    m_Key: COLOR_LIGHT_CORAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977981
+    m_Key: COLOR_PALE_LIME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977982
+    m_Key: COLOR_LIGHT_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977983
+    m_Key: COLOR_LIGHT_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977984
+    m_Key: COLOR_LIGHT_PINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977985
+    m_Key: COLOR_LIGHT_SALMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977986
+    m_Key: COLOR_LIGHT_SEA_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977987
+    m_Key: COLOR_LIGHT_SKY_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977988
+    m_Key: COLOR_LIGHT_ASH_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977989
+    m_Key: COLOR_LIGHT_STEEL_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977990
+    m_Key: COLOR_LIGHT_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977991
+    m_Key: COLOR_LIME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977992
+    m_Key: COLOR_LIME_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977993
+    m_Key: COLOR_LINEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977994
+    m_Key: COLOR_MAGENTA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977995
+    m_Key: COLOR_MAROON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977996
+    m_Key: COLOR_MEDIUM_AQUAMARINE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977997
+    m_Key: COLOR_ULTRAMARINE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977998
+    m_Key: COLOR_MEDIUM_ORCHID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400977999
+    m_Key: COLOR_MEDIUM_PURPLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978000
+    m_Key: COLOR_MEDIUM_SEA_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978001
+    m_Key: COLOR_MEDIUM_SLATE_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978002
+    m_Key: COLOR_MEDIUM_SPRING_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978003
+    m_Key: COLOR_MEDIUM_TURQUOISE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978004
+    m_Key: COLOR_ROSE_VOILET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978005
+    m_Key: COLOR_MIDNIGHT_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978006
+    m_Key: COLOR_MINT_CREAM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978007
+    m_Key: COLOR_MISTY_ROSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978008
+    m_Key: COLOR_NAPLES_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978009
+    m_Key: COLOR_TITAN_BUFF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978010
+    m_Key: COLOR_NAVY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978011
+    m_Key: COLOR_OLD_LACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978012
+    m_Key: COLOR_OLIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978013
+    m_Key: COLOR_MOSS_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978014
+    m_Key: COLOR_ORANGE_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978015
+    m_Key: COLOR_SCARLET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978016
+    m_Key: COLOR_ORCHID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978017
+    m_Key: COLOR_PALE_OCHRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978018
+    m_Key: COLOR_PALE_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978019
+    m_Key: COLOR_PALE_TURQUOISE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978020
+    m_Key: COLOR_PALE_VIOLET_RED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978021
+    m_Key: COLOR_PAPAYA_WHIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978022
+    m_Key: COLOR_PEACH_PUFF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978023
+    m_Key: COLOR_PINK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978024
+    m_Key: COLOR_LILAC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978025
+    m_Key: COLOR_POWDER_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978026
+    m_Key: COLOR_PURPLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978027
+    m_Key: COLOR_RED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978028
+    m_Key: COLOR_ROSY_BROWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978029
+    m_Key: COLOR_ROYAL_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978030
+    m_Key: COLOR_BURNT_UMBER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978031
+    m_Key: COLOR_SALMON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978032
+    m_Key: COLOR_SANDY_BROWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978033
+    m_Key: COLOR_SEA_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978034
+    m_Key: COLOR_SEASHELL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978035
+    m_Key: COLOR_SIENNA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978036
+    m_Key: COLOR_SKY_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978037
+    m_Key: COLOR_SLATE_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978038
+    m_Key: COLOR_SLATE_GREY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978039
+    m_Key: COLOR_SNOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978040
+    m_Key: COLOR_SPRING_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424400978041
+    m_Key: COLOR_STEEL_BLUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172224
+    m_Key: COLOR_TAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172225
+    m_Key: COLOR_TEAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172226
+    m_Key: COLOR_PALE_LILAC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172227
+    m_Key: COLOR_TOMATO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172228
+    m_Key: COLOR_TURQUOISE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172229
+    m_Key: COLOR_VIOLET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172230
+    m_Key: COLOR_TITAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172231
+    m_Key: COLOR_BRIGHT_WHITE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172232
+    m_Key: COLOR_YELLOW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172233
+    m_Key: COLOR_LEAF_GREEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81558424405172234
+    m_Key: COLOR_ORANGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85227255933722624
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86502336588701696
+    m_Key: CONTROLLER_HINT_TRIGGER_PAINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503100627312640
+    m_Key: CONTROLLER_HINT_TRIGGER_UNPIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503188791582720
+    m_Key: CONTROLLER_HINT_TRIGGER_PIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503489334435840
+    m_Key: CONTROLLER_HINT_TRIGGER_SAVEICON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503586919112704
+    m_Key: CONTROLLER_HINT_TRIGGER_PREVEWPATH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86505772348628992
+    m_Key: CONTROLLER_HINT_THUMBSTICK_UNLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86507370093240320
+    m_Key: CONTROLLER_HINT_THUMBSTICK_BRUSHSIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86510761523568640
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512053855739904
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512303735595008
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86513132228075520
+    m_Key: CONTROLLER_HINT_GRIP_FLOATINGPANEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515258303995904
+    m_Key: CONTROLLER_HINT_POINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515585589731328
+    m_Key: CONTROLLER_HINT_SHARE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86516117700108288
+    m_Key: CONTROLLER_HINT_ADVANCED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86522814208434176
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526550477660160
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526918276177920
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86527241187254272
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542625575559168
+    m_Key: CONTROLLER_HINT_TRIGGER_QUICKLOAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542994603008000
+    m_Key: CONTROLLER_HINT_THUMBPAD_UNLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543386296475648
+    m_Key: CONTROLLER_HINT_FACEBUTTON_SELECTION_PAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543571617603584
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DESELECTION_PAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543649577132032
+    m_Key: CONTROLLER_HINT_FACEBUTTON_DUPLICATE_PAD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86583802232332288
+    m_Key: TUTORIAL_ADDCOLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86584733715947520
+    m_Key: TUTORIAL_CONTROLLERCONSOLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86586444966813696
+    m_Key: TUTORIAL_DUPLICATE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605819400708096
+    m_Key: TUTORIAL_GRIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605978197057536
+    m_Key: TUTORIAL_GUIDE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606072233353216
+    m_Key: TUTORIAL_NEXTTIP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606143058370560
+    m_Key: TUTORIAL_PIN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606447405457408
+    m_Key: TUTORIAL_QUICKTOOL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606504787730432
+    m_Key: TUTORIAL_SCALE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606528972087296
+    m_Key: TUTORIAL_SWAPCONTROLLERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607071601778688
+    m_Key: TUTORIAL_TOSS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607314393260032
+    m_Key: TUTORIAL_UNDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607365643460608
+    m_Key: TUTORIAL_REDO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607461726576640
+    m_Key: TUTORIAL_WORLDTRANSFORM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607568958152704
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_KNUCKLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607659639005184
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_VIVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607720842289152
+    m_Key: TUTORIAL_WORLDTRANSFORMRESET_OCULUS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89041955544915968
+    m_Key: PANEL_REFERENCE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Key: PANEL_REFERENCE_ICONMODEL_LOADTEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Key: PANEL_REFERENCE_MODEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Key: PANEL_REFERENCE_VIDEO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Key: PANEL_REFERENCE_IMAGE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Key: POPUP_REFERENCEPANEL_NODATA_TEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Key: BUTTON_OPEN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Key: POPUP_REFERENCEPANEL_NODATA_BUTTON_ADDMEDIA_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Key: POPUP_REFERENCEPANEL_NODATA_MOBILETEXT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Key: BUTTON_OPENMOBILE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Key: PANEL_REFERENCE_BUTTON_ADDMEDIA_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_REWIND_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_PLAYPAUSE_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Key: PANEL_REFERENCE_BUTTON_VIDEO_FORWARD_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Key: SETTINGS_PANEL_BUTTON_EXPERIMENTAL_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Key: SETTINGS_PANEL_BUTTON_SWAPHAND_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95006156311494656
+    m_Key: LABS_PANEL_TRANSFORM_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400803737600
+    m_Key: KEYBOARD_UP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Key: KEYBOARD_DOWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Key: KEYBOARD_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Key: KEYBOARD_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Key: KEYBOARD_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Key: KEYBOARD_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Key: KEYBOARD_LEFT_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Key: KEYBOARD_RIGHT_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Key: KEYBOARD_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Key: KEYBOARD_LEFT_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Key: KEYBOARD_RIGHT_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Key: KEYBOARD_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Key: KEYBOARD_LEFT_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Key: KEYBOARD_RIGHT_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Key: KEYBOARD_ESCAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Key: KEYBOARD_ENTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Key: KEYBOARD_TAB
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Key: KEYBOARD_BACKSPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Key: KEYBOARD_ALTGR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Key: KEYBOARD_CAPSLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 6394126504544960513
+  references:
+    version: 2
+    RefIds:
+    - rid: 6394126504544960513
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables,
+        asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1659973725356

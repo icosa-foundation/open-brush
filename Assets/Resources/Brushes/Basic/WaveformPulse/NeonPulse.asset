@@ -25,7 +25,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 5abc544b4038f1e41b67c9c840d90968, type: 3}
-  m_Description: Neon Pulse
+  m_Description: BRUSH_NEONPULSE
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81206295621328896
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 57c01e7292d1a9344b49c44422dc657c, type: 3}
@@ -76,3 +85,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 3
+  references:
+    version: 2
+    RefIds: []

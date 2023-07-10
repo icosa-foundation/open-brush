@@ -142,6 +142,7 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+            RenameSketch = 5200,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -1300,15 +1301,20 @@ namespace TiltBrush
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.SwapControls))
                 {
-                    InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
-                    InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush)
-                        .DisplayControllerSwapAnimation();
-                    InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Wand)
-                        .DisplayControllerSwapAnimation();
-                    AudioManager.m_Instance.PlayControllerSwapSound(
-                        InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
+                    DoSwapControls();
                 }
             }
+        }
+
+        public static void DoSwapControls()
+        {
+            InputManager.m_Instance.WandOnRight = !InputManager.m_Instance.WandOnRight;
+            InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Brush)
+                .DisplayControllerSwapAnimation();
+            InputManager.m_Instance.GetControllerBehavior(InputManager.ControllerName.Wand)
+                .DisplayControllerSwapAnimation();
+            AudioManager.m_Instance.PlayControllerSwapSound(
+                InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
         }
 
         void UpdateStandardInput()
@@ -4525,6 +4531,14 @@ namespace TiltBrush
                         var sketchSetType = (SketchSetType)iParam2;
                         SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
                         sketchSet.DeleteSketch(iParam1);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.RenameSketch:
+                    {
+                        var sketchSetType = (SketchSetType)iParam2;
+                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }

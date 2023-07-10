@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -48,7 +49,7 @@ namespace TiltBrush
             m_BaseScale = m_Mesh.localScale;
             if (m_DismissMessage)
             {
-                TextMesh mesh = m_DismissMessage.GetComponentInChildren<TextMesh>();
+                TextMeshPro mesh = m_DismissMessage.GetComponentInChildren<TextMeshPro>();
                 m_DismissTextSize.x = TextMeasureScript.GetTextWidth(mesh);
                 m_DismissTextSize.y = TextMeasureScript.GetTextHeight(mesh);
             }

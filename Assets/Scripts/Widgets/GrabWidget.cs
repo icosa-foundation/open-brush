@@ -1565,8 +1565,11 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            InputManager.GetControllerGeometry(m_InteractingController)
-                .TogglePadSnapHint(SnapEnabled, show);
+            // TODO:Mike 'SnapEnabled' is controlled by the new snap panel, rather than button input.
+            // This breaks using this button to quickly toggle on a grabbed object.
+            // Disabling icon for now to avoid confusion.
+            // InputManager.GetControllerGeometry(m_InteractingController)
+            //     .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1
@@ -1651,9 +1654,10 @@ namespace TiltBrush
 
         virtual protected void OnTossComplete() { }
 
-        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser,
-                                  Quaternion? endForward = null)
+        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser, Quaternion? endForward = null,
+                                  bool forceTransform = false)
         {
+            var xf = xfTarget;
             Vector3 vSpawnForwardNoY = xfSpawn.forward;
             vSpawnForwardNoY.y = 0.0f;
             Quaternion qSpawnOrient = Quaternion.LookRotation(vSpawnForwardNoY);
@@ -1673,27 +1677,33 @@ namespace TiltBrush
                 placementOffset.x *= -1.0f;
             }
             Vector3 vRotatedOffset = qSpawnOrient * placementOffset;
-            xfTarget.translation += vRotatedOffset;
+            xf.translation += vRotatedOffset;
 
             // Face us toward user.
             if (bFaceUser)
             {
-                Vector3 vToUser = headRay.origin - xfTarget.translation;
-                xfTarget.rotation = Quaternion.LookRotation(vToUser.normalized);
+                Vector3 vToUser = headRay.origin - xf.translation;
+                xf.rotation = Quaternion.LookRotation(vToUser.normalized);
             }
             else
             {
-                Vector3 vToPanel = xfTarget.translation - headRay.origin;
-                xfTarget.rotation = Quaternion.LookRotation(vToPanel.normalized);
+                Vector3 vToPanel = xf.translation - headRay.origin;
+                xf.rotation = Quaternion.LookRotation(vToPanel.normalized);
             }
 
             if (endForward != null)
             {
-                xfTarget.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+                xf.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+            }
+
+            if (forceTransform)
+            {
+                // Ignore most of the above and just use the actual transform as passed in
+                xf = xfTarget;
             }
 
             m_xfIntroAnimSpawn_LS = ParentTransform.inverse * xfSpawn;
-            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xfTarget;
+            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xf;
         }
 
         virtual protected void UpdateIntroAnimState()

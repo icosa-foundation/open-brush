@@ -24,7 +24,16 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 2874bc75bee3f4846a2ed9a07dd9c468, type: 3}
-  m_Description: Tapered Marker
+  m_Description: BRUSH_TAPEREDMARKER
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81208142008475648
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: Geometry
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 046a8970bf2f7a949a26a3af1b603528, type: 3}
@@ -74,3 +83,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
