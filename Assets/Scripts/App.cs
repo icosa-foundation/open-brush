@@ -1898,7 +1898,7 @@ namespace TiltBrush
 
             if (Directory.Exists(m_UserPath))
             {
-                if(File.Exists(Path.Combine(m_UserPath, "MovedFiles.txt")))
+                if (File.Exists(Path.Combine(m_UserPath, "MovedFiles.txt")))
                 {
                     // Files have previously been moved.
                     return;
@@ -1919,7 +1919,7 @@ namespace TiltBrush
                 string moveMessageFilename = Path.Combine(m_OldUserPath, kFileMoveFilename);
                 File.WriteAllText(moveMessageFilename, kFileMoveContents);
 
-                // Signify this operation is comlpete by storing the manifest in the new directory.
+                // Signify this operation is complete by storing the manifest in the new directory.
                 File.WriteAllText(Path.Combine(m_UserPath, "MovedFiles.txt"), String.Join('\n', movedFiles.ToArray()));
 
             }
@@ -1945,7 +1945,7 @@ namespace TiltBrush
             foreach (FileInfo file in dir.GetFiles())
             {
                 string targetFilePath = Path.Combine(destinationDir, file.Name);
-                if(!File.Exists(targetFilePath))
+                if (!File.Exists(targetFilePath))
                 {
                     file.CopyTo(targetFilePath);
                     movedFiles.Add(targetFilePath);
