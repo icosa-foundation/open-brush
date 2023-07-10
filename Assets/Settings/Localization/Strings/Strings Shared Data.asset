@@ -2911,6 +2911,94 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 95006156311494656
+    m_Key: LABS_PANEL_TRANSFORM_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400803737600
+    m_Key: KEYBOARD_UP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Key: KEYBOARD_DOWN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Key: KEYBOARD_LEFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Key: KEYBOARD_RIGHT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Key: KEYBOARD_SPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Key: KEYBOARD_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Key: KEYBOARD_LEFT_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Key: KEYBOARD_RIGHT_SHIFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Key: KEYBOARD_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Key: KEYBOARD_LEFT_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Key: KEYBOARD_RIGHT_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Key: KEYBOARD_ALT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Key: KEYBOARD_LEFT_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Key: KEYBOARD_RIGHT_CONTROL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Key: KEYBOARD_ESCAPE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Key: KEYBOARD_ENTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Key: KEYBOARD_TAB
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Key: KEYBOARD_BACKSPACE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Key: KEYBOARD_ALTGR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Key: KEYBOARD_CAPSLOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
