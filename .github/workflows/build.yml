@@ -105,9 +105,9 @@ jobs:
           then
             PREV=$(git describe --tags --abbrev=0 HEAD^)
           else
-            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
+            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent --abbrev=0 HEAD^)
           fi
-          PREVFULL=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
+          PREVFULL=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent --abbrev=0 HEAD^)
           CUR="$(git rev-parse HEAD)"
           echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
           echo "previousfullrelease=$PREVFULL" >> $GITHUB_OUTPUT
@@ -208,7 +208,8 @@ jobs:
     steps:
       - name: Free extra space
         # This takes several minutes, so we only do it where required
-        if: false  # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
+        # Ubuntu 22.04 20230517.1 added some new packages, so we'll enable this (temporarily, hopefully). See https://github.com/actions/runner-images/pull/7645/files#diff-d3f496e99457b699df2a5621c8f59cb52f60a050e1a88318af7d6f7069c12b2eR180 for details
+        if: matrix.targetPlatform == 'Android' # We needed this to build for Android with the Ubuntu 20.04 image, which started with 29GB free. The 22.04 starts with 37GB free, and this is enough.
         run: |
           echo "Initial free space"
           df -h /
