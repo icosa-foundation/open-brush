@@ -2646,6 +2646,86 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 95221400803737600
+    m_Localized: "\u4E0A\u77E2\u5370"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292032
+    m_Localized: "\u4E0B\u77E2\u5370"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292033
+    m_Localized: "\u5DE6\u77E2\u5370"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292034
+    m_Localized: "\u53F3\u77E2\u5370"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292035
+    m_Localized: "\u30B9\u30DA\u30FC\u30B9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292036
+    m_Localized: "\u30B7\u30D5\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400837292037
+    m_Localized: "\u5DE6\u30B7\u30D5\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486336
+    m_Localized: "\u53F3\u30B7\u30D5\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486337
+    m_Localized: "\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486338
+    m_Localized: "\u5DE6\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486339
+    m_Localized: "\u53F3\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486340
+    m_Localized: "\u30AA\u30EB\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486341
+    m_Localized: "\u5DE6\u30AA\u30EB\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486342
+    m_Localized: "\u53F3\u30AA\u30EB\u30C8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486343
+    m_Localized: "\u30A8\u30B9\u30B1\u30FC\u30D7"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486344
+    m_Localized: "\u30A8\u30F3\u30BF\u30FC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486345
+    m_Localized: "\u30BF\u30D6"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486346
+    m_Localized: "\u30D0\u30C3\u30AF\u30B9\u30DA\u30FC\u30B9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486347
+    m_Localized: AltGr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95221400841486348
+    m_Localized: Caps Lock
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
