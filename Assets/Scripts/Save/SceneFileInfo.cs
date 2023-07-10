@@ -61,6 +61,8 @@ namespace TiltBrush
 
         void Delete();
 
+        void Rename(string newName);
+
         bool IsHeaderValid();
 
         /// Get a stream for a specific part of the file.  Subfilenames are defined in TiltFile.

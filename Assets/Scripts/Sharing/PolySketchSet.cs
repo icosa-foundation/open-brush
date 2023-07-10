@@ -219,6 +219,11 @@ namespace TiltBrush
             return i < m_Sketches.Count ? m_Sketches[i].SceneFileInfo.HumanName : null;
         }
 
+        public void RenameSketch(int toRename, string newName)
+        {
+            throw new NotImplementedException();
+        }
+
         public void PrecacheSketchModels(int i)
         {
             if (i < m_Sketches.Count)
@@ -833,6 +838,11 @@ namespace TiltBrush
         }
 
         public void Delete()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Rename(string newName)
         {
             throw new NotImplementedException();
         }
