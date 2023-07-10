@@ -143,6 +143,7 @@ namespace TiltBrush
             SignOutConfirm,
             ReadOnlyNotice,
             ShowContribution,
+            RenameSketch = 5200,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -4535,6 +4536,14 @@ namespace TiltBrush
                     {
                         ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         sketchSet.DeleteSketch(iParam1);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.RenameSketch:
+                    {
+                        var sketchSetType = (SketchSetType)iParam2;
+                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+                        sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
