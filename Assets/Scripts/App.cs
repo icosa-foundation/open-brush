@@ -73,7 +73,7 @@ namespace TiltBrush
 
         private const string kFileMoveContents =
             "Due to a change in Android security policy all your " + kAppDisplayName + " files have been moved to\n" +
-            "Android\\data\\com.Icosa.OpenBrush\n" +
+            "{0}\n" +
             "Visit the Open Brush Docs for more information: https://docs.openbrush.app";
 
         public enum AppState
@@ -1868,6 +1868,7 @@ namespace TiltBrush
                     break;
             }
 
+            m_OldUserPath = Path.Combine(m_OldUserPath, App.kAppFolderName);
             m_UserPath = Path.Combine(m_UserPath, App.kAppFolderName);
 
             // In the case that we have changed the location of the user data, move the user data from the
@@ -1896,19 +1897,17 @@ namespace TiltBrush
                 return;
             }
 
-            if (Directory.Exists(m_UserPath))
+            // we've already moved.
+            var filesToMove = Directory.GetFiles(m_OldUserPath);
+            if (filesToMove.Length == 1 && filesToMove[0].Equals(Path.Combine(m_OldUserPath, kFileMoveFilename)))
             {
-                if (File.Exists(Path.Combine(m_UserPath, "MovedFiles.txt")))
-                {
-                    // Files have previously been moved.
-                    return;
-                }
+                return;
             }
 
             try
             {
                 // Moving does not work across different mount points, have to copy and delete.
-                var movedFiles = MoveDirectory(m_OldUserPath, m_UserPath, true);
+                MoveDirectory(m_OldUserPath, m_UserPath, true);
 
                 // If successful, we can delete the old directory.
                 Directory.Delete(m_OldUserPath, true);
@@ -1917,11 +1916,7 @@ namespace TiltBrush
                 // location can find out where to get their files.
                 Directory.CreateDirectory(m_OldUserPath);
                 string moveMessageFilename = Path.Combine(m_OldUserPath, kFileMoveFilename);
-                File.WriteAllText(moveMessageFilename, kFileMoveContents);
-
-                // Signify this operation is complete by storing the manifest in the new directory.
-                File.WriteAllText(Path.Combine(m_UserPath, "MovedFiles.txt"), String.Join('\n', movedFiles.ToArray()));
-
+                File.WriteAllText(moveMessageFilename, String.Format(kFileMoveContents, Application.persistentDataPath));
             }
             catch (Exception ex)
             {
@@ -1929,14 +1924,16 @@ namespace TiltBrush
             }
         }
 
-        static List<string> MoveDirectory(string sourceDir, string destinationDir, bool recursive)
+        static void MoveDirectory(string sourceDir, string destinationDir, bool recursive)
         {
             var dir = new DirectoryInfo(sourceDir);
 
             List<string> movedFiles = new List<string>();
 
             if (!dir.Exists)
+            {
                 throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+            }
 
             DirectoryInfo[] dirs = dir.GetDirectories();
 
@@ -1944,13 +1941,9 @@ namespace TiltBrush
 
             foreach (FileInfo file in dir.GetFiles())
             {
-                string targetFilePath = Path.Combine(destinationDir, file.Name);
-                if (!File.Exists(targetFilePath))
-                {
-                    file.CopyTo(targetFilePath);
-                    movedFiles.Add(targetFilePath);
-                    file.Delete();
-                }
+                string targetFilePath = SafeFileName(Path.Combine(destinationDir, file.Name));
+                file.CopyTo(targetFilePath);
+                file.Delete();
             }
 
             if (recursive)
@@ -1958,11 +1951,26 @@ namespace TiltBrush
                 foreach (DirectoryInfo subDir in dirs)
                 {
                     string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                    movedFiles.Concat<string>(MoveDirectory(subDir.FullName, newDestinationDir, recursive));
+                    MoveDirectory(subDir.FullName, newDestinationDir, recursive);
                 }
             }
+        }
 
-            return movedFiles;
+        private static string SafeFileName(string path, int counter = 0)
+        {
+            var newName = path;
+
+            if(counter != 0)
+            {
+                newName = $"{Path.GetFileNameWithoutExtension(path)}.{counter+1}.{Path.GetExtension(path)}";
+            }
+
+            if(!File.Exists(newName))
+            {
+                return newName;
+            }
+
+            return SafeFileName(path, counter+1);
         }
 
         // Return path of root directory for storing user sketches, snapshots, etc.
