@@ -1960,17 +1960,17 @@ namespace TiltBrush
         {
             var newName = path;
 
-            if(counter != 0)
+            if (counter != 0)
             {
-                newName = $"{Path.GetFileNameWithoutExtension(path)}.{counter+1}.{Path.GetExtension(path)}";
+                newName = $"{Path.GetFileNameWithoutExtension(path)}.{counter + 1}.{Path.GetExtension(path)}";
             }
 
-            if(!File.Exists(newName))
+            if (!File.Exists(newName))
             {
                 return newName;
             }
 
-            return SafeFileName(path, counter+1);
+            return SafeFileName(path, counter + 1);
         }
 
         // Return path of root directory for storing user sketches, snapshots, etc.
