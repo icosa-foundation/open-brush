@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1055250080}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: StemBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -40,7 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1423503888}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: StemAttachPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,7 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8021867153671390976}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -106,7 +106,7 @@ GameObject:
   - component: {fileID: 4876096506462707450}
   - component: {fileID: 4139461325075840670}
   - component: {fileID: 3121385842973598780}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: LeftBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -188,7 +188,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1969929897328786559}
   - component: {fileID: 1875867020554690855}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Stem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -317,7 +317,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3815679252826617493}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Center
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -352,7 +352,7 @@ GameObject:
   - component: {fileID: 9047968023577320272}
   - component: {fileID: 8110737424403994591}
   - component: {fileID: 8344386299890123731}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: RightBorder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -435,7 +435,7 @@ GameObject:
   - component: {fileID: 5630686643041098404}
   - component: {fileID: 8125913644127712999}
   - component: {fileID: 7371690088860361219}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: CenterBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -518,7 +518,7 @@ GameObject:
   - component: {fileID: 3509037499704297234}
   - component: {fileID: 8062081264151736416}
   - component: {fileID: 5212428812122576044}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: RightBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -601,7 +601,7 @@ GameObject:
   - component: {fileID: 3982371635359139127}
   - component: {fileID: 6377365574910603182}
   - component: {fileID: 703817887625944913}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: LeftBorder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -683,7 +683,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8695010600745717173}
   - component: {fileID: 3477360781772463332}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: ControllerHint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -925,7 +925,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7726578953136506759}
   - component: {fileID: 4584288707958903752}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: HintPromoFlag
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -989,7 +989,7 @@ GameObject:
   - component: {fileID: 3755383606716017604}
   - component: {fileID: 6496470433215644178}
   - component: {fileID: 3101229058981438923}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: CenterBorder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1070,7 +1070,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5328659286739045611}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
