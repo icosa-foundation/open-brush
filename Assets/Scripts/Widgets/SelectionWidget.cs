@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -307,6 +308,37 @@ namespace TiltBrush
                 m_Pin.gameObject.SetActive(true);
                 m_Pin.WobblePin(m_InteractingController);
             }
+        }
+
+        protected override IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return SelectionManager.m_Instance.SelectedWidgets.OfType<StencilWidget>();
+        }
+
+        protected override bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            // In some cases it's weird to align the orientation of a selection
+            // with a guide (i.e. when there's only strokes selected)
+            var rot = xf_GS.rotation;
+            bool usedStencil = base.MagnetizeToStencils(ref xf_GS);
+            // No need to do anything if we didn't use a stencil
+            if (!usedStencil) return false;
+
+            // Only restore original orientation if we've got no widgets selected
+            if (SelectionManager.m_Instance.SelectedWidgets.Count() == 1)
+            {
+                // A single widget should align as if it was grabbed directly
+                // Rather than selected
+                var foo = xf_GS.rotation;
+                xf_GS.rotation = rot;
+                SelectionManager.m_Instance.SelectedWidgets.First().transform.rotation = foo;
+            }
+            else
+            {
+                xf_GS.rotation = rot;
+            }
+
+            return usedStencil;
         }
     }
 
