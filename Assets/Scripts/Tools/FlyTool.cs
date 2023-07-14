@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
-namespace TiltBrush.LachlanSleight
+namespace TiltBrush
 {
     public class FlyTool : BaseTool
     {
 
+        public GameObject m_NonVRFlyingUi;
+
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
-        private Transform m_BrushController;
         [SerializeField]
         [Range(0f, 2f)]
         private float m_MaxSpeed = 1f;
@@ -37,8 +41,11 @@ namespace TiltBrush.LachlanSleight
         private float m_StopThresholdSpeed = 0.01f;
 
         private bool m_Armed = false;
+        private bool m_InvertLook = false;
 
         private Vector3 m_Velocity;
+
+        bool m_IsTouchScreen => Application.isEditor || (!App.VrSdk.IsHmdInitialized() && App.Config.IsMobileHardware);
 
         public override void Init()
         {
@@ -52,13 +59,11 @@ namespace TiltBrush.LachlanSleight
 
             if (bEnable)
             {
-                m_LockToController = m_SketchSurface.IsInFreePaintMode();
-                if (m_LockToController)
-                {
-                    m_BrushController = InputManager.m_Instance.GetController(InputManager.ControllerName.Brush);
-                }
-
                 EatInput();
+
+                // Enable onscreenUI if no headset present and we're on a touchscreen device
+                // TODO logic for detecting mice/gamepads on mobile and disabling on-screen controls
+                m_NonVRFlyingUi.SetActive(m_IsTouchScreen);
             }
 
             m_Armed = false;
@@ -83,6 +88,10 @@ namespace TiltBrush.LachlanSleight
         public override void HideTool(bool bHide)
         {
             base.HideTool(bHide);
+            if (m_IsTouchScreen)
+            {
+                EnhancedTouchSupport.Disable();
+            }
             _toolDirectionIndicator.SetActive(!bHide);
         }
 
@@ -103,11 +112,107 @@ namespace TiltBrush.LachlanSleight
                 }
             }
 
-
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
-            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly) ||
-                InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.Forward))
+            // Handle non-VR navigation
+            if (!App.VrSdk.IsHmdInitialized())
+            {
+
+                if (!EnhancedTouchSupport.enabled) EnhancedTouchSupport.Enable();
+                Vector2 mv = Vector2.zero;
+                if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                {
+                    mv = InputManager.m_Instance.GetMouseMoveDelta();
+                }
+
+                var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
+
+                if (m_IsTouchScreen)
+                {
+                    TouchscreenVirtualKey[] btns = m_NonVRFlyingUi.GetComponentsInChildren<TouchscreenVirtualKey>();
+                    bool virtualButtonPressed = false;
+                    foreach (var btn in btns)
+                    {
+                        if (btn.m_IsPressed)
+                        {
+                            virtualButtons[btn.m_Key] = true;
+                            virtualButtonPressed = true;
+                        }
+                    }
+
+                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
+                    {
+                        mv = Touch.activeTouches[0].screenPosition;
+                        mv = new Vector2(
+                            mv.x / (Screen.width * 0.5f),
+                            mv.y / (Screen.height * 0.5f)
+                        ); // 0 to 2
+                        mv -= Vector2.one; // -1 to +1
+                    }
+                }
+
+                if (mv != Vector2.zero)
+                {
+                    Vector3 cameraRotation = App.VrSdk.GetVrCamera().transform.rotation.eulerAngles;
+                    cameraRotation.y += mv.x;
+                    if (cameraRotation.y <= -180)
+                    {
+                        cameraRotation.y += 360;
+                    }
+                    else if (cameraRotation.y > 180)
+                    {
+                        cameraRotation.y -= 360;
+                    }
+
+                    cameraRotation.x -= m_InvertLook ? -mv.y : mv.y;
+                    App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
+                }
+
+                Vector3 cameraTranslation = Vector3.zero;
+
+                bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode);
+                float movementSpeed = isSprinting ? 0.3f : 0.05f;
+
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward) || virtualButtons['W'])
+                {
+                    cameraTranslation = Vector3.forward;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
+                {
+                    cameraTranslation = Vector3.back;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveUp))
+                {
+                    cameraTranslation = Vector3.up;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveDown))
+                {
+                    cameraTranslation = Vector3.down;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
+                {
+                    cameraTranslation = Vector3.left;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
+                {
+                    cameraTranslation = Vector3.right;
+                }
+                else if (InputManager.m_Instance.GetKeyboardShortcutDown(InputManager.KeyboardShortcut.InvertLook))
+                {
+                    m_InvertLook = !m_InvertLook;
+                }
+
+                if (cameraTranslation != Vector3.zero)
+                {
+                    TrTransform newScene = App.Scene.Pose;
+                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation * (cameraTranslation * movementSpeed);
+                    newScene.translation -= sceneTranslation;
+                    newScene = SketchControlsScript.MakeValidScenePose(newScene, BoundsRadius);
+                    App.Scene.Pose = newScene;
+                }
+            }
+
+            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Fly))
             {
                 Vector3 position;
                 Vector3 vMovement;
