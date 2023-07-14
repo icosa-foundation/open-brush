@@ -114,6 +114,11 @@ namespace TiltBrush
                 throw new NotImplementedException();
             }
 
+            public void Rename(string newName)
+            {
+                throw new NotImplementedException();
+            }
+
             public bool IsHeaderValid()
             {
                 return true; // TODO
@@ -250,6 +255,11 @@ namespace TiltBrush
         }
 
         public void DeleteSketch(int toDelete)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RenameSketch(int toRename, string newName)
         {
             throw new NotImplementedException();
         }
