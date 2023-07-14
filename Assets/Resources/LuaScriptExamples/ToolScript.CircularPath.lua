@@ -21,18 +21,19 @@ function OnTriggerReleased()
     path:TransformBy(Transform:New(Tool.startPosition, Tool.rotation));
     CameraPath:FromPath(path, true)
 
-    -- Create the camera path knot by knot
-    radius = Tool.vector.magnitude
-    cameraPath = CameraPath:New()
-    angle = 30
-    for a = 0, 360 - angle, angle do
-        position = Vector2:PointOnCircle(a):Multiply(radius):OnY()
-        rotation = Rotation:New(0, -a, 0)
-        cameraPath:Extend(position, rotation, 0.75 * radius)
-    end
-    cameraPath:Loop()
-    cameraPath.transform = Transform:New(Tool.startPosition, Tool.rotation)
-    cameraPath.active = true
+    ---- Create the camera path knot by knot
+    -- This code is here as an example and therefore has been commented out
+    --radius = Tool.vector.magnitude
+    --cameraPath = CameraPath:New()
+    --angle = 30
+    --for a = 0, 360 - angle, angle do
+    --    position = Vector2:PointOnCircle(a):Multiply(radius):OnY()
+    --    rotation = Rotation:New(0, -a, 0)
+    --    cameraPath:Extend(position, rotation, 0.75 * radius)
+    --end
+    --cameraPath:Loop()
+    --cameraPath.transform = Transform:New(Tool.startPosition, Tool.rotation)
+    --cameraPath.active = true
 
 end
 
