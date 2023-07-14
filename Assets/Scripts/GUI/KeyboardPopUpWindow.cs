@@ -14,12 +14,14 @@
 
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace TiltBrush
 {
     public class KeyboardPopUpWindow : OptionsPopUpWindow
     {
         private KeyboardUI m_KeyboardUI;
+        [NonSerialized] public static string m_InitialText;
         [NonSerialized] public static string m_LastInput;
 
         public bool m_SanitizeFilename;
@@ -30,20 +32,10 @@ namespace TiltBrush
             m_KeyboardUI.KeyPressed += KeyPressed;
         }
 
-        override public void SetPopupCommandParameters(int commandParam, int commandParam2)
+        override public void Init(GameObject rParent, string sText)
         {
-            if (commandParam2 != (int)SketchSetType.User)
-            {
-                return;
-            }
-            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User) as FileSketchSet;
-            var sceneFileInfo = sketchSet.GetSketchSceneFileInfo(commandParam);
-            var currentName = Path.GetFileName(sceneFileInfo.FullPath);
-            if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
-            {
-                currentName = currentName.Substring(0, currentName.Length - SaveLoadScript.TILT_SUFFIX.Length);
-            }
-            m_KeyboardUI.AddConsoleContent(currentName);
+            base.Init(rParent, sText);
+            m_KeyboardUI.AddConsoleContent(m_InitialText);
         }
 
         private void OnDestroy()

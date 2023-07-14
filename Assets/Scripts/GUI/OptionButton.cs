@@ -22,7 +22,7 @@ namespace TiltBrush
     {
         [SerializeField] public SketchControlsScript.GlobalCommands m_Command;
         [SerializeField] public int m_CommandParam = -1;
-        [SerializeField] protected int m_CommandParam2 = -1;
+        [SerializeField] public int m_CommandParam2 = -1;
         [SerializeField] protected bool m_RequiresPopup = false;
         [SerializeField] protected bool m_CenterPopupOnButton = false;
         [SerializeField] protected Vector3 m_PopupOffset;
