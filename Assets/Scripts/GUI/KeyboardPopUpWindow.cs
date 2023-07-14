@@ -36,6 +36,7 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             m_KeyboardUI.AddConsoleContent(m_InitialText);
+            m_LastInput = m_InitialText;
         }
 
         private void OnDestroy()
@@ -48,6 +49,7 @@ namespace TiltBrush
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
+                    // Logic will been to be updated if we ever have a multi-line keyboard
                     m_LastInput = m_KeyboardUI.ConsoleContent;
                     if (m_ParentPanel)
                     {
