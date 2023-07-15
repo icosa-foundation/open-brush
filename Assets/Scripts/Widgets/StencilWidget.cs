@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -251,6 +252,11 @@ namespace TiltBrush
                     m_TintableMeshes[i].material.color = rMatColor;
                 }
             }
+        }
+
+        protected override IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget> { this };
         }
 
         public void RefreshVisibility(bool bStencilDisabled)
