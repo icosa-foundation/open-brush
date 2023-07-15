@@ -356,7 +356,6 @@ namespace TiltBrush
             xf_GS = App.ActiveCanvas.Pose * outXf_CS;
             return xf_GS;
         }
-
     }
 
 } // namespace TiltBrush

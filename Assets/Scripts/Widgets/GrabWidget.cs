@@ -1171,7 +1171,6 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
-
             MagnetizeToStencils(ref xf_GS);
 
             if (m_RecordMovements)

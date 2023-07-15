@@ -1,4 +1,4 @@
-// Copyright 2023 The Tilt Brush Authors
+// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,15 +13,14 @@
 // limitations under the License.
 
 using TMPro;
-using Unity.XR.CoreUtils;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.XR;
 
 namespace TiltBrush
 {
     public class InitNoHeadsetMode : MonoBehaviour
     {
+
+        public GameObject m_SketchLoadingUi;
 
         void Start()
         {
@@ -33,6 +32,12 @@ namespace TiltBrush
                 var sketchName = userSketchSet.GetSketchName(i);
                 dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
             }
+            var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+            for (int i = 0; i < curatedSketchSet.NumSketches; i++)
+            {
+                var sketchName = curatedSketchSet.GetSketchName(i);
+                dropdown.options.Add(new TMP_Dropdown.OptionData(sketchName));
+            }
         }
 
         public void Init()
@@ -42,18 +47,34 @@ namespace TiltBrush
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             var dropdown = GetComponentInChildren<TMP_Dropdown>();
             var index = dropdown.value;
-            // SketchControlsScript.m_Instance.IssueGlobalCommand(
-            //     SketchControlsScript.GlobalCommands.Load, sketchIndex, 0
-            // );
 
             var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
-            SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
-            if (rInfo != null)
+            if (index < sketchSet.NumSketches)
             {
-                SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                if (rInfo != null)
+                {
+                    SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                }
             }
+            else
+            {
+                index -= sketchSet.NumSketches;
+                sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated);
+                var rInfo = sketchSet.GetSketchSceneFileInfo(index);
+                if (rInfo != null)
+                {
+                    SketchControlsScript.m_Instance.LoadSketch(rInfo, true);
+                }
+            }
+
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             Destroy(gameObject);
+        }
+
+        public void ShowSketchSelectorUi(bool active = true)
+        {
+            m_SketchLoadingUi.SetActive(active);
         }
     }
 }

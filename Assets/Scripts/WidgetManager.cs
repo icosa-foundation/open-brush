@@ -825,7 +825,6 @@ namespace TiltBrush
 
             Vector3 samplePos = pos;
 
-
             bool stencilWasUsed = false;
 
             // If we're painting, we have a different path for magnetization that relies on the
