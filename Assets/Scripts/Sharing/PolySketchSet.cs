@@ -854,7 +854,7 @@ namespace TiltBrush
             throw new NotImplementedException();
         }
 
-        public void Rename(string newName)
+        public string Rename(string newName)
         {
             throw new NotImplementedException();
         }

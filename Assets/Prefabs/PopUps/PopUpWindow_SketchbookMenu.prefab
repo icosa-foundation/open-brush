@@ -931,7 +931,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8366139741319417911}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 68ab65faed9850448927b196242878d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -997,6 +997,21 @@ MonoBehaviour:
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
+  m_BeforePopupAction:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 114000011997523446}
+        m_TargetAssemblyTypeName: TiltBrush.MenuPopUpWindow, Assembly-CSharp
+        m_MethodName: SetInitialKeyboardText
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   references:
     version: 2
     RefIds: []

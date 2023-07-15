@@ -61,7 +61,7 @@ namespace TiltBrush
 
         void Delete();
 
-        void Rename(string newName);
+        string Rename(string newName);
 
         bool IsHeaderValid();
 
