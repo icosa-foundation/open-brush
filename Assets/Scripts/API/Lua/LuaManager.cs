@@ -65,9 +65,6 @@ namespace TiltBrush
         public static string Main => "Main";
         public static string Start => "Start";
         public static string End => "End";
-        public static string OnTriggerPressed => "OnTriggerPressed";
-        public static string OnTriggerReleased => "OnTriggerReleased";
-        public static string WhileTriggerPressed => "WhileTriggerPressed";
         public static string ScriptNameString => "_ScriptName";
         public static string IsExampleScriptBool => "_IsExampleScript";
         public static string ToolPreviewType => "previewType";
@@ -75,8 +72,8 @@ namespace TiltBrush
 
         // Injected Toolscript properties
 
-        public static string ToolScriptStartPosition => "Tool.startPosition";
-        public static string ToolScriptEndPosition => "Tool.endPosition";
+        public static string ToolScriptStartPoint => "Tool.startPoint";
+        public static string ToolScriptEndPoint => "Tool.endPoint";
         public static string ToolScriptVector => "Tool.vector";
         public static string ToolScriptRotation => "Tool.rotation";
 
@@ -560,21 +557,25 @@ namespace TiltBrush
             }
         }
 
-        private ScriptTrTransform CallActivePointerScript(string fnName)
+        private bool CallActivePointerScript(string fnName, out ScriptTrTransform result)
         {
             var script = GetActiveScript(LuaApiCategory.PointerScript);
-            DynValue result = _CallScript(script, fnName);
+            DynValue returnedTr = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(LuaApiCategory.PointerScript);
-            var tr = TrTransform.identity;
             try
             {
-                tr = result.Equals(DynValue.Nil) ? TrTransform.identity : result.ToObject<TrTransform>();
+                if (!returnedTr.Equals(DynValue.Nil))
+                {
+                    result = new ScriptTrTransform(returnedTr.ToObject<TrTransform>(), space);
+                    return true;
+                }
             }
             catch (InvalidCastException e)
             {
                 LogLuaCastError(script, fnName, e);
             }
-            return new ScriptTrTransform(tr, space);
+            result = default;
+            return false;
         }
 
         public MultiPathApiWrapper CallActiveToolScript(string fnName)
@@ -871,46 +872,41 @@ namespace TiltBrush
 
         public void ApplyPointerScript(Quaternion pointerRot, ref Vector3 pos_GS, ref Quaternion rot_GS)
         {
-            ScriptTrTransform scriptTransformOutput = new ScriptTrTransform();
-            bool scriptHasRun = false;
+            bool shouldEndUndo = false;
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 ApiManager.Instance.StartUndo();
-                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerPressed);
                 m_TriggerWasPressed = true;
-                scriptHasRun = true;
             }
             else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                scriptTransformOutput = CallActivePointerScript(LuaNames.WhileTriggerPressed);
                 m_TriggerWasPressed = true;
-                scriptHasRun = true;
             }
             else if (m_TriggerWasPressed)
             {
-                scriptTransformOutput = CallActivePointerScript(LuaNames.OnTriggerReleased);
                 m_TriggerWasPressed = false;
-                scriptHasRun = true;
-                ApiManager.Instance.EndUndo();
+                shouldEndUndo = true;
             }
 
+            bool scriptHasRun = CallActivePointerScript(LuaNames.Main, out var scriptResult);
+            if (shouldEndUndo) ApiManager.Instance.EndUndo();
             if (!scriptHasRun) return;
 
-            switch (scriptTransformOutput.Space)
+            switch (scriptResult.Space)
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
                     var oldPos = pos_GS;
-                    pos_GS = scriptTransformOutput.Transform.translation;
+                    pos_GS = scriptResult.Transform.translation;
                     pos_GS = pointerRot * pos_GS;
                     pos_GS += oldPos;
-                    rot_GS *= scriptTransformOutput.Transform.rotation;
+                    rot_GS *= scriptResult.Transform.rotation;
                     break;
                 case ScriptCoordSpace.Canvas:
                     var tr_CS = TrTransform.TR(
-                        scriptTransformOutput.Transform.translation,
-                        scriptTransformOutput.Transform.rotation
+                        scriptResult.Transform.translation,
+                        scriptResult.Transform.rotation
                     );
                     var tr_GS = App.Scene.Pose * tr_CS;
                     pos_GS = tr_GS.translation;
@@ -1037,18 +1033,18 @@ namespace TiltBrush
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
                         Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    tr_CS.scale = drawnVector_CS.magnitude;
+                    tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
 
                     transforms = result.AsMultiTrList();
                     break;
                 case ScriptCoordSpace.Canvas:
                     tr_CS.translation = Vector3.zero;
                     tr_CS.rotation = Quaternion.identity;
-                    tr_CS.scale = 1f;
+                    tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
                     transforms = result.AsMultiTrList();
                     break;
             }
-            float brushScale = 1f / App.ActiveCanvas.Pose.scale;
+            float brushScale = 1f;
             if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
         }
 

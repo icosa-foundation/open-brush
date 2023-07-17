@@ -20,8 +20,11 @@ namespace TiltBrush
         [LuaDocsDescription("Check whether the brush trigger is currently pressed")]
         public static bool triggerIsPressed => SketchSurfacePanel.m_Instance.ActiveTool.IsActive;
 
-        [LuaDocsDescription("Check whether the brush trigger was pressed in the current frame")]
-        public static bool triggerIsPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.IsActiveThisFrame;
+        [LuaDocsDescription("Check whether the brush trigger was pressed during the current frame")]
+        public static bool triggerPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameActiveThisFrame;
+
+        [LuaDocsDescription("Check whether the brush trigger was released during the current frame")]
+        public static bool triggerReleasedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameInactiveThisFrame;
 
         [LuaDocsDescription("The distance moved by the brush")]
         public static float distanceMoved => SketchSurfacePanel.m_Instance.ActiveTool.DistanceMoved_CS;

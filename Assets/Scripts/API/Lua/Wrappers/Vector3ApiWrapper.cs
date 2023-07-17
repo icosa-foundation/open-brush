@@ -69,10 +69,18 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the length of this vector")]
-        public float magnitude => _Vector3.magnitude;
+        public float magnitude
+        {
+            get => _Vector3.magnitude;
+            set => _Vector3 = _Vector3.normalized * value;
+        }
 
         [LuaDocsDescription("Returns the squared length of this vector")]
-        public float sqrMagnitude => _Vector3.sqrMagnitude;
+        public float sqrMagnitude
+        {
+            get => _Vector3.sqrMagnitude;
+            set => _Vector3 = _Vector3.normalized * Mathf.Sqrt(value);
+        }
 
         [LuaDocsDescription("Returns a vector with the same direction but with a length of 1")]
         public Vector3 normalized => _Vector3.normalized;

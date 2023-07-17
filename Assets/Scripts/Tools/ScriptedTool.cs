@@ -134,10 +134,11 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty(LuaNames.ToolScriptStartPosition, m_FirstPositionClicked_CS.translation);
+                SetApiProperty(LuaNames.ToolScriptStartPoint, m_FirstPositionClicked_CS);
                 ApiManager.Instance.StartUndo();
-                LuaManager.Instance.DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
+
+            bool shouldEndUndo = false;
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -212,7 +213,6 @@ namespace TiltBrush
                             break;
                     }
                 }
-                LuaManager.Instance.DoToolScript(LuaNames.WhileTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -220,13 +220,15 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty(LuaNames.ToolScriptEndPosition, rAttachPoint_CS.translation);
+                    SetApiProperty(LuaNames.ToolScriptEndPoint, rAttachPoint_CS);
                     SetApiProperty(LuaNames.ToolScriptVector, drawnVector_CS);
                     SetApiProperty(LuaNames.ToolScriptRotation, Quaternion.LookRotation(drawnVector_CS, Vector3.up));
-                    LuaManager.Instance.DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
-                    ApiManager.Instance.EndUndo();
+                    shouldEndUndo = true;
                 }
             }
+
+            LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
+            if (shouldEndUndo) ApiManager.Instance.EndUndo();
         }
 
         private void SetApiProperty(string key, object value)

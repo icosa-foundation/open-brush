@@ -51,7 +51,7 @@ namespace TiltBrush
             LuaDocsRegistration.RegisterForDocs(typeof(StrokeListApiWrapper), false);
 
             // Manually add some entries that aren't added the standard way
-            var vectorProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Vector3"};
+            var transformProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform"};
             var rotationProp = new LuaDocsType {PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Rotation"};
             var toolApiDocClass = new LuaDocsClass
             {
@@ -60,10 +60,10 @@ namespace TiltBrush
                 Description = "A class to interact with Scripted Tools",
                 Properties = new List<LuaDocsProperty>
                 {
-                    new() {Name="startPosition", PropertyType = vectorProp, Description = "The position of the tool when the trigger was pressed"},
-                    new() {Name="endPosition", PropertyType = vectorProp, Description = "The position of the tool when the trigger was released"},
-                    new() {Name="vector", PropertyType = vectorProp, Description = "The vector from startPosition to endPosition"},
-                    new() {Name="rotation", PropertyType = rotationProp, Description = "The rotation from startPosition to endPosition"},
+                    new() {Name=LuaNames.ToolScriptStartPoint, PropertyType = transformProp, Description = "The position and orientation of the point where the trigger was pressed"},
+                    new() {Name=LuaNames.ToolScriptEndPoint, PropertyType = transformProp, Description = "The position and orientation of the point where the trigger was released"},
+                    new() {Name=LuaNames.ToolScriptVector, PropertyType = transformProp, Description = "The vector from startPoint to endPoint"},
+                    new() {Name=LuaNames.ToolScriptRotation, PropertyType = rotationProp, Description = "The rotation from startPoint to endPoint"},
                 }
             };
             LuaDocsRegistration.ApiDocClasses.Add(toolApiDocClass);

@@ -80,8 +80,6 @@ namespace TiltBrush
             foreach (var example in toolScripts)
             {
                 var script = example.Value;
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, Vector3.zero);
-                LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, Vector3.one);
                 LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, Vector3.one);
                 LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.LookRotation(Vector3.one));
                 TestAllKnown(script);
@@ -99,9 +97,6 @@ namespace TiltBrush
                 DynValue result;
                 result = CallFunctionIfExists(script, LuaNames.Start);
                 result = CallFunctionIfExists(script, LuaNames.Main);
-                result = CallFunctionIfExists(script, LuaNames.OnTriggerPressed);
-                result = CallFunctionIfExists(script, LuaNames.WhileTriggerPressed);
-                result = CallFunctionIfExists(script, LuaNames.OnTriggerReleased);
                 result = CallFunctionIfExists(script, LuaNames.End);
             }
         }
@@ -172,11 +167,9 @@ namespace TiltBrush
 
             var startPoint = Vector3.up;
             var endPoint = Vector3.up + Vector3.one;
-            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptStartPosition, startPoint);
-            LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptEndPosition, endPoint);
             LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptVector, endPoint - startPoint);
             LuaManager.Instance.SetApiProperty(script, LuaNames.ToolScriptRotation, Quaternion.LookRotation(endPoint - startPoint));
-            LuaManager.Instance.DoToolScript(LuaNames.OnTriggerReleased, TrTransform.T(startPoint), TrTransform.T(endPoint));
+            LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.T(endPoint));
         }
     }
 

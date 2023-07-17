@@ -117,7 +117,10 @@ Brush.timeSinceReleased = nil
 Brush.triggerIsPressed = nil
 
 ---@type boolean
-Brush.triggerIsPressedThisFrame = nil
+Brush.triggerPressedThisFrame = nil
+
+---@type boolean
+Brush.triggerReleasedThisFrame = nil
 
 ---@type number
 Brush.distanceMoved = nil
