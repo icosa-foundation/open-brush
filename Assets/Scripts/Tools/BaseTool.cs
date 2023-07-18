@@ -218,13 +218,20 @@ namespace TiltBrush
                 m_BecameActiveThisFrame = false;
                 m_BecameInactiveThisFrame = false;
             }
-            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && IsActive)
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && m_IsActive)
             {
                 // The frame it becomes inactive
                 m_IsActive = false;
                 m_BecameActiveThisFrame = false;
                 m_BecameInactiveThisFrame = true;
                 m_TimeBecameInactive = Time.realtimeSinceStartup;
+            }
+            else
+            {
+                // Every frame while inactive
+                m_IsActive = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = false;
             }
         }
 
