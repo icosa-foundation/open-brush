@@ -1140,6 +1140,8 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
+            MagnetizeToStencils(ref xf_GS);
+
             if (m_RecordMovements)
             {
                 TrTransform newXf = TrTransform.FromTransform(
@@ -1169,6 +1171,26 @@ namespace TiltBrush
             m_bWasSnapping = SnapEnabled;
 
             OnEndUpdateWithDesiredTransform();
+        }
+
+        protected virtual bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            var pos = xf_GS.translation;
+            var rot = xf_GS.rotation;
+
+            bool usedStencil = WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot, GetStencilsToIgnore());
+            if (usedStencil)
+            {
+                xf_GS.translation = pos;
+                // If we're magnetizing to a stencil, we want to flip the widget
+                xf_GS.rotation = rot * Quaternion.Euler(0, 180, 0);
+            }
+            return usedStencil;
+        }
+
+        protected virtual IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget>();
         }
 
         virtual public TrTransform GetGrabbedTrTransform()
@@ -1657,9 +1679,10 @@ namespace TiltBrush
 
         virtual protected void OnTossComplete() { }
 
-        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser,
-                                  Quaternion? endForward = null)
+        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser, Quaternion? endForward = null,
+                                  bool forceTransform = false)
         {
+            var xf = xfTarget;
             Vector3 vSpawnForwardNoY = xfSpawn.forward;
             vSpawnForwardNoY.y = 0.0f;
             Quaternion qSpawnOrient = Quaternion.LookRotation(vSpawnForwardNoY);
@@ -1679,27 +1702,33 @@ namespace TiltBrush
                 placementOffset.x *= -1.0f;
             }
             Vector3 vRotatedOffset = qSpawnOrient * placementOffset;
-            xfTarget.translation += vRotatedOffset;
+            xf.translation += vRotatedOffset;
 
             // Face us toward user.
             if (bFaceUser)
             {
-                Vector3 vToUser = headRay.origin - xfTarget.translation;
-                xfTarget.rotation = Quaternion.LookRotation(vToUser.normalized);
+                Vector3 vToUser = headRay.origin - xf.translation;
+                xf.rotation = Quaternion.LookRotation(vToUser.normalized);
             }
             else
             {
-                Vector3 vToPanel = xfTarget.translation - headRay.origin;
-                xfTarget.rotation = Quaternion.LookRotation(vToPanel.normalized);
+                Vector3 vToPanel = xf.translation - headRay.origin;
+                xf.rotation = Quaternion.LookRotation(vToPanel.normalized);
             }
 
             if (endForward != null)
             {
-                xfTarget.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+                xf.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+            }
+
+            if (forceTransform)
+            {
+                // Ignore most of the above and just use the actual transform as passed in
+                xf = xfTarget;
             }
 
             m_xfIntroAnimSpawn_LS = ParentTransform.inverse * xfSpawn;
-            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xfTarget;
+            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xf;
         }
 
         virtual protected void UpdateIntroAnimState()
