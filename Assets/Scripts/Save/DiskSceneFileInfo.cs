@@ -237,12 +237,10 @@ namespace TiltBrush
             }
         }
 
-        public void Rename(string newName)
+        public string Rename(string newName)
         {
-            if (!Valid) { return; }
-
-            //look to delete the file version first
-            if (File.Exists(m_fullpath))
+            // Look to delete the file version first
+            if (Valid && File.Exists(m_fullpath))
             {
                 string dirPath = Path.GetDirectoryName(m_fullpath);
                 string newPath = Path.Combine(dirPath, $"{newName}{SaveLoadScript.TILT_SUFFIX}");
@@ -263,7 +261,10 @@ namespace TiltBrush
                 {
                     Debug.LogFormat("IO Exception: Can't Rename {0}", m_fullpath);
                 }
+
+                return newPath;
             }
+            return m_fullpath;
         }
 
         /// Returns a readable stream to a pre-existing subfile,
