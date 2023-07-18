@@ -7,20 +7,21 @@ Parameters = {
     speed={label="Speed", type="float", min=0.01, max=2, default=.1},
 }
 
-function OnTriggerPressed()
+function Main()
 
-    --Store the brush transform at the point we press the trigger
-    direction = Brush.direction
-    currentPos = Brush.position
-    currentRotation = Brush.rotation
+    if Brush.triggerPressedThisFrame then
 
-    return Transform:New(currentPos, currentRotation)
-end
+        --Store the brush transform at the point we press the trigger
+        direction = Brush.direction
+        currentPos = Brush.position
+        currentRotation = Brush.rotation
 
-function WhileTriggerPressed()
+    elseif Brush.triggerIsPressed then
 
-    -- Move the pointer in the direction we were facing when we pressed the trigger
-    currentPos = currentPos:Add(direction:Multiply(speed))
-    return Transform:New(currentPos, currentRotation)
+        -- Move the pointer in the direction we were facing when we pressed the trigger
+        currentPos = currentPos:Add(direction:Multiply(speed))
+        return Transform:New(currentPos, currentRotation)
+
+    end
 
 end

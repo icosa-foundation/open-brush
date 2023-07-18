@@ -14,7 +14,7 @@ end
 function Main()
 
     -- Update the path if we changed the spacing
-    if (spacing ~= lastSpacing) then
+    if spacing ~= lastSpacing then
         updatePath()
         lastSpacing = spacing
     end
@@ -23,7 +23,7 @@ end
 
 function updatePath()
     stroke = Sketch.strokes.last
-    if (stroke == nil) then
+    if stroke == nil then
         App.Error("Please draw a stroke and then restart this plugin")
         path = Path:New()
     else

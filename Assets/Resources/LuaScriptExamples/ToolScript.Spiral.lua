@@ -8,14 +8,16 @@ Parameters = {
     steps={label="Number of steps per turn", type="int", min=1, max=32, default=12},
 }
 
-function OnTriggerReleased()
-    points = Path:New();
-    totalSteps = turns * steps
-    for i = 0, 1, 1/totalSteps do
-        angle = Math.pi * 2 * turns * i
-        position = Vector3:New(Math:Cos(angle) * i, Math:Sin(angle) * i, -(i * 2) + 1)
-        rotation = Rotation:New(0, angle * Math.rad2Deg, 0)
-        points:Insert(Transform:New(position, rotation))
+function Main()
+    if Brush.triggerReleasedThisFrame then
+        points = Path:New();
+        totalSteps = turns * steps
+        for i = 0, 1, 1/totalSteps do
+            angle = Math.pi * 2 * turns * i
+            position = Vector3:New(Math:Cos(angle) * i, Math:Sin(angle) * i, -(i * 2) + 1)
+            rotation = Rotation:New(0, angle * Math.rad2Deg, 0)
+            points:Insert(Transform:New(position, rotation))
+        end
+        return points
     end
-    return points
 end

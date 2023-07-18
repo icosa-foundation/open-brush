@@ -8,12 +8,12 @@ Parameters = {
 
 function Main()
 
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         Symmetry.transform = Transform:New(Brush.position, Brush.rotation)
     end
 
     -- Don't allow painting immediately otherwise you get stray lines
-    Brush:ForcePaintingOff(Brush.triggerIsPressedThisFrame)
+    Brush:ForcePaintingOff(Brush.triggerPressedThisFrame)
 
     pointers = Path:New()
     theta = 360.0 / copies

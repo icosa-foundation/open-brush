@@ -9,23 +9,18 @@ Parameters = {
     radius={label="Radius", type="float", min=0, max=20, default=5},
 }
 
-function OnTriggerPressed()
-    initialPos = Brush.position
-    return calc()
-end
-
-function WhileTriggerPressed()
-    return calc()
-end
-
-function calc()
-    u = Brush.distanceDrawn * uScale
-    v = Brush.distanceDrawn * vScale
-    p = Sphere(u,v)
-    return Transform:New(
-        initialPos:Add(p),
-        Rotation.lookRotation(p, Vector3.right)
-    )
+function Main()
+    if Brush.triggerPressedThisFrame then
+        initialPos = Brush.position
+    elseif Brush.triggerIsPressed then
+        u = Brush.distanceDrawn * uScale
+        v = Brush.distanceDrawn * vScale
+        p = Sphere(u,v)
+        return Transform:New(
+            initialPos:Add(p),
+            Rotation.lookRotation(p, Vector3.right)
+        )
+    end
 end
 
 function Sphere(u, v)

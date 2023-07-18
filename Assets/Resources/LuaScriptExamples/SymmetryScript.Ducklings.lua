@@ -14,7 +14,7 @@ end
 
 function Main()
 
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         Brush:SetHistorySize(1)
         Brush:ForceNewStroke()
         initialHsv = Brush.colorHsv

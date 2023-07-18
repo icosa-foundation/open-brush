@@ -12,7 +12,7 @@ end
 
 function Main()
     -- Update the path if we changed the spacing
-    if (spacing ~= lastSpacing) then
+    if spacing ~= lastSpacing then
         updatePath()
         lastSpacing = spacing
     end

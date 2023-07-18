@@ -7,12 +7,14 @@ function Start()
     requestNewAvatar()
 end
 
-function OnTriggerReleased()
-    requestNewAvatar()
-    if svg ~= nil then
-        local paths = Svg:ParseDocument(svg, 0.1, true)
-        paths:Normalize(2) -- Scale and center inside a 2x2 square
-        return paths
+function Main()
+    if Brush.triggerReleasedThisFrame then
+        requestNewAvatar()
+        if svg ~= nil then
+            local paths = Svg:ParseDocument(svg, 0.1, true)
+            paths:Normalize(2) -- Scale and center inside a 2x2 square
+            return paths
+        end
     end
 end
 

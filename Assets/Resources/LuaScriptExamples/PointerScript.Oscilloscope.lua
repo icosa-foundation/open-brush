@@ -11,27 +11,26 @@ Parameters = {
     radius={label="Radius", type="float", min=0.01, max=2, default=1},
 }
 
-function OnTriggerPressed()
-    Brush:ForcePaintingOff(false)
-    xPrevious = 0
-    yPrevious = 0
-    return calc(0)
-end
+function Main()
 
-function WhileTriggerPressed()
-    return calc(Brush.timeSincePressed)
-end
+    if Brush.triggerPressedThisFrame then
 
-function calc(t)
+        Brush:ForcePaintingOff(false)
+        xPrevious = 0
+        yPrevious = 0
 
-    x = sampleWave(xWave, t, xFrequency, xPrevious)
-    y = sampleWave(yWave, t + (yPhase * 0.5), yFrequency, yPrevious)
-    xPrevious = x
-    yPrevious = y
+    elseif Brush.triggerIsPressed then
 
-    position = Vector3:New(-x * radius, y * radius, 0)
+        local t = Brush.timeSincePressed;
+        x = sampleWave(xWave, t, xFrequency, xPrevious)
+        y = sampleWave(yWave, t + (yPhase * 0.5), yFrequency, yPrevious)
+        xPrevious = x
+        yPrevious = y
+        position = Vector3:New(-x * radius, y * radius, 0)
+        return Transform:New(position)
 
-    return Transform:New(position)
+    end
+
 end
 
 function sampleWave(waveType, time, frequency, previous)

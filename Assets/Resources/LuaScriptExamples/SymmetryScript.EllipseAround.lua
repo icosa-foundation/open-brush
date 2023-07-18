@@ -16,7 +16,7 @@ end
 
 function Main()
 
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         symmetryHueShift.generate(copies, initialHsv)
     end
 

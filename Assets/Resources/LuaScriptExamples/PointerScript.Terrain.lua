@@ -10,10 +10,10 @@ Parameters = {
     offset={label="Offset", type="float", min=0, max=10, default=10},
 }
 
-function WhileTriggerPressed()
+function Main()
 
     -- Don't allow painting immediately otherwise you get stray lines
-    Brush:ForcePaintingOff(Brush.triggerIsPressedThisFrame)
+    Brush:ForcePaintingOff(Brush.triggerPressedThisFrame)
 
     return Transform:New(
         Vector3:New(

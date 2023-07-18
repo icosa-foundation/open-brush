@@ -17,11 +17,11 @@ end
 
 function Main()
 
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         symmetryHueShift.generate(numPointsWidth * numPointsHeight * 2, initialHsv)
     end
 
-    if (exteriorOnly==1) then
+    if exteriorOnly==1 then
         points = calculateRectangleExteriorPoints(numPointsWidth, numPointsHeight, spacing)
     else
         points = calculateRectanglePoints(numPointsWidth, numPointsHeight, spacing)

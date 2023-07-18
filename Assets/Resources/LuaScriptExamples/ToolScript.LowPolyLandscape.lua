@@ -15,23 +15,27 @@ function Start()
     filledCells = {}
 end
 
-function WhileTriggerPressed()
+function Main()
 
-    cell = {
-        x=quantize(Brush.position.x, grid),
-        z=quantize(Brush.position.z, grid),
-   }
+    if Brush.triggerIsPressed then
 
-    --A unique string key for each potential tile
-    key = cell.x .. "," .. cell.z
+        --Work out which cell we are in
+        cell = {
+            x = quantize(Brush.position.x, grid),
+            z = quantize(Brush.position.z, grid),
+       }
 
-    --Only draw tiles in empty cells
-    if filledCells[key]==nil then
-        filledCells[key] = true
-        Brush:JitterColor()
-        return patch(cell, grid)
-    else
-        return Path:New()
+        --A unique string key for each potential tile
+        key = cell.x .. "," .. cell.z
+
+        --Only draw tiles in empty cells
+        if filledCells[key]==nil then
+            filledCells[key] = true
+            Brush:JitterColor()
+            return patch(cell, grid)
+        else
+            return Path:New()
+        end
     end
 end
 
@@ -53,15 +57,15 @@ function patch(cell, gridSize)
     f = distance + cell.z
     b = -distance + cell.z
 
-    points:Insert(Transform:New(Vector3:New(l, GetHeight(l, f), f), Rotation.zero))
-    points:Insert(Transform:New(Vector3:New(r, GetHeight(r, f), f), Rotation.zero))
-    points:Insert(Transform:New(Vector3:New(r, GetHeight(r, b), b), Rotation:New(0, 0, 90)))
-    points:Insert(Transform:New(Vector3:New(l, GetHeight(l, b), b), Rotation:New(0, 0, 270)))
+    points:Insert(Transform:New(Vector3:New(l, getHeight(l, f), f), Rotation.zero))
+    points:Insert(Transform:New(Vector3:New(r, getHeight(r, f), f), Rotation.zero))
+    points:Insert(Transform:New(Vector3:New(r, getHeight(r, b), b), Rotation:New(0, 0, 90)))
+    points:Insert(Transform:New(Vector3:New(l, getHeight(l, b), b), Rotation:New(0, 0, 270)))
     points:Resample(0.1)
 
     return points
 end
 
-function GetHeight(x, y)
+function getHeight(x, y)
     return Math:PerlinNoise(x * scale, y * scale) * height + offset
 end

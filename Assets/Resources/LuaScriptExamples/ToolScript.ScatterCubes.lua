@@ -9,20 +9,25 @@ Parameters = {
     amount={label="Amount", type="float", min=0.001, max=1, default=0.25},
 }
 
-function WhileTriggerPressed()
+function Main()
 
-    Brush.colorRgb = Color:New(Random.value, Random.value, Random.value)
-    Brush.type = "ShinyHull"
-    Brush.size = 0.1
-    origin = Brush.position
+    if Brush.triggerIsPressed then
 
-    if (Random.value < amount) then
-        randomOffset = Random.insideUnitSphere:Multiply(spread)
-        return drawCube(
-            origin:Add(randomOffset),
-            Random.value * maxSize
-        )
+        Brush.colorRgb = Color:New(Random.value, Random.value, Random.value)
+        Brush.type = "ShinyHull"
+        Brush.size = 0.1
+        origin = Brush.position
+
+        if Random.value < amount then
+            randomOffset = Random.insideUnitSphere:Multiply(spread)
+            return drawCube(
+                origin:Add(randomOffset),
+                Random.value * maxSize
+            )
+        end
+
     end
+
 end
 
 function drawCube(center, size)
@@ -44,4 +49,5 @@ function drawCube(center, size)
     points:Insert(center:Add(size, size, -size)) -- top back
 
     return points
+
 end

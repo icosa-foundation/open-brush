@@ -57,14 +57,16 @@ function Start()
     requestNewIcon()
 end
 
-function OnTriggerReleased()
-    requestNewIcon()
-    if svg == nil then
-        return {}
-    else
-        local strokes = Svg:ParseDocument(svg)
-        strokes:Normalize(2) -- Scale and center inside a 2x2 square
-        strokes:Resample(0.1) -- Evenly space all the points
-        return strokes
+function Main()
+    if Brush.triggerReleasedThisFrame then
+        requestNewIcon()
+        if svg == nil then
+            return {}
+        else
+            local strokes = Svg:ParseDocument(svg)
+            strokes:Normalize(2) -- Scale and center inside a 2x2 square
+            strokes:Resample(0.1) -- Evenly space all the points
+            return strokes
+        end
     end
 end
