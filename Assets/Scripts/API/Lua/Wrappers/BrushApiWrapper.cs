@@ -137,7 +137,7 @@ namespace TiltBrush
         public static void ForcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
 
         [LuaDocsDescription("Forces the start of a new stroke - will stop painting this frame and start again the next.")]
-        [LuaDocsExample("Brush:ForceNewStroke(true)")]
+        [LuaDocsExample("Brush:ForceNewStroke()")]
         public static void ForceNewStroke() => ApiMethods.ForceNewStroke();
 
         [LuaDocsDescription("Gets or sets the current path of the brush. Assumes a stroke is in progress.")]
