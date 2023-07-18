@@ -13,53 +13,76 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class RepaintStrokeCommand : BaseCommand
     {
-        private Stroke m_TargetStroke;
-        private Color m_StartColor;
-        private Guid m_StartGuid;
-        private Color m_EndColor;
-        private Guid m_EndGuid;
-        private float m_StartSize;
-        private float m_EndSize;
+        private List<Stroke> m_TargetStrokes;
+        private List<Color> m_StartColors;
+        private List<Guid> m_StartGuids;
+        private List<float> m_StartSizes;
+        private List<Color> m_EndColors;
+        private List<Guid> m_EndGuids;
+        private List<float> m_EndSizes;
 
         public RepaintStrokeCommand(
             Stroke stroke, Color newcolor, Guid newGuid, float newSize, BaseCommand parent = null) : base(parent)
         {
-            m_TargetStroke = stroke;
-            m_StartColor = stroke.m_Color;
-            m_StartGuid = stroke.m_BrushGuid;
-            m_StartSize = stroke.m_BrushSize;
-            m_EndColor = newcolor;
-            m_EndGuid = newGuid;
-            m_EndSize = newSize;
+            m_TargetStrokes = new List<Stroke> { stroke };
+
+            m_StartColors = new List<Color> { stroke.m_Color };
+            m_StartGuids = new List<Guid> { stroke.m_BrushGuid };
+            m_StartSizes = new List<float> { stroke.m_BrushSize };
+
+            m_EndColors = new List<Color> { newcolor };
+            m_EndGuids = new List<Guid> { newGuid };
+            m_EndSizes = new List<float> { newSize };
+        }
+
+        public RepaintStrokeCommand(List<Stroke> strokes, List<Color> newcolors, List<Guid> newGuids, List<float> newSizes, BaseCommand parent = null) : base(parent)
+        {
+            m_TargetStrokes = strokes;
+
+            m_StartColors = strokes.Select(s => s.m_Color).ToList();
+            m_StartGuids = strokes.Select(s => s.m_BrushGuid).ToList();
+            m_StartSizes = strokes.Select(s => s.m_BrushSize).ToList();
+
+            m_EndColors = newcolors.ToList();
+            m_EndGuids = newGuids.ToList();
+            m_EndSizes = newSizes.ToList();
         }
 
         public override bool NeedsSave { get { return true; } }
 
-        private void ApplyColorAndBrushToObject(Color color, Guid brushGuid, float brushSize)
+        private void ApplyColorAndBrushToObject(Stroke stroke, Color color, Guid brushGuid, float brushSize)
         {
-            m_TargetStroke.m_Color = ColorPickerUtils.ClampLuminance(
+            stroke.m_Color = ColorPickerUtils.ClampLuminance(
                 color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
-            m_TargetStroke.m_BrushGuid = brushGuid;
-            m_TargetStroke.m_BrushSize = brushSize;
-            m_TargetStroke.InvalidateCopy();
-            m_TargetStroke.Uncreate();
-            m_TargetStroke.Recreate();
+            stroke.m_BrushGuid = brushGuid;
+            stroke.m_BrushSize = brushSize;
+            stroke.InvalidateCopy();
+            stroke.Uncreate();
+            stroke.Recreate();
         }
 
         protected override void OnRedo()
         {
-            ApplyColorAndBrushToObject(m_EndColor, m_EndGuid, m_EndSize);
+            for (var i = 0; i < m_TargetStrokes.Count; i++)
+            {
+                ApplyColorAndBrushToObject(m_TargetStrokes[i], m_EndColors[i], m_EndGuids[i], m_EndSizes[i]);
+            }
         }
 
         protected override void OnUndo()
         {
-            ApplyColorAndBrushToObject(m_StartColor, m_StartGuid, m_StartSize);
+            for (var i = 0; i < m_TargetStrokes.Count; i++)
+            {
+                ApplyColorAndBrushToObject(m_TargetStrokes[i], m_StartColors[i], m_StartGuids[i], m_StartSizes[i]);
+            }
         }
     }
 } // namespace TiltBrush
