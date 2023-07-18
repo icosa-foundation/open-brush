@@ -2444,6 +2444,12 @@ Wand.pressure = nil
 ---@type Vector3
 Wand.speed = nil
 
+---@type boolean
+Wand.triggerIsPressed = nil
+
+---@type boolean
+Wand.triggerPressedThisFrame = nil
+
 
 ---Methods for type Wand
 
