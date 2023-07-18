@@ -72,10 +72,10 @@ namespace TiltBrush
 
         // Injected Toolscript properties
 
-        public static string ToolScriptStartPoint => "Tool.startPoint";
-        public static string ToolScriptEndPoint => "Tool.endPoint";
-        public static string ToolScriptVector => "Tool.vector";
-        public static string ToolScriptRotation => "Tool.rotation";
+        public static string ToolScriptStartPoint => "startPoint";
+        public static string ToolScriptEndPoint => "endPoint";
+        public static string ToolScriptVector => "vector";
+        public static string ToolScriptRotation => "rotation";
 
     }
 

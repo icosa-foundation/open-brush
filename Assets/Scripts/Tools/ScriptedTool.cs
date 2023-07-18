@@ -134,7 +134,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty(LuaNames.ToolScriptStartPoint, m_FirstPositionClicked_CS);
+                SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}", m_FirstPositionClicked_CS);
                 ApiManager.Instance.StartUndo();
             }
 
@@ -220,9 +220,9 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty(LuaNames.ToolScriptEndPoint, rAttachPoint_CS);
-                    SetApiProperty(LuaNames.ToolScriptVector, drawnVector_CS);
-                    SetApiProperty(LuaNames.ToolScriptRotation, Quaternion.LookRotation(drawnVector_CS, Vector3.up));
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
                     shouldEndUndo = true;
                 }
             }
