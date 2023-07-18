@@ -135,7 +135,7 @@ namespace TiltBrush
         public static Vector3 Min(Vector3 a, Vector3 b) => Vector3.Min(a, b);
 
         [LuaDocsDescription("Moves a point towards a target point")]
-        [LuaDocsExample("newPoint = Vector3:MoveTowards(pointA, PointB, 0.25)")]
+        [LuaDocsExample("position = position:MoveTowards(PointB, 0.25)")]
         [LuaDocsParameter("target", "The target point")]
         [LuaDocsParameter("maxDistanceDelta", "The maximum distance to move towards the target point")]
         public Vector3 MoveTowards(Vector3 target, float maxDistanceDelta) => Vector3.MoveTowards(_Vector3, target, maxDistanceDelta);
@@ -267,7 +267,10 @@ namespace TiltBrush
         [LuaDocsDescription("Is this vector equal to another?")]
         [LuaDocsExample(@"if myVector:Equals(Vector3.zero) then print(""Vector is zero"") end")]
         [LuaDocsParameter("other", "The other vector")]
-        public bool Equals(Vector3 other) => _Vector3 == other;
+        public bool Equals(Vector3ApiWrapper other)
+        {
+            return _Vector3 == other._Vector3;
+        }
 
         [LuaDocsDescription("Is this vector equal these x, y and z values?")]
         [LuaDocsExample(@"if myVector:Equals(1, 2, 3) then print(""Vector is 1,2,3"") end")]
@@ -279,7 +282,7 @@ namespace TiltBrush
         [LuaDocsDescription("Is this vector not equal to another?")]
         [LuaDocsExample(@"if myVector:NotEquals(Vector3.zero) then print(""Vector is not zero"") end")]
         [LuaDocsParameter("other", "The other vector")]
-        public bool NotEquals(Vector3 other) => _Vector3 != other;
+        public bool NotEquals(Vector3ApiWrapper other) => _Vector3 != other._Vector3;
 
         [LuaDocsDescription("Is this vector not equal to these x, y and z values?")]
         [LuaDocsExample(@"if myVector:NotEquals(1, 2, 3) then print(""Vector is not 1,2,3"") end")]
