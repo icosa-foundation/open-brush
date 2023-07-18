@@ -187,6 +187,11 @@ namespace TiltBrush
             }
         }
 
+        public void RenameSketch(int toRename, string newName)
+        {
+            throw new NotImplementedException();
+        }
+
         public void PrecacheSketchModels(int index)
         {
             // TODO: Later, my friend - later.

@@ -28,6 +28,10 @@ namespace TiltBrush
         {
             throw new System.NotImplementedException();
         }
+        public string Rename(string newName)
+        {
+            throw new System.NotImplementedException();
+        }
         public bool IsHeaderValid()
         {
             return true; // TODO : FAAAEEEEKE

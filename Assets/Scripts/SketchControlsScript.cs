@@ -4138,7 +4138,7 @@ namespace TiltBrush
             m_WidgetManager.ValidateCurrentCameraPath();
         }
 
-        private void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4546,12 +4546,8 @@ namespace TiltBrush
                     }
                 case GlobalCommands.RenameSketch:
                     {
-                        var sketchSetType = (SketchSetType)iParam2;
-                        SketchSet sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
-                        if (sketchSetType == SketchSetType.User)
-                        {
-                            sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
-                        }
+                        ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
+                        sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }

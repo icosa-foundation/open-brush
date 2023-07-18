@@ -348,7 +348,7 @@ namespace TiltBrush
             m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
-            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            var driveSet = SketchCatalog.m_Instance.GetSketchSet(GoogleDriveSketchSet.UriString);
             if (driveSet != null)
             {
                 driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
