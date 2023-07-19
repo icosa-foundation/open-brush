@@ -254,7 +254,7 @@ namespace TiltBrush
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = false;
+            m_ReadOnly = true;
             m_SketchesPath = path;
         }
 
@@ -340,6 +340,24 @@ namespace TiltBrush
             }
 
             m_Sketches[toDelete].SceneFileInfo.Delete();
+        }
+
+        public virtual void RenameSketch(int toRename, string newName)
+        {
+            // Notify our file watcher to make sure it got the memo this sketch was deleted.
+            m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
+
+            // Notify the drive sketchset as the deleted file may now be visible there.
+            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            if (driveSet != null)
+            {
+                driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
+            }
+
+            var newPath = m_Sketches[toRename].SceneFileInfo.Rename(newName);
+
+            m_FileWatcher.NotifyCreated(newPath);
+
         }
 
         public virtual void Init()
@@ -475,7 +493,7 @@ namespace TiltBrush
             {
                 return;
             }
-            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di))
+            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
             {
                 //don't add bogus files to the catalog
                 if (info.IsHeaderValid())

@@ -235,6 +235,36 @@ namespace TiltBrush
             }
         }
 
+        public string Rename(string newName)
+        {
+            // Look to delete the file version first
+            if (Valid && File.Exists(m_fullpath))
+            {
+                string dirPath = Path.GetDirectoryName(m_fullpath);
+                string newPath = Path.Combine(dirPath, $"{newName}{SaveLoadScript.TILT_SUFFIX}");
+
+                try
+                {
+                    File.Move(m_fullpath, newPath);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Debug.LogFormat("Unauthorized Exception: Can't Rename {0}", m_fullpath);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    Debug.LogFormat("Can't Find File to Rename {0}", m_fullpath);
+                }
+                catch (IOException)
+                {
+                    Debug.LogFormat("IO Exception: Can't Rename {0}", m_fullpath);
+                }
+
+                return newPath;
+            }
+            return m_fullpath;
+        }
+
         /// Returns a readable stream to a pre-existing subfile,
         /// or null if the subfile does not exist,
         /// or null if the file format is invalid.

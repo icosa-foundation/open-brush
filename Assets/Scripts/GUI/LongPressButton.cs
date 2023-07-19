@@ -32,7 +32,7 @@ namespace TiltBrush
             if (m_Manager)
             {
                 BasePanel panel = m_Manager.GetPanelForPopUps();
-                panel.CreatePopUp(m_Command, m_CommandParam, -1, m_PopupText);
+                panel.CreatePopUp(m_Command, m_CommandParam, -1, PopupText);
                 panel.PositionPopUp(transform.position +
                     transform.forward * panel.PopUpOffset +
                     panel.transform.TransformVector(m_PopupOffset));
