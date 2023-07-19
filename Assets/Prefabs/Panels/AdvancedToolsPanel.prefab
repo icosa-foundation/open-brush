@@ -205,7 +205,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1191084873665120}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: 0eca91ea617987a4a8b8d03e685fc648, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -232,7 +232,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 48c4e2e5ea2c3794fa991bd025329d44, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: e19c558a83b463843bb1f2f37c9c5d52, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -242,6 +242,36 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
+  m_Command: 11500
+  m_CommandParam: -1
+  m_CommandParam2: -1
+  m_RequiresPopup: 1
+  m_CenterPopupOnButton: 0
+  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_ToggleOnTexture: {fileID: 0}
+  m_AllowUnavailable: 0
+  m_LinkedUIObject: {fileID: 0}
+  m_LongPressDuration: 0.3
   m_Tool: 18
   m_EatGazeInputOnPress: 1
   references:
@@ -781,6 +811,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
       type: 3}
     m_Command: 32
+  - m_PopUpPrefab: {fileID: 1887799951535888, guid: a600c48c5f105874e8e750977bb95d4b,
+      type: 3}
+    m_Command: 11500
   m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:
@@ -809,7 +842,7 @@ MonoBehaviour:
   m_BorderMeshAdvWidth: 0.01
   m_PanelSensitivity: 0.1
   m_ClampToBounds: 1
-  m_ReticleBounds: {x: 1.35, y: 1.9, z: 0}
+  m_ReticleBounds: {x: 2, y: 1.9, z: 0}
   m_BorderSphereHighlightRadius: 2.5
   m_PositioningSpheresBounds: {x: 1, y: 1}
   m_PositioningSphereRadius: 0.4
@@ -2619,6 +2652,11 @@ PrefabInstance:
       propertyPath: m_ToggleOnTexture
       value: 
       objectReference: {fileID: 2800000, guid: 5e29d73b48580ad4e98b76833dbcc4e4, type: 3}
+    - target: {fileID: 5169190909573522545, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6495778419652451853, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
       propertyPath: m_ShowOnToolType
@@ -2628,6 +2666,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Repaint Tray
+      objectReference: {fileID: 0}
+    - target: {fileID: 6608529110619887157, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6610468352840375919, guid: 3a7c3a09a58b6db43aab80957cc81fc9,
         type: 3}
@@ -2713,7 +2756,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.244
+      value: -0.187
       objectReference: {fileID: 0}
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2722,6 +2765,46 @@ PrefabInstance:
     - target: {fileID: 4073457010706892, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 65343707767525102, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 0.42873764
+      objectReference: {fileID: 0}
+    - target: {fileID: 65343707767525102, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_Size.y
+      value: 1.6982087
+      objectReference: {fileID: 0}
+    - target: {fileID: 65343707767525102, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_Center.x
+      value: 0.0045337677
+      objectReference: {fileID: 0}
+    - target: {fileID: 65343707767525102, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_Center.y
+      value: -0.18588668
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_DescriptionText
+      value: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 109424659466551296
+      objectReference: {fileID: 0}
+    - target: {fileID: 8146683654292829881, guid: 9b674e23f212f5a40b5d981d3ba5f4e2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9b674e23f212f5a40b5d981d3ba5f4e2, type: 3}

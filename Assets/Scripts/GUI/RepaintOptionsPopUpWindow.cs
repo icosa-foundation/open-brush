@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class RepaintTray : BaseTray
+
+    public class RepaintOptionsPopUpWindow : OptionsPopUpWindow
     {
         public ToggleButton m_RecolorButton;
         public ToggleButton m_ResizeButton;
         public ToggleButton m_RebrushButton;
         public ToggleButton m_JitterButton;
 
-        protected override void OnToolChanged()
+        override public void Init(GameObject rParent, string sText)
         {
-            base.OnToolChanged();
+            base.Init(rParent, sText);
             var pm = PointerManager.m_Instance;
             m_RecolorButton.IsToggledOn = pm.RecolorOn;
             m_ResizeButton.IsToggledOn = pm.ResizeOn;
             m_RebrushButton.IsToggledOn = pm.RebrushOn;
             m_JitterButton.IsToggledOn = pm.JitterOn;
-
         }
+
         enum ButtonType
         {
             Recolor,
@@ -68,6 +67,11 @@ namespace TiltBrush
             SetRepaintFlags(ButtonType.Recolor, button.IsToggledOn);
         }
 
+        public void HandleOKButton()
+        {
+            RequestClose(true);
+        }
+
         public void RebrushToggled(ToggleButton button)
         {
             SetRepaintFlags(ButtonType.Rebrush, button.IsToggledOn);
@@ -83,5 +87,4 @@ namespace TiltBrush
             SetRepaintFlags(ButtonType.Jitter, button.IsToggledOn);
         }
     }
-
 } // namespace TiltBrush

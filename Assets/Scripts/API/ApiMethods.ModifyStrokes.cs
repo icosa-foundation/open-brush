@@ -43,31 +43,22 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
 
-        [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
-        public static void RecolorSelection()
+        [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
+        public static void RebrushSelection(bool jitter = false)
         {
-            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false, false);
-            }
+            SketchMemoryScript.m_Instance.RepaintSelected(true, false, false, jitter);
         }
 
-        [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
-        public static void RebrushSelection()
+        [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
+        public static void RecolorSelection(bool jitter = false)
         {
-            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, true, false);
-            }
+            SketchMemoryScript.m_Instance.RepaintSelected(false, true, false, jitter);
         }
 
         [ApiEndpoint("selection.resize", "Changes the brush size the currently selected strokes")]
-        public static void ResizeSelection()
+        public static void ResizeSelection(bool jitter = false)
         {
-            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
-            {
-                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, false, false, true);
-            }
+            SketchMemoryScript.m_Instance.RepaintSelected(false, false, true, jitter);
         }
 
         [ApiEndpoint("selection.trim", "Removes a number of points from the currently selected strokes")]
