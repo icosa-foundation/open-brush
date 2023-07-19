@@ -5019,9 +5019,9 @@ namespace TiltBrush
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.OpenScriptParametersPopup:
-                case GlobalCommands.RepaintOptions: break; // Intentionally blank.
+                case GlobalCommands.RepaintOptions:
                 case GlobalCommands.Null:
-                    break; // Intentionally blank.
+                    break;
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
