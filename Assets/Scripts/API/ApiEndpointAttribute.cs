@@ -76,6 +76,10 @@ namespace TiltBrush
                 ParameterInfo paramType = parameterInfo[i];
                 object paramValue;
 
+                // Stop parsing if we run out of tokens and the current param is optional
+                // (All following params can be assumed to also be optional)
+                if (i >= tokens.Length && paramType.IsOptional) break;
+
                 if (paramType.ParameterType == typeof(string))
                 {
                     if (parameterInfo.Length == 1 && i == 0)

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -26,11 +25,6 @@ namespace TiltBrush
         private float m_SpinSpeedVel;
         private float m_SpinSpeed;
         private float m_SpinAmount;
-
-        [NonSerialized] public bool RecolorOn = true;
-        [NonSerialized] public bool RebrushOn = false;
-        [NonSerialized] public bool ResizeOn = false;
-        [NonSerialized] public bool JitterOn = false;
 
         override protected void Awake()
         {
@@ -145,16 +139,18 @@ namespace TiltBrush
             }
             else
                 m_BatchFilter = null;
+            var pm = PointerManager.m_Instance;
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGroup.m_Stroke, RecolorOn, RebrushOn, ResizeOn, JitterOn);
+                rGroup.m_Stroke, pm.RecolorOn, pm.RebrushOn, pm.ResizeOn, pm.JitterOn);
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
         }
 
         override protected bool HandleIntersectionWithSolitaryObject(GameObject rGameObject)
         {
+            var pm = PointerManager.m_Instance;
             var didRepaint = SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(
-                rGameObject, RecolorOn, RebrushOn, ResizeOn, JitterOn);
+                rGameObject, pm.RecolorOn, pm.RebrushOn, pm.ResizeOn, pm.JitterOn);
             PlayModifyStrokeSound();
             if (didRepaint) { PlayModifyStrokeSound(); }
             return didRepaint;
