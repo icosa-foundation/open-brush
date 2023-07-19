@@ -373,6 +373,7 @@ namespace TiltBrush
 
         public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false)
         {
+            SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
             ClearRedo();
@@ -593,45 +594,90 @@ namespace TiltBrush
             }
         }
 
+        public void RepaintSelected(bool rebrush, bool recolor, bool resize, bool jitter)
+        {
+            float desiredSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            Guid desiredGuid = PointerManager.m_Instance
+                .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
+            Color desiredColor = PointerManager.m_Instance.PointerColor;
+
+            var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+            var newColors = new List<Color>();
+            var newGuids = new List<Guid>();
+            var newSizes = new List<float>();
+
+            foreach (var stroke in strokes)
+            {
+                GetRepaintParams(
+                    stroke,
+                    desiredGuid, desiredColor, desiredSize,
+                    rebrush, recolor, resize, jitter,
+                    out Color newColor, out Guid newGuid, out float newSize
+                );
+                newColors.Add(newColor);
+                newGuids.Add(newGuid);
+                newSizes.Add(newSize);
+            }
+            PerformAndRecordCommand(
+                new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes)
+            );
+        }
+
+
+
+        public void GetRepaintParams(
+            Stroke stroke,
+            Guid desiredGuid, Color desiredColor, float desiredSize,
+            bool rebrush, bool recolor, bool resize, bool jitter,
+            out Color resultingColor, out Guid resultingGuid, out float resultingSize
+        )
+        {
+            resultingGuid = rebrush ? desiredGuid : stroke.m_BrushGuid;
+            resultingColor = recolor ? desiredColor : stroke.m_Color;
+            resultingSize = resize ? desiredSize : stroke.m_BrushSize;
+
+            // Is Jitter enabled?
+            if (jitter)
+            {
+                float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(resultingGuid).m_ColorLuminanceMin;
+                if (recolor) resultingColor = PointerManager.m_Instance.GenerateJitteredColor(colorLuminanceMin);
+                if (resize)
+                {
+                    BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(resultingGuid);
+                    resultingSize = PointerManager.m_Instance.GenerateJitteredSize(desc, resultingSize);
+                }
+            }
+        }
+
+
         public bool MemorizeStrokeRepaint(Stroke stroke, bool recolor, bool rebrush, bool resize, bool jitter = false, bool force = false)
         {
 
-            Guid currentBrushGuid = PointerManager.m_Instance
+            float desiredSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            Guid desiredGuid = PointerManager.m_Instance
                 .GetPointer(InputManager.ControllerName.Brush).CurrentBrush.m_Guid;
+            Color desiredColor = PointerManager.m_Instance.PointerColor;
 
-            float currentBrushSize = (1 / Coords.CanvasPose.scale) * PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
-
-            if (force || (recolor && stroke.m_Color != PointerManager.m_Instance.PointerColor) ||
-                (jitter && PointerManager.m_Instance.JitterEnabled) ||
-                (rebrush && stroke.m_BrushGuid != currentBrushGuid) ||
-                (resize && stroke.m_BrushSize != currentBrushSize))
+            // Don't run unless there's something to change
+            if (
+                force ||
+                ((recolor && stroke.m_Color != desiredColor) ||
+                (rebrush && stroke.m_BrushGuid != desiredGuid) ||
+                (resize && stroke.m_BrushSize != desiredSize) ||
+                (jitter && PointerManager.m_Instance.JitterEnabled))
+            )
             {
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
                 }
 
-                Color newColor = stroke.m_Color;
-                float newSize = stroke.m_BrushSize;
-
-                Guid newGuid = rebrush ? currentBrushGuid : stroke.m_BrushGuid;
-
-                if (jitter && PointerManager.m_Instance.JitterEnabled) // Is Jitter enabled?
-                {
-                    float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(newGuid).m_ColorLuminanceMin;
-                    if (recolor) newColor = PointerManager.m_Instance.GenerateJitteredColor(colorLuminanceMin);
-                    if (resize)
-                    {
-                        BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(newGuid);
-                        newSize = PointerManager.m_Instance.GenerateJitteredSize(desc, newSize);
-                    }
-
-                }
-                else
-                {
-                    if (recolor) newColor = PointerManager.m_Instance.PointerColor;
-                    if (resize) newSize = currentBrushSize;
-                }
+                GetRepaintParams(
+                    stroke,
+                    desiredGuid, desiredColor, desiredSize,
+                    rebrush, recolor, resize, jitter && PointerManager.m_Instance.JitterEnabled,
+                    out Color newColor, out Guid newGuid, out float newSize
+                );
 
                 var positionJitter = PointerManager.m_Instance.positionJitter;
                 if (positionJitter > 0)
@@ -766,6 +812,7 @@ namespace TiltBrush
             Resources.UnloadUnusedAssets();
         }
 
+        // Repaint in doesn't relate to the repaint command
         public IEnumerator<float> RepaintCoroutine()
         {
             int numStrokes = m_MemoryList.Count;
