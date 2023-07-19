@@ -31,7 +31,7 @@ runs:
   using: composite
   steps:
     - name: Archive artifacts
-      run: tar -cvf ${{ inputs.name }}.tar $(echo "${{ inputs.path }}" | tr '\n' ' ')
+      run: tar -cvf "${{ inputs.name }}.tar" $(echo "${{ inputs.path }}" | tr '\n' ' ')
       shell: bash
 
     - name: Upload artifacts
@@ -39,9 +39,9 @@ runs:
       with:
         if-no-files-found: ${{ inputs.if-no-files-found }}
         name: ${{ inputs.name }}
-        path: ${{ inputs.name }}.tar
+        path: "${{ inputs.name }}.tar"
         retention-days: ${{ inputs.retention-days }}
 
     - name: Remove archive
-      run: rm -f ${{ inputs.name }}.tar
+      run: rm -f "${{ inputs.name }}.tar"
       shell: bash

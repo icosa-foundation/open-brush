@@ -22,11 +22,11 @@ runs:
         path: ${{ inputs.path }}
 
     - name: Extract artifacts
-      run: tar -xvf ${{ inputs.name }}.tar
+      run: tar -xvf "${{ inputs.name }}.tar"
       shell: bash
       working-directory: ${{ inputs.path }}
 
     - name: Remove archive
-      run: rm -f ${{ inputs.name }}.tar
+      run: rm -f "${{ inputs.name }}.tar"
       shell: bash
       working-directory: ${{ inputs.path }}
