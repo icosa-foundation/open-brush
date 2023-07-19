@@ -269,8 +269,9 @@ namespace TiltBrush
             App.Scene.Pose = newScene;
         }
 
-        void Update()
+        protected override void Update()
         {
+            base.Update();
             ApplyVelocity(m_Velocity);
             if (!m_LockToController)
             {

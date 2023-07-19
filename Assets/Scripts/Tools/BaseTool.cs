@@ -191,7 +191,7 @@ namespace TiltBrush
             }
         }
 
-        void Update()
+        protected virtual void Update()
         {
             // Can't do it in UpdateTool as it happens too late
             // Symmetry scripts were seeing m_IsActiveThisFrame for two consecutive frames

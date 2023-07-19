@@ -238,8 +238,9 @@ namespace TiltBrush
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
-        void Update()
+        protected override void Update()
         {
+            base.Update();
             // If we're not locking to a controller, update our transforms now, instead of in LateUpdate.
             if (!m_LockToController)
             {

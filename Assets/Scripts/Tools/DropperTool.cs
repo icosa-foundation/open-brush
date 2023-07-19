@@ -100,8 +100,9 @@ namespace TiltBrush
             SnapIntersectionObjectToController();
         }
 
-        void Update()
+        protected override void Update()
         {
+            base.Update();
             //update animations
             switch (m_CurrentState)
             {
