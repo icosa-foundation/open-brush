@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,33 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public class SelectionTray : BaseTray
+    public class LongPressActionButton : LongPressButton
     {
-        [SerializeField] private OptionButton m_GroupButton;
+        [SerializeField] private UnityEngine.Events.UnityEvent m_Action;
 
-        protected override void OnSelectionChanged()
+        protected override void OnButtonPressed()
         {
-            m_GroupButton.UpdateVisuals();
-        }
-
-        public void RepaintSelected()
-        {
-            var pm = PointerManager.m_Instance;
-            SketchMemoryScript.m_Instance.RepaintSelected(
-                pm.RebrushOn,
-                pm.RecolorOn,
-                pm.ResizeOn,
-                pm.JitterOn
-            );
+            m_Action.Invoke();
         }
     }
-
 } // namespace TiltBrush
