@@ -2999,6 +2999,10 @@ MonoBehaviour:
     m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
     m_Metadata:
       m_Items: []
+  - m_Id: 109424659466551296
+    m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -158,6 +158,11 @@ namespace TiltBrush
         public float sizeJitter { get; set; }
         public float positionJitter { get; set; }
 
+        [NonSerialized] public bool RecolorOn = true;
+        [NonSerialized] public bool RebrushOn = false;
+        [NonSerialized] public bool ResizeOn = false;
+        [NonSerialized] public bool JitterOn = false;
+
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
         private float m_SketchSurfaceLineDepthVarianceBase = 0.0001f;
