@@ -402,7 +402,7 @@ jobs:
           mv OpenBrush.tgz build/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v3
+        uses: ./.github/actions/upload-artifact
         with:
           name: ${{ matrix.name }}
           path: build
@@ -456,31 +456,31 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows Rift
           path: build_windows_rift
 
       - name: Download Build Artifacts (Windows Monoscopic)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows Monoscopic
           path: build_windows_mono
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Oculus Quest
           path: build_oculus_quest
 
       - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Android Pico
           path: build_android_pico
@@ -598,7 +598,7 @@ jobs:
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -618,7 +618,7 @@ jobs:
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Save logs
-        uses: actions/upload-artifact@v3
+        uses: ./.github/actions/upload-artifact
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -640,7 +640,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Pimax)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows Pimax
           path: build_windows_pimax
@@ -672,7 +672,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows OpenXR
           path: build_windows_openxr
@@ -703,13 +703,13 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Oculus Quest
           path: build_oculus_quest
@@ -741,12 +741,12 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Windows Rift
           path: build_windows_rift
       - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
+        uses: ./.github/actions/download-artifact
         with:
           name: Oculus Quest
           path: build_oculus_quest
