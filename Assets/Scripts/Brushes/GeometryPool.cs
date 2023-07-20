@@ -328,8 +328,6 @@ namespace TiltBrush
         public List<Color32> m_Colors;
         public List<Vector4> m_Tangents;
 
-        public List<Vector2> m_TriangleIds;
-
         // All writes must go through the Layout setter
         private VertexLayout m_Layout;
 
@@ -369,7 +367,6 @@ namespace TiltBrush
                 m_Layout = value;
                 m_Texcoord0.SetSize(value.texcoord0.size);
                 m_Texcoord1.SetSize(value.texcoord1.size);
-                m_Texcoord2.SetSize(value.texcoord2.size);
                 m_Texcoord2.SetSize(value.texcoord2.size);
             }
         }
@@ -439,7 +436,6 @@ namespace TiltBrush
                 {
                     m_Tangents.SetCount(value);
                 }
-                m_TriangleIds.SetCount(value);
             }
         }
 
@@ -501,7 +497,6 @@ namespace TiltBrush
             {
                 m_Tangents.RemoveRange(0, verts);
             }
-            m_TriangleIds.RemoveRange(0, verts);
             for (int channel = 0; channel < kNumTexcoords; ++channel)
             {
                 var texcoordData = GetTexcoordData(channel);
@@ -533,7 +528,6 @@ namespace TiltBrush
             m_Normals = new List<Vector3>();
             m_Colors = new List<Color32>();
             m_Tangents = new List<Vector4>();
-            m_TriangleIds = new List<Vector2>();
             Reset(false);
         }
 
@@ -569,7 +563,6 @@ namespace TiltBrush
                 m_Texcoord2.Clear();
                 m_Colors.Clear();
                 m_Tangents.Clear();
-                m_TriangleIds.Clear();
             }
             else
             {
@@ -586,7 +579,6 @@ namespace TiltBrush
                 m_Texcoord2.Clear();
                 m_Colors = new List<Color32>();
                 m_Tangents = new List<Vector4>();
-                m_TriangleIds = new List<Vector2>();
             }
 
             if (!keepVertexLayout)
@@ -695,7 +687,6 @@ namespace TiltBrush
             }
             m_Colors = null;
             m_Tangents = null;
-            m_TriangleIds = null;
         }
 
         /// TODO: this is another hack that should be replaced with some way
@@ -762,14 +753,6 @@ namespace TiltBrush
             {
                 m_Tangents = StealArrayForList(mesh.tangents);
             }
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
-            {
-                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
-                m_TriangleIds[mesh.triangles[i]] = uv;
-                m_TriangleIds[mesh.triangles[i + 1]] = uv;
-                m_TriangleIds[mesh.triangles[i + 2]] = uv;
-            }
-
             for (int channel = 0; channel < kNumTexcoords; ++channel)
             {
                 TexcoordInfo txcInfo = m_Layout.GetTexcoordInfo(channel);
@@ -897,7 +880,37 @@ namespace TiltBrush
             {
                 mesh.SetTangents(m_Tangents);
             }
-            mesh.SetUVs(3, m_TriangleIds);
+            var triangleIds = GenerateTriangleIds(mesh);
+            mesh.SetUVs(3, triangleIds);
+        }
+
+        private Vector2[] GenerateTriangleIds(Mesh mesh)
+        {
+            var triangleIds = new Vector2[mesh.vertexCount];
+            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            {
+                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
+                triangleIds[mesh.triangles[i]] = uv;
+                triangleIds[mesh.triangles[i + 1]] = uv;
+                triangleIds[mesh.triangles[i + 2]] = uv;
+            }
+            return triangleIds;
+        }
+
+        private Vector2[] GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
+        {
+            var triangleIds = mesh.uv3 != null ? mesh.uv3 : new Vector2[nVert];
+            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            {
+                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
+                if (mesh.triangles[i] >= iVert && mesh.triangles[i] < iVert + nVert)
+                    triangleIds[mesh.triangles[i] - iVert] = uv;
+                if (mesh.triangles[i + 1] >= iVert && mesh.triangles[i + 1] < iVert + nVert)
+                    triangleIds[mesh.triangles[i + 1] - iVert] = uv;
+                if (mesh.triangles[i + 2] >= iVert && mesh.triangles[i + 2] < iVert + nVert)
+                    triangleIds[mesh.triangles[i + 2] - iVert] = uv;
+            }
+            return triangleIds;
         }
 
         /// Like CopyToMesh(), except copies a sub-chunk of verts and triangles.
@@ -949,7 +962,8 @@ namespace TiltBrush
             {
                 mesh.tangents = SubArray(m_Tangents, iVert, nVert);
             }
-            mesh.SetUVs(3, SubList(m_TriangleIds, iVert, nVert));
+            var triangleIds = GenerateTriangleIds(mesh, iVert, nVert);
+            mesh.SetUVs(3, triangleIds);
         }
 
         static int GetVertexCount(Stroke stroke)
@@ -1140,16 +1154,6 @@ namespace TiltBrush
                 m_Tangents.AddRange(mesh.tangents);
             }
 
-            var triangleIds = new List<Vector2>(mesh.vertexCount);
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
-            {
-                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
-                triangleIds[mesh.triangles[i]] = uv;
-                triangleIds[mesh.triangles[i + 1]] = uv;
-                triangleIds[mesh.triangles[i + 2]] = uv;
-            }
-            m_TriangleIds.AddRange(triangleIds);
-
             VerifySizes();
         }
 
@@ -1217,8 +1221,6 @@ namespace TiltBrush
             {
                 m_Tangents.AddRange(rhs.m_Tangents, iVert, nVert);
             }
-
-            m_TriangleIds.AddRange(rhs.m_TriangleIds, iVert, nVert);
 
             if (leftTransform.HasValue)
             {
@@ -1427,8 +1429,6 @@ namespace TiltBrush
                 ok &= (m_Tangents.Count == nVert);
             }
 
-            ok &= (m_TriangleIds.Count == nVert);
-
             if (!ok)
             {
                 Debug.LogError("Arrays not correctly sized");
@@ -1475,7 +1475,6 @@ namespace TiltBrush
                 {
                     writer.WriteLengthPrefixed(m_Tangents);
                 }
-                writer.WriteLengthPrefixed(m_TriangleIds);
                 for (int channel = 0; channel < kNumTexcoords; ++channel)
                 {
                     WriteTexcoordData(writer, GetTexcoordData(channel), m_Layout.GetTexcoordInfo(channel).size);
@@ -1536,10 +1535,6 @@ namespace TiltBrush
                     if (m_Tangents == null) { m_Tangents = new List<Vector4>(); }
                     if (!reader.ReadIntoExact(m_Tangents, numVerts)) { return false; }
                 }
-
-                if (m_TriangleIds == null) { m_TriangleIds = new List<Vector2>(); }
-                if (!reader.ReadIntoExact(m_TriangleIds, numVerts)) { return false; }
-
                 for (int channel = 0; channel < kNumTexcoords; ++channel)
                 {
                     TexcoordInfo txcInfo = m_Layout.GetTexcoordInfo(channel);
