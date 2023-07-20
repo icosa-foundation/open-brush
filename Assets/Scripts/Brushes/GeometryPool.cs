@@ -880,29 +880,30 @@ namespace TiltBrush
             {
                 mesh.SetTangents(m_Tangents);
             }
-            var triangleIds = GenerateTriangleIds(mesh);
-            mesh.SetUVs(3, triangleIds);
+            GenerateTriangleIds(mesh);
         }
 
-        private Vector2[] GenerateTriangleIds(Mesh mesh)
+        private void GenerateTriangleIds(Mesh mesh)
         {
             var triangleIds = new Vector2[mesh.vertexCount];
             for (int i = 0; i < mesh.triangles.Length; i += 3)
             {
-                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
+                int triIndex = Mathf.FloorToInt(i / 3);
+                Vector2 uv = new Vector2(triIndex, 0);
                 triangleIds[mesh.triangles[i]] = uv;
                 triangleIds[mesh.triangles[i + 1]] = uv;
                 triangleIds[mesh.triangles[i + 2]] = uv;
             }
-            return triangleIds;
+            mesh.SetUVs(4, triangleIds);
         }
 
-        private Vector2[] GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
+        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
         {
-            var triangleIds = mesh.uv3 != null ? mesh.uv3 : new Vector2[nVert];
+            var triangleIds = new Vector2[nVert];
             for (int i = 0; i < mesh.triangles.Length; i += 3)
             {
-                Vector2 uv = new Vector2((i / 3) / 65535f, ((i / 3) % 65535) / 65535f);
+                int triIndex = Mathf.FloorToInt(i / 3);
+                Vector2 uv = new Vector2(triIndex, 0);
                 if (mesh.triangles[i] >= iVert && mesh.triangles[i] < iVert + nVert)
                     triangleIds[mesh.triangles[i] - iVert] = uv;
                 if (mesh.triangles[i + 1] >= iVert && mesh.triangles[i + 1] < iVert + nVert)
@@ -910,7 +911,7 @@ namespace TiltBrush
                 if (mesh.triangles[i + 2] >= iVert && mesh.triangles[i + 2] < iVert + nVert)
                     triangleIds[mesh.triangles[i + 2] - iVert] = uv;
             }
-            return triangleIds;
+            mesh.SetUVs(4, triangleIds);
         }
 
         /// Like CopyToMesh(), except copies a sub-chunk of verts and triangles.
@@ -962,8 +963,7 @@ namespace TiltBrush
             {
                 mesh.tangents = SubArray(m_Tangents, iVert, nVert);
             }
-            var triangleIds = GenerateTriangleIds(mesh, iVert, nVert);
-            mesh.SetUVs(3, triangleIds);
+            GenerateTriangleIds(mesh, iVert, nVert);
         }
 
         static int GetVertexCount(Stroke stroke)

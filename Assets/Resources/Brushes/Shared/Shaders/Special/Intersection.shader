@@ -38,12 +38,12 @@ Shader "Brush/Special/Intersection" {
 
       struct appdata_t {
         float4 vertex : POSITION;
-        float4 triangleids : TEXCOORD3;
+        float4 triangleids : TEXCOORD4;
       };
 
       struct v2f {
         float4 vertex : POSITION;
-        float4 triangleids : TEXCOORD3;
+        float4 triangleids : TEXCOORD4;
         half4 color : COLOR;
       };
 
@@ -58,7 +58,7 @@ Shader "Brush/Special/Intersection" {
 
       half4 frag(v2f i) : COLOR
       {
-        uint triangleIndex = uint(i.triangleids.x * 65535) * 65535 + uint(i.triangleids.y * 65535);
+        uint triangleIndex = uint(i.triangleids.x);
         return PackUint16x2ToRgba8(uint2(_BatchID, triangleIndex));
       }
         ENDCG
