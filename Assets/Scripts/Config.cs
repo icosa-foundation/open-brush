@@ -495,7 +495,8 @@ namespace TiltBrush
         {
             get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
         }
-        public bool GeometryShaderSuppported {
+        public bool GeometryShaderSuppported
+        {
             get
             {
 #if OCULUS_SUPPORTED
