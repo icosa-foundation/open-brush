@@ -880,7 +880,12 @@ namespace TiltBrush
             {
                 mesh.SetTangents(m_Tangents);
             }
-            GenerateTriangleIds(mesh);
+
+            // If we aren't using the geometry shader, we need to generate triangle IDs
+            if (!App.Config.GeometryShaderSuppported)
+            {
+                GenerateTriangleIds(mesh);
+            }
         }
 
         private void GenerateTriangleIds(Mesh mesh)
@@ -963,7 +968,12 @@ namespace TiltBrush
             {
                 mesh.tangents = SubArray(m_Tangents, iVert, nVert);
             }
-            GenerateTriangleIds(mesh, iVert, nVert);
+
+            // If we aren't using the geometry shader, we need to generate triangle IDs
+            if (!App.Config.GeometryShaderSuppported)
+            {
+                GenerateTriangleIds(mesh, iVert, nVert);
+            }
         }
 
         static int GetVertexCount(Stroke stroke)

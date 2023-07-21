@@ -32,6 +32,10 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
+#if OCULUS_SUPPORTED
+using Unity.XR.Oculus;
+#endif
+
 namespace TiltBrush
 {
     public enum XrSdkMode
@@ -490,6 +494,16 @@ namespace TiltBrush
         public static bool IsExperimental
         {
             get => PlayerPrefs.HasKey("ExperimentalMode") && PlayerPrefs.GetInt("ExperimentalMode") == 1;
+        }
+        public bool GeometryShaderSuppported {
+            get
+            {
+#if OCULUS_SUPPORTED
+                SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
+                return headset != SystemHeadset.Oculus_Quest;
+#endif
+                return true;
+            }
         }
 
         // Non-Static version of above

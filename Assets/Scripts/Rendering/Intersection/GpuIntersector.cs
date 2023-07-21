@@ -67,6 +67,7 @@ namespace TiltBrush
         }
 
         [SerializeField] private Shader m_IntersectionShader;
+        [SerializeField] private Shader m_IntersectionShaderFallback;
         [SerializeField] private Shader m_DownsampleShader;
         [SerializeField] private ComputeShader m_ComputeCopyShader;
 
@@ -256,8 +257,15 @@ namespace TiltBrush
             // Intersect with strokes just the specified layer.
             m_IntersectionCamera.cullingMask = renderCullingMask;
 
-            // Render all gemoetry tagged as "intersection" with the intersection shader.
-            m_IntersectionCamera.RenderWithShader(m_IntersectionShader, string.Empty);
+            // Render all geometry tagged as "intersection" with the intersection shader.
+            if (App.Config.GeometryShaderSuppported)
+            {
+                m_IntersectionCamera.RenderWithShader(m_IntersectionShader, string.Empty);
+            }
+            else
+            {
+                m_IntersectionCamera.RenderWithShader(m_IntersectionShaderFallback, string.Empty);
+            }
 
             // Downsample to a tiny texture using a point filter, since we don't have an ordering to
             // selected strokes.
