@@ -40,28 +40,28 @@ namespace TiltBrush
             return $"Vector3({_Vector3.x}, {_Vector3.y}, {_Vector3.z})";
         }
 
-        [LuaDocsDescription("Gets or sets the component at the specified index")]
+        [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
             get => _Vector3[index];
             set => _Vector3[index] = value;
         }
 
-        [LuaDocsDescription("Gets or sets the x coordinate")]
+        [LuaDocsDescription("The x coordinate")]
         public float x
         {
             get => _Vector3.x;
             set => _Vector3.x = value;
         }
 
-        [LuaDocsDescription("Gets or sets the y coordinate")]
+        [LuaDocsDescription("The y coordinate")]
         public float y
         {
             get => _Vector3.y;
             set => _Vector3.y = value;
         }
 
-        [LuaDocsDescription("Gets or sets the z coordinate")]
+        [LuaDocsDescription("The z coordinate")]
         public float z
         {
             get => _Vector3.z;

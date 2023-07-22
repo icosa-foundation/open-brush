@@ -140,7 +140,7 @@ namespace TiltBrush
         [LuaDocsExample("Brush:ForceNewStroke()")]
         public static void ForceNewStroke() => ApiMethods.ForceNewStroke();
 
-        [LuaDocsDescription("Gets or sets the current path of the brush. Assumes a stroke is in progress.")]
+        [LuaDocsDescription("The current path of the brush. Assumes a stroke is in progress.")]
         public static PathApiWrapper currentPath
         {
             get => new (PointerManager.m_Instance.MainPointer.CurrentPath);

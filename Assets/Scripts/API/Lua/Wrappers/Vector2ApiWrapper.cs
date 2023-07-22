@@ -33,21 +33,21 @@ namespace TiltBrush
             return $"Vector2({_Vector2.x}, {_Vector2.y})";
         }
 
-        [LuaDocsDescription("Gets or sets the component at the specified index")]
+        [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
             get => _Vector2[index];
             set => _Vector2[index] = value;
         }
 
-        [LuaDocsDescription("Gets or sets the x coordinate")]
+        [LuaDocsDescription("The x coordinate")]
         public float x
         {
             get => _Vector2.x;
             set => _Vector2.x = value;
         }
 
-        [LuaDocsDescription("Gets or sets the y coordinate")]
+        [LuaDocsDescription("The y coordinate")]
         public float y
         {
             get => _Vector2.y;

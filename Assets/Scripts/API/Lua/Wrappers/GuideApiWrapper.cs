@@ -25,6 +25,20 @@ namespace TiltBrush
             return $"Guide({_StencilWidget})";
         }
 
+        [LuaDocsDescription("The layer the guide is on")]
+        public LayerApiWrapper layer
+        {
+            get => _StencilWidget != null ? new LayerApiWrapper(_StencilWidget.Canvas) : null;
+            set => _StencilWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this guide is part of")]
+        public GroupApiWrapper group
+        {
+            get => _StencilWidget != null ? new GroupApiWrapper(_StencilWidget.Group, layer._CanvasScript) : null;
+            set => _StencilWidget.Group = value._Group;
+        }
+
         [LuaDocsDescription("The transform of the Guide Widget")]
         public TrTransform transform
         {

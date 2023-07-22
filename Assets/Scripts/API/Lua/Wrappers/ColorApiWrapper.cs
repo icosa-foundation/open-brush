@@ -67,7 +67,7 @@ namespace TiltBrush
             return $"Color({_Color.r}, {_Color.g}, {_Color.b})";
         }
 
-        [LuaDocsDescription("Gets or sets the color component at the specified index")]
+        [LuaDocsDescription("The color component at the specified index")]
         public float this[int index]
         {
             get => _Color[index];

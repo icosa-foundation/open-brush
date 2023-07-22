@@ -207,6 +207,12 @@ t = Class()
 ---@type number
 CameraPath.index = nil
 
+---@type Layer
+CameraPath.layer = nil
+
+---@type Group
+CameraPath.group = nil
+
 ---@type boolean
 CameraPath.active = nil
 
@@ -605,6 +611,12 @@ t = Class()
 ---@type number
 Guide.index = nil
 
+---@type Layer
+Guide.layer = nil
+
+---@type Group
+Guide.group = nil
+
 ---@type Transform
 Guide.transform = nil
 
@@ -677,6 +689,12 @@ t = Class()
 ---@type number
 Image.index = nil
 
+---@type Layer
+Image.layer = nil
+
+---@type Group
+Image.group = nil
+
 ---@type Transform
 Image.transform = nil
 
@@ -719,6 +737,27 @@ function Image:SaveBase64(base64, filename) end
 
 ---@class Layer
 t = Class()
+
+---@type StrokeList
+Layer.strokes = nil
+
+---@type ImageList
+Layer.images = nil
+
+---@type VideoList
+Layer.videos = nil
+
+---@type ModelList
+Layer.models = nil
+
+---@type GuideList
+Layer.guides = nil
+
+---@type CameraPathList
+Layer.cameraPaths = nil
+
+---@type System.Collections.Generic.List`1[Group]
+Layer.groups = nil
 
 ---@type number
 Layer.index = nil
@@ -990,6 +1029,12 @@ t = Class()
 
 ---@type number
 Model.index = nil
+
+---@type Layer
+Model.layer = nil
+
+---@type Group
+Model.group = nil
 
 ---@type Transform
 Model.transform = nil
@@ -1573,6 +1618,9 @@ Sketch.strokes = nil
 ---@type LayerList
 Sketch.layers = nil
 
+---@type System.Collections.Generic.List`1[Group]
+Sketch.groups = nil
+
 ---@type ImageList
 Sketch.images = nil
 
@@ -1700,6 +1748,9 @@ Stroke.brushColor = nil
 ---@type Layer
 Stroke.layer = nil
 
+---@type Group
+Stroke.group = nil
+
 ---@type Transform
 Stroke.Item = nil
 
@@ -1717,6 +1768,9 @@ function Stroke:Delete() end
 
 
 function Stroke:Select() end
+
+
+function Stroke:ModifyMaterial() end
 
 ---@param from number
 ---@param to number
@@ -2354,6 +2408,12 @@ t = Class()
 
 ---@type number
 Video.index = nil
+
+---@type Layer
+Video.layer = nil
+
+---@type Group
+Video.group = nil
 
 ---@type Transform
 Video.transform = nil

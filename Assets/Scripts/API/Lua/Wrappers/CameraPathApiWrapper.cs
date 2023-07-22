@@ -40,6 +40,20 @@ namespace TiltBrush
             return $"CameraPath({_CameraPathWidget})";
         }
 
+        [LuaDocsDescription("The layer the camera path is on")]
+        public LayerApiWrapper layer
+        {
+            get => _CameraPathWidget != null ? new LayerApiWrapper(_CameraPathWidget.Canvas) : null;
+            set => _CameraPathWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this camera path is part of")]
+        public GroupApiWrapper group
+        {
+            get => _CameraPathWidget != null ? new GroupApiWrapper(_CameraPathWidget.Group, layer._CanvasScript) : null;
+            set => _CameraPathWidget.Group = value._Group;
+        }
+
         [LuaDocsDescription("Gets or sets whether this Camera Path is active")]
         public bool active
         {

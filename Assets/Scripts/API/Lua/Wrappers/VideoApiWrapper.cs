@@ -22,7 +22,21 @@ namespace TiltBrush
             return $"CameraPath({_VideoWidget})";
         }
 
-        [LuaDocsDescription("Gets or sets the Transform (position, rotation, scale) of the Video Widget")]
+        [LuaDocsDescription("The layer the video is on")]
+        public LayerApiWrapper layer
+        {
+            get => _VideoWidget != null ? new LayerApiWrapper(_VideoWidget.Canvas) : null;
+            set => _VideoWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this video is part of")]
+        public GroupApiWrapper group
+        {
+            get => _VideoWidget != null ? new GroupApiWrapper(_VideoWidget.Group, layer._CanvasScript) : null;
+            set => _VideoWidget.Group = value._Group;
+        }
+
+        [LuaDocsDescription("The Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
@@ -61,7 +75,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets or sets the scale of the Video Widget")]
+        [LuaDocsDescription("The scale of the Video Widget")]
         public float scale
         {
             get => transform.scale;

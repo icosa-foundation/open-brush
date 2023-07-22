@@ -13,7 +13,7 @@ namespace TiltBrush
 
         private PathApiWrapper m_Path;
 
-        [LuaDocsDescription("Gets or sets the control points of this stroke from a Path")]
+        [LuaDocsDescription("The control points of this stroke from a Path")]
         public PathApiWrapper path
         {
             get
@@ -53,7 +53,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets or sets the stroke's brush type")]
+        [LuaDocsDescription("The stroke's brush type")]
         public string brushType
         {
             get => _Stroke?.m_BatchSubset.m_ParentBatch.Brush.Description;
@@ -64,7 +64,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets or sets the stroke's size")]
+        [LuaDocsDescription("The stroke's size")]
         public float brushSize
         {
             get => _Stroke.m_BrushSize;
@@ -75,7 +75,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets or sets the stroke's Color")]
+        [LuaDocsDescription("The stroke's Color")]
         public ColorApiWrapper brushColor
         {
             get => new ColorApiWrapper(_Stroke.m_Color);
@@ -86,14 +86,18 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Gets or sets the layer the stroke is on")]
+        [LuaDocsDescription("The layer the stroke is on")]
         public LayerApiWrapper layer
         {
             get => _Stroke != null ? new LayerApiWrapper(_Stroke.Canvas) : null;
-            set
-            {
-                _Stroke.SetParentKeepWorldPosition(value._CanvasScript);
-            }
+            set => _Stroke.SetParentKeepWorldPosition(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this stroke is part of")]
+        public GroupApiWrapper group
+        {
+            get => _Stroke != null ? new GroupApiWrapper(_Stroke.Group, layer._CanvasScript) : null;
+            set => _Stroke.Group = value._Group;
         }
 
         public StrokeApiWrapper(Stroke stroke)

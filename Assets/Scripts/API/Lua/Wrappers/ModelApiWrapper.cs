@@ -22,6 +22,20 @@ namespace TiltBrush
             return $"Model({_ModelWidget})";
         }
 
+        [LuaDocsDescription("The layer the model is on")]
+        public LayerApiWrapper layer
+        {
+            get => _ModelWidget != null ? new LayerApiWrapper(_ModelWidget.Canvas) : null;
+            set => _ModelWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this model is part of")]
+        public GroupApiWrapper group
+        {
+            get => _ModelWidget != null ? new GroupApiWrapper(_ModelWidget.Group, layer._CanvasScript) : null;
+            set => _ModelWidget.Group = value._Group;
+        }
+
         [LuaDocsDescription(@"The transformation of the Model Widget")]
         public TrTransform transform
         {

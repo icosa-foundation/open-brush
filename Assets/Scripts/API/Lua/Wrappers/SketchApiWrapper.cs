@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using MoonSharp.Interpreter;
 
 namespace TiltBrush
@@ -49,6 +50,21 @@ namespace TiltBrush
         public static LayerListApiWrapper layers => new LayerListApiWrapper(
             App.Scene.LayerCanvases.ToList()
         );
+
+        [LuaDocsDescription("All the groups in this sketch")]
+        public static List<GroupApiWrapper> groups {
+            get
+            {
+                var tags = new HashSet<(SketchGroupTag, CanvasScript)>();
+                tags.UnionWith(strokes._Strokes.Select(x => (x.Group, x.Canvas)));
+                tags.UnionWith(images._Images.Select(x => (x.Group, x.Canvas)));
+                tags.UnionWith(videos._Videos.Select(x => (x.Group, x.Canvas)));
+                tags.UnionWith(models._Models.Select(x => (x.Group, x.Canvas)));
+                tags.UnionWith(guides._Guides.Select(x => (x.Group, x.Canvas)));
+                tags.UnionWith(cameraPaths._CameraPaths.Select(x => (x.Group, x.Canvas)));
+                return tags.Select(x => new GroupApiWrapper(x.Item1, x.Item2)).ToList();
+            }
+        }
 
         [LuaDocsDescription(@"Returns a list of active image widgets in the sketch")]
         public static ImageListApiWrapper images => new ImageListApiWrapper(
