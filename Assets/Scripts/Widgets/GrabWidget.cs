@@ -1140,7 +1140,10 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
-            MagnetizeToStencils(ref xf_GS);
+            if (WidgetManager.m_Instance.m_EnableSnapToGuides)
+            {
+                MagnetizeToStencils(ref xf_GS);
+            }
 
             if (m_RecordMovements)
             {

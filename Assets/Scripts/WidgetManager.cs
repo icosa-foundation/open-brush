@@ -175,6 +175,7 @@ namespace TiltBrush
         private CameraPathTinter m_CameraPathTinter;
 
         static private Dictionary<ushort, GrabWidget> sm_BatchMap = new Dictionary<ushort, GrabWidget>();
+        public bool m_EnableSnapToGuides;
 
         public StencilWidget ActiveStencil
         {

@@ -22,7 +22,8 @@ namespace TiltBrush
     {
         LockSnapTranslateX,
         LockSnapTranslateY,
-        LockSnapTranslateZ
+        LockSnapTranslateZ,
+        SnapToGuides
     }
 
     public class SnapSettingsPanel : BasePanel
@@ -47,6 +48,11 @@ namespace TiltBrush
         public void HandleSnapSelectionToGrid()
         {
             TransformItems.SnapSelectionToGrid();
+        }
+
+        public void HandleToggleSnapToGuides()
+        {
+            WidgetManager.m_Instance.m_EnableSnapToGuides = !WidgetManager.m_Instance.m_EnableSnapToGuides;
         }
 
         public void HandleSnapSelectedRotationAngles()
