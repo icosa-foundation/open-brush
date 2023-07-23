@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -146,6 +145,5 @@ namespace TiltBrush
             get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
             set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
         }
-
     }
 }
