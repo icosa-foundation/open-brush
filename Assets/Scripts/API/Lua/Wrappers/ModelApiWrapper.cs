@@ -51,42 +51,21 @@ namespace TiltBrush
         public Vector3 position
         {
             get => transform.translation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.translation = newTransform.translation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
 
         [LuaDocsDescription(@"The 3D orientation of the Model Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.rotation = newTransform.rotation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
         }
 
         [LuaDocsDescription(@"The scale of the Model Widget")]
         public float scale
         {
             get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
