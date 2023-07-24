@@ -72,7 +72,7 @@ namespace TiltBrush
         [LuaDocsExample(@"ModelApiWrapper:Import(""Andy.obj"")")]
         [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
         [LuaDocsReturnValue(@"Returns the Model instance")]
-        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename));
+        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename).Result);
 
         [LuaDocsDescription(@"Adds this model to the current selection")]
         [LuaDocsExample(@"myModel:Select()")]
