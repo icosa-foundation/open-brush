@@ -53,7 +53,7 @@ namespace TiltBrush
             if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.RepaintTool &&
                 SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.PolyhydraTool &&
                 SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.ScriptedTool &&
-                SketchSurfacePanel.m_Instance.m_LastCommand.GetType() != typeof(RepaintStrokeCommand))
+                SketchSurfacePanel.m_Instance.m_LastCommand?.GetType() != typeof(RepaintStrokeCommand))
             {
                 SketchSurfacePanel.m_Instance.EnableDefaultTool();
             }
