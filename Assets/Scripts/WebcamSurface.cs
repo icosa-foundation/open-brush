@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
@@ -19,7 +20,18 @@ public class WebcamSurface : MonoBehaviour
     {
         _Devices  = WebCamTexture.devices;
         UpdateButtonState();
-        UpdateDevice();
+        UpdateDeviceInCompositor();
+    }
+
+    private void UpdateDeviceInCompositor()
+    {
+        StartCoroutine(
+            OverlayManager.m_Instance.RunInCompositor(
+                OverlayType.LoadGeneric,
+                UpdateDevice,
+                0.25f
+            )
+        );
     }
 
     private void UpdateDevice()
@@ -45,13 +57,13 @@ public class WebcamSurface : MonoBehaviour
         deviceIndex += increment;
         deviceIndex = Mathf.Clamp(deviceIndex, 0, _Devices.Length - 1);
         UpdateButtonState();
-        UpdateDevice();
+        UpdateDeviceInCompositor();
     }
 
     private void UpdateButtonState()
     {
-        NextDeviceButton.SetButtonAvailable(deviceIndex < _Devices.Length - 1);
-        PreviousDeviceButton.SetButtonAvailable(deviceIndex > 0);
+        NextDeviceButton.gameObject.SetActive(deviceIndex < _Devices.Length - 1);
+        PreviousDeviceButton.gameObject.SetActive(deviceIndex > 0);
     }
 
     private void OnDestroy()

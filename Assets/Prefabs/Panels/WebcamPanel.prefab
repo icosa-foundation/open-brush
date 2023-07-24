@@ -631,10 +631,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4480697233370351510, guid: 56ec8ee0db1efc446a6f76935a5392f5,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.525
+      objectReference: {fileID: 0}
+    - target: {fileID: 4480697233370351510, guid: 56ec8ee0db1efc446a6f76935a5392f5,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.968
+      objectReference: {fileID: 0}
     - target: {fileID: 7448022236017278401, guid: 56ec8ee0db1efc446a6f76935a5392f5,
         type: 3}
       propertyPath: m_Name
       value: Webcam
+      objectReference: {fileID: 0}
+    - target: {fileID: 8720976293651703736, guid: 56ec8ee0db1efc446a6f76935a5392f5,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.512
+      objectReference: {fileID: 0}
+    - target: {fileID: 8720976293651703736, guid: 56ec8ee0db1efc446a6f76935a5392f5,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.96799994
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 56ec8ee0db1efc446a6f76935a5392f5, type: 3}
