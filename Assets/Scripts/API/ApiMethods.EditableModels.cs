@@ -14,13 +14,16 @@
 
 using System;
 using UnityEngine;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
         [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
-        public static ModelWidget ImportModel(string location)
+
+        public static async Task<ModelWidget> ImportModel(string location)
         {
             if (location.StartsWith("poly:"))
             {
@@ -50,7 +53,9 @@ namespace TiltBrush
             var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(Model.Location.File(relativePath));
 
-            model.LoadModel();
+
+            Task t = model.LoadModelAsync();
+            await t;
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
             );
