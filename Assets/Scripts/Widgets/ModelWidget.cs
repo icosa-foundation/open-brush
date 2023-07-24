@@ -14,6 +14,8 @@
 
 using UnityEngine;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -466,7 +468,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static void CreateFromSaveData(TiltModels75 modelDatas)
+        public static async void CreateFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -476,10 +478,13 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-                ok = CreateModelsFromRelativePath(
+
+                Task<bool> okTask = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
                     modelDatas.GroupIds);
+                ok = await okTask;
+
             }
             else if (modelDatas.AssetId != null)
             {
@@ -504,17 +509,20 @@ namespace TiltBrush
         /// I believe (but am not sure) that this is synchronous.
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
-        public static bool CreateModelsFromRelativePath(
+        public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath,
             TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-            if (model == null)
+            ;
+            if (model == null) { return false; }
+
+            if (!model.m_Valid)
             {
-                return false;
+                Task t = model.LoadModelAsync();
+                await t;
             }
-            if (!model.m_Valid) { model.LoadModel(); }
             if (!model.m_Valid)
             {
                 return false;
@@ -547,6 +555,7 @@ namespace TiltBrush
         protected static void CreateModel(Model model, TrTransform xf, bool pin,
                                           bool isNonRawTransform, uint groupId, string assetId = null)
         {
+
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
