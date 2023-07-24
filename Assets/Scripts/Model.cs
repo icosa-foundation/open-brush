@@ -20,9 +20,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using TiltBrush.MeshEditing;
+using System.Threading.Tasks;
 using TiltBrushToolkit;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
+
 
 namespace TiltBrush
 {
@@ -445,7 +447,7 @@ namespace TiltBrush
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
                 var options = m_fromPoly ? kPolyGltfImportOptions : kGltfImportOptions;
-                return ImportGltf.BeginImport(m_localPath, loader, options);
+                return ImportGltfast.BeginImport(m_localPath);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
@@ -458,27 +460,22 @@ namespace TiltBrush
                 GameObject rootObject = null;
                 using (IDisposable state_ = state__)
                 {
-                    var state = state_ as ImportGltf.ImportState;
+                    var state = state_ as ImportGltfast.ImportState;
                     if (state != null)
                     {
                         string assetLocation = Path.GetDirectoryName(m_localPath);
                         // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
                         // It knows it's on the main thread, so chooses to use Unity's fast loading.
-                        var loader = new TiltBrushUriLoader(m_localPath, assetLocation, loadImages: false);
-                        ImportGltf.GltfImportResult result =
-                            ImportGltf.EndImport(
-                                state, loader,
-                                new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath),
-                                out meshEnumerable);
+                        ImportGltfast.GltfImportResult result = ImportGltfast.EndAsyncImport(state);
 
                         if (result != null)
                         {
                             rootObject = result.root;
-                            importMaterialCollector = (ImportMaterialCollector)result.materialCollector;
+                            importMaterialCollector = result.materialCollector;
                         }
                     }
                 }
-                IsValid = (rootObject != null);
+                IsValid = rootObject != null;
                 return rootObject;
             }
         } // GltfModelBuilder
@@ -601,34 +598,28 @@ namespace TiltBrush
 #endif
         }
 
-        GameObject LoadGltf(List<string> warnings)
+        async Task LoadGltf(List<string> warnings)
         {
-            // This is intended to be identical to using GltfModelBuilder, except synchronous.
-            GameObject go;
-            bool fromPoly = (m_Location.GetLocationType() == Location.Type.PolyAssetId);
             string localPath = m_Location.AbsolutePath;
             string assetLocation = Path.GetDirectoryName(localPath);
-            // Synchronous, so don't use slow image loading
-            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
             try
             {
-                ImportGltf.GltfImportResult result = ImportGltf.Import(
-                    localPath, loader,
-                    new ImportMaterialCollector(assetLocation, uniqueSeed: localPath),
-                    fromPoly ? kPolyGltfImportOptions : kGltfImportOptions);
-                go = result.root;
-                m_ImportMaterialCollector = (ImportMaterialCollector)result.materialCollector;
+
+                Task t = ImportGltfast.StartSyncImport(
+                    localPath,
+                    assetLocation,
+                    this,
+                    warnings
+                );
+
+                await t;
+
             }
             catch (Exception ex)
             {
                 m_LoadError = new LoadError("Invalid data", ex.Message);
-                go = null;
-                m_AllowExport = false;
                 Debug.LogException(ex);
             }
-
-            m_AllowExport = (go != null);
-            return go;
         }
 
         private ModelBuilder m_builder;
@@ -726,7 +717,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                CreatePrefab(go, false);
+                StartCreatePrefab(go, false);
             }
 
             // Even if an exception occurs above, return true because the return value indicates async load
@@ -734,14 +725,20 @@ namespace TiltBrush
             return true;
         }
 
+        public async Task LoadModelAsync()
+        {
+            Task t = StartCreatePrefab(null);
+            await t;
+
+        }
         public void LoadModel()
         {
-            CreatePrefab(null, false);
+            StartCreatePrefab(null, false);
         }
 
         public void LoadEditableModel(GameObject go = null)
         {
-            CreatePrefab(go, true);
+            StartCreatePrefab(go, true);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -753,7 +750,7 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private void CreatePrefab(GameObject go, bool editable)
+        private async Task StartCreatePrefab(GameObject go, bool editable)
         {
             if (m_Valid)
             {
@@ -793,12 +790,19 @@ namespace TiltBrush
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
                     ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
+
+
                     // If we pulled this from Poly, it's going to be a gltf file.
-                    go = LoadGltf(warnings);
+                    Task t = LoadGltf(warnings);
+                    await t;
+
+
                 }
                 else if (editable && ext == ".obj" || nofbx)
                 {
@@ -807,10 +811,14 @@ namespace TiltBrush
                 else if (ext == ".fbx" || ext == ".obj")
                 {
                     go = LoadFbx(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (ext == ".ply")
                 {
                     go = LoadPly(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (ext == ".off")
                 {
@@ -826,58 +834,90 @@ namespace TiltBrush
                 }
             }
 
+        }
+
+        public void CalcBoundsGltf(GameObject go)
+        {
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
+            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+            foreach (Bounds bounds in boundsList)
+            {
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+            m_MeshBounds = b;
+            if (first)
+            {
+                // There was no geometry
+                Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
+            }
+        }
+
+        private void CalcBoundsNonGltf(GameObject go)
+        {
+            // TODO: this list of colliders is assumed to match the modelScript.m_MeshChildren array
+            // This should be enforced.
+
+            // bc.bounds is world-space; therefore this calculation requires that
+            // go.transform be identity
+            Debug.Assert(Coords.AsGlobal[go.transform] == TrTransform.identity);
+            Bounds b = new Bounds();
+            bool first = true;
+            foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>())
+            {
+                if (first)
+                {
+                    b = new Bounds(bc.bounds.center, bc.bounds.size);
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bc.bounds);
+                }
+                UnityEngine.Object.Destroy(bc);
+            }
+            m_MeshBounds = b;
+            if (first)
+            {
+                // There was no geometry
+                Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
+            }
+
+        }
+
+        public void EndCreatePrefab(GameObject go, List<string> warnings)
+        {
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
                 DisplayWarnings(warnings);
             }
-            else
+
+            // Adopt the GameObject
+            go.name = m_Location.ToString();
+            go.AddComponent<ObjModelScript>().Init();
+            go.SetActive(false);
+            if (m_ModelParent != null)
             {
-                // TODO: this list of colliders is assumed to match the modelScript.m_MeshChildren array
-                // This should be enforced.
-
-                // bc.bounds is world-space; therefore this calculation requires that
-                // go.transform be identity
-                Debug.Assert(Coords.AsGlobal[go.transform] == TrTransform.identity);
-                Bounds b = new Bounds();
-                bool first = true;
-                foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>())
-                {
-                    if (first)
-                    {
-                        b = new Bounds(bc.bounds.center, bc.bounds.size);
-                        first = false;
-                    }
-                    else
-                    {
-                        b.Encapsulate(bc.bounds);
-                    }
-                    UnityEngine.Object.Destroy(bc);
-                }
-                m_MeshBounds = b;
-
-                if (first)
-                {
-                    // There was no geometry
-                    Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
-                }
-
-                // Adopt the GameObject
-                go.name = m_Location.ToString();
-                go.AddComponent<ObjModelScript>().Init();
-                go.SetActive(false);
-                if (m_ModelParent != null)
-                {
-                    UnityEngine.Object.Destroy(m_ModelParent.gameObject);
-                }
-                m_ModelParent = go.transform;
-
-                // !!! Add to material dictionary here?
-
-                m_Valid = true;
-                DisplayWarnings(warnings);
+                UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
+            m_ModelParent = go.transform;
 
+            // !!! Add to material dictionary here?
+
+            m_Valid = true;
+            DisplayWarnings(warnings);
+            }
         }
 
         public void UnloadModel()

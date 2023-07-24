@@ -22,6 +22,8 @@ using Polyhydra.Core;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
@@ -59,16 +61,18 @@ namespace TiltBrush
         [ApiEndpoint("editablemodel.import", "Imports a model as editable; given a url, a filename in Media Library\\Models or Google Poly ID")]
         public static ModelWidget ImportEditableModel(string location)
         {
-            return _ImportModel(location, true);
+            var task = _ImportModel(location, true);
+            return task.Result;
         }
 
-        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models or Google Poly ID")]
+        [ApiEndpoint("model.import", "Imports a model given a url or a filename in Media Library\\Models (Models loaded from a url are saved locally first)")]
         public static ModelWidget ImportModel(string location)
         {
-            return _ImportModel(location, false);
+            var task = _ImportModel(location, false);
+            return task.Result;
         }
 
-        private static ModelWidget _ImportModel(string location, bool editable)
+        private static async Task<ModelWidget>  _ImportModel(string location, bool editable)
         {
             const string modelsFolder = "Models";
 
@@ -125,7 +129,8 @@ namespace TiltBrush
             }
             else
             {
-                model.LoadModel();
+                Task t = model.LoadModelAsync();
+                await t;
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
                     WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
                 );
