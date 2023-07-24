@@ -51,6 +51,9 @@ namespace TiltBrush
             App.Scene.LayerCanvases.ToList()
         );
 
+        [LuaDocsDescription(@"Returns a list of all layers in the sketch")]
+        public static LayerApiWrapper mainLayer => new LayerApiWrapper(App.Scene.MainCanvas);
+
         [LuaDocsDescription("All the groups in this sketch")]
         public static List<GroupApiWrapper> groups {
             get
