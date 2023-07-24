@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -112,7 +113,7 @@ namespace TiltBrush
             return $"Layer({_CanvasScript.name})";
         }
 
-        [LuaDocsDescription("Gets or sets a value indicating whether the layer is active")]
+        [LuaDocsDescription("Is the layer the active layer. Making another layer inactive will make the main layer the active layer again.")]
         public bool active
         {
             get => App.Scene.ActiveCanvas == _CanvasScript;
@@ -122,7 +123,7 @@ namespace TiltBrush
                 {
                     App.Scene.ActiveCanvas = _CanvasScript;
                 }
-                else if (active)
+                else if (active) // Only switch to the main layer if this layer already is the active layer
                 {
                     App.Scene.ActiveCanvas = App.Scene.MainCanvas;
                 }
@@ -143,43 +144,22 @@ namespace TiltBrush
         [LuaDocsDescription("The 3D position of the Layer (specifically the position of it's anchor point")]
         public Vector3 position
         {
-            get => (App.Scene.Pose.inverse * _CanvasScript.Pose).translation;
-            set
-            {
-                var tr = _CanvasScript.Pose;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr.translation = newTransform.translation;
-                _CanvasScript.Pose = tr;
-            }
+            get => transform.translation;
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
 
         [LuaDocsDescription("The rotation of the layer in 3D space")]
         public Quaternion rotation
         {
-            get => (App.Scene.Pose.inverse * _CanvasScript.Pose).rotation;
-            set
-            {
-                var tr = _CanvasScript.Pose;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr.rotation = newTransform.rotation;
-                _CanvasScript.Pose = tr;
-            }
+            get => transform.rotation;
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
         }
 
         [LuaDocsDescription("The scale of the layer")]
         public float scale
         {
             get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
         [LuaDocsDescription("Move the pivot point of the layer to the average center of it's contents")]
@@ -253,6 +233,62 @@ namespace TiltBrush
         public void Hide()
         {
             App.Scene.HideLayer(_CanvasScript);
+        }
+
+        public IEnumerable<Batch> _GetBatches(BrushDescriptor desc)
+        {
+            return _CanvasScript.BatchManager.AllBatches().Where(b => b.Brush == desc);
+        }
+
+        public BrushDescriptor _GetDesc(string brushType)
+        {
+            return ApiMethods.LookupBrushDescriptor(brushType);
+        }
+
+        [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer of the given brush type")]
+        public void SetShaderFloat(string brushType, string parameter, float value)
+        {
+            var desc = _GetDesc(brushType);
+            if (desc == null || !desc.Material.HasFloat(parameter)) return;
+            foreach (var batch in _GetBatches(desc))
+            {
+                batch.InstantiatedMaterial.SetFloat(parameter, value);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader color parameter. Affects all strokes on this layer of the given brush type")]
+        public void SetShaderColor(string brushType, string parameter, ColorApiWrapper color)
+        {
+            var desc = _GetDesc(brushType);
+            if (_GetDesc(brushType) == null || !_GetDesc(brushType).Material.HasColor(parameter)) return;
+            foreach (var batch in _GetBatches(desc))
+            {
+                batch.InstantiatedMaterial.SetColor(parameter, color._Color);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader texture parameter. Affects all strokes on this layer of the given brush type")]
+        public void SetShaderTexture(string brushType, string parameter, ImageApiWrapper image)
+        {
+            var desc = _GetDesc(brushType);
+            if (_GetDesc(brushType) == null || !_GetDesc(brushType).Material.HasTexture(parameter)) return;
+            foreach (var batch in _GetBatches(desc))
+            {
+                batch.InstantiatedMaterial.SetTexture(parameter, image._ImageWidget.ReferenceImage.FullSize);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer of the given brush type")]
+        public void SetShaderVector(string brushType, string parameter, Vector3ApiWrapper vector, float w = 0)
+        {
+            var desc = _GetDesc(brushType);
+            if (_GetDesc(brushType) == null || !_GetDesc(brushType).Material.HasVector(parameter)) return;
+            foreach (var batch in _GetBatches(desc))
+            {
+                var vec = (Vector4)vector._Vector3;
+                vec.w = w;
+                batch.InstantiatedMaterial.SetVector(parameter, vec);
+            }
         }
     }
 }
