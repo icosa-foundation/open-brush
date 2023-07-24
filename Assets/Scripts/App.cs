@@ -72,9 +72,8 @@ namespace TiltBrush
         private const string kFileMoveFilename = "WhereHaveMyFilesGone.txt";
 
         private const string kFileMoveContents =
-            "Due to a change in Android security policy all your " + kAppDisplayName + " files have been moved to\n" +
-            "Quest 2\\Internal shared storage\\Android\\data\\com.Icosa.OpenBrush\n" +
-            "Visit the Open Brush Docs for more information: https://docs.openbrush.app";
+            "All your " + kAppDisplayName + " files have been moved to\n" +
+            "/sdcard/" + kAppFolderName + ".\n";
 
         public enum AppState
         {
@@ -1859,8 +1858,8 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = Application.persistentDataPath;
-                    m_OldUserPath = "/sdcard/";
+                    m_UserPath = "/sdcard/";
+                    m_OldUserPath = Application.persistentDataPath;
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
@@ -1903,9 +1902,7 @@ namespace TiltBrush
 
             try
             {
-                // Moving does not work across different mount points, have to copy and delete.
-                CopyDirectory(m_OldUserPath, m_UserPath, true);
-                Directory.Delete(m_OldUserPath, true);
+                Directory.Move(m_OldUserPath, m_UserPath);
                 // Recreate the old directory and put a message in there so a user used to looking in the old
                 // location can find out where to get their files.
                 Directory.CreateDirectory(m_OldUserPath);
@@ -1915,39 +1912,6 @@ namespace TiltBrush
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-            }
-        }
-
-        static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)
-        {
-            // Get information about the source directory
-            var dir = new DirectoryInfo(sourceDir);
-
-            // Check if the source directory exists
-            if (!dir.Exists)
-                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
-
-            // Cache directories before we start copying
-            DirectoryInfo[] dirs = dir.GetDirectories();
-
-            // Create the destination directory
-            Directory.CreateDirectory(destinationDir);
-
-            // Get the files in the source directory and copy to the destination directory
-            foreach (FileInfo file in dir.GetFiles())
-            {
-                string targetFilePath = Path.Combine(destinationDir, file.Name);
-                file.CopyTo(targetFilePath);
-            }
-
-            // If recursive and copying subdirectories, recursively call this method
-            if (recursive)
-            {
-                foreach (DirectoryInfo subDir in dirs)
-                {
-                    string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                    CopyDirectory(subDir.FullName, newDestinationDir, true);
-                }
             }
         }
 
