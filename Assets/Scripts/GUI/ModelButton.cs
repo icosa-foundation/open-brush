@@ -59,6 +59,9 @@ namespace TiltBrush
             m_ModelPreview = Instantiate(m_Model.m_ModelParent);
             HierarchyUtils.RecursivelySetLayer(m_ModelPreview, LayerMask.NameToLayer("Panels"));
             m_ModelPreview.gameObject.SetActive(true);
+            var animationComponent = m_ModelPreview.GetComponentInChildren<Animation>();
+            if (animationComponent != null) animationComponent.Play();
+            m_CurrentButtonState = ButtonState.Hover; // Start off animating
             m_ModelPreview.parent = m_PreviewParent;
             float maxSide = Mathf.Max(m_Model.m_MeshBounds.size.x,
                 Mathf.Max(m_Model.m_MeshBounds.size.y, m_Model.m_MeshBounds.size.z));
@@ -208,17 +211,33 @@ namespace TiltBrush
             }
             else if (m_Model != null)
             {
+                var animationComponent = m_PreviewParent.GetComponentInChildren<Animation>();
                 if (m_CurrentButtonState == ButtonState.Hover)
                 {
-                    m_AnimateValue += Time.deltaTime / m_RotationSeconds;
-                    Vector3 vLocalRot = m_PreviewBaseRotation.eulerAngles;
-                    vLocalRot.y += m_AnimateValue * 360;
-                    m_PreviewParent.localRotation = Quaternion.Euler(vLocalRot);
+                    if (animationComponent != null)
+                    {
+                        animationComponent.Play();
+                    }
+                    else
+                    {
+                        m_AnimateValue += Time.deltaTime / m_RotationSeconds;
+                        Vector3 vLocalRot = m_PreviewBaseRotation.eulerAngles;
+                        vLocalRot.y += m_AnimateValue * 360;
+                        m_PreviewParent.localRotation = Quaternion.Euler(vLocalRot);
+                    }
                 }
                 else
                 {
-                    m_AnimateValue = 0;
-                    m_PreviewParent.localRotation = m_PreviewBaseRotation;
+                    if (animationComponent != null)
+                    {
+                        animationComponent.Stop();
+                        animationComponent.Rewind();
+                    }
+                    else
+                    {
+                        m_AnimateValue = 0;
+                        m_PreviewParent.localRotation = m_PreviewBaseRotation;
+                    }
                 }
 
                 // Both of the following methods protect against invalid models.
