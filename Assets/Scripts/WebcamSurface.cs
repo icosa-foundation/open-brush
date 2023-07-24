@@ -18,7 +18,7 @@ public class WebcamSurface : MonoBehaviour
 
     void Start()
     {
-        _Devices  = WebCamTexture.devices;
+        _Devices = WebCamTexture.devices;
         UpdateButtonState();
         UpdateDeviceInCompositor();
     }
