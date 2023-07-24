@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using GLTFast.Schema;
 
 namespace TiltBrush
 {
@@ -31,10 +32,11 @@ namespace TiltBrush
         // - MeshRenderer exists
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
+        public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
 
         public int NumMeshes
         {
-            get { return m_MeshChildren.Length; }
+            get { return m_MeshChildren.Length + m_SkinnedMeshChildren.Length; }
         }
 
         public int GetNumVertsInMeshes()
@@ -45,6 +47,10 @@ namespace TiltBrush
                 {
                     m_NumVertsInMeshes += m_MeshChildren[i].sharedMesh.vertexCount;
                 }
+                for (int i = 0; i < m_SkinnedMeshChildren.Length; ++i)
+                {
+                    m_NumVertsInMeshes += m_SkinnedMeshChildren[i].sharedMesh.vertexCount;
+                }
 
                 m_NumVertsInMeshes = Mathf.Max(1,
                     (int)(m_NumVertsInMeshes * WidgetManager.m_Instance.ModelVertCountScalar));
@@ -52,7 +58,7 @@ namespace TiltBrush
             return m_NumVertsInMeshes;
         }
 
-        private static void GetAllMeshFilters(List<MeshFilter> filters, Transform t, bool isRoot)
+        private static void GetAllMeshes(List<MeshFilter> filters, List<SkinnedMeshRenderer> smrs, Transform t, bool isRoot)
         {
             // Only return meshes that will be visible when the hierarchy root is enabled
             if (!isRoot && !t.gameObject.activeSelf)
@@ -73,17 +79,18 @@ namespace TiltBrush
                 filters.Add(meshFilter);
             }
 
-            foreach (Transform child in t)
-            {
-                GetAllMeshFilters(filters, child, isRoot: false);
-            }
+            var smr = t.GetComponent<SkinnedMeshRenderer>();
+            if (smr != null && smr.sharedMesh != null) smrs.Add(smr);
+            foreach (Transform child in t) GetAllMeshes(filters, smrs, child, isRoot: false);
         }
 
         public void Init()
         {
             var filters = new List<MeshFilter>();
-            GetAllMeshFilters(filters, transform, isRoot: true);
+            var smrs = new List<SkinnedMeshRenderer>();
+            GetAllMeshes(filters, smrs, transform, isRoot: true);
             m_MeshChildren = filters.ToArray();
+            m_SkinnedMeshChildren = smrs.ToArray();
         }
 
         void Awake()
@@ -97,6 +104,13 @@ namespace TiltBrush
                     Debug.Assert(mf != null);
                 }
             }
+            if (m_SkinnedMeshChildren != null)
+            {
+                foreach (var sm in m_SkinnedMeshChildren)
+                {
+                    Debug.Assert(sm != null);
+                }
+            }
         }
 
         public void RegisterHighlight()
@@ -105,6 +119,7 @@ namespace TiltBrush
             for (int i = 0; i < m_MeshChildren.Length; i++)
             {
                 App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
+                // TODO Handle skinned meshes
             }
 #endif
         }
