@@ -232,8 +232,11 @@ namespace TiltBrush
 
         private void Update()
         {
+            // Operate on a copy in case we are modified while iterating
+            var scriptsToProcess = m_ScriptPathsToUpdate.ToList();
+            m_ScriptPathsToUpdate.Clear();
             // Consume the queue of scripts that the FileListener reports have changed
-            foreach (var path in m_ScriptPathsToUpdate)
+            foreach (var path in scriptsToProcess)
             {
                 var scriptFilename = Path.GetFileNameWithoutExtension(Path.GetFileName(path));
                 var catMatch = TryGetCategoryFromScriptName(scriptFilename);
@@ -260,7 +263,6 @@ namespace TiltBrush
                     }
                 }
             }
-            m_ScriptPathsToUpdate.Clear();
 
             var toRemove = new List<(Script OwnerScript, int ReferenceID)>();
             foreach (var kv in m_Timers)
