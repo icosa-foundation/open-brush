@@ -10,7 +10,7 @@ Parameters = {
 
 function Main()
 
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         Brush:ForceNewStroke()
         Symmetry.rotation = Rotation:New(angleX, 0, angleZ)
         Symmetry:Spin(0, speed, 0)

@@ -12,27 +12,34 @@ function Start()
     filledCells = {}
 end
 
-function WhileTriggerPressed()
+function Main()
 
-    cell = {
-        x = quantize(Brush.position.x, xzGrid),
-        z = quantize(Brush.position.z, xzGrid),
-   }
-    key = cell.x .. "," .. cell.z
+    if Brush.triggerIsPressed then
 
-    top = quantize(Brush.position.y, yGrid)
-    bottom = filledCells[key]
-    if bottom==nil or bottom < top then
-        filledCells[key] = top
-        if bottom == nil then
-            bottom = 0
+        --Calculate which cell we are in
+        cell = {
+            x = quantize(Brush.position.x, xzGrid),
+            z = quantize(Brush.position.z, xzGrid),
+        }
+        key = cell.x .. "," .. cell.z
+
+        top = quantize(Brush.position.y, yGrid)
+        bottom = filledCells[key]
+
+        if bottom==nil or bottom < top then
+            filledCells[key] = top
+            if bottom == nil then
+                bottom = 0
+            end
+            path = cube(cell, bottom, top, xzGrid)
+            path:Resample(0.1)
+            return path
+        else
+            return Path:New()
         end
-        path = cube(cell, bottom, top, xzGrid)
-        path:Resample(0.1)
-        return path
-    else
-        return Path:New()
+
     end
+
 end
 
 function quantize(val, size)

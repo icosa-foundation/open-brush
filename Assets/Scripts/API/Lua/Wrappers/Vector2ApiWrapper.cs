@@ -33,21 +33,21 @@ namespace TiltBrush
             return $"Vector2({_Vector2.x}, {_Vector2.y})";
         }
 
-        [LuaDocsDescription("Gets or sets the component at the specified index")]
+        [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
             get => _Vector2[index];
             set => _Vector2[index] = value;
         }
 
-        [LuaDocsDescription("Gets or sets the x coordinate")]
+        [LuaDocsDescription("The x coordinate")]
         public float x
         {
             get => _Vector2.x;
             set => _Vector2.x = value;
         }
 
-        [LuaDocsDescription("Gets or sets the y coordinate")]
+        [LuaDocsDescription("The y coordinate")]
         public float y
         {
             get => _Vector2.y;
@@ -70,10 +70,18 @@ namespace TiltBrush
         public float Distance(Vector2 other) => Vector2.Distance(_Vector2, other);
 
         [LuaDocsDescription("The length of this vector")]
-        public float magnitude => _Vector2.magnitude;
+        public float magnitude
+        {
+            get => _Vector2.magnitude;
+            set => _Vector2 = _Vector2.normalized * value;
+        }
 
         [LuaDocsDescription("The square of the length of this vector (faster to calculate if you're just comparing two lengths)")]
-        public float sqrMagnitude => _Vector2.sqrMagnitude;
+        public float sqrMagnitude
+        {
+            get => _Vector2.sqrMagnitude;
+            set => _Vector2 = _Vector2.normalized * Mathf.Sqrt(value);
+        }
 
         [LuaDocsDescription("The dot product of two vectors")]
         [LuaDocsExample("result = Vector3:Dot(myVector, otherVector")]

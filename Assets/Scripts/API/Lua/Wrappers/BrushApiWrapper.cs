@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -20,8 +19,11 @@ namespace TiltBrush
         [LuaDocsDescription("Check whether the brush trigger is currently pressed")]
         public static bool triggerIsPressed => SketchSurfacePanel.m_Instance.ActiveTool.IsActive;
 
-        [LuaDocsDescription("Check whether the brush trigger was pressed in the current frame")]
-        public static bool triggerIsPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.IsActiveThisFrame;
+        [LuaDocsDescription("Check whether the brush trigger was pressed during the current frame")]
+        public static bool triggerPressedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameActiveThisFrame;
+
+        [LuaDocsDescription("Check whether the brush trigger was released during the current frame")]
+        public static bool triggerReleasedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameInactiveThisFrame;
 
         [LuaDocsDescription("The distance moved by the brush")]
         public static float distanceMoved => SketchSurfacePanel.m_Instance.ActiveTool.DistanceMoved_CS;
@@ -134,15 +136,14 @@ namespace TiltBrush
         public static void ForcePaintingOff(bool active) => ApiMethods.ForcePaintingOff(active);
 
         [LuaDocsDescription("Forces the start of a new stroke - will stop painting this frame and start again the next.")]
-        [LuaDocsExample("Brush:ForceNewStroke(true)")]
+        [LuaDocsExample("Brush:ForceNewStroke()")]
         public static void ForceNewStroke() => ApiMethods.ForceNewStroke();
 
-        [LuaDocsDescription("Gets or sets the current path of the brush. Assumes a stroke is in progress.")]
+        [LuaDocsDescription("The current path of the brush. Assumes a stroke is in progress.")]
         public static PathApiWrapper currentPath
         {
             get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
             set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
         }
-
     }
 }

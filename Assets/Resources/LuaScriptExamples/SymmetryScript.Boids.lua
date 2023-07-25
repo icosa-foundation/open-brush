@@ -83,7 +83,7 @@ function randomFloat(x)
 end
 
 function Main()
-    if Brush.triggerIsPressedThisFrame then
+    if Brush.triggerPressedThisFrame then
         -- Initialize boids with random positions and velocities
         boids = {}
         for i = 1, copies do

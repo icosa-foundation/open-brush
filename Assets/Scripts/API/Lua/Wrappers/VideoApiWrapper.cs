@@ -22,7 +22,21 @@ namespace TiltBrush
             return $"CameraPath({_VideoWidget})";
         }
 
-        [LuaDocsDescription("Gets or sets the Transform (position, rotation, scale) of the Video Widget")]
+        [LuaDocsDescription("The layer the video is on")]
+        public LayerApiWrapper layer
+        {
+            get => _VideoWidget != null ? new LayerApiWrapper(_VideoWidget.Canvas) : null;
+            set => _VideoWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this video is part of")]
+        public GroupApiWrapper group
+        {
+            get => _VideoWidget != null ? new GroupApiWrapper(_VideoWidget.Group, layer._CanvasScript) : null;
+            set => _VideoWidget.Group = value._Group;
+        }
+
+        [LuaDocsDescription("The Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
             get =>  App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
@@ -37,42 +51,21 @@ namespace TiltBrush
         public Vector3 position
         {
             get => transform.translation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.translation = newTransform.translation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
 
         [LuaDocsDescription("The 3D orientation of the Video Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.rotation = newTransform.rotation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
         }
 
-        [LuaDocsDescription("Gets or sets the scale of the Video Widget")]
+        [LuaDocsDescription("The scale of the Video Widget")]
         public float scale
         {
             get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
         [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]

@@ -5021,7 +5021,7 @@ namespace TiltBrush
                 case GlobalCommands.OpenScriptParametersPopup:
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.Null:
-                    break;
+                    break; // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;

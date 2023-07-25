@@ -134,10 +134,11 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty(LuaNames.ToolScriptStartPosition, m_FirstPositionClicked_CS.translation);
+                SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}", m_FirstPositionClicked_CS);
                 ApiManager.Instance.StartUndo();
-                LuaManager.Instance.DoToolScript(LuaNames.OnTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
+
+            bool shouldEndUndo = false;
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -212,7 +213,6 @@ namespace TiltBrush
                             break;
                     }
                 }
-                LuaManager.Instance.DoToolScript(LuaNames.WhileTriggerPressed, m_FirstPositionClicked_CS, rAttachPoint_CS);
             }
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -220,13 +220,15 @@ namespace TiltBrush
                 {
                     m_WasClicked = false;
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
-                    SetApiProperty(LuaNames.ToolScriptEndPosition, rAttachPoint_CS.translation);
-                    SetApiProperty(LuaNames.ToolScriptVector, drawnVector_CS);
-                    SetApiProperty(LuaNames.ToolScriptRotation, Quaternion.LookRotation(drawnVector_CS, Vector3.up));
-                    LuaManager.Instance.DoToolScript(LuaNames.OnTriggerReleased, m_FirstPositionClicked_CS, rAttachPoint_CS);
-                    ApiManager.Instance.EndUndo();
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
+                    shouldEndUndo = true;
                 }
             }
+
+            LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
+            if (shouldEndUndo) ApiManager.Instance.EndUndo();
         }
 
         private void SetApiProperty(string key, object value)
@@ -236,8 +238,9 @@ namespace TiltBrush
         }
 
         //The actual Unity update function, used to update transforms and perform per-frame operations
-        void Update()
+        protected override void Update()
         {
+            base.Update();
             // If we're not locking to a controller, update our transforms now, instead of in LateUpdate.
             if (!m_LockToController)
             {

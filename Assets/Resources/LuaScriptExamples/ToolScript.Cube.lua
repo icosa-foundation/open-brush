@@ -35,15 +35,19 @@ function createFace(center, normal, up)
     return face
 end
 
-function OnTriggerReleased()
+function Main()
 
-    paths = MultiPath:New()
-    paths:Insert(createFace(Vector3.forward, Vector3.forward, Vector3.up)) -- front face
-    paths:Insert(createFace(Vector3.right, Vector3.right, Vector3.up)) -- right face
-    paths:Insert(createFace(Vector3.back, Vector3.back, Vector3.up)) -- back face
-    paths:Insert(createFace(Vector3.left, Vector3.left, Vector3.up)) -- left face
-    paths:Insert(createFace(Vector3.up, Vector3.up, Vector3.forward)) -- top face
-    paths:Insert(createFace(Vector3.down, Vector3.down, Vector3.forward)) -- bottom face
+    if Brush.triggerReleasedThisFrame then
 
-    return paths
+        paths = MultiPath:New()
+        paths:Insert(createFace(Vector3.forward, Vector3.forward, Vector3.up)) -- front face
+        paths:Insert(createFace(Vector3.right, Vector3.right, Vector3.up)) -- right face
+        paths:Insert(createFace(Vector3.back, Vector3.back, Vector3.up)) -- back face
+        paths:Insert(createFace(Vector3.left, Vector3.left, Vector3.up)) -- left face
+        paths:Insert(createFace(Vector3.up, Vector3.up, Vector3.forward)) -- top face
+        paths:Insert(createFace(Vector3.down, Vector3.down, Vector3.forward)) -- bottom face
+
+        return paths
+    end
+
 end

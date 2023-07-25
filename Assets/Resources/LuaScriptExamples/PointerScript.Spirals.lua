@@ -7,15 +7,15 @@ Parameters = {
     radius={label="Radius", type="float", min=0.01, max=5, default=1},
 }
 
-function WhileTriggerPressed()
-    angle = App.time * speed
-    r = 0
-    if (Brush.triggerIsPressed) then
-        r = radius * Brush.timeSincePressed
+function Main()
+
+    if Brush.triggerIsPressed then
+
+        currentRadius = radius * Brush.timeSincePressed
+        angle = Brush.timeSincePressed * speed
+        position = Vector2:PointOnCircle(angle):Multiply(currentRadius):OnZ()
+        return Transform:New(position, Brush.rotation)
+
     end
-    return Transform:New(
-        Math:Sin(angle) * r,
-        Math:Cos(angle) * r,
-        0
-    )
+
 end

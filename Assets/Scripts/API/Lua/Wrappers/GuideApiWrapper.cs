@@ -25,6 +25,20 @@ namespace TiltBrush
             return $"Guide({_StencilWidget})";
         }
 
+        [LuaDocsDescription("The layer the guide is on")]
+        public LayerApiWrapper layer
+        {
+            get => _StencilWidget != null ? new LayerApiWrapper(_StencilWidget.Canvas) : null;
+            set => _StencilWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this guide is part of")]
+        public GroupApiWrapper group
+        {
+            get => _StencilWidget != null ? new GroupApiWrapper(_StencilWidget.Group, layer._CanvasScript) : null;
+            set => _StencilWidget.Group = value._Group;
+        }
+
         [LuaDocsDescription("The transform of the Guide Widget")]
         public TrTransform transform
         {
@@ -40,42 +54,21 @@ namespace TiltBrush
         public Vector3 position
         {
             get => transform.translation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.translation = newTransform.translation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
 
         [LuaDocsDescription("The 3D orientation of the Guide Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.rotation = newTransform.rotation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
         }
 
         [LuaDocsDescription("The scale of the Guide Widget")]
         public float scale
         {
             get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
         [LuaDocsDescription("Creates a new cube guide with a default size using the transform for position and orientation")]

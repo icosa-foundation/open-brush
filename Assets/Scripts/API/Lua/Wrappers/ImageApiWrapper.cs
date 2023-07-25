@@ -26,7 +26,21 @@ namespace TiltBrush
             return $"Image({_ImageWidget})";
         }
 
-        [LuaDocsDescription("Gets or sets the transform of the image widget")]
+        [LuaDocsDescription("The layer the image is on")]
+        public LayerApiWrapper layer
+        {
+            get => _ImageWidget != null ? new LayerApiWrapper(_ImageWidget.Canvas) : null;
+            set => _ImageWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this image is part of")]
+        public GroupApiWrapper group
+        {
+            get => _ImageWidget != null ? new GroupApiWrapper(_ImageWidget.Group, layer._CanvasScript) : null;
+            set => _ImageWidget.Group = value._Group;
+        }
+
+        [LuaDocsDescription("The transform of the image widget")]
         public TrTransform transform
         {
             get => App.Scene.MainCanvas.AsCanvas[_ImageWidget.transform];
@@ -41,15 +55,36 @@ namespace TiltBrush
         public Vector3 position
         {
             get => transform.translation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.translation = newTransform.translation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
+
+        [LuaDocsDescription("The 3D orientation of the Image Widget")]
+        public Quaternion rotation
+        {
+            get => transform.rotation;
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
+        }
+
+        [LuaDocsDescription("The scale of the image widget")]
+        public float scale
+        {
+            get => transform.scale;
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
+        }
+
+        [LuaDocsDescription("Imports an image widget based on the specified location")]
+        [LuaDocsExample(@"Image:Import(""test.png"")")]
+        [LuaDocsParameter("location", "The location of the image")]
+        [LuaDocsReturnValue("The imported image widget")]
+        public static ImageApiWrapper Import(string location) => new (ApiMethods.ImportImage(location));
+
+        [LuaDocsDescription("Selects the image widget")]
+        [LuaDocsExample(@"myImage:Select()")]
+        public void Select() => ApiMethods.SelectWidget(_ImageWidget);
+
+        [LuaDocsDescription("Deletes the image widget")]
+        [LuaDocsExample(@"myImage:Delete()")]
+        public void Delete() => ApiMethods.DeleteWidget(_ImageWidget);
 
         [LuaDocsDescription("Extrudes the image widget with the specified depth and color")]
         [LuaDocsExample(@"Image:Extrude(5, Color.green)")]
@@ -70,48 +105,6 @@ namespace TiltBrush
                 extruder.Generate();
             }
         }
-
-        [LuaDocsDescription("The 3D orientation of the Image Widget")]
-        public Quaternion rotation
-        {
-            get => transform.rotation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.rotation = newTransform.rotation;
-                transform = tr_CS;
-            }
-        }
-
-        [LuaDocsDescription("The scale of the image widget")]
-        public float scale
-        {
-            get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
-        }
-
-        [LuaDocsDescription("Imports an image widget based on the specified location")]
-        [LuaDocsExample(@"Image:Import(""test.png"")")]
-        [LuaDocsParameter("location", "The location of the image")]
-        [LuaDocsReturnValue("The imported image widget")]
-        public static ImageApiWrapper Import(string location) => new (ApiMethods.ImportImage(location));
-
-        [LuaDocsDescription("Selects the image widget")]
-        [LuaDocsExample(@"myImage:Select()")]
-        public void Select() => ApiMethods.SelectWidget(_ImageWidget);
-
-        [LuaDocsDescription("Deletes the image widget")]
-        [LuaDocsExample(@"myImage:Delete()")]
-        public void Delete() => ApiMethods.DeleteWidget(_ImageWidget);
 
         [LuaDocsDescription("Encodes the image as a form")]
         [LuaDocsExample(@"formdata = myImage:FormEncode()")]

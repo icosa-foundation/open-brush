@@ -7,7 +7,8 @@ Parameters = {
     size={label="Size", type="float", min=0.01, max=5, default=1},
 }
 
-function WhileTriggerPressed()
+function Main()
+
     -- Calculate the angle and position of the brush based on app time, points, and size
     angle = App.time * 2 * Math.pi
     point = Math:Floor(angle / (2 * Math.pi / points))
@@ -26,5 +27,6 @@ function WhileTriggerPressed()
 
     -- Set the brush position and rotation
     position = Vector3:New(x, y, 0)
-    return Transform:New(position, Brush.rotation)
+    return Transform:New(position)
+
 end

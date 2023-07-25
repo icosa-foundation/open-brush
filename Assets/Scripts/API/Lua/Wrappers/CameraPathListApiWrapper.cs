@@ -30,7 +30,7 @@ namespace TiltBrush
         public int count => _CameraPaths?.Count ?? 0;
 
 
-        [LuaDocsDescription("Gets or sets the active Camera Path")]
+        [LuaDocsDescription("The active Camera Path")]
         public CameraPathApiWrapper active
         {
             get => new CameraPathApiWrapper(WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript);

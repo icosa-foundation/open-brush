@@ -22,6 +22,20 @@ namespace TiltBrush
             return $"Model({_ModelWidget})";
         }
 
+        [LuaDocsDescription("The layer the model is on")]
+        public LayerApiWrapper layer
+        {
+            get => _ModelWidget != null ? new LayerApiWrapper(_ModelWidget.Canvas) : null;
+            set => _ModelWidget.SetCanvas(value._CanvasScript);
+        }
+
+        [LuaDocsDescription("The group this model is part of")]
+        public GroupApiWrapper group
+        {
+            get => _ModelWidget != null ? new GroupApiWrapper(_ModelWidget.Group, layer._CanvasScript) : null;
+            set => _ModelWidget.Group = value._Group;
+        }
+
         [LuaDocsDescription(@"The transformation of the Model Widget")]
         public TrTransform transform
         {
@@ -37,49 +51,28 @@ namespace TiltBrush
         public Vector3 position
         {
             get => transform.translation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.T(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.translation = newTransform.translation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(value, transform.rotation, transform.scale);
         }
 
         [LuaDocsDescription(@"The 3D orientation of the Model Widget")]
         public Quaternion rotation
         {
             get => transform.rotation;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.R(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.rotation = newTransform.rotation;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, value, transform.scale);
         }
 
         [LuaDocsDescription(@"The scale of the Model Widget")]
         public float scale
         {
             get => transform.scale;
-            set
-            {
-                var tr_CS = transform;
-                var newTransform = TrTransform.S(value);
-                newTransform = App.Scene.Pose * newTransform;
-                tr_CS.scale = newTransform.scale;
-                transform = tr_CS;
-            }
+            set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
         [LuaDocsExample(@"ModelApiWrapper:Import(""Andy.obj"")")]
         [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
         [LuaDocsReturnValue(@"Returns the Model instance")]
-        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename));
+        public static ModelApiWrapper Import(string filename) => new ModelApiWrapper(ApiMethods.ImportModel(filename).Result);
 
         [LuaDocsDescription(@"Adds this model to the current selection")]
         [LuaDocsExample(@"myModel:Select()")]

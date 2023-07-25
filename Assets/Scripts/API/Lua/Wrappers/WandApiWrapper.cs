@@ -21,6 +21,15 @@ namespace TiltBrush
         [LuaDocsDescription("How fast the wand contrller is currently moving")]
         public static Vector3 speed => InputManager.Wand.m_Velocity;
 
+        [LuaDocsDescription("Check whether the wand trigger is currently pressed")]
+        public static bool triggerIsPressed => InputManager.m_Instance.GetCommand(InputManager.SketchCommands.AltActivate);
+
+        [LuaDocsDescription("Check whether the wand trigger was pressed during the current frame")]
+        public static bool triggerPressedThisFrame => InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.AltActivate);
+
+        // [LuaDocsDescription("Check whether the wand trigger was released during the current frame")]
+        // public static bool triggerReleasedThisFrame => SketchSurfacePanel.m_Instance.ActiveTool.BecameInactiveThisFrame;
+
         [LuaDocsDescription("Clears the history and sets it's size")]
         [LuaDocsExample("Wand.ResizeHistory(100)")]
         [LuaDocsParameter("size", "The size of the history buffer")]

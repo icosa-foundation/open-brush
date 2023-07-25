@@ -11,23 +11,29 @@ function Start()
     filledCells = {}
 end
 
-function WhileTriggerPressed()
+function Main()
 
-    cell = Vector3:New(
-        quantize(Brush.position.x, gridSize),
-        quantize(Brush.position.y, gridSize),
-        quantize(Brush.position.z, gridSize)
-    )
-    key = cell.x .. "," .. cell.y .. "," .. cell.z
+    if Brush.triggerIsPressed then
 
-    if (filledCells[key]==nil) then
-        filledCells[key] = true
-        path = cube(cell, gridSize)
-        path:Resample(0.1)
-        return path
-    else
-        return Path:New()
+        cell = Vector3:New(
+                quantize(Brush.position.x, gridSize),
+                quantize(Brush.position.y, gridSize),
+                quantize(Brush.position.z, gridSize)
+        )
+
+        key = cell.x .. "," .. cell.y .. "," .. cell.z
+
+        if filledCells[key]==nil then
+            filledCells[key] = true
+            path = cube(cell, gridSize)
+            path:Resample(0.1)
+            return path
+        else
+            return Path:New()
+        end
+
     end
+
 end
 
 function quantize(val, grid)

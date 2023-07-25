@@ -514,6 +514,28 @@ namespace TiltBrush
 
             m_FreePaintPointerAngle =
                 PlayerPrefs.GetFloat(PLAYER_PREFS_POINTER_ANGLE, m_DefaultPointerAngle);
+
+            App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
+        }
+        private void OnPoseChanged(TrTransform prev, TrTransform current)
+        {
+            // Calculate differences
+            Vector3 translationDiff = current.translation - prev.translation;
+            Quaternion rotationDiff = current.rotation * Quaternion.Inverse(prev.rotation);
+
+            // Scripted pointers should translate and rotate with the scene
+            // Apply differences to target TrTransform
+            foreach (var pointer in m_ScriptedPointers)
+            {
+                var tr = pointer.transform;
+                tr.position += translationDiff;
+                tr.rotation *= rotationDiff;
+            }
+        }
+
+        protected void OnDestroy()
+        {
+            App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
         }
 
         private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)

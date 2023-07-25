@@ -53,6 +53,43 @@ namespace TiltBrush
             SnapIntersectionObjectToController();
         }
 
+        protected override void Update()
+        {
+            base.Update();
+            //update animations
+            switch (m_CurrentState)
+            {
+                case State.Enter:
+                    m_EnterAmount += (m_EnterSpeed * Time.deltaTime);
+                    if (m_EnterAmount >= 1.0f)
+                    {
+                        m_EnterAmount = 1.0f;
+                        m_CurrentState = State.Standard;
+                    }
+                    UpdateScale();
+                    break;
+                case State.Exit:
+                    m_EnterAmount -= (m_EnterSpeed * Time.deltaTime);
+                    if (m_EnterAmount <= 0.0f)
+                    {
+                        m_EnterAmount = 0.0f;
+                        m_CurrentState = State.Off;
+                    }
+                    UpdateScale();
+                    break;
+            }
+        }
+
+        void SetState(State rDesiredState)
+        {
+            switch (rDesiredState)
+            {
+                case State.Enter:
+                    break;
+            }
+            m_CurrentState = rDesiredState;
+        }
+
         override public void UpdateTool()
         {
             base.UpdateTool();

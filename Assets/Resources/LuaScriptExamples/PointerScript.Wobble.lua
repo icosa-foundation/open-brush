@@ -8,7 +8,7 @@ Parameters = {
     frequency={label="Frequency", type="float", min=0.01, max=4, default=1}
 }
 
-function WhileTriggerPressed()
+function Main()
     noiseX = -0.5 + Math:PerlinNoise(frequency * Brush.position.x - 100, frequency * Brush.position.z)
     noiseY = -0.5 + Math:PerlinNoise(frequency * Brush.position.x, frequency * Brush.position.z)
     noiseZ = -0.5 + Math:PerlinNoise(frequency * Brush.position.x + 100, frequency * Brush.position.z)

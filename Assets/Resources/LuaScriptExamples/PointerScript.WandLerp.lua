@@ -9,7 +9,7 @@ Parameters = {
     amp={label="Amplitude", type="float", min=0, max=5, default=0.5},
 }
 
-function WhileTriggerPressed()
+function Main()
 
     mix = (Math:Sin(App.time * freq) + 1) * amp
 

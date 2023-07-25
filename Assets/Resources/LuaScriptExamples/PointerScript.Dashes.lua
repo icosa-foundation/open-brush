@@ -11,7 +11,7 @@ function Start()
     Brush:ForcePaintingOff(false)
 end
 
-function WhileTriggerPressed()
+function Main()
 
     wave = Math:Cos(Brush.distanceDrawn * frequency)
 

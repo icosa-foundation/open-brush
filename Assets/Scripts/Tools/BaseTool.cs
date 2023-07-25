@@ -73,16 +73,19 @@ namespace TiltBrush
 
         // Used by real-time scripts
         private bool m_IsActive;
-        private bool m_IsActiveThisFrame;
+        private bool m_BecameActiveThisFrame;
+        private bool m_BecameInactiveThisFrame;
         private float m_TimeBecameActive;
         private float m_TimeBecameInactive;
         private float m_DistanceMoved_CS;
+
         public float DistanceMoved_CS => m_DistanceMoved_CS;
         private Vector3 m_PreviousPosition;
         private float m_DistanceDrawn_CS;
         public float DistanceDrawn_CS => m_DistanceDrawn_CS;
         public bool IsActive => m_IsActive;
-        public bool IsActiveThisFrame => m_IsActiveThisFrame;
+        public bool BecameActiveThisFrame => m_BecameActiveThisFrame;
+        public bool BecameInactiveThisFrame => m_BecameInactiveThisFrame;
         public float TimeBecameActive => m_TimeBecameActive;
         public float TimeBecameInactive => m_TimeBecameInactive;
 
@@ -189,7 +192,7 @@ namespace TiltBrush
             }
         }
 
-        void Update()
+        protected virtual void Update()
         {
             // Can't do it in UpdateTool as it happens too late
             // Symmetry scripts were seeing m_IsActiveThisFrame for two consecutive frames
@@ -205,21 +208,31 @@ namespace TiltBrush
             {
                 // The frame it becomes active
                 m_IsActive = true;
-                m_IsActiveThisFrame = true;
+                m_BecameActiveThisFrame = true;
+                m_BecameInactiveThisFrame = false;
                 m_TimeBecameActive = Time.realtimeSinceStartup;
             }
             else if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 // Every frame while active
                 m_IsActive = true;
-                m_IsActiveThisFrame = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = false;
             }
-            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && IsActive)
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && m_IsActive)
             {
                 // The frame it becomes inactive
                 m_IsActive = false;
-                m_IsActiveThisFrame = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = true;
                 m_TimeBecameInactive = Time.realtimeSinceStartup;
+            }
+            else
+            {
+                // Every frame while inactive
+                m_IsActive = false;
+                m_BecameActiveThisFrame = false;
+                m_BecameInactiveThisFrame = false;
             }
         }
 
