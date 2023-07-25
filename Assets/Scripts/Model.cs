@@ -727,7 +727,7 @@ namespace TiltBrush
 
         public async Task LoadModelAsync()
         {
-            Task t = StartCreatePrefab(null);
+            Task t = StartCreatePrefab(null, false);
             await t;
 
         }
@@ -917,7 +917,6 @@ namespace TiltBrush
 
             m_Valid = true;
             DisplayWarnings(warnings);
-            }
         }
 
         public void UnloadModel()

@@ -113,10 +113,11 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-                ok = CreateModelsFromRelativePath(
+                var task = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
                     modelDatas.GroupIds);
+                ok = task.IsCompletedSuccessfully;
             }
             else if (modelDatas.AssetId != null)
             {
