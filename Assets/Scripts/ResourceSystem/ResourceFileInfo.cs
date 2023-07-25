@@ -1,6 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
-using USD.NET;
+
 namespace TiltBrush
 {
     public class ResourceFileInfo : SceneFileInfo
