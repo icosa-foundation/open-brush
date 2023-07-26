@@ -19,16 +19,17 @@
       "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=12#upm",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git?nocache=13#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {
+        "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "ea37db1ba897e71c823eb4aef00f1fba3db5792a"
+      "hash": "067f71180c328c9d577d0306f0db34c8aad628ab"
     },
     "com.ixxy.unitysymmetry": {
-      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=8#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
@@ -46,6 +47,15 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.syomus.proceduraltoolkit": {
+      "version": "0.2.3",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
       "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {

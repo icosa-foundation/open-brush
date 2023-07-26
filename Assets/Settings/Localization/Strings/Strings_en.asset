@@ -3101,15 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images\t"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 109424659466551296
-    m_Localized: Repaint Selected
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5146220882010112
-    m_Localized: Recolor On
+    m_Localized: "Background Images"
     m_Metadata:
       m_Items: []
   - m_Id: 103943359016206336
@@ -3208,6 +3200,6 @@ MonoBehaviour:
     m_Localized: Recolor On
     m_Metadata:
       m_Items: []
-    references:
+  references:
     version: 2
     RefIds: []
