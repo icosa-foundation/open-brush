@@ -1235,13 +1235,14 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
+                // Calculate the nearest snap angle
                 var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
                 Quaternion nearestSnapRotation_CS = QuantizeAngle(rot_CS);
 
+                // Decide whether to snap to the old or the new snap angle
                 float snapAngle = SelectionManager.m_Instance.SnappingAngle;
                 float stickiness = m_ValidSnapRotationStickyAngle / 90f;
                 float stickyAngle = snapAngle * stickiness;
-
                 if (nearestSnapRotation_CS != m_PrevSnapRotation)
                 {
                     float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
@@ -1251,7 +1252,9 @@ namespace TiltBrush
                     }
                 }
 
-                outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
+                // Apply the resulting change in rotation to the original transform
+                var rotationDelta = m_PrevSnapRotation * Quaternion.Inverse(rot_CS);
+                outXf_GS.rotation = rotationDelta * outXf_GS.rotation;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
