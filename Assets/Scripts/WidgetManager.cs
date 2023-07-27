@@ -176,6 +176,7 @@ namespace TiltBrush
         private CameraPathTinter m_CameraPathTinter;
 
         static private Dictionary<ushort, GrabWidget> sm_BatchMap = new Dictionary<ushort, GrabWidget>();
+        public bool m_EnableSnapToGuides;
 
         public StencilWidget ActiveStencil
         {
@@ -902,7 +903,8 @@ namespace TiltBrush
                 {
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
-                    rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal);
+                    var up = rot * Vector3.up;
+                    rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal, up);
                     stencilWasUsed = true;
                 }
 

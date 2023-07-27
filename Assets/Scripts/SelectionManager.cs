@@ -84,6 +84,16 @@ namespace TiltBrush
 
         private bool m_bSelectionWidgetNeedsUpdate;
 
+        [NonSerialized] public bool m_LockTranslationX = false;
+        [NonSerialized] public bool m_LockTranslationY = false;
+        [NonSerialized] public bool m_LockTranslationZ = false;
+        [NonSerialized] public bool m_LockRotationX = false;
+        [NonSerialized] public bool m_LockRotationY = false;
+        [NonSerialized] public bool m_LockRotationZ = false;
+        [NonSerialized] public bool m_EnableSnapTranslationX = true;
+        [NonSerialized] public bool m_EnableSnapTranslationY = true;
+        [NonSerialized] public bool m_EnableSnapTranslationZ = true;
+
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
         {
@@ -1063,10 +1073,32 @@ namespace TiltBrush
             );
         }
 
+        public void SetSnappingAngle(string angleAsString)
+        {
+            int requestedIndex = m_AngleSnaps.Select(x => x.ToString()).ToList().FindIndex(x => x == angleAsString);
+            if (requestedIndex < 0)
+            {
+                Debug.LogWarning($"SetSnappingAngle received an invalid angle of {angleAsString}. Valid values: {string.Join(",", m_AngleSnaps)}");
+                return;
+            }
+            SetSnappingAngle(requestedIndex);
+        }
+
         public void SetSnappingAngle(int snapIndex)
         {
             m_CurrentSnapAngleIndex = snapIndex;
             m_snappingAngle = m_AngleSnaps[snapIndex];
+        }
+
+        public void SetSnappingGridSize(string gridSizeAsString)
+        {
+            int requestedIndex = m_GridSnaps.Select(x => x.ToString()).ToList().FindIndex(x => x == gridSizeAsString);
+            if (requestedIndex < 0)
+            {
+                Debug.LogWarning($"SetSnappingGridSize received an invalid angle of {gridSizeAsString}. Valid values: {string.Join(",", m_GridSnaps)}");
+                return;
+            }
+            SetSnappingGridSize(requestedIndex);
         }
 
         public void SetSnappingGridSize(int snapIndex)
@@ -1095,9 +1127,9 @@ namespace TiltBrush
             if (gridSize == 0) return position;
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                round(position.x),
-                round(position.y),
-                round(position.z)
+                m_EnableSnapTranslationX ? round(position.x) : position.x,
+                m_EnableSnapTranslationY ? round(position.y) : position.y,
+                m_EnableSnapTranslationZ ? round(position.z) : position.z
             );
             return roundedCanvasPos;
         }
@@ -1106,13 +1138,14 @@ namespace TiltBrush
         // And the result is returned in global space
         public Vector3 SnapToGrid_GS(Vector3 position_GS)
         {
-            if (SnappingGridSize == 0) return position_GS;
+            float gridSize = SnappingGridSize;
+            if (gridSize == 0) return position_GS;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
-            float round(float val) { return Mathf.Round(val / SnappingGridSize) * SnappingGridSize; }
+            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
             Vector3 roundedCanvasPos = new Vector3(
-                round(localCanvasPos.x),
-                round(localCanvasPos.y),
-                round(localCanvasPos.z)
+                m_EnableSnapTranslationX ? round(localCanvasPos.x) : localCanvasPos.x,
+                m_EnableSnapTranslationY ? round(localCanvasPos.y) : localCanvasPos.y,
+                m_EnableSnapTranslationZ ? round(localCanvasPos.z) : localCanvasPos.z
             );
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }

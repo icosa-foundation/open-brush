@@ -46,6 +46,12 @@ namespace TiltBrush
                     Mathf.Round(localCanvasPos.z / gridSubdivision) * gridSubdivision
                 );
 
+            roundedCanvasPos = new Vector3(
+                !SelectionManager.m_Instance.m_EnableSnapTranslationX ? roundedCanvasPos.x : localCanvasPos.x,
+                !SelectionManager.m_Instance.m_EnableSnapTranslationY ? roundedCanvasPos.y : localCanvasPos.y,
+                !SelectionManager.m_Instance.m_EnableSnapTranslationZ ? roundedCanvasPos.z : localCanvasPos.z
+            );
+
             Vector3 offset = new Vector3(
                 Mathf.Abs(roundedCanvasPos.x - localCanvasPos.x),
                 Mathf.Abs(roundedCanvasPos.y - localCanvasPos.y),
@@ -57,7 +63,7 @@ namespace TiltBrush
 
             // Otherwise allow a degree of freedom in the appropriate snap axis
             // (but only if we're not very close to a snap point)
-            const float stickiness = 5f;
+            const float stickiness = 4f;
             if (offset.x > offset.y && offset.x > offset.z) // x is biggest
             {
                 if (offset.x > gridSubdivision / stickiness)

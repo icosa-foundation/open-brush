@@ -1171,7 +1171,10 @@ namespace TiltBrush
 
             var xf_GS = GetDesiredTransform(inputXf);
 
-            MagnetizeToStencils(ref xf_GS);
+            if (WidgetManager.m_Instance.m_EnableSnapToGuides)
+            {
+                MagnetizeToStencils(ref xf_GS);
+            }
 
             if (m_RecordMovements)
             {
@@ -1266,13 +1269,14 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
+                // Calculate the nearest snap angle
                 var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
                 Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
 
+                // Decide whether to snap to the old or the new snap angle
                 float snapAngle = SelectionManager.m_Instance.SnappingAngle;
                 float stickiness = m_ValidSnapRotationStickyAngle / 90f;
                 float stickyAngle = snapAngle * stickiness;
-
                 if (nearestSnapRotation_CS != m_PrevSnapRotation)
                 {
                     float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
@@ -1282,7 +1286,9 @@ namespace TiltBrush
                     }
                 }
 
-                outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
+                // Apply the resulting change in rotation to the original transform
+                var rotationDelta = m_PrevSnapRotation * Quaternion.Inverse(rot_CS);
+                outXf_GS.rotation = rotationDelta * outXf_GS.rotation;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
@@ -1297,30 +1303,6 @@ namespace TiltBrush
 
             return outXf_GS;
         }
-
-        private Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
-            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
-        }
-
-        public static Vector3 SnapToGrid(Vector3 position)
-        {
-            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
-            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
-            Vector3 roundedCanvasPos = new Vector3(
-                round(localCanvasPos.x),
-                round(localCanvasPos.y),
-                round(localCanvasPos.z)
-            );
-            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
-        }
-
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {
@@ -1437,7 +1419,15 @@ namespace TiltBrush
                     }
                 }
             }
+
+            outXf_GS = ApplyAxisLocks(outXf_GS);
+
             return outXf_GS;
+        }
+
+        protected virtual TrTransform ApplyAxisLocks(TrTransform xf_GS)
+        {
+            return xf_GS;
         }
 
         protected virtual bool AllowSnapping()

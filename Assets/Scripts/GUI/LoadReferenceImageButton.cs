@@ -42,7 +42,9 @@ namespace TiltBrush
             else
             {
                 CreateWidgetCommand command = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ImageWidgetPrefab, TrTransform.FromTransform(transform));
+                    WidgetManager.m_Instance.ImageWidgetPrefab, TrTransform.FromTransform(transform), null,
+                    false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+                );
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                 ImageWidget widget = command.Widget as ImageWidget;
                 widget.ReferenceImage = ReferenceImage;
