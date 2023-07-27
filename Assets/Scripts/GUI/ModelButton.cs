@@ -158,7 +158,9 @@ namespace TiltBrush
             TrTransform xfSpawn = Coords.AsGlobal[transform]
                 * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation);
+                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation,
+                false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+            );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             ModelWidget modelWidget = createCommand.Widget as ModelWidget;
             modelWidget.Model = model;

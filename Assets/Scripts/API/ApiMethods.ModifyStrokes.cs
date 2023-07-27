@@ -43,6 +43,53 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(strokes);
         }
 
+        [ApiEndpoint("selection.recolor", "Recolors the currently selected strokes")]
+        public static void RecolorSelection()
+        {
+            foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
+            {
+                SketchMemoryScript.m_Instance.MemorizeStrokeRepaint(stroke, true, false, false);
+            }
+        }
+
+        [ApiEndpoint("strokes.move.to", "Moves several strokes to the given position")]
+        public static void TranslateStrokesTo(int start, int end, Vector3 position)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            foreach (var stroke in strokes)
+            {
+                stroke.RecreateAt(TrTransform.T(position));
+            }
+        }
+
+        [ApiEndpoint("strokes.move.by", "Moves several strokes to the given coordinates")]
+        public static void TranslateStrokesBy(int start, int end, Vector3 translation)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, TrTransform.T(translation), Vector3.zero);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("strokes.rotate.by", "Rotates multiple brushstrokes around the current brush position")]
+        public static void RotateStrokesBy(int start, int end, float angle)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var axis = ApiManager.Instance.BrushRotation * Vector3.forward;
+            var rot = TrTransform.R(angle, axis);
+            var pivot = ApiManager.Instance.BrushPosition;
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, rot, pivot);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("strokes.scale.by", "Scales multiple brushstrokes around the current brush position")]
+        public static void ScaleStrokesBy(int start, int end, float scale)
+        {
+            var strokes = SketchMemoryScript.GetStrokesBetween(start, end);
+            var pivot = ApiManager.Instance.BrushPosition;
+            TransformItemsCommand cmd = new TransformItemsCommand(strokes, null, TrTransform.S(scale), pivot);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
         [ApiEndpoint("selection.rebrush", "Rebrushes the currently selected strokes")]
         public static void RebrushSelection(bool jitter = false)
         {
