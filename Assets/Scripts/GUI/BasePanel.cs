@@ -108,7 +108,8 @@ namespace TiltBrush
             Scripts = 6000,
             SnapSettings = 8000,
             StencilSettings = 20200,
-            LayersPanel = 15000
+            LayersPanel = 15000,
+            TransformPanel = 12000,
         }
 
         private enum FixedTransitionState

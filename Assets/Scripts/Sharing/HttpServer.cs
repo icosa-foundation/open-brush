@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 
@@ -37,6 +38,11 @@ namespace TiltBrush
             new Dictionary<string, Action<HttpListenerContext>>();
 
         void Awake()
+        {
+            Task.Run(() => { InitListener(); });
+        }
+
+        void InitListener()
         {
             try
             {
