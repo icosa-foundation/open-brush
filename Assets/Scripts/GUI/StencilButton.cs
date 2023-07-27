@@ -27,7 +27,9 @@ namespace TiltBrush
                 WidgetManager.m_Instance.StencilsDisabled = false;
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(m_Type), TrTransform.FromTransform(transform)));
+                WidgetManager.m_Instance.GetStencilPrefab(m_Type), TrTransform.FromTransform(transform), null,
+                false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+            ));
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
         }

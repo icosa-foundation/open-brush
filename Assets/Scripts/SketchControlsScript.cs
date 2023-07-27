@@ -152,6 +152,7 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
+            OpenNumericInputPopup = 12000
         }
 
         public enum ControlsType
@@ -772,6 +773,7 @@ namespace TiltBrush
         {
             get { return GetComponent<IconTextureAtlas>(); }
         }
+        public GrabWidget CurrentGrabWidget => m_CurrentGrabWidget;
 
         void DismissPopupOnCurrentGazeObject(bool force)
         {
