@@ -205,6 +205,8 @@ namespace TiltBrush
 
         private EnqueuedApiCommand EnqueueCommand(string commandString)
         {
+            if (string.IsNullOrWhiteSpace(commandString)) return null;
+            if (commandString.StartsWith("//")) return null;
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
             if (commandPair.Length < 1) return null;
             string parameters;
@@ -827,7 +829,9 @@ namespace TiltBrush
             else
             {
                 TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn);
+                CreateWidgetCommand createCommand = new CreateWidgetCommand(
+                    WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, Quaternion.identity, true
+                );
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
                 ModelWidget modelWidget = createCommand.Widget as ModelWidget;
                 modelWidget.Model = model;
