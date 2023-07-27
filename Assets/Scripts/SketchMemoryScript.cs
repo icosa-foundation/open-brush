@@ -1301,6 +1301,8 @@ namespace TiltBrush
 
         public static List<Stroke> GetStrokesBetween(int start, int end)
         {
+            if (m_Instance.StrokeCount == 0) return new List<Stroke>();
+
             int index0, index1;
             int lastStrokeIndex = m_Instance.StrokeCount - 1;
             if (start < 0)
@@ -1334,17 +1336,20 @@ namespace TiltBrush
             var result = new List<Stroke>();
             int i = index0;
             var node = GetNodeAtIndex(index0);
-            while (i < index1)
+
+            while (i <= index1)
             {
                 result.Add(node.Value);
+                i++;
+                if (i > index1) break;
                 node = node.Next;
                 if (node == null)
                 {
                     Debug.LogError($"Aborting early due to no next stroke in linked list");
                     break;
                 }
-                i++;
             }
+
             return result;
         }
     }

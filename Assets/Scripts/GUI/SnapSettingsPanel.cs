@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using UnityEngine;
 
+using System.Collections.Generic;
+using System.Linq;
 namespace TiltBrush
 {
+
+    public enum SnapSettingsPanelToggleType
+    {
+        LockSnapTranslateX,
+        LockSnapTranslateY,
+        LockSnapTranslateZ,
+        SnapToGuides
+    }
 
     public class SnapSettingsPanel : BasePanel
     {
 
+        public void HandleToggle(SnapSettingsPanelToggleButton btn)
+        {
+            switch (btn.m_ButtonType)
+            {
+                case SnapSettingsPanelToggleType.LockSnapTranslateX:
+                    SelectionManager.m_Instance.m_EnableSnapTranslationX = btn.ToggleState;
+                    break;
+                case SnapSettingsPanelToggleType.LockSnapTranslateY:
+                    SelectionManager.m_Instance.m_EnableSnapTranslationY = btn.ToggleState;
+                    break;
+                case SnapSettingsPanelToggleType.LockSnapTranslateZ:
+                    SelectionManager.m_Instance.m_EnableSnapTranslationZ = btn.ToggleState;
+                    break;
+            }
+        }
+
+        public void HandleSnapSelectionToGrid()
+        {
+            TransformItems.SnapSelectionToGrid();
+        }
+
+        public void HandleToggleSnapToGuides()
+        {
+            WidgetManager.m_Instance.m_EnableSnapToGuides = !WidgetManager.m_Instance.m_EnableSnapToGuides;
+        }
+
+        public void HandleSnapSelectedRotationAngles()
+        {
+            TransformItems.SnapSelectedRotationAngles();
+        }
+
     }
+
 } // namespace TiltBrush

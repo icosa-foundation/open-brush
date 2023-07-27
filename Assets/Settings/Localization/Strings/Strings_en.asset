@@ -609,7 +609,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7870824155160576
-    m_Localized: Snap and Stroke Settings
+    m_Localized: Grid and Snap Settings
     m_Metadata:
       m_Items: []
   - m_Id: 7870978190974976
@@ -3182,6 +3182,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 103924956079587328
     m_Localized: Rename Sketch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: Transform Tools
     m_Metadata:
       m_Items: []
   - m_Id: 109424659466551296
