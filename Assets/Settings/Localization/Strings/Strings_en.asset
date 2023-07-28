@@ -3104,10 +3104,6 @@ MonoBehaviour:
     m_Localized: "Background Images"
     m_Metadata:
       m_Items: []
-  - m_Id: 103943359016206336
-    m_Localized: Transform Tools
-    m_Metadata:
-      m_Items: []
   - m_Id: 95221400803737600
     m_Localized: Up arrow
     m_Metadata:

@@ -3019,16 +3019,6 @@ PrefabInstance:
       propertyPath: m_RootOrder
       value: 11
       objectReference: {fileID: 0}
-    - target: {fileID: 7630606763700834929, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 9
-      objectReference: {fileID: 0}
     - target: {fileID: 7631838532712089505, guid: 71757eb1eb6bebe489a852e972821df3,
         type: 3}
       propertyPath: m_LocalScale.x
