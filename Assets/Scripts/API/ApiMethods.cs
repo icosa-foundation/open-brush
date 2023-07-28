@@ -71,6 +71,13 @@ namespace TiltBrush
             cam.transform.position = position;
         }
 
+        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
+        public static void MoveSpectatorBy(Vector3 amount)
+        {
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.position += amount;
+        }
+
         [ApiEndpoint("user.move.to", "Moves the user to the given position")]
         public static void MoveUserTo(Vector3 position)
         {
@@ -81,20 +88,11 @@ namespace TiltBrush
             App.Scene.Pose = pose;
         }
 
-        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
-        public static void MoveSpectatorBy(Vector3 amount)
-        {
-            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
-            cam.transform.position += amount;
-        }
-
         [ApiEndpoint("user.move.by", "Moves the user by the given amount")]
         public static void MoveUserBy(Vector3 amount)
         {
             TrTransform pose = App.Scene.Pose;
             pose.translation -= amount;
-            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
         }
 
@@ -116,41 +114,63 @@ namespace TiltBrush
             _ChangeSpectatorBearing(angle, Vector3.forward);
         }
 
-        // [ApiEndpoint("user.turn.y", "Rotates the user camera left or right.")]
-        // public static void UserYaw(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.up);
-        // }
+        [ApiEndpoint("user.turn.y", "Rotates the user camera left or right.")]
+        public static void UserYaw(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.up);
+        }
 
-        // [ApiEndpoint("user.turn.x", "Rotates the user camera up or down. (monoscopic mode only)")]
-        // public static void UserPitch(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.left);
-        // }
+        [ApiEndpoint("user.turn.x", "Rotates the user camera up or down. (monoscopic mode only)")]
+        public static void UserPitch(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.left);
+        }
 
-        // [ApiEndpoint("user.turn.z", "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)")]
-        // public static void UserRoll(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.forward);
-        // }
+        [ApiEndpoint("user.turn.z", "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)")]
+        public static void UserRoll(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.forward);
+        }
+
+        [ApiEndpoint("scene.scale.to", "Sets the scene scale to the given value")]
+        public static void ScaleSceneTo(float scale)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.scale = scale;
+            App.Scene.Pose = lookPose;
+        }
+
+        [ApiEndpoint("scene.scale.by", "Scales the scene by the given amount")]
+        public static void ScaleSceneBy(float amount)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.scale *= amount;
+            App.Scene.Pose = lookPose;
+        }
+
+        public static void ChangeUserBearing(float angle, Vector3 axis)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.rotation *= Quaternion.AngleAxis(angle, axis);
+            App.Scene.Pose = lookPose;
+        }
 
         [ApiEndpoint("spectator.direction", "Points the spectator camera to look in the specified direction. Angles are given in x,y,z degrees")]
         public static void SpectatorDirection(Vector3 direction)
+        {
+            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.rotation = qNewRotation;
+        }
+
+        [ApiEndpoint("user.direction", "Points the user camera to look in the specified direction. Angles are given in x,y,z degrees. (Monoscopic mode only)")]
+        public static void UserDirection(Vector3 direction)
         {
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = qNewRotation;
             App.Scene.Pose = lookPose;
         }
-
-        // [ApiEndpoint("user.direction", "Points the user camera to look in the specified direction. Angles are given in x,y,z degrees. (Monoscopic mode only)")]
-        // public static void UserDirection(Vector3 direction)
-        // {
-        //     TrTransform lookPose = App.Scene.Pose;
-        //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-        //     lookPose.rotation = qNewRotation;
-        //     App.Scene.Pose = lookPose;
-        // }
 
         [ApiEndpoint("spectator.look.at", "Points the spectator camera towards a specific point")]
         public static void SpectatorLookAt(Vector3 position)
@@ -350,7 +370,9 @@ namespace TiltBrush
             var tr = new TrTransform();
             tr.translation = ApiManager.Instance.BrushPosition;
             tr.rotation = ApiManager.Instance.BrushRotation;
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+            var cmd = new CreateWidgetCommand(
+                WidgetManager.m_Instance.ImageWidgetPrefab, tr, null, true
+            );
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var imageWidget = cmd.Widget as ImageWidget;
@@ -398,7 +420,6 @@ namespace TiltBrush
         [ApiEndpoint("layer.squash", "Move everything from one layer to another then removes the empty layer")]
         public static void SquashLayer(int squashedLayer, int destinationLayer)
         {
-            Debug.Log($"squashedLayer {squashedLayer} destinationLayer {destinationLayer}");
             SquashLayerCommand cmd = new SquashLayerCommand(squashedLayer, destinationLayer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
@@ -514,7 +535,7 @@ namespace TiltBrush
 
             var tr = _CurrentTransform();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr);
+                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr, null, true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
         }
 
