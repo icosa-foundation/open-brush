@@ -1056,6 +1056,22 @@ namespace TiltBrush
             }
         }
 
+        public Quaternion QuantizeAngle(Quaternion rotation)
+        {
+            var snapAngle = SnappingAngle;
+            if (snapAngle == 0) return rotation;
+            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
+            Vector3 euler = rotation.eulerAngles;
+            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            return Quaternion.Euler(euler);
+        }
+
+        public float ScalarSnap(float val)
+        {
+            if (SnappingGridSize == 0) return val;
+            return Mathf.Round(val / SnappingGridSize) * SnappingGridSize;
+        }
+
         // All transforms are in canvas space
         public Vector3 SnapToGrid_CS(Vector3 position)
         {
@@ -1086,17 +1102,6 @@ namespace TiltBrush
             return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
         }
 
-        public Quaternion QuantizeAngle(Quaternion rotation)
-        {
-            var snapAngle = SnappingAngle;
-            if (snapAngle == 0) return rotation;
-            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
-        }
-
         // Used by align/distribute etc
         // Controls which widget types should be affected
         // Currently it's "any subclass of MediaWidget or StencilWidget"
@@ -1106,8 +1111,6 @@ namespace TiltBrush
                 widget.GetType().IsSubclassOf(typeof(StencilWidget))
             )
             .ToList();
-
-
     }
 
 } // namespace TiltBrush
