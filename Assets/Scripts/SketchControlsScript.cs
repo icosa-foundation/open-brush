@@ -56,7 +56,7 @@ namespace TiltBrush
             ResetAllPanels,
             SketchOrigin,
             SymmetryPlane,
-            SymmetryFour,
+            MultiMirror,
             ViewOnly,
             SaveGallery,
             LightingLdr,
@@ -1370,8 +1370,8 @@ namespace TiltBrush
                     var cur = PointerManager.m_Instance.CurrentSymmetryMode;
                     var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
                         : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
-                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.FourAroundY
-                        : (cur == SymmetryMode.FourAroundY) ? SymmetryMode.TwoHanded
+                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.MultiMirror
+                        : (cur == SymmetryMode.MultiMirror) ? SymmetryMode.TwoHanded
                         : SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
@@ -4286,10 +4286,10 @@ namespace TiltBrush
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Off");
                     }
                     break;
-                case GlobalCommands.SymmetryFour:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.FourAroundY)
+                case GlobalCommands.MultiMirror:
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.MultiMirror)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.FourAroundY);
+                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.MultiMirror);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
@@ -4638,6 +4638,13 @@ namespace TiltBrush
                 case GlobalCommands.Duplicate:
                     {
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
+
+                        // TODO - this code has never taken imported models etc into account
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                        {
+                            selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
+                        }
+
                         if (!SketchMemoryScript.m_Instance.MemoryWarningAccepted &&
                             SketchMemoryScript.m_Instance.WillVertCountPutUsOverTheMemoryLimit(selectedVerts))
                         {
@@ -4650,7 +4657,7 @@ namespace TiltBrush
                         else
                         {
                             ClipboardManager.Instance.DuplicateSelection(
-                                offsetDuplicate: !IsUserInteractingWithSelectionWidget());
+                                stampMode: IsUserInteractingWithSelectionWidget());
                         }
                         EatToolScaleInput();
                         break;
@@ -4975,7 +4982,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
-                case GlobalCommands.SymmetryFour: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.FourAroundY;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
@@ -5123,8 +5130,8 @@ namespace TiltBrush
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
                 case GlobalCommands.SaveModel: return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
-                    return PointerManager.m_Instance.CurrentSymmetryMode ==
-                        SymmetryMode.SinglePlane;
+                    return PointerManager.m_Instance.CurrentSymmetryMode !=
+                        SymmetryMode.None;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;

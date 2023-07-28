@@ -172,7 +172,11 @@ namespace TiltBrush
             videoWidget.UpdateScale();
         }
 
-        public override GrabWidget Clone()
+        override public GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+        override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             VideoWidget clone = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab) as VideoWidget;
             clone.m_PreviousCanvas = m_PreviousCanvas;
@@ -180,10 +184,10 @@ namespace TiltBrush
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;
             clone.SetVideo(m_Video);
-            clone.SetSignedWidgetSize(m_Size);
+            clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);

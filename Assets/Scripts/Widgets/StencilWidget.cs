@@ -149,18 +149,22 @@ namespace TiltBrush
             RestoreGameObjectLayer(App.Scene.MainCanvas.gameObject.layer);
         }
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             StencilWidget clone = Instantiate(WidgetManager.m_Instance.GetStencilPrefab(this.Type));
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
             clone.m_SkipIntroAnim = true;
             // We want to lie about our intro transition amount.
             clone.m_ShowTimer = clone.m_ShowDuration;
             clone.transform.parent = transform.parent;
             clone.Show(true, false);
-            clone.SetSignedWidgetSize(this.m_Size);
+            clone.SetSignedWidgetSize(size);
             clone.CloneInitialMaterials(this);
             clone.Extents = this.Extents;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
