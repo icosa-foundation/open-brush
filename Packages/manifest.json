@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.atteneder.gltfast": "5.0.4",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=8#upm",
@@ -63,13 +62,6 @@
   },
   "scopedRegistries": [
     {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder"
-      ]
-    },
-    {
       "name": "Vive",
       "url": "https://npm-registry.vive.com",
       "scopes": [
@@ -96,6 +88,7 @@
       "name": "package.openupm.com",
       "url": "https://package.openupm.com",
       "scopes": [
+        "com.atteneder",
         "com.ixxy.polyhydra.core",
         "com.nition.unity-octree",
         "com.openupm",

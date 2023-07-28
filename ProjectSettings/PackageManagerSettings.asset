@@ -26,14 +26,6 @@ MonoBehaviour:
     m_IsDefault: 1
     m_Capabilities: 7
     m_ConfigSource: 0
-  - m_Id: scoped:project:OpenUPM
-    m_Name: OpenUPM
-    m_Url: https://package.openupm.com
-    m_Scopes:
-    - com.atteneder
-    m_IsDefault: 0
-    m_Capabilities: 0
-    m_ConfigSource: 4
   - m_Id: scoped:project:Vive
     m_Name: Vive
     m_Url: https://npm-registry.vive.com
@@ -64,6 +56,7 @@ MonoBehaviour:
     m_Name: package.openupm.com
     m_Url: https://package.openupm.com
     m_Scopes:
+    - com.atteneder
     - com.ixxy.polyhydra.core
     - com.nition.unity-octree
     - com.openupm
