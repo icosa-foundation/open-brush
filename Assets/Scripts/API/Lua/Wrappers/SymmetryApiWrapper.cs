@@ -40,7 +40,7 @@ namespace TiltBrush
         public static void Mirror() => ApiMethods.SymmetryPlane();
 
         [LuaDocsDescription("")]
-        public static void DoubleMirror() => ApiMethods.SymmetryFour();
+        public static void MultiMirror() => ApiMethods.MultiMirror();
 
         [LuaDocsDescription("")]
         public static void TwoHandeded() => ApiMethods.SymmetryTwoHanded();

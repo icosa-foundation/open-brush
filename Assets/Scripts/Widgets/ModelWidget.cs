@@ -138,10 +138,6 @@ namespace TiltBrush
             // Set our model to null so its usage count is decremented.
             Model = null;
         }
-        public override GrabWidget Clone()
-        {
-            return Clone(transform.position, transform.rotation, m_Size);
-        }
 
         public override GrabWidget Clone()
         {
@@ -472,7 +468,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async void CreateFromSaveData(TiltModels75 modelDatas)
+        public static async void CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");

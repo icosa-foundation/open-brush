@@ -41,10 +41,19 @@ namespace TiltBrush
         {
             None,
             SinglePlane,
-            FourAroundY,
+            MultiMirror,
             DebugMultiple,
-            TwoHanded,
-            ScriptedSymmetryMode = 6000
+            CustomSymmetryMode = 5000,
+            ScriptedSymmetryMode = 6000,
+            TwoHanded = 6001
+        }
+
+        [Serializable]
+        public enum CustomSymmetryType
+        {
+            Point,
+            Wallpaper,
+            Polyhedra
         }
 
         public enum ColorShiftComponent
@@ -53,6 +62,18 @@ namespace TiltBrush
             Saturation,
             Brightness
         }
+
+        [NonSerialized] public CustomSymmetryType m_CustomSymmetryType = CustomSymmetryType.Point;
+        [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
+        [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
+        [NonSerialized] public int m_PointSymmetryOrder = 6;
+        [NonSerialized] public int m_WallpaperSymmetryX = 2;
+        [NonSerialized] public int m_WallpaperSymmetryY = 2;
+        [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
+        [NonSerialized] public float m_WallpaperSymmetryScaleX = 1f;
+        [NonSerialized] public float m_WallpaperSymmetryScaleY = 1f;
+        [NonSerialized] public float m_WallpaperSymmetrySkewX = 0;
+        [NonSerialized] public float m_WallpaperSymmetrySkewY = 0;
 
         [NonSerialized] public bool m_SymmetryLockedToController = false;
 
@@ -134,6 +155,9 @@ namespace TiltBrush
         [SerializeField] private float m_GestureStepDist;
         [SerializeField] private float m_GestureMaxAngle;
 
+        [NonSerialized] public TrTransform m_SymmetryTransformEach = TrTransform.identity;
+        [NonSerialized] public bool m_SymmetryTransformEachAfter;
+
         // ---- Private member data
 
         private int m_NumActivePointers = 1;
@@ -205,6 +229,7 @@ namespace TiltBrush
         private float m_SketchSurfaceLineDepthIncrement = 0.0001f;
         private float m_SketchSurfaceLineDepth;
         private bool m_SketchSurfaceLineWasEnabled;
+        private List<Matrix4x4> m_CustomMirrorMatrices;
         private List<Color> m_SymmetryPointerColors;
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
@@ -329,6 +354,9 @@ namespace TiltBrush
         }
         public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
 
+        public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
+        public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
+
         public List<Color> SymmetryPointerColors
         {
             get { return m_SymmetryPointerColors; }
@@ -443,6 +471,7 @@ namespace TiltBrush
 
             Debug.Assert(m_MaxPointers > 0);
             m_Pointers = new PointerData[m_MaxPointers];
+            m_CustomMirrorMatrices = new List<Matrix4x4>();
             m_ScriptedPointers = new List<PointerScript>();
 
             for (int i = 0; i < m_Pointers.Length; ++i)
@@ -466,6 +495,8 @@ namespace TiltBrush
             m_CurrentLineCreationState = LineCreationState.WaitingForInput;
             m_StraightEdgeProxyActive = false;
             m_StraightEdgeGesture = new CircleGesture();
+            App.Scene.MainCanvas.PoseChanged += OnActiveCanvasPoseChanged;
+
 
             if (m_SymmetryWidget)
             {
@@ -500,6 +531,11 @@ namespace TiltBrush
         protected void OnDestroy()
         {
             App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
+        }
+
+        private void OnActiveCanvasPoseChanged(TrTransform prev, TrTransform current)
+        {
+            CalculateMirrorMatrices();
         }
 
         public PointerScript CreateScriptedPointer()
@@ -552,7 +588,12 @@ namespace TiltBrush
                         m_SymmetryWidget.position = Vector3.zero;
                         m_SymmetryWidget.rotation = Quaternion.identity;
                     }
-                    else if (m_CurrentSymmetryMode == SymmetryMode.FourAroundY)
+                    else if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                    {
+                        m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
+                        m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+                    }
+                    else if (m_CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
                     {
                         m_SymmetryWidget.position = SketchSurfacePanel.m_Instance.transform.position;
                         m_SymmetryWidget.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
@@ -917,8 +958,12 @@ namespace TiltBrush
                 case SymmetryMode.TwoHanded:
                     active = 2;
                     break;
-                case SymmetryMode.FourAroundY:
-                    active = 4;
+                case SymmetryMode.MultiMirror:
+                    // Don't call CalculateMirrorPointers
+                    // as this is handled below
+                    CalculateMirrorMatrices();
+                    CalculateMirrorColors();
+                    active = m_CustomMirrorMatrices.Count;
                     break;
                 case SymmetryMode.ScriptedSymmetryMode:
                     var script = LuaManager.Instance.GetActiveScript(LuaApiCategory.SymmetryScript);
@@ -1002,18 +1047,21 @@ namespace TiltBrush
                         return m_SymmetryWidgetScript.ReflectionPlane.ReflectPoseKeepHandedness(xfMain);
                     }
 
-                case SymmetryMode.FourAroundY:
+                case SymmetryMode.MultiMirror:
                     {
-                        // aboutY is an operator that rotates worldspace objects N degrees around the widget's Y
-                        TrTransform aboutY;
+                        (TrTransform, TrTransform) trAndFix;
+                        TrTransform tr;
                         {
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            float angle = (360f * child) / m_NumActivePointers;
-                            aboutY = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(angle, Vector3.up));
+                            var xfCenter = TrTransform.FromTransform(
+                                m_SymmetryLockedToController ?
+                                    MainPointer.transform : m_SymmetryWidget
+                            );
+
                             // convert from widget-local coords to world coords
-                            aboutY = aboutY.TransformBy(xfWidget);
+                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
+                            tr = trAndFix.Item1.TransformBy(xfCenter);
                         }
-                        return aboutY * xfMain;
+                        return tr * xfMain * trAndFix.Item1;
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
@@ -1041,6 +1089,59 @@ namespace TiltBrush
             }
         }
 
+        public void CalculateMirrors()
+        {
+            CalculateMirrorMatrices();
+            CalculateMirrorColors();
+            CalculateMirrorPointers();
+        }
+
+        private void CalculateMirrorMatrices()
+        {
+            switch (m_CustomSymmetryType)
+            {
+                case CustomSymmetryType.Wallpaper:
+                    var wallpaperSym = new WallpaperSymmetry(
+                        m_WallpaperSymmetryGroup,
+                        m_WallpaperSymmetryX,
+                        m_WallpaperSymmetryY,
+                        1,
+                        m_WallpaperSymmetryScaleX,
+                        m_WallpaperSymmetryScaleY,
+                        m_WallpaperSymmetrySkewX,
+                        m_WallpaperSymmetrySkewY
+                    );
+                    m_CustomMirrorMatrices = wallpaperSym.matrices;
+                    m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
+                    break;
+                case CustomSymmetryType.Point:
+                case CustomSymmetryType.Polyhedra:
+                default:
+                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
+                    m_CustomMirrorMatrices = pointSym.matrices;
+                    break;
+            }
+
+            for (var i = 0; i < m_CustomMirrorMatrices.Count; i++)
+            {
+                float amount = i / (float)m_CustomMirrorMatrices.Count;
+                var transformEach = m_SymmetryTransformEach;
+                transformEach.translation *= amount;
+                transformEach.rotation = Quaternion.Slerp(Quaternion.identity, transformEach.rotation, amount);
+                transformEach.scale = Mathf.Lerp(1, transformEach.scale, amount);
+
+                var m = m_CustomMirrorMatrices[i];
+                if (m_SymmetryTransformEachAfter)
+                {
+                    m = transformEach.ToMatrix4x4() * m;
+                }
+                else
+                {
+                    m *= transformEach.ToMatrix4x4();
+                }
+                m_CustomMirrorMatrices[i] = m;
+            }
+        }
 
         public void CalculateMirrorColors()
         {
@@ -1056,6 +1157,22 @@ namespace TiltBrush
             }
         }
 
+        public void CalculateMirrorPointers()
+        {
+            m_NumActivePointers = m_CustomMirrorMatrices.Count;
+            for (int i = 1; i < m_Pointers.Length; ++i)
+            {
+                var pointer = m_Pointers[i];
+                bool enabled = i < m_NumActivePointers;
+                pointer.m_UiEnabled = enabled;
+                pointer.m_Script.gameObject.SetActive(enabled);
+                pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
+                if (enabled)
+                {
+                    pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
+                }
+            }
+        }
 
         void UpdateSymmetryPointerTransforms()
         {
@@ -1080,25 +1197,25 @@ namespace TiltBrush
                         break;
                     }
 
-                case SymmetryMode.FourAroundY:
+                case SymmetryMode.MultiMirror:
                     {
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                        // aboutY is an operator that rotates worldspace objects N degrees around the widget's Y
-                        TrTransform aboutY;
-                        {
-                            var xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
-                            float angle = 360f / m_NumActivePointers;
-                            aboutY = TrTransform.TR(Vector3.zero, Quaternion.AngleAxis(angle, Vector3.up));
-                            // convert from widget-local coords to world coords
-                            aboutY = xfWidget * aboutY * xfWidget.inverse;
-                        }
+                        TrTransform tr;
 
-                        TrTransform cur = TrTransform.identity;
-                        for (int i = 1; i < m_NumActivePointers; ++i)
+                        var xfCenter = TrTransform.FromTransform(
+                            m_SymmetryLockedToController ?
+                            MainPointer.transform : m_SymmetryWidget
+                        );
+
+                        for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
-                            cur = aboutY * cur;         // stack another rotation on top
-                            var tmp = (cur * pointer0); // Work around 2018.3.x Mono parse bug
+                            (TrTransform, TrTransform) trAndFix;
+                            trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
+                            tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
+                            var tmp = tr * pointer0 * trAndFix.Item2; // Work around 2018.3.x Mono parse bug
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
+                            float scaledSize = m_Pointers[0].m_Script.BrushSize01 * Mathf.Abs(m_CustomMirrorMatrices[i].lossyScale.x);
+                            m_Pointers[i].m_Script.BrushSize01 = scaledSize;
                         }
                         break;
                     }
@@ -1141,6 +1258,32 @@ namespace TiltBrush
                     }
                     break;
             }
+        }
+
+        public float GetCustomMirrorScale()
+        {
+            float canvasScale = App.ActiveCanvas.Pose.scale;
+            return canvasScale * m_WallpaperSymmetryScale;
+        }
+
+        public TrTransform TrFromMatrix(Matrix4x4 m)
+        {
+            var tr = TrTransform.FromMatrix4x4(m);
+            tr.translation *= GetCustomMirrorScale();
+            return tr;
+        }
+
+        public (TrTransform, TrTransform) TrFromMatrixWithFixedReflections(Matrix4x4 m)
+        {
+            // See ReflectPoseKeepHandedness
+
+            var tr = TrFromMatrix(m);
+            var fixTr = TrTransform.identity;
+            if (m.lossyScale.x < 0 || m.lossyScale.y < 0 || m.lossyScale.z < 0)
+            {
+                fixTr = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+            }
+            return (tr, fixTr);
         }
 
         /// Called every frame while Activate is disallowed

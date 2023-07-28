@@ -1350,6 +1350,7 @@ namespace TiltBrush
         ///   the Model will be automatically replaced with the loaded Model some time later.
         public IEnumerator<Null> CreateMediaWidgetsFromLoadDataCoroutine()
         {
+            // TODO reduce code duplication with the next two if blocks
             if (m_loadingTiltModels75 != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);
@@ -1383,14 +1384,16 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    ModelWidget.CreateFromSaveData(m_loadingTiltModels75[i]);
+                    ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingTiltModels75.Length, true);
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
             }
+
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
+
             if (m_loadingTiltImages75 != null)
             {
                 foreach (TiltImages75 import in m_loadingTiltImages75)
