@@ -142,10 +142,10 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("symmetry.doublemirror", "Sets the symmetry mode to 'double mirror'")]
-        public static void SymmetryFour()
+        [ApiEndpoint("symmetry.multimirror", "Sets the symmetry mode to 'multimirror'")]
+        public static void MultiMirror()
         {
-            var rEnum = SketchControlsScript.GlobalCommands.SymmetryFour;
+            var rEnum = SketchControlsScript.GlobalCommands.MultiMirror;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 

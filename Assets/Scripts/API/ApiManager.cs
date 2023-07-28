@@ -567,6 +567,12 @@ namespace TiltBrush
             string brushesJson = JsonConvert.SerializeObject(brushNameList);
             html = html.Replace("{{brushesJson}}", brushesJson);
 
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)));
+            html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
+
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
+            html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
+
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
                 .Select(x => x.Description.Replace(" ", ""))
                 .ToArray();
