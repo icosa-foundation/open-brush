@@ -1,36 +1,21 @@
-﻿<html>
-<head><meta charset='UTF-8'></head>
+﻿<html><head><meta charset='UTF-8'></head>
 <body>
-    
-    <label>Turn: <input id='turn' value='45'></label>
-    <label>Length: <input id='length' value='2'></label>
-    <label>Repeats: <input id='repeats' value='6'></label>
-    
-    <button onclick='run();'>Run</button>
-    
     <script>
-        function run() {
+        sendCommands([
+            'brush.color=red',
+            'brush.size.set=0.5',
+            'brush.type=comet',
+        ]);
 		
-			sendCommands([
-				'brush.color=red',
-				'brush.size.set=0.5',
-				'brush.type=comet',
-			]);
-		
-            var turn = document.getElementById('turn').value;
-            var length = document.getElementById('length').value;
-            var repeats = parseFloat(document.getElementById('repeats').value);
-            
-            for (var i=0; i<repeats; i++) {
-                sendCommands([
-                    `brush.turn.y=${turn}`,
-                    `brush.draw=${length}`,
-                    `brush.move=-${length}`,
-					'color.add.hsv=0.015, 0, 0'
-                ]);
-            }
+        for (var i=0; i<repeats; i++) {
+            sendCommands([
+                `brush.turn.y=45`,
+                `brush.draw=2`,
+                `brush.move=6`,
+                'color.add.hsv=0.015, 0, 0'
+            ]);
         }
-        
+
         function sendCommands(commands) {
             var xmlHttp = new XMLHttpRequest();
             var url = '/api/v1?' + commands.join('&');
@@ -39,6 +24,5 @@
         }
         
     </script>
-
 </body>
 </html>

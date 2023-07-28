@@ -32,10 +32,18 @@ namespace TiltBrush
         private string m_Endpoint;
         private string m_Description;
 
-        public ApiEndpoint(string endpoint, string description)
+        public ApiEndpoint(string endpoint, string description, string exampleUsage = null)
         {
-            this.m_Endpoint = endpoint;
-            this.m_Description = description;
+            m_Endpoint = endpoint;
+            m_Description = description;
+            if (exampleUsage != null)
+            {
+                if (ApiManager.Instance.CommandExamples == null)
+                {
+                    ApiManager.Instance.CommandExamples = new Dictionary<string, string>();
+                }
+                ApiManager.Instance.CommandExamples[endpoint] = exampleUsage;
+            }
         }
 
         public virtual string Endpoint
