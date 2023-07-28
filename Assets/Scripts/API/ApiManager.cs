@@ -99,64 +99,63 @@ namespace TiltBrush
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-
-            CommandExamples = new Dictionary<string, string>
+            if (CommandExamples == null)
             {
-                { "draw.paths", "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]" },
-                { "draw.path", "[0,0,0],[1,0,0],[1,1,0],[0,1,0]" },
-                { "draw.stroke", "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]" },
-                { "listenfor.strokes", "http://localhost:8000/" },
-                { "draw.polygon", "5,1,0" },
-                { "draw.text", "hello" },
-                { "draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88" },
-                { "draw.camerapath", "0" },
-                { "brush.type", "ink" },
-                { "color.add.hsv", "0.1,0.2,0.3" },
-                { "color.add.rgb", "0.1,0.2,0.3" },
-                { "color.set.rgb", "0.1,0.2,0.3" },
-                { "color.set.hsv", "0.1,0.2,0.3" },
-                { "color.set.html", "darkblue" },
-                { "brush.size.set", ".5" },
-                { "brush.size.add", ".1" },
-                { "spectator.move.to", "1,1,1" },
-                { "spectator.move.by", "1,1,1" },
-                { "spectator.turn.y", "45" },
-                { "spectator.turn.x", "45" },
-                { "spectator.turn.z", "45" },
-                { "spectator.direction", "45,45,0" },
-                { "spectator.look.at", "1,2,3" },
-                { "spectator.mode", "circular" },
-                { "spectator.show", "panels" },
-                { "spectator.hide", "widgets" },
-                { "user.move.to", "1,1,1" },
-                { "user.move.by", "1,1,1" },
-                { "brush.move.to", "1,1,1" },
-                { "brush.move.by", "1,1,1" },
-                { "brush.move", "1" },
-                { "brush.draw", "1" },
-                { "brush.turn.y", "45" },
-                { "brush.turn.x", "45" },
-                { "brush.turn.z", "45" },
-                { "brush.look.at", "1,1,1" },
-                { "stroke.delete", "0" },
-                { "stroke.select", "0" },
-                { "strokes.select", "0,3" },
-                { "selection.trim", "2" },
-                { "selection.points.addnoise", "x,0.5" },
-                { "selection.points.quantize", "0.1" },
-                { "strokes.join", "0,2" },
-                { "stroke.add", "0" },
-                { "load.user", "0" },
-                { "load.curated", "0" },
-                { "load.liked", "0" },
-                { "load.drive", "0" },
-                { "load.named", "Untitled_0.tilt" },
-                { "showfolder.sketch", "0" },
-                { "import.model", "Andy\\Andy.obj" },
-                { "import.image", "TiltBrushLogo.png" },
-                { "import.video", "animated-logo.mp4" }
-            };
-
+                CommandExamples = new Dictionary<string, string>();
+            }
+            CommandExamples["draw.paths"] = "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]";
+            CommandExamples["draw.path"] = "[0,0,0],[1,0,0],[1,1,0],[0,1,0]";
+            CommandExamples["draw.stroke"] = "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]";
+            CommandExamples["listenfor.strokes"] = "http://localhost:8000/";
+            CommandExamples["draw.polygon"] = "5,1,0";
+            CommandExamples["draw.text"] = "hello";
+            CommandExamples["draw.svg"] = "M 184,199 116,170 53,209.6 60,136.2 4.3,88";
+            CommandExamples["draw.camerapath"] = "0";
+            CommandExamples["brush.type"] = "ink";
+            CommandExamples["color.add.hsv"] = "0.1,0.2,0.3";
+            CommandExamples["color.add.rgb"] = "0.1,0.2,0.3";
+            CommandExamples["color.set.rgb"] = "0.1,0.2,0.3";
+            CommandExamples["color.set.hsv"] = "0.1,0.2,0.3";
+            CommandExamples["color.set.html"] = "darkblue";
+            CommandExamples["brush.size.set"] = ".5";
+            CommandExamples["brush.size.add"] = ".1";
+            CommandExamples["spectator.move.to"] = "1,1,1";
+            CommandExamples["spectator.move.by"] = "1,1,1";
+            CommandExamples["spectator.turn.y"] = "45";
+            CommandExamples["spectator.turn.x"] = "45";
+            CommandExamples["spectator.turn.z"] = "45";
+            CommandExamples["spectator.direction"] = "45,45,0";
+            CommandExamples["spectator.look.at"] = "1,2,3";
+            CommandExamples["spectator.mode"] = "circular";
+            CommandExamples["spectator.show"] = "panels";
+            CommandExamples["spectator.hide"] = "widgets";
+            CommandExamples["user.move.to"] = "1,1,1";
+            CommandExamples["user.move.by"] = "1,1,1";
+            CommandExamples["brush.move.to"] = "1,1,1";
+            CommandExamples["brush.move.by"] = "1,1,1";
+            CommandExamples["brush.move"] = "1";
+            CommandExamples["brush.draw"] = "1";
+            CommandExamples["brush.turn.y"] = "45";
+            CommandExamples["brush.turn.x"] = "45";
+            CommandExamples["brush.turn.z"] = "45";
+            CommandExamples["brush.look.at"] = "1,1,1";
+            CommandExamples["stroke.delete"] = "0";
+            CommandExamples["stroke.select"] = "0";
+            CommandExamples["strokes.select"] = "0,3";
+            CommandExamples["selection.trim"] = "2";
+            CommandExamples["selection.points.addnoise"] = "x,0.5";
+            CommandExamples["selection.points.quantize"] = "0.1";
+            CommandExamples["strokes.join"] = "0,2";
+            CommandExamples["stroke.add"] = "0";
+            CommandExamples["load.user"] = "0";
+            CommandExamples["load.curated"] = "0";
+            CommandExamples["load.liked"] = "0";
+            CommandExamples["load.drive"] = "0";
+            CommandExamples["load.named"] = "Untitled_0.tilt";
+            CommandExamples["showfolder.sketch"] = "0";
+            CommandExamples["import.model"] = "Andy\\Andy.obj";
+            CommandExamples["import.image"] = "TiltBrushLogo.png";
+            CommandExamples["import.video"] = "animated-logo.mp4";
             App.Instance.StateChanged += RunStartupScript;
 
         }
@@ -413,7 +412,10 @@ namespace TiltBrush
                 var parameters = endpoint.DecodeParams(command.Parameters);
                 return endpoint.Invoke(parameters)?.ToString();
             }
-            Debug.LogError($"Invalid API command: {command.Command}");
+            if (!command.Command.StartsWith("//"))
+            {
+                Debug.LogError($"Invalid API command: {command.Command}");
+            }
             return null;
         }
 
@@ -521,6 +523,9 @@ namespace TiltBrush
 
         private string ScriptTemplateSubstitution(string html)
         {
+
+            // TODO Document these
+
             string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
                 .Where(x => x.Description != "")
                 .Where(x => x.m_SupersededBy == null)
@@ -528,6 +533,12 @@ namespace TiltBrush
                 .ToArray();
             string brushesJson = JsonConvert.SerializeObject(brushNameList);
             html = html.Replace("{{brushesJson}}", brushesJson);
+
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)));
+            html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
+
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)));
+            html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
 
             string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
                 .Select(x => x.Description.Replace(" ", ""))
