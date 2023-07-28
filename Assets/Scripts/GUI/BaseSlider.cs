@@ -78,7 +78,7 @@ namespace TiltBrush
             m_CurrentValue = fValue;
         }
 
-        public void SetSliderPositionToReflectValue()
+        public virtual void SetSliderPositionToReflectValue()
         {
             if (m_Nob != null)
             {
