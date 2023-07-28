@@ -17,6 +17,7 @@ using System.Linq.Expressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -228,7 +229,7 @@ namespace TiltBrush
                         var newValue = m_CurrentValue + (v * 0.01f);
                         UpdateValue(newValue);
                         callback = () => InputManager.Brush.Geometry.ShowSliderValue(true, m_CurrentValue);
-                    }
+    }
                     else
                     {
                         callback = () => InputManager.Brush.Geometry.ShowSliderValue(false, m_CurrentValue);

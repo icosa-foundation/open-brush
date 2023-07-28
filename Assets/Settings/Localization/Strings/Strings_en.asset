@@ -3192,6 +3192,10 @@ MonoBehaviour:
     m_Localized: Rename Sketch
     m_Metadata:
       m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: Transform Tools
+    m_Metadata:
+      m_Items: []
   - m_Id: 109424659466551296
     m_Localized: Repaint Selected
     m_Metadata:
