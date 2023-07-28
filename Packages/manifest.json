@@ -66,13 +66,6 @@
       ]
     },
     {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder"
-      ]
-    },
-    {
       "name": "Vive",
       "url": "https://npm-registry.vive.com",
       "scopes": [
