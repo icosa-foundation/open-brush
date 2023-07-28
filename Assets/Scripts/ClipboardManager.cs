@@ -44,15 +44,15 @@ namespace TiltBrush
         }
 
         /// Copies and pastes the current selection to the current canvas.
-        public void DuplicateSelection(bool offsetDuplicate = false)
+        public void DuplicateSelection(bool stampMode = false)
         {
-            TrTransform xf = SelectionManager.m_Instance.SelectionTransform;
-            if (offsetDuplicate)
+            TrTransform dupXf = SelectionManager.m_Instance.SelectionTransform;
+            if (!stampMode)
             {
                 // Scoot all the strokes and widgets.
                 // TODO: Make this relative to the user's facing.
                 Vector3 offset = m_DuplicateOffset / App.Scene.Pose.scale * 0.5f;
-                xf.translation += offset;
+                dupXf.translation += offset;
             }
 
             // Lil' jiggle.
@@ -64,7 +64,19 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHapticsPulse(controller, 3, 0.15f, 0.07f);
             AudioManager.m_Instance.PlayDuplicateSound(InputManager.m_Instance.GetControllerPosition(controller));
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DuplicateSelectionCommand(xf));
+            // Duplicate selection works differently if the multimirror is active
+            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
+            {
+                // Multimirrored dups never use the offset transform
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MultimirrorDuplicateCommand(SelectionManager.m_Instance.SelectionTransform, stampMode)
+                );
+            }
+            else
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DuplicateSelectionCommand(dupXf));
+            }
+
         }
     }
 
