@@ -32,13 +32,13 @@ namespace TiltBrush
 
     public class AdvancedSlider : BaseSlider
     {
-        [FormerlySerializedAs("opIndex")] public int m_Param1;
-        [FormerlySerializedAs("paramIndex")] public int m_Param2;
+        public int m_Param1;
+        public int m_Param2;
 
-        private float m_safeMin;
-        private float m_safeMax;
-        private float m_unsafeMin;
-        private float m_unsafeMax;
+        public float m_safeMin = 0;
+        public float m_safeMax = 1;
+        public float m_unsafeMin = 0;
+        public float m_unsafeMax = 1;
 
         public bool m_SafeLimits = true;
 
@@ -51,7 +51,11 @@ namespace TiltBrush
             m_safeMax = safeMax;
             m_unsafeMax = unsafeMax;
             m_SafeLimits = true;
-
+            if (m_CurrentValue > safeMax)
+            {
+                m_CurrentValue = safeMax;
+                SetSliderPositionToReflectValue();
+            }
         }
 
         public void SetMin(float safeMin, float unsafeMin)
@@ -60,8 +64,14 @@ namespace TiltBrush
             m_safeMin = safeMin;
             m_unsafeMin = unsafeMin;
             m_SafeLimits = true;
+            if (m_CurrentValue < safeMin)
+            {
+                m_CurrentValue = safeMin;
+                SetSliderPositionToReflectValue();
+            }
         }
 
+        [SerializeField] private float m_InitialValue = 0.5f;
         [SerializeField] private TextMeshPro minText;
         [SerializeField] private TextMeshPro maxText;
         [SerializeField] private TextMeshPro valueText;
@@ -79,10 +89,22 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            UpdateValue(0.5f);
+            SetInitialValueAndUpdate(m_InitialValue);
             minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
-            valueText.text = FormatValue(m_CurrentValue);
+        }
+
+        public void SetInitialValueAndUpdate(float initialValue)
+        {
+            m_InitialValue = initialValue;
+            m_CurrentValue = Mathf.InverseLerp(Min, Max, m_InitialValue);
+            SetSliderPositionToReflectValue();
+        }
+
+        public override void SetSliderPositionToReflectValue()
+        {
+            base.SetSliderPositionToReflectValue();
+            valueText.text = FormatValue(CurrentValueAbsolute);
         }
 
         private string FormatValue(float val)

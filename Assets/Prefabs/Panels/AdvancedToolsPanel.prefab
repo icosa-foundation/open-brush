@@ -805,7 +805,7 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1758786797962018, guid: e2dd9f64d28858a468b61151cbf090d6,
       type: 3}
     m_Command: 14
-  - m_PopUpPrefab: {fileID: 1887799951535888, guid: cea55265052f18b4ca24670a074de41d,
+  - m_PopUpPrefab: {fileID: 1758786797962018, guid: 04751ea8307825e4bb7657eb20f9bfc5,
       type: 3}
     m_Command: 67
   - m_PopUpPrefab: {fileID: 1386358278955912, guid: be80cc928a63c8c4aa97d1e0d06e965d,
@@ -826,7 +826,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
-  m_PanelDescriptionOffset: {x: 1.25, y: 1, z: 0}
+  m_PanelDescriptionOffset: {x: 1.25, y: 0.8, z: 0}
   m_PanelDescriptionColor: {r: 1, g: 1, b: 1, a: 1}
   m_PanelFlairPrefab: {fileID: 0}
   m_PanelFlairOffset: {x: 0, y: 0, z: 0}
@@ -852,7 +852,7 @@ MonoBehaviour:
   m_InitialSpawnPos: {x: 4.61, y: 12, z: 5.34}
   m_InitialSpawnRotEulers: {x: 37.18, y: 63.12, z: 0}
   m_WandAttachAngle: 240
-  m_WandAttachYOffset: 1.2
+  m_WandAttachYOffset: 0.75
   m_WandAttachHalfHeight: 1.2
   m_BeginFixed: 1
   m_CanBeFixedToWand: 1
