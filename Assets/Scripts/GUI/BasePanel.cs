@@ -109,7 +109,7 @@ namespace TiltBrush
             SnapSettings = 8000,
             StencilSettings = 20200,
             LayersPanel = 15000,
-
+            TransformPanel = 12000,
             AnimationPanel = 18000,
         }
 
