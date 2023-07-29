@@ -24,6 +24,7 @@ Shader "Custom/ReferenceImage" {
         Tags{ "Queue" = "AlphaTest+20" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
         Pass {
             Lighting Off
+            Cull Off
 
             CGPROGRAM
             #pragma vertex vert
