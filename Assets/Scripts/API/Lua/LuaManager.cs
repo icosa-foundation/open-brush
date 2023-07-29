@@ -90,6 +90,8 @@ namespace TiltBrush
         public string UserPluginsPath() { return m_UserPluginsPath; }
 
         public List<LuaApiCategory> ApiCategories => Enum.GetValues(typeof(LuaApiCategory)).Cast<LuaApiCategory>().ToList();
+
+        public List<string> BackgroundScriptsToRun;
         public int ScriptedWaveformSampleRate = 16000;
 
         [NonSerialized] public Dictionary<LuaApiCategory, SortedDictionary<string, Script>> Scripts;
@@ -130,6 +132,10 @@ namespace TiltBrush
             {
                 Directory.CreateDirectory(m_UserPluginsPath);
             }
+        }
+
+        void Start()
+        {
             Init();
         }
 
@@ -169,11 +175,6 @@ namespace TiltBrush
 
             LoadExampleScripts();
             LoadUserScripts();
-            var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
-            panel.InitScriptUiNav();
-            ConfigureScriptButton(LuaApiCategory.PointerScript);
-            ConfigureScriptButton(LuaApiCategory.SymmetryScript);
-            ConfigureScriptButton(LuaApiCategory.ToolScript);
 
             if (Directory.Exists(UserPluginsPath()))
             {
@@ -183,6 +184,23 @@ namespace TiltBrush
                 m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
+            }
+
+            foreach (var scriptName in BackgroundScriptsToRun)
+            {
+                ActivateBackgroundScript(scriptName, true);
+            }
+
+            var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
+            panel.InitScriptUiNav();
+            ConfigureScriptButton(LuaApiCategory.PointerScript);
+            ConfigureScriptButton(LuaApiCategory.SymmetryScript);
+            ConfigureScriptButton(LuaApiCategory.ToolScript);
+
+            if (BackgroundScriptsToRun.Count > 0)
+            {
+                EnableBackgroundScripts(true);
+                panel.BackgroundScriptsButton.IsToggledOn = true;
             }
         }
         

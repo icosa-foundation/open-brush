@@ -22,6 +22,7 @@ namespace TiltBrush
         public BaseButton SymmetryScriptButton;
         public BaseButton PointerScriptButton;
         public BaseButton ToolScriptButton;
+        public ToggleButton BackgroundScriptsButton;
 
         public void InitScriptUiNav()
         {
