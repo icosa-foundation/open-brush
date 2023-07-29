@@ -21,6 +21,11 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -43,6 +48,7 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -75,11 +81,11 @@ Category {
         float4 center_WS = mul(unity_ObjectToWorld, center);
 
         // Custom vertex animation
-        float scrollAmount = _Time.y;
+        float scrollAmount = GetTime().y;
         float t = fmod(scrollAmount * _ScrollRate + v.color.a, 1);
         float4 dispVec = (t - .5f) * float4(_ScrollDistance, 0.0);
-        dispVec.x += sin(t * _ScrollJitterFrequency + _Time.y) * _ScrollJitterIntensity;
-        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + _Time.y) * _ScrollJitterIntensity;
+        dispVec.x += sin(t * _ScrollJitterFrequency + GetTime().y) * _ScrollJitterIntensity;
+        dispVec.z += cos(t * _ScrollJitterFrequency * .5 + GetTime().y) * _ScrollJitterIntensity;
         dispVec.xyz = spreadProgress * dispVec * kDecimetersToWorldUnits;
         center_WS += mul(xf_CS, dispVec);
 

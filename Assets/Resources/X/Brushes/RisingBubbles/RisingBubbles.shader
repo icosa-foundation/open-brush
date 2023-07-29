@@ -21,6 +21,11 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -43,6 +48,7 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
@@ -70,7 +76,7 @@ Category {
       // seed is a value in [0, 1]
       // t01 is a time value in [0, 1]
       float3 ComputeDisplacement(float3 pos, float seed, float t01) {
-        float t2 = _Time.y / 3;
+        float t2 = GetTime().y / 3;
 
         // Animate the motion of the bubbles
         // Accumulate all displacement into a common, pre-transformed space.
@@ -89,7 +95,7 @@ Category {
         v2f o;
         // Used as a random-ish seed for various calculations
         float seed = v.color.a;
-        float t01 = fmod(_Time.y*_ScrollRate + seed * 10, 1);
+        float t01 = fmod(GetTime().y*_ScrollRate + seed * 10, 1);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);

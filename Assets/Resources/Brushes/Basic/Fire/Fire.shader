@@ -19,6 +19,12 @@ Properties {
   _Scroll2 ("Scroll2", Float) = 0
   _DisplacementIntensity("Displacement", Float) = .1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
 }
 
 Category {
@@ -42,6 +48,7 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -100,7 +107,7 @@ Category {
         float envelopeHalf = sin(i.texcoord.x * 3.14159 * .5);
 
         // Basic fire effect
-        displacement = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll1, 0)  ).a;
+        displacement = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll1, 0)  ).a;
 
         // Waveform fire effect
         float waveform = (tex2D(_WaveFormTex, float2(i.texcoord.x * .2 + .025*i.worldPos.y,0)).g - .5f) + displacement*.05;
@@ -113,10 +120,10 @@ Category {
         //procedural_line = pow(procedural_line, i.texcoord.x* 10);
 
 #else
-        displacement = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll1, 0)  ).a;
+        displacement = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll1, 0)  ).a;
 #endif
 
-        half4 tex = tex2D(_MainTex, i.texcoord + half2(-_Time.x * _Scroll2, 0) - displacement * _DisplacementIntensity);
+        half4 tex = tex2D(_MainTex, i.texcoord + half2(-GetTime().x * _Scroll2, 0) - displacement * _DisplacementIntensity);
 		tex.xyz *= step(0.01, tex.xyz);
 
 #ifdef AUDIO_REACTIVE

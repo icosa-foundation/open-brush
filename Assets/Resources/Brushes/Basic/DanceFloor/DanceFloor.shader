@@ -16,6 +16,11 @@ Shader "Brush/Special/DanceFloor" {
 Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -38,6 +43,7 @@ Category {
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -69,7 +75,7 @@ Category {
         float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
         float waveform = 0;
 
-        float lifetime = _Time.y - v.texcoord1.w;
+        float lifetime = GetTime().y - v.texcoord1.w;
         float release = saturate(lifetime);
 
 
@@ -98,7 +104,7 @@ Category {
       fixed4 frag (v2f i) : SV_Target
       {
 
-        //float waveform = tex2D(_WaveFormTex, float2(fmod(i.worldPos.x * 0.1f + _Time.y,1),0) ).r - .5f;
+        //float waveform = tex2D(_WaveFormTex, float2(fmod(i.worldPos.x * 0.1f + GetTime().y,1),0) ).r - .5f;
         //i.texcoord.y += waveform;
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
         return encodeHdr(c.rgb * c.a);

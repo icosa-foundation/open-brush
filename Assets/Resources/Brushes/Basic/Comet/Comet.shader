@@ -18,6 +18,11 @@ Properties {
   _AlphaMask("Alpha Mask", 2D) = "white" {}
   _Speed ("Animation Speed", Range (0,1)) = 1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -38,6 +43,7 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -84,9 +90,9 @@ Category {
       {
         // Set up some staggered scrolling for "fire" effect
 #ifdef AUDIO_REACTIVE
-        float time = (_Time.x * 2 + _BeatOutputAccum.w) * -_Speed;
+        float time = (GetTime().x * 2 + _BeatOutputAccum.w) * -_Speed;
 #else
-        float time = _Time.y * -_Speed;
+        float time = GetTime().y * -_Speed;
 #endif
         fixed2 scrollUV = i.texcoord;
         fixed2 scrollUV2 = i.texcoord;

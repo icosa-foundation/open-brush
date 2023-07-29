@@ -19,6 +19,11 @@ Shader "Brush/Special/LightWire" {
     _Shininess ("Shininess", Range (0.01, 1)) = 0.078125
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
   }
   SubShader {
     Cull Back
@@ -28,6 +33,7 @@ Shader "Brush/Special/LightWire" {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
     #pragma multi_compile __ SELECTION_ON
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -73,7 +79,7 @@ Shader "Brush/Special/LightWire" {
 #ifdef AUDIO_REACTIVE
       t = _BeatOutputAccum.x*10;
 #else
-      t = _Time.w;
+      t = GetTime().w;
 #endif
 
       if (lights) {

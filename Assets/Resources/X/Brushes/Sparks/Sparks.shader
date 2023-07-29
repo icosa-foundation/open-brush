@@ -21,6 +21,11 @@ Properties {
 	_StretchDistortionExponent ("Stretch Distortion Exponent", Float) = 3
 	_NumSides ("Number of Sides", Float) = 5
 	_Speed ("Speed", Float) = 1
+
+	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -44,6 +49,7 @@ Category {
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
+			#include "Assets/Shaders/Include/TimeOverride.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -80,7 +86,7 @@ Category {
 				// This multiplier is a magic number but it's still not right. Is there a better
 				// multiplciation for this (not using fmod) so I can count on the "lifetime" being contstant?
 				/*
-				float t01 = fmod(_Time.y * 0.95, 1);
+				float t01 = fmod(GetTime().y * 0.95, 1);
 				float3 incolor = v.color.rgb;
 				v.color.rgb *= incolor * pow(1 - t01, 2) * 10;
 				*/
@@ -108,7 +114,7 @@ Category {
 
 				// Rescale time to go between 0 : u_scale, where u_scale is the range of warped u coords on the stroke
 				float u_scale = _Speed;
-				float t = fmod(_Time.w * u_scale, u_scale);
+				float t = fmod(GetTime().w * u_scale, u_scale);
 
 				// Rescale U coord in range 0 : u_scale.
 				// Note that we subtract "t" because we want to move the origin (i.e. the "0" value)

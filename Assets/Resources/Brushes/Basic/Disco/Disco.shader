@@ -19,6 +19,12 @@ Shader "Brush/Disco" {
     _Shininess ("Shininess", Range (0.01, 1)) = 0.078125
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+
   }
   SubShader {
     Cull Back
@@ -28,6 +34,7 @@ Shader "Brush/Disco" {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
     #pragma multi_compile __ SELECTION_ON
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -58,7 +65,7 @@ Shader "Brush/Disco" {
       float waveform = tex2Dlod(_WaveFormTex, float4(v.texcoord.x * 2, 0, 0, 0)).b - .5f;
       v.vertex.xyz += waveform * v.normal.xyz * .2;
 #else
-      t = _Time.z;
+      t = GetTime().z;
       uTileRate = 10;
       waveIntensity = .6;
 #endif

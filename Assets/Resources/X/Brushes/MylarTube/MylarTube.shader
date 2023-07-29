@@ -19,6 +19,11 @@ Properties {
 	_SpecColor ("Specular Color", Color) = (0.5, 0.5, 0.5, 0)
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 	_SqueezeAmount("Squeeze Amount", Range(0.0,1)) = 0.825
+
+	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 Category {
 	Cull Back
@@ -29,6 +34,7 @@ Category {
 		#pragma surface surf StandardSpecular vertex:vert addshadow
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+		#include "Assets/Shaders/Include/TimeOverride.cginc"
 		#include "Assets/Shaders/Include/Brush.cginc"
 		#include "Assets/ThirdParty/Shaders/Noise.cginc"
 
@@ -75,7 +81,7 @@ Category {
 			rim *= 1-pow(rim,5);
 
 			//Thin slit diffraction texture ramp lookup
-			float3 diffraction = tex2D(_MainTex, half2(rim + _Time.x + o.Normal.y, rim + o.Normal.y)).xyz;
+			float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x + o.Normal.y, rim + o.Normal.y)).xyz;
 			o.Emission = rim*(.25 * diffraction * rim  + .75 * diffraction * IN.color);
 
 		}

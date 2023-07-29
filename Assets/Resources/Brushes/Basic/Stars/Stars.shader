@@ -17,6 +17,11 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _SparkleRate ("Sparkle Rate", Float) = 2.5
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -41,6 +46,7 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
@@ -76,7 +82,7 @@ Category {
         brightness = 800 * pow(abs(sin(_BeatOutputAccum.w * _SparkleRate + phase)), 20);
         brightness = brightness*.25 + 2*brightness * (_BeatOutput.w);
 #else
-        brightness = 800 * pow(abs(sin(_Time.y * _SparkleRate + phase)), 20);
+        brightness = 800 * pow(abs(sin(GetTime().y * _SparkleRate + phase)), 20);
 #endif
         o.color.rgb = v.color.rgb * brightness;
         o.color.a = 1;

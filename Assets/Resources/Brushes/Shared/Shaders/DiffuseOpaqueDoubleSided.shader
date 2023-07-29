@@ -16,6 +16,8 @@ Shader "Brush/DiffuseOpaqueDoubleSided" {
 
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -34,6 +36,8 @@ SubShader {
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
   fixed4 _Color;
+	uniform float _ClipStart;
+	uniform float _ClipEnd;
 
   struct appdata {
     float4 vertex : POSITION;
@@ -47,6 +51,8 @@ SubShader {
   };
 
   struct Input {
+    float4 vertex : POSITION;
+    float2 texcoord : TEXCOORD0;
     float4 color : COLOR;
     fixed vface : VFACE;
   };
@@ -55,9 +61,15 @@ SubShader {
     UNITY_INITIALIZE_OUTPUT(Input, o);
     PrepForOds(v.vertex);
     v.color = TbVertToNative(v.color);
+    o.vertex = v.vertex;
+    o.texcoord = v.texcoord;
   }
 
   void surf (Input IN, inout SurfaceOutput o) {
+
+      float completion = _ClipEnd < 0 || (IN.texcoord.x > _ClipStart && IN.texcoord.x < _ClipEnd) ? 1 : -1;
+      clip(completion);
+
     o.Albedo = _Color * IN.color.rgb;
     o.Normal = float3(0,0,IN.vface);
     SURF_FRAG_MOBILESELECT(o);

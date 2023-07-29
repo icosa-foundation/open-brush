@@ -16,6 +16,11 @@ Shader "Brush/Special/Wind" {
 Properties {
 	_MainTex ("Texture", 2D) = "white" {}
 	_Speed ("Animation Speed", Range (0,1)) = 1
+
+	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -36,6 +41,7 @@ Category {
 			#pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 			#include "UnityCG.cginc"
+			#include "Assets/Shaders/Include/TimeOverride.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -73,7 +79,7 @@ Category {
 			fixed4 frag (v2f i) : COLOR
 			{
 				// Simple scrollin'
-				float time = _Time.y * _Speed;
+				float time = GetTime().y * _Speed;
 				fixed2 scrollUV = i.texcoord;
 				scrollUV.x += time * 0.5;
 

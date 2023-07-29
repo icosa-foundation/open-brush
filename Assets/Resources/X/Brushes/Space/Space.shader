@@ -16,6 +16,11 @@ Shader "Brush/Special/Space" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -37,6 +42,7 @@ Category {
 
       #pragma target 3.0
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/ColorSpace.cginc"
@@ -91,12 +97,12 @@ Category {
         float r = abs(i.texcoord.y * 2 - 1);  // distance from center of stroke
 
         // determine the contributions of each hue
-        float primary_a = .2 * fbm(i.texcoord + _Time.x) * gain + gain2;
-        float analog1_a = .2 * fbm(float3(i.texcoord.x + 12.52, i.texcoord.y + 12.52, _Time.x * 5.2)) * gain + gain2;
-        float analog2_a = .2 * fbm(float3(i.texcoord.x + 6.253, i.texcoord.y + 6.253, _Time.x * .8)) * gain + gain2;
+        float primary_a = .2 * fbm(i.texcoord + GetTime().x) * gain + gain2;
+        float analog1_a = .2 * fbm(float3(i.texcoord.x + 12.52, i.texcoord.y + 12.52, GetTime().x * 5.2)) * gain + gain2;
+        float analog2_a = .2 * fbm(float3(i.texcoord.x + 6.253, i.texcoord.y + 6.253, GetTime().x * .8)) * gain + gain2;
 
         // the main hue is present in the center and falls off with randomized radius
-        primary_a = clampedRemap(0, .5, primary_a, 0, r + fbm(float2(_Time.x + 50, i.texcoord.x)) * 2);
+        primary_a = clampedRemap(0, .5, primary_a, 0, r + fbm(float2(GetTime().x + 50, i.texcoord.x)) * 2);
 
         // the analog hues start a little out from the center and increase with intensity going out
         analog1_a = clampedRemap(.2, 1, 0, analog1_a * 1.2, r);
@@ -113,7 +119,7 @@ Category {
 
         // now sculpt the overall shape of the stroke
         float lum = 1 - r;
-        float rfbm = fbm(float2(i.texcoord.x, _Time.x));
+        float rfbm = fbm(float2(i.texcoord.x, GetTime().x));
         rfbm += 1.2;
         rfbm *= .8;
         lum *= step(r, rfbm);  // shorten the radius with fbm

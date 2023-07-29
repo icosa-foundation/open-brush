@@ -18,6 +18,11 @@ Properties {
 	_NumSides("Number of Sides", Float) = 5
 	_Speed("Speed", Float) = 1
 	_Bulge("Displacement Amount", Float) = 2.25
+
+	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -41,6 +46,7 @@ Category {
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
+			#include "Assets/Shaders/Include/TimeOverride.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
 			#include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -95,7 +101,7 @@ Category {
 			fixed4 frag (v2f i) : COLOR
 			{
 				float u_scale = _Speed;
-				float t = fmod(_Time.y * 4 * u_scale, u_scale);
+				float t = fmod(GetTime().y * 4 * u_scale, u_scale);
 
 				// Rescale U coord in range 0 : u_scale.
 				// Note that we subtract "t" because we want to move the origin (i.e. the "0" value)
@@ -119,9 +125,9 @@ Category {
 				float row_id = (int) (uvs.y *(_NumSides));
 				float rand = rand_1_05(row_id.xx);
 
-				// Randomize by row ID, add _Time offset by row and add an offset back into U
+				// Randomize by row ID, add GetTime() offset by row and add an offset back into U
 				// so the strips don't animate together
-				u += rand * _Time.y * 2.75 * u_scale;
+				u += rand * GetTime().y * 2.75 * u_scale;
 
 				// Wrap the u coordinate in the 0:u_scale range.
 				// If we don't do this, then the strokes we offset previously

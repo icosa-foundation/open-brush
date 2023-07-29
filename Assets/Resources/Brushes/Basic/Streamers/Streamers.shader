@@ -19,6 +19,11 @@ Properties {
   _Scroll2 ("Scroll2", Float) = 0
   _DisplacementIntensity("Displacement", Float) = .1
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -43,6 +48,7 @@ Category {
       #pragma target 3.0 // Required -> compiler error: too many instructions for SM 2.0
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -97,7 +103,7 @@ Category {
         float row_rand = rand_1_05(row_id.xx);
         uvs.x += row_rand * 200;
 
-        half2 sins = sin(uvs.x * half2(10,23) + _Time.z * half2(5,3));
+        half2 sins = sin(uvs.x * half2(10,23) + GetTime().z * half2(5,3));
         uvs.y = 5 * uvs.y + dot(half2(.05, -.05), sins);
 
 #ifdef AUDIO_REACTIVE
@@ -107,7 +113,7 @@ Category {
 #else
         // Scrolling UVs
         uvs.x *= .5 + row_rand * .3;
-        uvs.x -= _Time.y * (1 + fmod(row_id * 1.61803398875, 1) - 0.5);
+        uvs.x -= GetTime().y * (1 + fmod(row_id * 1.61803398875, 1) - 0.5);
 #endif
 
         // Sample final texture
