@@ -47,9 +47,9 @@ namespace TiltBrush
                 );
 
             roundedCanvasPos = new Vector3(
-                !SelectionManager.m_Instance.m_EnableSnapTranslationX ? roundedCanvasPos.x : localCanvasPos.x,
-                !SelectionManager.m_Instance.m_EnableSnapTranslationY ? roundedCanvasPos.y : localCanvasPos.y,
-                !SelectionManager.m_Instance.m_EnableSnapTranslationZ ? roundedCanvasPos.z : localCanvasPos.z
+                SelectionManager.m_Instance.m_EnableSnapTranslationX ? roundedCanvasPos.x : localCanvasPos.x,
+                SelectionManager.m_Instance.m_EnableSnapTranslationY ? roundedCanvasPos.y : localCanvasPos.y,
+                SelectionManager.m_Instance.m_EnableSnapTranslationZ ? roundedCanvasPos.z : localCanvasPos.z
             );
 
             Vector3 offset = new Vector3(
@@ -85,6 +85,7 @@ namespace TiltBrush
                     snappedPos = new Vector3(roundedCanvasPos.x, roundedCanvasPos.y, localCanvasPos.z);
                 }
             }
+
             return App.Scene.MainCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(snappedPos);
         }
 
