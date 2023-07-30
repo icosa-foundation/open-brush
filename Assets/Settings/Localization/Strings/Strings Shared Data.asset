@@ -2995,16 +2995,196 @@ MonoBehaviour:
     m_Key: KEYBOARD_CAPSLOCK
     m_Metadata:
       m_Items: []
-  - m_Id: 103924956079587328
-    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
-    m_Metadata:
-      m_Items: []
   - m_Id: 103943359016206336
     m_Key: EXTRA_PANEL_TRANSFORMTOOLS_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 103924956079587328
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_RENAME_SKETCH
+    m_Metadata:
+      m_Items: []
   - m_Id: 109424659466551296
     m_Key: ADVANCEDTOOLS_PANEL_SELECTION_TRAY_REPAINT_SELECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Key: TRANSFORM_PANEL_SNAP_AXES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Key: TRANSFORM_PANEL_SNAP_SELECTED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Key: TRANSFORM_PANEL_TOGGLE_X_POSITION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Key: TRANSFORM_PANEL_TOGGLE_Y_POSITION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Key: TRANSFORM_PANEL_TOGGLE_Z_POSITION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Key: TRANSFORM_PANEL_SNAP_SELECTED_TO_GRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Key: TRANSFORM_PANEL_SNAP_SELECTED_ROTATION_ANGLES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Key: TRANSFORM_PANEL_POSITION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Key: TRANSFORM_PANEL_ROTATION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Key: TRANSFORM_PANEL_ALIGN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Key: TRANSFORM_PANEL_TOGGLE_X_POSITION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Key: TRANSFORM_PANEL_TOGGLE_Y_POSITION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Key: TRANSFORM_PANEL_TOGGLE_Z_POSITION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Key: TRANSFORM_PANEL_TOGGLE_X_ROTATION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Key: TRANSFORM_PANEL_TOGGLE_Y_ROTATION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Key: TRANSFORM_PANEL_TOGGLE_Z_ROTATION_LOCK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Key: TRANSFORM_PANEL_ALIGN_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Key: TRANSFORM_PANEL_ALIGN_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Key: TRANSFORM_PANEL_ALIGN_Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Key: TRANSFORM_PANEL_ALIGN_BY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Key: TRANSFORM_PANEL_LEFT_BOTTOM_FRONT_EDGES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Key: TRANSFORM_PANEL_CENTERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Key: TRANSFORM_PANEL_RIGHT_TOP_BACK_EDGES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Key: TRANSFORM_PANEL_ALIGN_ROTATION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Key: TRANSFORM_PANEL_DISTRIBUTE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Key: TRANSFORM_PANEL_DISTRIBUTE_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Key: TRANSFORM_PANEL_DISTRIBUTE_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Key: TRANSFORM_PANEL_DISTRIBUTE_Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Key: TRANSFORM_PANEL_DISTRIBUTE_BY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Key: TRANSFORM_PANEL_SPACING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Key: MULTIMIRROR_PANEL_MULTI_MIRROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Key: MULTIMIRROR_PANEL_POINT_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Key: MULTIMIRROR_PANEL_WALLPAPER_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Key: MULTIMIRROR_PANEL_OPTIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Key: MULTIMIRROR_PANEL_AFFECT_HUE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Key: MULTIMIRROR_PANEL_AFFECT_SATURATION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Key: MULTIMIRROR_PANEL_AFFECT_BRIGHTNESS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Key: MULTIMIRROR_PANEL_AMOUNT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Key: MULTIMIRROR_PANEL_FREQUENCY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Key: MULTIMIRROR_PANEL_SINE_WAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Key: MULTIMIRROR_PANEL_TRIANGLE_WAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Key: MULTIMIRROR_PANEL_SAWTOOTH_WAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Key: MULTIMIRROR_PANEL_SQUARE_WAVE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Key: MULTIMIRROR_PANEL_NOISE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Key: MULTIMIRROR_PANEL_SUMMON_MIRROR
     m_Metadata:
       m_Items: []
   m_Metadata:
