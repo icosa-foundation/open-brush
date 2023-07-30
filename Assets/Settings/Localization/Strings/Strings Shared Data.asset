@@ -3187,6 +3187,14 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_SUMMON_MIRROR
     m_Metadata:
       m_Items: []
+  - m_Id: 128978688454426624
+    m_Key: SNAP_SETTINGS_PANEL_GUIDES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Key: SNAP_SETTINGS_PANEL_SNAP_TO_GUIDES
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

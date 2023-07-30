@@ -1084,7 +1084,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10142251554152448
-    m_Localized: Snap and Stroke Settings
+    m_Localized: Grid and Snap Settings
     m_Metadata:
       m_Items: []
   - m_Id: 10142405791293440
@@ -3317,7 +3317,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828496
-    m_Localized: Multi-Mirror
+    m_Localized: Multimirror
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828497
@@ -3374,6 +3374,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 128947584188022786
     m_Localized: Summon Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: Snap to Guides
     m_Metadata:
       m_Items: []
   references:
