@@ -3193,7 +3193,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5146220882010112
-    m_Localized: 
+    m_Localized: Recolor On
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
@@ -3382,6 +3382,38 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 128979151367176192
     m_Localized: Snap to Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: Symmetry Order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: X Repeats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: Y Repeats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: Scale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: Scale X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: Scale Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: Skew X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: Skew Y
     m_Metadata:
       m_Items: []
   references:

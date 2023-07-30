@@ -3195,6 +3195,38 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_SNAP_TO_GUIDES
     m_Metadata:
       m_Items: []
+  - m_Id: 129010807801118720
+    m_Key: MULTIMIRROR_SYMMETRY_ORDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Key: MULTIMIRROR_PANEL_X_REPEATS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Key: MULTIMIRROR_PANEL_Y_REPEATS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Key: MULTIMIRROR_PANEL_SYMMETRY_SCALE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Key: MULTIMIRROR_PANEL_SYMMETRY_SCALE_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Key: MULTIMIRROR_PANEL_SYMMETRY_SCALE_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Key: MULTIMIRROR_PANEL_SYMMETRY_SKEW_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Key: MULTIMIRROR_PANEL_SYMMETRY_SKEW_Y
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
