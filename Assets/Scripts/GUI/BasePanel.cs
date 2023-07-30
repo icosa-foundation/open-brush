@@ -105,6 +105,7 @@ namespace TiltBrush
             ReferenceMobile,
             CameraPath,
             BrushLab,
+            WebcamPanel = 5200,
             Scripts = 6000,
             SnapSettings = 8000,
             StencilSettings = 20200,
