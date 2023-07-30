@@ -27,16 +27,16 @@ public class WebcamSurface : MonoBehaviour
     public ActionButton PreviousDeviceButton;
     public ActionButton NextDeviceButton;
 
-    #if !UNITY_ANDROID
+#if !UNITY_ANDROID
     private WebCamDevice[] _Devices;
     private WebCamTexture _webcam;
-    #endif
+#endif
 
     void Start()
     {
-        #if !UNITY_ANDROID
+#if !UNITY_ANDROID
         _Devices = WebCamTexture.devices;
-        #endif
+#endif
         UpdateButtonState();
         UpdateDeviceInCompositor();
     }
@@ -54,7 +54,7 @@ public class WebcamSurface : MonoBehaviour
 
     private void UpdateDevice()
     {
-        #if !UNITY_ANDROID
+#if !UNITY_ANDROID
         if (_webcam != null)
         {
             _webcam.Stop();
@@ -69,32 +69,32 @@ public class WebcamSurface : MonoBehaviour
         // Note that it's height / width, not width / height
         var aspectRatio = _webcam.height / (float)_webcam.width;
         Pivot.localScale = new Vector3(1, aspectRatio, 1);
-        #endif
+#endif
     }
 
     private void UpdateButtonState()
     {
-        #if !UNITY_ANDROID
+#if !UNITY_ANDROID
         NextDeviceButton.gameObject.SetActive(deviceIndex < _Devices.Length - 1);
         PreviousDeviceButton.gameObject.SetActive(deviceIndex > 0);
-        #endif
+#endif
     }
 
     private void OnDestroy()
     {
-        #if !UNITY_ANDROID
+#if !UNITY_ANDROID
         _webcam.Stop();
         Destroy(_webcam);
-        #endif
+#endif
     }
 
     public void HandleChangeDevice(int increment)
     {
-        #if !UNITY_ANDROID
+#if !UNITY_ANDROID
         deviceIndex += increment;
         deviceIndex = Mathf.Clamp(deviceIndex, 0, _Devices.Length - 1);
         UpdateButtonState();
         UpdateDeviceInCompositor();
-        #endif
+#endif
     }
 }
