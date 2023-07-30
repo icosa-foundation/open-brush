@@ -236,8 +236,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_ENVIRONMENT_BUTTON_DESCRIPTION
@@ -246,17 +246,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7690667696037888
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -284,17 +284,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7690784670982144
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_ToggleOnDescription: 
+  m_ToggleOnDescription:
   m_LocalizedToggleOnDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -442,8 +442,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1aaefde5afe80784e908d27fcb05a101, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_OffsetOverride: -1
 --- !u!1 &1272310558547734
 GameObject:
@@ -492,8 +492,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a7d0b1933e6839443a2050b4306ef453, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_PanelType: 27
   m_Collider: {fileID: 65686315866890560}
   m_Mesh: {fileID: 1129504163572690}
@@ -511,7 +511,7 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7689873479409664
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -562,8 +562,8 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6311d8a25dba6a443be8afe87803c545, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_ShowDuration: 0.25
   m_GrabDistance: 1.4
   m_CollisionRadius: 0.8
@@ -599,8 +599,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1388918871144404
 GameObject:
   m_ObjectHideFlags: 0
@@ -696,8 +696,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_GUIDES_BUTTON_DESCRIPTION
@@ -706,17 +706,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7691186472722432
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -858,8 +858,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_BACKDROP_BUTTON_DESCRIPTION
@@ -868,17 +868,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7691111650533376
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1039,8 +1039,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: LABS_PANEL_POLY_BUTTON_DESCRIPTION
@@ -1049,17 +1049,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7691576060649472
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1241,8 +1241,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_LIGHTS_BUTTON_DESCRIPTION
@@ -1251,17 +1251,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7690924718792704
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1377,8 +1377,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_LOCALMEDIA_BUTTON_DESCRIPTION
@@ -1387,17 +1387,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7867671724662784
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1526,8 +1526,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_CAMERAPATHS_BUTTON_DESCRIPTION
@@ -1536,17 +1536,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 7691821452599296
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1675,8 +1675,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03222d9718beeb748bf9e9be379fea39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: EXTRA_PANEL_LAYERS_BUTTON_DESCRIPTION
@@ -1685,17 +1685,17 @@ MonoBehaviour:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
       m_KeyId: 68764809030598656
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra:
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName:
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key: 
+      m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1829,7 +1829,7 @@ PrefabInstance:
     - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
       propertyPath: m_ButtonTexture
-      value: 
+      value:
       objectReference: {fileID: 2800000, guid: 4fb00a3c13d9a1b4e916be1c5a5357b8, type: 3}
     - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
