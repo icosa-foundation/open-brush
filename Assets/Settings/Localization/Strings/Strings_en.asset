@@ -3416,6 +3416,18 @@ MonoBehaviour:
     m_Localized: Skew Y
     m_Metadata:
       m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: Webcam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: Previous Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: Next Device
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

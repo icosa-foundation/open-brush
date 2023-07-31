@@ -3227,6 +3227,18 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_SYMMETRY_SKEW_Y
     m_Metadata:
       m_Items: []
+  - m_Id: 129251051561549824
+    m_Key: LABS_PANEL_WEBCAM_BUTTON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Key: WEBCAM_PANEL_PREVIOUS_DEVICE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Key: WEBCAM_PANEL_NEXT_DEVICE
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
