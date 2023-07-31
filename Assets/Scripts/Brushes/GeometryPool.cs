@@ -891,13 +891,15 @@ namespace TiltBrush
         private void GenerateTriangleIds(Mesh mesh)
         {
             var triangleIds = new Vector2[mesh.vertexCount];
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            int triCount = mesh.triangles.Length / 3;
+            var tris = mesh.triangles;
+            for (int i = 0; i < triCount; i++)
             {
-                int triIndex = Mathf.FloorToInt(i / 3);
-                Vector2 uv = new Vector2(triIndex, 0);
-                triangleIds[mesh.triangles[i]] = uv;
-                triangleIds[mesh.triangles[i + 1]] = uv;
-                triangleIds[mesh.triangles[i + 2]] = uv;
+                Vector2 uv = new Vector2(i, 0);
+                int triIndex = i * 3;
+                triangleIds[tris[triIndex]] = uv;
+                triangleIds[tris[triIndex + 1]] = uv;
+                triangleIds[tris[triIndex + 2]] = uv;
             }
             mesh.SetUVs(4, triangleIds);
         }
