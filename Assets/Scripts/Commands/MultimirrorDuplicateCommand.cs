@@ -88,13 +88,14 @@ namespace TiltBrush
                 TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
                 TrTransform tr_GS;
                 var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+                // Generally speaking we want both sides of 2d media to appear
+                // when duplicating using multimirror
+                bool duplicateAsTwoSided = widget is Media2dWidget;
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     var duplicatedWidget = widget.Clone();
 
-                    // Generally speaking we want both sides of 2d media to appear
-                    // when duplicating using multimirror
-                    ((Media2dWidget)widget).TwoSided = duplicatedWidget is Media2dWidget;
+                    ((Media2dWidget)duplicatedWidget).TwoSided = duplicateAsTwoSided;
 
                     (TrTransform, TrTransform) trAndFix_WS;
                     trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);

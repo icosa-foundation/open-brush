@@ -250,10 +250,11 @@ namespace TiltBrush
 
         public bool TwoSided
         {
-            get => m_ImageQuad.material.GetInteger("_Cull") == (int)UnityEngine.Rendering.CullMode.Off;
-            set {
+            get => m_ImageQuad.material.GetInt("_CullMode") == (int)UnityEngine.Rendering.CullMode.Off;
+            set
+            {
                 var mode = value ? UnityEngine.Rendering.CullMode.Off : UnityEngine.Rendering.CullMode.Back;
-                m_ImageQuad.material.SetInteger("_Cull", (int)mode);
+                m_ImageQuad.material.SetInt("_CullMode", (int)mode);
             }
         }
     }
