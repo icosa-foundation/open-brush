@@ -76,7 +76,6 @@ namespace TiltBrush
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }
             }
-            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
             m_DuplicatedWidgets = new List<GrabWidget>();
@@ -103,9 +102,11 @@ namespace TiltBrush
                     var tmp = tr_GS * widgetTransform_GS * trAndFix_WS.Item2;   // Work around 2018.3.x Mono parse bug
 
                     tmp.ToTransform(duplicatedWidget.transform);
+                    duplicatedWidget.SetCanvas(m_CurrentCanvas);
                     m_DuplicatedWidgets.Add(duplicatedWidget);
                 }
             }
+            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -143,17 +144,14 @@ namespace TiltBrush
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
             {
                 m_DuplicatedWidgets[i].RestoreFromToss();
-                m_DuplicatedWidgets[i].SetCanvas(App.Scene.SelectionCanvas);
             }
 
-            // // Select widgets.
-            // if (m_DuplicatedWidgets != null && !m_StampMode)
-            // {
-            //     SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
-            //     SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-            // }
-
-            SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets, App.ActiveCanvas);
+            // Select widgets.
+            if (m_DuplicatedWidgets != null && !m_StampMode)
+            {
+                SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+            }
 
             // Set selection widget transforms.
             SelectionManager.m_Instance.SelectionTransform = m_Transform;
