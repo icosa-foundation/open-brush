@@ -247,5 +247,14 @@ namespace TiltBrush
             }
             return baseScore;
         }
+
+        public bool TwoSided
+        {
+            get => m_ImageQuad.material.GetInteger("_Cull") == (int)UnityEngine.Rendering.CullMode.Off;
+            set {
+                var mode = value ? UnityEngine.Rendering.CullMode.Off : UnityEngine.Rendering.CullMode.Back;
+                m_ImageQuad.material.SetInteger("_Cull", (int)mode);
+            }
+        }
     }
 } // namespace TiltBrush

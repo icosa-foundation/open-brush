@@ -76,11 +76,16 @@ namespace TiltBrush
                     m_DuplicatedStrokes.Add(duplicatedStroke);
                 }
             }
+            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
 
             m_SelectedWidgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
             m_DuplicatedWidgets = new List<GrabWidget>();
             foreach (var widget in m_SelectedWidgets)
             {
+                if (widget is Media2dWidget)
+                {
+                    ((Media2dWidget)widget).TwoSided = true;
+                }
                 TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
                 TrTransform tr_GS;
                 var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
@@ -88,17 +93,19 @@ namespace TiltBrush
                 {
                     var duplicatedWidget = widget.Clone();
 
+                    // Generally speaking we want both sides of 2d media to appear
+                    // when duplicating using multimirror
+                    ((Media2dWidget)widget).TwoSided = duplicatedWidget is Media2dWidget;
+
                     (TrTransform, TrTransform) trAndFix_WS;
                     trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
                     tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse; // convert from widget-local coords to world coords
                     var tmp = tr_GS * widgetTransform_GS * trAndFix_WS.Item2;   // Work around 2018.3.x Mono parse bug
 
                     tmp.ToTransform(duplicatedWidget.transform);
-                    duplicatedWidget.SetCanvas(m_CurrentCanvas);
                     m_DuplicatedWidgets.Add(duplicatedWidget);
                 }
             }
-            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -136,14 +143,17 @@ namespace TiltBrush
             for (int i = 0; i < m_DuplicatedWidgets.Count; ++i)
             {
                 m_DuplicatedWidgets[i].RestoreFromToss();
+                m_DuplicatedWidgets[i].SetCanvas(App.Scene.SelectionCanvas);
             }
 
-            // Select widgets.
-            if (m_DuplicatedWidgets != null && !m_StampMode)
-            {
-                SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
-                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
-            }
+            // // Select widgets.
+            // if (m_DuplicatedWidgets != null && !m_StampMode)
+            // {
+            //     SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+            //     SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+            // }
+
+            SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets, App.ActiveCanvas);
 
             // Set selection widget transforms.
             SelectionManager.m_Instance.SelectionTransform = m_Transform;

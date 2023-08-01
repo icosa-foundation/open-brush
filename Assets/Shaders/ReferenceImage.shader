@@ -19,11 +19,13 @@ Shader "Custom/ReferenceImage" {
         _Aspect("Aspect Ratio", Float) = 1
         _Cutoff("Alpha cutoff", Range(0,1)) = 0.5
         _Grayscale("Grayscale", Float) = 0
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Integer) = 1
     }
     SubShader {
         Tags{ "Queue" = "AlphaTest+20" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
         Pass {
             Lighting Off
+            Cull [_Cull]
 
             CGPROGRAM
             #pragma vertex vert
