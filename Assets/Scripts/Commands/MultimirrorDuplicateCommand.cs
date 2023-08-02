@@ -61,16 +61,22 @@ namespace TiltBrush
                 var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
                 for (int i = 0; i < matrices.Count; i++)
                 {
-                    (TrTransform, TrTransform) trAndFix_WS;
-                    trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
-                    tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse;                   // convert from widget-local coords to world coords
-                    var tmp = tr_GS * strokeTransform_GS * trAndFix_WS.Item2; // Work around 2018.3.x Mono parse bug
+                    var tr = TrTransform.FromMatrix4x4(matrices[i]);
+                    tr.scale = Mathf.Abs(tr.scale);
+                    tr_GS = xfCenter_GS * tr * xfCenter_GS.inverse; // convert from widget-local coords to world coords
+                    var tmp = tr_GS * strokeTransform_GS; // Work around 2018.3.x Mono parse bug
 
-                    // TODO strokes don't work correctly with reflections and I can't figure out why
-                    // Same logic is working for widgets and pointers (whilst drawing)...
-                    // So skip reflected strokes for now
-                    if (trAndFix_WS.Item2 != TrTransform.identity) continue;
+                    if (matrices[i].lossyScale.x < 0 || matrices[i].lossyScale.y < 0 || matrices[i].lossyScale.z < 0)
+                    {
+                        // Sigh...
+                        continue;
 
+                        // Here we have to do something similar to TrFromMatrixWithFixedReflections
+                        // or ReflectPoseKeepHandedness - but everything I've tried so far has been wrong
+                        tmp.translation -= strokeTransform_GS.translation;
+                        tmp *= TrTransform.R(Quaternion.Euler(180, 0, 0));
+                        tmp.translation += strokeTransform_GS.translation;
+                    }
                     tmp = targetCanvas.Pose.inverse * tmp;
                     var duplicatedStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, targetCanvas, tmp);
                     m_DuplicatedStrokes.Add(duplicatedStroke);
