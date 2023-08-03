@@ -3898,6 +3898,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_IntersectionShader: {fileID: 4800000, guid: d7406cc85f98dca4a92d6f7f70b640f2,
     type: 3}
+  m_IntersectionShaderFallback: {fileID: 4800000, guid: 19bc3f8f9a072424da23ce6c0865fcb4,
+    type: 3}
   m_DownsampleShader: {fileID: 4800000, guid: d5dde51f5552b8845818961cb99651bc, type: 3}
   m_ComputeCopyShader: {fileID: 7200000, guid: 23cf500c81c9a2448bf627131043da1f, type: 3}
 --- !u!1 &168645622

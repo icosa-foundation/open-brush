@@ -990,13 +990,14 @@ namespace TiltBrush
                 ChangeNumActivePointers(active);
             }
 
+            var previousMode = m_CurrentSymmetryMode;
             m_CurrentSymmetryMode = mode;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
             if (recordCommand)
             {
                 SketchMemoryScript.m_Instance.RecordCommand(
-                    new SymmetryWidgetVisibleCommand(m_SymmetryWidgetScript));
+                    new SymmetryWidgetVisibleCommand(mode, previousMode));
             }
 
             // Get a max face size to use as a scaling factor later.

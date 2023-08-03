@@ -234,7 +234,7 @@ MonoBehaviour:
   m_PanelPopUpMap:
   - m_PopUpPrefab: {fileID: 197348, guid: d239309283424304dbea4303c5b675ba, type: 3}
     m_Command: 7000
-  m_PanelDescription: Snap and Stroke Settings
+  m_PanelDescription: Grid and Snap Settings
   m_LocalizedPanelDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -795,9 +795,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Y Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634178
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -962,9 +962,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle X Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634177
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1238,6 +1238,7 @@ GameObject:
   - component: {fileID: 6532322519593860585}
   - component: {fileID: 5696135300144436554}
   - component: {fileID: 5708193282607495134}
+  - component: {fileID: 2946121269421900855}
   m_Layer: 16
   m_Name: 'Label: Snap Selected'
   m_TagString: Untagged
@@ -1399,6 +1400,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 5696135300144436554}
   m_maskType: 0
+--- !u!114 &2946121269421900855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4578537617175540313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382018
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382018
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 5708193282607495134}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382019
+        m_UpdateType: 0
+    - rid: 3936629452279382019
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584179634176
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &4760301089406437960
 GameObject:
   m_ObjectHideFlags: 0
@@ -1581,6 +1622,7 @@ GameObject:
   - component: {fileID: 9058690031562536873}
   - component: {fileID: 8962570540094781164}
   - component: {fileID: 3749135201943500226}
+  - component: {fileID: 7584209061859989676}
   m_Layer: 16
   m_Name: 'Label: Snap Axes'
   m_TagString: Untagged
@@ -1742,6 +1784,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 8962570540094781164}
   m_maskType: 0
+--- !u!114 &7584209061859989676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5488736236287980047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382016
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382016
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 3749135201943500226}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382017
+        m_UpdateType: 0
+    - rid: 3936629452279382017
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584125108224
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &5637956185939505903
 GameObject:
   m_ObjectHideFlags: 0
@@ -2283,9 +2365,9 @@ MonoBehaviour:
   m_DescriptionText: Snap Selected Rotation Angles
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634181
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2445,9 +2527,9 @@ MonoBehaviour:
   m_DescriptionText: Snap Selected to Grid
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634180
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2607,9 +2689,9 @@ MonoBehaviour:
   m_DescriptionText: Snap to Guides
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128979151367176192
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2773,9 +2855,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Z Position Snap
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634179
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2836,6 +2918,7 @@ GameObject:
   - component: {fileID: 3072981064562806302}
   - component: {fileID: 4305953896708350755}
   - component: {fileID: 5870935104714113040}
+  - component: {fileID: 2062587934248439819}
   m_Layer: 16
   m_Name: 'Label: Snap To Guides'
   m_TagString: Untagged
@@ -2997,6 +3080,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 4305953896708350755}
   m_maskType: 0
+--- !u!114 &2062587934248439819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9223053529476398660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382020
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382020
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 5870935104714113040}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382021
+        m_UpdateType: 0
+    - rid: 3936629452279382021
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128978688454426624
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1001 &2798590016152267446
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -151,10 +151,19 @@ namespace TiltBrush
             }
 
             // Select widgets.
-            if (m_DuplicatedWidgets != null && !m_StampMode)
+            if (m_DuplicatedWidgets != null)
             {
-                SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
-                SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                if (m_StampMode)
+                {
+                    SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+                    SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                    SelectionManager.m_Instance.DeselectWidgets(m_DuplicatedWidgets);
+                }
+                else
+                {
+                    SelectionManager.m_Instance.SelectWidgets(m_DuplicatedWidgets);
+                    SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_DuplicatedWidgets);
+                }
             }
 
             // Set selection widget transforms.
