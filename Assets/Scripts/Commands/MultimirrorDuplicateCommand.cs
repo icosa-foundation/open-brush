@@ -84,15 +84,20 @@ namespace TiltBrush
                 TrTransform widgetTransform_GS = TrTransform.FromTransform(widget.transform);
                 TrTransform tr_GS;
                 var xfCenter_GS = TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget);
+
+                // Generally speaking we want both sides of 2d media to appear
+                // when duplicating using multimirror
+                bool duplicateAsTwoSided = widget is Media2dWidget;
+
                 for (int i = 0; i < matrices.Count; i++)
                 {
                     var duplicatedWidget = widget.Clone();
+                    ((Media2dWidget)duplicatedWidget).TwoSided = duplicateAsTwoSided;
 
                     (TrTransform, TrTransform) trAndFix_WS;
                     trAndFix_WS = PointerManager.m_Instance.TrFromMatrixWithFixedReflections(matrices[i]);
                     tr_GS = xfCenter_GS * trAndFix_WS.Item1 * xfCenter_GS.inverse; // convert from widget-local coords to world coords
                     var tmp = tr_GS * widgetTransform_GS * trAndFix_WS.Item2;   // Work around 2018.3.x Mono parse bug
-
                     tmp.ToTransform(duplicatedWidget.transform);
                     duplicatedWidget.SetCanvas(m_CurrentCanvas);
                     m_DuplicatedWidgets.Add(duplicatedWidget);
