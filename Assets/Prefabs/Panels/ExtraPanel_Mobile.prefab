@@ -1678,6 +1678,11 @@ PrefabInstance:
       objectReference: {fileID: 2800000, guid: 4fb00a3c13d9a1b4e916be1c5a5357b8, type: 3}
     - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
         type: 3}
+      propertyPath: m_DescriptionText
+      value: EXTRA_PANEL_TRANSFORMTOOLS_BUTTON_DESCRIPTION
+      objectReference: {fileID: 0}
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325,
+        type: 3}
       propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
       value: 103943359016206336
       objectReference: {fileID: 0}
