@@ -327,6 +327,15 @@ MonoBehaviour:
       type: 3}
     m_Command: 15
   m_PanelDescription: Experimental
+  m_LocalizedPanelDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_PanelDescriptionPrefab: {fileID: 160918, guid: 3491f4f01ba6cac47b1633f36d7c6c84,
     type: 3}
   m_PanelDescriptionOffset: {x: 1.25, y: 0.8, z: 0}
@@ -361,6 +370,9 @@ MonoBehaviour:
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &11455360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -523,7 +535,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Turn on profile logging
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: Enable Profiling
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 8fe3d1d450fbf524c903f7548325db74, type: 3}
@@ -543,10 +573,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000013109740914
 GameObject:
   m_ObjectHideFlags: 0
@@ -660,7 +711,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Drafting Lines
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -685,6 +754,9 @@ MonoBehaviour:
     m_Texture: {fileID: 2800000, guid: ff3938a5f23ea46409dd9389f1a1cd97, type: 3}
   DisplayTextLabel: 0
   DisplayIcon: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1000013585526572
 GameObject:
   m_ObjectHideFlags: 0
@@ -881,7 +953,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Save selected strokes to model catalog
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: Save Model
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: b7fb5e24817634c4eb185b6d24afa87c, type: 3}
@@ -901,10 +991,31 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 1
   m_LinkedUIObject: {fileID: 0}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &1074454570839015039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,7 +1129,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Multi-Mirror
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 128947584183828496
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 8643f7dbd4cd20b48bb3b2b4c7ac1fe0, type: 3}
@@ -1038,11 +1167,32 @@ MonoBehaviour:
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0.5, z: 0}
   m_PopupText: 
+  m_LocalizedPopup:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnDescription: 
+  m_LocalizedToggleOnDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_ToggleOnTexture: {fileID: 0}
   m_AllowUnavailable: 0
   m_LinkedUIObject: {fileID: 0}
   m_LongPressDuration: 0.3
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &114000014220451482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1058,7 +1208,25 @@ MonoBehaviour:
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
@@ -1083,3 +1251,6 @@ MonoBehaviour:
     m_Texture: {fileID: 2800000, guid: ff3938a5f23ea46409dd9389f1a1cd97, type: 3}
   DisplayTextLabel: 0
   DisplayIcon: 1
+  references:
+    version: 2
+    RefIds: []

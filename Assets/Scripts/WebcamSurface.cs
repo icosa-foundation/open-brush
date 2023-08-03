@@ -83,8 +83,11 @@ public class WebcamSurface : MonoBehaviour
     private void OnDestroy()
     {
 #if !UNITY_ANDROID
-        _webcam.Stop();
-        Destroy(_webcam);
+        if (_webcam != null)
+        {
+            _webcam.Stop();
+            Destroy(_webcam);
+        }
 #endif
     }
 
