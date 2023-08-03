@@ -1083,7 +1083,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10142405791293440
-    m_Localized: 
+    m_Localized: Einrastwinkel
     m_Metadata:
       m_Items: []
   - m_Id: 10149748172103680
@@ -1240,7 +1240,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18101557633294336
-    m_Localized: 
+    m_Localized: Position
     m_Metadata:
       m_Items: []
   - m_Id: 68763796961820672
@@ -2201,539 +2201,539 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 81558424363229184
-    m_Localized: 
+    m_Localized: "K\xFChles Wei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977920
-    m_Localized: 
+    m_Localized: "Antikes Wei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977921
-    m_Localized: 
+    m_Localized: Helles Cyan
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977922
-    m_Localized: 
+    m_Localized: "Wei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977923
-    m_Localized: 
+    m_Localized: Beige
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977924
-    m_Localized: 
+    m_Localized: Biskuit
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977925
-    m_Localized: 
+    m_Localized: Schwarz
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977926
-    m_Localized: 
+    m_Localized: Mittelgrau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977927
-    m_Localized: 
+    m_Localized: "Knochenwei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977928
-    m_Localized: 
+    m_Localized: Blau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977929
-    m_Localized: 
+    m_Localized: Blauviolett
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977930
-    m_Localized: 
+    m_Localized: Braun
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977931
-    m_Localized: 
+    m_Localized: Tiefes Beige
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977932
-    m_Localized: 
+    m_Localized: Aschblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977933
-    m_Localized: 
+    m_Localized: Chartreuse
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977934
-    m_Localized: 
+    m_Localized: Rohes Siena
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977935
-    m_Localized: 
+    m_Localized: Kornblumenblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977936
-    m_Localized: 
+    m_Localized: Kornseide
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977937
-    m_Localized: 
+    m_Localized: Karmesinrot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977938
-    m_Localized: 
+    m_Localized: Cyan
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977939
-    m_Localized: 
+    m_Localized: Dunkles Blau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977940
-    m_Localized: 
+    m_Localized: "Dunkles Blaugr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977941
-    m_Localized: 
+    m_Localized: Dunkles Ocker
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977942
-    m_Localized: 
+    m_Localized: "Dunkles Gr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977943
-    m_Localized: 
+    m_Localized: Dunkles Khaki
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977944
-    m_Localized: 
+    m_Localized: Dunkles Magenta
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977945
-    m_Localized: 
+    m_Localized: "Dunkles Olivgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977946
-    m_Localized: 
+    m_Localized: Dunkle Orange
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977947
-    m_Localized: 
+    m_Localized: Dunkle Orchidee
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977948
-    m_Localized: 
+    m_Localized: Dunkles Rot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977949
-    m_Localized: 
+    m_Localized: Dunkel Lachsfarben
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977950
-    m_Localized: 
+    m_Localized: "Dunkles Meeresgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977951
-    m_Localized: 
+    m_Localized: Dunkles Schieferblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977952
-    m_Localized: 
+    m_Localized: Neutralgrau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977953
-    m_Localized: 
+    m_Localized: "Dunkles T\xFCrkis"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977954
-    m_Localized: 
+    m_Localized: Dunkles Violett
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977955
-    m_Localized: 
+    m_Localized: Tiefrosa
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977956
-    m_Localized: 
+    m_Localized: Tiefes Himmelblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977957
-    m_Localized: 
+    m_Localized: Dunkles Grau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977958
-    m_Localized: 
+    m_Localized: Coelinblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977959
-    m_Localized: 
+    m_Localized: Karminrot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977960
-    m_Localized: 
+    m_Localized: "Blumenwei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977961
-    m_Localized: 
+    m_Localized: "Waldgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977962
-    m_Localized: 
+    m_Localized: Silber
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977963
-    m_Localized: 
+    m_Localized: "Geisterwei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977964
-    m_Localized: 
+    m_Localized: Kadmiumgelb
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977965
-    m_Localized: 
+    m_Localized: Ocker
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977966
-    m_Localized: 
+    m_Localized: Grau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977967
-    m_Localized: 
+    m_Localized: "Gr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977968
-    m_Localized: 
+    m_Localized: "Gr\xFCngelb"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977969
-    m_Localized: 
+    m_Localized: Honigtau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977970
-    m_Localized: 
+    m_Localized: "Hei\xDFes Rosa"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977971
-    m_Localized: 
+    m_Localized: Oxidrot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977972
-    m_Localized: 
+    m_Localized: Indigo
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977973
-    m_Localized: 
+    m_Localized: Elfenbein
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977974
-    m_Localized: 
+    m_Localized: Khaki
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977975
-    m_Localized: 
+    m_Localized: Lavendel
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977976
-    m_Localized: 
+    m_Localized: Blasser Lavendel
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977977
-    m_Localized: 
+    m_Localized: "Leuchtendes Gr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977978
-    m_Localized: 
+    m_Localized: Blasse Zitrone
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977979
-    m_Localized: 
+    m_Localized: Hellblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977980
-    m_Localized: 
+    m_Localized: Helle Koralle
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977981
-    m_Localized: 
+    m_Localized: Blasse Limette
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977982
-    m_Localized: 
+    m_Localized: "Hellgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977983
-    m_Localized: 
+    m_Localized: Hellgrau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977984
-    m_Localized: 
+    m_Localized: Hellrosa
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977985
-    m_Localized: 
+    m_Localized: Hell Lachsfarben
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977986
-    m_Localized: 
+    m_Localized: "Helles Meeresgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977987
-    m_Localized: 
+    m_Localized: Helles Himmelblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977988
-    m_Localized: 
+    m_Localized: Helles Aschblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977989
-    m_Localized: 
+    m_Localized: Helles Stahlblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977990
-    m_Localized: 
+    m_Localized: Hellgelb
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977991
-    m_Localized: 
+    m_Localized: Limette
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977992
-    m_Localized: 
+    m_Localized: "Limettengr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977993
-    m_Localized: 
+    m_Localized: Leinen
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977994
-    m_Localized: 
+    m_Localized: Magenta
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977995
-    m_Localized: 
+    m_Localized: Kastanienbraun
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977996
-    m_Localized: 
+    m_Localized: Mittleres Aquamarin
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977997
-    m_Localized: 
+    m_Localized: Ultramarin
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977998
-    m_Localized: 
+    m_Localized: Mittlere Orchidee
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400977999
-    m_Localized: 
+    m_Localized: Mittleres Lila
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978000
-    m_Localized: 
+    m_Localized: "Mittleres Meeresgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978001
-    m_Localized: 
+    m_Localized: Mittleres Schieferblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978002
-    m_Localized: 
+    m_Localized: "Mittleres Fr\xFChlingsgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978003
-    m_Localized: 
+    m_Localized: "Mittleres T\xFCrkis"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978004
-    m_Localized: 
+    m_Localized: Rosaviolett
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978005
-    m_Localized: 
+    m_Localized: Mitternachtsblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978006
-    m_Localized: 
+    m_Localized: Minzcreme
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978007
-    m_Localized: 
+    m_Localized: Nebliges Rosa
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978008
-    m_Localized: 
+    m_Localized: Neapelgelb
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978009
-    m_Localized: 
+    m_Localized: Titan-Braungelb
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978010
-    m_Localized: 
+    m_Localized: Marineblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978011
-    m_Localized: 
+    m_Localized: Alte Spitze
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978012
-    m_Localized: 
+    m_Localized: Olive
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978013
-    m_Localized: 
+    m_Localized: "Moosgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978014
-    m_Localized: 
+    m_Localized: Gelborange
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978015
-    m_Localized: 
+    m_Localized: Scharlachrot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978016
-    m_Localized: 
+    m_Localized: Orchidee
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978017
-    m_Localized: 
+    m_Localized: Blasser Ocker
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978018
-    m_Localized: 
+    m_Localized: "Blasses Gr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978019
-    m_Localized: 
+    m_Localized: "Blasses T\xFCrkis"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978020
-    m_Localized: 
+    m_Localized: Blasses Violettrot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978021
-    m_Localized: 
+    m_Localized: Papayapeitsche
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978022
-    m_Localized: 
+    m_Localized: Pfirsichflaum
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978023
-    m_Localized: 
+    m_Localized: Rosa
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978024
-    m_Localized: 
+    m_Localized: Flieder
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978025
-    m_Localized: 
+    m_Localized: Puderblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978026
-    m_Localized: 
+    m_Localized: Lila
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978027
-    m_Localized: 
+    m_Localized: Rot
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978028
-    m_Localized: 
+    m_Localized: Rosig Braun
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978029
-    m_Localized: 
+    m_Localized: "K\xF6nigsblau"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978030
-    m_Localized: 
+    m_Localized: Gebrannte Umber
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978031
-    m_Localized: 
+    m_Localized: Lachsfarben
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978032
-    m_Localized: 
+    m_Localized: Sandbraun
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978033
-    m_Localized: 
+    m_Localized: "Meeresgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978034
-    m_Localized: 
+    m_Localized: Seemuschel
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978035
-    m_Localized: 
+    m_Localized: Siena
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978036
-    m_Localized: 
+    m_Localized: Himmelblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978037
-    m_Localized: 
+    m_Localized: Schieferblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978038
-    m_Localized: 
+    m_Localized: Schiefergrau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978039
-    m_Localized: 
+    m_Localized: Schnee
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978040
-    m_Localized: 
+    m_Localized: "Fr\xFChlingsgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424400978041
-    m_Localized: 
+    m_Localized: Stahlblau
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172224
-    m_Localized: 
+    m_Localized: Hellbraun
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172225
-    m_Localized: 
+    m_Localized: "Blaugr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172226
-    m_Localized: 
+    m_Localized: Blasses Lila
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172227
-    m_Localized: 
+    m_Localized: Tomate
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172228
-    m_Localized: 
+    m_Localized: "T\xFCrkis"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172229
-    m_Localized: 
+    m_Localized: Violett
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172230
-    m_Localized: 
+    m_Localized: Titan
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172231
-    m_Localized: 
+    m_Localized: "Helles Wei\xDF"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172232
-    m_Localized: 
+    m_Localized: Gelb
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172233
-    m_Localized: 
+    m_Localized: "Blattgr\xFCn"
     m_Metadata:
       m_Items: []
   - m_Id: 81558424405172234
-    m_Localized: 
+    m_Localized: Orange
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -2814,6 +2814,750 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 95221400841486348
     m_Localized: Feststelltaste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182403783614464
+    m_Localized: Pfad aufgezeichnet!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81182608851525632
+    m_Localized: Aufnahme abgebrochen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81183732522344448
+    m_Localized: Auswahl auf aktuelle Ebene kopieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184247687733248
+    m_Localized: Hauptebene
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81184440202092544
+    m_Localized: Ebene
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81187452349898752
+    m_Localized: "Ausl\xF6sen zum Best\xE4tigen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194531575881728
+    m_Localized: Skizze laden ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194664648564736
+    m_Localized: Modelle laden ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194744055128064
+    m_Localized: "Wird geladen\_..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194843074256896
+    m_Localized: Bilder laden ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194906580213760
+    m_Localized: Exportieren ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81194990285938688
+    m_Localized: Medien laden ...
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203094671122432
+    m_Localized: Blasen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203153294909440
+    m_Localized: Seifenblasenstab
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203246727225344
+    m_Localized: Zuckerstange
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203301878128640
+    m_Localized: Cel-Vinyl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203372350824448
+    m_Localized: Holzkohle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203423919792128
+    m_Localized: Chromatische Welle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203481385951232
+    m_Localized: Grobe Borsten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203567432097792
+    m_Localized: Komet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203611405180928
+    m_Localized: Konkaver Rumpf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203662118510592
+    m_Localized: "Tanzfl\xE4che"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203709862273024
+    m_Localized: Diamant
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203777713528832
+    m_Localized: Digital
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203824031227904
+    m_Localized: Disco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203865550643200
+    m_Localized: Punktmarker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203913957105664
+    m_Localized: Punkte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81203958152486912
+    m_Localized: Doppelt flach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204005120303104
+    m_Localized: Eingeklemmt flach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204078575149056
+    m_Localized: Eingeklemmter Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204129737269248
+    m_Localized: Zeichnen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204173685186560
+    m_Localized: Trockener Pinsel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204235328872448
+    m_Localized: Klebeband
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204288453926912
+    m_Localized: Klebeband (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204382188232704
+    m_Localized: "Elektrizit\xE4t"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204427818065920
+    m_Localized: Glut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204493236625408
+    m_Localized: "Facettierte R\xF6hre"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204541060079616
+    m_Localized: Fee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204581946155008
+    m_Localized: Feder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204635582914560
+    m_Localized: Filz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204676406075392
+    m_Localized: Feuer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204735243771904
+    m_Localized: Feuer2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204778390577152
+    m_Localized: Flach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204889594159104
+    m_Localized: Flache Geometrie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81204982288277504
+    m_Localized: Gouache
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205065486491648
+    m_Localized: "D\xE4rme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205104946503680
+    m_Localized: Textmarker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205150878326784
+    m_Localized: Baum
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205201507770368
+    m_Localized: Hyperfarbe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205290808696832
+    m_Localized: Hypergitter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205339491983360
+    m_Localized: Zuckerguss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205378532564992
+    m_Localized: Tinte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205417556369408
+    m_Localized: Tinte (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205502021263360
+    m_Localized: Keijiro-Rohr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205552273219584
+    m_Localized: Florfliege
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205593624862720
+    m_Localized: Undichter Stift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205636259962880
+    m_Localized: "Bl\xE4tter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205679876530176
+    m_Localized: "Bl\xE4tter2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205749166432256
+    m_Localized: Licht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205790060896256
+    m_Localized: Lichtdraht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205838656102400
+    m_Localized: Draht (beleuchtet)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205898521403392
+    m_Localized: Erhaben
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81205943849246720
+    m_Localized: Erhaben (Farbtonverschiebung)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206004192698368
+    m_Localized: Marmorierter Regenbogen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206060224405504
+    m_Localized: Marker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206102402326528
+    m_Localized: Marker (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206156286550016
+    m_Localized: Matter Rumpf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206207075377152
+    m_Localized: Muskeln
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206251857960960
+    m_Localized: "Mylar-R\xF6hre"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206295621328896
+    m_Localized: Neonimpuls
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206368749019136
+    m_Localized: "\xD6lfarbe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206416861880320
+    m_Localized: "\xD6lfarbe (Geometrie)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206494716551168
+    m_Localized: Papier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206536990941184
+    m_Localized: Papier (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206595077857280
+    m_Localized: Geflecht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206666636877824
+    m_Localized: "Bl\xFCtenblatt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206859902017536
+    m_Localized: Plasma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206904026095616
+    m_Localized: Rennen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206946329845760
+    m_Localized: Regen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81206986301562880
+    m_Localized: Regenbogen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207025421836288
+    m_Localized: Aufsteigende Blasen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207069424279552
+    m_Localized: "Gl\xE4nzender Rumpf"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207135908192256
+    m_Localized: Einseitig
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207182829871104
+    m_Localized: Slice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207263394062336
+    m_Localized: Glatter Rumpf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207308449275904
+    m_Localized: Schnee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207357476495360
+    m_Localized: Schneeflocke
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207400497471488
+    m_Localized: Weicher Textmarker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207449709240320
+    m_Localized: Raum
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207491186712576
+    m_Localized: Funken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207535642140672
+    m_Localized: Stacheln
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207574603030528
+    m_Localized: Spritzer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207648775102464
+    m_Localized: 3D-Druck-Pinsel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207710548811776
+    m_Localized: Quadratisch flach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207756761653248
+    m_Localized: Sterne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207807806332928
+    m_Localized: Streamer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207912810733568
+    m_Localized: Toffee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207961254944768
+    m_Localized: "Verj\xFCngt flach"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208043572355072
+    m_Localized: "Verj\xFCngter Textmarker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208094986133504
+    m_Localized: "Verj\xFCngte Farbtonverschiebung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208142008475648
+    m_Localized: "Verj\xFCngter Marker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208255854469120
+    m_Localized: "Verj\xFCngter Marker Geo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208320484499456
+    m_Localized: "Verj\xFCngter Draht"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208372611309568
+    m_Localized: Geom/Dick (Klebeband)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208728183431168
+    m_Localized: Dicke Farbe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208800589701120
+    m_Localized: Toon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208843535179776
+    m_Localized: "R\xF6hre (Textmarker)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208895842344960
+    m_Localized: "R\xF6hre (flach)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81208961575477248
+    m_Localized: "R\xF6hre-Toon Umgekehrt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209021776322560
+    m_Localized: "R\xF6hre (Marker)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209066508574720
+    m_Localized: Unbeleuchteter Rumpf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209114365583360
+    m_Localized: Samttinte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209159253024768
+    m_Localized: Aquarellpapier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209241222307840
+    m_Localized: Aquarellpapier (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209297144963072
+    m_Localized: Wellenform
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209348688764928
+    m_Localized: Wellenform-FFT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209390745051136
+    m_Localized: Wellenformpartikel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209436215500800
+    m_Localized: "Wellenformr\xF6hre"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209474924732416
+    m_Localized: Nasse Farbe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209522190344192
+    m_Localized: Nasse Farbe (Geometrie)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209591056621568
+    m_Localized: Dr. Wigglez
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209706207043584
+    m_Localized: Wind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209742752014336
+    m_Localized: Draht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81209777615069184
+    m_Localized: Drahtgitter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212669579288576
+    m_Localized: Schwarz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212740198785024
+    m_Localized: Blau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212798805794816
+    m_Localized: Kleidform
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212845635198976
+    m_Localized: Beispiel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212886244450304
+    m_Localized: "Hei\xDF"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212929865211904
+    m_Localized: Illustrativ
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81212976329711616
+    m_Localized: Nachthimmel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213029828059136
+    m_Localized: Keine Lichter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213093988327424
+    m_Localized: Durchleitung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213138796077056
+    m_Localized: Sockel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213180441321472
+    m_Localized: Rosa Limonade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213231821545472
+    m_Localized: Pistazie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213302868860928
+    m_Localized: Schneemann
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213342391787520
+    m_Localized: Raum
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213390877941760
+    m_Localized: Standard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81213430556057600
+    m_Localized: "Wei\xDF"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81450547493494784
+    m_Localized: exportiert!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81477322290257920
+    m_Localized: Geschafft!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85227255933722624
+    m_Localized: "Dr\xFCcke den linken Abzug, \num schnell zu laden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86502336588701696
+    m_Localized: "Halte den Ausl\xF6ser zum Malen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503100627312640
+    m_Localized: "Dr\xFCcke den Ausl\xF6ser, \num das Objekt zu l\xF6sen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503188791582720
+    m_Localized: "Dr\xFCcke den Ausl\xF6ser, \num das Objekt anzuheften"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503489334435840
+    m_Localized: "Dr\xFCcke den Ausl\xF6ser, um das Speichersymbol zu erfassen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86503586919112704
+    m_Localized: "Halte den Ausl\xF6ser \nf\xFCr die Vorschau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86505772348628992
+    m_Localized: Bewege den Daumenstick
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86507370093240320
+    m_Localized: "Pinselgr\xF6\xDFe einstellen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86510761523568640
+    m_Localized: "Dr\xFCcke X, um den \nAbwahlmodus zu aktivieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512053855739904
+    m_Localized: "Dr\xFCcke X, um den \nAbwahlmodus zu verlassen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86512303735595008
+    m_Localized: "Dr\xFCcke X, um eine \nAuswahl zu duplizieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86513132228075520
+    m_Localized: 'Nutze Greifen, um das
+
+      leuchtende Panel zu greifen'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515258303995904
+    m_Localized: Zeige zum Interagieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86515585589731328
+    m_Localized: 'Teile deine Skizze
+
+      mit der Community'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86516117700108288
+    m_Localized: 'Schalte
+
+      fortschrittliche Funktionen frei'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86522814208434176
+    m_Localized: "Dr\xFCcke den rechten Ausl\xF6ser, \num schnell zu laden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526550477660160
+    m_Localized: "Dr\xFCcke A, um den \nAbwahlmodus zu verlassen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86526918276177920
+    m_Localized: "Dr\xFCcke A, um den \nAbwahlmodus zu aktivieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86527241187254272
+    m_Localized: "Halte A gedr\xFCckt, \num eine Auswahl zu duplizieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542625575559168
+    m_Localized: "Dr\xFCcke den Ausl\xF6ser, \num schnell zu laden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86542994603008000
+    m_Localized: "Wische \xFCber das Daumenpad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543386296475648
+    m_Localized: "Dr\xFCcke das Daumenpad \nf\xFCr den Abwahlmodus"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543571617603584
+    m_Localized: "Dr\xFCcke das Daumenpad, \num den Abwahlmodus zu beenden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86543649577132032
+    m_Localized: "Halte das Daumenpad gedr\xFCckt \nzum Duplizieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86583802232332288
+    m_Localized: "Speicher die Farben \nin deiner Skizzenpalette"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86584733715947520
+    m_Localized: "Hilfreiche Informationen \nhinter dem Pinsel-Controller"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86586444966813696
+    m_Localized: "Dupliziere, wenn das \nAuswahlwerkzeug die Auswahl \xFCberlappt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605819400708096
+    m_Localized: 'Greifen, um Objekte zu greifen
+
+      <color=#787878>Versuch dieses
+      Panel zu greifen'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86605978197057536
+    m_Localized: "Nutze Hilfslinien \nzum pr\xE4zisen Malen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606072233353216
+    m_Localized: "Nutze Pfeile f\xFCr mehr ..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606143058370560
+    m_Localized: "Ziehe den Ausl\xF6ser zum Anheften"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606447405457408
+    m_Localized: "Gedr\xFCckt halten, \num das Werkzeug zu wechseln"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606504787730432
+    m_Localized: "Benutze beide Griffe \nbei Objekten, um sie zu skalieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86606528972087296
+    m_Localized: Tippe auf die Unterseite, um die Controller zu wechseln
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607071601778688
+    m_Localized: "Wirf Objekte, um sie loszuwerden<color=#787878>Versuch, diesen
+      W\xFCrfel zu werfen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607314393260032
+    m_Localized: "Dr\xFCck zum R\xFCckg\xE4ngigmachen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607365643460608
+    m_Localized: "Dr\xFCck zum Wiederholen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607461726576640
+    m_Localized: "Benutze beide Griffe, um dich \nzu drehen und deine Gr\xF6\xDFe
+      zu ver\xE4ndern"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607568958152704
+    m_Localized: "Linken Ausl\xF6ser dr\xFCcken,\num schnell zu laden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607659639005184
+    m_Localized: "Greif und dr\xFCcke dann das \nTrackpad, um deine Gr\xF6\xDFe zur\xFCckzusetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86607720842289152
+    m_Localized: "Greif und dr\xFCcke dann den X- oder A-Knopf, um deine Gr\xF6\xDFe
+      zur\xFCckzusetzen"
     m_Metadata:
       m_Items: []
   references:
