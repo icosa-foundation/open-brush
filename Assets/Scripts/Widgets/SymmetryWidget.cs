@@ -146,13 +146,6 @@ namespace TiltBrush
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = false;
-                    m_FrontBackMesh.enabled = true;
-                    for (int i = 0; i < m_GuideBeams.Length; ++i)
-                    {
-                        m_GuideBeams[i].m_BeamRenderer.enabled = false;
-                    }
-                    if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
-                    {
                     }
                     break;
             }
