@@ -261,9 +261,9 @@ MonoBehaviour:
   m_PanelDescription: Transform
   m_LocalizedPanelDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 103943359016206336
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -554,6 +554,7 @@ GameObject:
   - component: {fileID: 4322157154749012749}
   - component: {fileID: 6897223125503477208}
   - component: {fileID: 6646559286969075917}
+  - component: {fileID: 6909539371691054040}
   m_Layer: 16
   m_Name: 'Label: Translation'
   m_TagString: Untagged
@@ -715,6 +716,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 6897223125503477208}
   m_maskType: 0
+--- !u!114 &6909539371691054040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216595415184818018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382022
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382022
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 6646559286969075917}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382023
+        m_UpdateType: 0
+    - rid: 3936629452279382023
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584179634182
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &371591639283283845
 GameObject:
   m_ObjectHideFlags: 0
@@ -1175,9 +1216,9 @@ MonoBehaviour:
   m_DescriptionText: 'Align by:'
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828485
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1527,9 +1568,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828492
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1858,9 +1899,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828491
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2041,6 +2082,7 @@ GameObject:
   - component: {fileID: 4239944618348988289}
   - component: {fileID: 6699270512922461547}
   - component: {fileID: 635189248975164053}
+  - component: {fileID: 1086578794190711233}
   m_Layer: 16
   m_Name: 'Label: Align'
   m_TagString: Untagged
@@ -2202,6 +2244,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 6699270512922461547}
   m_maskType: 0
+--- !u!114 &1086578794190711233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2508026035057716006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382026
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382026
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 635189248975164053}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382027
+        m_UpdateType: 0
+    - rid: 3936629452279382027
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584179634184
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &2625226377608175970
 GameObject:
   m_ObjectHideFlags: 0
@@ -2494,9 +2576,9 @@ MonoBehaviour:
   m_DescriptionText: Align Y
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828483
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2658,9 +2740,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Z Position Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634187
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2825,9 +2907,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Y Position Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634186
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2888,6 +2970,7 @@ GameObject:
   - component: {fileID: 4885711003180212691}
   - component: {fileID: 2241077554658690178}
   - component: {fileID: 2893698644932960249}
+  - component: {fileID: 2053061225448928789}
   m_Layer: 16
   m_Name: 'Label: Distribute'
   m_TagString: Untagged
@@ -3049,6 +3132,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 2241077554658690178}
   m_maskType: 0
+--- !u!114 &2053061225448928789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3897681355709531774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382034
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382034
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 2893698644932960249}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382035
+        m_UpdateType: 0
+    - rid: 3936629452279382035
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584183828490
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &4046563913371732578
 GameObject:
   m_ObjectHideFlags: 0
@@ -3337,9 +3460,9 @@ MonoBehaviour:
   m_DescriptionText: Align Rotation
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828489
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3502,9 +3625,9 @@ MonoBehaviour:
   m_DescriptionText: Align Z
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828484
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3839,9 +3962,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle X Rotation Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634188
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3902,6 +4025,7 @@ GameObject:
   - component: {fileID: 4689434918512347961}
   - component: {fileID: 7905603438149138789}
   - component: {fileID: 1858082173923385319}
+  - component: {fileID: 8375057332226181445}
   m_Layer: 16
   m_Name: 'Label: Rotation'
   m_TagString: Untagged
@@ -4063,6 +4187,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 7905603438149138789}
   m_maskType: 0
+--- !u!114 &8375057332226181445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4563334062437857873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69beb381e244f92449b8c4cf954630e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TrackedObjects:
+  - rid: 3936629452279382024
+  references:
+    version: 2
+    RefIds:
+    - rid: 3936629452279382024
+      type: {class: TrackedUGuiGraphic, ns: UnityEngine.Localization.PropertyVariants.TrackedObjects,
+        asm: Unity.Localization}
+      data:
+        m_Target: {fileID: 1858082173923385319}
+        m_TrackedProperties:
+          items:
+          - rid: 3936629452279382025
+        m_UpdateType: 0
+    - rid: 3936629452279382025
+      type: {class: LocalizedStringProperty, ns: UnityEngine.Localization.PropertyVariants.TrackedProperties,
+        asm: Unity.Localization}
+      data:
+        m_Localized:
+          m_TableReference:
+            m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+          m_TableEntryReference:
+            m_KeyId: 128947584179634183
+            m_Key: 
+          m_FallbackState: 0
+          m_WaitForCompletion: 0
+          m_LocalVariables: []
+        m_PropertyPath: m_text
 --- !u!1 &4678059152290188125
 GameObject:
   m_ObjectHideFlags: 0
@@ -4188,9 +4352,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828493
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4342,9 +4506,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Y Rotation Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828480
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4676,9 +4840,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle X Position Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584179634185
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4843,9 +5007,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Z Rotation Lock
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828481
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -5214,9 +5378,9 @@ MonoBehaviour:
   m_DescriptionText: Align X
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584183828482
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
