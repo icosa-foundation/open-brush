@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
 namespace TiltBrush
 {
     public class SymmetryWidgetVisibleCommand : BaseCommand
     {
-        private bool m_Visible;
+        private PointerManager.SymmetryMode m_RequestedMode;
+        private PointerManager.SymmetryMode m_PreviousMode;
 
-        public SymmetryWidgetVisibleCommand(SymmetryWidget widget, BaseCommand parent = null)
+        public SymmetryWidgetVisibleCommand(
+            PointerManager.SymmetryMode requestedMode, PointerManager.SymmetryMode previousMode,
+            BaseCommand parent = null)
             : base(parent)
         {
-            m_Visible = widget.Showing;
+            m_RequestedMode = requestedMode;
+            m_PreviousMode = previousMode;
         }
 
         public override bool NeedsSave { get { return base.NeedsSave; } }
@@ -29,8 +34,7 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             PointerManager.m_Instance.DisablePointerPreviewLine();
-            PointerManager.m_Instance.SetSymmetryMode(m_Visible ?
-                PointerManager.SymmetryMode.SinglePlane : PointerManager.SymmetryMode.None, false);
+            PointerManager.m_Instance.SetSymmetryMode(m_RequestedMode, false);
             if (!SketchControlsScript.m_Instance.IsUserInteractingWithUI())
             {
                 PointerManager.m_Instance.AllowPointerPreviewLine(true);
@@ -40,8 +44,7 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             PointerManager.m_Instance.DisablePointerPreviewLine();
-            PointerManager.m_Instance.SetSymmetryMode(m_Visible ?
-                PointerManager.SymmetryMode.None : PointerManager.SymmetryMode.SinglePlane, false);
+            PointerManager.m_Instance.SetSymmetryMode(m_PreviousMode, false);
             if (!SketchControlsScript.m_Instance.IsUserInteractingWithUI())
             {
                 PointerManager.m_Instance.AllowPointerPreviewLine(true);
