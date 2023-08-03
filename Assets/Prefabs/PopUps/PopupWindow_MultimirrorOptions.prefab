@@ -253,9 +253,9 @@ MonoBehaviour:
   m_DescriptionText: Summon Mirror
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 128947584188022786
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -6159,8 +6159,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011554005549056
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -6533,8 +6543,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011445721202688
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -6895,8 +6915,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828503
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -7077,6 +7107,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828505
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -7094,6 +7129,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleWaveformButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -7459,6 +7499,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 114054410763498584}
@@ -7636,6 +7681,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828502
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -7653,6 +7703,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleColorComponentButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -7828,8 +7883,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129010807801118720
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -8286,8 +8351,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828504
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -8468,6 +8543,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828501
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -8485,6 +8565,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleColorComponentButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -8665,8 +8750,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011387676229632
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -8837,8 +8932,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011621378654208
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -9014,6 +9119,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584188022785
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -9031,6 +9141,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleWaveformButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -9630,6 +9745,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828498
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 1
       objectReference: {fileID: 0}
@@ -9647,6 +9767,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleShowWallpaperSymmetry
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -9832,6 +9957,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828507
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -9849,6 +9979,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleWaveformButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -10044,6 +10179,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828499
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 1
       objectReference: {fileID: 0}
@@ -10061,6 +10201,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleShowOptions
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -10448,6 +10593,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828497
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 1
       objectReference: {fileID: 0}
@@ -10465,6 +10615,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleShowPointSymmetry
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -10650,6 +10805,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828500
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -10667,6 +10827,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleColorComponentButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -10852,6 +11017,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584188022784
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -10869,6 +11039,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleWaveformButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
@@ -11431,8 +11606,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011519415123968
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -11815,8 +12000,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011580064759808
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -11982,8 +12177,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 129011310442315776
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
       propertyPath: onUpdateValue.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2514466698640951438, guid: 73f56870960b5564e8849fe39bdfd7c2,
         type: 3}
@@ -12573,6 +12778,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 128947584183828506
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 2
       objectReference: {fileID: 0}
@@ -12590,6 +12800,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Action.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: HandleWaveformButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
+        type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9,
         type: 3}
