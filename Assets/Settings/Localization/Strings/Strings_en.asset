@@ -605,7 +605,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7870646065012736
-    m_Localized: Plugins and Scripts
+    m_Localized: Scripts
     m_Metadata:
       m_Items: []
   - m_Id: 7870824155160576
@@ -3098,10 +3098,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 81207223535591424
     m_Localized: Smoke
-    m_Metadata:
-      m_Items: []
-  - m_Id: 106429517453328384
-    m_Localized: "Background Images"
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
