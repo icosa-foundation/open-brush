@@ -27,6 +27,7 @@ namespace TiltBrush
             public bool tinted;
             public uint groupId;
             public int layerId;
+            public bool twoSided;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -153,7 +154,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas)
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    TwoSided = widget.TwoSided
                 };
                 if (widget.VideoController != null)
                 {
@@ -227,6 +229,7 @@ namespace TiltBrush
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                newEntry.twoSided = image.TwoSided;
                 imagesByFileName[fileName].Add(newEntry);
             }
 
@@ -248,6 +251,7 @@ namespace TiltBrush
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
+                val.TwoSidedFlags = new bool[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
@@ -255,6 +259,7 @@ namespace TiltBrush
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
+                    val.TwoSidedFlags[i] = ordered[i].twoSided;
                 }
                 imageIndex.Add(val);
             }
