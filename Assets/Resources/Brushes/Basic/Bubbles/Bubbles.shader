@@ -19,6 +19,11 @@ Properties {
   _ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -40,6 +45,7 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -63,15 +69,15 @@ Category {
 
       float3 computeDisplacement(float3 seed, float timeOffset) {
         float3 jitter; {
-          float t = _Time.y * _ScrollRate + timeOffset;
-          jitter.x = sin(t       + _Time.y + seed.z * _ScrollJitterFrequency);
-          jitter.z = cos(t       + _Time.y + seed.x * _ScrollJitterFrequency);
-          jitter.y = cos(t * 1.2 + _Time.y + seed.x * _ScrollJitterFrequency);
+          float t = GetTime().y * _ScrollRate + timeOffset;
+          jitter.x = sin(t       + GetTime().y + seed.z * _ScrollJitterFrequency);
+          jitter.z = cos(t       + GetTime().y + seed.x * _ScrollJitterFrequency);
+          jitter.y = cos(t * 1.2 + GetTime().y + seed.x * _ScrollJitterFrequency);
           jitter *= _ScrollJitterIntensity;
         }
 
         float3 curl; {
-          float3 v = (seed + jitter) * .1 + _Time.x * 5;
+          float3 v = (seed + jitter) * .1 + GetTime().x * 5;
           float d = 30;
           curl = float3(curlX(v, d), curlY(v, d), curlZ(v, d)) * 10;
         }

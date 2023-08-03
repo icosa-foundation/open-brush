@@ -710,10 +710,6 @@ Image.scale = nil
 
 ---Methods for type Image
 
----@param depth number
----@param color Color
-function Image:Extrude(depth, color) end
-
 ---@param location string
 ---@return Image
 function Image:Import(location) end
@@ -723,6 +719,10 @@ function Image:Select() end
 
 
 function Image:Delete() end
+
+---@param depth number
+---@param color Color
+function Image:Extrude(depth, color) end
 
 
 ---@return string
@@ -811,6 +811,37 @@ function Layer:Show() end
 
 
 function Layer:Hide() end
+
+---@param desc BrushDescriptor
+---@return System.Collections.Generic.IEnumerable`1[Batch]
+function Layer:_GetBatches(desc) end
+
+---@param brushType string
+---@return BrushDescriptor
+function Layer:_GetDesc(brushType) end
+
+---@param brushType string
+---@param parameter string
+---@param value number
+function Layer:SetShaderFloat(brushType, parameter, value) end
+
+---@param brushType string
+---@param parameter string
+---@param color Color
+function Layer:SetShaderColor(brushType, parameter, color) end
+
+---@param brushType string
+---@param parameter string
+---@param image Image
+function Layer:SetShaderTexture(brushType, parameter, image) end
+
+---@param brushType string
+---@param parameter string
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function Layer:SetShaderVector(brushType, parameter, x, y, z, w) end
 
 ---Properties for class Math
 
@@ -1618,6 +1649,9 @@ Sketch.strokes = nil
 ---@type LayerList
 Sketch.layers = nil
 
+---@type Layer
+Sketch.mainLayer = nil
+
 ---@type System.Collections.Generic.List`1[Group]
 Sketch.groups = nil
 
@@ -1769,9 +1803,6 @@ function Stroke:Delete() end
 
 function Stroke:Select() end
 
-
-function Stroke:ModifyMaterial() end
-
 ---@param from number
 ---@param to number
 function Stroke:SelectRange(from, to) end
@@ -1841,7 +1872,7 @@ Symmetry.direction = nil
 function Symmetry:Mirror() end
 
 
-function Symmetry:DoubleMirror() end
+function Symmetry:MultiMirror() end
 
 
 function Symmetry:TwoHandeded() end

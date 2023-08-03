@@ -24,6 +24,11 @@ Properties {
   _DisplacementIntensity("Displacement", Float) = .1
 
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -48,6 +53,7 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -118,9 +124,9 @@ Category {
         // Calculate uvs for each line
         half3 us, vs;
         {
-          us = A * i.texcoord.x - aRate * _Time.y;
+          us = A * i.texcoord.x - aRate * GetTime().y;
 
-          half3 tmp = M*A * i.texcoord.x - bRate * _Time.y;
+          half3 tmp = M*A * i.texcoord.x - bRate * GetTime().y;
           tmp = abs(frac(tmp) - 0.5);
           vs = i.texcoord.y + .4 * i.color.a * half3(1,-1,1) * tmp;
           vs = saturate(lerp((vs - .5) * 4, vs,  sin( (3.14159/2) * i.color.a)));

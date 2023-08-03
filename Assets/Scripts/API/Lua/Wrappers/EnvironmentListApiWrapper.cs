@@ -18,7 +18,7 @@ namespace TiltBrush
         {
             get
             {
-                return new EnvironmentApiWrapper(SceneSettings.m_Instance.GetDesiredPreset());
+                return new EnvironmentApiWrapper(SceneSettings.m_Instance.CurrentEnvironment);
             }
             set
             {

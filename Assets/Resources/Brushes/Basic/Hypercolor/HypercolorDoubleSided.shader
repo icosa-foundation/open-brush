@@ -20,6 +20,12 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+ [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+ _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+ _TimeBlend("Time Blend", Float) = 0
+ _TimeSpeed("Time Speed", Float) = 1.0
+
 }
     SubShader {
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -34,6 +40,7 @@ Properties {
     #pragma multi_compile __ SELECTION_ON
     // Faster compiles
     #pragma skip_variants INSTANCING_ON
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -84,7 +91,7 @@ Properties {
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 
-      float scroll = _Time.z;
+      float scroll = GetTime().z;
 #ifdef AUDIO_REACTIVE
       float3 localPos = mul(xf_I_CS, float4(IN.worldPos, 1.0)).xyz;
       float t = length(localPos) * .5;

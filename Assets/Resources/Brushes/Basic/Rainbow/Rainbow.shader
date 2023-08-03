@@ -16,6 +16,11 @@ Shader "Brush/Special/Rainbow" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -34,6 +39,7 @@ Category {
 
     #pragma target 3.0
     #include "UnityCG.cginc"
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
     #include "Assets/Shaders/Include/Brush.cginc"
     #include "Assets/Shaders/Include/Hdr.cginc"
     #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -80,7 +86,7 @@ Category {
       half4 tex = float4(0,0,0,1);
       half row_y = fmod(uvs.y,1);
        
-      float time = frac( _Time.z * 0.2 ) * 5; 
+      float time = frac( GetTime().z * 0.2 ) * 5;
       float rowOffset = floor( time );
 
       row_id += rowOffset;
@@ -93,7 +99,7 @@ Category {
       tex.rgb = row_id == 4 ? float3(.4,0,1.2) : tex.rgb;
 
       // Make rainbow lines pulse
-      tex.rgb *= pow( (sin(row_id * 1 + _Time.z) + 1)/2,5);
+      tex.rgb *= pow( (sin(row_id * 1 + GetTime().z) + 1)/2,5);
 
       // Make rainbow lines thin
       tex.rgb *= saturate(pow(row_y * (1 - row_y) * 5, 50));

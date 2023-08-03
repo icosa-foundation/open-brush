@@ -31,5 +31,16 @@ namespace TiltBrush
         {
             _Strokes = strokes;
         }
+
+        [LuaDocsDescription("Deletes all the strokes in the list")]
+        [LuaDocsExample("myStrokes:Delete()")]
+        public void Delete()
+        {
+            foreach (var stroke in _Strokes)
+            {
+                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                stroke.Uncreate();
+            }
+        }
     }
 }

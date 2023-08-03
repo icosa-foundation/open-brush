@@ -279,15 +279,13 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer of the given brush type")]
-        public void SetShaderVector(string brushType, string parameter, Vector3ApiWrapper vector, float w = 0)
+        public void SetShaderVector(string brushType, string parameter, float x, float y = 0, float z = 0, float w = 0)
         {
             var desc = _GetDesc(brushType);
             if (_GetDesc(brushType) == null || !_GetDesc(brushType).Material.HasVector(parameter)) return;
             foreach (var batch in _GetBatches(desc))
             {
-                var vec = (Vector4)vector._Vector3;
-                vec.w = w;
-                batch.InstantiatedMaterial.SetVector(parameter, vec);
+                batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
             }
         }
     }

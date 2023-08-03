@@ -15,6 +15,12 @@
 Shader "Brush/Special/DiamondHull" {
   Properties {
     _MainTex("Texture", 2D) = "white" {}
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+
   }
 
   SubShader {
@@ -29,6 +35,7 @@ Shader "Brush/Special/DiamondHull" {
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -161,7 +168,7 @@ Shader "Brush/Special/DiamondHull" {
         rim = lerp(rim, 150,
               1 - saturate(abs(dot(normalize(I), IN.worldNormal)) / .1));
 
-        float3 diffraction = tex2D(_MainTex, half2(rim + _Time.x * .3 + o.Normal.x, rim + o.Normal.y)).xyz;
+        float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x * .3 + o.Normal.x, rim + o.Normal.y)).xyz;
         diffraction = GetDiffraction(diffraction, o.Normal, normalize(IN.viewDir));
 
         o.Emission = rim * IN.color * diffraction * .5 + rim * diffraction * .25;

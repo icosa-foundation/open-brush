@@ -948,6 +948,7 @@ namespace TiltBrush
 
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
+            if (m_CurrentSymmetryMode == mode) return;
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);

@@ -16,6 +16,11 @@ Shader "Brush/Visualizer/Waveform" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -40,6 +45,7 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -83,9 +89,9 @@ Category {
 #ifdef AUDIO_REACTIVE
         float waveform = (tex2D(_WaveFormTex, float2(i.texcoord.x,0)).r) - .5;
 #else
-        float waveform = .15 * sin( -30 * i.unbloomedColor.r * _Time.w + i.texcoord.x * 100   * i.unbloomedColor.r);
-        waveform += .15 * sin( -40 * i.unbloomedColor.g * _Time.w + i.texcoord.x * 100   * i.unbloomedColor.g);
-        waveform += .15 * sin( -50 * i.unbloomedColor.b * _Time.w + i.texcoord.x * 100   * i.unbloomedColor.b);
+        float waveform = .15 * sin( -30 * i.unbloomedColor.r * GetTime().w + i.texcoord.x * 100   * i.unbloomedColor.r);
+        waveform += .15 * sin( -40 * i.unbloomedColor.g * GetTime().w + i.texcoord.x * 100   * i.unbloomedColor.g);
+        waveform += .15 * sin( -50 * i.unbloomedColor.b * GetTime().w + i.texcoord.x * 100   * i.unbloomedColor.b);
 #endif
 
         float pinch = (1 - envelope) * 40 + 20;

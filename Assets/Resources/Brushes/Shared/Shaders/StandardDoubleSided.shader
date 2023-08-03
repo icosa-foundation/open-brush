@@ -20,6 +20,8 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
   // -------------------------------------------------------------------------------------------- //
@@ -49,6 +51,8 @@ Properties {
     sampler2D _BumpMap;
     fixed4 _Color;
     half _Shininess;
+	  uniform float _ClipStart;
+	  uniform float _ClipEnd;
 
     void vert (inout appdata_full i /*, out Input o*/) {
       // UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -58,6 +62,10 @@ Properties {
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+      float completion = _ClipEnd < 0 || (IN.uv_MainTex.x > _ClipStart && IN.uv_MainTex.x < _ClipEnd) ? 1 : -1;
+      clip(completion);
+
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
       o.Smoothness = _Shininess;

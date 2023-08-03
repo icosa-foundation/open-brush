@@ -16,6 +16,12 @@ Shader "Brush/Special/HyperGrid" {
 Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
+
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
 }
 
 Category {
@@ -39,6 +45,7 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
       #pragma multi_compile __ SELECTION_ON
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -74,7 +81,7 @@ Category {
 
         float waveform = 0;
 
-        float lifetime = _Time.y - v.texcoord1.w;
+        float lifetime = GetTime().y - v.texcoord1.w;
         float size = length(v.texcoord1.xyz);
         float release = saturate(lifetime);
 

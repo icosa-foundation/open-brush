@@ -279,6 +279,7 @@ MonoBehaviour:
   SymmetryScriptButton: {fileID: 1090007126676559718}
   PointerScriptButton: {fileID: 5067221232058941735}
   ToolScriptButton: {fileID: 7766592774551079244}
+  BackgroundScriptsButton: {fileID: 518047961655839408}
   references:
     version: 2
     RefIds: []
@@ -2094,7 +2095,7 @@ GameObject:
   - component: {fileID: 6589962414787385614}
   - component: {fileID: 7481746012544075901}
   m_Layer: 16
-  m_Name: ToggleBackgroundScript
+  m_Name: ToggleSingleBackgroundScript
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

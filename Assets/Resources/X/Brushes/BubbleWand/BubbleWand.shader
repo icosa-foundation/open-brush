@@ -18,6 +18,11 @@ Properties {
 	_ScrollRate("Scroll Rate", Float) = 1.0
 	_ScrollJitterIntensity("Scroll Jitter Intensity", Float) = 1.0
 	_ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
+
+	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
     SubShader {
@@ -30,6 +35,7 @@ Properties {
 		#pragma surface surf StandardSpecular vertex:vert
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
+		#include "Assets/Shaders/Include/TimeOverride.cginc"
 		#include "Assets/Shaders/Include/Brush.cginc"
 		#include "Assets/ThirdParty/Shaders/Noise.cginc"
 
@@ -40,13 +46,13 @@ Properties {
 		float _ScrollJitterFrequency;
 
 		float4 displace(float4 pos, float timeOffset) {
-			float t = _Time.y*_ScrollRate + timeOffset;
+			float t = GetTime().y*_ScrollRate + timeOffset;
 
-			pos.x += sin(t + _Time.y + pos.z * _ScrollJitterFrequency) * _ScrollJitterIntensity;
-			pos.z += cos(t + _Time.y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
-			pos.y += cos(t * 1.2 + _Time.y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.x += sin(t + GetTime().y + pos.z * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.z += cos(t + GetTime().y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
+			pos.y += cos(t * 1.2 + GetTime().y + pos.x * _ScrollJitterFrequency) * _ScrollJitterIntensity;
 
-			float time = _Time.x;
+			float time = GetTime().x;
 			float d = 30;
 			float freq = .1;
 			float3 disp = float3(1,0,0) * curlX(pos.xyz * freq + time, d);
@@ -99,7 +105,7 @@ Properties {
 			rim *= 1-pow(rim,5);
 
 			//Thin slit diffraction texture ramp lookup
-			float3 diffraction = tex2D(_MainTex, half2(rim + _Time.x + o.Normal.y, rim + o.Normal.y)).xyz;
+			float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x + o.Normal.y, rim + o.Normal.y)).xyz;
 			o.Emission = rim*(.25 * diffraction * rim  + .75 * diffraction * IN.color);
 
 		}

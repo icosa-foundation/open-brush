@@ -16,6 +16,11 @@ Shader "Brush/Special/Fairy" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
     _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -37,6 +42,7 @@ Category {
 
       #pragma target 3.0
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -136,7 +142,7 @@ Category {
         // fade the dots in and out with variety
         float fadespeed = lerp(.25, 1.25, random(rc));
         float fadephase = random(rc) * 2 * 3.14;
-        float time = sin(_Time.z * fadespeed + fadephase) / 2 + .5;
+        float time = sin(GetTime().z * fadespeed + fadephase) / 2 + .5;
         lum *= lerp(0, 1, time);
 
         fixed4 color;

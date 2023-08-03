@@ -17,6 +17,11 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
     _MainTex("Main Texture", 2D) = "white" {}
     _SecondaryTex("Diffuse Tex", 2D) = "white" {}
     _Cutoff("Alpha cutoff", Range(0,1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
   }
   SubShader{
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -31,6 +36,7 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
       // Faster compiles
       #pragma skip_variants INSTANCING_ON
 
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
       #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -66,9 +72,9 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
 
         // Animate flipbook motion. Currently tuned to taste.
 #ifdef AUDIO_REACTIVE
-        float anim = ceil(fmod(_Time.y * 3.0 + _BeatOutput.x * 3.0, 6.0));
+        float anim = ceil(fmod(GetTime().y * 3.0 + _BeatOutput.x * 3.0, 6.0));
 #else
-        float anim = ceil(fmod(_Time.y * 12.0, 6.0));
+        float anim = ceil(fmod(GetTime().y * 12.0, 6.0));
 #endif
         scrollUV.x += anim;
         scrollUV.x *= 1.1;

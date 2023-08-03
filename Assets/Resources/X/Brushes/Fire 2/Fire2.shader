@@ -25,6 +25,11 @@ Properties {
   _FlameFadeMin ("Fade Flame Min", Float) = 1
   _FlameFadeMax ("Fade Flame Max", Float) = 30
 
+      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
+
 }
 
 Category {
@@ -47,6 +52,7 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
 
@@ -119,8 +125,8 @@ Category {
         half2 uv = i.texcoord;
         uv += displacement;
 
-        half flame1 = tex2D(_MainTex, uv * .7 + half2(-_Time.x * _Scroll1, 0)).x;
-        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-_Time.x * _Scroll2, -_Time.x * _Scroll2 / 4 )).x;
+        half flame1 = tex2D(_MainTex, uv * .7 + half2(-GetTime().x * _Scroll1, 0)).x;
+        half flame2 = tex2D(_MainTex, half2(uv.x,1.0-uv.y) + half2(-GetTime().x * _Scroll2, -GetTime().x * _Scroll2 / 4 )).x;
 
         half flames = saturate( flame2 + flame1 ) / 2.0;
         flames = smoothstep( 0, 0.8, mask*flames);

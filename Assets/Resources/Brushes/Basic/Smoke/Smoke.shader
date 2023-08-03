@@ -17,6 +17,11 @@ Properties {
   _TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
   _MainTex ("Particle Texture", 2D) = "white" {}
   _ScrollRate("Scroll Rate", Float) = 1.0
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+  _TimeBlend("Time Blend", Float) = 0
+  _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 Category {
@@ -38,6 +43,7 @@ Category {
       #pragma multi_compile __ SELECTION_ON
 
       #include "UnityCG.cginc"
+      #include "Assets/Shaders/Include/TimeOverride.cginc"
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Particles.cginc"
       #include "Assets/ThirdParty/Shaders/Noise.cginc"
@@ -88,8 +94,8 @@ Category {
         float4 center = float4(v.center.xyz, 1);
         float4 center_WS = mul(unity_ObjectToWorld, center);
 
-        float t = _Time.y*_ScrollRate + v.color.a * 10;
-        float time = _Time.x * 5;
+        float t = GetTime().y*_ScrollRate + v.color.a * 10;
+        float time = GetTime().x * 5;
         float d = 30;
         float freq = .1;
         float3 disp = float3(1,0,0) * curlX(center_WS.xyz * freq + time, d);

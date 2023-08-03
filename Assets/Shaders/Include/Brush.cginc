@@ -21,6 +21,16 @@ uniform float4x4 xf_I_CS;
 uniform uint _BatchID;  // NOTOOLKIT
 #include "Ods.cginc"  // NOTOOLKIT
 
+float4 GetTime() {
+  #ifdef TIME_OVERRIDES_DEFINED
+  if (_OverrideTime)
+  {
+    return lerp(_Time * _TimeSpeed, _TimeOverrideValue, _TimeBlend);
+  }
+  #endif
+  return _Time;
+}
+
 // Unity only guarantees signed 2.8 for fixed4.
 // In practice, 2*exp(_EmissionGain * 10) = 180, so we need to use float4
 float4 bloomColor(float4 color, float gain) {
@@ -39,9 +49,8 @@ float4 bloomColor(float4 color, float gain) {
 // Used by various shaders to animate selection outlines
 // Needs to be visible even when the color is black
 float4 GetAnimatedSelectionColor( float4 color) {
-  return color + sin(_Time.w*2)*.1 + .2f;
+  return color + sin(GetTime().w*2)*.1 + .2f;
 }
-
 
 //
 // Common for Music Reactive Brushes
@@ -77,7 +86,7 @@ float4 musicReactiveColor(float4 color, float beat) {
 
 float4 musicReactiveAnimationWorldSpace(float4 worldPos, float4 color, float beat, float t) {
   float intensity = .15;
-  float randomOffset = 2 * 3.14159 * randomizeByColor(color) + _Time.w + worldPos.z;
+  float randomOffset = 2 * 3.14159 * randomizeByColor(color) + GetTime().w + worldPos.z;
   // the first sin function makes the start and end points of the UV's (0:1) have zero modulation.
   // The second sin term causes vibration along the stroke like a plucked guitar string - frequency defined by color
   worldPos.xyz += randomNormal(color.rgb) * beat * sin(t * 3.14159) * sin(randomOffset) * intensity;

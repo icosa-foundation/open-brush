@@ -16,6 +16,11 @@ Shader "Brush/Visualizer/WaveformPulse" {
 
 Properties {
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 1.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
 }
 
 SubShader {
@@ -33,6 +38,7 @@ SubShader {
   // Faster compiles
   #pragma skip_variants INSTANCING_ON
 
+  #include "Assets/Shaders/Include/TimeOverride.cginc"
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -74,7 +80,7 @@ SubShader {
     IN.tex.x -= _BeatOutputAccum.z;
     IN.color += IN.color * _BeatOutput.w * .25;
 #else
-    IN.tex.x -= _Time.x*15;
+    IN.tex.x -= GetTime().x*15;
 #endif
     IN.tex.x = fmod( abs(IN.tex.x),1);
     float neon = saturate(pow( 10 * saturate(.2 - IN.tex.x),5) * audioMultiplier);

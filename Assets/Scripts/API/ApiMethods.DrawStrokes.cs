@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -129,6 +130,7 @@ namespace TiltBrush
 
         // TODO Find a better home for this
         // Accepts either guid or "Description"
+        // Description is matched based on removing all non-alphanumeric characters and lower-casing
         public static BrushDescriptor LookupBrushDescriptor(string brushType)
         {
             if (brushType == null) return null;
@@ -144,16 +146,13 @@ namespace TiltBrush
 
             if (brushDescriptor == null)
             {
-                brushType = brushType.ToLower().Trim().Replace(" ", "");
+                string AlphaNumericLowerCased(string s) => Regex.Replace(s, @"\W|_", "").ToLower();
+                brushType = AlphaNumericLowerCased(brushType);
+
                 try
                 {
                     brushDescriptor = BrushCatalog.m_Instance.AllBrushes
-                        .First(x => x.Description
-                            .Replace(" ", "")
-                            .Replace(".", "")
-                            .Replace("(", "")
-                            .Replace(")", "")
-                            .ToLower() == brushType);
+                        .First(x => AlphaNumericLowerCased(x.Description) == brushType);
                 }
                 catch (InvalidOperationException e)
                 {
