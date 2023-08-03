@@ -605,7 +605,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7870646065012736
-    m_Localized: Plugins and Scripts
+    m_Localized: Scripts
     m_Metadata:
       m_Items: []
   - m_Id: 7870824155160576
@@ -1084,7 +1084,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10142251554152448
-    m_Localized: Snap and Stroke Settings
+    m_Localized: Grid and Snap Settings
     m_Metadata:
       m_Items: []
   - m_Id: 10142405791293440
@@ -3100,10 +3100,6 @@ MonoBehaviour:
     m_Localized: Smoke
     m_Metadata:
       m_Items: []
-  - m_Id: 106429517453328384
-    m_Localized: "Background Images"
-    m_Metadata:
-      m_Items: []
   - m_Id: 95221400803737600
     m_Localized: Up arrow
     m_Metadata:
@@ -3198,6 +3194,238 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 5146220882010112
     m_Localized: Recolor On
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: Snap Axes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: Snap Selected
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: Toggle X Position Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: Toggle Y Position Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: Toggle Z Position Snap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: Snap Selected to Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: Snap Selected Rotation Angles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: Position
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: Rotation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: Align
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: Toggle X Position Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: Toggle Y Position Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: Toggle Z Position Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: Toggle X Rotation Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: Toggle Y Rotation Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: Toggle Z Rotation Lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: Align X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: Align Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: Align Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: 'Align by:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: Left/Bottom/Front edges
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: Centers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: Right/Top/Back edges
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: Align Rotation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: 'Distribute:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: Distribute X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: Distribute Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: Distribute Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: 'Distribute By:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: Spacing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: Multimirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: Point Symmetry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: Wallpaper Symmetry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: Affect Hue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: Affect Saturation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: Affect Brightness
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: Amount
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: Frequency
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: Sine Wave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: Triangle Wave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: Sawtooth Wave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: Square Wave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: Noise
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: Summon Mirror
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: Snap to Guides
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: Symmetry Order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: X Repeats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: Y Repeats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: Scale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: Scale X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: Scale Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: Skew X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: Skew Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: Webcam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: Previous Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: Next Device
     m_Metadata:
       m_Items: []
   references:
