@@ -648,6 +648,7 @@ namespace TiltBrush
         public uint[] GroupIds { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] LayerIds { get; set; }
+        public bool[] TwoSidedFlags { get; set; }
     }
 
     [Serializable]
@@ -669,6 +670,7 @@ namespace TiltBrush
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public bool TwoSided { get; set; }
     }
 
     [Serializable]
