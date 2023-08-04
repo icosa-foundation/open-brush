@@ -235,12 +235,12 @@ namespace TiltBrush
             App.Scene.HideLayer(_CanvasScript);
         }
 
-        public IEnumerable<Batch> _GetBatches(BrushDescriptor desc)
+        private IEnumerable<Batch> _GetBatches(BrushDescriptor desc)
         {
             return _CanvasScript.BatchManager.AllBatches().Where(b => b.Brush == desc);
         }
 
-        public BrushDescriptor _GetDesc(string brushType)
+        private BrushDescriptor _GetDesc(string brushType)
         {
             return ApiMethods.LookupBrushDescriptor(brushType);
         }

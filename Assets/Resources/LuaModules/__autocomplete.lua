@@ -328,6 +328,35 @@ function CameraPath:Sample(time, loop, pingpong) end
 ---@return CameraPath
 function CameraPath:Simplify(tolerance, smoothing) end
 
+---Properties for class CameraPathList
+
+---@class CameraPathList
+t = Class()
+
+---@type CameraPath
+CameraPathList.last = nil
+
+---@type CameraPath
+CameraPathList.Item = nil
+
+---@type number
+CameraPathList.count = nil
+
+---@type CameraPath
+CameraPathList.active = nil
+
+
+---Methods for type CameraPathList
+
+
+function CameraPathList:ShowAll() end
+
+
+function CameraPathList:HideAll() end
+
+---@param active boolean
+function CameraPathList:PreviewActivePath(active) end
+
 ---Properties for class Color
 
 ---@class Color
@@ -477,6 +506,30 @@ function Color:NotEquals(other) end
 ---@param b number
 ---@return boolean
 function Color:NotEquals(r, g, b) end
+
+---Properties for class EnvironmentList
+
+---@class EnvironmentList
+t = Class()
+
+---@type Environment
+EnvironmentList.last = nil
+
+---@type Environment
+EnvironmentList.current = nil
+
+---@type Environment
+EnvironmentList.Item = nil
+
+---@type number
+EnvironmentList.count = nil
+
+
+---Methods for type EnvironmentList
+
+---@param name string
+---@return Environment
+function EnvironmentList:ByName(name) end
 ---Methods for type Easing
 
 ---@param t number
@@ -713,6 +766,28 @@ function Guide:Delete() end
 
 ---@param scale Vector3
 function Guide:Scale(scale) end
+
+---Properties for class GuideList
+
+---@class GuideList
+t = Class()
+
+---@type Guide
+GuideList.lastSelected = nil
+
+---@type Guide
+GuideList.last = nil
+
+---@type boolean
+GuideList.enabled = nil
+
+---@type Guide
+GuideList.Item = nil
+
+---@type number
+GuideList.count = nil
+
+
 ---Methods for type Headset
 
 ---@param size number
@@ -879,14 +954,6 @@ function Layer:Show() end
 
 function Layer:Hide() end
 
----@param desc BrushDescriptor
----@return System.Collections.Generic.IEnumerable`1[Batch]
-function Layer:_GetBatches(desc) end
-
----@param brushType string
----@return BrushDescriptor
-function Layer:_GetDesc(brushType) end
-
 ---@param brushType string
 ---@param parameter string
 ---@param value number
@@ -909,6 +976,31 @@ function Layer:SetShaderTexture(brushType, parameter, image) end
 ---@param z number
 ---@param w number
 function Layer:SetShaderVector(brushType, parameter, x, y, z, w) end
+
+---Properties for class LayerList
+
+---@class LayerList
+t = Class()
+
+---@type Layer
+LayerList.last = nil
+
+---@type Layer
+LayerList.Item = nil
+
+---@type Layer
+LayerList.Item = nil
+
+---@type Layer
+LayerList.main = nil
+
+---@type number
+LayerList.count = nil
+
+---@type Layer
+LayerList.active = nil
+
+
 
 ---Properties for class Math
 
@@ -1159,78 +1251,24 @@ function Model:Select() end
 
 function Model:Delete() end
 
----Properties for class MultiPath
+---Properties for class ModelList
 
----@class MultiPath
+---@class ModelList
 t = Class()
 
----@type number
-MultiPath.count = nil
+---@type Model
+ModelList.lastSelected = nil
+
+---@type Model
+ModelList.last = nil
+
+---@type Model
+ModelList.Item = nil
 
 ---@type number
-MultiPath.pointCount = nil
+ModelList.count = nil
 
 
----Methods for type MultiPath
-
-
----@return MultiPath
-function MultiPath:New() end
-
----@param pathList Path[]
----@return MultiPath
-function MultiPath:New(pathList) end
-
-
-function MultiPath:Draw() end
-
----@param text string
----@return MultiPath
-function MultiPath:FromText(text) end
-
----@param path Path
-function MultiPath:Insert(path) end
-
----@param path Path
----@param index number
-function MultiPath:Insert(path, index) end
-
----@param transform Transform
-function MultiPath:InsertPoint(transform) end
-
----@param transform Transform
----@param pathIndex number
----@param pointIndex number
-function MultiPath:InsertPoint(transform, pathIndex, pointIndex) end
-
----@param transform Transform
-function MultiPath:TransformBy(transform) end
-
----@param amount Vector3
-function MultiPath:TranslateBy(amount) end
-
----@param rotation Rotation
-function MultiPath:RotateBy(rotation) end
-
----@param scale Vector3
-function MultiPath:ScaleBy(scale) end
-
-
-function MultiPath:Center() end
-
----@param size number
-function MultiPath:Normalize(size) end
-
----@param spacing number
-function MultiPath:Resample(spacing) end
-
-
----@return Path
-function MultiPath:Join() end
-
-
----@return Path
-function MultiPath:Longest() end
 
 ---Properties for class Path
 
@@ -1346,6 +1384,79 @@ function Path:Subdivide(parts) end
 ---@param tangentStrength number
 ---@return Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
+
+---Properties for class PathList
+
+---@class PathList
+t = Class()
+
+---@type number
+PathList.count = nil
+
+---@type number
+PathList.pointCount = nil
+
+
+---Methods for type PathList
+
+
+---@return PathList
+function PathList:New() end
+
+---@param pathList Path[]
+---@return PathList
+function PathList:New(pathList) end
+
+
+function PathList:Draw() end
+
+---@param text string
+---@return PathList
+function PathList:FromText(text) end
+
+---@param path Path
+function PathList:Insert(path) end
+
+---@param path Path
+---@param index number
+function PathList:Insert(path, index) end
+
+---@param transform Transform
+function PathList:InsertPoint(transform) end
+
+---@param transform Transform
+---@param pathIndex number
+---@param pointIndex number
+function PathList:InsertPoint(transform, pathIndex, pointIndex) end
+
+---@param transform Transform
+function PathList:TransformBy(transform) end
+
+---@param amount Vector3
+function PathList:TranslateBy(amount) end
+
+---@param rotation Rotation
+function PathList:RotateBy(rotation) end
+
+---@param scale Vector3
+function PathList:ScaleBy(scale) end
+
+
+function PathList:Center() end
+
+---@param size number
+function PathList:Normalize(size) end
+
+---@param spacing number
+function PathList:Resample(spacing) end
+
+
+---@return Path
+function PathList:Join() end
+
+
+---@return Path
+function PathList:Longest() end
 
 ---Properties for class Path2d
 
@@ -1889,16 +2000,39 @@ function Stroke:Join(stroke2) end
 
 ---@param name string
 function Stroke:MergeFrom(name) end
+
+---Properties for class StrokeList
+
+---@class StrokeList
+t = Class()
+
+---@type Stroke
+StrokeList.lastSelected = nil
+
+---@type Stroke
+StrokeList.last = nil
+
+---@type Stroke
+StrokeList.Item = nil
+
+---@type number
+StrokeList.count = nil
+
+
+---Methods for type StrokeList
+
+
+function StrokeList:Delete() end
 ---Methods for type Svg
 
 ---@param svgPath string
----@return MultiPath
+---@return PathList
 function Svg:ParsePathString(svgPath) end
 
 ---@param svg string
 ---@param offsetPerPath number
 ---@param includeColors boolean
----@return MultiPath
+---@return PathList
 function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
 
 ---@param svg string
@@ -2514,6 +2648,25 @@ function Video:Select() end
 
 
 function Video:Delete() end
+
+---Properties for class VideoList
+
+---@class VideoList
+t = Class()
+
+---@type Video
+VideoList.lastSelected = nil
+
+---@type Video
+VideoList.last = nil
+
+---@type Video
+VideoList.Item = nil
+
+---@type number
+VideoList.count = nil
+
+
 
 ---Properties for class Visualizer
 
