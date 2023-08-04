@@ -30,7 +30,7 @@ function Main()
             letter = string.sub(text, letterCount, letterCount)
             rot = Brush.rotation
             transform = Transform:New(Brush.position, rot, size)
-            paths = MultiPath:FromText(letter)
+            paths = PathList:FromText(letter)
             paths:TransformBy(transform)
             paths:Resample(0.01)
             paths:Draw()

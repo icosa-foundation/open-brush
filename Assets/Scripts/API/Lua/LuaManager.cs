@@ -598,15 +598,15 @@ namespace TiltBrush
             return false;
         }
 
-        public MultiPathApiWrapper CallActiveToolScript(string fnName)
+        public PathListApiWrapper CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.ToolScript);
             DynValue result = _CallScript(script, fnName);
-            MultiPathApiWrapper multipathWrapper = null;
+            PathListApiWrapper pathListWrapper = null;
             try
             {
                 // Try to cast to multipath first
-                multipathWrapper = result.ToObject<MultiPathApiWrapper>();
+                pathListWrapper = result.ToObject<PathListApiWrapper>();
             }
             catch (Exception _)
             {
@@ -615,7 +615,7 @@ namespace TiltBrush
                     // If that fails, try to cast to path
                     var pathWrapper = result.ToObject<PathApiWrapper>();
                     // and wrap it as a multipath
-                    multipathWrapper = new MultiPathApiWrapper(pathWrapper);
+                    pathListWrapper = new PathListApiWrapper(pathWrapper);
                 }
                 catch (Exception e)
                 {
@@ -623,11 +623,11 @@ namespace TiltBrush
                     LogGenericLuaError(script, fnName, e);
                 }
             }
-            if (multipathWrapper != null)
+            if (pathListWrapper != null)
             {
-                multipathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+                pathListWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
             }
-            return multipathWrapper;
+            return pathListWrapper;
         }
 
         public IPathApiWrapper CallActiveSymmetryScript(string fnName)
@@ -771,16 +771,24 @@ namespace TiltBrush
             RegisterApiClass(script, "App", typeof(AppApiWrapper));
             RegisterApiClass(script, "Brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "CameraPath", typeof(CameraPathApiWrapper));
+            RegisterApiClass(script, "CameraPathList", typeof(CameraPathListApiWrapper));
             RegisterApiClass(script, "Color", typeof(ColorApiWrapper));
+            RegisterApiClass(script, "Environment", typeof(EnvironmentApiWrapper));
+            RegisterApiClass(script, "EnvironmentList", typeof(EnvironmentListApiWrapper));
             RegisterApiClass(script, "Easing", typeof(EasingApiWrapper));
+            RegisterApiClass(script, "Group", typeof(GroupApiWrapper));
             RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
+            RegisterApiClass(script, "GuideList", typeof(GuideListApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
             RegisterApiClass(script, "Image", typeof(ImageApiWrapper));
+            RegisterApiClass(script, "ImageList", typeof(ImageListApiWrapper));
             RegisterApiClass(script, "Layer", typeof(LayerApiWrapper));
+            RegisterApiClass(script, "LayerList", typeof(LayerListApiWrapper));
             RegisterApiClass(script, "Math", typeof(MathApiWrapper));
             RegisterApiClass(script, "Model", typeof(ModelApiWrapper));
-            RegisterApiClass(script, "MultiPath", typeof(MultiPathApiWrapper));
+            RegisterApiClass(script, "ModelList", typeof(ModelListApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
+            RegisterApiClass(script, "PathList", typeof(PathListApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
             RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
@@ -789,6 +797,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Sketch", typeof(SketchApiWrapper));
             RegisterApiClass(script, "Spectator", typeof(SpectatorApiWrapper));
             RegisterApiClass(script, "Stroke", typeof(StrokeApiWrapper));
+            RegisterApiClass(script, "StrokeList", typeof(StrokeListApiWrapper));
             RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
             RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
@@ -798,6 +807,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
+            RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));

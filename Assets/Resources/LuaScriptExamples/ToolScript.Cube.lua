@@ -39,7 +39,7 @@ function Main()
 
     if Brush.triggerReleasedThisFrame then
 
-        paths = MultiPath:New()
+        paths = PathList:New()
         paths:Insert(createFace(Vector3.forward, Vector3.forward, Vector3.up)) -- front face
         paths:Insert(createFace(Vector3.right, Vector3.right, Vector3.up)) -- right face
         paths:Insert(createFace(Vector3.back, Vector3.back, Vector3.up)) -- back face
