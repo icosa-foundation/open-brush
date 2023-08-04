@@ -250,7 +250,7 @@ function CameraPath:Delete() end
 ---@return CameraPath
 function CameraPath:New() end
 
----@param path IPath
+---@param path Path
 ---@param looped boolean
 ---@return CameraPath
 function CameraPath:FromPath(path, looped) end
@@ -603,6 +603,54 @@ function Easing:OutBounce(t) end
 ---@return number
 function Easing:InOutBounce(t) end
 
+---Properties for class Group
+
+---@class Group
+t = Class()
+
+---@type ImageList
+Group.images = nil
+
+---@type VideoList
+Group.videos = nil
+
+---@type ModelList
+Group.models = nil
+
+---@type GuideList
+Group.guides = nil
+
+---@type CameraPathList
+Group.cameraPaths = nil
+
+
+---Methods for type Group
+
+
+---@return Group
+function Group:New() end
+
+---@param widget Image
+function Group:Add(widget) end
+
+---@param widget Video
+function Group:Add(widget) end
+
+---@param widget Model
+function Group:Add(widget) end
+
+---@param widget Guide
+function Group:Add(widget) end
+
+---@param widget CameraPath
+function Group:Add(widget) end
+
+---@param widget GrabWidget
+function Group:_Add(widget) end
+
+---@param widget GrabWidget
+function Group:Add(widget) end
+
 ---Properties for class Guide
 
 ---@class Guide
@@ -732,6 +780,25 @@ function Image:FormEncode() end
 ---@param filename string
 ---@return string
 function Image:SaveBase64(base64, filename) end
+
+---Properties for class ImageList
+
+---@class ImageList
+t = Class()
+
+---@type Image
+ImageList.lastSelected = nil
+
+---@type Image
+ImageList.last = nil
+
+---@type Image
+ImageList.Item = nil
+
+---@type number
+ImageList.count = nil
+
+
 
 ---Properties for class Layer
 
@@ -1847,43 +1914,20 @@ function Svg:DrawDocument(svg, tr) end
 ---@class Symmetry
 t = Class()
 
----@type Transform
-Symmetry.transform = nil
-
----@type Vector3
-Symmetry.position = nil
-
----@type Rotation
-Symmetry.rotation = nil
-
 ---@type Vector3
 Symmetry.brushOffset = nil
 
 ---@type Vector3
 Symmetry.wandOffset = nil
 
----@type Vector3
-Symmetry.direction = nil
+---@type SymmetrySettings
+Symmetry.settings = nil
 
 
 ---Methods for type Symmetry
 
 
-function Symmetry:Mirror() end
-
-
-function Symmetry:MultiMirror() end
-
-
-function Symmetry:TwoHandeded() end
-
-
 function Symmetry:SummonWidget() end
-
----@param xSpeed number
----@param ySpeed number
----@param zSpeed number
-function Symmetry:Spin(xSpeed, ySpeed, zSpeed) end
 
 ---@param angle number
 ---@param minorRadius number

@@ -1,55 +1,144 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
 namespace TiltBrush
 {
+    public enum ApiSymmetryMode
+    {
+        None = PointerManager.SymmetryMode.None,
+        Standard = PointerManager.SymmetryMode.SinglePlane,
+        Scripted = PointerManager.SymmetryMode.ScriptedSymmetryMode,
+        TwoHanded = PointerManager.SymmetryMode.TwoHanded,
+        Point,
+        Wallpaper
+    }
+
+    [LuaDocsDescription("Represents the settings for the symmetry mode")]
+    [MoonSharpUserData]
+    public class SymmetrySettingsApiWrapper
+    {
+        public ApiSymmetryMode mode;
+
+        public Vector3 position;
+        public Quaternion rotation;
+        public Vector3 spin;
+
+        public PointSymmetry.Family pointType;
+        public int pointOrder;
+
+        public SymmetryGroup.R wallpaperType;
+        public int wallpaperRepeatX;
+        public int wallpaperRepeatY;
+        public float wallpaperScale;
+        public float wallpaperScaleX;
+        public float wallpaperScaleY;
+        public float wallpaperSkewX;
+        public float wallpaperSkewY;
+    }
+
     [LuaDocsDescription("Functions for controlling the mirror symmetry mode")]
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
-        [LuaDocsDescription("The transform of the Symmetry Widget")]
-        public static TrTransform transform
-        {
-            get => TrTransform.FromTransform(PointerManager.m_Instance.SymmetryWidget.transform);
-            set => ApiMethods._SymmetrySetTransform(value.translation, value.rotation);
-        }
-
-        [LuaDocsDescription("The 3D position of the Symmetry Widget")]
-        public static Vector3 position
-        {
-            get => PointerManager.m_Instance.SymmetryWidget.transform.position;
-            set => ApiMethods.SymmetrySetPosition(value);
-        }
-
-        [LuaDocsDescription("The 3D orientation of the Symmetry Widget")]
-        public static Quaternion rotation
-        {
-            get => PointerManager.m_Instance.SymmetryWidget.transform.rotation;
-            set => ApiMethods._SymmetrySetRotation(value);
-        }
-
-        [LuaDocsDescription("")]
+        [LuaDocsDescription("Gets the offset betwen the current brush position and the symmetry widget")]
         public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
+        [LuaDocsDescription("Gets the offset betwen the current wand position and the symmetry widget")]
         public static Vector3 wandOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastWandPos(0))).translation;
 
-        [LuaDocsDescription("")]
-        public static Vector3 direction => PointerManager.m_Instance.SymmetryWidget.transform.rotation * Vector3.forward;
+        [LuaDocsDescription("The current symmetry settings")]
+        public static SymmetrySettingsApiWrapper settings
+        {
+            get
+            {
+                var settings = new SymmetrySettingsApiWrapper();
+                var mode = ApiSymmetryMode.None;
 
-        [LuaDocsDescription("")]
-        public static void Mirror() => ApiMethods.SymmetryPlane();
+                switch (PointerManager.m_Instance.CurrentSymmetryMode)
+                {
+                    case PointerManager.SymmetryMode.MultiMirror:
 
-        [LuaDocsDescription("")]
-        public static void MultiMirror() => ApiMethods.MultiMirror();
-
-        [LuaDocsDescription("")]
-        public static void TwoHandeded() => ApiMethods.SymmetryTwoHanded();
+                        if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
+                        {
+                            settings.mode = ApiSymmetryMode.Point;
+                            settings.pointType = PointerManager.m_Instance.m_PointSymmetryFamily;
+                            settings.pointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else
+                        {
+                            settings.mode = ApiSymmetryMode.Wallpaper;
+                            settings.wallpaperType = PointerManager.m_Instance.m_WallpaperSymmetryGroup;
+                            settings.wallpaperScale = PointerManager.m_Instance.m_WallpaperSymmetryScale;
+                            settings.wallpaperScaleX = PointerManager.m_Instance.m_WallpaperSymmetryScaleX;
+                            settings.wallpaperScaleY = PointerManager.m_Instance.m_WallpaperSymmetryScaleY;
+                            settings.wallpaperSkewX = PointerManager.m_Instance.m_WallpaperSymmetrySkewX;
+                            settings.wallpaperSkewY = PointerManager.m_Instance.m_WallpaperSymmetrySkewY;
+                        }
+                        break;
+                    case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                        mode = ApiSymmetryMode.Scripted;
+                        break;
+                    case PointerManager.SymmetryMode.SinglePlane:
+                        mode = ApiSymmetryMode.Standard;
+                        break;
+                    case PointerManager.SymmetryMode.TwoHanded:
+                        mode = ApiSymmetryMode.TwoHanded;
+                        break;
+                    case PointerManager.SymmetryMode.None:
+                        mode = ApiSymmetryMode.None;
+                        break;
+                }
+                var widgetTr = PointerManager.m_Instance.SymmetryWidget.transform;
+                settings.position = widgetTr.position;
+                settings.rotation = widgetTr.rotation;
+                settings.spin = PointerManager.m_Instance.SymmetryWidget.GetSpin();
+                return settings;
+            }
+            set
+            {
+                switch (value.mode)
+                {
+                    case ApiSymmetryMode.None:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+                        break;
+                    case ApiSymmetryMode.Standard:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.SinglePlane);
+                        break;
+                    case ApiSymmetryMode.Scripted:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+                        break;
+                    case ApiSymmetryMode.TwoHanded:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                        break;
+                    case ApiSymmetryMode.Point:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
+                        PointerManager.m_Instance.m_PointSymmetryFamily = value.pointType;
+                        PointerManager.m_Instance.m_PointSymmetryOrder = value.pointOrder;
+                        break;
+                    case ApiSymmetryMode.Wallpaper:
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
+                        PointerManager.m_Instance.m_WallpaperSymmetryGroup = value.wallpaperType;
+                        PointerManager.m_Instance.m_WallpaperSymmetryScale = value.wallpaperScale;
+                        PointerManager.m_Instance.m_WallpaperSymmetryScaleX = value.wallpaperScaleX;
+                        PointerManager.m_Instance.m_WallpaperSymmetryScaleY = value.wallpaperScaleY;
+                        PointerManager.m_Instance.m_WallpaperSymmetrySkewX = value.wallpaperSkewX;
+                        PointerManager.m_Instance.m_WallpaperSymmetrySkewY = value.wallpaperSkewY;
+                        break;
+                }
+                var widget = PointerManager.m_Instance.SymmetryWidget;
+                var tr = TrTransform.TR(value.position, value.rotation);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
+                );
+                PointerManager.m_Instance.SymmetryWidget.Spin(value.spin.x, value.spin.y, value.spin.z);
+            }
+        }
 
         [LuaDocsDescription("")]
         public static void SummonWidget() => ApiMethods.SummonMirror();
-
-        [LuaDocsDescription("")]
-        public static void Spin(float xSpeed, float ySpeed, float zSpeed) => PointerManager.m_Instance.SymmetryWidget.Spin(xSpeed, ySpeed, zSpeed);
 
         [LuaDocsDescription("")]
         public static float Ellipse(float angle, float minorRadius)
