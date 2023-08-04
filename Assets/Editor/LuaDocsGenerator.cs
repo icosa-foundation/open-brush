@@ -97,7 +97,7 @@ namespace TiltBrush
             
             // Done
             LuaDocsRegistration.ApiDocClasses = null;
-            Debug.Log($"Finished Generating Lua Autocomplete");
+            Debug.Log($"Finished Generating Lua Docs");
         }
     }
 }
