@@ -143,11 +143,11 @@ namespace TiltBrush
             return wrapper;
         }
 
-        [LuaDocsDescription("Creates a camera path from a Path and whether it should be looped")]
+        [LuaDocsDescription("Creates a camera path from a Path")]
         [LuaDocsParameter("path", "The Path to convert")]
         [LuaDocsParameter("looped", "Whether the resulting CameraPath should loop")]
         [LuaDocsExample("myCameraPath = Camera:FromPath(myPath, false)")]
-        public static CameraPathApiWrapper FromPath(IPathApiWrapper path, bool looped)
+        public static CameraPathApiWrapper FromPath(PathApiWrapper path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
             metadata.PathKnots = path.AsSingleTrList().Select(t => new CameraPathPositionKnotMetadata
