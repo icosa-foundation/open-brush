@@ -30,10 +30,10 @@ function Main()
             letter = string.sub(text, letterCount, letterCount)
             rot = Brush.rotation
             transform = Transform:New(Brush.position, rot, size)
-            path = MultiPath:FromText(letter)
-            path:TransformBy(transform)
-            path:Resample(0.01)
-            path:Draw()
+            paths = MultiPath:FromText(letter)
+            paths:TransformBy(transform)
+            paths:Resample(0.01)
+            paths:Draw()
             letterCount = letterCount % string.len(text)
             distance = 0
         end
