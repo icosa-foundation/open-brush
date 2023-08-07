@@ -144,8 +144,8 @@ namespace TiltBrush
         {
             get => new(_Position);
             set {
-                position = value;
-                if (_IsCurrent) _SetTransform(TrTransform.TR(value._Vector3, rotation._Quaternion));
+                _Position = value._Vector3;
+                if (_IsCurrent) _SetTransform(TrTransform.TR(value._Vector3, _Rotation));
             }
         }
 
@@ -154,8 +154,8 @@ namespace TiltBrush
         {
             get => new(_Rotation);
             set {
-                rotation = value;
-                if (_IsCurrent) _SetTransform(TrTransform.TR(position._Vector3, value._Quaternion));
+                _Rotation = value._Quaternion;
+                if (_IsCurrent) _SetTransform(TrTransform.TR(_Position, value._Quaternion));
             }
         }
 
@@ -172,7 +172,7 @@ namespace TiltBrush
         {
             get => new(_Spin);
             set {
-                spin = value;
+                _Spin = value._Vector3;
                 if (_IsCurrent) PointerManager.m_Instance.SymmetryWidget.Spin(value.x, value.y, value.z);
             }
         }
