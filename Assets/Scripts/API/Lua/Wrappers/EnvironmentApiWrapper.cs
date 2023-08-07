@@ -71,6 +71,7 @@ namespace TiltBrush
             return $"Environment({_Environment.Description})";
         }
 
+        [LuaDocsDescription("The sky color at the top")]
         public ColorApiWrapper gradientColorA
         {
             get => _GradientColorA;
@@ -81,6 +82,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The skybox color at the horizon")]
         public ColorApiWrapper gradientColorB
         {
             get => _GradientColorB;
@@ -91,6 +93,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The sky gradient orientation")]
         public RotationApiWrapper gradientOrientation
         {
             get => _GradientOrientation;
@@ -101,6 +104,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The fog color")]
         public ColorApiWrapper fogColor
         {
             get => _FogColor;
@@ -111,6 +115,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The fog density")]
         public float fogDensity
         {
             get => _FogDensity;
@@ -121,6 +126,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The ambient light color")]
         public ColorApiWrapper ambientColor
             {
             get => _AmbientColor;
@@ -131,6 +137,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The main light color")]
         public ColorApiWrapper mainLightColor
         {
             get => _MainLightColor;
@@ -141,6 +148,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The main light direction")]
         public RotationApiWrapper mainLightDirection
         {
             get => _MainLightDirection;
@@ -151,6 +159,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The secondary light color")]
         public ColorApiWrapper secondaryLightColor
         {
             get => _SecondaryLightColor;
@@ -161,6 +170,7 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The secondary light direction")]
         public RotationApiWrapper secondaryLightDirection
         {
             get => _SecondaryLightDirection;
