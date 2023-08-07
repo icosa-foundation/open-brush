@@ -186,22 +186,11 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            foreach (var scriptName in BackgroundScriptsToRun)
-            {
-                ActivateBackgroundScript(scriptName, true);
-            }
-
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
             panel.InitScriptUiNav();
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
-
-            if (BackgroundScriptsToRun.Count > 0)
-            {
-                EnableBackgroundScripts(true);
-                panel.BackgroundScriptsButton.IsToggledOn = true;
-            }
         }
         
         public void CopyLuaModules()
@@ -250,6 +239,18 @@ namespace TiltBrush
 
         private void Update()
         {
+            bool sceneIsReady = App.CurrentState == App.AppState.Standard;
+            if (BackgroundScriptsToRun.Count > 0 && sceneIsReady)
+            {
+                // Pop one of the initial scripts and run it
+                var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
+                panel.BackgroundScriptsButton.IsToggledOn = true;
+                BackgroundScriptsEnabled = true;
+                var scriptName = BackgroundScriptsToRun[0];
+                ActivateBackgroundScript(scriptName, true);
+                BackgroundScriptsToRun.RemoveAt(0);
+            }
+
             // Operate on a copy in case we are modified while iterating
             var scriptsToProcess = m_ScriptPathsToUpdate.ToList();
             m_ScriptPathsToUpdate.Clear();
@@ -817,6 +818,20 @@ namespace TiltBrush
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
+
+            RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
+            RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
+            RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+
+        }
+
+        public void RegisterApiEnum(Script script, string name, Type t, string prefix = null)
+        {
+            UserData.RegisterType(t);
+            script.Globals[name] = UserData.CreateStatic(t);
+#if UNITY_EDITOR
+            LuaDocsRegistration.RegisterForDocs(t);
+#endif
         }
 
         public void EnablePointerScript(bool enable)

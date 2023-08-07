@@ -107,10 +107,15 @@ namespace TiltBrush
 
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
                              .Where(x =>
+                                 // Classes
                                  x.Name != "Equals" &&
                                  x.Name != "GetHashCode" &&
                                  x.Name != "GetType" &&
-                                 x.Name != "ToString"))
+                                 x.Name != "ToString" &&
+                                 // Enums
+                                 x.Name != "CompareTo" &&
+                                 x.Name != "HasFlag" &&
+                                 x.Name != "GetTypeCode")) // Exclude internal methods
                 {
                     if (isHidden(prop)) continue;
 
