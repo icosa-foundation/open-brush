@@ -118,11 +118,13 @@ namespace TiltBrush
         [LuaDocsDescription("Recalls previous positions of the Brush from the history buffer")]
         [LuaDocsExample("Brush:GetPastPosition(3)")]
         [LuaDocsParameter("back", "How many frames back in the history to look")]
+        [LuaDocsReturnValue("The position of the brush during the specified frame")]
         public static Vector3 GetPastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
 
         [LuaDocsDescription("Recalls previous orientations of the Brush from the history buffer")]
         [LuaDocsExample("Brush:GetPastRotation(3)")]
         [LuaDocsParameter("back", "How many frames back in the history to look")]
+        [LuaDocsReturnValue("The rotation of the brush during the specified frame")]
         public static Quaternion GetPastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
 
         [LuaDocsDescription("If set to true then the brush will draw strokes even if the trigger isn't being pressed.")]
