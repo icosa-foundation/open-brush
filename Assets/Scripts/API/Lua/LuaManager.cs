@@ -777,6 +777,7 @@ namespace TiltBrush
             RegisterApiClass(script, "EnvironmentList", typeof(EnvironmentListApiWrapper));
             RegisterApiClass(script, "Easing", typeof(EasingApiWrapper));
             RegisterApiClass(script, "Group", typeof(GroupApiWrapper));
+            RegisterApiClass(script, "GroupList", typeof(GroupListApiWrapper));
             RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
             RegisterApiClass(script, "GuideList", typeof(GuideListApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
@@ -800,6 +801,7 @@ namespace TiltBrush
             RegisterApiClass(script, "StrokeList", typeof(StrokeListApiWrapper));
             RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
             RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
+            RegisterApiClass(script, "SymmetrySettings", typeof(SymmetrySettingsApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
             RegisterApiClass(script, "Transform", typeof(TransformApiWrapper));
             // RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));

@@ -55,7 +55,7 @@ namespace TiltBrush
         public static LayerApiWrapper mainLayer => new LayerApiWrapper(App.Scene.MainCanvas);
 
         [LuaDocsDescription("All the groups in this sketch")]
-        public static List<GroupApiWrapper> groups {
+        public static GroupListApiWrapper groups {
             get
             {
                 var tags = new HashSet<(SketchGroupTag, CanvasScript)>();
@@ -65,7 +65,8 @@ namespace TiltBrush
                 tags.UnionWith(models._Models.Select(x => (x.Group, x.Canvas)));
                 tags.UnionWith(guides._Guides.Select(x => (x.Group, x.Canvas)));
                 tags.UnionWith(cameraPaths._CameraPaths.Select(x => (x.Group, x.Canvas)));
-                return tags.Select(x => new GroupApiWrapper(x.Item1, x.Item2)).ToList();
+                var groups = tags.Select(x => new GroupApiWrapper(x.Item1, x.Item2)).ToList();
+                return new GroupListApiWrapper(groups);
             }
         }
 

@@ -80,7 +80,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("All the groups on this layer")]
-        public List<GroupApiWrapper> groups {
+        public GroupListApiWrapper groups {
             get
             {
                 var tags = new HashSet<SketchGroupTag>();
@@ -90,7 +90,8 @@ namespace TiltBrush
                 tags.UnionWith(models._Models.Select(x => x.Group));
                 tags.UnionWith(guides._Guides.Select(x => x.Group));
                 tags.UnionWith(cameraPaths._CameraPaths.Select(x => x.Group));
-                return tags.Select(x => new GroupApiWrapper(x, _CanvasScript)).ToList();
+                var groups = tags.Select(x => new GroupApiWrapper(x, _CanvasScript)).ToList();
+                return new GroupListApiWrapper(groups);
             }
         }
 
@@ -246,6 +247,10 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("value", "The new value")]
+        [LuaDocsExample("myLayer:SetShaderFloat(\"Light\", \"_EmissionGain\", 0.5)")]
         public void SetShaderFloat(string brushType, string parameter, float value)
         {
             var desc = _GetDesc(brushType);
@@ -257,6 +262,10 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Changes a shader color parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("color", "The new color")]
+        [LuaDocsExample("myLayer:SetShaderColor(\"Embers\", \"_TintColor\", Color.red)")]
         public void SetShaderColor(string brushType, string parameter, ColorApiWrapper color)
         {
             var desc = _GetDesc(brushType);
@@ -268,6 +277,10 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Changes a shader texture parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("image", "The new image to use as a texture")]
+        [LuaDocsExample("myLayer:SetShaderTexture(\"Ink\", \"_MainTex\", myImage)")]
         public void SetShaderTexture(string brushType, string parameter, ImageApiWrapper image)
         {
             var desc = _GetDesc(brushType);
@@ -279,6 +292,13 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("x", "The new x value")]
+        [LuaDocsParameter("y", "The new y value")]
+        [LuaDocsParameter("z", "The new z value")]
+        [LuaDocsParameter("w", "The new w value")]
+        [LuaDocsExample("myLayer:SetShaderVector(\"NeonPulse\", \"_TimeOverrideValue\", 0.5, 0, 0, 0)")]
         public void SetShaderVector(string brushType, string parameter, float x, float y = 0, float z = 0, float w = 0)
         {
             var desc = _GetDesc(brushType);

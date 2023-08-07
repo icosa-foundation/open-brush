@@ -144,6 +144,23 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Scales the whole set of paths by a specified factor")]
+        [LuaDocsExample(@"myPaths:ScaleBy(float)")]
+        [LuaDocsParameter(@"scale", "The amount to scale the paths by")]
+        public void ScaleBy(float scale)
+        {
+            for (var i = 0; i < _PathList.Count; i++)
+            {
+                var path = _PathList[i];
+                // Supports non-uniform scaling
+                for (var j = 0; j < path.Count; j++)
+                {
+                    var tr = path[j];
+                    tr.translation *= scale;
+                }
+            }
+        }
+
         [LuaDocsDescription("Offsets all points on the path so that their common center is at the origin")]
         [LuaDocsExample(@"myPaths:Center()")]
         public void Center()
