@@ -1390,12 +1390,12 @@ namespace TiltBrush
                     InputManager.KeyboardShortcut.CycleSymmetryMode))
                 {
                     var cur = PointerManager.m_Instance.CurrentSymmetryMode;
-                    var next = (cur == SymmetryMode.None) ? SymmetryMode.SinglePlane
-                        : (cur == SymmetryMode.SinglePlane) ? SymmetryMode.DebugMultiple
-                        : (cur == SymmetryMode.DebugMultiple) ? SymmetryMode.MultiMirror
-                        : (cur == SymmetryMode.MultiMirror) ? SymmetryMode.TwoHanded
-                        : (cur == SymmetryMode.TwoHanded) ? SymmetryMode.ScriptedSymmetryMode
-                        : SymmetryMode.None;
+                    var next = (cur == PointerManager.SymmetryMode.None) ? PointerManager.SymmetryMode.SinglePlane
+                        : (cur == PointerManager.SymmetryMode.SinglePlane) ? PointerManager.SymmetryMode.DebugMultiple
+                        : (cur == PointerManager.SymmetryMode.DebugMultiple) ? PointerManager.SymmetryMode.MultiMirror
+                        : (cur == PointerManager.SymmetryMode.MultiMirror) ? PointerManager.SymmetryMode.TwoHanded
+                        : (cur == PointerManager.SymmetryMode.TwoHanded) ? PointerManager.SymmetryMode.ScriptedSymmetryMode
+                        : PointerManager.SymmetryMode.None;
                     PointerManager.m_Instance.CurrentSymmetryMode = next;
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
@@ -4318,48 +4318,48 @@ namespace TiltBrush
                     PromoManager.m_Instance.RequestAdvancedPanelsPromo();
                     break;
                 case GlobalCommands.SymmetryPlane:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.SinglePlane)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.SinglePlane)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.SinglePlane);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.SinglePlane);
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Enabled");
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                         ControllerConsoleScript.m_Instance.AddNewLine("Mirror Off");
                     }
                     break;
                 case GlobalCommands.MultiMirror:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.MultiMirror)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
                 case GlobalCommands.SymmetryTwoHanded:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.TwoHanded)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.TwoHanded)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.TwoHanded);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
                 case GlobalCommands.ScriptedSymmetryCommand:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.ScriptedSymmetryMode);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
                     }
                     else
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
@@ -4681,7 +4681,7 @@ namespace TiltBrush
                         int selectedVerts = SelectionManager.m_Instance.NumVertsInSelection;
 
                         // TODO - this code has never taken imported models etc into account
-                        if (PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
                         {
                             selectedVerts *= PointerManager.m_Instance.CustomMirrorMatrices.Count;
                         }
@@ -4712,9 +4712,9 @@ namespace TiltBrush
                         m_WidgetManager.CameraPathsVisible = false;
                         App.Switchboard.TriggerStencilModeChanged();
                         m_SketchSurfacePanel.EnsureUserHasBasicToolEnabled();
-                        if (PointerManager.m_Instance.CurrentSymmetryMode != SymmetryMode.None)
+                        if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.None)
                         {
-                            PointerManager.m_Instance.SetSymmetryMode(SymmetryMode.None, false);
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None, false);
                         }
                     }
                     PromoManager.m_Instance.RecordCompletion(PromoType.AdvancedPanels);
@@ -5034,10 +5034,10 @@ namespace TiltBrush
             {
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
-                case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.SinglePlane;
-                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.MultiMirror;
-                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.TwoHanded;
-                case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode;
+                case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
+                case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
+                case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
                 case GlobalCommands.AudioVisualization: return VisualizerManager.m_Instance.VisualsRequested;
                 case GlobalCommands.AdvancedPanelsToggle: return m_PanelManager.AdvancedModeActive();
@@ -5188,7 +5188,7 @@ namespace TiltBrush
                 case GlobalCommands.SaveModel: return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
-                        SymmetryMode.None;
+                        PointerManager.SymmetryMode.None;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;
