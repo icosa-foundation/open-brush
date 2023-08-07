@@ -2103,6 +2103,9 @@ function Svg:DrawDocument(svg, tr) end
 ---@class Symmetry
 t = Class()
 
+---@type SymmetrySettings
+Symmetry.current = nil
+
 ---@type Vector3
 Symmetry.brushOffset = nil
 
@@ -2182,10 +2185,7 @@ function Symmetry:PathToPolar(path) end
 ---@class SymmetrySettings
 t = Class()
 
----@type SymmetrySettings
-SymmetrySettings.current = nil
-
----@type string
+---@type SymmetryMode
 SymmetrySettings.mode = nil
 
 ---@type Vector3
@@ -2197,13 +2197,13 @@ SymmetrySettings.rotation = nil
 ---@type Vector3
 SymmetrySettings.spin = nil
 
----@type string
+---@type SymmetryPointType
 SymmetrySettings.pointType = nil
 
 ---@type number
 SymmetrySettings.pointOrder = nil
 
----@type string
+---@type SymmetryWallpaperType
 SymmetrySettings.wallpaperType = nil
 
 ---@type number
@@ -2230,8 +2230,9 @@ SymmetrySettings.wallpaperSkewY = nil
 
 ---Methods for type SymmetrySettings
 
----@param tr Transform
-function SymmetrySettings:_SetTransform(tr) end
+
+---@return SymmetrySettings
+function SymmetrySettings:Duplicate() end
 ---Methods for type Timer
 
 ---@param fn function
