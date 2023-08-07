@@ -5,20 +5,73 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public enum ApiSymmetryMode
+    [LuaDocsDescription("The list of valid symmetry modes")]
+    public enum SymmetryMode
     {
-        None = PointerManager.SymmetryMode.None,
-        Standard = PointerManager.SymmetryMode.SinglePlane,
-        Scripted = PointerManager.SymmetryMode.ScriptedSymmetryMode,
-        TwoHanded = PointerManager.SymmetryMode.TwoHanded,
+        None,
+        Standard,
+        Scripted,
+        TwoHanded,
         Point,
         Wallpaper
+    }
+
+    [LuaDocsDescription("The list of valid point symmetry types")]
+    public enum SymmetryPointType
+    {
+        Cn = PointSymmetry.Family.Cn,
+        Cnv = PointSymmetry.Family.Cnv,
+        Cnh = PointSymmetry.Family.Cnh,
+        Sn = PointSymmetry.Family.Sn,
+        Dn = PointSymmetry.Family.Dn,
+        Dnh = PointSymmetry.Family.Dnh,
+        Dnd = PointSymmetry.Family.Dnd,
+        T = PointSymmetry.Family.T,
+        Th = PointSymmetry.Family.Th,
+        Td = PointSymmetry.Family.Td,
+        O = PointSymmetry.Family.O,
+        Oh = PointSymmetry.Family.Oh,
+        I = PointSymmetry.Family.I,
+        Ih = PointSymmetry.Family.Ih,
+    }
+
+    [LuaDocsDescription("The list of valid wallpaper symmetry types")]
+    public enum SymmetryWallpaperType
+    {
+        p1 = SymmetryGroup.R.p1,
+        pg = SymmetryGroup.R.pg,
+        cm = SymmetryGroup.R.cm,
+        pm = SymmetryGroup.R.pm,
+        p6 = SymmetryGroup.R.p6,
+        p6m = SymmetryGroup.R.p6m,
+        p3 = SymmetryGroup.R.p3,
+        p3m1 = SymmetryGroup.R.p3m1,
+        p31m = SymmetryGroup.R.p31m,
+        p4 = SymmetryGroup.R.p4,
+        p4m = SymmetryGroup.R.p4m,
+        p4g = SymmetryGroup.R.p4g,
+        p2 = SymmetryGroup.R.p2,
+        pgg = SymmetryGroup.R.pgg,
+        pmg = SymmetryGroup.R.pmg,
+        pmm = SymmetryGroup.R.pmm,
+        cmm = SymmetryGroup.R.cmm,
     }
 
     [LuaDocsDescription("Functions for controlling the mirror symmetry mode")]
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
+
+        [LuaDocsDescription("The current symmetry settings")]
+        public static SymmetrySettingsApiWrapper current
+        {
+            get => new(isCurrent: true);
+            set
+            {
+                SymmetrySettingsApiWrapper._WriteToScene(value);
+            }
+        }
+
         [LuaDocsDescription("Gets the offset betwen the current brush position and the symmetry widget")]
         public static Vector3 brushOffset => (App.Scene.MainCanvas.AsCanvas[PointerManager.m_Instance.SymmetryWidget.transform].inverse * TrTransform.T(LuaManager.Instance.GetPastBrushPos(0))).translation;
         [LuaDocsDescription("Gets the offset betwen the current wand position and the symmetry widget")]

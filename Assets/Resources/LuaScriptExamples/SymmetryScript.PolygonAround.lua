@@ -24,7 +24,7 @@ function Main()
 
     for i = 0, copies - 1 do
 
-        angle = (Symmetry.rotation.y * Math.deg2Rad) + i * theta
+        angle = (Symmetry.current.rotation.y * Math.deg2Rad) + i * theta
         radius = Symmetry:Polygon(angle, sides)
 
         pointer = Transform:New(
