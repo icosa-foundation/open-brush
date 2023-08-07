@@ -10,6 +10,9 @@ App.time = nil
 ---@type number
 App.frames = nil
 
+---@type boolean
+App.physics = nil
+
 ---@type number
 App.currentScale = nil
 
@@ -21,10 +24,6 @@ App.clipboardText = nil
 
 
 ---Methods for type App
-
----@param active boolean
----@return boolean
-function App:Physics(active) end
 
 
 function App:Undo() end
@@ -507,6 +506,46 @@ function Color:NotEquals(other) end
 ---@return boolean
 function Color:NotEquals(r, g, b) end
 
+---Properties for class Environment
+
+---@class Environment
+t = Class()
+
+---@type Environment
+Environment.current = nil
+
+---@type Color
+Environment.gradientColorA = nil
+
+---@type Color
+Environment.gradientColorB = nil
+
+---@type Rotation
+Environment.gradientOrientation = nil
+
+---@type Color
+Environment.fogColor = nil
+
+---@type number
+Environment.fogDensity = nil
+
+---@type Color
+Environment.ambientColor = nil
+
+---@type Color
+Environment.mainLightColor = nil
+
+---@type Rotation
+Environment.mainLightDirection = nil
+
+---@type Color
+Environment.secondaryLightColor = nil
+
+---@type Rotation
+Environment.secondaryLightDirection = nil
+
+
+
 ---Properties for class EnvironmentList
 
 ---@class EnvironmentList
@@ -683,26 +722,39 @@ Group.cameraPaths = nil
 ---@return Group
 function Group:New() end
 
----@param widget Image
-function Group:Add(widget) end
+---@param image Image
+function Group:Add(image) end
 
----@param widget Video
-function Group:Add(widget) end
+---@param video Video
+function Group:Add(video) end
 
----@param widget Model
-function Group:Add(widget) end
+---@param model Model
+function Group:Add(model) end
 
----@param widget Guide
-function Group:Add(widget) end
+---@param guide Guide
+function Group:Add(guide) end
 
----@param widget CameraPath
-function Group:Add(widget) end
+---@param cameraPath CameraPath
+function Group:Add(cameraPath) end
 
----@param widget GrabWidget
-function Group:_Add(widget) end
+---@param stroke Stroke
+function Group:Add(stroke) end
 
----@param widget GrabWidget
-function Group:Add(widget) end
+---Properties for class GroupList
+
+---@class GroupList
+t = Class()
+
+---@type Group
+GroupList.last = nil
+
+---@type Group
+GroupList.Item = nil
+
+---@type number
+GroupList.count = nil
+
+
 
 ---Properties for class Guide
 
@@ -898,7 +950,7 @@ Layer.guides = nil
 ---@type CameraPathList
 Layer.cameraPaths = nil
 
----@type System.Collections.Generic.List`1[Group]
+---@type GroupList
 Layer.groups = nil
 
 ---@type number
@@ -1441,6 +1493,9 @@ function PathList:RotateBy(rotation) end
 ---@param scale Vector3
 function PathList:ScaleBy(scale) end
 
+---@param scale number
+function PathList:ScaleBy(scale) end
+
 
 function PathList:Center() end
 
@@ -1830,7 +1885,7 @@ Sketch.layers = nil
 ---@type Layer
 Sketch.mainLayer = nil
 
----@type System.Collections.Generic.List`1[Group]
+---@type GroupList
 Sketch.groups = nil
 
 ---@type ImageList
@@ -2054,9 +2109,6 @@ Symmetry.brushOffset = nil
 ---@type Vector3
 Symmetry.wandOffset = nil
 
----@type SymmetrySettings
-Symmetry.settings = nil
-
 
 ---Methods for type Symmetry
 
@@ -2080,10 +2132,10 @@ function Symmetry:Square(angle) end
 function Symmetry:Superellipse(angle, n, a, b) end
 
 ---@param angle number
----@param halfSideLength number
+---@param size number
 ---@param cornerRadius number
 ---@return number
-function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
+function Symmetry:Rsquare(angle, size, cornerRadius) end
 
 ---@param angle number
 ---@param numSides number
@@ -2091,8 +2143,8 @@ function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
 ---@return number
 function Symmetry:Polygon(angle, numSides, radius) end
 
----@param colors Color[]
-function Symmetry:ClearColors(colors) end
+
+function Symmetry:ClearColors() end
 
 ---@param color Color
 function Symmetry:AddColor(color) end
@@ -2107,8 +2159,8 @@ function Symmetry:GetColors() end
 ---@param brush string
 function Symmetry:AddBrush(brush) end
 
----@param brushes string[]
-function Symmetry:ClearBrushes(brushes) end
+
+function Symmetry:ClearBrushes() end
 
 ---@param brushes string[]
 function Symmetry:SetBrushes(brushes) end
@@ -2121,9 +2173,65 @@ function Symmetry:GetBrushNames() end
 ---@return string[]
 function Symmetry:GetBrushGuids() end
 
----@param path IPath
+---@param path Path
 ---@return Path
 function Symmetry:PathToPolar(path) end
+
+---Properties for class SymmetrySettings
+
+---@class SymmetrySettings
+t = Class()
+
+---@type SymmetrySettings
+SymmetrySettings.current = nil
+
+---@type string
+SymmetrySettings.mode = nil
+
+---@type Vector3
+SymmetrySettings.position = nil
+
+---@type Rotation
+SymmetrySettings.rotation = nil
+
+---@type Vector3
+SymmetrySettings.spin = nil
+
+---@type string
+SymmetrySettings.pointType = nil
+
+---@type number
+SymmetrySettings.pointOrder = nil
+
+---@type string
+SymmetrySettings.wallpaperType = nil
+
+---@type number
+SymmetrySettings.wallpaperRepeatX = nil
+
+---@type number
+SymmetrySettings.wallpaperRepeatY = nil
+
+---@type number
+SymmetrySettings.wallpaperScale = nil
+
+---@type number
+SymmetrySettings.wallpaperScaleX = nil
+
+---@type number
+SymmetrySettings.wallpaperScaleY = nil
+
+---@type number
+SymmetrySettings.wallpaperSkewX = nil
+
+---@type number
+SymmetrySettings.wallpaperSkewY = nil
+
+
+---Methods for type SymmetrySettings
+
+---@param tr Transform
+function SymmetrySettings:_SetTransform(tr) end
 ---Methods for type Timer
 
 ---@param fn function
