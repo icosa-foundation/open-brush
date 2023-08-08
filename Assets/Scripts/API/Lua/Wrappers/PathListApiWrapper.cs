@@ -216,6 +216,19 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Subdivides all paths into the specified number of parts")]
+        [LuaDocsExample(@"myPaths:Subdivide(4)")]
+        [LuaDocsParameter(@"parts", "Number of parts to subdivide each path into")]
+        [LuaDocsReturnValue(@"The new subdivided PathList")]
+        public void Subdivide(int parts)
+        {
+            if (_PathList == null || parts <= 0) return;
+            for (var i = 0; i < _PathList.Count; i++)
+            {
+                _PathList[i] = PathApiWrapper._Subdivide(_PathList[i], parts);
+            }
+        }
+
         [LuaDocsDescription("Joins all the paths in order connecting each end to the following start")]
         [LuaDocsExample(@"myPaths:Join()")]
         [LuaDocsReturnValue(@"A single path")]
