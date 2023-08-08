@@ -30,8 +30,9 @@ namespace TiltBrush
 
         public List<List<TrTransform>> Build(string text)
         {
-            var shape = new List<List<TrTransform>>();
+            var allPaths = new List<List<TrTransform>>();
             Vector2 offset = Vector2.zero;
+
             foreach (var character in text)
             {
                 if (character == '\n')
@@ -40,23 +41,21 @@ namespace TiltBrush
                     offset.x = 0;
                     continue;
                 }
-                List<List<Vector2>> letter;
-                if (_font.Outlines.ContainsKey(character))
+
+                var letterShape2d = new List<List<Vector2>>();
+                if (_font.Outlines.TryGetValue(character, out var outline))
                 {
-                    letter = _font.Outlines[character];
+                    letterShape2d = outline;
                 }
-                else
-                {
-                    letter = new List<List<Vector2>>();
-                }
-                // Offset letter outline by the current total offset
-                shape.AddRange(
-                    letter.Select(
-                        path => path.Select(
-                            point => TrTransform.T(new Vector3(point.x + offset.x, point.y + offset.y, 0))
-                        ).ToList()
+
+                // Offset letter outline by the current total offset and convert to 3d TrTransform
+                List<List<TrTransform>> pathList = letterShape2d.Select(
+                    path => path.Select(
+                        point => TrTransform.T(new Vector3(point.x + offset.x, point.y + offset.y, 0))
                     ).ToList()
-                );
+                ).ToList();
+
+                allPaths.AddRange(pathList);
                 if (_font.Outlines.ContainsKey(character))
                 {
                     offset.x += _font.Widths[character];
@@ -68,7 +67,7 @@ namespace TiltBrush
                     offset.x += 0.75f;
                 }
             }
-            return shape;
+            return allPaths;
         }
     }
 }
