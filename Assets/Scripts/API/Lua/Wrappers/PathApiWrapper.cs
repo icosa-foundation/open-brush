@@ -323,7 +323,7 @@ namespace TiltBrush
         }
 
         [MoonSharpHidden]
-        public static List<TrTransform> _Subdivide(List<TrTransform> trs, int parts)
+        public static List<TrTransform> _SampleByCount(List<TrTransform> trs, int parts)
         {
             if (trs == null || trs.Count < 2 || parts < 1) return trs;
             List<TrTransform> subdividedPath = new List<TrTransform>();
@@ -369,8 +369,41 @@ namespace TiltBrush
             return subdividedPath;
         }
 
+        public static List<TrTransform> _SubdivideSegments(List<TrTransform> trs, int parts)
+        {
+            if (parts < 1 || trs == null || trs.Count < 2)
+            {
+                return trs;
+            }
+
+            var newPath = new List<TrTransform>();
+
+            for (int i = 0; i < trs.Count - 1; i++)
+            {
+                var startPoint = trs[i];
+                var endPoint = trs[i + 1];
+
+                // Include the starting point of the segment
+                newPath.Add(startPoint);
+
+                for (int j = 1; j < parts; j++)
+                {
+                    float interpolationFactor = (float)j / parts;
+                    Vector3 newTranslation = Vector3.Lerp(startPoint.translation, endPoint.translation, interpolationFactor);
+                    Quaternion newRotation = Quaternion.Lerp(startPoint.rotation, endPoint.rotation, interpolationFactor);
+                    float newScale = Mathf.Lerp(startPoint.scale, endPoint.scale, interpolationFactor);
+                    newPath.Add(TrTransform.TRS(newTranslation, newRotation, newScale));
+                }
+            }
+
+            // Add the last point of the input path
+            newPath.Add(trs[^1]);
+
+            return newPath;
+        }
+
         [MoonSharpHidden]
-        public static List<TrTransform> _Resample(List<TrTransform> trs, float spacing)
+        public static List<TrTransform> _SampleByDistance(List<TrTransform> trs, float spacing)
         {
             if (trs == null || trs.Count < 2 || spacing <= 0) return trs;
             List<TrTransform> resampledPath = new List<TrTransform>();
@@ -407,22 +440,31 @@ namespace TiltBrush
             return resampledPath;
         }
 
-        [LuaDocsDescription(@"Resamples the path at a specified spacing")]
-        [LuaDocsExample(@"myPath:Resample(spacing)")]
-        [LuaDocsParameter(@"spacing", "The space between points in the new pat")]
-        [LuaDocsReturnValue(@"The resampled path")]
-        public void Resample(float spacing)
+        [LuaDocsDescription("Resamples the path evenly by distance")]
+        [LuaDocsExample(@"myPath:SampleByDistance(spacing)")]
+        [LuaDocsParameter(@"spacing", "The space between points in the new path")]
+        [LuaDocsReturnValue(@"The new path")]
+        public void SampleByDistance(float spacing)
         {
-            _Path = _Resample(_Path, spacing);
+            _Path = _SampleByDistance(_Path, spacing);
         }
 
-        [LuaDocsDescription(@"Subdivides the path into given number of parts.")]
-        [LuaDocsExample(@"myPath:Subdivide(parts)")]
-        [LuaDocsParameter(@"parts", "Number of parts to subdivide into")]
-        [LuaDocsReturnValue(@"The new subdivided path")]
-        public void Subdivide(int parts)
+        [LuaDocsDescription("Resamples the path evenly into the specified number of points")]
+        [LuaDocsExample(@"myPath:SampleByCount(count)")]
+        [LuaDocsParameter(@"count", "The number of points in the new path")]
+        [LuaDocsReturnValue(@"The new path")]
+        public void SampleByCount(int count)
         {
-            _Path = _Subdivide(_Path, parts);
+            _Path = _SampleByCount(_Path, count);
+        }
+
+        [LuaDocsDescription("Subdivides each path segment into the specified number of parts")]
+        [LuaDocsExample(@"myPath:SubdivideSegments(parts)")]
+        [LuaDocsParameter(@"parts", "Number of parts to subdivide into")]
+        [LuaDocsReturnValue(@"The new path")]
+        public void SubdivideSegments(int parts)
+        {
+            _Path = _SubdivideSegments(_Path, parts);
         }
 
         [LuaDocsDescription(@"Generates a hermite spline")]

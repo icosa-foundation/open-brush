@@ -58,7 +58,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("Draws this PathList using current settings")]
         [LuaDocsExample("myPaths:Draw()")]
-        public void Draw() => LuaApiMethods.DrawPath(this);
+        public void Draw() => LuaApiMethods.DrawPaths(this);
 
         [LuaDocsDescription("Creates a new PathList from a text")]
         [LuaDocsExample(@"PathListApiWrapper.FromText('example')")]
@@ -205,27 +205,41 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Resamples all paths with a specified spacing between points")]
-        [LuaDocsExample(@"myPaths:Resample(0.2)")]
+        [LuaDocsExample(@"myPaths:SampleByDistance(0.2)")]
         [LuaDocsParameter(@"spacing", "The distance between each new point")]
-        public void Resample(float spacing)
+        [LuaDocsReturnValue(@"The new PathList")]
+        public void SampleByDistance(float spacing)
         {
             if (_PathList == null || spacing <= 0) return;
             for (var i = 0; i < _PathList.Count; i++)
             {
-                _PathList[i] = PathApiWrapper._Resample(_PathList[i], spacing);
+                _PathList[i] = PathApiWrapper._SampleByDistance(_PathList[i], spacing);
             }
         }
 
-        [LuaDocsDescription("Subdivides all paths into the specified number of parts")]
-        [LuaDocsExample(@"myPaths:Subdivide(4)")]
-        [LuaDocsParameter(@"parts", "Number of parts to subdivide each path into")]
-        [LuaDocsReturnValue(@"The new subdivided PathList")]
-        public void Subdivide(int parts)
+        [LuaDocsDescription("Resamples each path evenly into a specified number of points")]
+        [LuaDocsExample(@"myPaths:SampleByCount(4)")]
+        [LuaDocsParameter(@"count", "Number of points in the new path")]
+        [LuaDocsReturnValue(@"The new PathList")]
+        public void SampleByCount(int count)
         {
-            if (_PathList == null || parts <= 0) return;
+            if (_PathList == null || count <= 0) return;
             for (var i = 0; i < _PathList.Count; i++)
             {
-                _PathList[i] = PathApiWrapper._Subdivide(_PathList[i], parts);
+                _PathList[i] = PathApiWrapper._SampleByCount(_PathList[i], count);
+            }
+        }
+
+        [LuaDocsDescription("For each path in the list subdivide it's path segment into the specified number of parts")]
+        [LuaDocsExample(@"myPaths:SubdivideSegments(4)")]
+        [LuaDocsParameter(@"parts", "Number of parts to subdivide each path segment into")]
+        [LuaDocsReturnValue(@"The new PathList")]
+        public void SubdivideSegments(int parts)
+        {
+            if (_PathList == null || count <= 0) return;
+            for (var i = 0; i < _PathList.Count; i++)
+            {
+                _PathList[i] = PathApiWrapper._SubdivideSegments(_PathList[i], parts);
             }
         }
 

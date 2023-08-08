@@ -65,7 +65,7 @@ function Main()
         else
             local strokes = Svg:ParseDocument(svg)
             strokes:Normalize(2) -- Scale and center inside a 2x2 square
-            strokes:Resample(0.1) -- Evenly space all the points
+            strokes:SampleByDistance(0.1) -- Evenly space all the points
             return strokes
         end
     end

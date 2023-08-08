@@ -23,7 +23,7 @@ function Main()
                 Transform:New(initialPos, Brush.rotation),
                 Transform:New(currentPos, Brush.rotation),
             })
-            path:Resample(0.1)
+            path:SampleByDistance(0.1)
             path:Draw()
         end
 

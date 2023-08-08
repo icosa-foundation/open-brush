@@ -13,8 +13,8 @@ function Main()
 
         lastPath = Brush.currentPath
         lastButOnePath = Sketch.strokes.last.path
-        lastPath:Subdivide(parts)
-        lastButOnePath:Subdivide(parts)
+        lastPath:SampleByCount(parts)
+        lastButOnePath:SampleByCount(parts)
         for i = 0, parts do
 
             -- Straight line version

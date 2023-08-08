@@ -30,7 +30,7 @@ function createFace(center, normal, up)
     face:Insert(Transform:New(bottomRight, rotation))
     face:Insert(Transform:New(bottomLeft, rotation))
     face:Insert(Transform:New(topLeft, rotation)) -- to close the loop
-    face:Resample(spacing) -- Create evenly spaced points
+    face:SampleByDistance(spacing) -- Create evenly spaced points
 
     return face
 end

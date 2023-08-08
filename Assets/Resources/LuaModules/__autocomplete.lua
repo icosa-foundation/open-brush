@@ -1422,11 +1422,19 @@ function Path:FindMaximumZ() end
 ---@param size number
 function Path:Normalize(size) end
 
+---@param trs Transform[]
+---@param parts number
+---@return Transform[]
+function Path:_SubdivideSegments(trs, parts) end
+
 ---@param spacing number
-function Path:Resample(spacing) end
+function Path:SampleByDistance(spacing) end
+
+---@param count number
+function Path:SampleByCount(count) end
 
 ---@param parts number
-function Path:Subdivide(parts) end
+function Path:SubdivideSegments(parts) end
 
 ---@param startTransform Transform
 ---@param endTransform Transform
@@ -1503,10 +1511,13 @@ function PathList:Center() end
 function PathList:Normalize(size) end
 
 ---@param spacing number
-function PathList:Resample(spacing) end
+function PathList:SampleByDistance(spacing) end
+
+---@param count number
+function PathList:SampleByCount(count) end
 
 ---@param parts number
-function PathList:Subdivide(parts) end
+function PathList:SubdivideSegments(parts) end
 
 
 ---@return Path

@@ -9,7 +9,7 @@ function Main()
             App.Error("Please draw a stroke with the brush and then try again")
         else
             path = stroke.path
-            path:Resample(0.1)
+            path:SampleByDistance(0.1)
             return path
         end
     end

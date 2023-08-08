@@ -32,7 +32,7 @@ function Main()
             transform = Transform:New(Brush.position, rot, size)
             paths = PathList:FromText(letter)
             paths:TransformBy(transform)
-            paths:Resample(0.01)
+            paths:SampleByDistance(0.01)
             paths:Draw()
             letterCount = letterCount % string.len(text)
             distance = 0

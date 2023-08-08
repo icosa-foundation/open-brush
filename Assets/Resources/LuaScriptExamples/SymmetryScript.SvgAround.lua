@@ -25,7 +25,7 @@ function updatePath()
     path = paths:Longest() -- Get the longest path
     path:RotateBy(Rotation.clockwise) -- Rotate 90 degrees
     path:Normalize(2) -- Scale and center inside a 2x2 square
-    path:Resample(spacing) -- Evenly space all the points
+    path:SampleByDistance(spacing) -- Evenly space all the points
     lowest = path:FindMinimumX(path) -- Find the point with the lowest x value
     path:StartingFrom(lowest) -- Make it the new start point
     symmetryHueShift.generate(path.count, initialHsv)

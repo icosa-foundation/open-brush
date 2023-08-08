@@ -28,7 +28,7 @@ function updatePath()
         path = Path:New()
     else
         path = stroke.path
-        path:Resample(spacing)
+        path:SampleByDistance(spacing)
         path:Center()
         symmetryHueShift.generate(path.count, initialHsv)
     end

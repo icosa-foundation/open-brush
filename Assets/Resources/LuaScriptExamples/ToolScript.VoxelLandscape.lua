@@ -32,7 +32,7 @@ function Main()
                 bottom = 0
             end
             path = cube(cell, bottom, top, xzGrid)
-            path:Resample(0.1)
+            path:SampleByDistance(0.1)
             return path
         else
             return Path:New()

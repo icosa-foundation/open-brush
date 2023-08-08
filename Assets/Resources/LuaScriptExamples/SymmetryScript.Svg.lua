@@ -5,7 +5,7 @@ function Start()
     paths = Svg:ParsePathString(svgPath)
     path = paths:Longest() -- Get the longest path
     path:Normalize(2)
-    path:Resample(0.1)
+    path:SampleByDistance(0.1)
 end
 
 function Main()

@@ -26,7 +26,7 @@ function Main()
         if filledCells[key]==nil then
             filledCells[key] = true
             path = cube(cell, gridSize)
-            path:Resample(0.1)
+            path:SampleByDistance(0.1)
             return path
         else
             return Path:New()
