@@ -65,7 +65,7 @@ namespace TiltBrush
         [LuaDocsParameter(@"text", "Input text to generate a path.")]
         public static PathListApiWrapper FromText(string text)
         {
-            var builder = new TextToStrokes(ApiManager.Instance.TextFont);
+            TextToStrokes builder = new TextToStrokes(ApiManager.Instance.TextFont);
             return new PathListApiWrapper(builder.Build(text));
         }
 
