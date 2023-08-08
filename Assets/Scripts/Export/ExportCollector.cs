@@ -268,7 +268,8 @@ namespace TiltBrush
             foreach (ExportUtils.ExportBrush brush in exportGroup.SplitByBrush())
             {
                 var desc = brush.m_desc;
-                foreach (var (batch, batchIndex) in brush.ToGeometryBatches().WithIndex())
+                int vertexLimit = App.UserConfig.Flags.LargeMeshSupport ? 2147483645 : 65534;
+                foreach (var (batch, batchIndex) in brush.ToGeometryBatches(vertexLimit).WithIndex())
                 {
                     GeometryPool geometry = batch.pool;
                     List<Stroke> strokes = batch.strokes;
