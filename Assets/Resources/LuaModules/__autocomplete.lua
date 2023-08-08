@@ -3062,3 +3062,61 @@ function WebRequest:Get(url, onSuccess, onError, headers, context) end
 ---@param headers table
 ---@param context table
 function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
+
+---Values for enum SymmetryMode
+
+---@class SymmetryMode
+t = Class()
+
+SymmetryMode.None = nil
+SymmetryMode.Standard = nil
+SymmetryMode.Scripted = nil
+SymmetryMode.TwoHanded = nil
+SymmetryMode.Point = nil
+SymmetryMode.Wallpaper = nil
+
+
+---Values for enum SymmetryPointType
+
+---@class SymmetryPointType
+t = Class()
+
+SymmetryPointType.Cn = nil
+SymmetryPointType.Cnv = nil
+SymmetryPointType.Cnh = nil
+SymmetryPointType.Sn = nil
+SymmetryPointType.Dn = nil
+SymmetryPointType.Dnh = nil
+SymmetryPointType.Dnd = nil
+SymmetryPointType.T = nil
+SymmetryPointType.Th = nil
+SymmetryPointType.Td = nil
+SymmetryPointType.O = nil
+SymmetryPointType.Oh = nil
+SymmetryPointType.I = nil
+SymmetryPointType.Ih = nil
+
+
+---Values for enum SymmetryWallpaperType
+
+---@class SymmetryWallpaperType
+t = Class()
+
+SymmetryWallpaperType.p1 = nil
+SymmetryWallpaperType.pg = nil
+SymmetryWallpaperType.cm = nil
+SymmetryWallpaperType.pm = nil
+SymmetryWallpaperType.p6 = nil
+SymmetryWallpaperType.p6m = nil
+SymmetryWallpaperType.p3 = nil
+SymmetryWallpaperType.p3m1 = nil
+SymmetryWallpaperType.p31m = nil
+SymmetryWallpaperType.p4 = nil
+SymmetryWallpaperType.p4m = nil
+SymmetryWallpaperType.p4g = nil
+SymmetryWallpaperType.p2 = nil
+SymmetryWallpaperType.pgg = nil
+SymmetryWallpaperType.pmg = nil
+SymmetryWallpaperType.pmm = nil
+SymmetryWallpaperType.cmm = nil
+

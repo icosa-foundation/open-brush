@@ -22,6 +22,7 @@ namespace TiltBrush
         public string Description;
 
         public List<LuaDocsProperty> Properties;
+        public List<LuaDocsEnumValue> EnumValues;
         public List<LuaDocsProperty> StaticProperties => Properties.Where(p => p.Static).ToList();
         public List<LuaDocsProperty> InstanceProperties => Properties.Where(p => !p.Static).ToList();
         public List<LuaDocsMethod> Methods;
@@ -29,16 +30,16 @@ namespace TiltBrush
         public List<LuaDocsMethod> InstanceMethods => Methods.Where(p => !p.Static).ToList();
         public bool IsTopLevelClass;
 
-        // 0=name 1=description 2=static properties 3=instance properties 4=static methods 5=instance methods
+        // 0=name 1=description 2=static properties 3=instance properties 4=enum values 5=static methods 6=instance methods
         private string markdownTemplateForClass = @"
 # {0}
 
 ## Summary
 {1}
 {2}
-{3}
-{4}
+{3}{4}
 {5}
+{6}
 ";
 
         private string markdownTemplateForProperties = @"
@@ -49,6 +50,13 @@ namespace TiltBrush
 <tbody>
 {1}
 </tbody></table>
+
+";
+
+        private string markdownTemplateForEnumValues = @"
+## Values
+
+<ul>{0}</ul>
 
 ";
 
@@ -63,6 +71,8 @@ namespace TiltBrush
         {
             string properties = "";
             string methods = "";
+            string enumValues = "";
+
 
             if (Properties.Count > 0)
             {
@@ -77,6 +87,19 @@ t = Class()
 ";
             }
 
+            if (EnumValues.Count > 0)
+            {
+                enumValues = $@"
+---Values for enum {Name}
+
+---@class {Name}
+t = Class()
+
+{String.Join("\n", EnumValues.Select(p => p.AutocompleteSerialize(Name)))}
+
+";
+            }
+
             if (Methods.Count > 0)
             {
                 methods = $@"---Methods for type {Name}
@@ -85,13 +108,14 @@ t = Class()
 
             }
             
-            return $"{properties}{methods}";
+            return $"{properties}{enumValues}{methods}";
         }
 
         public string MarkdownSerialize()
         {
             string staticProperties = "";
             string instanceProperties = "";
+            string enumValues = "";
 
             if (StaticProperties.Count > 0)
             {
@@ -108,6 +132,14 @@ t = Class()
                     markdownTemplateForProperties,
                     "Instance",
                     String.Join("\n", InstanceProperties.Select(p => p.MarkdownSerialize()))
+                );
+            }
+
+            if (EnumValues!= null && EnumValues.Count > 0)
+            {
+                enumValues = String.Format(
+                    markdownTemplateForEnumValues,
+                    String.Join("\n", EnumValues.Select(p => p.MarkdownSerialize()))
                 );
             }
 
@@ -139,7 +171,7 @@ t = Class()
                 Debug.LogWarning($"Missing Description for class {Name}");
             }
 
-            return string.Format(markdownTemplateForClass, Name, Description, staticProperties, instanceProperties, staticMethods, instanceMethods);
+            return string.Format(markdownTemplateForClass, Name, Description, staticProperties, instanceProperties, enumValues, staticMethods, instanceMethods);
         }
 
         public string JsonSerialize()
@@ -452,6 +484,24 @@ t = Class()
             return $@"{parameters}{returnTypeAnnotation}
 function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))}) end
 ";
+        }
+    }
+
+    [Serializable]
+    public class LuaDocsEnumValue
+    {
+        public string Name;
+        private string markdownTemplate = "<li>{0}</li>";
+
+        public string MarkdownSerialize()
+        {
+            string name = Name;
+            return string.Format(markdownTemplate, name);
+        }
+
+        public string AutocompleteSerialize(string className)
+        {
+            return $"{className}.{Name} = nil";
         }
     }
 
