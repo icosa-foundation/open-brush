@@ -1505,6 +1505,9 @@ function PathList:Normalize(size) end
 ---@param spacing number
 function PathList:Resample(spacing) end
 
+---@param parts number
+function PathList:Subdivide(parts) end
+
 
 ---@return Path
 function PathList:Join() end
