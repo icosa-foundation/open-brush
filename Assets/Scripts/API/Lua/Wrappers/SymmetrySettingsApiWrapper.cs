@@ -183,7 +183,11 @@ namespace TiltBrush
             get => _PointType;
             set {
                 _PointType = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_PointSymmetryFamily = (PointSymmetry.Family)value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PointSymmetryFamily = (PointSymmetry.Family)value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -193,7 +197,11 @@ namespace TiltBrush
             get => _PointOrder;
             set {
                 _PointOrder = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_PointSymmetryOrder = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PointSymmetryOrder = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -203,7 +211,11 @@ namespace TiltBrush
             get => _WallpaperType;
             set {
                 _WallpaperType = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryGroup = (SymmetryGroup.R)value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryGroup = (SymmetryGroup.R)value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -213,7 +225,11 @@ namespace TiltBrush
             get => _WallpaperRepeatX;
             set {
                 _WallpaperRepeatX = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryX = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryX = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -223,7 +239,11 @@ namespace TiltBrush
             get => _WallpaperRepeatY;
             set {
                 _WallpaperRepeatY = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryY = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryY = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -233,7 +253,11 @@ namespace TiltBrush
             get => _WallpaperScale;
             set {
                 _WallpaperScale = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryScale = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryScale = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -243,7 +267,11 @@ namespace TiltBrush
             get => _WallpaperScaleX;
             set {
                 _WallpaperScaleX = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryScaleX = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryScaleX = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -253,7 +281,11 @@ namespace TiltBrush
             get => _WallpaperScaleY;
             set {
                 _WallpaperScaleY = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetryScaleY = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetryScaleY = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -263,7 +295,11 @@ namespace TiltBrush
             get => _WallpaperSkewX;
             set {
                 _WallpaperSkewX = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetrySkewX = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetrySkewX = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
@@ -273,26 +309,31 @@ namespace TiltBrush
             get => _WallpaperSkewY;
             set {
                 _WallpaperSkewY = value;
-                if (_IsCurrent) PointerManager.m_Instance.m_WallpaperSymmetrySkewY = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_WallpaperSymmetrySkewY = value;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
             }
         }
 
         [MoonSharpHidden]
         public static void _WriteToScene(SymmetrySettingsApiWrapper settings)
         {
+            var newMode = PointerManager.SymmetryMode.None;
             switch (settings._Mode)
             {
                 case SymmetryMode.None:
-                    PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+                    newMode = PointerManager.SymmetryMode.None;
                     break;
                 case SymmetryMode.Standard:
-                    PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.SinglePlane);
+                    newMode = PointerManager.SymmetryMode.SinglePlane;
                     break;
                 case SymmetryMode.Scripted:
-                    PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+                    newMode = PointerManager.SymmetryMode.ScriptedSymmetryMode;
                     break;
                 case SymmetryMode.TwoHanded:
-                    PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                    newMode = PointerManager.SymmetryMode.TwoHanded;
                     break;
                 case SymmetryMode.Point:
                     PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
@@ -319,6 +360,9 @@ namespace TiltBrush
                 new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
             PointerManager.m_Instance.SymmetryWidget.Spin(settings._Spin.x, settings._Spin.y, settings._Spin.z);
+
+            // Set mode last so we recalculate mirrors etc with correct settings
+            PointerManager.m_Instance.SetSymmetryMode(newMode);
         }
     }
 }
