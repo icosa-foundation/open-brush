@@ -411,7 +411,7 @@ namespace TiltBrush
 
         protected virtual bool ValidExtension(string ext)
         {
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
+            return ext == ".jpg" || ext == ".jpeg" || ext == ".png";
         }
 
         // Pass a file name with no path components. Matching is purely based on name.
