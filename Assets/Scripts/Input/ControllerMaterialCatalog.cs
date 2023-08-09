@@ -175,6 +175,12 @@ namespace TiltBrush
         [SerializeField] private Material m_SelectionOptions;
         [CatalogMaterial] public Material SelectionOptions { get; private set; }
 
+        [SerializeField] private Material m_ChangeSliderValue;
+        [CatalogMaterial] public Material ChangeSliderValue { get; private set; }
+
+        [SerializeField] private Material m_ChangeSliderValueActive;
+        [CatalogMaterial] public Material ChangeSliderValueActive { get; private set; }
+
         void Awake()
         {
             m_Instance = this;
