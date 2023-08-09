@@ -268,10 +268,10 @@ namespace TiltBrush
             foreach (ExportUtils.ExportBrush brush in exportGroup.SplitByBrush())
             {
                 var desc = brush.m_desc;
-                // Values are 2 ^ 16 - 1 or 2 ^ 31 - 1
-                // The actual upper limit is 2 ^ 32 -1 but we can't use uint as lots of code uses int
+                // Values are 2 ^ 16 - 2 or 2 ^ 31 - 2
+                // The actual upper limit is 2 ^ 32 - 2 but we can't use uint as lots of code uses int
                 // Also 2 billion verts is realistically more than enough for any practical purpose
-                int vertexLimit = App.UserConfig.Flags.LargeMeshSupport ? 2147483647 : 65534;
+                int vertexLimit = App.UserConfig.Flags.LargeMeshSupport ? 2147483646 : 65534;
                 foreach (var (batch, batchIndex) in brush.ToGeometryBatches(vertexLimit).WithIndex())
                 {
                     GeometryPool geometry = batch.pool;
