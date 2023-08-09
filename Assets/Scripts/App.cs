@@ -1983,7 +1983,7 @@ namespace TiltBrush
             return true;
         }
 
-        /// Creates the Reference Images directory and copies in the provided default images.
+        /// Creates the Background Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
         public static bool InitBackgroundImagesPath(string[] defaultBackgroundImages)
