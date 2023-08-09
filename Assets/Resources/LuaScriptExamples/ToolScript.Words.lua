@@ -10,7 +10,7 @@ Parameters = {
 
 function Main()
 
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerPressedThisFrame then
 
         text = App.clipboardText
         if text == nil or string.len(text) == 0 then
