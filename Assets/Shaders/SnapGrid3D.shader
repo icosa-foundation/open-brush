@@ -148,16 +148,16 @@ Shader "Custom/Grid3D"
                 float3 _Pointer_CS = mul(_WorldToCanvasMatrix, _Pointer_GS);
                 
                 float3 quantizedPointer_CS = float3(
-                    round((_Pointer_CS.x + _GridInterval * 0.5) / _GridInterval) * _GridInterval,
-                    round((_Pointer_CS.y + _GridInterval * 0.5) / _GridInterval) * _GridInterval,
-                    round((_Pointer_CS.z + _GridInterval * 0.5) / _GridInterval) * _GridInterval
+                    round(_Pointer_CS.x / _GridInterval) * _GridInterval,
+                    round(_Pointer_CS.y / _GridInterval) * _GridInterval,
+                    round(_Pointer_CS.z / _GridInterval) * _GridInterval
                 );
 
                 float3 _CanvasOrigin_CS = mul(_WorldToCanvasMatrix, _CanvasOrigin_GS);
                 float3 quantizedCanvasOrigin_CS = float3(
-                    round((_CanvasOrigin_CS.x + _GridInterval * 0.5) / _GridInterval) * _GridInterval,
-                    round((_CanvasOrigin_CS.y + _GridInterval * 0.5) / _GridInterval) * _GridInterval,
-                    round((_CanvasOrigin_CS.z + _GridInterval * 0.5) / _GridInterval) * _GridInterval
+                    round(_CanvasOrigin_CS.x / _GridInterval) * _GridInterval,
+                    round(_CanvasOrigin_CS.y / _GridInterval) * _GridInterval,
+                    round(_CanvasOrigin_CS.z / _GridInterval) * _GridInterval
                 );
                 float3 canvasOffsetFix_CS = quantizedCanvasOrigin_CS - _CanvasOrigin_CS;
                 float3 canvasOffsetFix_GS = mul(_CanvasToWorldMatrix, canvasOffsetFix_CS);
