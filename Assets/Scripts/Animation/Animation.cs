@@ -4,9 +4,9 @@ using UnityEngine;
 using TiltBrush;
 using System;
 
-namespace TiltBrush.Animation
+namespace TiltBrush.FrameAnimation
 {
-public class Animation : MonoBehaviour
+public class FrameAnimation : MonoBehaviour
 
 {
  
