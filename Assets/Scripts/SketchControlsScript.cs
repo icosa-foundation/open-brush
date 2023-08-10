@@ -1084,7 +1084,12 @@ namespace TiltBrush
                             m_SketchSurfacePanel.GetReticleTransform(out vPointerPos, out vPointerForward,
                                 (m_ControlsType == ControlsType.ViewingOnly));
 
-                            if (App.Config.m_SdkMode == SdkMode.Monoscopic)
+                            if (!App.VrSdk.IsHmdInitialized())
+                            {
+                                vPointerPos = ViewpointScript.Head.rotation * vPointerPos;
+                            }
+
+                            if (App.Config.m_SdkMode == SdkMode.Monoscopic || !App.VrSdk.IsHmdInitialized())
                             {
                                 Quaternion vPointerRot = Quaternion.identity;
 
