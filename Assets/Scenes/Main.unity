@@ -643,7 +643,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -7872,11 +7872,13 @@ MonoBehaviour:
 
     Quality Level: ~~
 
-    # FPS High: ~~~~ (> ~~)
+    #
+    FPS High: ~~~~ (> ~~)
 
     # GPU Low: ~~~~ (< ~~.~~)
 
-    # FPS Low: ~~~~ (< ~~)
+    # FPS Low: ~~~~ (<
+    ~~)
 
     # GPU High: ~~~~ (> ~~.~~)
 
@@ -29039,7 +29041,8 @@ MonoBehaviour:
   m_QuestSideLoadingHowToURL: https://docs.openbrush.app/user-guide/using-reference-images-on-oculus-quest
   m_ContributionPromoText: 'Open Brush is a free app entirely run by volunteers.
 
-    If you enjoy the app, please consider donating in the settings menu!'
+    If
+    you enjoy the app, please consider donating in the settings menu!'
   m_ContributionURL: https://opencollective.com/icosa
   m_WorldTransformMinScale: 0.1
   m_WorldTransformMaxScale: 10
@@ -29591,6 +29594,7 @@ MonoBehaviour:
   m_StencilAttachHysteresis: 0.1
   m_StencilLayerName: StencilObject
   m_PinnedStencilLayerName: PinnedStencilObject
+  m_EnableSnapToGuides: 0
 --- !u!114 &1796800575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32684,7 +32688,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -33566,7 +33570,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
