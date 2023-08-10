@@ -236,7 +236,5 @@ namespace TiltBrush
                 }
             }
         }
-                }
-            }
-        } }
+    }
 } // namespace TiltBrush
