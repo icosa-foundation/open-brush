@@ -17,7 +17,7 @@ namespace TiltBrush.FrameAnimation{
         float frameOn = 0f;
 
         public int getFrameOn(){
-            return Math.Clamp((int)frameOn,0,timeline.Count-1) ;
+            return Math.Clamp((int)frameOn,0,timeline[0].Frames.Count-1) ;
         }
         long start = 0,current = 0, time = 0;
 
@@ -151,16 +151,25 @@ namespace TiltBrush.FrameAnimation{
         }
 
         private void showFrame(int frameIndex){
-            // frameShowing.visible = true;
+            
+            
+           
 
+            print("SHOWING FRAME ++ " + frameIndex);
 
             foreach(Track track in timeline){
                 Frame thisFrame =  track.Frames[frameIndex];
+
+                thisFrame.visible = true;
+
+                 print("THIS FRAME NOW  ++ " + thisFrame.visible + " " + thisFrame.deleted);
                 
-                if (thisFrame.visible && !thisFrame.deleted) { 
+                if (track.visible && !thisFrame.deleted) { 
+                    print("SHOWING HERE ++ ");
                     App.Scene.ShowLayer(thisFrame.canvas);
                     thisFrame.visible = true;
                 }else{
+                    print("HIDING HERE ++ ");
                     App.Scene.HideLayer(thisFrame.canvas);
                     thisFrame.visible = false;
                 }
@@ -826,7 +835,7 @@ namespace TiltBrush.FrameAnimation{
 
 
 
-            frameOn = frameOn >= timeline.Count ? timeline.Count  : frameOn;
+            frameOn = frameOn >= timeline[0].Frames.Count ? timeline[0].Frames.Count  : frameOn;
             frameOn = frameOn < 0 ? 0 : frameOn;
             
             print("T SLIDE frameoN- " + frameOn);
@@ -842,7 +851,7 @@ namespace TiltBrush.FrameAnimation{
                 timelineOffset += 0.05f;
                  print ("SCROLL RIGHT " +  timelineOffset);
             }
-            float max = sliderFrameSize*(float)timeline.Count - 1;
+            float max = sliderFrameSize*(float)timeline[0].Frames.Count - 1;
             timelineOffset = Math.Clamp(timelineOffset,0,  max < 0 ? 0 : max );
 
 
@@ -883,6 +892,7 @@ namespace TiltBrush.FrameAnimation{
                 previousCanvasBatches = 0;
             }
             lastCanvas = App.Scene.ActiveCanvas;
+            ;
 
             int currentBatchPools = App.Scene.ActiveCanvas.BatchManager.GetNumBatchPools();
             
