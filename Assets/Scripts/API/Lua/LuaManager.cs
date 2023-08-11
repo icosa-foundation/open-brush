@@ -1079,7 +1079,7 @@ namespace TiltBrush
 
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, ScriptedTool.CalcStableUp(drawnVector_CS));
                     tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
                     tr_CS.scale *= drawnVector_CS.magnitude;
                     transforms = result.AsMultiTrList();

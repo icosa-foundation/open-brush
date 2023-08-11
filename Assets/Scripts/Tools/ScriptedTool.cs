@@ -146,10 +146,12 @@ namespace TiltBrush
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
                 var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                 var drawnVector_GS = rAttachPoint_GS - m_FirstPositionClicked_GS;
+
+                var stableUp = CalcStableUp(drawnVector_CS);
                 if (drawnVector_GS.sqrMagnitude > 0)
                 {
-                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, Vector3.up);
-                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, Vector3.up);
+                    var rotation_CS = Quaternion.LookRotation(drawnVector_CS, stableUp);
+                    var rotation_GS = Quaternion.LookRotation(drawnVector_GS, stableUp);
 
                     // Snapping needs compensating for the different rotation between global space and canvas space
                     var CS_GS_offset = rotation_GS.eulerAngles - rotation_CS.eulerAngles;
@@ -222,13 +224,26 @@ namespace TiltBrush
                     var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
-                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(drawnVector_CS, Vector3.up));
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(drawnVector_CS, CalcStableUp(drawnVector_CS)));
                     shouldEndUndo = true;
                 }
             }
 
             LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
             if (shouldEndUndo) ApiManager.Instance.EndUndo();
+        }
+
+        public static Vector3 CalcStableUp(Vector3 vector)
+        {
+            // Check if the direction is nearly up or down, if it is, use world right instead.
+            var referenceUp = Vector3.Dot(vector, Vector3.up) > 0.99f ||
+                Vector3.Dot(vector, Vector3.up) < -0.99f
+                    ? Vector3.right : Vector3.up;
+            // Compute the right vector by crossing the direction with the reference up
+            Vector3 right = Vector3.Cross(vector, referenceUp);
+            // Compute a stable up vector by crossing the direction with the right vector
+            Vector3 stableUp = Vector3.Cross(vector, right);
+            return stableUp;
         }
 
         private void SetApiProperty(string key, object value)
