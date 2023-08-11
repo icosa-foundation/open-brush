@@ -20,6 +20,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using USD.NET.Unity;
 using Unity.Formats.USD;
+using USD.NET;
 
 namespace TiltBrush
 {
@@ -177,7 +178,7 @@ namespace TiltBrush
             public PrimvarReader1fSample(string primvarName)
                 : base()
             {
-                this.varname.defaultValue = new pxr.TfToken(primvarName);
+                ////this.varname.defaultValue = new pxr.TfToken(primvarName);
             }
         }
 
@@ -190,7 +191,7 @@ namespace TiltBrush
 
             public PrimvarReader2fSample(string primvarName) : base()
             {
-                this.varname.defaultValue = new pxr.TfToken(primvarName);
+                ////this.varname.defaultValue = new pxr.TfToken(primvarName);
             }
         }
 
@@ -205,7 +206,7 @@ namespace TiltBrush
             public PrimvarReader3fSample(string primvarName)
                 : base()
             {
-                this.varname.defaultValue = new pxr.TfToken(primvarName);
+                ////this.varname.defaultValue = new pxr.TfToken(primvarName);
             }
         }
 
@@ -220,7 +221,7 @@ namespace TiltBrush
             public PrimvarReader4fSample(string primvarName)
                 : base()
             {
-                this.varname.defaultValue = new pxr.TfToken(primvarName);
+                ////this.varname.defaultValue = new pxr.TfToken(primvarName);
             }
         }
 
@@ -305,17 +306,18 @@ namespace TiltBrush
 
             if (vertexLayout.bUseTangents)
             {
-                sample.tangents = geomPool.m_Tangents.ToArray();
+                sample.tangents = new Primvar<Vector4[]>{value=geomPool.m_Tangents.ToArray()};
             }
 
             if (vertexLayout.bUseColors)
             {
-                sample.colors = geomPool.m_Colors.Select(
-                    c => (new Color(c.r, c.g, c.b, c.a) / 255.0f).linear).ToArray();
+                sample.colors = new Primvar<Color[]>{value=geomPool.m_Colors.Select(
+                    c => (new Color(c.r, c.g, c.b, c.a) / 255.0f).linear).ToArray()};
             }
 
-            sample.uv = GetUv(0, vertexLayout.texcoord0.size, geomPool);
-            sample.uv2 = GetUv(1, vertexLayout.texcoord1.size, geomPool);
+            sample.
+            // sample.uv = GetUv(0, vertexLayout.texcoord0.size, geomPool);
+            // sample.uv2 = GetUv(1, vertexLayout.texcoord1.size, geomPool);
         }
 
         /// Converts TiltBrush brush strokes into linear USD BasisCurves.
@@ -338,7 +340,7 @@ namespace TiltBrush
             int numCPs = sample.curveVertexCounts.Sum();
             sample.points = new Vector3[numCPs];
             sample.normals = new Vector3[numCPs];
-            sample.colors = new Color[numCPs];
+            sample.colors = new Primvar<Color[]> { value = new Color[numCPs] };
             int iKnot = 0;
 
             foreach (Stroke stroke in strokes)
