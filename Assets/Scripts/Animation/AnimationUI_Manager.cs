@@ -5,6 +5,8 @@ using System;
 using TMPro;
 using System.Linq;
 
+
+
 namespace TiltBrush.FrameAnimation{
     public class AnimationUI_Manager : MonoBehaviour
     {
@@ -85,12 +87,12 @@ namespace TiltBrush.FrameAnimation{
 
         float timelineOffset = 0.0f;
         public List<GameObject> timelineNotches;
-
         public List<GameObject> timelineFrameObjects;
 
         public List<Track> timeline;
 
 
+        public List<GameObject> animatedModels;
 
 
         // List<CanvasScript> Frames = new List<CanvasScript>();
@@ -179,6 +181,11 @@ namespace TiltBrush.FrameAnimation{
 
         }
 
+
+        public void addAnimatedModel(GameObject newModel){
+            animatedModels.Add(newModel);
+            print("OBJ POSITIION: " + newModel.transform.localPosition);
+        }
         public void AddLayerRefresh(CanvasScript canvasAdding){
 
 
@@ -926,6 +933,11 @@ namespace TiltBrush.FrameAnimation{
                 
                 focusFrame( getFrameOn());
            
+
+                foreach (GameObject model in animatedModels){
+                        model.transform.localPosition = new Vector3(frameOn, 0, 0);
+                        print("MODELPOSITION " + model.transform.localPosition);
+                }
 
                
             }
