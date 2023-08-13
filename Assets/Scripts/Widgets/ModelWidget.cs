@@ -159,6 +159,8 @@ namespace TiltBrush
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
+
+          
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -224,10 +226,12 @@ namespace TiltBrush
             {
                 return;
             }
-
+           this.gameObject.transform.SetParent(App.Scene.MainCanvas.transform.parent.gameObject.transform) ;
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+
+            print("MODEL PARENT " + this.gameObject.name);
 
             print("CREATING MODEL ^^ " + m_ModelInstance.gameObject.name);    
 
@@ -235,7 +239,7 @@ namespace TiltBrush
              
             var uiManager =  App.Scene.animationUI_manager;
 
-            uiManager.addAnimatedModel(m_ModelInstance.gameObject);
+            uiManager.addAnimatedModel(this.gameObject);
 
           
       
@@ -576,6 +580,7 @@ namespace TiltBrush
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
+
             if (isNonRawTransform)
             {
                 modelWidget.SetWidgetSizeNonRaw(xf.scale);
