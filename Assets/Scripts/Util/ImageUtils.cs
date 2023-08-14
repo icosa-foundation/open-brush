@@ -87,7 +87,8 @@ namespace TiltBrush
                 }
             }
 
-            if (imageWidth > maxDimension || imageHeight > maxDimension)
+            // Cast to long as maxDimension is big enough on desktop to overflow
+            if (imageWidth * imageHeight > ((long)maxDimension * (long)maxDimension))
             {
                 throw new ImageLoadError(
                     String.Format("Image dimensions {0}x{1} are greater than max dimensions of {2}x{2}!",
