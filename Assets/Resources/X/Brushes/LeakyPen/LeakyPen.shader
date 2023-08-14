@@ -18,7 +18,10 @@ Shader "Brush/Special/LeakyPen" {
 		_SecondaryTex("Diffuse Tex", 2D) = "white" {}
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
+	    _ClipStart("Clip Start", Float) = 0
+	    _ClipEnd("Clip End", Float) = -1
 	}
+
 	Category {
 		Cull Back
 		SubShader {
@@ -28,7 +31,7 @@ Shader "Brush/Special/LeakyPen" {
 			CGPROGRAM
 			#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
 			#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-			#pragma target 3.0
+			#pragma target 4.0
 
 			#include "UnityCG.cginc"
 			#include "Assets/Shaders/Include/Brush.cginc"
@@ -36,19 +39,40 @@ Shader "Brush/Special/LeakyPen" {
 			sampler2D _MainTex;
 			sampler2D _SecondaryTex;
 
-			struct Input {
+			uniform float _ClipStart;
+			uniform float _ClipEnd;
 
-			float2 uv_MainTex;
-			float2 uv_SecondaryTex;
-			float4 color : Color;
+			struct Input {
+				float2 uv_MainTex;
+				float2 uv_SecondaryTex;
+				float4 color : Color;
+	            uint id : SV_VertexID;
 			};
 
-			void vert(inout appdata_full i) {
+			struct appdata_full_plus_id {
+				float4 vertex : POSITION;
+				float4 tangent : TANGENT;
+				float3 normal : NORMAL;
+				float4 texcoord : TEXCOORD0;
+				float4 texcoord1 : TEXCOORD1;
+				float4 texcoord2 : TEXCOORD2;
+				float4 texcoord3 : TEXCOORD3;
+				fixed4 color : COLOR;
+				uint id : SV_VertexID;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
+			};
+
+			void vert(inout appdata_full_plus_id i, out Input o) {
+                UNITY_INITIALIZE_OUTPUT(Input, o);
 				PrepForOds(i.vertex);
 				i.color = TbVertToNative(i.color);
+                o.id = i.id;
 			}
 
 			void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+				float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+		        clip(completion);
 
 				float3 secondary_tex = tex2D(_MainTex, IN.uv_SecondaryTex).rgb;
 

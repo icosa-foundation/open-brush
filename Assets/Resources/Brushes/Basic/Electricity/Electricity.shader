@@ -23,6 +23,9 @@ Properties {
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
 
+    _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 CGINCLUDE
@@ -47,16 +50,22 @@ CGINCLUDE
     float3 tangent : TANGENT;
     float2 texcoord0 : TEXCOORD0;
     float3 texcoord1 : TEXCOORD1;
+    uint id : SV_VertexID;
   };
 
   sampler2D _MainTex;
   half _DisplacementIntensity;
   half _EmissionGain;
 
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+  uniform float _Opacity;
+
   struct v2f {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+    uint id : TEXCOORD2;
   };
 
   float3 displacement(float3 pos, float mod) {
@@ -124,6 +133,7 @@ CGINCLUDE
     o.color = v.color;
 #endif
     o.texcoord = v.texcoord0;
+    o.id = (float2)v.id;
     return o;
   }
 
@@ -145,6 +155,9 @@ CGINCLUDE
   // Input color is srgb
   fixed4 frag (v2f i) : COLOR
   {
+    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     // interior procedural line
 #if SHARP_AND_BLOOMY
     // Step function: 3 in [.4, .6], 1 elsewhere
@@ -168,7 +181,8 @@ CGINCLUDE
 
     // It doesn't matter which of these is first since they can't both be active at the same time;
     // but only one ordering will compile because of the return types.
-    return SrgbToNative(encodeHdr(unencoded));
+    float4 color = encodeHdr(unencoded);
+    return SrgbToNative(color * _Opacity);
   }
 ENDCG
 

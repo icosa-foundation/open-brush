@@ -938,6 +938,9 @@ Layer.strokes = nil
 ---@type ImageList
 Layer.images = nil
 
+---@type boolean
+Layer.allowStrokeAnimation = nil
+
 ---@type VideoList
 Layer.videos = nil
 
@@ -2070,6 +2073,25 @@ function Stroke:Join(stroke2) end
 ---@param name string
 function Stroke:MergeFrom(name) end
 
+---@param parameter string
+---@param value number
+function Stroke:SetShaderFloat(parameter, value) end
+
+---@param parameter string
+---@param color Color
+function Stroke:SetShaderColor(parameter, color) end
+
+---@param parameter string
+---@param image Image
+function Stroke:SetShaderTexture(parameter, image) end
+
+---@param parameter string
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function Stroke:SetShaderVector(parameter, x, y, z, w) end
+
 ---Properties for class StrokeList
 
 ---@class StrokeList
@@ -2125,6 +2147,9 @@ Symmetry.brushOffset = nil
 
 ---@type Vector3
 Symmetry.wandOffset = nil
+
+---@type Vector3
+Symmetry.pointerOffset = nil
 
 
 ---Methods for type Symmetry

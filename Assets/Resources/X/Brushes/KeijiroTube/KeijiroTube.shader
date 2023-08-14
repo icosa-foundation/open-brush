@@ -18,10 +18,12 @@ Properties {
 	_SpecColor ("Specular Color", Color) = (0.5, 0.5, 0.5, 0)
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 
-	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
+    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
 }
     SubShader {
 		LOD 400
@@ -36,17 +38,34 @@ Properties {
 		#include "Assets/Shaders/Include/TimeOverride.cginc"
 		#include "Assets/Shaders/Include/Brush.cginc"
 
+		fixed4 _Color;
+		half _Shininess;
+
+    	uniform float _ClipStart;
+	    uniform float _ClipEnd;
+
 		struct Input {
 			float2 uv_MainTex;
 			float2 uv_BumpMap;
 			float4 color : Color;
 			float radius;
+            uint id : SV_VertexID;
 		};
 
-		fixed4 _Color;
-		half _Shininess;
+        struct appdata_full_plus_id {
+	        float4 vertex : POSITION;
+	        float4 tangent : TANGENT;
+	        float3 normal : NORMAL;
+	        float4 texcoord : TEXCOORD0;
+	        float4 texcoord1 : TEXCOORD1;
+	        float4 texcoord2 : TEXCOORD2;
+	        float4 texcoord3 : TEXCOORD3;
+	        fixed4 color : COLOR;
+	        uint id : SV_VertexID;
+	        UNITY_VERTEX_INPUT_INSTANCE_ID
+	    };
 
-		void vert (inout appdata_full i, out Input o) {
+		void vert (inout appdata_full_plus_id i, out Input o) {
 			UNITY_INITIALIZE_OUTPUT(Input, o);
 			// o.tangent = v.tangent;
 			PrepForOds(i.vertex);
@@ -57,9 +76,14 @@ Properties {
 			float pulse = smoothstep(.45, .5, saturate(wave));
 			i.vertex.xyz -= pulse * radius * i.normal.xyz;
 			o.radius = radius;
+            o.id = i.id;
 		}
 
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+	        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+	        clip(completion);
+
 			o.Albedo = _Color.rgb * IN.color.rgb;
 			o.Smoothness = _Shininess;
 			o.Specular = _SpecColor * IN.color.rgb;

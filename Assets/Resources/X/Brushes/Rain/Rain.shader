@@ -23,6 +23,10 @@ Properties {
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -56,11 +60,21 @@ Category {
 			float _Speed;
 			float _Bulge;
 
-			struct appdata_t {
+            uniform float _ClipStart;
+            uniform float _ClipEnd;
+            uniform float _Opacity;
+
+			struct appdata_full_plus_id {
 				float4 vertex : POSITION;
-				fixed4 color : COLOR;
+				float4 tangent : TANGENT;
 				float3 normal : NORMAL;
-				float2 texcoord : TEXCOORD0;
+				float4 texcoord : TEXCOORD0;
+				float4 texcoord1 : TEXCOORD1;
+				float4 texcoord2 : TEXCOORD2;
+				float4 texcoord3 : TEXCOORD3;
+				fixed4 color : COLOR;
+				uint id : SV_VertexID;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
 			struct v2f {
@@ -68,10 +82,11 @@ Category {
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
 				float4 worldPos : TEXCOORD1;
+                uint id : TEXCOORD2;
 			};
 
 
-			v2f vert (appdata_full v)
+			v2f vert (appdata_full_plus_id v)
 			{
 				PrepForOds(v.vertex);
 				v.color = TbVertToSrgb(v.color);
@@ -88,6 +103,7 @@ Category {
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
+                o.id = (float2)v.id;
 				return o;
 			}
 
@@ -100,6 +116,10 @@ Category {
 			// Input color is srgb
 			fixed4 frag (v2f i) : COLOR
 			{
+
+				float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+				clip(completion);
+
 				float u_scale = _Speed;
 				float t = fmod(GetTime().y * 4 * u_scale, u_scale);
 
@@ -150,7 +170,7 @@ Category {
 
 				color = encodeHdr(finalColor.rgb * finalColor.a);
 				color = SrgbToNative(color);
-				return color;
+				return color * _Opacity;
 			}
 			ENDCG
 		}

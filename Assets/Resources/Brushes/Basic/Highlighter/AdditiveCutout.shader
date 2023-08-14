@@ -16,6 +16,10 @@ Shader "Brush/Special/AdditiveCutout" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -44,15 +48,21 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
         float4 pos : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -62,11 +72,15 @@ Category {
         o.pos = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = TbVertToNative(v.color);
+        o.id = v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
          half4 c = tex2D(_MainTex, i.texcoord );
 
         // Cutoff the alpha value based on the incoming vertex alpha
@@ -74,6 +88,7 @@ Category {
 
         float4 col = i.color * float4(c.rgb,1);
         FRAG_MOBILESELECT(col)
+        col.a *= _Opacity;
         return col;
       }
       ENDCG

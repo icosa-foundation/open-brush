@@ -16,6 +16,9 @@ Shader "Brush/Bloom" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -42,17 +45,22 @@ Category {
     sampler2D _MainTex;
     float4 _MainTex_ST;
     float _EmissionGain;
+    uniform float _ClipStart;
+    uniform float _ClipEnd;
+    uniform float _Opacity;
 
     struct appdata_t {
       float4 vertex : POSITION;
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
+      uint id : SV_VertexID;
     };
 
     struct v2f {
       float4 pos : POSITION;
       float4 color : COLOR;
       float2 texcoord : TEXCOORD0;
+      float2 id : TEXCOORD2;
     };
 
     v2f vert (appdata_t v)
@@ -67,17 +75,21 @@ Category {
       v.vertex = musicReactiveAnimation(v.vertex, v.color, _BeatOutput.y, o.texcoord.x);
 #endif
       o.pos = UnityObjectToClipPos(v.vertex);
+      o.id = (float2)v.id;
       return o;
     }
 
     fixed4 frag (v2f i) : COLOR
     {
+      float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+      clip(completion);
+
       float4 color = i.color * tex2D(_MainTex, i.texcoord);
       color = float4(color.rgb * color.a, 1.0);
       color = SrgbToNative(color);
       color = encodeHdr(color.rgb);
       FRAG_MOBILESELECT(color)
-      return color;
+      return color * _Opacity;
     }
 
   ENDCG
@@ -96,6 +108,7 @@ Category {
   }
 
   // Mobile (Uses 'Max' blend mode for RGB)
+  // @andybak - why? Is this a performance thing or a compatibility thing? And is it still needed?
   SubShader {
     LOD 150
     Pass {

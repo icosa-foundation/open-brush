@@ -15,7 +15,12 @@
 Shader "Brush/Special/Race" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
-    _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+  _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
 }
 
 Category {
@@ -51,16 +56,22 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
       half _EmissionGain;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -71,11 +82,16 @@ Category {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
+
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         // copied from Digital.shader with a modification on the chance
         // that a tile will connect with its neighbor
         float stroke_width = .1;
@@ -165,7 +181,7 @@ Category {
         fixed4 color;
         color.a = 1;
         color.rgb = lum*bloomColor(i.color,lum*_EmissionGain);
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

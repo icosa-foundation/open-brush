@@ -20,6 +20,8 @@ Shader "Brush/StandardSingleSided" {
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
   }
 
   // -------------------------------------------------------------------------------------------- //
@@ -42,21 +44,42 @@ Shader "Brush/StandardSingleSided" {
         float2 uv_MainTex;
         float2 uv_BumpMap;
         float4 color : Color;
+        uint id : SV_VertexID;
       };
 
       sampler2D _MainTex;
       sampler2D _BumpMap;
       fixed4 _Color;
       half _Shininess;
+  	  uniform float _ClipStart;
+	    uniform float _ClipEnd;
 
-      void vert (inout appdata_full i /*, out Input o*/) {
-        // UNITY_INITIALIZE_OUTPUT(Input, o);
+      struct appdata_full_plus_id {
+        float4 vertex : POSITION;
+        float4 tangent : TANGENT;
+        float3 normal : NORMAL;
+        float4 texcoord : TEXCOORD0;
+        float4 texcoord1 : TEXCOORD1;
+        float4 texcoord2 : TEXCOORD2;
+        float4 texcoord3 : TEXCOORD3;
+        fixed4 color : COLOR;
+        uint id : SV_VertexID;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+      void vert (inout appdata_full_plus_id i, out Input o) {
+        UNITY_INITIALIZE_OUTPUT(Input, o);
         // o.tangent = v.tangent;
         PrepForOds(i.vertex);
         i.color = TbVertToNative(i.color);
+        o.id = i.id;
       }
 
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
         o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
         o.Smoothness = _Shininess;
@@ -96,6 +119,7 @@ Shader "Brush/StandardSingleSided" {
           half3 normal : NORMAL;
           fixed4 color : COLOR;
           float4 tangent : TANGENT;
+          uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -106,6 +130,7 @@ Shader "Brush/StandardSingleSided" {
           half3 tspace0 : TEXCOORD1;
           half3 tspace1 : TEXCOORD2;
           half3 tspace2 : TEXCOORD3;
+          float2 id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -115,6 +140,8 @@ Shader "Brush/StandardSingleSided" {
 
         fixed _Cutoff;
         half _MipScale;
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -137,10 +164,15 @@ Shader "Brush/StandardSingleSided" {
           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
+          o.id = (float2)v.id;
           return o;
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;
@@ -199,6 +231,7 @@ Shader "Brush/StandardSingleSided" {
             half3 normal : NORMAL;
             fixed4 color : COLOR;
             float4 tangent : TANGENT;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -208,8 +241,8 @@ Shader "Brush/StandardSingleSided" {
             half3 tspace0 : TEXCOORD1;
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
+            uint id : TEXCOORD2;
             UNITY_FOG_COORDS(5)
-
         };
 
         sampler2D _MainTex;
@@ -217,6 +250,9 @@ Shader "Brush/StandardSingleSided" {
         sampler2D _BumpMap;
 
         fixed _Cutoff;
+
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         v2f vert (appdata v) {
           v2f o;
@@ -236,6 +272,10 @@ Shader "Brush/StandardSingleSided" {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           if (col.a < _Cutoff) { discard; }
@@ -289,6 +329,7 @@ Shader "Brush/StandardSingleSided" {
             float2 uv : TEXCOORD0;
             half3 normal : NORMAL;
             fixed4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -296,6 +337,7 @@ Shader "Brush/StandardSingleSided" {
             float2 uv : TEXCOORD0;
             half3 worldNormal : NORMAL;
             fixed4 color : COLOR;
+            uint id : TEXCOORD2;
         };
 
         sampler2D _MainTex;
@@ -304,6 +346,9 @@ Shader "Brush/StandardSingleSided" {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -322,6 +367,10 @@ Shader "Brush/StandardSingleSided" {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;

@@ -22,6 +22,9 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
+
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
   }
   SubShader{
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -49,6 +52,7 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
         half3 normal : NORMAL;
         fixed4 color : COLOR;
         float4 tangent : TANGENT;
+        uint id : SV_VertexID;
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
@@ -56,18 +60,27 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
         float2 uv_MainTex;
         float4 color : Color;
         fixed vface : VFACE;
+        uint id : SV_VertexID;
       };
 
       sampler2D _MainTex;
       float _Cutoff;
 
+      uniform float _ClipStart;
+	    uniform float _ClipEnd;
+
       void vert(inout appdata i, out Input o) {
         UNITY_INITIALIZE_OUTPUT(Input, o);
         PrepForOds(i.vertex);
         o.color = TbVertToSrgb(i.color);
+        o.id = i.id;
       }
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         fixed2 scrollUV = IN.uv_MainTex;
 
         // Animate flipbook motion. Currently tuned to taste.

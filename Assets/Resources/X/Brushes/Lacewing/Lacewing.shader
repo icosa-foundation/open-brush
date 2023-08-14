@@ -23,9 +23,12 @@ Shader "Brush/Special/Lacewing" {
 		_Cutoff("Alpha cutoff", Range(0,1)) = 0.5
 
 		  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
+		  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+		  _TimeBlend("Time Blend", Float) = 0
+		  _TimeSpeed("Time Speed", Float) = 1.0
+
+          _ClipStart("Clip Start", Float) = 0
+          _ClipEnd("Clip End", Float) = -1
 	}
 		SubShader{
 		Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
@@ -33,19 +36,20 @@ Shader "Brush/Special/Lacewing" {
 		LOD 100
 
 		CGPROGRAM
-#pragma target 3.0
+#pragma target 4.0
 #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
 #pragma multi_compile __ AUDIO_REACTIVE
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #include "Assets/Shaders/Include/TimeOverride.cginc"
 #include "Assets/Shaders/Include/Brush.cginc"
 
-		struct Input {
+	struct Input {
 		float2 uv_MainTex;
 		float2 uv_BumpMap;
 		float2 uv_SpecTex;
 		float4 color : Color;
 		float3 worldPos;
+        uint id : SV_VertexID;
 	};
 
 	sampler2D _MainTex;
@@ -54,7 +58,24 @@ Shader "Brush/Special/Lacewing" {
 	fixed4 _Color;
 	half _Shininess;
 
-	void vert(inout appdata_full v) {
+	uniform float _ClipStart;
+	uniform float _ClipEnd;
+
+    struct appdata_full_plus_id {
+        float4 vertex : POSITION;
+        float4 tangent : TANGENT;
+        float3 normal : NORMAL;
+        float4 texcoord : TEXCOORD0;
+        float4 texcoord1 : TEXCOORD1;
+        float4 texcoord2 : TEXCOORD2;
+        float4 texcoord3 : TEXCOORD3;
+        fixed4 color : COLOR;
+        uint id : SV_VertexID;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+    };
+
+	void vert(inout appdata_full_plus_id v, out Input o) {
+        UNITY_INITIALIZE_OUTPUT(Input, o);
 		PrepForOds(v.vertex);
 		v.color = TbVertToSrgb(v.color);
 
@@ -70,9 +91,15 @@ Shader "Brush/Special/Lacewing" {
 			* waveIntensity)
 			;
 #endif
+		o.id = v.id;
+
 	}
 
 	void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
 		fixed4 spectex = tex2D(_SpecTex, IN.uv_SpecTex);
 		fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 

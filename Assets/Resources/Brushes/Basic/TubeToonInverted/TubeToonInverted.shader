@@ -15,6 +15,8 @@
 Shader "Brush/Special/TubeToonInverted" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 CGINCLUDE
@@ -27,17 +29,22 @@ CGINCLUDE
   sampler2D _MainTex;
   float4 _MainTex_ST;
 
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+
   struct appdata_t {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
     float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
+    uint id : SV_VertexID;
   };
 
   struct v2f {
     float4 vertex : SV_POSITION;
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+    uint id : TEXCOORD2;
   };
 
   v2f vertInflate (appdata_t v, float inflate)
@@ -47,10 +54,11 @@ CGINCLUDE
     v2f o;
     v.vertex.xyz += v.normal.xyz * inflate;
     o.vertex = UnityObjectToClipPos(v.vertex);
-      o.color = v.color;
-      o.color.a = 1;
-      o.color.xyz += v.normal.y *.2;
-      o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+    o.color = v.color;
+    o.color.a = 1;
+    o.color.xyz += v.normal.y *.2;
+    o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+    o.id = (float2)v.id;
     return o;
   }
 
@@ -70,11 +78,17 @@ CGINCLUDE
 
   fixed4 fragBlack (v2f i) : SV_Target
   {
+    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     return float4(0,0,0,1);
   }
 
   fixed4 fragColor (v2f i) : SV_Target
   {
+    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     return i.color;
   }
 

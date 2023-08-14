@@ -20,6 +20,11 @@ Properties {
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
 }
 
 Category {
@@ -52,10 +57,15 @@ Category {
 
       float _EmissionGain;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
@@ -63,6 +73,7 @@ Category {
         float4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 unbloomedColor : TEXCOORD1;
+        uint id : TEXCOORD2;
       };
 
       v2f vert (appdata_t v)
@@ -74,12 +85,16 @@ Category {
         o.texcoord = v.texcoord;
         o.color = bloomColor(v.color, _EmissionGain);
         o.unbloomedColor = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         // Envelope
         float envelope = sin(i.texcoord.x * 3.14159);
         i.texcoord.y += i.texcoord.x * 3 + _BeatOutputAccum.b*3;
@@ -99,11 +114,10 @@ Category {
         float4 color = procedural_line_r * float4(1,0,0,0) + procedural_line_g * float4(0,1,0,0) + procedural_line_b * float4(0,0,1,0);
         color.w = 1;
         color = i.color * color;
-
         color = encodeHdr(color.rgb * color.a);
         color = SrgbToNative(color);
         FRAG_MOBILESELECT(color)
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

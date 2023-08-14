@@ -21,6 +21,11 @@ Shader "Brush/Special/DiamondHull" {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
+    _Opacity ("Opacity", Range(0, 1)) = 1
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
+
+
   }
 
   SubShader {
@@ -42,12 +47,17 @@ Shader "Brush/Special/DiamondHull" {
 
       sampler2D _MainTex;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct Input {
         float4 color : Color;
         float2 tex : TEXCOORD0;
         float3 viewDir;
         float3 worldPos;
         float3 worldNormal;
+        uint id : SV_VertexID;
         INTERNAL_DATA
       };
 
@@ -147,15 +157,33 @@ Shader "Brush/Special/DiamondHull" {
         return float3(red, green, blue);
       }
 
-      void vert (inout appdata_full v, out Input o) {
+      struct appdata_full_plus_id {
+        float4 vertex : POSITION;
+        float4 tangent : TANGENT;
+        float3 normal : NORMAL;
+        float4 texcoord : TEXCOORD0;
+        float4 texcoord1 : TEXCOORD1;
+        float4 texcoord2 : TEXCOORD2;
+        float4 texcoord3 : TEXCOORD3;
+        fixed4 color : COLOR;
+        uint id : SV_VertexID;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+      void vert (inout appdata_full_plus_id v, out Input o) {
         PrepForOds(v.vertex);
         o.color = TbVertToSrgb(o.color);
         UNITY_INITIALIZE_OUTPUT(Input, o);
         o.tex = v.texcoord.xy;
+        o.id = v.id;
       }
 
       // Input color is srgb
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         // Hardcode some shiny specular values
         o.Smoothness = .8;
         o.Albedo = IN.color * .2;
@@ -174,6 +202,7 @@ Shader "Brush/Special/DiamondHull" {
         o.Emission = rim * IN.color * diffraction * .5 + rim * diffraction * .25;
         SURF_FRAG_MOBILESELECT(o);
         o.Specular = SrgbToNative(IN.color).rgb * clamp(diffraction, .0, 1);
+        o.Alpha *= _Opacity;
       }
     ENDCG
   }

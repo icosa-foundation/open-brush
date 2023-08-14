@@ -45,6 +45,20 @@ Properties {
       float2 uv_BumpMap;
       float4 color : Color;
       fixed vface : VFACE;
+      uint id : SV_VertexID;
+    };
+
+    struct appdata_full_plus_id {
+      float4 vertex : POSITION;
+      float4 tangent : TANGENT;
+      float3 normal : NORMAL;
+      float4 texcoord : TEXCOORD0;
+      float4 texcoord1 : TEXCOORD1;
+      float4 texcoord2 : TEXCOORD2;
+      float4 texcoord3 : TEXCOORD3;
+      fixed4 color : COLOR;
+      uint id : SV_VertexID;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     sampler2D _MainTex;
@@ -54,16 +68,17 @@ Properties {
 	  uniform float _ClipStart;
 	  uniform float _ClipEnd;
 
-    void vert (inout appdata_full i /*, out Input o*/) {
-      // UNITY_INITIALIZE_OUTPUT(Input, o);
+    void vert (inout appdata_full_plus_id i, out Input o) {
+      UNITY_INITIALIZE_OUTPUT(Input, o);
       // o.tangent = v.tangent;
       PrepForOds(i.vertex);
       i.color = TbVertToNative(i.color);
+      o.id = i.id;
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-      float completion = _ClipEnd < 0 || (IN.uv_MainTex.x > _ClipStart && IN.uv_MainTex.x < _ClipEnd) ? 1 : -1;
+      float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
       clip(completion);
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
@@ -107,6 +122,7 @@ Properties {
           half3 normal : NORMAL;
           fixed4 color : COLOR;
           float4 tangent : TANGENT;
+          uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -117,6 +133,7 @@ Properties {
           half3 tspace0 : TEXCOORD1;
           half3 tspace1 : TEXCOORD2;
           half3 tspace2 : TEXCOORD3;
+          uint id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -126,6 +143,9 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -152,6 +172,9 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;
@@ -210,6 +233,7 @@ Properties {
             half3 normal : NORMAL;
             fixed4 color : COLOR;
             float4 tangent : TANGENT;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -220,6 +244,7 @@ Properties {
             half3 tspace1 : TANGENT;
             half3 tspace2 : NORMAL;
             float4 worldPos : TEXCOORD4;
+            float2 id : TEXCOORD5;
             UNITY_FOG_COORDS(5)
         };
 
@@ -229,6 +254,8 @@ Properties {
         half _Shininess;
 
         fixed _Cutoff;
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         v2f vert (appdata v) {
           v2f o;
@@ -245,10 +272,15 @@ Properties {
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
           o.worldPos = mul (unity_ObjectToWorld, v.vertex);
           UNITY_TRANSFER_FOG(o, o.pos);
+          o.id = (float2)v.id;
           return o;
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           if (col.a < _Cutoff) { discard; }
@@ -321,6 +353,7 @@ Properties {
             half3 normal : NORMAL;
             fixed4 color : COLOR;
             float4 tangent : TANGENT;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -331,6 +364,7 @@ Properties {
             half3 tspace0 : TEXCOORD1;
             half3 tspace1 : TEXCOORD2;
             half3 tspace2 : TEXCOORD3;
+            uint id : TEXCOORD4;
         };
 
         sampler2D _MainTex;
@@ -338,6 +372,9 @@ Properties {
         sampler2D _BumpMap;
 
         fixed _Cutoff;
+
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         v2f vert (appdata v) {
           v2f o;
@@ -357,6 +394,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
           //if (col.a < _Cutoff) { discard; }
@@ -408,6 +449,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 normal : NORMAL;
             fixed4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -415,6 +457,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 worldNormal : NORMAL;
             fixed4 color : COLOR;
+            uint id : TEXCOORD2;
         };
 
         sampler2D _MainTex;
@@ -423,6 +466,9 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -441,6 +487,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
           col.a *= 1 + max(0, ComputeMipLevel(i.uv * _MainTex_TexelSize.zw)) * _MipScale;
@@ -494,6 +544,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 normal : NORMAL;
             fixed4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
@@ -501,6 +552,7 @@ Properties {
             float2 uv : TEXCOORD0;
             half3 worldNormal : NORMAL;
             fixed4 color : COLOR;
+            uint id : TEXCOORD2;
         };
 
         sampler2D _MainTex;
@@ -509,6 +561,9 @@ Properties {
 
         fixed _Cutoff;
         half _MipScale;
+
+        uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -527,6 +582,10 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
+
+          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+          clip(completion);
+
           fixed4 col = i.color;
           col.a = 1;
 

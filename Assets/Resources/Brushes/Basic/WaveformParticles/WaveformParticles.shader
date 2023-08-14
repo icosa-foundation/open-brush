@@ -21,6 +21,10 @@ Properties {
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -52,12 +56,17 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 texcoord1 : TEXCOORD1;
         float3 tangent : TANGENT;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
@@ -66,6 +75,7 @@ Category {
         float2 texcoord : TEXCOORD0;
         float3 worldPos : TEXCOORD1;
         float lifetime : TEXCOORD2;
+        uint id : TEXCOORD3;
       };
 
       float4 _MainTex_ST;
@@ -102,14 +112,18 @@ Category {
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.worldPos = worldPos.xyz;
+        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : SV_Target
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
 
         float4 c = i.color * _TintColor * tex2D(_MainTex, i.texcoord);
-        return encodeHdr(c.rgb * c.a);
+        c = encodeHdr(c.rgb * c.a);
+        return c * _Opacity;
       }
       ENDCG
     }

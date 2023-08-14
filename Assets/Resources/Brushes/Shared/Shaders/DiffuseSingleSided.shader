@@ -17,6 +17,8 @@ Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -34,19 +36,40 @@ CGPROGRAM
 
 sampler2D _MainTex;
 fixed4 _Color;
+uniform float _ClipStart;
+uniform float _ClipEnd;
 
 struct Input {
   float2 uv_MainTex;
   float4 color : COLOR;
+  uint id : SV_VertexID;
 };
 
-void vert (inout appdata_full v, out Input o) {
+struct appdata_full_plus_id {
+  float4 vertex : POSITION;
+  float4 tangent : TANGENT;
+  float3 normal : NORMAL;
+  float4 texcoord : TEXCOORD0;
+  float4 texcoord1 : TEXCOORD1;
+  float4 texcoord2 : TEXCOORD2;
+  float4 texcoord3 : TEXCOORD3;
+  fixed4 color : COLOR;
+  uint id : SV_VertexID;
+  UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
+void vert (inout appdata_full_plus_id v, out Input o) {
   PrepForOds(v.vertex);
   v.color = TbVertToNative(v.color);
   UNITY_INITIALIZE_OUTPUT(Input, o);
+  o.id = v.id;
 }
 
 void surf (Input IN, inout SurfaceOutput o) {
+
+  float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+  clip(completion);
+
   fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
   o.Albedo = c.rgb * IN.color.rgb;
   o.Alpha = c.a * IN.color.a;

@@ -21,6 +21,11 @@ Properties {
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
 }
 
 Category {
@@ -56,16 +61,22 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
       half _EmissionGain;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -76,12 +87,16 @@ Category {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         float analog_spread = .1;  // how far the analogous hues are from the primary
         float gain = 10;
         float gain2 = 0;
@@ -132,7 +147,8 @@ Category {
         color = bloomColor(color,_EmissionGain);
         color = SrgbToNative(color);
         color = encodeHdr(color.rgb);
-        return color;
+
+        return color * _Opacity;
       }
       ENDCG
     }

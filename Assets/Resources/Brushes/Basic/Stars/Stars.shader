@@ -18,10 +18,14 @@ Properties {
   _SparkleRate ("Sparkle Rate", Float) = 2.5
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
 
-      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -57,10 +61,15 @@ Category {
       float _SparkleRate;
       float _SpreadRate;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       v2f vert (ParticleVertexWithSpread_t v)
@@ -90,6 +99,7 @@ Category {
 
         float4 corner = OrientParticle(center.xyz, halfSize, v.vid, rotation);
         o.vertex = UnityObjectToClipPos(corner);
+        o.id = (float2)v.id;
 
         return o;
       }
@@ -97,6 +107,9 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = i.color * texCol;
         color = encodeHdr(color.rgb * color.a);
@@ -105,7 +118,7 @@ Category {
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
-        return color;
+        return color * _Opacity;
       }
       ENDCG
     }

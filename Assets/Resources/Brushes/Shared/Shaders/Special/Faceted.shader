@@ -15,6 +15,8 @@
 Shader "Brush/Special/Faceted" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -31,12 +33,15 @@ SubShader {
     #include "Assets/ThirdParty/Shaders/Noise.cginc"
     sampler2D _MainTex;
     float4 _MainTex_ST;
+    uniform float _ClipStart;
+    uniform float _ClipEnd;
 
     struct appdata_t {
       float4 vertex : POSITION;
       fixed4 color : COLOR;
       float3 normal : NORMAL;
       float2 texcoord : TEXCOORD0;
+      uint id : SV_VertexID;
     };
 
     struct v2f {
@@ -44,6 +49,7 @@ SubShader {
       fixed4 color : COLOR;
       float2 texcoord : TEXCOORD0;
       float3 worldPos : TEXCOORD1;
+      float2 id : TEXCOORD2;
     };
 
     v2f vert (appdata_t v)
@@ -54,11 +60,16 @@ SubShader {
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+
+      o.id = (float2)v.id;
       return o;
     }
 
     fixed4 frag (v2f i) : SV_Target
     {
+       float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+       clip(completion);
+
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
       i.color.xyz = n.xyz;
       return i.color;
