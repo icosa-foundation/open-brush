@@ -1,35 +1,35 @@
 Settings = {space="pointer"}
 
 Parameters = {
-    spacing={label="Point Spacing", type="float", min=0.1, max=1, default=0.1},
+    copies={label="Copies", type="int", min=1, max=96, default=32},
 }
 
 symmetryHueShift = require "symmetryHueShift"
 
 function Start()
     initialHsv = Brush.colorHsv
+    stroke = Sketch.strokes.last
     updatePath()
 end
 
 function Main()
 
     -- Update the path if we changed the spacing
-    if spacing ~= lastSpacing then
+    if copies ~= lastCopies then
         updatePath()
-        lastSpacing = spacing
+        lastCopies = copies
     end
     return path
 end
 
 function updatePath()
-    stroke = Sketch.strokes.last
     if stroke == nil then
         App.Error("Please draw a stroke and then restart this plugin")
         path = Path:New()
     else
         path = stroke.path
-        path:SampleByDistance(spacing)
+        path:SampleByCount(copies)
         path:Center()
-        symmetryHueShift.generate(path.count, initialHsv)
+        symmetryHueShift.generate(copies, initialHsv)
     end
 end

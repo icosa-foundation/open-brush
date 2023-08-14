@@ -198,6 +198,22 @@ function Brush:ForcePaintingOff(active) end
 
 function Brush:ForceNewStroke() end
 
+---@param type string
+---@return string[]
+function Brush:GetShaderFloatParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderColorParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderTextureParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderVectorParameters(type) end
+
 ---Properties for class CameraPath
 
 ---@class CameraPath
@@ -1008,6 +1024,15 @@ function Layer:Show() end
 
 
 function Layer:Hide() end
+
+---@param brushType string
+---@param start number
+---@param end number
+function Layer:SetShaderClipping(brushType, start, end) end
+
+---@param parameter string
+---@param value number
+function Layer:SetShaderFloat(parameter, value) end
 
 ---@param brushType string
 ---@param parameter string
@@ -2073,6 +2098,10 @@ function Stroke:Join(stroke2) end
 ---@param name string
 function Stroke:MergeFrom(name) end
 
+---@param start number
+---@param end number
+function Stroke:SetShaderClipping(start, end) end
+
 ---@param parameter string
 ---@param value number
 function Stroke:SetShaderFloat(parameter, value) end
@@ -2114,6 +2143,29 @@ StrokeList.count = nil
 
 
 function StrokeList:Delete() end
+
+---@param start number
+---@param end number
+function StrokeList:SetShaderClipping(start, end) end
+
+---@param parameter string
+---@param value number
+function StrokeList:SetShaderFloat(parameter, value) end
+
+---@param parameter string
+---@param color Color
+function StrokeList:SetShaderColor(parameter, color) end
+
+---@param parameter string
+---@param image Image
+function StrokeList:SetShaderTexture(parameter, image) end
+
+---@param parameter string
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function StrokeList:SetShaderVector(parameter, x, y, z, w) end
 ---Methods for type Svg
 
 ---@param svgPath string
@@ -2147,9 +2199,6 @@ Symmetry.brushOffset = nil
 
 ---@type Vector3
 Symmetry.wandOffset = nil
-
----@type Vector3
-Symmetry.pointerOffset = nil
 
 
 ---Methods for type Symmetry

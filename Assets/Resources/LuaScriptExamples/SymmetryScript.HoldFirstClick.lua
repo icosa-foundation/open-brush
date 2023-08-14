@@ -9,7 +9,8 @@ Parameters = {
 function Main()
 
     if Brush.triggerPressedThisFrame then
-        Symmetry.transform = Transform:New(Brush.position, Brush.rotation)
+        Symmetry.current.position = Brush.position
+        Symmetry.current.rotation = Brush.rotation
     end
 
     -- Don't allow painting immediately otherwise you get stray lines
