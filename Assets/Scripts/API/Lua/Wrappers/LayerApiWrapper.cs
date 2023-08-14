@@ -43,6 +43,13 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Sets whether or not individual strokes on this layer can be animated via ")]
+        public bool allowStrokeAnimation
+        {
+            get => _CanvasScript.BatchManager.OneStrokePerBatch;
+            set => _CanvasScript.BatchManager.OneStrokePerBatch = value;
+        }
+
         [LuaDocsDescription("All the videos on this layer")]
         public VideoListApiWrapper videos {
             get
@@ -244,6 +251,41 @@ namespace TiltBrush
         private BrushDescriptor _GetDesc(string brushType)
         {
             return ApiMethods.LookupBrushDescriptor(brushType);
+        }
+
+        [LuaDocsDescription("Hides the section of the each batch of strokes that is outside the specified range. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
+        public void SetShaderClipping(string brushType, float start, float end)
+        {
+            var desc = _GetDesc(brushType);
+            if (desc == null || !desc.Material.HasFloat("_ClipStart") || !desc.Material.HasFloat("_ClipEnd"))
+            {
+                foreach (var batch in _GetBatches(desc))
+                {
+                    float startIndex = start * batch.Geometry.NumVerts;
+                    float endIndex = end * batch.Geometry.NumVerts;
+                    batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
+                    batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
+                }
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("value", "The new value")]
+        [LuaDocsExample("myLayer:SetShaderFloat(\"_EmissionGain\", 0.5)")]
+        public void SetShaderFloat(string parameter, float value)
+        {
+            foreach (var batch in _CanvasScript.BatchManager.AllBatches())
+            {
+                Debug.Log($"{batch}");
+                if (!batch.InstantiatedMaterial.HasFloat(parameter)) return;
+                Debug.Log($"changing {batch}");
+                batch.InstantiatedMaterial.SetFloat(parameter, value);
+            }
         }
 
         [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer of the given brush type")]

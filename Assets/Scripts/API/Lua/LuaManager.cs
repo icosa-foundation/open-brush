@@ -375,12 +375,12 @@ namespace TiltBrush
         public void LogLuaInterpreterError(Script script, string fnName, InterpreterException e)
         {
             string msg = e.DecoratedMessage ?? e.Message;
-            _LogLuaError(script, fnName, e, msg);
+            _FormatAndLogLuaError(script, fnName, e, msg);
         }
 
         public void LogLuaCastError(Script script, string fnName, InvalidCastException e)
         {
-            _LogLuaError(script, fnName, e, e.Message);
+            _FormatAndLogLuaError(script, fnName, e, e.Message);
         }
 
         public void LogGenericLuaError(Script script, string fnName, Exception e)
@@ -404,14 +404,24 @@ namespace TiltBrush
             return $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
         }
 
-        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        private static void _FormatAndLogLuaError(Script script, string fnName, Exception e, string msg)
         {
             string errorMsg = ReformatLuaError(script, fnName, msg);
+            LogLuaError(errorMsg, e);
+        }
+
+        public static void LogLuaError(string errorMsg, Exception e)
+        {
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
 
-        public void LogLuaMessage(string s)
+        public static void LogLuaError(Exception e)
+        {
+            LogLuaError(e.Message, e);
+        }
+
+        public static void LogLuaMessage(string s)
         {
             ControllerConsoleScript.m_Instance.AddNewLine(s, false, true);
             Debug.Log(s);

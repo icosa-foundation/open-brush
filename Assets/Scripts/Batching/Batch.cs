@@ -235,6 +235,8 @@ namespace TiltBrush
         /// Note that empty batches will accept verts up to the Unity VB limit.
         public bool HasSpaceFor(int nVert)
         {
+            // OneStrokePerBatch flag forces all strokes on this canvas into separate gameobjects
+            if (ParentPool.Owner.OneStrokePerBatch && m_Groups.Count >= 1) return false;
             return m_Geometry.NumVerts + nVert <= MAX_VERTS_SOFT;
         }
 
