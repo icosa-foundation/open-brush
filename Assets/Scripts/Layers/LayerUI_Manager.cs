@@ -41,6 +41,7 @@ namespace TiltBrush.Layers
 
         private void ResetUI()
         {
+            print("START RESET UI");
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
             for (int i = 0; i < m_Widgets.Count; i++)
@@ -61,6 +62,9 @@ namespace TiltBrush.Layers
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
                 m_Canvases.Add(canvas);
             }
+
+            print("RESET UI DONE");
+            print(m_Canvases.Count);
         }
 
         private void OnLayerCanvasesUpdate()

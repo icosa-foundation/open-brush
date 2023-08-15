@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TiltBrush.Animation
+namespace TiltBrush.FrameAnimation
 {
     public class RemoveKeyFrameButton : BaseButton
     {

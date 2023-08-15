@@ -16,7 +16,7 @@ using UnityEngine;
 using System;
 
 
-namespace TiltBrush.Animation
+namespace TiltBrush.FrameAnimation
 {
 
     public class TimelineSlider : BaseSlider
