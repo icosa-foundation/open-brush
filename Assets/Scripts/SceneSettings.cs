@@ -795,6 +795,7 @@ namespace TiltBrush
                     m_SkyColorA = env.m_SkyboxColorA;
                     m_SkyColorB = env.m_SkyboxColorB;
                     m_GradientSkew = Quaternion.identity;
+                    m_CustomSkyboxTextureName = null;
                 }
 
                 m_DesiredEnvironment = env;
