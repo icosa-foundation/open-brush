@@ -200,9 +200,12 @@ Shader "Brush/Special/DiamondHull" {
         diffraction = GetDiffraction(diffraction, o.Normal, normalize(IN.viewDir));
 
         o.Emission = rim * IN.color * diffraction * .5 + rim * diffraction * .25;
-        SURF_FRAG_MOBILESELECT(o);
+        // SURF_FRAG_MOBILESELECT(o);
         o.Specular = SrgbToNative(IN.color).rgb * clamp(diffraction, .0, 1);
-        o.Alpha *= _Opacity;
+        o.Emission *= _Opacity;
+        o.Albedo *= _Opacity;
+        o.Specular *= _Opacity;
+        o.Smoothness *= _Opacity;
       }
     ENDCG
   }

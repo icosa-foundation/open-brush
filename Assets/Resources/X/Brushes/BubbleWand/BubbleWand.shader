@@ -135,7 +135,9 @@ Properties {
 			//Thin slit diffraction texture ramp lookup
 			float3 diffraction = tex2D(_MainTex, half2(rim + GetTime().x + o.Normal.y, rim + o.Normal.y)).xyz;
 			o.Emission = rim*(.25 * diffraction * rim  + .75 * diffraction * IN.color);
-			o.Alpha *= _Opacity;
+	        o.Emission *= _Opacity;
+	        o.Specular *= _Opacity;
+	        o.Smoothness *= _Opacity;
 		}
 		ENDCG
     }
