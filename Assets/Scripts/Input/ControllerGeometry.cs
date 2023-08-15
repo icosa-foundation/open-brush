@@ -1161,6 +1161,38 @@ namespace TiltBrush
             }
         }
 
+        // Show the Slider value when interacting with advanced sliders
+        public void ShowSliderValue(bool active, float value)
+        {
+            Material mat = active ? Materials.ChangeSliderValueActive : Materials.ChangeSliderValue;
+
+            switch (Style)
+            {
+                case ControllerStyle.LogitechPen:
+                    mat = active ? Materials.BrushPageActive_LogitechPen : Materials.BrushPage;
+                    Materials.Assign(PadMesh, mat);
+                    PadMesh.material.SetFloat("_Ratio", value);
+                    break;
+                case ControllerStyle.Vive:
+                    Materials.Assign(PadMesh, mat);
+                    PadMesh.material.SetFloat("_Ratio", value);
+                    break;
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                case ControllerStyle.Neo3:
+                case ControllerStyle.Phoenix:
+                    Materials.Assign(JoystickMesh, SelectPadTouched(Materials.Blank, mat));
+                    Materials.Assign(JoystickPad, mat);
+                    JoystickPad.material.SetFloat("_Ratio", value);
+                    JoystickMesh.material.SetFloat("_Ratio", value);
+                    break;
+                case ControllerStyle.Wmr:
+                    Materials.Assign(JoystickMesh, mat);
+                    JoystickMesh.material.SetFloat("_Ratio", value);
+                    break;
+            }
+        }
+
         // Resets all materials to the default state.
         public void ResetAll()
         {

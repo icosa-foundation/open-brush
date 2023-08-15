@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.VectorGraphics;
+using Superla.RadianceHDR;
 using UnityEngine;
 
 namespace TiltBrush
@@ -307,6 +308,32 @@ namespace TiltBrush
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
+                ImageCache.SaveImageCache(tex, FilePath);
+                m_ImageAspect = (float)tex.width / tex.height;
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                {
+                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                    m_Icon = resizedTex;
+                    Object.Destroy(resizedTex);
+                }
+                else
+                {
+                    m_Icon = tex;
+                }
+                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                m_State = ImageState.Ready;
+                return true;
+            }
+
+            if (FilePath.EndsWith(".hdr"))
+            {
+                // TODO Move into the async code path?
+                var fileData = File.ReadAllBytes(FilePath);
+                RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                tex = hdr.texture;
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
                 int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
