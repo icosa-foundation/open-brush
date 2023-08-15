@@ -313,6 +313,13 @@
       "dependencies": {},
       "url": "https://unitynuget-registry.azurewebsites.net"
     },
+    "tv.superla.radiancehdr": {
+      "version": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "cff83f2ffcb95787572f951e7c7ea6e8958f2f65"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,
