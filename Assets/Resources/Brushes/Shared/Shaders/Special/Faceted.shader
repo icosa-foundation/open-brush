@@ -17,6 +17,12 @@ Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
+
+  _Opacity("Opacity", Range(0,1)) = 1
+
+  _ColorX("Color X", Color) = (1,0,0,1)
+  _ColorY("Color Y", Color) = (0,1,0,1)
+  _ColorZ("Color Z", Color) = (0,0,1,1)
 }
 
 SubShader {
@@ -33,8 +39,12 @@ SubShader {
     #include "Assets/ThirdParty/Shaders/Noise.cginc"
     sampler2D _MainTex;
     float4 _MainTex_ST;
+    fixed4 _ColorX;
+    fixed4 _ColorY;
+    fixed4 _ColorZ;
     uniform float _ClipStart;
     uniform float _ClipEnd;
+    uniform float _Opacity;
 
     struct appdata_t {
       float4 vertex : POSITION;
@@ -67,11 +77,17 @@ SubShader {
 
     fixed4 frag (v2f i) : SV_Target
     {
-       float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-       clip(completion);
-
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
-      i.color.xyz = n.xyz;
+      if (_Opacity < 1)
+      {
+        float completion = random(n) < _Opacity ? 1 : -1;
+        clip(completion);
+      }
+      i.color.xyz = float3(
+        lerp(float3(0,0,0), _ColorX, n.x) +
+        lerp(float3(0,0,0), _ColorY, n.y) +
+        lerp(float3(0,0,0), _ColorZ, n.z)
+      );
       return i.color;
     }
 
