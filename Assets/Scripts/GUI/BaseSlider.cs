@@ -29,7 +29,7 @@ namespace TiltBrush
 
         private Renderer[] m_TintableMeshes;
 
-        public float GetCurrentValue() { return m_CurrentValue; }
+        public virtual float GetCurrentValue() { return m_CurrentValue; }
         protected bool IsAvailable() { return m_IsAvailable; }
 
         protected void SetAvailable(bool available)
