@@ -33,11 +33,11 @@ namespace TiltBrush
         public event Action CatalogChanged;
         private int m_TexturesCreatedThisFrame;
 
-        private FileWatcher m_FileWatcher;
-        private string m_ReferenceDirectory;
+        protected FileWatcher m_FileWatcher;
+        protected string m_ReferenceDirectory;
 
-        private List<ReferenceImage> m_Images;
-        private Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
+        protected List<ReferenceImage> m_Images;
+        protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
         private bool m_DirNeedsProcessing;
         private string m_ChangedFile;
         private int m_InCompositorLoad;
@@ -45,7 +45,7 @@ namespace TiltBrush
         private bool m_ResetImageEnumeration;
 
         [SerializeField] private Texture2D m_ErrorImage;
-        [SerializeField] string[] m_DefaultImages;
+        [SerializeField] protected string[] m_DefaultImages;
 
         public bool IsScanning => m_RunningImageCacheCoroutine;
 
@@ -240,7 +240,7 @@ namespace TiltBrush
             return false;
         }
 
-        void OnChanged(object source, FileSystemEventArgs e)
+        protected void OnChanged(object source, FileSystemEventArgs e)
         {
             m_DirNeedsProcessing = true;
 
@@ -333,7 +333,7 @@ namespace TiltBrush
 
         // Update m_Images with latest contents of reference directory.
         // Preserves items if they're still in the directory.
-        void ProcessReferenceDirectory(bool userOverlay = true)
+        protected void ProcessReferenceDirectory(bool userOverlay = true)
         {
             m_DirNeedsProcessing = false;
             var oldImagesByPath = m_Images.ToDictionary(image => image.FilePath);
@@ -359,7 +359,7 @@ namespace TiltBrush
                 foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") { continue; }
+                    if (!ValidExtension(ext)) { continue; }
                     try
                     {
                         m_Images.Add(oldImagesByPath[filePath]);
@@ -407,6 +407,11 @@ namespace TiltBrush
             {
                 CatalogChanged();
             }
+        }
+
+        protected virtual bool ValidExtension(string ext)
+        {
+            return ext == ".jpg" || ext == ".jpeg" || ext == ".png";
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

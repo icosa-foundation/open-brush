@@ -551,6 +551,8 @@ namespace TiltBrush
         public Color32 FogColor { get; set; }
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }
+
+        public string Skybox { get; set; }
     }
 
     [Serializable]
