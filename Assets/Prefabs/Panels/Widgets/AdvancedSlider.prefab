@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1884626016259365661}
   - component: {fileID: 4220200482343937391}
-  - component: {fileID: 1247450603250936685}
   - component: {fileID: 6988663123546496789}
   m_Layer: 16
   m_Name: ValueText
@@ -81,14 +80,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &1247450603250936685
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1366882551601991066}
-  m_CullTransparentMesh: 0
 --- !u!114 &6988663123546496789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,7 +163,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 1
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -0.092847615, y: 0, z: -0.103544034, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   _SortingLayer: 0
@@ -965,14 +956,38 @@ MonoBehaviour:
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
   m_DescriptionText: 
-  m_DescriptionTextExtra: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra:
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName:
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 10
   m_Nob: {fileID: 4471627121253469398}
   m_Mesh: {fileID: 4471627121255601424}
-  opIndex: 0
-  paramIndex: 0
+  m_DisplayDecimalPlaces: 1
+  m_Param1: 0
+  m_Param2: 0
+  m_safeMin: 0
+  m_safeMax: 1
+  m_unsafeMin: 0
+  m_unsafeMax: 1
   m_SafeLimits: 1
+  m_InitialValue: 0.5
   minText: {fileID: 7444929264988374951}
   maxText: {fileID: 791795469446217164}
   valueText: {fileID: 6988663123546496789}
@@ -980,6 +995,9 @@ MonoBehaviour:
   onUpdateValue:
     m_PersistentCalls:
       m_Calls: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4471627121253469398 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 975834435814391916, guid: ebe6fa705c559de4084f3b11e7668c61,
