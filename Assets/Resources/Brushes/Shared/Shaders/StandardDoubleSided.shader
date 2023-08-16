@@ -78,8 +78,8 @@ Properties {
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-      float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-      clip(completion);
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
@@ -172,8 +172,8 @@ Properties {
         }
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -278,8 +278,8 @@ Properties {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -395,8 +395,8 @@ Properties {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -488,8 +488,8 @@ Properties {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
@@ -583,8 +583,8 @@ Properties {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = 1;

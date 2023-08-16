@@ -94,8 +94,8 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         float analog_spread = .1;  // how far the analogous hues are from the primary
         float gain = 10;

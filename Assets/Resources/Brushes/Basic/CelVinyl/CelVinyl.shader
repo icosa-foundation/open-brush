@@ -78,8 +78,8 @@ Shader "Brush/Special/CelVinyl" {
 
         fixed4 frag (v2f i) : COLOR
         {
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
           fixed4 tex = tex2D(_MainTex, i.texcoord) * i.color;
           UNITY_APPLY_FOG(i.fogCoord, tex);

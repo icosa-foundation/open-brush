@@ -71,8 +71,8 @@ Shader "Brush/LoftedHueShift" {
 
 			void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
-				float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-		        clip(completion);
+				if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
 				fixed4 tex = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
 

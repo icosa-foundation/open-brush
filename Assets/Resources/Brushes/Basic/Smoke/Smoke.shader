@@ -128,8 +128,8 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         float4 c =  tex2D(_MainTex, i.texcoord);
         c *= i.color * _TintColor;

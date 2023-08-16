@@ -114,8 +114,8 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         //float waveform = tex2D(_WaveFormTex, float2(fmod(i.worldPos.x * 0.1f + GetTime().y,1),0) ).r - .5f;
         //i.texcoord.y += waveform;

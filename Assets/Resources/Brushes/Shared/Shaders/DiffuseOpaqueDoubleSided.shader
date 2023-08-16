@@ -47,6 +47,7 @@ SubShader {
     half3 normal : NORMAL;
     fixed4 color : COLOR;
     float4 tangent : TANGENT;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
@@ -55,6 +56,7 @@ SubShader {
     float2 texcoord : TEXCOORD0;
     float4 color : COLOR;
     fixed vface : VFACE;
+    uint id : SV_VertexID;
   };
 
   void vert(inout appdata v, out Input o) {
@@ -62,13 +64,13 @@ SubShader {
     PrepForOds(v.vertex);
     v.color = TbVertToNative(v.color);
     o.vertex = v.vertex;
-    o.texcoord = v.texcoord;
+    o.id = v.id;
   }
 
   void surf (Input IN, inout SurfaceOutput o) {
 
-      float completion = _ClipEnd < 0 || (IN.texcoord.x > _ClipStart && IN.texcoord.x < _ClipEnd) ? 1 : -1;
-      clip(completion);
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
     o.Albedo = _Color * IN.color.rgb;
     o.Normal = float3(0,0,IN.vface);

@@ -67,8 +67,8 @@ void vert (inout appdata_full_plus_id v, out Input o) {
 
 void surf (Input IN, inout SurfaceOutput o) {
 
-  float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-  clip(completion);
+  if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
   fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
   o.Albedo = c.rgb * IN.color.rgb;

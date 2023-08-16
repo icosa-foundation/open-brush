@@ -82,8 +82,8 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         i.texcoord.x -= _BeatOutputAccum.x;
         i.texcoord.y += i.texcoord.x;

@@ -92,8 +92,8 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         // Envelope
         float envelope = sin(i.texcoord.x * 3.14159);

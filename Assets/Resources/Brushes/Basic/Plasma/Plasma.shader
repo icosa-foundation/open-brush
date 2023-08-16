@@ -113,8 +113,8 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
         // Workaround for b/30500118, caused by b/30504121
         i.color.a = saturate(i.color.a);

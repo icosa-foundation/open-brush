@@ -64,8 +64,8 @@ SubShader {
 
   void surf (Input IN, inout SurfaceOutput o) {
 
-    float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-    clip(completion);
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
     o.Albedo = _Color * IN.color.rgb;
     SURF_FRAG_MOBILESELECT(o);

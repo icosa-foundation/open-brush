@@ -181,8 +181,8 @@ Shader "Brush/Special/DiamondHull" {
       // Input color is srgb
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
         // Hardcode some shiny specular values
         o.Smoothness = .8;

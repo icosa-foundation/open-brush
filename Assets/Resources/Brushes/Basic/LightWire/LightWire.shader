@@ -91,8 +91,8 @@ Shader "Brush/Special/LightWire" {
     // Input color is srgb
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-      float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-      clip(completion);
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
+
 
       float envelope = sin ( fmod ( IN.uv_MainTex.x*2, 1.0f) * 3.14159);
       float lights = envelope < .1 ? 1 : 0;

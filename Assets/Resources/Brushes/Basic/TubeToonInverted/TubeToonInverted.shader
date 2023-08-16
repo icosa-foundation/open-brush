@@ -78,16 +78,16 @@ CGINCLUDE
 
   fixed4 fragBlack (v2f i) : SV_Target
   {
-    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-    clip(completion);
+    if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
     return float4(0,0,0,1);
   }
 
   fixed4 fragColor (v2f i) : SV_Target
   {
-    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-    clip(completion);
+    if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 
     return i.color;
   }

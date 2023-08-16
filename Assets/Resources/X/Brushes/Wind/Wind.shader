@@ -88,8 +88,8 @@ Category {
 
 			fixed4 frag (v2f i) : COLOR
 			{
-				float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-                clip(completion);
+				if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+
 				// Simple scrollin'
 				float time = GetTime().y * _Speed;
 				fixed2 scrollUV = i.texcoord;
