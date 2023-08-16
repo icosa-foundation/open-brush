@@ -76,7 +76,7 @@ SubShader {
 
     fixed4 frag (v2f i) : SV_Target
     {
-      if (_ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd)) discard;
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
       if (_Opacity < 1 && Dither8x8(i.vertex.xy) > _Opacity) discard;
 
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
