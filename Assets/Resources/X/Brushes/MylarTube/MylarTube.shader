@@ -20,11 +20,15 @@ Properties {
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 	_SqueezeAmount("Squeeze Amount", Range(0.0,1)) = 0.825
 
-	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
+	[Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+	_TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+	_TimeBlend("Time Blend", Float) = 0
+	_TimeSpeed("Time Speed", Float) = 1.0
+
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
+
 Category {
 	Cull Back
     SubShader {
@@ -43,14 +47,31 @@ Category {
 		half _Shininess;
 		half _SqueezeAmount;
 
+		uniform float _ClipStart;
+		uniform float _ClipEnd;
+
 		struct Input {
 			float4 color : Color;
 			float2 tex : TEXCOORD0;
 			float3 viewDir;
+			uint id : SV_VertexID;
 			INTERNAL_DATA
 		};
 
-		void vert (inout appdata_full v, out Input o) {
+			struct appdata_full_plus_id {
+				float4 vertex : POSITION;
+				float4 tangent : TANGENT;
+				float3 normal : NORMAL;
+				float4 texcoord : TEXCOORD0;
+				float4 texcoord1 : TEXCOORD1;
+				float4 texcoord2 : TEXCOORD2;
+				float4 texcoord3 : TEXCOORD3;
+				fixed4 color : COLOR;
+				uint id : SV_VertexID;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
+			};
+
+			void vert(inout appdata_full_plus_id v, out Input o) {
 			PrepForOds(v.vertex);
 
 			float radius = v.texcoord.z;
@@ -66,10 +87,15 @@ Category {
 			o.color = TbVertToSrgb(o.color);
 			UNITY_INITIALIZE_OUTPUT(Input, o);
 		    o.tex = v.texcoord.xy;
+            o.id = v.id;
 		}
 
 		// Input color is srgb
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+			float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+	        clip(completion);
+
 		    o.Albedo =  _Color.rgb * IN.color.rgb;
 			//o.Emission =  _Color.rgb * IN.color.rgb;
 			o.Smoothness = _Shininess;

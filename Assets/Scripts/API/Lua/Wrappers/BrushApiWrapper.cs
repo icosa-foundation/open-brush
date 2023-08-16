@@ -2,6 +2,7 @@
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Color = UnityEngine.Color;
 
 namespace TiltBrush
@@ -118,11 +119,13 @@ namespace TiltBrush
         [LuaDocsDescription("Recalls previous positions of the Brush from the history buffer")]
         [LuaDocsExample("Brush:GetPastPosition(3)")]
         [LuaDocsParameter("back", "How many frames back in the history to look")]
+        [LuaDocsReturnValue("The position of the brush during the specified frame")]
         public static Vector3 GetPastPosition(int back) => LuaManager.Instance.GetPastBrushPos(back);
 
         [LuaDocsDescription("Recalls previous orientations of the Brush from the history buffer")]
         [LuaDocsExample("Brush:GetPastRotation(3)")]
         [LuaDocsParameter("back", "How many frames back in the history to look")]
+        [LuaDocsReturnValue("The rotation of the brush during the specified frame")]
         public static Quaternion GetPastRotation(int back) => LuaManager.Instance.GetPastBrushRot(back);
 
         [LuaDocsDescription("If set to true then the brush will draw strokes even if the trigger isn't being pressed.")]
@@ -144,6 +147,61 @@ namespace TiltBrush
         {
             get => new (PointerManager.m_Instance.MainPointer.CurrentPath);
             set => PointerManager.m_Instance.MainPointer.CurrentPath = value._Path;
+        }
+
+        private static Dictionary<ShaderPropertyType, List<string>> _GetParamsDict()
+        {
+            var paramsDict = new Dictionary<ShaderPropertyType, List<string>>();
+            paramsDict[ShaderPropertyType.Float] = new List<string>();
+            paramsDict[ShaderPropertyType.Color] = new List<string>();
+            paramsDict[ShaderPropertyType.Int] = new List<string>();
+            paramsDict[ShaderPropertyType.Range] = new List<string>();
+            paramsDict[ShaderPropertyType.Vector] = new List<string>();
+            paramsDict[ShaderPropertyType.Texture] = new List<string>();
+            var brushDescriptor = ApiMethods.LookupBrushDescriptor(type);
+            var shader = brushDescriptor.Material.shader;
+            for (int i = 0; i < shader.GetPropertyCount(); ++i)
+            {
+                string propertyName = shader.GetPropertyName(i);
+                paramsDict[shader.GetPropertyType(i)].Add(shader.GetPropertyName(i));
+            }
+            return paramsDict;
+        }
+
+        [LuaDocsDescription("Gets a list of float property names for a brush")]
+        [LuaDocsExample("Brush:GetShaderFloatParameters(\"Ink\")")]
+        [LuaDocsParameter("type", "The brush name")]
+        [LuaDocsReturnValue("A list of float property names usable with Stroke:SetShaderFloat")]
+        public static List<string> GetShaderFloatParameters(string type)
+        {
+            return _GetParamsDict()[ShaderPropertyType.Float];
+        }
+
+        [LuaDocsDescription("Gets a list of color property names for a brush")]
+        [LuaDocsExample("Brush:GetShaderColorParameters(\"Ink\")")]
+        [LuaDocsParameter("type", "The brush name")]
+        [LuaDocsReturnValue("A list of color property names usable with Stroke:SetShaderColor")]
+        public static List<string> GetShaderColorParameters(string type)
+        {
+            return _GetParamsDict()[ShaderPropertyType.Color];
+        }
+
+        [LuaDocsDescription("Gets a list of texture property names for a brush")]
+        [LuaDocsExample("Brush:GetShaderTextureParameters(\"Ink\")")]
+        [LuaDocsParameter("type", "The brush name")]
+        [LuaDocsReturnValue("A list of texture property names usable with Stroke:SetShaderTexture")]
+        public static List<string> GetShaderTextureParameters(string type)
+        {
+            return _GetParamsDict()[ShaderPropertyType.Texture];
+        }
+
+        [LuaDocsDescription("Gets a list of vector property names for a brush")]
+        [LuaDocsExample("Brush:GetShaderVectorParameters(\"Ink\")")]
+        [LuaDocsParameter("type", "The brush name")]
+        [LuaDocsReturnValue("A list of vector property names usable with Stroke:SetShaderVector")]
+        public static List<string> GetShaderVectorParameters(string type)
+        {
+            return _GetParamsDict()[ShaderPropertyType.Vector];
         }
     }
 }

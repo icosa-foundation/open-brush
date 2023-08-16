@@ -24,7 +24,7 @@ function Main()
     theta = (Math.pi * 2.0) / copies
 
     for i = 0, copies - 1 do
-        angle = (Symmetry.rotation.y * Math.deg2Rad) + i * theta
+        angle = (Symmetry.current.rotation.y * Math.deg2Rad) + i * theta
         radius = Symmetry:Ellipse(angle, eccentricity)
         newZ = Math:Lerp(Symmetry.brushOffset.z, Symmetry.brushOffset.z * radius, axisConsistency)
         position = Vector3:New(

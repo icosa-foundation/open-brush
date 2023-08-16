@@ -21,6 +21,8 @@ Properties {
   _MainTex("Texture", 2D) = "white" {}
   _Smoothness("Smoothness", Range(0, 1)) = 0.5
   _Metallic("Metallic", Range(0, 1)) = 0
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -44,10 +46,14 @@ SubShader {
     sampler2D _MainTex;
     float4 _MainTex_ST;
 
+    uniform float _ClipStart;
+    uniform float _ClipEnd;
+
     struct appdata {
       float4 vertex : POSITION;
       float2 uv : TEXCOORD0;
       float4 color : Color;
+      uint id : SV_VertexID;
     };
 
     struct v2f {
@@ -56,6 +62,7 @@ SubShader {
       float3 normal : TEXCOORD1;
       float3 worldPos : TEXCOORD2;
       float4 color : TEXCOORD3;
+      float2 id : TEXCOORD4;
       SHADOW_COORDS(5)
     };
 
@@ -69,6 +76,7 @@ SubShader {
 
       // normal is set in geom method
 
+      o.id = (float2)v.id;
       return o;
     }
 
@@ -95,6 +103,8 @@ SubShader {
     }
 
     float4 frag(v2f i) : SV_TARGET {
+      float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+      clip(completion);
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
       float3 lightColor = _LightColor0.rgb * attenuation;

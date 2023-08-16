@@ -186,22 +186,11 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            foreach (var scriptName in BackgroundScriptsToRun)
-            {
-                ActivateBackgroundScript(scriptName, true);
-            }
-
             var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
             panel.InitScriptUiNav();
             ConfigureScriptButton(LuaApiCategory.PointerScript);
             ConfigureScriptButton(LuaApiCategory.SymmetryScript);
             ConfigureScriptButton(LuaApiCategory.ToolScript);
-
-            if (BackgroundScriptsToRun.Count > 0)
-            {
-                EnableBackgroundScripts(true);
-                panel.BackgroundScriptsButton.IsToggledOn = true;
-            }
         }
         
         public void CopyLuaModules()
@@ -250,6 +239,18 @@ namespace TiltBrush
 
         private void Update()
         {
+            bool sceneIsReady = App.CurrentState == App.AppState.Standard;
+            if (BackgroundScriptsToRun.Count > 0 && sceneIsReady)
+            {
+                // Pop one of the initial scripts and run it
+                var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Scripts);
+                panel.BackgroundScriptsButton.IsToggledOn = true;
+                BackgroundScriptsEnabled = true;
+                var scriptName = BackgroundScriptsToRun[0];
+                ActivateBackgroundScript(scriptName, true);
+                BackgroundScriptsToRun.RemoveAt(0);
+            }
+
             // Operate on a copy in case we are modified while iterating
             var scriptsToProcess = m_ScriptPathsToUpdate.ToList();
             m_ScriptPathsToUpdate.Clear();
@@ -374,12 +375,12 @@ namespace TiltBrush
         public void LogLuaInterpreterError(Script script, string fnName, InterpreterException e)
         {
             string msg = e.DecoratedMessage ?? e.Message;
-            _LogLuaError(script, fnName, e, msg);
+            _FormatAndLogLuaError(script, fnName, e, msg);
         }
 
         public void LogLuaCastError(Script script, string fnName, InvalidCastException e)
         {
-            _LogLuaError(script, fnName, e, e.Message);
+            _FormatAndLogLuaError(script, fnName, e, e.Message);
         }
 
         public void LogGenericLuaError(Script script, string fnName, Exception e)
@@ -403,14 +404,24 @@ namespace TiltBrush
             return $"Error in {script.Globals.Get(LuaNames.ScriptNameString).String}.{fnName} {msg}";
         }
 
-        private void _LogLuaError(Script script, string fnName, Exception e, string msg)
+        private static void _FormatAndLogLuaError(Script script, string fnName, Exception e, string msg)
         {
             string errorMsg = ReformatLuaError(script, fnName, msg);
+            LogLuaError(errorMsg, e);
+        }
+
+        public static void LogLuaError(string errorMsg, Exception e)
+        {
             ControllerConsoleScript.m_Instance.AddNewLine(errorMsg, true, true);
             Debug.LogError($"{errorMsg}\n\n{e.StackTrace}\n\n");
         }
 
-        public void LogLuaMessage(string s)
+        public static void LogLuaError(Exception e)
+        {
+            LogLuaError(e.Message, e);
+        }
+
+        public static void LogLuaMessage(string s)
         {
             ControllerConsoleScript.m_Instance.AddNewLine(s, false, true);
             Debug.Log(s);
@@ -598,15 +609,15 @@ namespace TiltBrush
             return false;
         }
 
-        public MultiPathApiWrapper CallActiveToolScript(string fnName)
+        public PathListApiWrapper CallActiveToolScript(string fnName)
         {
             var script = GetActiveScript(LuaApiCategory.ToolScript);
             DynValue result = _CallScript(script, fnName);
-            MultiPathApiWrapper multipathWrapper = null;
+            PathListApiWrapper pathListWrapper = null;
             try
             {
                 // Try to cast to multipath first
-                multipathWrapper = result.ToObject<MultiPathApiWrapper>();
+                pathListWrapper = result.ToObject<PathListApiWrapper>();
             }
             catch (Exception _)
             {
@@ -615,7 +626,7 @@ namespace TiltBrush
                     // If that fails, try to cast to path
                     var pathWrapper = result.ToObject<PathApiWrapper>();
                     // and wrap it as a multipath
-                    multipathWrapper = new MultiPathApiWrapper(pathWrapper);
+                    pathListWrapper = new PathListApiWrapper(pathWrapper);
                 }
                 catch (Exception e)
                 {
@@ -623,11 +634,11 @@ namespace TiltBrush
                     LogGenericLuaError(script, fnName, e);
                 }
             }
-            if (multipathWrapper != null)
+            if (pathListWrapper != null)
             {
-                multipathWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
+                pathListWrapper._Space = _GetSpaceForActiveScript(LuaApiCategory.ToolScript);
             }
-            return multipathWrapper;
+            return pathListWrapper;
         }
 
         public IPathApiWrapper CallActiveSymmetryScript(string fnName)
@@ -771,16 +782,25 @@ namespace TiltBrush
             RegisterApiClass(script, "App", typeof(AppApiWrapper));
             RegisterApiClass(script, "Brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "CameraPath", typeof(CameraPathApiWrapper));
+            RegisterApiClass(script, "CameraPathList", typeof(CameraPathListApiWrapper));
             RegisterApiClass(script, "Color", typeof(ColorApiWrapper));
+            RegisterApiClass(script, "Environment", typeof(EnvironmentApiWrapper));
+            RegisterApiClass(script, "EnvironmentList", typeof(EnvironmentListApiWrapper));
             RegisterApiClass(script, "Easing", typeof(EasingApiWrapper));
+            RegisterApiClass(script, "Group", typeof(GroupApiWrapper));
+            RegisterApiClass(script, "GroupList", typeof(GroupListApiWrapper));
             RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
+            RegisterApiClass(script, "GuideList", typeof(GuideListApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
             RegisterApiClass(script, "Image", typeof(ImageApiWrapper));
+            RegisterApiClass(script, "ImageList", typeof(ImageListApiWrapper));
             RegisterApiClass(script, "Layer", typeof(LayerApiWrapper));
+            RegisterApiClass(script, "LayerList", typeof(LayerListApiWrapper));
             RegisterApiClass(script, "Math", typeof(MathApiWrapper));
             RegisterApiClass(script, "Model", typeof(ModelApiWrapper));
-            RegisterApiClass(script, "MultiPath", typeof(MultiPathApiWrapper));
+            RegisterApiClass(script, "ModelList", typeof(ModelListApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
+            RegisterApiClass(script, "PathList", typeof(PathListApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
             RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
@@ -789,8 +809,10 @@ namespace TiltBrush
             RegisterApiClass(script, "Sketch", typeof(SketchApiWrapper));
             RegisterApiClass(script, "Spectator", typeof(SpectatorApiWrapper));
             RegisterApiClass(script, "Stroke", typeof(StrokeApiWrapper));
+            RegisterApiClass(script, "StrokeList", typeof(StrokeListApiWrapper));
             RegisterApiClass(script, "Svg", typeof(SvgApiWrapper));
             RegisterApiClass(script, "Symmetry", typeof(SymmetryApiWrapper));
+            RegisterApiClass(script, "SymmetrySettings", typeof(SymmetrySettingsApiWrapper));
             RegisterApiClass(script, "Timer", typeof(TimerApiWrapper));
             RegisterApiClass(script, "Transform", typeof(TransformApiWrapper));
             // RegisterApiClass(script, "Turtle", typeof(TurtleApiWrapper));
@@ -798,6 +820,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Vector2", typeof(Vector2ApiWrapper));
             RegisterApiClass(script, "Vector3", typeof(Vector3ApiWrapper));
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
+            RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
@@ -805,6 +828,20 @@ namespace TiltBrush
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
+
+            RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
+            RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
+            RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+
+        }
+
+        public void RegisterApiEnum(Script script, string name, Type t, string prefix = null)
+        {
+            UserData.RegisterType(t);
+            script.Globals[name] = UserData.CreateStatic(t);
+#if UNITY_EDITOR
+            LuaDocsRegistration.RegisterForDocs(t);
+#endif
         }
 
         public void EnablePointerScript(bool enable)
@@ -1052,15 +1089,15 @@ namespace TiltBrush
 
                     tr_CS.translation = firstTr_CS.translation;
                     tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, ScriptedTool.CalcStableUp(drawnVector_CS));
                     tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
-
+                    tr_CS.scale *= drawnVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;
                 case ScriptCoordSpace.Canvas:
                     tr_CS.translation = Vector3.zero;
                     tr_CS.rotation = Quaternion.identity;
-                    tr_CS.scale = 1f / App.ActiveCanvas.Pose.scale;
+                    tr_CS.scale = 1f;
                     transforms = result.AsMultiTrList();
                     break;
             }

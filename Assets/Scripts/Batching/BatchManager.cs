@@ -37,6 +37,9 @@ namespace TiltBrush
 
         static private Dictionary<ushort, Batch> sm_BatchMap = new Dictionary<ushort, Batch>();
 
+        // Used to force new batches for every stroke to allow the user to animate shader props etc for individual strokes
+        private bool m_OneStrokePerBatch;
+
         public CanvasScript Canvas { get { return m_owner; } }
         public List<string> MaterialKeywords
         {
@@ -47,6 +50,23 @@ namespace TiltBrush
         public int CurrentTimestamp
         {
             get { return m_CurrentTimestamp; }
+        }
+
+        public bool OneStrokePerBatch
+        {
+            get => m_OneStrokePerBatch;
+            set
+            {
+                if (m_OneStrokePerBatch == value) return;
+                m_OneStrokePerBatch = value;
+                // Is there a more efficient way to do this?
+                var strokes = AllBatches().SelectMany(x => x.m_Groups.Select(y => y.m_Stroke));
+                foreach (var stroke in strokes.ToArray())
+                {
+                    stroke.Uncreate();
+                    stroke.Recreate();
+                }
+            }
         }
 
         public void Init(CanvasScript owner)

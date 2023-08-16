@@ -26,6 +26,8 @@ Properties {
  _TimeBlend("Time Blend", Float) = 0
  _TimeSpeed("Time Speed", Float) = 1.0
 
+ _ClipStart("Clip Start", Float) = 0
+ _ClipEnd("Clip End", Float) = -1
 }
     SubShader {
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
@@ -52,6 +54,7 @@ Properties {
       half3 normal : NORMAL;
       fixed4 color : COLOR;
       float4 tangent : TANGENT;
+      uint id : SV_VertexID;
       UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
@@ -61,6 +64,7 @@ Properties {
       float4 color : Color;
       float3 worldPos;
       fixed vface : VFACE;
+      uint id : TEXCOORD2;
     };
 
     sampler2D _MainTex;
@@ -68,6 +72,9 @@ Properties {
     fixed4 _Color;
     half _Shininess;
     fixed _Cutoff;
+
+    uniform float _ClipStart;
+    uniform float _ClipEnd;
 
     void vert (inout appdata v, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -86,9 +93,14 @@ Properties {
                 * waveIntensity)
               ;
 #endif
+      o.id = v.id;
     }
 
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+      float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+      clip(completion);
+
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 
       float scroll = GetTime().z;

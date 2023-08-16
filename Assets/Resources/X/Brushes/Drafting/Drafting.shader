@@ -15,6 +15,11 @@
 Shader "Brush/Special/Drafting" {
   Properties {
     _MainTex ("Texture", 2D) = "white" {}
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
   }
 
   SubShader {
@@ -42,17 +47,23 @@ Shader "Brush/Special/Drafting" {
       uniform float _DraftingVisibility01;
       sampler2D _MainTex;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
@@ -62,12 +73,18 @@ Shader "Brush/Special/Drafting" {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color * _DraftingVisibility01;
+        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR {
+
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         half4 c = i.color * tex2D(_MainTex, i.texcoord );
-        return encodeHdr(c.rgb * c.a);
+        c = encodeHdr(c.rgb * c.a * _Opacity);
+        return c * _Opacity;
       }
       ENDCG
     }

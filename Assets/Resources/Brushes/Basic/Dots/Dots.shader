@@ -20,6 +20,10 @@ Properties {
   _WaveformIntensity("Waveform Intensity", Vector) = (0,1,0,0)
   _BaseGain("Base Gain", Float) = 0
   _EmissionGain("Emission Gain", Float) = 0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -52,11 +56,16 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float waveform : TEXCOORD1;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
@@ -89,13 +98,17 @@ Category {
         o.color = v.color * _BaseGain;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
         o.waveform = waveform * 15;
+        o.id = v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
-#ifdef AUDIO_REACTIVE
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
+        #ifdef AUDIO_REACTIVE
         // Deform uv's by waveform displacement amount vertically
         // Envelop by "V" UV to keep the edges clean
         float vDistance = abs(i.texcoord.y - .5)*2;
@@ -113,7 +126,7 @@ Category {
 #if SELECTION_ON
         c.rgb = GetSelectionColor() * tex.r;
 #endif
-        return c;
+          return c * _Opacity;
       }
       ENDCG
     }

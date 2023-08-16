@@ -136,6 +136,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("Creates a new empty camera path")]
         [LuaDocsExample("CameraPath:New()")]
+        [LuaDocsReturnValue("The new CameraPath")]
         public static CameraPathApiWrapper New()
         {
             var wrapper = new CameraPathApiWrapper();
@@ -143,11 +144,12 @@ namespace TiltBrush
             return wrapper;
         }
 
-        [LuaDocsDescription("Creates a camera path from a Path and whether it should be looped")]
+        [LuaDocsDescription("Creates a camera path from a Path")]
         [LuaDocsParameter("path", "The Path to convert")]
         [LuaDocsParameter("looped", "Whether the resulting CameraPath should loop")]
         [LuaDocsExample("myCameraPath = Camera:FromPath(myPath, false)")]
-        public static CameraPathApiWrapper FromPath(IPathApiWrapper path, bool looped)
+        [LuaDocsReturnValue("A new CameraPath")]
+        public static CameraPathApiWrapper FromPath(PathApiWrapper path, bool looped)
         {
             CameraPathMetadata metadata = new CameraPathMetadata();
             metadata.PathKnots = path.AsSingleTrList().Select(t => new CameraPathPositionKnotMetadata
@@ -168,6 +170,7 @@ namespace TiltBrush
         [LuaDocsDescription("Converts the camera path to a path with the specified step size")]
         [LuaDocsParameter("step", "A control point is created at time=0, time=step, time=step x 2 etc")]
         [LuaDocsExample("myPath = myCameraPath:AsPath(5)")]
+        [LuaDocsReturnValue("The new Path")]
         public PathApiWrapper AsPath(float step)
         {
             return new PathApiWrapper(
@@ -177,6 +180,7 @@ namespace TiltBrush
 
         [LuaDocsDescription("Duplicates the camera path")]
         [LuaDocsExample("mynewPath = myOldPath:Duplicate()")]
+        [LuaDocsReturnValue("The copy of the specied CameraPath")]
         public CameraPathApiWrapper Duplicate()
         {
             CameraPathMetadata metadata = _CameraPathWidget.AsSerializable();
@@ -190,6 +194,8 @@ namespace TiltBrush
         [LuaDocsParameter("position", "The position of the new knot")]
         [LuaDocsParameter("rotation", "The rotation of the new knot")]
         [LuaDocsParameter("smoothing", "Controls the spline curvature for this knot")]
+        [LuaDocsReturnValue("The index of the new knot, or -1 if the position is too far from the path")]
+
         public int InsertPosition(Vector3 position, Quaternion rotation, float smoothing)
         {
             if (_CameraPathWidget.Path.ProjectPositionOnToPath(position, out PathT pathT, out Vector3 error))
@@ -204,6 +210,7 @@ namespace TiltBrush
         [LuaDocsParameter("t", "The time along the path to insert the new knot")]
         [LuaDocsParameter("rotation", "The rotation of the new knot")]
         [LuaDocsParameter("smoothing", "Controls the spline curvature for this knot")]
+        [LuaDocsReturnValue("The index of the new knot")]
         public int InsertPositionAtTime(float t, Quaternion rotation, float smoothing)
         {
             var pathWidget = WidgetManager.m_Instance.GetNthActiveCameraPath(index);
@@ -238,6 +245,7 @@ namespace TiltBrush
         [LuaDocsExample("myCameraPath:InsertRotation(pos, rot")]
         [LuaDocsParameter("position", "The position of the new knot")]
         [LuaDocsParameter("rotation", "The rotation of the new knot")]
+        [LuaDocsReturnValue("The index of the new knot, or -1 if the position is too far from the path")]
         public int InsertRotation(Vector3 position, Quaternion rotation)
         {
             position = App.Scene.MainCanvas.Pose.MultiplyPoint(position);
@@ -251,6 +259,8 @@ namespace TiltBrush
         [LuaDocsExample("myCameraPath:InsertRotationAtTime(1.5, rot")]
         [LuaDocsParameter("t", "The time along the path to insert the new knot")]
         [LuaDocsParameter("rotation", "The rotation of the new knot")]
+        [LuaDocsReturnValue("The index of the new knot")]
+
         public int InsertRotationAtTime(float t, Quaternion rotation)
         {
             PathT pathT = new PathT(t);
@@ -262,6 +272,7 @@ namespace TiltBrush
         [LuaDocsParameter("position", "The position of the new knot")]
         [LuaDocsParameter("fov", "The field of view of the new knot")]
         [LuaDocsExample("myCameraPath:InsertFov(pos, 45")]
+        [LuaDocsReturnValue("The index of the new knot, or -1 if the position is too far from the path")]
         public int InsertFov(Vector3 position, float fov)
         {
             position = App.Scene.MainCanvas.Pose.MultiplyPoint(position);
@@ -274,6 +285,8 @@ namespace TiltBrush
         [LuaDocsParameter("t", "The time along the path to insert the new knot")]
         [LuaDocsParameter("fov", "The field of view of the new knot")]
         [LuaDocsExample("myCameraPath:InsertFovAtTime(2.5, 45")]
+        [LuaDocsReturnValue("The index of the new knot")]
+
         public int InsertFovAtTime(float t, float fov)
         {
             PathT pathT = new PathT(t);
@@ -286,6 +299,8 @@ namespace TiltBrush
         [LuaDocsParameter("position", "The position of the new knot")]
         [LuaDocsParameter("speed", "The speed of the new knot")]
         [LuaDocsExample("myCameraPath:InsertSpeed(position, 1.5")]
+        [LuaDocsReturnValue("The index of the new knot, or -1 if the position is too far from the path")]
+
         public int InsertSpeed(Vector3 position, float speed)
         {
             position = App.Scene.MainCanvas.Pose.MultiplyPoint(position);
@@ -298,6 +313,8 @@ namespace TiltBrush
         [LuaDocsParameter("t", "The time along the path to insert the new knot")]
         [LuaDocsParameter("speed", "The speed of the new knot")]
         [LuaDocsExample("myCameraPath:InsertSpeedAtTime(2.5, 2")]
+        [LuaDocsReturnValue("The index of the new knot")]
+
         public int InsertSpeedAtTime(float t, float speed)
         {
             PathT pathT = new PathT(t);

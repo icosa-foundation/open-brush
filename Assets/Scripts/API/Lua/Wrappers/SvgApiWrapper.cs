@@ -10,32 +10,32 @@ namespace TiltBrush
         [LuaDocsDescription("Parses an SVG path string")]
         [LuaDocsExample("myPaths = SVG:ParsePathString('M 100 100 L 200 200')")]
         [LuaDocsParameter("svgPath", "The SVG path string to parse")]
-        [LuaDocsReturnValue("Returns a MultiPath representing the parsed SVG path")]
-        public static MultiPathApiWrapper ParsePathString(string svgPath) => _SvgPathStringToNestedPaths(svgPath);
+        [LuaDocsReturnValue("Returns a PathList representing the parsed SVG path")]
+        public static PathListApiWrapper ParsePathString(string svgPath) => _SvgPathStringToNestedPaths(svgPath);
 
         [LuaDocsDescription("Parses an SVG document")]
         [LuaDocsExample("myPaths = SVG:ParseDocument('<svg>...</svg>')")]
         [LuaDocsParameter("svg", "A text string that is valid SVG document")]
         [LuaDocsParameter("offsetPerPath", "Each path can be lifted to form a layered result")]
         [LuaDocsParameter("includeColors", "Whether the colors from the SVG are used")]
-        [LuaDocsReturnValue("Returns a MultiPath representing the parsed SVG document")]
-        public static MultiPathApiWrapper ParseDocument(string svg, float offsetPerPath = 0, bool includeColors = false)
+        [LuaDocsReturnValue("Returns a PathList representing the parsed SVG document")]
+        public static PathListApiWrapper ParseDocument(string svg, float offsetPerPath = 0, bool includeColors = false)
         {
             return _SvgDocumentToNestedPaths(svg, offsetPerPath, includeColors);
         }
 
-        private static MultiPathApiWrapper _SvgDocumentToNestedPaths(string svg, float offsetPerPath, bool includeColors)
+        private static PathListApiWrapper _SvgDocumentToNestedPaths(string svg, float offsetPerPath, bool includeColors)
         {
             var (nestedTransforms, colors) = DrawStrokes.SvgDocumentToNestedPaths(svg, offsetPerPath, includeColors);
             var paths = nestedTransforms.Select(p => new PathApiWrapper(p));
-            return new MultiPathApiWrapper(paths, colors);
+            return new PathListApiWrapper(paths, colors);
         }
 
-        private static MultiPathApiWrapper _SvgPathStringToNestedPaths(string svgPathString)
+        private static PathListApiWrapper _SvgPathStringToNestedPaths(string svgPathString)
         {
             var nestedTransforms = DrawStrokes.SvgPathStringToApiPaths(svgPathString);
             var paths = nestedTransforms.Select(p => new PathApiWrapper(p));
-            return new MultiPathApiWrapper(paths);
+            return new PathListApiWrapper(paths);
         }
 
         [LuaDocsDescription("Draws an SVG path string")]

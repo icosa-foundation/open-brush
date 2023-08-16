@@ -39,7 +39,7 @@ namespace TiltBrush
         }
     }
 
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Enum)]
     public class LuaDocsDescriptionAttribute : LuaDocsAttributeBase
     {
         public string Description;

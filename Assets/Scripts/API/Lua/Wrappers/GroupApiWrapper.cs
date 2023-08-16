@@ -22,6 +22,12 @@ namespace TiltBrush
             _Layer = App.ActiveCanvas;
         }
 
+        public GroupApiWrapper(SketchGroupTag group)
+        {
+            _Group = group;
+            _Layer = App.ActiveCanvas;
+        }
+
         [LuaDocsDescription("Creates and returns a new empty group")]
         [LuaDocsExample(@"myGroup = Group:New()")]
         [LuaDocsReturnValue("The new group")]
@@ -31,55 +37,61 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Adds an image to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("image", "The image to add")]
         [LuaDocsExample(@"myGroup:Add(myImage)")]
-        public void Add(ImageApiWrapper widget)
+        public void Add(ImageApiWrapper image)
         {
-            _Add(widget._ImageWidget);
+            _Add(image._ImageWidget);
         }
 
         [LuaDocsDescription("Adds a video to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("video", "The video to add")]
         [LuaDocsExample(@"myGroup:Add(myVideo)")]
-        public void Add(VideoApiWrapper widget)
+        public void Add(VideoApiWrapper video)
         {
-            _Add(widget._VideoWidget);
+            _Add(video._VideoWidget);
         }
 
         [LuaDocsDescription("Adds a model to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("model", "The model to add")]
         [LuaDocsExample(@"myGroup:Add(myModel)")]
-        public void Add(ModelApiWrapper widget)
+        public void Add(ModelApiWrapper model)
         {
-            _Add(widget._ModelWidget);
+            _Add(model._ModelWidget);
         }
 
         [LuaDocsDescription("Adds a guide to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("guide", "The guide to add")]
         [LuaDocsExample(@"myGroup:Add(myGuide)")]
-        public void Add(GuideApiWrapper widget)
+        public void Add(GuideApiWrapper guide)
         {
-            _Add(widget._StencilWidget);
+            _Add(guide._StencilWidget);
         }
 
         [LuaDocsDescription("Adds an image to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("cameraPath", "The CameraPath to add")]
         [LuaDocsExample(@"myGroup:Add(myCameraPath)")]
-        public void Add(CameraPathApiWrapper widget)
+        public void Add(CameraPathApiWrapper cameraPath)
         {
-            _Add(widget._CameraPathWidget);
+            _Add(cameraPath._CameraPathWidget);
         }
 
-        public void _Add(GrabWidget widget)
+        private void _Add(GrabWidget widget)
         {
             if (widget.Canvas != _Layer) widget.SetCanvas(_Layer);
             widget.Group = _Group;
         }
 
         [LuaDocsDescription("Adds a stroke to this group moving it to the group's layer if necessary")]
+        [LuaDocsParameter("stroke", "The Stroke to add")]
         [LuaDocsExample(@"myGroup:Add(mystroke)")]
-        public void Add(GrabWidget widget)
+        public void Add(StrokeApiWrapper stroke)
         {
-            if (widget.Canvas != _Layer)
+            if (stroke._Stroke.Canvas != _Layer)
             {
-                widget.SetCanvas(_Layer);
+                stroke._Stroke.SetParentKeepWorldPosition(_Layer);
             }
-            widget.Group = _Group;
+            stroke._Stroke.Group = _Group;
         }
 
         [LuaDocsDescription("All the images in this group")]

@@ -30,7 +30,7 @@ function createFace(center, normal, up)
     face:Insert(Transform:New(bottomRight, rotation))
     face:Insert(Transform:New(bottomLeft, rotation))
     face:Insert(Transform:New(topLeft, rotation)) -- to close the loop
-    face:Resample(spacing) -- Create evenly spaced points
+    face:SampleByDistance(spacing) -- Create evenly spaced points
 
     return face
 end
@@ -39,7 +39,7 @@ function Main()
 
     if Brush.triggerReleasedThisFrame then
 
-        paths = MultiPath:New()
+        paths = PathList:New()
         paths:Insert(createFace(Vector3.forward, Vector3.forward, Vector3.up)) -- front face
         paths:Insert(createFace(Vector3.right, Vector3.right, Vector3.up)) -- right face
         paths:Insert(createFace(Vector3.back, Vector3.back, Vector3.up)) -- back face

@@ -24,6 +24,9 @@ Shader "Brush/Special/LightWire" {
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
+
+    _ClipStart("Clip Start", Float) = 0
+    _ClipEnd("Clip End", Float) = -1
   }
   SubShader {
     Cull Back
@@ -40,6 +43,7 @@ Shader "Brush/Special/LightWire" {
     struct Input {
       float2 uv_MainTex;
       float4 color : Color;
+      float2 id : TEXCOORD2;
     };
 
     sampler2D _MainTex;
@@ -47,7 +51,23 @@ Shader "Brush/Special/LightWire" {
     fixed4 _Color;
     half _Shininess;
 
-    void vert (inout appdata_full v, out Input o) {
+    uniform float _ClipStart;
+    uniform float _ClipEnd;
+
+    struct appdata_full_plus_id {
+      float4 vertex : POSITION;
+      float4 tangent : TANGENT;
+      float3 normal : NORMAL;
+      float4 texcoord : TEXCOORD0;
+      float4 texcoord1 : TEXCOORD1;
+      float4 texcoord2 : TEXCOORD2;
+      float4 texcoord3 : TEXCOORD3;
+      fixed4 color : COLOR;
+      uint id : SV_VertexID;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+    };
+
+    void vert (inout appdata_full_plus_id v, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
       PrepForOds(v.vertex);
       v.color = TbVertToSrgb(v.color);
@@ -61,6 +81,7 @@ Shader "Brush/Special/LightWire" {
 
       radius *= 0.9;
       v.vertex.xyz += v.normal * lights * radius;
+      o.id = (float2)v.id;
     }
 
     float3 SrgbToNative3(float3 color) {
@@ -69,6 +90,10 @@ Shader "Brush/Special/LightWire" {
 
     // Input color is srgb
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+      float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+      clip(completion);
+
       float envelope = sin ( fmod ( IN.uv_MainTex.x*2, 1.0f) * 3.14159);
       float lights = envelope < .1 ? 1 : 0;
       float border = abs(envelope - .1) < .01 ? 0 : 1;

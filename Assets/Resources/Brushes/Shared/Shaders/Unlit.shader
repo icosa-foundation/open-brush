@@ -17,6 +17,8 @@ Shader "Brush/Special/Unlit" {
 Properties {
     _MainTex ("Texture", 2D) = "white" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -37,19 +39,21 @@ SubShader {
 
         sampler2D _MainTex;
         float _Cutoff;
-
-
+  	    uniform float _ClipStart;
+        uniform float _ClipEnd;
 
         struct appdata_t {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
+            uint id : SV_VertexID;
         };
 
         struct v2f {
             float4 pos : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
+            float2 id : TEXCOORD2;
             UNITY_FOG_COORDS(1)
         };
 
@@ -61,6 +65,7 @@ SubShader {
 
             o.pos = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;
+            o.id = (float2)v.id;
             o.color = TbVertToNative(v.color);
             UNITY_TRANSFER_FOG(o, o.pos);
             return o;
@@ -68,6 +73,9 @@ SubShader {
 
         fixed4 frag (v2f i) : COLOR
         {
+            float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+            clip(completion);
+
             fixed4 c;
             UNITY_APPLY_FOG(i.fogCoord, i.color);
             c = tex2D(_MainTex, i.texcoord) * i.color;

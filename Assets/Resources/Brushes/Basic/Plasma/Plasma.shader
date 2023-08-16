@@ -23,12 +23,16 @@ Properties {
 
   _DisplacementIntensity("Displacement", Float) = .1
 
-    _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+  _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -60,12 +64,16 @@ Category {
 
       sampler2D _MainTex;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
-
+        uint id : SV_VertexID;
       };
 
       struct v2f {
@@ -73,6 +81,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float3 worldPos : TEXCOORD1;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
@@ -92,6 +101,7 @@ Category {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+        o.id = (float2)v.id;
         return o;
       }
 
@@ -103,6 +113,9 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         // Workaround for b/30500118, caused by b/30504121
         i.color.a = saturate(i.color.a);
 
@@ -148,7 +161,8 @@ Category {
 #if SELECTION_ON
         c.rgb = GetSelectionColor() * tex;
 #endif
-        return encodeHdr(c.rgb * c.a);
+        float4 color = encodeHdr(c.rgb * c.a);
+        return color * _Opacity;
       }
 
       ENDCG

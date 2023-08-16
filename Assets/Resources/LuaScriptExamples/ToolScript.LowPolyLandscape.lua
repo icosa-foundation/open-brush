@@ -61,7 +61,7 @@ function patch(cell, gridSize)
     points:Insert(Transform:New(Vector3:New(r, getHeight(r, f), f), Rotation.zero))
     points:Insert(Transform:New(Vector3:New(r, getHeight(r, b), b), Rotation:New(0, 0, 90)))
     points:Insert(Transform:New(Vector3:New(l, getHeight(l, b), b), Rotation:New(0, 0, 270)))
-    points:Resample(0.1)
+    points:SampleByDistance(0.1)
 
     return points
 end

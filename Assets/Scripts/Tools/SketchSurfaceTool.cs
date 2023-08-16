@@ -54,6 +54,7 @@ namespace TiltBrush
         {
             base.UpdateTool();
 
+            // This is where we detect input and initiate drawing
             bool bEnableLine = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             bEnableLine = bEnableLine && !m_EatInput && m_AllowDrawing && m_SketchSurface.IsSurfaceDrawable();
 

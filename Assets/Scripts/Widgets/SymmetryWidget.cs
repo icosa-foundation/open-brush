@@ -88,6 +88,11 @@ namespace TiltBrush
             m_IsSpinningFreely = true;
         }
 
+        public Vector3 GetSpin()
+        {
+            return App.Scene.Pose.rotation.TrueInverse() * AngularVelocity_GS;
+        }
+
         public override Vector3 CustomDimension
         {
             get { return m_AngularVelocity_LS; }

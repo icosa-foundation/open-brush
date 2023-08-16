@@ -25,7 +25,7 @@ function Main()
     pointers = Path:New()
     brushOffset = Brush.position:Subtract(brushInitialPosition)
     for i = 0.0, copies do
-        position = Vector3.Lerp(Symmetry.position, guide.position, i/copies):Add(brushOffset)
+        position = Vector3.Lerp(Symmetry.current.position, guide.position, i/copies):Add(brushOffset)
         pointers:Insert(position)
     end
     return pointers

@@ -22,7 +22,7 @@ function Main()
                 Transform:New(initialPos, Brush.rotation),
                 Transform:New(Brush.position, Brush.rotation),
             })
-            path:Resample(0.1) --Add more points as Open Brush will optimize the line away otherwise
+            path:SampleByDistance(0.1) --Add more points as Open Brush will optimize the line away otherwise
             path:Draw() --Draw it manually. Paths are only drawn automatically when returned from OnTriggerReleased
         end
 

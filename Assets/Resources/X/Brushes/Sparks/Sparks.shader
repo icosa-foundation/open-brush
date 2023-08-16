@@ -26,6 +26,11 @@ Properties {
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+    _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
 }
 
 Category {
@@ -60,12 +65,14 @@ Category {
 				fixed4 color : COLOR;
 				float3 normal : NORMAL;
 				float2 texcoord : TEXCOORD0;
+                uint id : SV_VertexID;
 			};
 
 			struct v2f {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
+                uint id : TEXCOORD2;
 			};
 
 			float4 _MainTex_ST;
@@ -75,6 +82,10 @@ Category {
 			float _StretchDistortionExponent;
 			float _NumSides;
 			float _Speed;
+
+            uniform float _ClipStart;
+			uniform float _ClipEnd;
+			uniform float _Opacity;
 
 			v2f vert (appdata_t v)
 			{
@@ -96,6 +107,7 @@ Category {
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
+                o.id = (float2)v.id;
 				return o;
 			}
 
@@ -107,6 +119,8 @@ Category {
 
 			fixed4 frag (v2f i) : COLOR
 			{
+				float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+				clip(completion);
 
 				// Distort U coord to taste. This makes the effect to "slow down" towards the end of the stroke
 				// by clumping UV's closer together toward the beginning of the stroke
@@ -162,7 +176,7 @@ Category {
 				float4 color = i.color * tex * bloom;
 				color = encodeHdr(color.rgb * color.a);
 				color = SrgbToNative(color);
-				return color;
+				return color * _Opacity;
 			}
 			ENDCG
 		}

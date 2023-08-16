@@ -85,6 +85,7 @@ namespace TiltBrush
                     Name = className,
                     Description = GetClassDescription(),
                     Properties = new List<LuaDocsProperty>(),
+                    EnumValues = new List<LuaDocsEnumValue>(),
                     Methods = new List<LuaDocsMethod>(),
                     IsTopLevelClass = isTopLevelClass
                 };
@@ -105,12 +106,30 @@ namespace TiltBrush
                     apiDocClass.Properties.Add(property);
                 }
 
+                // Render enum values as properties
+                if (t.IsEnum)
+                {
+                    foreach (var name in Enum.GetNames(t))
+                    {
+                        var enumValue = new LuaDocsEnumValue
+                        {
+                            Name = name
+                        };
+                        apiDocClass.EnumValues.Add(enumValue);
+                    }
+                }
+
                 foreach (var prop in t.GetMethods().Where(m => !m.IsSpecialName)
                              .Where(x =>
+                                 // Classes
                                  x.Name != "Equals" &&
                                  x.Name != "GetHashCode" &&
                                  x.Name != "GetType" &&
-                                 x.Name != "ToString"))
+                                 x.Name != "ToString" &&
+                                 // Enums
+                                 x.Name != "CompareTo" &&
+                                 x.Name != "HasFlag" &&
+                                 x.Name != "GetTypeCode")) // Exclude internal methods
                 {
                     if (isHidden(prop)) continue;
 

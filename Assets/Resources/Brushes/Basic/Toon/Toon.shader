@@ -16,6 +16,8 @@ Shader "Brush/Special/Toon" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _OutlineMax("Maximum outline size", Range(0, .5)) = .005
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 CGINCLUDE
@@ -32,17 +34,22 @@ CGINCLUDE
   float4 _MainTex_ST;
   float _OutlineMax;
 
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+
   struct appdata_t {
     float4 vertex : POSITION;
     fixed4 color : COLOR;
     float3 normal : NORMAL;
     float3 texcoord : TEXCOORD0;
+    uint id : SV_VertexID;
   };
 
   struct v2f {
     float4 pos : SV_POSITION;
     fixed4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+    uint id : TEXCOORD2;
     UNITY_FOG_COORDS(1)
   };
 
@@ -96,6 +103,7 @@ CGINCLUDE
     o.color.xyz = max(0, o.color.xyz);
     o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
     UNITY_TRANSFER_FOG(o, o.pos);
+    o.id = (float2)v.id;
     return o;
   }
 
@@ -113,6 +121,9 @@ CGINCLUDE
 
   fixed4 fragBlack (v2f i) : SV_Target
   {
+    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     float4 color = float4(0,0,0,1);
     UNITY_APPLY_FOG(i.fogCoord, color);
     FRAG_MOBILESELECT(color)
@@ -121,6 +132,9 @@ CGINCLUDE
 
   fixed4 fragColor (v2f i) : SV_Target
   {
+    float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     UNITY_APPLY_FOG(i.fogCoord, i.color);
     FRAG_MOBILESELECT(i.color)
     return i.color;

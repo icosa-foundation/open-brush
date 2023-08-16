@@ -3,7 +3,7 @@ using System.Linq;
 using MoonSharp.Interpreter;
 namespace TiltBrush
 {
-    [LuaDocsDescription("The list of available environments. (You don't instantiate this yourself. Access this via Sketch.environments)")]
+    [LuaDocsDescription("The list of available environments. (Don't create your own instances - use Sketch.environments)")]
     [MoonSharpUserData]
     public class EnvironmentListApiWrapper
     {
@@ -18,7 +18,7 @@ namespace TiltBrush
         {
             get
             {
-                return new EnvironmentApiWrapper(SceneSettings.m_Instance.CurrentEnvironment);
+                return new EnvironmentApiWrapper(true);
             }
             set
             {
@@ -42,10 +42,14 @@ namespace TiltBrush
         [LuaDocsDescription("The number of available environments")]
         public int count => _Environments?.Count ?? 0;
 
-        [LuaDocsDescription("Returns the environment with the given name, or nil if no environment has that name")]
+        [LuaDocsDescription("Gets an Environment by name")]
         [LuaDocsExample(@"env = Sketch.environments:ByName(""Pistachio"")")]
         [LuaDocsParameter("name", "The name of the environment to get")]
-        public EnvironmentApiWrapper ByName(string name) => new EnvironmentApiWrapper(_Environments.FirstOrDefault(e => e.Description == name));
+        [LuaDocsReturnValue("The environment, or nil if no environment has that name")]
+
+        public EnvironmentApiWrapper ByName(string name) => new EnvironmentApiWrapper(
+            _Environments.FirstOrDefault(e => e.Description == name)
+        );
     }
 
 }

@@ -16,11 +16,12 @@ namespace TiltBrush
         [LuaDocsDescription("The number of frames that have been rendered since Open Brush was launched")]
         public static float frames => UnityEngine.Time.frameCount;
 
-        [LuaDocsDescription("Determines if physics simulation is active")]
-        [LuaDocsExample("App:Physics(true)")]
-        [LuaDocsParameter("active", "True means on, false means off (the default is off)")]
-
-        public static bool Physics(bool active) => UnityEngine.Physics.autoSimulation = active;
+        [LuaDocsDescription("Whether physics simulation is active (defaults is off)")]
+        public static bool physics
+        {
+            get => UnityEngine.Physics.autoSimulation;
+            set => UnityEngine.Physics.autoSimulation = value;
+        }
 
         [LuaDocsDescription("The current scale of the scene")]
         public static float currentScale => App.Scene.Pose.scale;
@@ -136,6 +137,7 @@ namespace TiltBrush
         [LuaDocsDescription("Read the contents of a file")]
         [LuaDocsExample(@"App:ReadFile(""path/to/file.txt"")")]
         [LuaDocsParameter("path", "The file path to read from. It must be relative to and contined within the Scripts folder")]
+        [LuaDocsReturnValue("The contents of the file as a string")]
         public static string ReadFile(string path)
         {
             bool valid = false;

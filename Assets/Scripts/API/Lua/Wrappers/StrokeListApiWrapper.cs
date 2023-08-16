@@ -42,5 +42,85 @@ namespace TiltBrush
                 stroke.Uncreate();
             }
         }
+
+        [LuaDocsDescription("Hides the section of the stroke that is outside the specified range")]
+        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
+        public void SetShaderClipping(float start, float end)
+        {
+            foreach (var stroke in _Strokes)
+            {
+                stroke.SetShaderClipping(start, end);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader float parameter.")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("value", "The new value")]
+        [LuaDocsExample("myStrokes:SetShaderFloat(\"_EmissionGain\", 0.5)")]
+        public void SetShaderFloat(string parameter, float value)
+        {
+            foreach (var stroke in _Strokes)
+            {
+                try
+                {
+                    stroke.SetShaderFloat(parameter, value);
+                }
+                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader color parameter")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("color", "The new color")]
+        [LuaDocsExample("myStrokes:SetShaderColor(\"_TintColor\", Color.red)")]
+        public void SetShaderColor(string parameter, ColorApiWrapper color)
+        {
+            foreach (var stroke in _Strokes)
+            {
+                try
+                {
+                    stroke.SetShaderColor(parameter, color);
+                }
+                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader texture parameter")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("image", "The new image to use as a texture")]
+        [LuaDocsExample("myStrokes:SetShaderTexture(\"_MainTex\", myImage)")]
+        public void SetShaderTexture(string parameter, ImageApiWrapper image)
+        {
+            var texture = image._ImageWidget.ReferenceImage.FullSize;
+            foreach (var stroke in _Strokes)
+            {
+                try
+                {
+                    stroke.SetShaderTexture(parameter, texture);
+                }
+                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader vector parameter")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("x", "The new x value")]
+        [LuaDocsParameter("y", "The new y value")]
+        [LuaDocsParameter("z", "The new z value")]
+        [LuaDocsParameter("w", "The new w value")]
+        [LuaDocsExample("myStrokes:SetShaderVector(\"_TimeOverrideValue\", 0.5, 0, 0, 0)")]
+        public void SetShaderVector(string parameter, float x, float y = 0, float z = 0, float w = 0)
+        {
+            foreach (var stroke in _Strokes)
+            {
+                try
+                {
+                    stroke.SetShaderVector(parameter, x, y, z, w);
+                }
+                catch (StrokeShaderModifierException e) {LuaManager.LogLuaError(e);}
+            }
+        }
     }
 }

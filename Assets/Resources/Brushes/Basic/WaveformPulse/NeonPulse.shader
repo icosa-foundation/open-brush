@@ -21,6 +21,11 @@ Properties {
     _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+
 }
 
 SubShader {
@@ -38,7 +43,7 @@ SubShader {
   // Faster compiles
   #pragma skip_variants INSTANCING_ON
 
-  #include "Assets/Shaders/Include/TimeOverride.cginc"
+    #include "Assets/Shaders/Include/TimeOverride.cginc"
   #include "Assets/Shaders/Include/Brush.cginc"
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
@@ -50,6 +55,7 @@ SubShader {
     half3 normal : NORMAL;
     fixed4 color : COLOR;
     float4 tangent : TANGENT;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
@@ -58,20 +64,29 @@ SubShader {
     float2 tex : TEXCOORD0;
     float3 viewDir;
     float3 worldNormal;
+    uint id : SV_VertexID;
     INTERNAL_DATA
   };
 
   float _EmissionGain;
 
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+  uniform float _Opacity;
+
   void vert (inout appdata i, out Input o) {
     PrepForOds(i.vertex);
     UNITY_INITIALIZE_OUTPUT(Input, o);
     o.color = TbVertToSrgb(o.color);
-    o.tex = i.texcoord;
+    o.id = (float2)i.id;
   }
 
   // Input color is srgb
   void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
+
+    float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
+    clip(completion);
+
     o.Smoothness = .8;
     o.Specular = .05;
     float audioMultiplier = 1;
@@ -89,6 +104,10 @@ SubShader {
     half rim = 1.0 - saturate(dot (normalize(IN.viewDir), n));
     bloom *= pow(1-rim,5);
     o.Emission = SrgbToNative(bloom * neon);
+    o.Alpha *= _Opacity;
+    o.Emission *= _Opacity;
+    o.Albedo *= _Opacity;
+    o.Specular *= _Opacity;
     SURF_FRAG_MOBILESELECT(o);
   }
   ENDCG

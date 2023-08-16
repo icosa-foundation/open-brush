@@ -20,7 +20,12 @@ Properties {
     [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0}
+  _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
+}
 
 Category {
   Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
@@ -51,10 +56,15 @@ Category {
       float4 _MainTex_ST;
       float _EmissionGain;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : SV_VertexID;
       };
 
       struct v2f {
@@ -62,6 +72,7 @@ Category {
         float4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float4 unbloomedColor : TEXCOORD1;
+        uint id : TEXCOORD2;
       };
 
       v2f vert (appdata_t v)
@@ -73,11 +84,15 @@ Category {
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = bloomColor(v.color, _EmissionGain);
         o.unbloomedColor = v.color;
+        o.id = (float2)v.id;
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         // Envelope
         float envelope = 1; //sin(i.texcoord.x * 3.14159);
 
@@ -95,7 +110,8 @@ Category {
         float4 color = 1;
         color.rgb *= envelope * procedural_line;
         color = i.color * color;
-        return encodeHdr(color.rgb * color.a);
+        color = encodeHdr(color.rgb * color.a);
+        return color * _Opacity;
       }
       ENDCG
     }

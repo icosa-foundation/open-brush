@@ -9,10 +9,10 @@ Parameters = {
 }
 
 function Main()
-    Symmetry:Spin(speedX, speedY, speedZ)
+    Symmetry.current.spin = Vector3:New(speedX, speedY, speedZ)
 end
 
 function End()
-    Symmetry:Spin(0, 0, 0)
-    Symmetry.rotation = Rotation.zero
+    Symmetry.current.spin = Vector3:New(0, 0, 0)
+    Symmetry.current.rotation = Rotation.zero
 end

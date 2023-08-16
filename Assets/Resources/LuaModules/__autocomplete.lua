@@ -10,6 +10,9 @@ App.time = nil
 ---@type number
 App.frames = nil
 
+---@type boolean
+App.physics = nil
+
 ---@type number
 App.currentScale = nil
 
@@ -21,10 +24,6 @@ App.clipboardText = nil
 
 
 ---Methods for type App
-
----@param active boolean
----@return boolean
-function App:Physics(active) end
 
 
 function App:Undo() end
@@ -199,6 +198,22 @@ function Brush:ForcePaintingOff(active) end
 
 function Brush:ForceNewStroke() end
 
+---@param type string
+---@return string[]
+function Brush:GetShaderFloatParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderColorParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderTextureParameters(type) end
+
+---@param type string
+---@return string[]
+function Brush:GetShaderVectorParameters(type) end
+
 ---Properties for class CameraPath
 
 ---@class CameraPath
@@ -250,7 +265,7 @@ function CameraPath:Delete() end
 ---@return CameraPath
 function CameraPath:New() end
 
----@param path IPath
+---@param path Path
 ---@param looped boolean
 ---@return CameraPath
 function CameraPath:FromPath(path, looped) end
@@ -327,6 +342,35 @@ function CameraPath:Sample(time, loop, pingpong) end
 ---@param smoothing number
 ---@return CameraPath
 function CameraPath:Simplify(tolerance, smoothing) end
+
+---Properties for class CameraPathList
+
+---@class CameraPathList
+t = Class()
+
+---@type CameraPath
+CameraPathList.last = nil
+
+---@type CameraPath
+CameraPathList.Item = nil
+
+---@type number
+CameraPathList.count = nil
+
+---@type CameraPath
+CameraPathList.active = nil
+
+
+---Methods for type CameraPathList
+
+
+function CameraPathList:ShowAll() end
+
+
+function CameraPathList:HideAll() end
+
+---@param active boolean
+function CameraPathList:PreviewActivePath(active) end
 
 ---Properties for class Color
 
@@ -477,6 +521,70 @@ function Color:NotEquals(other) end
 ---@param b number
 ---@return boolean
 function Color:NotEquals(r, g, b) end
+
+---Properties for class Environment
+
+---@class Environment
+t = Class()
+
+---@type Environment
+Environment.current = nil
+
+---@type Color
+Environment.gradientColorA = nil
+
+---@type Color
+Environment.gradientColorB = nil
+
+---@type Rotation
+Environment.gradientOrientation = nil
+
+---@type Color
+Environment.fogColor = nil
+
+---@type number
+Environment.fogDensity = nil
+
+---@type Color
+Environment.ambientColor = nil
+
+---@type Color
+Environment.mainLightColor = nil
+
+---@type Rotation
+Environment.mainLightDirection = nil
+
+---@type Color
+Environment.secondaryLightColor = nil
+
+---@type Rotation
+Environment.secondaryLightDirection = nil
+
+
+
+---Properties for class EnvironmentList
+
+---@class EnvironmentList
+t = Class()
+
+---@type Environment
+EnvironmentList.last = nil
+
+---@type Environment
+EnvironmentList.current = nil
+
+---@type Environment
+EnvironmentList.Item = nil
+
+---@type number
+EnvironmentList.count = nil
+
+
+---Methods for type EnvironmentList
+
+---@param name string
+---@return Environment
+function EnvironmentList:ByName(name) end
 ---Methods for type Easing
 
 ---@param t number
@@ -603,6 +711,67 @@ function Easing:OutBounce(t) end
 ---@return number
 function Easing:InOutBounce(t) end
 
+---Properties for class Group
+
+---@class Group
+t = Class()
+
+---@type ImageList
+Group.images = nil
+
+---@type VideoList
+Group.videos = nil
+
+---@type ModelList
+Group.models = nil
+
+---@type GuideList
+Group.guides = nil
+
+---@type CameraPathList
+Group.cameraPaths = nil
+
+
+---Methods for type Group
+
+
+---@return Group
+function Group:New() end
+
+---@param image Image
+function Group:Add(image) end
+
+---@param video Video
+function Group:Add(video) end
+
+---@param model Model
+function Group:Add(model) end
+
+---@param guide Guide
+function Group:Add(guide) end
+
+---@param cameraPath CameraPath
+function Group:Add(cameraPath) end
+
+---@param stroke Stroke
+function Group:Add(stroke) end
+
+---Properties for class GroupList
+
+---@class GroupList
+t = Class()
+
+---@type Group
+GroupList.last = nil
+
+---@type Group
+GroupList.Item = nil
+
+---@type number
+GroupList.count = nil
+
+
+
 ---Properties for class Guide
 
 ---@class Guide
@@ -665,6 +834,28 @@ function Guide:Delete() end
 
 ---@param scale Vector3
 function Guide:Scale(scale) end
+
+---Properties for class GuideList
+
+---@class GuideList
+t = Class()
+
+---@type Guide
+GuideList.lastSelected = nil
+
+---@type Guide
+GuideList.last = nil
+
+---@type boolean
+GuideList.enabled = nil
+
+---@type Guide
+GuideList.Item = nil
+
+---@type number
+GuideList.count = nil
+
+
 ---Methods for type Headset
 
 ---@param size number
@@ -733,6 +924,25 @@ function Image:FormEncode() end
 ---@return string
 function Image:SaveBase64(base64, filename) end
 
+---Properties for class ImageList
+
+---@class ImageList
+t = Class()
+
+---@type Image
+ImageList.lastSelected = nil
+
+---@type Image
+ImageList.last = nil
+
+---@type Image
+ImageList.Item = nil
+
+---@type number
+ImageList.count = nil
+
+
+
 ---Properties for class Layer
 
 ---@class Layer
@@ -743,6 +953,9 @@ Layer.strokes = nil
 
 ---@type ImageList
 Layer.images = nil
+
+---@type boolean
+Layer.allowStrokeAnimation = nil
 
 ---@type VideoList
 Layer.videos = nil
@@ -756,7 +969,7 @@ Layer.guides = nil
 ---@type CameraPathList
 Layer.cameraPaths = nil
 
----@type System.Collections.Generic.List`1[Group]
+---@type GroupList
 Layer.groups = nil
 
 ---@type number
@@ -812,13 +1025,14 @@ function Layer:Show() end
 
 function Layer:Hide() end
 
----@param desc BrushDescriptor
----@return System.Collections.Generic.IEnumerable`1[Batch]
-function Layer:_GetBatches(desc) end
-
 ---@param brushType string
----@return BrushDescriptor
-function Layer:_GetDesc(brushType) end
+---@param start number
+---@param end number
+function Layer:SetShaderClipping(brushType, start, end) end
+
+---@param parameter string
+---@param value number
+function Layer:SetShaderFloat(parameter, value) end
 
 ---@param brushType string
 ---@param parameter string
@@ -842,6 +1056,31 @@ function Layer:SetShaderTexture(brushType, parameter, image) end
 ---@param z number
 ---@param w number
 function Layer:SetShaderVector(brushType, parameter, x, y, z, w) end
+
+---Properties for class LayerList
+
+---@class LayerList
+t = Class()
+
+---@type Layer
+LayerList.last = nil
+
+---@type Layer
+LayerList.Item = nil
+
+---@type Layer
+LayerList.Item = nil
+
+---@type Layer
+LayerList.main = nil
+
+---@type number
+LayerList.count = nil
+
+---@type Layer
+LayerList.active = nil
+
+
 
 ---Properties for class Math
 
@@ -1092,78 +1331,24 @@ function Model:Select() end
 
 function Model:Delete() end
 
----Properties for class MultiPath
+---Properties for class ModelList
 
----@class MultiPath
+---@class ModelList
 t = Class()
 
----@type number
-MultiPath.count = nil
+---@type Model
+ModelList.lastSelected = nil
+
+---@type Model
+ModelList.last = nil
+
+---@type Model
+ModelList.Item = nil
 
 ---@type number
-MultiPath.pointCount = nil
+ModelList.count = nil
 
 
----Methods for type MultiPath
-
-
----@return MultiPath
-function MultiPath:New() end
-
----@param pathList Path[]
----@return MultiPath
-function MultiPath:New(pathList) end
-
-
-function MultiPath:Draw() end
-
----@param text string
----@return MultiPath
-function MultiPath:FromText(text) end
-
----@param path Path
-function MultiPath:Insert(path) end
-
----@param path Path
----@param index number
-function MultiPath:Insert(path, index) end
-
----@param transform Transform
-function MultiPath:InsertPoint(transform) end
-
----@param transform Transform
----@param pathIndex number
----@param pointIndex number
-function MultiPath:InsertPoint(transform, pathIndex, pointIndex) end
-
----@param transform Transform
-function MultiPath:TransformBy(transform) end
-
----@param amount Vector3
-function MultiPath:TranslateBy(amount) end
-
----@param rotation Rotation
-function MultiPath:RotateBy(rotation) end
-
----@param scale Vector3
-function MultiPath:ScaleBy(scale) end
-
-
-function MultiPath:Center() end
-
----@param size number
-function MultiPath:Normalize(size) end
-
----@param spacing number
-function MultiPath:Resample(spacing) end
-
-
----@return Path
-function MultiPath:Join() end
-
-
----@return Path
-function MultiPath:Longest() end
 
 ---Properties for class Path
 
@@ -1265,11 +1450,19 @@ function Path:FindMaximumZ() end
 ---@param size number
 function Path:Normalize(size) end
 
+---@param trs Transform[]
+---@param parts number
+---@return Transform[]
+function Path:_SubdivideSegments(trs, parts) end
+
 ---@param spacing number
-function Path:Resample(spacing) end
+function Path:SampleByDistance(spacing) end
+
+---@param count number
+function Path:SampleByCount(count) end
 
 ---@param parts number
-function Path:Subdivide(parts) end
+function Path:SubdivideSegments(parts) end
 
 ---@param startTransform Transform
 ---@param endTransform Transform
@@ -1279,6 +1472,88 @@ function Path:Subdivide(parts) end
 ---@param tangentStrength number
 ---@return Path
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
+
+---Properties for class PathList
+
+---@class PathList
+t = Class()
+
+---@type number
+PathList.count = nil
+
+---@type number
+PathList.pointCount = nil
+
+
+---Methods for type PathList
+
+
+---@return PathList
+function PathList:New() end
+
+---@param pathList Path[]
+---@return PathList
+function PathList:New(pathList) end
+
+
+function PathList:Draw() end
+
+---@param text string
+---@return PathList
+function PathList:FromText(text) end
+
+---@param path Path
+function PathList:Insert(path) end
+
+---@param path Path
+---@param index number
+function PathList:Insert(path, index) end
+
+---@param transform Transform
+function PathList:InsertPoint(transform) end
+
+---@param transform Transform
+---@param pathIndex number
+---@param pointIndex number
+function PathList:InsertPoint(transform, pathIndex, pointIndex) end
+
+---@param transform Transform
+function PathList:TransformBy(transform) end
+
+---@param amount Vector3
+function PathList:TranslateBy(amount) end
+
+---@param rotation Rotation
+function PathList:RotateBy(rotation) end
+
+---@param scale Vector3
+function PathList:ScaleBy(scale) end
+
+---@param scale number
+function PathList:ScaleBy(scale) end
+
+
+function PathList:Center() end
+
+---@param size number
+function PathList:Normalize(size) end
+
+---@param spacing number
+function PathList:SampleByDistance(spacing) end
+
+---@param count number
+function PathList:SampleByCount(count) end
+
+---@param parts number
+function PathList:SubdivideSegments(parts) end
+
+
+---@return Path
+function PathList:Join() end
+
+
+---@return Path
+function PathList:Longest() end
 
 ---Properties for class Path2d
 
@@ -1652,7 +1927,7 @@ Sketch.layers = nil
 ---@type Layer
 Sketch.mainLayer = nil
 
----@type System.Collections.Generic.List`1[Group]
+---@type GroupList
 Sketch.groups = nil
 
 ---@type ImageList
@@ -1822,16 +2097,85 @@ function Stroke:Join(stroke2) end
 
 ---@param name string
 function Stroke:MergeFrom(name) end
+
+---@param start number
+---@param end number
+function Stroke:SetShaderClipping(start, end) end
+
+---@param parameter string
+---@param value number
+function Stroke:SetShaderFloat(parameter, value) end
+
+---@param parameter string
+---@param color Color
+function Stroke:SetShaderColor(parameter, color) end
+
+---@param parameter string
+---@param image Image
+function Stroke:SetShaderTexture(parameter, image) end
+
+---@param parameter string
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function Stroke:SetShaderVector(parameter, x, y, z, w) end
+
+---Properties for class StrokeList
+
+---@class StrokeList
+t = Class()
+
+---@type Stroke
+StrokeList.lastSelected = nil
+
+---@type Stroke
+StrokeList.last = nil
+
+---@type Stroke
+StrokeList.Item = nil
+
+---@type number
+StrokeList.count = nil
+
+
+---Methods for type StrokeList
+
+
+function StrokeList:Delete() end
+
+---@param start number
+---@param end number
+function StrokeList:SetShaderClipping(start, end) end
+
+---@param parameter string
+---@param value number
+function StrokeList:SetShaderFloat(parameter, value) end
+
+---@param parameter string
+---@param color Color
+function StrokeList:SetShaderColor(parameter, color) end
+
+---@param parameter string
+---@param image Image
+function StrokeList:SetShaderTexture(parameter, image) end
+
+---@param parameter string
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+function StrokeList:SetShaderVector(parameter, x, y, z, w) end
 ---Methods for type Svg
 
 ---@param svgPath string
----@return MultiPath
+---@return PathList
 function Svg:ParsePathString(svgPath) end
 
 ---@param svg string
 ---@param offsetPerPath number
 ---@param includeColors boolean
----@return MultiPath
+---@return PathList
 function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
 
 ---@param svg string
@@ -1847,14 +2191,8 @@ function Svg:DrawDocument(svg, tr) end
 ---@class Symmetry
 t = Class()
 
----@type Transform
-Symmetry.transform = nil
-
----@type Vector3
-Symmetry.position = nil
-
----@type Rotation
-Symmetry.rotation = nil
+---@type SymmetrySettings
+Symmetry.current = nil
 
 ---@type Vector3
 Symmetry.brushOffset = nil
@@ -1862,28 +2200,11 @@ Symmetry.brushOffset = nil
 ---@type Vector3
 Symmetry.wandOffset = nil
 
----@type Vector3
-Symmetry.direction = nil
-
 
 ---Methods for type Symmetry
 
 
-function Symmetry:Mirror() end
-
-
-function Symmetry:MultiMirror() end
-
-
-function Symmetry:TwoHandeded() end
-
-
 function Symmetry:SummonWidget() end
-
----@param xSpeed number
----@param ySpeed number
----@param zSpeed number
-function Symmetry:Spin(xSpeed, ySpeed, zSpeed) end
 
 ---@param angle number
 ---@param minorRadius number
@@ -1902,10 +2223,10 @@ function Symmetry:Square(angle) end
 function Symmetry:Superellipse(angle, n, a, b) end
 
 ---@param angle number
----@param halfSideLength number
+---@param size number
 ---@param cornerRadius number
 ---@return number
-function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
+function Symmetry:Rsquare(angle, size, cornerRadius) end
 
 ---@param angle number
 ---@param numSides number
@@ -1913,8 +2234,8 @@ function Symmetry:Rsquare(angle, halfSideLength, cornerRadius) end
 ---@return number
 function Symmetry:Polygon(angle, numSides, radius) end
 
----@param colors Color[]
-function Symmetry:ClearColors(colors) end
+
+function Symmetry:ClearColors() end
 
 ---@param color Color
 function Symmetry:AddColor(color) end
@@ -1929,8 +2250,8 @@ function Symmetry:GetColors() end
 ---@param brush string
 function Symmetry:AddBrush(brush) end
 
----@param brushes string[]
-function Symmetry:ClearBrushes(brushes) end
+
+function Symmetry:ClearBrushes() end
 
 ---@param brushes string[]
 function Symmetry:SetBrushes(brushes) end
@@ -1943,9 +2264,63 @@ function Symmetry:GetBrushNames() end
 ---@return string[]
 function Symmetry:GetBrushGuids() end
 
----@param path IPath
+---@param path Path
 ---@return Path
 function Symmetry:PathToPolar(path) end
+
+---Properties for class SymmetrySettings
+
+---@class SymmetrySettings
+t = Class()
+
+---@type SymmetryMode
+SymmetrySettings.mode = nil
+
+---@type Vector3
+SymmetrySettings.position = nil
+
+---@type Rotation
+SymmetrySettings.rotation = nil
+
+---@type Vector3
+SymmetrySettings.spin = nil
+
+---@type SymmetryPointType
+SymmetrySettings.pointType = nil
+
+---@type number
+SymmetrySettings.pointOrder = nil
+
+---@type SymmetryWallpaperType
+SymmetrySettings.wallpaperType = nil
+
+---@type number
+SymmetrySettings.wallpaperRepeatX = nil
+
+---@type number
+SymmetrySettings.wallpaperRepeatY = nil
+
+---@type number
+SymmetrySettings.wallpaperScale = nil
+
+---@type number
+SymmetrySettings.wallpaperScaleX = nil
+
+---@type number
+SymmetrySettings.wallpaperScaleY = nil
+
+---@type number
+SymmetrySettings.wallpaperSkewX = nil
+
+---@type number
+SymmetrySettings.wallpaperSkewY = nil
+
+
+---Methods for type SymmetrySettings
+
+
+---@return SymmetrySettings
+function SymmetrySettings:Duplicate() end
 ---Methods for type Timer
 
 ---@param fn function
@@ -2471,6 +2846,25 @@ function Video:Select() end
 
 function Video:Delete() end
 
+---Properties for class VideoList
+
+---@class VideoList
+t = Class()
+
+---@type Video
+VideoList.lastSelected = nil
+
+---@type Video
+VideoList.last = nil
+
+---@type Video
+VideoList.Item = nil
+
+---@type number
+VideoList.count = nil
+
+
+
 ---Properties for class Visualizer
 
 ---@class Visualizer
@@ -2753,3 +3147,61 @@ function WebRequest:Get(url, onSuccess, onError, headers, context) end
 ---@param headers table
 ---@param context table
 function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
+
+---Values for enum SymmetryMode
+
+---@class SymmetryMode
+t = Class()
+
+SymmetryMode.None = nil
+SymmetryMode.Standard = nil
+SymmetryMode.Scripted = nil
+SymmetryMode.TwoHanded = nil
+SymmetryMode.Point = nil
+SymmetryMode.Wallpaper = nil
+
+
+---Values for enum SymmetryPointType
+
+---@class SymmetryPointType
+t = Class()
+
+SymmetryPointType.Cn = nil
+SymmetryPointType.Cnv = nil
+SymmetryPointType.Cnh = nil
+SymmetryPointType.Sn = nil
+SymmetryPointType.Dn = nil
+SymmetryPointType.Dnh = nil
+SymmetryPointType.Dnd = nil
+SymmetryPointType.T = nil
+SymmetryPointType.Th = nil
+SymmetryPointType.Td = nil
+SymmetryPointType.O = nil
+SymmetryPointType.Oh = nil
+SymmetryPointType.I = nil
+SymmetryPointType.Ih = nil
+
+
+---Values for enum SymmetryWallpaperType
+
+---@class SymmetryWallpaperType
+t = Class()
+
+SymmetryWallpaperType.p1 = nil
+SymmetryWallpaperType.pg = nil
+SymmetryWallpaperType.cm = nil
+SymmetryWallpaperType.pm = nil
+SymmetryWallpaperType.p6 = nil
+SymmetryWallpaperType.p6m = nil
+SymmetryWallpaperType.p3 = nil
+SymmetryWallpaperType.p3m1 = nil
+SymmetryWallpaperType.p31m = nil
+SymmetryWallpaperType.p4 = nil
+SymmetryWallpaperType.p4m = nil
+SymmetryWallpaperType.p4g = nil
+SymmetryWallpaperType.p2 = nil
+SymmetryWallpaperType.pgg = nil
+SymmetryWallpaperType.pmg = nil
+SymmetryWallpaperType.pmm = nil
+SymmetryWallpaperType.cmm = nil
+

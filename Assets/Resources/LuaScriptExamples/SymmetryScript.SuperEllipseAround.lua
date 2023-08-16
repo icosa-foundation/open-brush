@@ -25,7 +25,7 @@ function Main()
     theta = (Math.pi * 2.0) / copies
 
     for i = 0, copies - 1 do
-        angle = (Symmetry.rotation.y * Math.deg2Rad) + i * theta
+        angle = (Symmetry.current.rotation.y * Math.deg2Rad) + i * theta
         radius = Symmetry:Superellipse(angle, n, eccentricity)
         if n < 1 then
             radius = radius * Math:Pow(1 + (1-n), 2)

@@ -22,10 +22,14 @@ Properties {
   _ScrollJitterFrequency("Scroll Jitter Frequency", Float) = 1.0
   _SpreadRate ("Spread Rate", Range(0.3, 5)) = 1.539
 
-      [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -56,10 +60,15 @@ Category {
       sampler2D _MainTex;
       fixed4 _TintColor;
 
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
+
       struct v2f {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
@@ -102,18 +111,23 @@ Category {
         o.vertex = mul(UNITY_MATRIX_VP, corner_WS);
         o.color.a = pow(1 - abs(2*(t - .5)), 3);
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy, _MainTex);
+        o.id = (float2)v.id;
         return o;
       }
 
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = SrgbToNative(2.0f * i.color * _TintColor * texCol);
 #if SELECTION_ON
         color.rgb = GetSelectionColor() * texCol.r;
         color.a = texCol.a;
 #endif
+        color.a *= _Opacity;
         return color;
       }
       ENDCG

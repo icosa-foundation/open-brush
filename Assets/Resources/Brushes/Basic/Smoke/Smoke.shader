@@ -18,10 +18,14 @@ Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _ScrollRate("Scroll Rate", Float) = 1.0
 
-    [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
   _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
   _TimeBlend("Time Blend", Float) = 0
   _TimeSpeed("Time Speed", Float) = 1.0
+
+  _Opacity ("Opacity", Range(0, 1)) = 1
+  _ClipStart("Clip Start", Float) = 0
+  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -56,10 +60,15 @@ Category {
         float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        uint id : TEXCOORD2;
       };
 
       float4 _MainTex_ST;
       float _ScrollRate;
+
+      uniform float _ClipStart;
+      uniform float _ClipEnd;
+      uniform float _Opacity;
 
       //
       // Functions for line/plane distances. Experimental.
@@ -112,12 +121,16 @@ Category {
         o.color = v.color;
         v.color.a = 1;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
+        o.id = (float2)v.id;
 
         return o;
       }
 
       fixed4 frag (v2f i) : SV_Target
       {
+        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+        clip(completion);
+
         float4 c =  tex2D(_MainTex, i.texcoord);
         c *= i.color * _TintColor;
         c = SrgbToNative(c);
@@ -126,6 +139,7 @@ Category {
         FRAG_MOBILESELECT(c)
         c.rgb *= strength;
 #endif
+        c.a *= _Opacity;
         return c;
       }
       ENDCG

@@ -18,9 +18,13 @@ Properties {
 	_Speed ("Animation Speed", Range (0,1)) = 1
 
 	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
+      _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+      _TimeBlend("Time Blend", Float) = 0
+      _TimeSpeed("Time Speed", Float) = 1.0
+
+      _Opacity ("Opacity", Range(0, 1)) = 1
+	  _ClipStart("Clip Start", Float) = 0
+	  _ClipEnd("Clip End", Float) = -1
 }
 
 Category {
@@ -50,17 +54,23 @@ Category {
 			float4 _MainTex_ST;
 			float _Speed;
 
+			uniform float _ClipStart;
+			uniform float _ClipEnd;
+			uniform float _Opacity;
+
 			struct appdata_t {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float3 normal : NORMAL;
 				float2 texcoord : TEXCOORD0;
+                uint id : SV_VertexID;
 			};
 
 			struct v2f {
 				float4 vertex : POSITION;
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
+                uint id : TEXCOORD2;
 			};
 
 
@@ -72,19 +82,21 @@ Category {
 				o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
 				o.color = TbVertToNative(v.color);
 				o.vertex = UnityObjectToClipPos(v.vertex);
-
+                o.id = (float2)v.id;
 				return o;
 			}
 
 			fixed4 frag (v2f i) : COLOR
 			{
+				float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
+                clip(completion);
 				// Simple scrollin'
 				float time = GetTime().y * _Speed;
 				fixed2 scrollUV = i.texcoord;
 				scrollUV.x += time * 0.5;
 
 				float4 tex = tex2D(_MainTex, scrollUV);
-				return encodeHdr(tex * i.color.rgb * i.color.a);
+				return encodeHdr(tex * i.color.rgb * i.color.a) * _Opacity;
 			}
 			ENDCG
 		}
