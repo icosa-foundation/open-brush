@@ -514,9 +514,9 @@ MonoBehaviour:
     m_LocalVariables: []
   m_AdditionalLayerName:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 81184440202092544
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -558,6 +558,7 @@ MonoBehaviour:
   layersPanel: {fileID: 176644, guid: 832e29c521f326a41adfb1176478943b, type: 3}
   timelineNotches: []
   timelineFrameObjects: []
+  animatedModels: []
 --- !u!1 &1000013585526572
 GameObject:
   m_ObjectHideFlags: 0
