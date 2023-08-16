@@ -643,7 +643,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -29703,6 +29703,7 @@ MonoBehaviour:
   m_StencilAttachHysteresis: 0.1
   m_StencilLayerName: StencilObject
   m_PinnedStencilLayerName: PinnedStencilObject
+  m_EnableSnapToGuides: 0
 --- !u!114 &1796800575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32796,7 +32797,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -33678,7 +33679,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0

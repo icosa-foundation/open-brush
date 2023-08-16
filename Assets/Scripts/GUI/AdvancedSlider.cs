@@ -235,5 +235,6 @@ namespace TiltBrush
                     m_Manager.GetPanelForPopUps().m_OverrideControllerMaterial = callback;
                 }
             }
-        } }
+        }
+    }
 } // namespace TiltBrush
