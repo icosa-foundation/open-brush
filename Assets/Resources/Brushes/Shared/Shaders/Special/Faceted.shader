@@ -67,22 +67,19 @@ SubShader {
       PrepForOds(v.vertex);
       v2f o;
       o.vertex = UnityObjectToClipPos(v.vertex);
-        o.color = v.color;
-        o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
-        o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-
+      o.color = v.color;
+      o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+      o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
       o.id = (float2)v.id;
       return o;
     }
 
     fixed4 frag (v2f i) : SV_Target
     {
+      if (_ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd)) discard;
+      if (_Opacity < 1 && Dither8x8(i.vertex.xy) > _Opacity) discard;
+
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
-      if (_Opacity < 1)
-      {
-        float completion = random(n) < _Opacity ? 1 : -1;
-        clip(completion);
-      }
       i.color.xyz = float3(
         lerp(float3(0,0,0), _ColorX, n.x) +
         lerp(float3(0,0,0), _ColorY, n.y) +
