@@ -32,6 +32,7 @@ namespace TiltBrush.Layers
         private List<CanvasScript> m_Canvases;
 
         public Component animationUI_Manager;
+        public GameObject layersWidget;
 
         private void Start()
         {
@@ -41,14 +42,20 @@ namespace TiltBrush.Layers
 
         private void ResetUI()
         {
+
+            // var newWidget = Instantiate(layersWidget); TODO
             print("START RESET UI");
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
             for (int i = 0; i < m_Widgets.Count; i++)
             {
+                print("FOR HERE " + i + " " + canvases.Length);
                 var widget = m_Widgets[i];
+
+             
                 if (i >= canvases.Length)
                 {
+                    
                     widget.SetActive(false);
                     continue;
                 }
@@ -57,6 +64,9 @@ namespace TiltBrush.Layers
                 if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
                 if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
                 widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+                print("BEFORE PRE STRING");
+                print(" PRE STRINGS 1" + m_MainLayerName.GetLocalizedString() );
+                 print(" PRE STRINGS 2" +  m_AdditionalLayerName.GetLocalizedString());
                 widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
                 // Active button means hidden layer
                 widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
@@ -137,7 +147,9 @@ namespace TiltBrush.Layers
 
         public void AddLayer()
         {
+            print("ADD 1~ LAYER NOW ");
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
+            print("ADD 2~  ");
             App.Scene.animationUI_manager.resetTimeline();
         }
 

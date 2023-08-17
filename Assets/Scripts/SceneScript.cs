@@ -244,6 +244,9 @@ namespace TiltBrush
 
         public CanvasScript AddLayerNow()
         {
+
+
+            
             var go = new GameObject(string.Format("Layer {0}", LayerCanvases.Count()));
             go.transform.parent = transform;
             Coords.AsLocal[go.transform] = TrTransform.identity;

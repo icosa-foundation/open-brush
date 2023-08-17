@@ -78,6 +78,7 @@ namespace TiltBrush.FrameAnimation{
         [SerializeField] public GameObject deleteFrameButton;
 
         [SerializeField] public GameObject layersPanel;
+       
 
         bool animationMode = true;
 
@@ -107,6 +108,7 @@ namespace TiltBrush.FrameAnimation{
         }
         void Awake(){
 
+    
             
             App.Scene.animationUI_manager = this;
           
@@ -552,7 +554,7 @@ namespace TiltBrush.FrameAnimation{
         public void selectTimelineFrame(int trackNum,int frameNum){
 
 
-            print("SELECT TIMELINE FRAME " + trackNum + " " + frameNum);
+  
             App.Scene.ActiveCanvas = timeline[trackNum].Frames[frameNum].canvas;
             frameOn = frameNum;
             focusFrame(frameNum);
@@ -569,11 +571,11 @@ namespace TiltBrush.FrameAnimation{
             if (newVal >= 0.9f){
                 timelineOffset += newVal - 0.9f;
               
-                 print ("SCROLL RIGHT " +  timelineOffset);
+                
             }
             if (newVal <= 0.1f){
                  timelineOffset += newVal - 0.1f;
-                 print ("SCROLL RIGHT " +  timelineOffset);
+              
             }
 
             float max = sliderFrameSize*(float)timeline[0].Frames.Count - 1;
@@ -893,7 +895,7 @@ namespace TiltBrush.FrameAnimation{
         void Update()
         {
 
-            print("UPDATE TIMELINE: ");
+       
             printTimeline();
             if (lastCanvas != App.Scene.ActiveCanvas){
                 previousCanvasBatches = 0;
@@ -910,7 +912,7 @@ namespace TiltBrush.FrameAnimation{
                 previousCanvasBatches = currentBatchPools;
 
             }
-            print("ANIM UPDATE");
+         
             if (playing){
                 time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 current = (time - start);
@@ -918,13 +920,10 @@ namespace TiltBrush.FrameAnimation{
 
                 frameOn = frameOn % timeline[0].Frames.Count;
 
-                if (frameOn - prevFrameOn > 1){
-                    print("DIFFERENCE " + frameOn + " "  + prevFrameOn +" " + current + " " + (1000f / ((float)fps)));
-                }
-
+             
                 prevFrameOn = frameOn;
 
-                print("FRAME ON - " + frameOn + " " + current);
+               
 
               
 
@@ -936,7 +935,7 @@ namespace TiltBrush.FrameAnimation{
 
                 foreach (GameObject model in animatedModels){
                         model.transform.localPosition = new Vector3(frameOn, 0, 0);
-                        print("MODELPOSITION " + model.transform.localPosition);
+                        
                 }
 
                
