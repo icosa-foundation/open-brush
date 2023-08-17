@@ -25,14 +25,15 @@ Shader "Brush/Disco" {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
+    _Opacity("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
-
   }
+
   SubShader {
     Cull Back
     CGPROGRAM
-    #pragma target 3.0
+    #pragma target 4.0
     #pragma surface surf StandardSpecular vertex:vert noshadow
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
@@ -47,6 +48,7 @@ Shader "Brush/Disco" {
       float4 color : Color;
       float3 worldPos;
       uint id : SV_VertexID;
+      float4 screenPos;
     };
 
     struct appdata_full_plus_id {
@@ -69,7 +71,7 @@ Shader "Brush/Disco" {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
-
+    uniform half _Opacity;
 
     void vert (inout appdata_full_plus_id v, out Input o) {
       UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -101,8 +103,8 @@ Shader "Brush/Disco" {
     // Input color is _native_
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+      if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
       fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
       o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;

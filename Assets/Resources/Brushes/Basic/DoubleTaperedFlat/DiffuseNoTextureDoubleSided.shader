@@ -15,6 +15,8 @@
 Shader "Brush/Special/DiffuseNoTextureDoubleSided" {
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+
+  _Opacity("Opacity", Range(0,1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
 }
@@ -34,8 +36,10 @@ SubShader {
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
   fixed4 _Color;
+
   uniform float _ClipStart;
   uniform float _ClipEnd;
+  uniform half _Opacity;
 
   struct appdata_t {
     float4 vertex : POSITION;
@@ -55,6 +59,7 @@ SubShader {
     float4 color : COLOR;
     fixed vface : VFACE;
     uint id : SV_VertexID;
+    float4 screenPos;
   };
 
   void vert (inout appdata_t v, out Input o) {
@@ -75,8 +80,8 @@ SubShader {
 
   void surf (Input IN, inout SurfaceOutput o) {
 
-    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
     fixed4 c = _Color;
     o.Normal = float3(0,0,IN.vface);

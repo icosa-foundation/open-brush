@@ -27,7 +27,6 @@ Properties {
   _Opacity ("Opacity", Range(0, 1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
-
 }
 
     SubShader {
@@ -52,7 +51,7 @@ Properties {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
-        uniform float _Opacity;
+        uniform half _Opacity;
 
 		float4 displace(float4 pos, float timeOffset) {
 			float t = GetTime().y*_ScrollRate + timeOffset;
@@ -119,8 +118,7 @@ Properties {
 		// Input color is srgb
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
 
 			// Hardcode some shiny specular values
 			o.Smoothness = .9;

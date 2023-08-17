@@ -25,9 +25,11 @@ Shader "Brush/Special/LightWire" {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
+    _Opacity("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
+
   SubShader {
     Cull Back
     CGPROGRAM
@@ -44,6 +46,7 @@ Shader "Brush/Special/LightWire" {
       float2 uv_MainTex;
       float4 color : Color;
       float2 id : TEXCOORD2;
+      float4 screenPos;
     };
 
     sampler2D _MainTex;
@@ -53,6 +56,7 @@ Shader "Brush/Special/LightWire" {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
+    uniform half _Opacity;
 
     struct appdata_full_plus_id {
       float4 vertex : POSITION;
@@ -91,8 +95,8 @@ Shader "Brush/Special/LightWire" {
     // Input color is srgb
     void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+      if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+      if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
       float envelope = sin ( fmod ( IN.uv_MainTex.x*2, 1.0f) * 3.14159);
       float lights = envelope < .1 ? 1 : 0;

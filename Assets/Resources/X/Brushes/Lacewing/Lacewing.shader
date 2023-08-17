@@ -27,6 +27,7 @@ Shader "Brush/Special/Lacewing" {
 		  _TimeBlend("Time Blend", Float) = 0
 		  _TimeSpeed("Time Speed", Float) = 1.0
 
+          _Opacity("Opacity", Range(0,1)) = 1
           _ClipStart("Clip Start", Float) = 0
           _ClipEnd("Clip End", Float) = -1
 	}
@@ -50,6 +51,7 @@ Shader "Brush/Special/Lacewing" {
 		float4 color : Color;
 		float3 worldPos;
         uint id : SV_VertexID;
+		float4 screenPos;
 	};
 
 	sampler2D _MainTex;
@@ -60,6 +62,7 @@ Shader "Brush/Special/Lacewing" {
 
 	uniform float _ClipStart;
 	uniform float _ClipEnd;
+    uniform half _Opacity;
 
     struct appdata_full_plus_id {
         float4 vertex : POSITION;
@@ -97,8 +100,8 @@ Shader "Brush/Special/Lacewing" {
 
 	void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
-        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+		if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
 		fixed4 spectex = tex2D(_SpecTex, IN.uv_SpecTex);
 		fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);

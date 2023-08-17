@@ -65,7 +65,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       struct v2f {
         float4 vertex : SV_POSITION;
@@ -173,8 +173,9 @@ Category {
       // i.color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
-
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      // It's hard to get alpha curves right so use dithering for hdr shaders
+      if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
         float4 texCol = tex2D(_MainTex, i.texcoord);
         float4 color = 2.0f * i.color * _TintColor * texCol;

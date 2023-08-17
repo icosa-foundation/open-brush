@@ -23,9 +23,11 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
     _TimeBlend("Time Blend", Float) = 0
     _TimeSpeed("Time Speed", Float) = 1.0
 
+    _Opacity("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
+
   SubShader{
     Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
     Cull Off
@@ -61,6 +63,8 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
         float4 color : Color;
         fixed vface : VFACE;
         uint id : SV_VertexID;
+        float4 vertex : SV_POSITION;
+        float4 screenPos;
       };
 
       sampler2D _MainTex;
@@ -68,9 +72,11 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
 
       uniform float _ClipStart;
 	    uniform float _ClipEnd;
+      uniform half _Opacity;
 
       void vert(inout appdata i, out Input o) {
         UNITY_INITIALIZE_OUTPUT(Input, o);
+        o.vertex = UnityObjectToClipPos(i.vertex);
         PrepForOds(i.vertex);
         o.color = TbVertToSrgb(i.color);
         o.id = i.id;
@@ -78,8 +84,8 @@ Shader "Brush/Special/WigglyGraphiteDoubleSided" {
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
-        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.y < _ClipEnd)) discard;
-
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
         fixed2 scrollUV = IN.uv_MainTex;
 

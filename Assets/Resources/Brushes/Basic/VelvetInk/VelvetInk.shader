@@ -45,7 +45,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -85,7 +85,7 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
 
 
          half4 c = tex2D(_MainTex, i.texcoord );

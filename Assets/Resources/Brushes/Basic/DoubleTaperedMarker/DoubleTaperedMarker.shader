@@ -14,6 +14,7 @@
 
 Shader "Brush/Special/DoubleTaperedMarker" {
 Properties {
+  _Opacity("Opacity", Range(0,1)) = 1
   _ClipStart("Clip Start", Float) = 0
   _ClipEnd("Clip End", Float) = -1
 }
@@ -44,6 +45,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
+      uniform half _Opacity;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -83,8 +85,8 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
-
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
         UNITY_APPLY_FOG(i.fogCoord, i.color.rgb);
         float4 color = float4(i.color.rgb, 1);

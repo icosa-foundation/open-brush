@@ -16,6 +16,7 @@ Shader "Brush/Bloom" {
 Properties {
   _MainTex ("Particle Texture", 2D) = "white" {}
   _EmissionGain ("Emission Gain", Range(0, 1)) = 0.5
+
   _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
@@ -45,9 +46,10 @@ Category {
     sampler2D _MainTex;
     float4 _MainTex_ST;
     float _EmissionGain;
+
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform float _Opacity;
+    uniform half _Opacity;
 
     struct appdata_t {
       float4 vertex : POSITION;
@@ -81,8 +83,9 @@ Category {
 
     fixed4 frag (v2f i) : COLOR
     {
-      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
-
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      // It's hard to get alpha curves right so use dithering for hdr shaders
+      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
       float4 color = i.color * tex2D(_MainTex, i.texcoord);
       color = float4(color.rgb * color.a, 1.0);

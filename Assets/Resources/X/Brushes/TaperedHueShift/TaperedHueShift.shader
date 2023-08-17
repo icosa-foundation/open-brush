@@ -17,9 +17,9 @@ Properties {
     _MainTex ("Texture", 2D) = "white" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 
+    _Opacity("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
 }
 
 SubShader {
@@ -43,6 +43,7 @@ SubShader {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
+        uniform half _Opacity;
 
         struct appdata_t {
             float4 vertex : POSITION;
@@ -75,8 +76,8 @@ SubShader {
 
         fixed4 frag (v2f i) : COLOR
         {
-            if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
-
+            if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+            if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
 			UNITY_APPLY_FOG(i.fogCoord, i.color);
             fixed4 c = tex2D(_MainTex, i.texcoord) * i.color;

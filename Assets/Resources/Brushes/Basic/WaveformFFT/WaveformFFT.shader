@@ -58,7 +58,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -90,8 +90,9 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
 
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
         // Envelope
         float envelope = 1; //sin(i.texcoord.x * 3.14159);

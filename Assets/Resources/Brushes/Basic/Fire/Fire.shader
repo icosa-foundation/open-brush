@@ -28,8 +28,6 @@ Properties {
     _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
-
 }
 
 Category {
@@ -93,7 +91,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -111,8 +109,9 @@ Category {
       // Note: input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
-        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.y < _ClipEnd)) discard;
-
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      // It's hard to get alpha curves right so use dithering for hdr shaders
+      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
 
         half2 displacement;
         float procedural_line = 0;
