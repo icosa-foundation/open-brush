@@ -59,7 +59,7 @@ namespace TiltBrush
                 SketchWriter.ControlPointExtension.Color);
             public float m_Pressure;
             public uint m_TimestampMs; // CurrentSketchTime of creation, in milliseconds
-            public Color m_Color;
+            public Color32 m_Color;
         }
 
         // TODO: all this should be stored in the PointerScript instead of kept alongside
@@ -157,8 +157,11 @@ namespace TiltBrush
         private bool m_UseSymmetryWidget = false;
         private Color m_lastChosenColor { get; set; }
         public Vector3 colorJitter { get; set; }
+        public float colorJitterFrequency { get; set; }
         public float sizeJitter { get; set; }
         public float positionJitter { get; set; }
+
+        private float jitterSeed;
 
         // These variables are legacy for supporting z-fighting control on the sketch surface
         // panel in monoscopic mode.
@@ -285,7 +288,8 @@ namespace TiltBrush
                 PlayerPrefs.SetFloat(PLAYER_PREFS_POINTER_ANGLE, m_FreePaintPointerAngle);
             }
         }
-        public bool JitterEnabled => colorJitter.sqrMagnitude > 0 || sizeJitter > 0 || positionJitter > 0;
+        public bool ColorJitterEnabled => colorJitter.sqrMagnitude > 0 && colorJitterFrequency > 0;
+        public bool JitterEnabled => ColorJitterEnabled || sizeJitter > 0 || positionJitter > 0;
 
         static public void ClearPlayerPrefs()
         {
@@ -1046,14 +1050,6 @@ namespace TiltBrush
                 m_lastChosenColor = PointerColor;
             }
 
-            if (JitterEnabled)
-            {
-                // Bypass the code in the PointerColor setter
-                // Size is jittered in PointerScript. Should we also do color there?
-                ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
-            }
-
-
             if (m_StraightEdgeEnabled)
             {
                 StraightEdgeGuide.SetTempShape(StraightEdgeGuideScript.Shape.Line);
@@ -1080,11 +1076,13 @@ namespace TiltBrush
 
         public Color CalculateJitteredColor(Color currentColor)
         {
+            float perlinFloat() => (-0.5f + Mathf.PerlinNoise(jitterSeed, 0)) * 2f;
             Color.RGBToHSV(currentColor, out var h, out var s, out var v);
-            return Random.ColorHSV(
-                h - colorJitter.x, h + colorJitter.x,
-                s - colorJitter.y, s + colorJitter.y,
-                v - colorJitter.z, v + colorJitter.z
+            jitterSeed += colorJitterFrequency / 2f;
+            return Color.HSVToRGB(
+                h - perlinFloat() * colorJitter.x * 2,
+                s - perlinFloat() * colorJitter.y * 2,
+                v - perlinFloat() * colorJitter.z * 2
             );
         }
 

@@ -95,6 +95,13 @@ namespace TiltBrush
             return new Color(Float(), Float(), Float(), Float());
         }
 
+        public Color32 Color32()
+        {
+            int n = m_stream.Read(m_buf16, 0, 4);
+            System.Diagnostics.Debug.Assert(n == 4);
+            return new Color32(m_buf16[0], m_buf16[1], m_buf16[2], m_buf16[3]);
+        }
+
         public Quaternion Quaternion()
         {
             return new Quaternion(Float(), Float(), Float(), Float());

@@ -346,7 +346,7 @@ namespace TiltBrush
                     m_Orient = ori,
                     m_Pressure = 1,
                     // Test Color per CP - if we see yellow this line matters
-                    m_Color = Color.yellow
+                    // m_Color = Color.yellow
                 },
                 length = 0,
                 smoothedPos = pos
@@ -442,7 +442,7 @@ namespace TiltBrush
             updated.point.m_Orient = ori;
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
-            updated.point.m_Color = PointerManager.m_Instance.CalculateJitteredColor(m_Color);
+            // updated.point.m_Color = PointerManager.m_Instance.CalculateJitteredColor(m_Color);
             updated.smoothedPos = pos;
             if (iUpdate < 2)
             {

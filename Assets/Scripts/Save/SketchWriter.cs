@@ -508,7 +508,7 @@ namespace TiltBrush
                                     rControlPoint.m_TimestampMs = reader.UInt32();
                                     break;
                                 case ControlPointExtension.Color:
-                                    rControlPoint.m_Color = reader.Color();
+                                    rControlPoint.m_Color = reader.Color32();
                                     break;
                                 default:
                                     // skip unknown extension

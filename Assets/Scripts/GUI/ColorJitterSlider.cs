@@ -29,7 +29,8 @@ namespace TiltBrush
             Saturation,
             Value,
             Size,
-            Position
+            Position,
+            Frequency
         }
         public JitterProperties JitterProperty;
 
@@ -39,6 +40,7 @@ namespace TiltBrush
             float adjust(float val) { return Mathf.Pow(val * 2f, 1f / pow); }
             base.Awake();
             Vector3 colorJitter = PointerManager.m_Instance.colorJitter;
+            float colorJitterFrequency = PointerManager.m_Instance.colorJitterFrequency;
             float sizeJitter = PointerManager.m_Instance.sizeJitter;
             float positionJitter = PointerManager.m_Instance.positionJitter;
             switch (JitterProperty)
@@ -57,6 +59,9 @@ namespace TiltBrush
                     break;
                 case JitterProperties.Position:
                     m_CurrentValue = adjust(positionJitter);
+                    break;
+                case JitterProperties.Frequency:
+                    m_CurrentValue = adjust(colorJitterFrequency);
                     break;
             }
             SetSliderPositionToReflectValue();
@@ -85,6 +90,9 @@ namespace TiltBrush
                     break;
                 case JitterProperties.Position:
                     PointerManager.m_Instance.positionJitter = val;
+                    break;
+                case JitterProperties.Frequency:
+                    PointerManager.m_Instance.colorJitterFrequency = val;
                     break;
             }
             m_CurrentValue = fValue;

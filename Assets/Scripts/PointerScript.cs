@@ -659,7 +659,7 @@ namespace TiltBrush
                 BaseBrushScript line = BaseBrushScript.Create(
                     App.Instance.m_CanvasTransform,
                     xf_LS,
-                    m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
+                    m_CurrentBrush, Color.green, m_CurrentBrushSize);
 
                 line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
                 line.SetPreviewMode();
@@ -867,14 +867,17 @@ namespace TiltBrush
             m_LineLength_CS = 0.0f;
 
             float jitteredBrushSize = m_CurrentBrushSize;
-            if (PointerManager.m_Instance.JitterEnabled)
+            Color jitteredColor = m_CurrentColor;
+
+            if (PointerManager.m_Instance.ColorJitterEnabled)
             {
+                jitteredColor = PointerManager.m_Instance.CalculateJitteredColor(m_CurrentColor);
                 jitteredBrushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, m_CurrentBrushSize);
             }
 
             m_CurrentLine = BaseBrushScript.Create(
                 canvas.transform, xf_CS,
-                desc, m_CurrentColor, jitteredBrushSize);
+                desc, jitteredColor, jitteredBrushSize);
         }
 
         /// Like BeginLineFromMemory + EndLineFromMemory
