@@ -147,10 +147,10 @@ namespace TiltBrush
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
             SymmetryTwoHanded = 6003,
+            SaveSelected = 6500,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
-            SaveSelected = 123 // TODO
         }
 
         public enum ControlsType

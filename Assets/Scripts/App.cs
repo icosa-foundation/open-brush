@@ -648,8 +648,8 @@ namespace TiltBrush
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)
                 {
-                    string newPath = SaveLoadScript.m_Instance.GenerateNewUntitledFilename(
-                        UserSketchPath(), SaveLoadScript.TILT_SUFFIX);
+                    string newPath = SaveLoadScript.m_Instance.GenerateNewFilename(
+                        UserSketchPath(), SaveLoadScript.TILT_SUFFIX, SaveLoadScript.UNTITLED_PREFIX);
                     if (newPath != null)
                     {
                         File.Copy(lastAutosave, newPath);
@@ -2113,6 +2113,11 @@ namespace TiltBrush
         static public string UserSketchPath()
         {
             return Path.Combine(UserPath(), "Sketches");
+        }
+
+        static public string SavedStrokesPath()
+        {
+            return Path.Combine(UserSketchPath(), "Saved Strokes");
         }
 
         static public string AutosavePath()

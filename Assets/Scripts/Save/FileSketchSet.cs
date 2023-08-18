@@ -360,6 +360,7 @@ namespace TiltBrush
         public virtual void Init()
         {
             ProcessDirectory(m_SketchesPath);
+            ProcessDirectory(App.SavedStrokesPath());
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
