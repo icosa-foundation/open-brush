@@ -182,7 +182,7 @@ namespace TiltBrush
         }
 
 
-        public Brush[] GetTagFilteredBrushList(string[] includeTags = null, string[] excludeTags = null)
+        public Brush[] GetTagFilteredBrushList(IEnumerable<string> includeTags = null, IEnumerable<string> excludeTags = null)
         {
             includeTags ??= App.UserConfig.Brushes.IncludeTags;
             excludeTags ??= App.UserConfig.Brushes.ExcludeTags;

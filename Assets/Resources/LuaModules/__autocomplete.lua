@@ -172,6 +172,11 @@ Brush.currentPath = nil
 
 ---Methods for type Brush
 
+---@param includeTags string[]
+---@param excludeTags string[]
+---@return string[]
+function Brush:GetTypes(includeTags, excludeTags) end
+
 
 function Brush:JitterColor() end
 

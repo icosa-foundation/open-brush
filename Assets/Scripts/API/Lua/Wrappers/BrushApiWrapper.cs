@@ -66,7 +66,7 @@ namespace TiltBrush
         [LuaDocsParameter("excludeTags", "Exclude brushes that have any of these tags")]
         [LuaDocsExample("brushList = Brush:GetTypes({\"audioreactive\"}, {\"particle\"})")]
         [LuaDocsReturnValue("A filtered list of brush types")]
-        public static List<string> GetTypes(string[] includeTags, string[] excludeTags)
+        public static List<string> GetTypes(List<string> includeTags, List<string> excludeTags)
         {
             return BrushCatalog.m_Instance.GetTagFilteredBrushList(includeTags, excludeTags)
                 .Select(b => b.Description).ToList();
