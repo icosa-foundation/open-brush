@@ -43,7 +43,9 @@ namespace TiltBrush.Layers
         private void ResetUI()
         {
 
-            // var newWidget = Instantiate(layersWidget); TODO
+            var newWidget = Instantiate(layersWidget); TODO
+            newWidget.transform.SetParent(this.gameObject.transform, false);
+            
             print("START RESET UI");
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
