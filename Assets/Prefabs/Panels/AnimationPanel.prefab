@@ -531,6 +531,8 @@ MonoBehaviour:
   - {fileID: 192512337666498616}
   - {fileID: 5142255780986780541}
   animationUI_Manager: {fileID: 511419024171822062}
+  layersWidget: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+    type: 3}
   references:
     version: 2
     RefIds: []

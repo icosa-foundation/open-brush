@@ -43,9 +43,21 @@ namespace TiltBrush.Layers
         private void ResetUI()
         {
 
-            var newWidget = Instantiate(layersWidget); TODO
+            var layerCanvases = App.Scene.LayerCanvases.ToArray();
+            for (int i = 0; i < layerCanvases.Length; i++)
+            {
+            var newWidget = Instantiate(layersWidget);
             newWidget.transform.SetParent(this.gameObject.transform, false);
-            
+            newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
+
+             
+            Vector3 localPos = m_Widgets[0].transform.localPosition;
+            localPos.y -= i*0.2f;
+
+
+            newWidget.transform.localPosition = localPos;
+            }
+
             print("START RESET UI");
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
@@ -61,7 +73,8 @@ namespace TiltBrush.Layers
                     widget.SetActive(false);
                     continue;
                 }
-                widget.SetActive(true);
+                // widget.SetActive(true);
+                 widget.SetActive(false);
                 var canvas = canvases[i];
                 if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
                 if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
