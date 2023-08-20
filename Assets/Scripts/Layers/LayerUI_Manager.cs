@@ -28,7 +28,9 @@ namespace TiltBrush.Layers
         [SerializeField] private LocalizedString m_MainLayerName;
         [SerializeField] private LocalizedString m_AdditionalLayerName;
 
+        public GameObject mainWidget;
         public List<GameObject> m_Widgets;
+
         private List<CanvasScript> m_Canvases;
 
         public Component animationUI_Manager;
@@ -43,53 +45,75 @@ namespace TiltBrush.Layers
         private void ResetUI()
         {
 
+
+            m_Canvases = new List<CanvasScript>();
             var layerCanvases = App.Scene.LayerCanvases.ToArray();
+
+
+            foreach (GameObject widget in m_Widgets){
+
+                Destroy(widget);
+            }
+            m_Widgets.Clear();
+
+        
+
             for (int i = 0; i < layerCanvases.Length; i++)
             {
-            var newWidget = Instantiate(layersWidget);
-            newWidget.transform.SetParent(this.gameObject.transform, false);
-            newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
+            var newWidget = Instantiate(layersWidget,this.gameObject.transform,false);
+            // newWidget.transform.SetParent(this.gameObject.transform, false);
+        
 
+
+            if (i == 0) newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
+            if (i == 0) newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
+            newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
+            newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
+                // Active button means hidden layer
+            newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
              
-            Vector3 localPos = m_Widgets[0].transform.localPosition;
+            Vector3 localPos = mainWidget.transform.localPosition;
             localPos.y -= i*0.2f;
 
 
             newWidget.transform.localPosition = localPos;
+            m_Widgets.Add(newWidget);
+
+            m_Canvases.Add(layerCanvases[i]);
             }
 
-            print("START RESET UI");
-            m_Canvases = new List<CanvasScript>();
-            var canvases = App.Scene.LayerCanvases.ToArray();
-            for (int i = 0; i < m_Widgets.Count; i++)
-            {
-                print("FOR HERE " + i + " " + canvases.Length);
-                var widget = m_Widgets[i];
+            // print("START RESET UI");
+            // m_Canvases = new List<CanvasScript>();
+            // var canvases = App.Scene.LayerCanvases.ToArray();
+            // for (int i = 0; i < m_Widgets.Count; i++)
+            // {
+            //     print("FOR HERE " + i + " " + canvases.Length);
+            //     var widget = m_Widgets[i];
 
              
-                if (i >= canvases.Length)
-                {
+            //     if (i >= canvases.Length)
+            //     {
                     
-                    widget.SetActive(false);
-                    continue;
-                }
-                // widget.SetActive(true);
-                 widget.SetActive(false);
-                var canvas = canvases[i];
-                if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-                widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-                print("BEFORE PRE STRING");
-                print(" PRE STRINGS 1" + m_MainLayerName.GetLocalizedString() );
-                 print(" PRE STRINGS 2" +  m_AdditionalLayerName.GetLocalizedString());
-                widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
-                // Active button means hidden layer
-                widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
-                m_Canvases.Add(canvas);
-            }
+            //         widget.SetActive(false);
+            //         continue;
+            //     }
+            //     // widget.SetActive(true);
+            //      widget.SetActive(false);
+            //     var canvas = canvases[i];
+            //     if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
+            //     if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
+            //     widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
+            //     print("BEFORE PRE STRING");
+            //     print(" PRE STRINGS 1" + m_MainLayerName.GetLocalizedString() );
+            //      print(" PRE STRINGS 2" +  m_AdditionalLayerName.GetLocalizedString());
+            //     widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
+            //     // Active button means hidden layer
+            //     widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
+            //     m_Canvases.Add(canvas);
+            // }
 
-            print("RESET UI DONE");
-            print(m_Canvases.Count);
+            // print("RESET UI DONE");
+            // print(m_Canvases.Count);
         }
 
         private void OnLayerCanvasesUpdate()
