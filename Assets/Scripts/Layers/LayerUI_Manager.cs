@@ -67,7 +67,12 @@ namespace TiltBrush.Layers
 
             if (i == 0) newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
             if (i == 0) newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-            newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
+
+            if (layerCanvases[i] == App.ActiveCanvas){
+                print("ACTIVE CANVAS");
+                print(layerCanvases[i]);
+                newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
+            }
             newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
                 // Active button means hidden layer
             newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
@@ -195,6 +200,8 @@ namespace TiltBrush.Layers
         public void ToggleVisibility(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
+            print("TOGGLE VISIBILITY");
+            print(canvas);
             App.Scene.ToggleLayerVisibility(canvas);
         }
 
