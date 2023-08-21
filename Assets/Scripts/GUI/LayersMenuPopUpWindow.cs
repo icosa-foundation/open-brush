@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,15 +13,28 @@
 // limitations under the License.
 
 using System.IO;
+using TiltBrush.Layers;
 using UnityEngine;
 
 namespace TiltBrush
 {
 
-    class MenuPopUpWindow : PopUpWindow
+    class LayersMenuPopUpWindow : MenuPopUpWindow
     {
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
+            // TODO : Fix this hangnail.
+            OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
+            foreach (OptionButton button in optionButtons)
+            {
+                button.SetCommandParameters(iCommandParam, iCommandParam2);
+            }
+        }
+
+        public void SetInitialKeyboardText(RenameLayerButton btn)
+        {
+            var layer = App.Scene.GetCanvasByLayerIndex(btn.m_CommandParam);
+            KeyboardPopUpWindow.m_InitialText = layer.name;
         }
     }
 

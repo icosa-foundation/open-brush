@@ -13,9 +13,18 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Events;
 namespace TiltBrush.Layers
 {
     public class RenameLayerButton : OptionButton
     {
+        [SerializeField]
+        private UnityEvent<RenameLayerButton> m_BeforePopupAction;
+
+        override protected void OnButtonPressed()
+        {
+            m_BeforePopupAction.Invoke(this);
+            base.OnButtonPressed();
+        }
     }
 }

@@ -61,14 +61,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000012632495268}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e340528bde9d10f4fae286d1df56db8e, type: 3}
+  m_Script: {fileID: 11500000, guid: 07db6b9361da4fca914d828eb8059fb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Background: {fileID: 1000013916285508}
   m_TopBorder: {fileID: 1000013656473796}
   m_BottomBorder: {fileID: 1000013656473796}
   m_WindowText: {fileID: 0}
-  m_WindowSubText: {fileID: 0}
   m_CharacterWidth: 0.175
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
@@ -403,6 +402,46 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4000012974061348}
     m_Modifications:
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 114000013354020050}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: SetInitialKeyboardText
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: TiltBrush.LayersMenuPopUpWindow, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 114000013920850342}
+    - target: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+        type: 3}
+      propertyPath: m_BeforePopupAction.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: TiltBrush.Layers.RenameLayerButton, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 4599598240902352096, guid: 5056dc0f2865306449988b756f72f2c2,
         type: 3}
       propertyPath: m_Name
@@ -471,6 +510,18 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 4600008909524176278}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &114000013920850342 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4486572399880723504, guid: 5056dc0f2865306449988b756f72f2c2,
+    type: 3}
+  m_PrefabInstance: {fileID: 4600008909524176278}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79889b4ded5a418880f71e3f76d2f714, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7397330737850835020
 PrefabInstance:
   m_ObjectHideFlags: 0

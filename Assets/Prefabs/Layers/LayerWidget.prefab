@@ -118,6 +118,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 764252602712346550}
     m_Modifications:
+    - target: {fileID: 1805998224603225912, guid: 5a37b016dc443fb4393eadaa8d259cf4,
+        type: 3}
+      propertyPath: m_CenterPopupOnButton
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2652655742183443353, guid: 5a37b016dc443fb4393eadaa8d259cf4,
         type: 3}
       propertyPath: m_Name
