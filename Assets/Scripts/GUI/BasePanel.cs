@@ -105,10 +105,12 @@ namespace TiltBrush
             ReferenceMobile,
             CameraPath,
             BrushLab,
+            WebcamPanel = 5200,
             Scripts = 6000,
             SnapSettings = 8000,
             StencilSettings = 20200,
-            LayersPanel = 15000
+            LayersPanel = 15000,
+            TransformPanel = 12000,
         }
 
         private enum FixedTransitionState
@@ -299,6 +301,7 @@ namespace TiltBrush
         private bool m_PanelInitializationStarted;
         private bool m_PanelInitializationFinished;
         private float m_PanelDescriptionCounter;
+        public Action m_OverrideControllerMaterial;
 
         // Accessors/properties
 
@@ -448,6 +451,15 @@ namespace TiltBrush
         virtual public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             m_UIComponentManager.AssignControllerMaterials(controller);
+
+            // Allows components to override the regular controller material
+            // without worrying about execution order etc
+            if (m_OverrideControllerMaterial != null)
+            {
+                m_OverrideControllerMaterial();
+                // Clear afterwards. This needs to be set every frame
+                m_OverrideControllerMaterial = null;
+            }
         }
 
         /// This function is used to determine the value to be passed in to the controller pad mesh's
