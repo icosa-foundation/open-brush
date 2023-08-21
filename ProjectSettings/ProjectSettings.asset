@@ -863,6 +863,7 @@ PlayerSettings:
     Android: TILT_BRUSH
     Standalone: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH;FBX_SUPPORTED;FBXSDK_RUNTIME;LATK_SUPPORTED
     Windows Store Apps: USD_SUPPORTED;UNITY_HAS_GOOGLEVR;TILT_BRUSH
+    iPhone: TILT_BRUSH
   additionalCompilerArguments: {}
   platformArchitecture:
     iPhone: 1
@@ -881,7 +882,7 @@ PlayerSettings:
   allowUnsafeCode: 1
   useDeterministicCompilation: 1
   enableRoslynAnalyzers: 1
-  selectedPlatform: 2
+  selectedPlatform: 3
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1
   gcIncremental: 0
