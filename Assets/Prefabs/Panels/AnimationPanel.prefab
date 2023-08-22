@@ -524,7 +524,7 @@ MonoBehaviour:
   mainWidget: {fileID: 8931799926426736621}
   m_Widgets: []
   animationUI_Manager: {fileID: 511419024171822062}
-  layersWidget: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
+  layersWidget: {fileID: 7290462010586009958, guid: ec5273ee748c3514297bef089ac0fb2e,
     type: 3}
   references:
     version: 2
@@ -2712,7 +2712,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8931799926426736621}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.968, y: 0.638, z: 0.041}
+  m_LocalPosition: {x: -0.982, y: 0.427, z: 0.041}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
