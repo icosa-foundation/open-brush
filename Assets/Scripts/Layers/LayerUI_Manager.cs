@@ -207,7 +207,9 @@ namespace TiltBrush.Layers
 
         public void SetActiveLayer(GameObject widget)
         {
+            print("SETTING ACTIVE LAYER");
             var newActiveCanvas = GetCanvasFromWidget(widget);
+            print(newActiveCanvas);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
         }
 
