@@ -20,8 +20,21 @@ namespace TiltBrush
 {
     public class RepaintTray : BaseTray
     {
-        private RepaintTool m_repaintTool;
+        public ToggleButton m_RecolorButton;
+        public ToggleButton m_ResizeButton;
+        public ToggleButton m_RebrushButton;
+        public ToggleButton m_JitterButton;
 
+        protected override void OnToolChanged()
+        {
+            base.OnToolChanged();
+            var pm = PointerManager.m_Instance;
+            m_RecolorButton.IsToggledOn = pm.RecolorOn;
+            m_ResizeButton.IsToggledOn = pm.ResizeOn;
+            m_RebrushButton.IsToggledOn = pm.RebrushOn;
+            m_JitterButton.IsToggledOn = pm.JitterOn;
+
+        }
         enum ButtonType
         {
             Recolor,
@@ -32,23 +45,20 @@ namespace TiltBrush
 
         private void SetRepaintFlags(ButtonType buttonType, bool state)
         {
-            if (m_repaintTool == null)
-            {
-                m_repaintTool = SketchControlsScript.m_Instance.GetComponentInChildren<RepaintTool>();
-            }
+            var pm = PointerManager.m_Instance;
             switch (buttonType)
             {
                 case ButtonType.Recolor:
-                    m_repaintTool.RecolorOn = state;
+                    pm.RecolorOn = state;
                     break;
                 case ButtonType.Rebrush:
-                    m_repaintTool.RebrushOn = state;
+                    pm.RebrushOn = state;
                     break;
                 case ButtonType.Resize:
-                    m_repaintTool.ResizeOn = state;
+                    pm.ResizeOn = state;
                     break;
                 case ButtonType.Jitter:
-                    m_repaintTool.JitterOn = state;
+                    pm.JitterOn = state;
                     break;
             }
         }

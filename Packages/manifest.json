@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+    "com.atteneder.gltfast": "5.0.4",
     "com.meta.xr.sdk.utilities": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
@@ -24,6 +26,7 @@
     "org.nuget.google.apis.auth": "1.57.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
     "org.nuget.sharpziplib": "1.3.1",
+    "tv.superla.radiancehdr": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
@@ -55,6 +58,13 @@
     "com.unity.modules.wind": "1.0.0"
   },
   "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.atteneder"
+      ]
+    },
     {
       "name": "Vive",
       "url": "https://npm-registry.vive.com",

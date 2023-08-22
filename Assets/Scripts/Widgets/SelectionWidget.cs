@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -308,6 +309,52 @@ namespace TiltBrush
                 m_Pin.WobblePin(m_InteractingController);
             }
         }
-    }
 
+        protected override TrTransform ApplyAxisLocks(TrTransform xf_GS)
+        {
+            var outXf_CS = App.ActiveCanvas.Pose.inverse * xf_GS;
+            // Restore transforms for locked axes
+            if (SelectionManager.m_Instance.m_LockTranslationX) outXf_CS.translation.x = transform.localPosition.x;
+            if (SelectionManager.m_Instance.m_LockTranslationY) outXf_CS.translation.y = transform.localPosition.y;
+            if (SelectionManager.m_Instance.m_LockTranslationZ) outXf_CS.translation.z = transform.localPosition.z;
+            var euler = outXf_CS.rotation.eulerAngles;
+            if (SelectionManager.m_Instance.m_LockRotationX) euler.x = transform.localRotation.eulerAngles.x;
+            if (SelectionManager.m_Instance.m_LockRotationY) euler.y = transform.localRotation.eulerAngles.y;
+            if (SelectionManager.m_Instance.m_LockRotationZ) euler.z = transform.localRotation.eulerAngles.z;
+            outXf_CS.rotation.eulerAngles = euler;
+            xf_GS = App.ActiveCanvas.Pose * outXf_CS;
+            return xf_GS;
+        }
+
+        protected override IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return SelectionManager.m_Instance.SelectedWidgets.OfType<StencilWidget>();
+        }
+
+        protected override bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            // In some cases it's weird to align the orientation of a selection
+            // with a guide (i.e. when there's only strokes selected)
+            var rot = xf_GS.rotation;
+            bool usedStencil = base.MagnetizeToStencils(ref xf_GS);
+            // No need to do anything if we didn't use a stencil
+            if (!usedStencil) return false;
+
+            // Only restore original orientation if we've got no widgets selected
+            if (SelectionManager.m_Instance.SelectedWidgets.Count() == 1)
+            {
+                // A single widget should align as if it was grabbed directly
+                // Rather than selected
+                var foo = xf_GS.rotation;
+                xf_GS.rotation = rot;
+                SelectionManager.m_Instance.SelectedWidgets.First().transform.rotation = foo;
+            }
+            else
+            {
+                xf_GS.rotation = rot;
+            }
+
+            return usedStencil;
+        }
+    }
 } // namespace TiltBrush

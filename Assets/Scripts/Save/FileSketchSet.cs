@@ -354,7 +354,10 @@ namespace TiltBrush
                 driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
             }
 
-            m_Sketches[toRename].SceneFileInfo.Rename(newName);
+            var newPath = m_Sketches[toRename].SceneFileInfo.Rename(newName);
+
+            m_FileWatcher.NotifyCreated(newPath);
+
         }
 
         public virtual void Init()

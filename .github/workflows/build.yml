@@ -419,7 +419,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -525,7 +525,7 @@ jobs:
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -597,7 +597,6 @@ jobs:
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
-          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v3
         with:

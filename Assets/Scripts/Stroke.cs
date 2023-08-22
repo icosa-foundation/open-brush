@@ -252,6 +252,15 @@ namespace TiltBrush
             m_Type = Type.NotCreated;
         }
 
+        /// Like Recreate except the translation are interpreted as a destination point relative to the canvas
+        /// (instead of how much to translate by). Rotation and scale are relative and applied after the translation.
+
+        public void RecreateAt(TrTransform xf_CS)
+        {
+            TrTransform leftTransform = TrTransform.InvMul(TrTransform.T(m_BatchSubset.m_Bounds.center), xf_CS);
+            Recreate(leftTransform);
+        }
+
         /// Ensure there is geometry for this stroke, creating if necessary.
         /// Optionally also calls SetParent() or LeftTransformControlPoints() before creation.
         ///
