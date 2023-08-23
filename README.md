@@ -2,7 +2,7 @@
 
 [![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
 [![All GitHub releases](https://img.shields.io/github/downloads/icosa-foundation/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-foundation/open-brush/releases/latest)
-[![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
+[![Twitter](https://img.shields.io/badge/follow-%40openbrushapp-blue.svg?style=flat&logo=twitter)](https://twitter.com/openbrushapp)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
 ![Current Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush)
 ![Prerelease Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush?include_prereleases&label=prerelease)
