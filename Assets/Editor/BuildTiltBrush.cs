@@ -1715,6 +1715,19 @@ static class BuildTiltBrush
     // Returns null if no errors; otherwise a string with what went wrong.
     private static string FormatBuildReport(BuildReport report)
     {
+        // This format is required by the game-ci build action
+        Console.WriteLine(
+                $"{Environment.NewLine}" +
+                $"###########################{Environment.NewLine}" +
+                $"#      Build results      #{Environment.NewLine}" +
+                $"###########################{Environment.NewLine}" +
+                $"{Environment.NewLine}" +
+                $"Duration: {report.summary.totalTime.ToString()}{Environment.NewLine}" +
+                $"Warnings: {report.summary.totalWarnings.ToString()}{Environment.NewLine}" +
+                $"Errors: {report.summary.totalErrors.ToString()}{Environment.NewLine}" +
+                $"Size: {report.summary.totalSize.ToString()} bytes{Environment.NewLine}" +
+                $"{Environment.NewLine}"
+        );
         if (report.summary.result == BuildResult.Succeeded)
         {
             return null;
