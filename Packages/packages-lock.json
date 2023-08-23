@@ -18,12 +18,12 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.icosa.cscore": {
-      "version": "https://github.com/icosa-gallery/com.icosa.cscore.git#upm",
+    "com.filoe.cscore": {
+      "version": "https://github.com/icosa-mirror/com.filoe.cscore.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "d0f7ae9ffae5c42e1d2e4aa09df5a94669818310"
+      "hash": "85891599eb66651704ae81d09d72a68745a71ce9"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
