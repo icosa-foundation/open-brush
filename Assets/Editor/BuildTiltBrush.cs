@@ -831,6 +831,16 @@ static class BuildTiltBrush
                 {
                     i++;
                 }
+                else if (args[i] == "-androidExportType")
+                {
+                    // Not supported in Open Brush (added to game-ci in v3)
+                    i++;
+                }
+                else if (args[i] == "-androidSymbolType")
+                {
+                    // Not supported in Open Brush (added to game-ci in v3)
+                    i++;
+                }
                 else
                 {
                     Die(3, "Unknown argument {0}", args[i]);
