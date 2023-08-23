@@ -372,7 +372,7 @@ jobs:
           echo -e "\n-define:PIMAX_SUPPORTED" | tee -a Assets/csc.rsp
 
       - name: Build project
-        uses: game-ci/unity-builder@v2
+        uses: game-ci/unity-builder@v3
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         with:
