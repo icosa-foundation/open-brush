@@ -220,7 +220,7 @@
       }
     },
     "com.unity.vectorgraphics": {
-      "version": "https://github.com/icosa-gallery/com.unity.vectorgraphics.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush",
       "depth": 0,
       "source": "git",
       "dependencies": {
