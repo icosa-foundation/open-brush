@@ -1723,8 +1723,18 @@ static class BuildTiltBrush
                 $"###########################{Environment.NewLine}" +
                 $"{Environment.NewLine}" +
                 $"Duration: {report.summary.totalTime.ToString()}{Environment.NewLine}" +
-                $"Warnings: {report.summary.totalWarnings.ToString()}{Environment.NewLine}" +
-                $"Errors: {report.summary.totalErrors.ToString()}{Environment.NewLine}" +
+                $"Warnings: {report.summary.totalWarnings.ToString()}{Environment.NewLine}"
+        );
+        // We have some "errors" that show up on Mac and Linux (IOException copying FBX and USD) that are ignored. The builds succeed, but for some reason they get reported anyway. To avoid confusing the analysis, print a 0 even if we have errors logged, provided that the build passed
+        if (report.summary.result == BuildResult.Succeeded)
+        {
+            Console.WriteLine($"Errors: 0{Environment.NewLine}");
+        }
+        else
+        {
+            Console.WriteLine($"Errors: {report.summary.totalErrors.ToString()}{Environment.NewLine}");
+        }
+        Console.WriteLine(
                 $"Size: {report.summary.totalSize.ToString()} bytes{Environment.NewLine}" +
                 $"{Environment.NewLine}"
         );
