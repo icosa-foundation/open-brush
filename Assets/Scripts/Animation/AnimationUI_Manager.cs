@@ -76,6 +76,7 @@ namespace TiltBrush.FrameAnimation{
         [SerializeField] public GameObject textRef;
 
         [SerializeField] public GameObject deleteFrameButton;
+        [SerializeField] public GameObject frameButtonPrefab;
 
         [SerializeField] public GameObject layersPanel;
        
@@ -474,10 +475,15 @@ namespace TiltBrush.FrameAnimation{
 
                 int numDeleted = 0;
 
-                for(int i = 0; i < frameWrapper.transform.childCount; i++)
+                for(int i = frameWrapper.transform.childCount - 1; i >= 0; i--)
                 {
-                    frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
+                    Destroy(frameWrapper.transform.GetChild(i).gameObject);
                 }
+                // for(int i = 0; i < frameWrapper.transform.childCount; i++)
+                // {
+         
+                //     frameWrapper.transform.GetChild(i).gameObject.SetActive(false);
+                // }
 
                 for(int i = 0; i < timeline.Count; i++)
                 {
@@ -486,8 +492,18 @@ namespace TiltBrush.FrameAnimation{
                     int layerOn = i - numDeleted;
 
                     if (layerOn < timeline.Count && !timeline[i].Frames[f].deleted){
-                        var frameButton =  frameWrapper.transform.GetChild(layerOn);
+
+                        
+                        // var frameButton =  frameWrapper.transform.GetChild(layerOn);
+                        var newButton = Instantiate(frameButtonPrefab,frameWrapper.transform,false);
+                        var frameButton = newButton.transform.GetChild(0);
+                        
+                        // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
+                        frameButton.localPosition = new Vector3(0.00538007962f,0.449999988f - 1.1f*i,-0.963263571f);
                         frameButton.gameObject.SetActive(true);
+                        print("FRAME BUTTON ");
+                        print(frameButton);
+                        // EditorGUIUtility.PingObject(frameButton);
                         frameButton.gameObject.GetComponent<FrameButton>().setButtonCoordinate(i,f);
 
                         print("NUM BATCH POOLS: " + timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools());

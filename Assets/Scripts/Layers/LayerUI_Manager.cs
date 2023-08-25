@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Localization;
+using System;
 
 
 namespace TiltBrush.Layers
@@ -30,7 +31,7 @@ namespace TiltBrush.Layers
 
         public GameObject mainWidget;
         public List<GameObject> m_Widgets;
-
+        public float scrollOffset = 0f;
         private List<CanvasScript> m_Canvases;
 
         public Component animationUI_Manager;
@@ -42,6 +43,8 @@ namespace TiltBrush.Layers
             App.Scene.animationUI_manager.startTimeline();
         }
 
+
+       
         private void ResetUI()
         {
 
@@ -80,11 +83,16 @@ namespace TiltBrush.Layers
             Vector3 localPos = mainWidget.transform.localPosition;
             localPos.y -= i*0.2f;
 
+            print("LOCAL POS BEFORE " +  localPos.y + " " + scrollOffset);
+
+            localPos.y -= scrollOffset;
+            print("LOCAL POS AFTER " +  localPos.y);
 
             newWidget.transform.localPosition = localPos;
             m_Widgets.Add(newWidget);
 
             m_Canvases.Add(layerCanvases[i]);
+           
             }
 
             // print("START RESET UI");
@@ -121,6 +129,29 @@ namespace TiltBrush.Layers
             // print(m_Canvases.Count);
         }
 
+        private void UpdateScroll(){
+             for (int i = 0; i < m_Widgets.Count; i++)
+            {
+                Vector3 localPos = mainWidget.transform.localPosition;
+                float subtractingVal = i*0.2f + scrollOffset*0.2f;
+                localPos.y -= subtractingVal;
+
+
+                m_Widgets[i].transform.localPosition = localPos;
+
+                if (subtractingVal >= 0.2 *7 || subtractingVal < -0.2){
+                    m_Widgets[i].SetActive(false);
+                }else{
+                     m_Widgets[i].SetActive(true);
+                }
+            }
+        }
+        public void scrollDirection(bool upDirection){
+            if (scrollOffset == 0 && upDirection) return;
+            if (scrollOffset + m_Widgets.Count  <= 7 && !upDirection) return;
+            scrollOffset += (Convert.ToSingle(upDirection)*2 - 1);
+            UpdateScroll();
+        }
         private void OnLayerCanvasesUpdate()
         {
             ResetUI();
@@ -211,6 +242,7 @@ namespace TiltBrush.Layers
             var newActiveCanvas = GetCanvasFromWidget(widget);
             print(newActiveCanvas);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
+            ResetUI();
         }
 
         private void ActiveSceneChanged(CanvasScript prev, CanvasScript current)
