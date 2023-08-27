@@ -456,9 +456,12 @@ MonoBehaviour:
     m_LocalVariables: []
   mainWidget: {fileID: 8931799926426736621}
   m_Widgets: []
+  scrollOffset: 0
   animationUI_Manager: {fileID: 449684, guid: e4e1ee92a3873da4d8e7fcc9f2501591, type: 3}
   layersWidget: {fileID: 7290462010586009958, guid: 11ea7c56cbc37e944bb9fcd3cdb20b8a,
     type: 3}
+  scrollUpButton: {fileID: 257841238939133005}
+  scrollDownButton: {fileID: 7595996017880737542}
   references:
     version: 2
     RefIds: []
@@ -850,7 +853,7 @@ GameObject:
   - component: {fileID: 8492357391588942466}
   - component: {fileID: 8056510530506173245}
   m_Layer: 16
-  m_Name: 1
+  m_Name: ' Button'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1095,7 +1098,7 @@ GameObject:
   - component: {fileID: 2244064826847109577}
   - component: {fileID: 373823765688772726}
   m_Layer: 16
-  m_Name: 1
+  m_Name: ' Button'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

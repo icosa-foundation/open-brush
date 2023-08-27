@@ -31,15 +31,21 @@ namespace TiltBrush.Layers
 
         public GameObject mainWidget;
         public List<GameObject> m_Widgets;
-        public float scrollOffset = 0f;
+        public int scrollOffset = 0; 
+        public float scrollHeight = 0.2f; // Height of each element in scroll zone
         private List<CanvasScript> m_Canvases;
 
         public Component animationUI_Manager;
         public GameObject layersWidget;
 
+
+        public GameObject scrollUpButton;
+        public GameObject scrollDownButton;
+
         private void Start()
         {
             ResetUI();
+            initScroll();
             App.Scene.animationUI_manager.startTimeline();
         }
 
@@ -81,7 +87,7 @@ namespace TiltBrush.Layers
             newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
              
             Vector3 localPos = mainWidget.transform.localPosition;
-            localPos.y -= i*0.2f;
+            localPos.y -= i*scrollHeight;
 
             print("LOCAL POS BEFORE " +  localPos.y + " " + scrollOffset);
 
@@ -92,6 +98,8 @@ namespace TiltBrush.Layers
             m_Widgets.Add(newWidget);
 
             m_Canvases.Add(layerCanvases[i]);
+
+            UpdateScroll();
            
             }
 
@@ -129,27 +137,43 @@ namespace TiltBrush.Layers
             // print(m_Canvases.Count);
         }
 
+        private void initScroll(){
+            scrollOffset = 0;
+            scrollHeight =0.2f;
+        }
         private void UpdateScroll(){
+
+            print("SCROLL OFFSET " + scrollOffset);
+            print("WIDGET COUNT " +  m_Widgets.Count);
              for (int i = 0; i < m_Widgets.Count; i++)
             {
                 Vector3 localPos = mainWidget.transform.localPosition;
-                float subtractingVal = i*0.2f + scrollOffset*0.2f;
+                float subtractingVal = i*scrollHeight + scrollOffset*scrollHeight;
                 localPos.y -= subtractingVal;
 
 
                 m_Widgets[i].transform.localPosition = localPos;
 
-                if (subtractingVal >= 0.2 *7 || subtractingVal < -0.2){
+                int thisWidgetOffset = i + scrollOffset;
+
+                print("WIDGET OFFSET " +  thisWidgetOffset);
+                if (thisWidgetOffset >= 7 || thisWidgetOffset < 0){
                     m_Widgets[i].SetActive(false);
                 }else{
                      m_Widgets[i].SetActive(true);
                 }
             }
+
+            scrollUpButton.SetActive(scrollOffset != 0);
+            scrollDownButton.SetActive(scrollOffset + m_Widgets.Count  > 7);
+
+            App.Scene.animationUI_manager.updateTrackScroll(scrollOffset,scrollHeight);
+
         }
         public void scrollDirection(bool upDirection){
             if (scrollOffset == 0 && upDirection) return;
             if (scrollOffset + m_Widgets.Count  <= 7 && !upDirection) return;
-            scrollOffset += (Convert.ToSingle(upDirection)*2 - 1);
+            scrollOffset += (Convert.ToInt32(upDirection)*2 - 1);
             UpdateScroll();
         }
         private void OnLayerCanvasesUpdate()

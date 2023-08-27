@@ -525,6 +525,29 @@ namespace TiltBrush.FrameAnimation{
 
         }
 
+        public void updateTrackScroll( int scrollOffset,float scrollHeight){
+                 for (int i = 0;i < timelineFrameObjects.Count; i++){
+                 
+                        Vector3 thisPos = timelineFrameObjects[i].transform.localPosition;
+                        thisPos.y = -scrollOffset *scrollHeight;
+                        timelineFrameObjects[i].transform.localPosition = thisPos;
+
+                        GameObject frameWrapper = timelineFrameObjects[i].transform.GetChild(0).gameObject;
+
+                        for(int c = 0; c < frameWrapper.transform.GetChildCount(); c++)
+                        {
+                            int thisFrameOffset = c + scrollOffset;
+                            GameObject frameObject = frameWrapper.transform.GetChild(c).gameObject;
+
+                            if (thisFrameOffset >= 7 || thisFrameOffset < 0){
+                                frameObject.SetActive(false);
+                            }else{
+                                frameObject.SetActive(true);
+                            }
+                        }
+ 
+                 }
+        }   
         public void updateTimelineSlider(){
 
             float meshLength = timelineRef.GetComponent<TimelineSlider>().m_MeshScale.x;
