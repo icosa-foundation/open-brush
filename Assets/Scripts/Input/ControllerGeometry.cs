@@ -753,6 +753,27 @@ namespace TiltBrush
                     break;
             }
         }
+        
+        public void ShowSnipJoinToggle(bool isJoin)
+        {
+            var mat = isJoin ? Materials.ToggleJoin : Materials.ToggleSnip;
+            switch (Style)
+            {
+                case ControllerStyle.Vive:
+                case ControllerStyle.LogitechPen:
+                    Materials.Assign(PadMesh, mat);
+                    break;
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                case ControllerStyle.Neo3:
+                case ControllerStyle.Phoenix:
+                    Materials.Assign(Button01Mesh, mat);
+                    break;
+                case ControllerStyle.Wmr:
+                    Materials.Assign(PadMesh, mat);
+                    break;
+            }
+        }
 
         public void ShowPinToggle(bool isPinning)
         {
