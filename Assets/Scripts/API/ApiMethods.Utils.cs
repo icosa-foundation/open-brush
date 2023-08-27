@@ -127,6 +127,12 @@ namespace TiltBrush
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
             return WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
         }
+        
+        private static TextWidget _GetActiveTextWidget(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
+            return WidgetManager.m_Instance.ActiveTextWidgets[index].WidgetScript;
+        }
 
         private static VideoWidget _GetActiveVideo(int index)
         {
