@@ -17,7 +17,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Localization;
 using System;
-
+using UnityEditor;
 
 namespace TiltBrush.Layers
 {
@@ -28,6 +28,8 @@ namespace TiltBrush.Layers
 
         [SerializeField] private LocalizedString m_MainLayerName;
         [SerializeField] private LocalizedString m_AdditionalLayerName;
+
+        [SerializeField] public GameObject modeltrackWidget;
 
         public GameObject mainWidget;
         public List<GameObject> m_Widgets;
@@ -41,6 +43,7 @@ namespace TiltBrush.Layers
 
         public GameObject scrollUpButton;
         public GameObject scrollDownButton;
+        
 
         private void Start()
         {
@@ -66,8 +69,8 @@ namespace TiltBrush.Layers
             m_Widgets.Clear();
 
         
-
-            for (int i = 0; i < layerCanvases.Length; i++)
+            int i=0;
+            for (i = 0; i < layerCanvases.Length; i++)
             {
             var newWidget = Instantiate(layersWidget,this.gameObject.transform,false);
             // newWidget.transform.SetParent(this.gameObject.transform, false);
@@ -99,10 +102,41 @@ namespace TiltBrush.Layers
 
             m_Canvases.Add(layerCanvases[i]);
 
-            UpdateScroll();
-           
+            
+            
             }
+            if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null){
+                
+                if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels != null){
 
+                    var animatedModels = this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels;
+                    print(animatedModels.Count);
+
+                    for (int a = 0; a < animatedModels.Count; a++){
+
+                    var newWidget = Instantiate(modeltrackWidget,this.gameObject.transform,false);
+
+                    var modelPreview = Instantiate(animatedModels[a].gameObject.GetComponentInChildren<ObjModelScript>().gameObject,newWidget.gameObject.transform,false);
+                     
+                    modelPreview.transform.localScale = new Vector3(0.01f,0.01f,0.01f);
+                    modelPreview.transform.localPosition = new Vector3(-0.785000026f,-0.0680000037f,-0.141000003f);
+                     EditorGUIUtility.PingObject(modelPreview);
+
+                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = animatedModels[a].name;
+                    // Active button means hidden layer
+                    newWidget.GetComponentInChildren<FocusModelTrackButton>().SetButtonActivation(false);
+                    Vector3 localPos = mainWidget.transform.localPosition;
+                    localPos.y -=  (a + i)*scrollHeight;
+
+                    newWidget.transform.localPosition = localPos;
+                    m_Widgets.Add(newWidget);
+              
+                }
+                }
+            }
+            
+
+            UpdateScroll();
             // print("START RESET UI");
             // m_Canvases = new List<CanvasScript>();
             // var canvases = App.Scene.LayerCanvases.ToArray();

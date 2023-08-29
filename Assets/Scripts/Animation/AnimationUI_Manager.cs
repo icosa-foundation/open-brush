@@ -4,7 +4,7 @@ using UnityEngine;
 using System;
 using TMPro;
 using System.Linq;
-
+using UnityEditor;  
 
 
 namespace TiltBrush.FrameAnimation{
@@ -23,7 +23,12 @@ namespace TiltBrush.FrameAnimation{
         }
         long start = 0,current = 0, time = 0;
 
+        float frameOffset = 1.22f;
+        int trackScrollOffset = 0;
         bool playing = false;
+
+
+  
         
         
         // public struct frameLayer{
@@ -78,8 +83,9 @@ namespace TiltBrush.FrameAnimation{
         [SerializeField] public GameObject deleteFrameButton;
         [SerializeField] public GameObject frameButtonPrefab;
 
+   
         [SerializeField] public GameObject layersPanel;
-       
+
 
         bool animationMode = true;
 
@@ -93,8 +99,12 @@ namespace TiltBrush.FrameAnimation{
 
         public List<Track> timeline;
 
+        public struct animatedModel{
+            public GameObject gameObject;
+            public string name;
+        }
 
-        public List<GameObject> animatedModels;
+        public List<animatedModel> animatedModels;
 
 
         // List<CanvasScript> Frames = new List<CanvasScript>();
@@ -117,6 +127,7 @@ namespace TiltBrush.FrameAnimation{
         }
         public void startTimeline(){
             timeline = new List<Track>();
+            animatedModels = new List<animatedModel>();
 
             Track mainTrack = newTrack();
             Frame originFrame = newFrame(App.Scene.m_MainCanvas);
@@ -185,9 +196,15 @@ namespace TiltBrush.FrameAnimation{
         }
 
 
-        public void addAnimatedModel(GameObject newModel){
+        public void addAnimatedModel(GameObject gameObject,string modelname){
+
+            animatedModel newModel;
+            newModel.gameObject = gameObject;
+            newModel.name = modelname;
             animatedModels.Add(newModel);
-            print("OBJ POSITIION: " + newModel.transform.localPosition);
+            print("OBJ POSITIION: " + newModel.gameObject.transform.localPosition);
+
+
         }
         public void AddLayerRefresh(CanvasScript canvasAdding){
 
@@ -237,7 +254,7 @@ namespace TiltBrush.FrameAnimation{
 
             }
             timeline.Add(addingTrack);
-
+       
 
         }
 
@@ -338,7 +355,7 @@ namespace TiltBrush.FrameAnimation{
 
                  timeline[canvasIndex.Item2] = thisTrack;
             }
-
+           
         }
 
         public void MarkLayerAsDeleteRefresh(CanvasScript canvas){
@@ -366,6 +383,7 @@ namespace TiltBrush.FrameAnimation{
                 } 
                 timeline[canvasIndex.Item2] = thisTrack;
             }
+             updateTrackScroll();
         }
 
 
@@ -407,6 +425,7 @@ namespace TiltBrush.FrameAnimation{
                  
                 } 
             }
+ 
         }
 
         public void DestroyLayerRefresh(CanvasScript canvasAdding){
@@ -444,6 +463,9 @@ namespace TiltBrush.FrameAnimation{
 
  
             for (int f = 0; f < timeline[0].Frames.Count; f++){
+
+
+
          
 
                 GameObject newNotch =  Instantiate(timelineNotchPrefab);
@@ -499,7 +521,7 @@ namespace TiltBrush.FrameAnimation{
                         var frameButton = newButton.transform.GetChild(0);
                         
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
-                        frameButton.localPosition = new Vector3(0.00538007962f,0.449999988f - 1.1f*i,-0.963263571f);
+                        frameButton.localPosition = new Vector3(0.00538007962f,0.449999988f - frameOffset*i,-0.963263571f);
                         frameButton.gameObject.SetActive(true);
                         print("FRAME BUTTON ");
                         print(frameButton);
@@ -520,24 +542,41 @@ namespace TiltBrush.FrameAnimation{
  
 
             }
+            
+            
+            
+            
             updateTimelineSlider();
             updateTimelineNob();
-
+            updateTrackScroll();
         }
 
         public void updateTrackScroll( int scrollOffset,float scrollHeight){
+
+   
+            trackScrollOffset = scrollOffset;
                  for (int i = 0;i < timelineFrameObjects.Count; i++){
                  
-                        Vector3 thisPos = timelineFrameObjects[i].transform.localPosition;
-                        thisPos.y = -scrollOffset *scrollHeight;
-                        timelineFrameObjects[i].transform.localPosition = thisPos;
 
+                        
                         GameObject frameWrapper = timelineFrameObjects[i].transform.GetChild(0).gameObject;
+
+             
+
 
                         for(int c = 0; c < frameWrapper.transform.GetChildCount(); c++)
                         {
-                            int thisFrameOffset = c + scrollOffset;
+                       
+
+                      
                             GameObject frameObject = frameWrapper.transform.GetChild(c).gameObject;
+
+                            Vector3 thisPos = frameObject.transform.localPosition;
+                            thisPos.y = -scrollOffset *frameOffset;
+                            frameObject.transform.localPosition = thisPos;
+
+
+                            int thisFrameOffset = c + scrollOffset;
 
                             if (thisFrameOffset >= 7 || thisFrameOffset < 0){
                                 frameObject.SetActive(false);
@@ -548,6 +587,49 @@ namespace TiltBrush.FrameAnimation{
  
                  }
         }   
+
+        public void updateTrackScroll(){
+
+               int scrollOffsetLocal = trackScrollOffset;
+               print("SCROLLOFFSET HERE "+ scrollOffsetLocal);
+                 for (int i = 0;i < timelineFrameObjects.Count; i++){
+                 
+
+                        
+                        GameObject frameWrapper = timelineFrameObjects[i].transform.GetChild(0).gameObject;
+
+                        EditorGUIUtility.PingObject(frameWrapper);
+
+                        print("START LOOP == " + frameWrapper.transform.GetChildCount());
+                        for(int c = 0; c < frameWrapper.transform.GetChildCount(); c++)
+                        {
+                       
+
+                      
+                            GameObject frameObject = frameWrapper.transform.GetChild(c).gameObject;
+
+                            Vector3 thisPos = frameObject.transform.localPosition;
+                            thisPos.y = -scrollOffsetLocal *frameOffset;
+                            frameObject.transform.localPosition = thisPos;
+
+
+                            int thisFrameOffset = c + scrollOffsetLocal;
+
+                            print("HERE : " + c + "  " + thisFrameOffset );
+                            print(thisFrameOffset >= 7);
+                            print(thisFrameOffset < 0);
+                            if (thisFrameOffset >= 7 || thisFrameOffset < 0){
+                                print("CHOOSING FALSE");
+                                frameObject.SetActive(false);
+                            }else{
+                                print("CHOOSING TRUE");
+                                frameObject.SetActive(true);
+                            }
+                        }
+                        print("END LOOP == ");
+ 
+                 }
+        }
         public void updateTimelineSlider(){
 
             float meshLength = timelineRef.GetComponent<TimelineSlider>().m_MeshScale.x;
@@ -972,8 +1054,8 @@ namespace TiltBrush.FrameAnimation{
                 focusFrame( getFrameOn());
            
 
-                foreach (GameObject model in animatedModels){
-                        model.transform.localPosition = new Vector3(frameOn, 0, 0);
+                foreach (animatedModel model in animatedModels){
+                        model.gameObject.transform.localPosition = new Vector3(frameOn, 0, 0);
                         
                 }
 

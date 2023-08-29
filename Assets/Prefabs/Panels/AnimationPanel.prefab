@@ -521,9 +521,12 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
+  modeltrackWidget: {fileID: 7290462010586009958, guid: afb84f7275415e647bdfd88525bbe26c,
+    type: 3}
   mainWidget: {fileID: 8931799926426736621}
   m_Widgets: []
   scrollOffset: 5
+  scrollHeight: 0.2
   animationUI_Manager: {fileID: 511419024171822062}
   layersWidget: {fileID: 7290462010586009958, guid: ec5273ee748c3514297bef089ac0fb2e,
     type: 3}
@@ -2080,7 +2083,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.075, y: -1.44}
+  m_AnchoredPosition: {x: 0.075, y: -1.557}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!65 &9060603587226625431
