@@ -67,7 +67,8 @@ namespace TiltBrush
             CreateStemNodes();
             UpdateScale(0.0f);
 
-            SetHintText(m_HintDescription.GetLocalizedString());
+            if(!string.IsNullOrEmpty(m_HintDescription.TableEntryReference.Key))
+                SetHintText(m_HintDescription.GetLocalizedString());
         }
 
         public void Activate(bool bActivate)
