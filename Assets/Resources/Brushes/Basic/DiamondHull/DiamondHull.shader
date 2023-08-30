@@ -24,8 +24,6 @@ Shader "Brush/Special/DiamondHull" {
     _Opacity ("Opacity", Range(0, 1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
-
-
   }
 
   SubShader {
@@ -49,7 +47,7 @@ Shader "Brush/Special/DiamondHull" {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       struct Input {
         float4 color : Color;
@@ -181,8 +179,7 @@ Shader "Brush/Special/DiamondHull" {
       // Input color is srgb
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
 
         // Hardcode some shiny specular values
         o.Smoothness = .8;
@@ -205,7 +202,6 @@ Shader "Brush/Special/DiamondHull" {
         o.Emission *= _Opacity;
         o.Albedo *= _Opacity;
         o.Specular *= _Opacity;
-        o.Smoothness *= _Opacity;
       }
     ENDCG
   }

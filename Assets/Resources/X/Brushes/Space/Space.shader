@@ -25,7 +25,6 @@ Properties {
   _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
 }
 
 Category {
@@ -76,7 +75,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       v2f vert (appdata_t v)
       {
@@ -94,8 +93,9 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR
       {
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
         float analog_spread = .1;  // how far the analogous hues are from the primary
         float gain = 10;
@@ -148,7 +148,7 @@ Category {
         color = SrgbToNative(color);
         color = encodeHdr(color.rgb);
 
-        return color * _Opacity;
+        return color;
       }
       ENDCG
     }

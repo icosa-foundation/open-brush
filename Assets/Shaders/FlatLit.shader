@@ -21,6 +21,8 @@ Properties {
   _MainTex("Texture", 2D) = "white" {}
   _Smoothness("Smoothness", Range(0, 1)) = 0.5
   _Metallic("Metallic", Range(0, 1)) = 0
+
+  _Opacity("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -38,6 +40,7 @@ SubShader {
     #pragma multi_compile _ SHADOWS_SCREEN
     #pragma target 4.0
 
+    #include "Assets/Shaders/Include/Brush.cginc"
     #include "AutoLight.cginc"
     #include "UnityPBSLighting.cginc"
 
@@ -48,6 +51,7 @@ SubShader {
 
     uniform float _ClipStart;
     uniform float _ClipEnd;
+    uniform half _Opacity;
 
     struct appdata {
       float4 vertex : POSITION;
@@ -103,8 +107,10 @@ SubShader {
     }
 
     float4 frag(v2f i) : SV_TARGET {
-      float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-      clip(completion);
+
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      if (_Opacity < 1 && Dither8x8(i.pos.xy) >= _Opacity) discard;
+
       // Apply shadows
       UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
       float3 lightColor = _LightColor0.rgb * attenuation;

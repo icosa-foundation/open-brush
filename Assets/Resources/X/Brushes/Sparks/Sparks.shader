@@ -22,15 +22,14 @@ Properties {
 	_NumSides ("Number of Sides", Float) = 5
 	_Speed ("Speed", Float) = 1
 
-	  [Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
-  _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
-  _TimeBlend("Time Blend", Float) = 0
-  _TimeSpeed("Time Speed", Float) = 1.0
+	[Toggle] _OverrideTime ("Overriden Time", Float) = 0.0
+    _TimeOverrideValue("Time Override Value", Vector) = (0,0,0,0)
+    _TimeBlend("Time Blend", Float) = 0
+    _TimeSpeed("Time Speed", Float) = 1.0
 
     _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
 }
 
 Category {
@@ -85,7 +84,7 @@ Category {
 
             uniform float _ClipStart;
 			uniform float _ClipEnd;
-			uniform float _Opacity;
+			uniform half _Opacity;
 
 			v2f vert (appdata_t v)
 			{
@@ -119,8 +118,8 @@ Category {
 
 			fixed4 frag (v2f i) : COLOR
 			{
-				float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-				clip(completion);
+                if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+                if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
 				// Distort U coord to taste. This makes the effect to "slow down" towards the end of the stroke
 				// by clumping UV's closer together toward the beginning of the stroke

@@ -25,7 +25,6 @@ Properties {
   _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
 }
 
 SubShader {
@@ -65,6 +64,7 @@ SubShader {
     float3 viewDir;
     float3 worldNormal;
     uint id : SV_VertexID;
+    float4 screenPos;
     INTERNAL_DATA
   };
 
@@ -72,7 +72,7 @@ SubShader {
 
   uniform float _ClipStart;
   uniform float _ClipEnd;
-  uniform float _Opacity;
+  uniform half _Opacity;
 
   void vert (inout appdata i, out Input o) {
     PrepForOds(i.vertex);
@@ -84,8 +84,9 @@ SubShader {
   // Input color is srgb
   void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-    float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-    clip(completion);
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    // It's hard to get alpha curves right so use dithering for hdr shaders
+    if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
     o.Smoothness = .8;
     o.Specular = .05;

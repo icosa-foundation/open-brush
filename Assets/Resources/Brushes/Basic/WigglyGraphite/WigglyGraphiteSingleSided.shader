@@ -54,6 +54,7 @@ Shader "Brush/Special/WigglyGraphiteSingleSided" {
       }
 
       void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
+
         fixed2 scrollUV = IN.uv_MainTex;
 
         // Animate flipbook motion. Currently tuned to taste.

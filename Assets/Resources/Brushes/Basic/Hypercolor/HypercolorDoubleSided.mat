@@ -30,18 +30,25 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ClipEnd: -1
+    - _ClipStart: 0
     - _Cutoff: 0.5
     - _DisplacementIntensity: 0.1
     - _EmissionGain: 0.5
     - _EmissionScroll1: 0
     - _EmissionScroll2: 0
     - _InvFade: 1
+    - _Opacity: 1
+    - _OverrideTime: 0
     - _Scroll1: 20
     - _Scroll2: 0
     - _Shininess: 0.5
+    - _TimeBlend: 0
+    - _TimeSpeed: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.27450982, g: 0.27450982, b: 0.27450982, a: 1}
+    - _TimeOverrideValue: {r: 0, g: 0, b: 0, a: 0}
     - _TintColor: {r: 0.61764705, g: 0.61764705, b: 0.61764705, a: 1}
   m_BuildTextureStacks: []
 --- !u!1002 &2100001

@@ -25,7 +25,6 @@ Properties {
   _Opacity ("Opacity", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
-
 }
 
 Category {
@@ -56,7 +55,7 @@ Category {
 
       uniform float _ClipStart;
       uniform float _ClipEnd;
-      uniform float _Opacity;
+      uniform half _Opacity;
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -92,8 +91,9 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : COLOR {
 
-        float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
+
 
         float scale1 = 3;
         float scale2 = 3;

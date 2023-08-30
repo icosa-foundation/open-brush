@@ -20,6 +20,8 @@ Shader "Brush/StandardSingleSided" {
     _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
     _BumpMap ("Normalmap", 2D) = "bump" {}
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+
+    _Opacity("Opacity", Range(0,1)) = 1
     _ClipStart("Clip Start", Float) = 0
     _ClipEnd("Clip End", Float) = -1
   }
@@ -33,7 +35,7 @@ Shader "Brush/StandardSingleSided" {
     Cull Back
 
     CGPROGRAM
-      #pragma target 3.0
+      #pragma target 4.0
       #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
@@ -45,14 +47,17 @@ Shader "Brush/StandardSingleSided" {
         float2 uv_BumpMap;
         float4 color : Color;
         uint id : SV_VertexID;
+        float4 screenPos;
       };
 
       sampler2D _MainTex;
       sampler2D _BumpMap;
       fixed4 _Color;
       half _Shininess;
+
   	  uniform float _ClipStart;
 	    uniform float _ClipEnd;
+      uniform half _Opacity;
 
       struct appdata_full_plus_id {
         float4 vertex : POSITION;
@@ -77,8 +82,8 @@ Shader "Brush/StandardSingleSided" {
 
       void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-        float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-        clip(completion);
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
         fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
         o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
@@ -107,6 +112,7 @@ Shader "Brush/StandardSingleSided" {
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -140,8 +146,10 @@ Shader "Brush/StandardSingleSided" {
 
         fixed _Cutoff;
         half _MipScale;
+
         uniform float _ClipStart;
         uniform float _ClipEnd;
+        uniform half _Opacity;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -170,8 +178,8 @@ Shader "Brush/StandardSingleSided" {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -253,6 +261,7 @@ Shader "Brush/StandardSingleSided" {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
+        uniform half _Opacity;
 
         v2f vert (appdata v) {
           v2f o;
@@ -273,8 +282,8 @@ Shader "Brush/StandardSingleSided" {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a = tex2D(_MainTex, i.uv).a * col.a;
@@ -318,6 +327,7 @@ Shader "Brush/StandardSingleSided" {
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -349,6 +359,7 @@ Shader "Brush/StandardSingleSided" {
 
         uniform float _ClipStart;
         uniform float _ClipEnd;
+        uniform half _Opacity;
 
         float ComputeMipLevel(float2 uv) {
           float2 dx = ddx(uv);
@@ -368,8 +379,8 @@ Shader "Brush/StandardSingleSided" {
 
         fixed4 frag (v2f i, fixed vface : VFACE) : SV_Target {
 
-          float completion = _ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd) ? 1 : -1;
-          clip(completion);
+          if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+
 
           fixed4 col = i.color;
           col.a *= tex2D(_MainTex, i.uv).a;
@@ -401,18 +412,30 @@ Shader "Brush/StandardSingleSided" {
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
       #pragma target 3.0
 
+      #include "Assets/Shaders/Include/Brush.cginc"
+
       sampler2D _MainTex;
       fixed4 _Color;
+
+      uniform float _ClipStart;
+	    uniform float _ClipEnd;
+      uniform half _Opacity;
 
       struct Input {
         float2 uv_MainTex;
         float4 color : COLOR;
+        uint id : SV_VertexID;
+        float4 screenPos;
       };
 
       void vert (inout appdata_full v) {
       }
 
       void surf (Input IN, inout SurfaceOutput o) {
+
+        if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+        if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
+
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
         o.Albedo = c.rgb * IN.color.rgb;
         o.Alpha = c.a * IN.color.a;

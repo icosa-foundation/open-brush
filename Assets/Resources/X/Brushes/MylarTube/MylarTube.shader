@@ -25,6 +25,7 @@ Properties {
 	_TimeBlend("Time Blend", Float) = 0
 	_TimeSpeed("Time Speed", Float) = 1.0
 
+	_Opacity("Opacity", Range(0,1)) = 1.0
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -34,7 +35,7 @@ Category {
     SubShader {
 
 		CGPROGRAM
-		#pragma target 3.0
+		#pragma target 4.0
 		#pragma surface surf StandardSpecular vertex:vert addshadow
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
@@ -49,12 +50,14 @@ Category {
 
 		uniform float _ClipStart;
 		uniform float _ClipEnd;
+		uniform half _Opacity;
 
 		struct Input {
 			float4 color : Color;
 			float2 tex : TEXCOORD0;
 			float3 viewDir;
 			uint id : SV_VertexID;
+			float4 screenPos;
 			INTERNAL_DATA
 		};
 
@@ -93,8 +96,8 @@ Category {
 		// Input color is srgb
 		void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
 
-			float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-	        clip(completion);
+			if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+			if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
 		    o.Albedo =  _Color.rgb * IN.color.rgb;
 			//o.Emission =  _Color.rgb * IN.color.rgb;

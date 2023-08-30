@@ -19,6 +19,7 @@ Shader "Brush/LoftedHueShift" {
 		_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 		_MainTex("Base (RGB) TransGloss (A)", 2D) = "white" {}
 
+		_Opacity("Opacity", Range(0,1)) = 1
 		_ClipStart("Clip Start", Float) = 0
 	    _ClipEnd("Clip End", Float) = -1
 	}
@@ -48,7 +49,7 @@ Shader "Brush/LoftedHueShift" {
 
 			uniform float _ClipStart;
 			uniform float _ClipEnd;
-
+			uniform half _Opacity;
 
 			struct appdata_full_plus_id {
 				float4 vertex : POSITION;
@@ -71,8 +72,8 @@ Shader "Brush/LoftedHueShift" {
 
 			void surf(Input IN, inout SurfaceOutputStandardSpecular o) {
 
-				float completion = _ClipEnd < 0 || (IN.id > _ClipStart && IN.id < _ClipEnd) ? 1 : -1;
-		        clip(completion);
+				if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+				if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
 				fixed4 tex = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
 

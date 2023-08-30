@@ -16,6 +16,8 @@ Shader "Brush/DiffuseOpaqueDoubleSided" {
 
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+
+  _Opacity("Opacity", Range(0,1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
 }
@@ -36,8 +38,10 @@ SubShader {
   #include "Assets/Shaders/Include/MobileSelection.cginc"
 
   fixed4 _Color;
-	uniform float _ClipStart;
-	uniform float _ClipEnd;
+
+  uniform float _ClipStart;
+  uniform float _ClipEnd;
+  uniform half _Opacity;
 
   struct appdata {
     float4 vertex : POSITION;
@@ -47,6 +51,7 @@ SubShader {
     half3 normal : NORMAL;
     fixed4 color : COLOR;
     float4 tangent : TANGENT;
+    uint id : SV_VertexID;
     UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
@@ -55,6 +60,8 @@ SubShader {
     float2 texcoord : TEXCOORD0;
     float4 color : COLOR;
     fixed vface : VFACE;
+    uint id : SV_VertexID;
+    float4 screenPos;
   };
 
   void vert(inout appdata v, out Input o) {
@@ -62,13 +69,13 @@ SubShader {
     PrepForOds(v.vertex);
     v.color = TbVertToNative(v.color);
     o.vertex = v.vertex;
-    o.texcoord = v.texcoord;
+    o.id = v.id;
   }
 
   void surf (Input IN, inout SurfaceOutput o) {
 
-      float completion = _ClipEnd < 0 || (IN.texcoord.x > _ClipStart && IN.texcoord.x < _ClipEnd) ? 1 : -1;
-      clip(completion);
+    if (_ClipEnd > 0 && !(IN.id.x > _ClipStart && IN.id.x < _ClipEnd)) discard;
+    if (_Opacity < 1 && Dither8x8(IN.screenPos.xy / IN.screenPos.w * _ScreenParams) >= _Opacity) discard;
 
     o.Albedo = _Color * IN.color.rgb;
     o.Normal = float3(0,0,IN.vface);

@@ -58,8 +58,20 @@ namespace TiltBrush
             set => ApiMethods.Brush(value);
         }
 
-        [LuaDocsDescription("All available brush types")]
-        public static List<string> types => BrushCatalog.m_Instance.AllBrushes.Select(b => b.Description).ToList();
+        [LuaDocsDescription("All brush types available via the UI")]
+        public static List<string> types => BrushCatalog.m_Instance.GetTagFilteredBrushList().Select(b => b.Description).ToList();
+
+        [LuaDocsDescription("Brush types filtered by chosen tags")]
+        [LuaDocsParameter("includeTags", "Include brushes that have any of these tags")]
+        [LuaDocsParameter("excludeTags", "Exclude brushes that have any of these tags")]
+        [LuaDocsExample("brushList = Brush:GetTypes({\"audioreactive\"}, {\"particle\"})")]
+        [LuaDocsReturnValue("A filtered list of brush types")]
+        public static List<string> GetTypes(List<string> includeTags, List<string> excludeTags)
+        {
+            return BrushCatalog.m_Instance.GetTagFilteredBrushList(includeTags, excludeTags)
+                .Select(b => b.Description).ToList();
+        }
+
 
         [LuaDocsDescription("How fast the brush is currently moving")]
         public static float speed => PointerManager.m_Instance.MainPointer.MovementSpeed;

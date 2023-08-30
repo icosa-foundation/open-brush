@@ -15,14 +15,13 @@
 Shader "Brush/Special/Faceted" {
 Properties {
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
-
-  _Opacity("Opacity", Range(0,1)) = 1
-
   _ColorX("Color X", Color) = (1,0,0,1)
   _ColorY("Color Y", Color) = (0,1,0,1)
   _ColorZ("Color Z", Color) = (0,0,1,1)
+
+  _Opacity("Opacity", Range(0,1)) = 1
+	_ClipStart("Clip Start", Float) = 0
+	_ClipEnd("Clip End", Float) = -1
 }
 
 SubShader {
@@ -42,9 +41,10 @@ SubShader {
     fixed4 _ColorX;
     fixed4 _ColorY;
     fixed4 _ColorZ;
+
     uniform float _ClipStart;
     uniform float _ClipEnd;
-    uniform float _Opacity;
+    uniform half _Opacity;
 
     struct appdata_t {
       float4 vertex : POSITION;
@@ -76,8 +76,8 @@ SubShader {
 
     fixed4 frag (v2f i) : SV_Target
     {
-      if (_ClipEnd < 0 || (i.id > _ClipStart && i.id < _ClipEnd)) discard;
-      if (_Opacity < 1 && Dither8x8(i.vertex.xy) > _Opacity) discard;
+      if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
+      if (_Opacity < 1 && Dither8x8(i.vertex.xy) >= _Opacity) discard;
 
       float3 n = normalize(cross(ddy(i.worldPos), ddx(i.worldPos)));
       i.color.xyz = float3(
