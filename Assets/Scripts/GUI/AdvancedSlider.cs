@@ -16,7 +16,6 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -32,6 +31,8 @@ namespace TiltBrush
 
     public class AdvancedSlider : BaseSlider
     {
+        public int m_DisplayDecimalPlaces = 1;
+
         public int m_Param1;
         public int m_Param2;
 
@@ -45,6 +46,24 @@ namespace TiltBrush
         public float Min => m_SafeLimits ? m_safeMin : m_unsafeMin;
         public float Max => m_SafeLimits ? m_safeMax : m_unsafeMax;
 
+        private bool m_EatPadInput;
+
+        public void SetMax(float max)
+        {
+            SetMax(max, max);
+        }
+
+        public override float GetCurrentValue()
+        {
+            float val = base.GetCurrentValue();
+            if (SliderType == SliderTypes.Int)
+            {
+                val = Mathf.RoundToInt(val);
+            }
+            return val;
+
+        }
+
         public void SetMax(float safeMax, float unsafeMax)
         {
             maxText.text = FormatValue(safeMax);
@@ -56,6 +75,11 @@ namespace TiltBrush
                 m_CurrentValue = safeMax;
                 SetSliderPositionToReflectValue();
             }
+        }
+
+        public void SetMin(float min)
+        {
+            SetMin(min, min);
         }
 
         public void SetMin(float safeMin, float unsafeMin)
@@ -111,11 +135,12 @@ namespace TiltBrush
         {
             if (SliderType == SliderTypes.Int)
             {
-                return Mathf.FloorToInt(val).ToString();
+                return Mathf.RoundToInt(val).ToString();
             }
             else if (SliderType == SliderTypes.Float)
             {
-                return (Mathf.Round(val * 10) / 10).ToString();
+                var rounding = Mathf.Pow(10, m_DisplayDecimalPlaces);
+                return (Mathf.Round(val * rounding) / rounding).ToString();
             }
 
             return "";
@@ -178,6 +203,38 @@ namespace TiltBrush
             minText.text = FormatValue(Min);
             maxText.text = FormatValue(Max);
             _UpdateValueAbsolute(previousValue);
+        }
+
+
+        override public void HasFocus(RaycastHit hitInfo)
+        {
+            base.HasFocus(hitInfo);
+
+            if (m_EatPadInput && !(InputManager.Brush.GetPadTouch()
+                    || InputManager.Brush.GetThumbStickTouch()))
+            {
+                m_EatPadInput = false;
+            }
+
+            if (!m_EatPadInput)
+            {
+                if (App.VrSdk.AnalogIsStick(InputManager.ControllerName.Brush))
+                {
+                    float v = InputManager.m_Instance.GetBrushScrollAmount();
+                    Action callback;
+                    if (Mathf.Abs(v) > 0.05f)
+                    {
+                        var newValue = m_CurrentValue + (v * 0.01f);
+                        UpdateValue(newValue);
+                        callback = () => InputManager.Brush.Geometry.ShowSliderValue(true, m_CurrentValue);
+                    }
+                    else
+                    {
+                        callback = () => InputManager.Brush.Geometry.ShowSliderValue(false, m_CurrentValue);
+                    }
+                    m_Manager.GetPanelForPopUps().m_OverrideControllerMaterial = callback;
+                }
+            }
         }
     }
 } // namespace TiltBrush

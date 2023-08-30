@@ -27,6 +27,7 @@
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#unity-newtonsoft",
     "org.nuget.sharpziplib": "1.3.1",
     "tw.hoba.isomesh": "https://github.com/shinabebel/IsoMesh.git#upm",
+    "tv.superla.radiancehdr": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
