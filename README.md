@@ -1,11 +1,11 @@
 # Open Brush - Tilt Brush Evolved
 
 [![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
-[![All GitHub releases](https://img.shields.io/github/downloads/icosa-gallery/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-gallery/open-brush/releases/latest)
-[![Twitter](https://img.shields.io/badge/follow-%40IcosaGallery-blue.svg?style=flat&logo=twitter)](https://twitter.com/IcosaGallery)
+[![All GitHub releases](https://img.shields.io/github/downloads/icosa-foundation/open-brush/total?label=GitHub%20downloads)](https://github.com/icosa-foundation/open-brush/releases/latest)
+[![Twitter](https://img.shields.io/badge/follow-%40openbrushapp-blue.svg?style=flat&logo=twitter)](https://twitter.com/openbrushapp)
 [![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
-![Current Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush)
-![Prerelease Version](https://img.shields.io/github/v/release/icosa-gallery/open-brush?include_prereleases&label=prerelease)
+![Current Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush)
+![Prerelease Version](https://img.shields.io/github/v/release/icosa-foundation/open-brush?include_prereleases&label=prerelease)
 
 [![Open Brush Banner](open-brush.png)](https://openbrush.app)
 
@@ -17,7 +17,7 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 
 [User Guide](https://docs.openbrush.app/)  
 [Developer Notes](https://docs.openbrush.app/developer-notes)  
-[Roadmap](https://github.com/orgs/icosa-gallery/projects/1)  
+[Roadmap](https://github.com/orgs/icosa-foundation/projects/1)  
 [Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
 [List of tutorials, write-ups and other things from the community](https://docs.google.com/document/d/1gjoYp4y-1qlE3a7fvXVxGR3ioj3nMfgprmTHQ-bpq0k/)  
 **[Support us on Open Collective!](https://opencollective.com/icosa)**  
@@ -31,7 +31,7 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 - [Viveport Desktop](https://www.viveport.com/f1f3d00b-cf8a-443f-825e-4fea2dd3b005)
 - [itch.io](https://openbrush.itch.io/openbrush)
 ### GitHub
-- [Formal GitHub Releases](https://github.com/icosa-gallery/open-brush/releases/latest)
+- [Formal GitHub Releases](https://github.com/icosa-foundation/open-brush/releases/latest)
 - [Bleeding Edge GitHub Releases](#bleeding-edge-releases)
 
 
@@ -43,13 +43,13 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 
 ## Bleeding Edge Releases
 
-Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-gallery/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
+Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-foundation/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
 
 These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
 
 Note that the "experimental" builds contain experimental brushes, and sketches created using the experimental brushes may appear differently when loaded in the official build of Open Brush!
 
-In addition, there is also a version created for  Windows Monoscopic that is listed as an "Artifact" of the Github Actions, however, this is intended only for developers, and should not be used by general users. You can find it by browsing to the [commit list](https://github.com/icosa-gallery/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop OpenXR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. 
+In addition, there is also a version created for  Windows Monoscopic that is listed as an "Artifact" of the Github Actions, however, this is intended only for developers, and should not be used by general users. You can find it by browsing to the [commit list](https://github.com/icosa-foundation/open-brush/commits/main), and then clicking on the green check mark below the title (next to the XXX committed XXX ago), and scroll to the build you want, and click on **Details**. Then, towards the upper right corner, click on **Artifacts** and click on the name of the build. Unzip the downloaded file, and either run the executable (Desktop OpenXR/Monoscopic) or install the apk (Android Oculus) using `adb install com.Icosa.OpenBrush-github.apk`. 
 
 ## Important note from the original Tilt Brush README
 
