@@ -8,7 +8,6 @@
     "com.unity.editorcoroutines": "1.0.0",
     "com.unity.formats.usd": "1.0.3-preview.2",
     "com.unity.ide.rider": "3.0.24",
-    "com.unity.ide.vscode": "1.2.5",
     "com.unity.ide.visualstudio": "2.0.20",
     "com.unity.inputsystem": "https://github.com/icosa-mirror/com.unity.inputsystem.git#open-brush",
     "com.unity.localization": "1.4.2",
@@ -88,18 +87,6 @@
       "url": "https://npm.developer.oculus.com",
       "scopes": [
         "com.meta.xr.sdk"
-      ]
-    },
-    {
-      "name": "package.openupm.com",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.openupm"
-    "com.unity.ide.rider": "3.0.24",
-    "com.unity.ide.visualstudio": "2.0.17",
-    "com.unity.ide.vscode": "1.2.5",
-    "com.unity.vectorgraphics": "https://github.com/icosa-gallery/com.unity.vectorgraphics.git#open-brush",
-    "moonsharp": "https://github.com/nothke/moonsharp-unity-upm.git",
       ]
     },
     {
