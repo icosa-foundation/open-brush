@@ -23,6 +23,7 @@ namespace TiltBrush
             Models,
             AddAssets,
             Videos,
+            BackgroundImages
         }
 
         public Type m_ButtonType;
