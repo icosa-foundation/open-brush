@@ -4,7 +4,7 @@
 
 The best place to look currently would be either:
 
-1. The [issues](https://github.com/icosa-gallery/open-brush/issues)
+1. The [issues](https://github.com/icosa-foundation/open-brush/issues)
 2. The [Trello cards](https://trello.com/b/jItetqYe/open-brush)
 3. Take a look at some of the [experimental branches](https://icosa.gitbook.io/open-brush/alternate-and-experimental-builds) that might need assistance
 4. Join the Discord and look at the [feature requests](https://discord.gg/BXYUKzhS)
