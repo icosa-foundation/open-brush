@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -157,11 +158,11 @@ namespace TiltBrush
             {
                 if (m_Strokes != null)
                 {
-                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes);
+                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
                 }
                 if (m_Widgets != null)
                 {
-                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets);
+                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets, m_TargetCanvas);
                 }
             }
             else
@@ -211,7 +212,7 @@ namespace TiltBrush
             {
                 if (m_Strokes != null)
                 {
-                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
+                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes);
                 }
                 if (m_Widgets != null)
                 {
