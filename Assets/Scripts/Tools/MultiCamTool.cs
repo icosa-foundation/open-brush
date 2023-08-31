@@ -746,6 +746,12 @@ namespace TiltBrush
                                 StartCoroutine(TakeScreenshotAsync(saveName));
                             }
                             break;
+                        case MultiCamStyle.Depth:
+                            if (FileUtils.CheckDiskSpaceWithError(saveName))
+                            {
+                                StartCoroutine(TakeScreenshotPlusDepthAsync(saveName));
+                            }
+                            break;
                         case MultiCamStyle.AutoGif:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
@@ -1792,7 +1798,7 @@ namespace TiltBrush
         // Snapshot
         //
 
-        public IEnumerator TakeScreenshotAsync(string saveName)
+        public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1840,7 +1846,7 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp);
+                    rMgr.RenderToTexture(tmp, renderDepth: renderDepth);
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
@@ -1883,6 +1889,12 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerator TakeScreenshotPlusDepthAsync(string saveName)
+        {
+            yield return TakeScreenshotAsync(saveName);
+            yield return TakeScreenshotAsync($"{saveName}_depth", true);
+        }
+        
         //
         // TimeGif
         //
