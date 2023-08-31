@@ -3243,6 +3243,10 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 140576377201754112
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_SNIP_JOIN
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
