@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using System.Text;
 using UnityEngine;
 
@@ -46,7 +47,10 @@ namespace TiltBrush
     {
         public static bool Export(string outputFile)
         {
-            ExportUtils.SceneStatePayload payload = ExportCollector.GetExportPayload(AxisConvention.kVrml);
+            ExportUtils.SceneStatePayload payload = ExportCollector.GetExportPayload(
+            AxisConvention.kVrml, 
+                outputDirectory: Path.GetDirectoryName(outputFile)
+            );
 
             var buffer = new StringBuilder("#VRML V2.0 utf8\n");
             AppendSceneHeader(ref buffer);

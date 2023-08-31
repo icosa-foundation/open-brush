@@ -39,7 +39,7 @@ namespace TiltBrush
         public static SceneStatePayload GetExportPayload(
             AxisConvention axes,
             bool includeLocalMediaContent = false,
-            string temporaryDirectory = null)
+            string temporaryDirectory = null, string outputDirectory = null)
         {
             UnityEngine.Profiling.Profiler.BeginSample("GetSceneStatePayload");
 
@@ -101,9 +101,57 @@ namespace TiltBrush
                         payload.imageQuads.Add(BuildImageQuadPayload(payload, image, material, idx));
                     }
                 }
-
-                BuildEmptyXforms(payload, notImages);
                 BuildEmptyXforms(payload, notExportable);
+
+                // Text Widgets
+                var (textWidgets, notTextOrImage) = notImages.Partition(w => w is TextWidget);
+                foreach (var (widget, idx) in textWidgets.WithIndex())
+                {
+                    var tw = (TextWidget)widget;
+                    var textMesh = tw.m_TextMeshPro;
+                    var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, 0);
+                    string texturePath = $"{outputDirectory}/{guid}.png";
+                    
+                    int width = Mathf.RoundToInt(textMesh.renderedWidth * 256);
+                    int height = Mathf.RoundToInt(textMesh.renderedHeight * 256);
+                    
+                    Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
+                    RenderTexture renderTexture = new RenderTexture(width, height, 24);
+                    tempCamera.targetTexture = renderTexture;
+    
+                    // Adjust camera's position and rotation to capture the text mesh
+                    tempCamera.orthographic = true;
+                    tempCamera.orthographicSize = textMesh.renderedHeight;
+                    tempCamera.aspect = tw.AspectRatio.Value;
+                    tempCamera.transform.position = textMesh.transform.position + textMesh.transform.forward * -1;
+                    tempCamera.transform.forward = textMesh.transform.forward;
+    
+                    // Set the camera's culling mask to only render the temp layer
+                    // int tmpLayer = LayerMask.NameToLayer("TempRenderTex");
+                    var prevLayer = textMesh.gameObject.layer;
+                    // textMesh.gameObject.layer = tmpLayer;
+                    // tempCamera.cullingMask = 1 << tmpLayer;
+    
+                    // Capture the image
+                    tempCamera.Render();
+
+                    RenderTexture.active = renderTexture;
+                    Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+                    tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                    tex.Apply();
+
+                    byte[] bytes = tex.EncodeToPNG();
+                    File.WriteAllBytes(texturePath, bytes);
+
+                    // Cleanup
+                    textMesh.gameObject.layer = prevLayer;
+                    UnityEngine.Object.DestroyImmediate(tex);
+                    UnityEngine.Object.DestroyImmediate(tempCamera);
+
+                    var material = CreateImageQuadMaterial(tw, texturePath, guid);
+                    payload.imageQuads.Add(BuildImageQuadPayload(payload, widget, material, idx));
+                }
+                BuildEmptyXforms(payload, notTextOrImage);
             }
 
             UnityEngine.Profiling.Profiler.EndSample();
@@ -323,6 +371,11 @@ namespace TiltBrush
         {
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", ri.FileFullPath, id));
         }
+        
+        static Guid MakeDeterministicUniqueName(Guid descriptor, TextWidget tw, int id)
+        {
+            return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", tw.Text, id));
+        }
 
         static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri)
         {
@@ -338,12 +391,27 @@ namespace TiltBrush
                 MetallicFactor = kRefimageMetallicFactor
             };
         }
+        
+        static DynamicExportableMaterial CreateImageQuadMaterial(TextWidget tw, string path, Guid guid)
+        {
+            BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
+            return new DynamicExportableMaterial(
+                parent: desc,
+                // GetExportName() not totally guaranteed to be unique; maybe we should detect collisions?
+                durableName: $"text_{tw.GetExportName()}",
+                uniqueName: guid,
+                uriBase: Path.GetDirectoryName(path))
+            {
+                BaseColorTex = Path.GetFileName(path),
+                MetallicFactor = kRefimageMetallicFactor
+            };
+        }
 
         // widget.ReferenceImage must be != null
         // Never returns null
         // id is an instance id
         static ImageQuadPayload BuildImageQuadPayload(
-            SceneStatePayload payload, ImageWidget widget, DynamicExportableMaterial material, int id)
+            SceneStatePayload payload, Media2dWidget widget, DynamicExportableMaterial material, int id)
         {
             string nodeName = $"image_{widget.GetExportName()}_{id}";
 
@@ -366,7 +434,16 @@ namespace TiltBrush
             // Create pool and bake in the leftover non-uniform scale
             GeometryPool pool = new GeometryPool();
             pool.Layout = material.VertexLayout;
-            pool.Append(widgetChild.GetComponent<MeshFilter>().sharedMesh, fallbackColor: Color.white);
+            Mesh mesh;
+            if (false) // TODO (widget is TextWidget)
+            {
+                mesh = CreateQuad(((TextWidget)widget).AspectRatio.Value);
+            }
+            else
+            {
+                mesh = widgetChild.GetComponent<MeshFilter>().sharedMesh;
+            }
+            pool.Append(mesh, fallbackColor: Color.white);
             pool.ApplyTransform(
                 Matrix4x4.Scale(localScale), Matrix4x4.identity, 1f,
                 0, pool.NumVerts);
@@ -393,6 +470,28 @@ namespace TiltBrush
                 geometry = pool,
                 exportableMaterial = material,
             };
+        }
+        
+        private static Mesh CreateQuad(float aspect)
+        {
+            float width = aspect / 2f;
+            var mesh = new Mesh();
+            mesh.vertices = new[]
+            {
+                new Vector3(-width, 0.5f, 0),
+                new Vector3(width, 0.5f, 0),
+                new Vector3(width, -0.5f, 0),
+                new Vector3(-width, -0.5f, 0)
+            };
+            mesh.triangles = new[]
+            {
+                0, 1, 3,
+                1, 2, 3
+            };
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            return new Mesh();
         }
 
         // -------------------------------------------------------------------------------------------- //

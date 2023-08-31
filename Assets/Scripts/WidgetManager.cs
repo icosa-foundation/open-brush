@@ -408,7 +408,7 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets);
+                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets).Concat(m_TextWidgets);
             }
         }
 
