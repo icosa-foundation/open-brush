@@ -3101,7 +3101,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "Background Images"
+    m_Localized: Background Images
     m_Metadata:
       m_Items: []
   - m_Id: 95221400803737600
@@ -3430,6 +3430,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 129251554584428544
     m_Localized: Next Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 140585981667180544
+    m_Localized: Text
     m_Metadata:
       m_Items: []
   references:

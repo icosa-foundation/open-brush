@@ -3243,6 +3243,10 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 140585981667180544
+    m_Key: ADVANCEDTOOLS_PANEL_BUTTON_TEXT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
