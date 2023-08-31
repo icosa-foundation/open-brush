@@ -140,7 +140,7 @@ namespace TiltBrush.Layers
                 new DuplicateSelectionCommand(SelectionManager.m_Instance.SelectionTransform)
             );
         }
-        
+
         public void HandleMoveSelectionToCurrentLayer()
         {
             var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();

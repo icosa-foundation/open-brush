@@ -42,7 +42,7 @@ namespace TiltBrush
         private bool m_IsGrabbingGroup;
         private bool m_IsEndGrabbingGroup;
         private CanvasScript m_TargetCanvas; // Override original canvas as target for deselection.
-        
+
         override public bool NeedsSave
         {
             get
