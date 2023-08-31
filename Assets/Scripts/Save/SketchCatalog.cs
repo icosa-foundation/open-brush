@@ -24,6 +24,7 @@ namespace TiltBrush
         Curated,
         Liked,
         Drive,
+        SavedStrokes,
     }
 
     // SketchCatalog.Awake must come after App.Awake
