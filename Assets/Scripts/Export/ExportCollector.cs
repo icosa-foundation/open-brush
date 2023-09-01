@@ -95,7 +95,28 @@ namespace TiltBrush
                         Debug.Assert(false, "Empty ImageWidgets");
                         continue;
                     }
-                    var material = CreateImageQuadMaterial(ri);
+
+                    DynamicExportableMaterial material;
+                    if (ri.FileName.EndsWith(".svg"))
+                    {
+                        byte[] bytes = ri.FullSize.EncodeToPNG();
+                        if (temporaryDirectory == null)
+                        {
+                           temporaryDirectory = Application.temporaryCachePath;
+                        }
+                        if (!Directory.Exists(temporaryDirectory))
+                        {
+                            Directory.CreateDirectory(temporaryDirectory);
+                        }
+                        string texturePath = $"{temporaryDirectory}/{Path.GetFileName(ri.FileName)}.png";
+                        File.WriteAllBytes(texturePath, bytes);
+                        var newRi = new ReferenceImage(texturePath);
+                        material = CreateImageQuadMaterial(newRi);
+                    }
+                    else
+                    {
+                        material = CreateImageQuadMaterial(ri);
+                    }
                     foreach ((ImageWidget image, int idx) in group.WithIndex())
                     {
                         payload.imageQuads.Add(BuildImageQuadPayload(payload, image, material, idx));
