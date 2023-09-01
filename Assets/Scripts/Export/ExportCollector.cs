@@ -102,7 +102,7 @@ namespace TiltBrush
                         byte[] bytes = ri.FullSize.EncodeToPNG();
                         if (temporaryDirectory == null)
                         {
-                           temporaryDirectory = Application.temporaryCachePath;
+                            temporaryDirectory = Application.temporaryCachePath;
                         }
                         if (!Directory.Exists(temporaryDirectory))
                         {
