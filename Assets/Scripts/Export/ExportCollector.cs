@@ -271,6 +271,8 @@ namespace TiltBrush
                 // Values are 2 ^ 16 - 2 or 2 ^ 31 - 2
                 // The actual upper limit is 2 ^ 32 - 2 but we can't use uint as lots of code uses int
                 // Also 2 billion verts is realistically more than enough for any practical purpose
+                // TODO: Why is the non-large-mesh limit different to MAX_VERTS_SOFT
+                // and why is MAX_VERTS_SOFT set so low?
                 int vertexLimit = App.UserConfig.Flags.LargeMeshSupport ? 2147483646 : 65534;
                 foreach (var (batch, batchIndex) in brush.ToGeometryBatches(vertexLimit).WithIndex())
                 {
