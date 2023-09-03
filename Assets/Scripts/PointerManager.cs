@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using MoonSharp.Interpreter;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -896,6 +895,7 @@ namespace TiltBrush
                             needsDummyPointer = false;
                         }
                         Quaternion pointerRot_GS = rAttachPoint_GS.rotation * FreePaintTool.sm_OrientationAdjust;
+                        pointerRot_GS *= Quaternion.Euler(0, 180, 0);
                         newTr_CS.translation = pointerRot_GS * tr.translation;
                         break;
                     }
