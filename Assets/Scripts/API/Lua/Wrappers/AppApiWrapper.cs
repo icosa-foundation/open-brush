@@ -214,7 +214,7 @@ namespace TiltBrush
                 RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = superSampling;
-                rMgr.RenderToTexture(tmp, renderDepth: renderDepth);
+                rMgr.RenderToTexture(tmp, asDepth: renderDepth);
                 wrapper.SuperSampling = ssaaRestore;
                 using (var fs = new FileStream(path, FileMode.Create))
                 {
