@@ -1664,7 +1664,7 @@ namespace TiltBrush
                 bool resetColors = true;
                 bool resetBrushes = true;
                 // TODO Better logic around when to set and revert colors
-                if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+                if (CurrentSymmetryMode is SymmetryMode.ScriptedSymmetryMode or SymmetryMode.MultiMirror)
                 {
                     if (m_SymmetryPointerColors != null && m_SymmetryPointerColors.Count > 0)
                     {
