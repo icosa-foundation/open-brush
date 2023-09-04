@@ -195,6 +195,10 @@ namespace TiltBrush.FrameAnimation{
 
         }
 
+        public void refreshAnimatedModelUI(){
+            this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().ResetUI();
+            resetTimeline();
+        }
 
         public void addAnimatedModel(GameObject gameObject,string modelname){
 
@@ -236,26 +240,29 @@ namespace TiltBrush.FrameAnimation{
             Track addingTrack = newTrack();
             
 
-            for (int i =0 ; i < timeline.Count; i++){
+            for (int i =0 ; i < timeline[0].Frames.Count; i++){
 
-                if (i == frameOn){
+                Frame addingFrame = newFrame(canvasAdding);
+                addingTrack.Frames.Add(addingFrame);
+                // if (i == frameOn){
 
-                    Frame addingFrame = newFrame(canvasAdding);
-                    addingTrack.Frames.Add(addingFrame);
+                //     Frame addingFrame = newFrame(canvasAdding);
+                //     addingTrack.Frames.Add(addingFrame);
              
 
-                }else{
-                    Frame addingFrame = newFrame(App.Scene.AddCanvas());
-                    addingTrack.Frames.Add(addingFrame);
+                // }else{
+                //     Frame addingFrame = newFrame(App.Scene.AddCanvas());
+                //     addingTrack.Frames.Add(addingFrame);
                   
           
-                }
+                // }
                 
 
             }
             timeline.Add(addingTrack);
        
-
+            print("ADDED LAYER REFRESH");
+            printTimeline();
         }
 
         public (int,int) getCanvasIndex(CanvasScript canvas){
@@ -519,6 +526,7 @@ namespace TiltBrush.FrameAnimation{
                         // var frameButton =  frameWrapper.transform.GetChild(layerOn);
                         var newButton = Instantiate(frameButtonPrefab,frameWrapper.transform,false);
                         var frameButton = newButton.transform.GetChild(0);
+
                         
                         // frameButton.localScale = new Vector3(1f,1f,7.88270617f);
                         frameButton.localPosition = new Vector3(0.00538007962f,0.449999988f - frameOffset*i,-0.963263571f);
@@ -530,10 +538,30 @@ namespace TiltBrush.FrameAnimation{
 
                         print("NUM BATCH POOLS: " + timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools());
 
+                    
+                        // Hide all ui indicators first
+                        for(int o = 0; o < frameButton.GetChildCount(); o++)
+                        {
+                                frameButton.GetChild(o).gameObject.SetActive(false);
+                        }
+                        bool backwardsConnect = (f > 0 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f - 1].canvas));
+                        bool forwardConnect = f < timeline[0].Frames.Count - 1 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f + 1].canvas);
                         bool filled = timeline[i].Frames[f].canvas.BatchManager.GetNumBatchPools() > 0;
 
-                        frameButton.GetChild(0).gameObject.SetActive(filled);
-                        frameButton.GetChild(1).gameObject.SetActive(!filled);
+                        frameButton.GetChild(Convert.ToInt32(filled)).gameObject.SetActive(true);
+
+                        if (backwardsConnect){
+                                frameButton.GetChild(Convert.ToInt32(filled) + 2).gameObject.SetActive(true);
+                        }
+
+                        if (forwardConnect){
+                                frameButton.GetChild(Convert.ToInt32(filled) + 4).gameObject.SetActive(true);
+                        }
+
+                       
+                     
+
+                        
 
               
                     }
@@ -850,7 +878,9 @@ namespace TiltBrush.FrameAnimation{
             for (int l =0;l< timeline.Count; l++){
                 
                 print("ADDING LAYER HERE - " + l);
-                Frame addingFrame = newFrame(App.Scene.AddCanvas());
+                // Frame addingFrame = newFrame(App.Scene.AddCanvas());
+
+                Frame addingFrame = newFrame(timeline[l].Frames[timeline[l].Frames.Count - 1].canvas);
                 // CanvasScript newCanvas = App.Scene.AddCanvas();
                 // frameLayer addingLayer = newFrameLayer(newCanvas);
                 addingFrame.deleted = timeline[l].Frames[0].deleted;
@@ -960,6 +990,8 @@ namespace TiltBrush.FrameAnimation{
       
       
         public void timelineSlide(float Value){
+
+            this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnDisable();
            
             frameOn =  ((float)(Value + timelineOffset) / sliderFrameSize );
 
@@ -986,16 +1018,21 @@ namespace TiltBrush.FrameAnimation{
 
 
             updateTimelineSlider();
+
+            this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().OnEnable();
         }
 
         public void startAnimation(){
             start = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             playing = true;
-            // App.Scene.LayerCanvases
-            // App.Scene.ShowLayer();
+            
+            this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().setAnimating(playing);
         }
         public void stopAnimation(){
             playing = false;
+
+
+            this.gameObject.GetComponent<TiltBrush.Layers.LayerUI_Manager>().setAnimating(playing);
         }
         public void toggleAnimation(){
             print("TOGGLING ANIMATION");

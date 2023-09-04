@@ -23,7 +23,7 @@ namespace TiltBrush
 {
 
     // TODO: Allow light count to be reduced.  Having to deal with inactive
-    // lights is a burden for the rest of the codebase, and can be error prone
+    // lights is a burden for the restLayerCanvasesUpdate of the codebase, and can be error prone
     // (e.g. component enabled vs. game object active).
     public class SceneScript : MonoBehaviour
     {
@@ -259,6 +259,8 @@ namespace TiltBrush
 
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
+
+            App.Scene.ActiveCanvas = layer;
 
             App.Scene.LayerCanvasesUpdate?.Invoke();
 
