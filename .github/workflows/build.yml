@@ -46,7 +46,7 @@ jobs:
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -234,7 +234,7 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -587,7 +587,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
