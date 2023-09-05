@@ -910,79 +910,148 @@ namespace TiltBrush.FrameAnimation{
             
             
 
-            for (int l =0;l< timeline.Count; l++){
+            (int,int) index = getCanvasIndex(App.Scene.ActiveCanvas);
+
+            CanvasScript newCanvas = App.Scene.AddCanvas();
+
+
+            (int,int) canvasCoord = (getFrameOn(),index.Item2);
+            CanvasScript oldCanvas = getTimelineCanvas(canvasCoord.Item1,canvasCoord.Item2);
+
+
+
+
+
+
+            List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                        .Where(x => x.Canvas 
+                        ==
+                            oldCanvas
+                            ).ToList();
+                
+            List<Stroke> newStrokes = oldStrokes
+            .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
+                stroke, App.Scene.SelectionCanvas, null))
+            .ToList();
+
+            foreach (var stroke in newStrokes)
+                {
+                    switch (stroke.m_Type)
+                    {
+                        case Stroke.Type.BrushStroke:
+                            {
+                                BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
+                                if (brushScript)
+                                {
+                                    brushScript.HideBrush(false);
+                                }
+                            }
+                            break;
+                        case Stroke.Type.BatchedBrushStroke:
+                            {
+                                stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
+                            }
+                            break;
+                        default:
+                            Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
+                            break;
+                    }
+                    TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+
+                    stroke.SetParentKeepWorldPosition(newCanvas);
+                }
+
+            Frame addingFrame = newFrame(newCanvas);
+            
+
+            addingFrame.deleted = false;
+
+            timeline[canvasCoord.Item2].Frames[canvasCoord.Item1+1] = addingFrame;
+
+            int i = 2;
+            while ( canvasCoord.Item1+i <timeline[canvasCoord.Item2].Frames.Count &&
+             timeline[canvasCoord.Item2].Frames[canvasCoord.Item1+i].canvas.Equals(oldCanvas)
+             ){
+                timeline[canvasCoord.Item2].Frames[canvasCoord.Item1+i] = newFrame(newCanvas);
+                i++;
+            }
+
+            resetTimeline();
+
+
+            // for (int l =0;l< timeline.Count; l++){
 
           
              
 
             
-                    CanvasScript newCanvas = App.Scene.AddCanvas();
+            //         CanvasScript newCanvas = App.Scene.AddCanvas();
                   
 
-                    List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
-                            .Where(x => x.Canvas 
-                            ==
-                             timeline[l].Frames[getFrameOn()].canvas
-                             ).ToList();
+            //         List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+            //                 .Where(x => x.Canvas 
+            //                 ==
+            //                  timeline[l].Frames[getFrameOn()].canvas
+            //                  ).ToList();
                     
-                    List<Stroke> newStrokes = oldStrokes
-                    .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                        stroke, App.Scene.SelectionCanvas, null))
-                    .ToList();
+            //         List<Stroke> newStrokes = oldStrokes
+            //         .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
+            //             stroke, App.Scene.SelectionCanvas, null))
+            //         .ToList();
 
-                    foreach (var stroke in newStrokes)
-                        {
-                            switch (stroke.m_Type)
-                            {
-                                case Stroke.Type.BrushStroke:
-                                    {
-                                        BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                                        if (brushScript)
-                                        {
-                                            brushScript.HideBrush(false);
-                                        }
-                                    }
-                                    break;
-                                case Stroke.Type.BatchedBrushStroke:
-                                    {
-                                        stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
-                                    }
-                                    break;
-                                default:
-                                    Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
-                                    break;
-                            }
-                            TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+            //         foreach (var stroke in newStrokes)
+            //             {
+            //                 switch (stroke.m_Type)
+            //                 {
+            //                     case Stroke.Type.BrushStroke:
+            //                         {
+            //                             BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
+            //                             if (brushScript)
+            //                             {
+            //                                 brushScript.HideBrush(false);
+            //                             }
+            //                         }
+            //                         break;
+            //                     case Stroke.Type.BatchedBrushStroke:
+            //                         {
+            //                             stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
+            //                         }
+            //                         break;
+            //                     default:
+            //                         Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
+            //                         break;
+            //                 }
+            //                 TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
 
-                            stroke.SetParentKeepWorldPosition(newCanvas);
-                     }
+            //                 stroke.SetParentKeepWorldPosition(newCanvas);
+            //          }
 
                 
                  
           
-                Frame addingFrame = newFrame(newCanvas);
-                print("DUPLICATE NOW");
-                printTimeline();
+            //     Frame addingFrame = newFrame(newCanvas);
+            //     print("DUPLICATE NOW");
+            //     printTimeline();
 
-                addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
+            //     addingFrame.deleted = timeline[l].Frames[getFrameOn()].deleted;
 
 
-                timeline[l].Frames.Insert(getFrameOn() + 1,addingFrame);
-                // frameLayer addingLayer = newFrameLayer(newCanvas);
-                // addingLayer.deleted = timeline[getFrameOn()].layers[l].deleted;
-                // addingFrame.layers.Add(addingLayer);
-                print("ADDING LAYER");
+            //     timeline[l].Frames.Insert(getFrameOn() + 1,addingFrame);
+            //     // frameLayer addingLayer = newFrameLayer(newCanvas);
+            //     // addingLayer.deleted = timeline[getFrameOn()].layers[l].deleted;
+            //     // addingFrame.layers.Add(addingLayer);
+            //     print("ADDING LAYER");
             
-            }
+            // }
   
 
           
 
-            focusFrame((int)frameOn+1);   
+            // focusFrame((int)frameOn+1);   
             
 
 
-            resetTimeline();
+            // resetTimeline();
 
         
         }
