@@ -6,8 +6,7 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class UserApiWrapper
     {
-        [LuaDocsDescription(@"The 3D position of the user (specifically where they have moved to using Fly, Teleport etc
- - not their headset or controller position)")]
+        [LuaDocsDescription(@"The 3D position of the user's viewpoint")]
         public static Vector3 position
         {
             get => App.Scene.Pose.translation;

@@ -80,9 +80,11 @@ namespace TiltBrush
 ---Properties for class {Name}
 
 ---@class {Name}
-t = Class()
+{String.Join("\n", Properties
+    .Where(p => p.Name != "Item")  // Exclude indexers
+    .Select(p => p.AutocompleteSerialize()))}
+{Name} = {{}}
 
-{String.Join("\n", Properties.Select(p => p.AutocompleteSerialize(Name)))}
 
 ";
             }
@@ -205,10 +207,11 @@ t = Class()
         public LuaDocsPrimitiveType PrimitiveType;
         [CanBeNull] public string CustomTypeName;
         public bool IsTable;
-        
-        public static LuaDocsType CsharpTypeToDocsType(string reflectedType)
+
+        public static LuaDocsType CsharpTypeToDocsType(Type reflectedType)
         {
-            var docsType = reflectedType switch
+            string reflectedTypeName = reflectedType.ToString();
+            var docsType = reflectedTypeName switch
             {
                 "System.Boolean" => new LuaDocsType
                 {
@@ -315,9 +318,9 @@ t = Class()
                 _ => new LuaDocsType
                 {
                     PrimitiveType = LuaDocsPrimitiveType.UserData,
-                    CustomTypeName = reflectedType
+                    CustomTypeName = reflectedTypeName
                         .Replace("TiltBrush.", "")
-                        .Replace("ApiWrapper", "")
+                        .Replace("ApiWrapper", ""),
                 }
             };
 
@@ -376,7 +379,7 @@ t = Class()
         
         public string AutocompleteSerialize()
         {
-            return $"---@param {Name} {ParameterType.TypeAsLuaString()}";
+            return $"---@param {Name} {ParameterType.TypeAsLuaString()} {Description}";
         }
     }
     
@@ -478,7 +481,7 @@ t = Class()
             string returnTypeAnnotation = "";
             if (ReturnType.PrimitiveType != LuaDocsPrimitiveType.Nil)
             {
-                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()}";
+                returnTypeAnnotation = $"\n---@return {ReturnType.TypeAsLuaString()} {ReturnValueDescription}";
             }
 
             return $@"{parameters}{returnTypeAnnotation}
@@ -510,6 +513,7 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
     {
         public string Name;
         public LuaDocsType PropertyType;
+        public LuaDocsType IndexerType;
         public string Description;
         public bool ReadWrite;
         public bool Static;
@@ -525,11 +529,15 @@ function {className}:{Name}({string.Join(", ", Parameters.Select(p => p.Name))})
             return string.Format(markdownTemplate, name, PropertyType.TypeAsMarkdownString(), readwrite, Description);
         }
 
-        public string AutocompleteSerialize(string className)
+        public string AutocompleteSerialize()
         {
-            return $@"---@type {PropertyType.TypeAsLuaString()}
-{className}.{Name} = nil
-";
+            string indexerAnnotation = "";
+            if (IndexerType != null)
+            {
+                // Union with the indexer type
+                indexerAnnotation = $" | {IndexerType.TypeAsLuaString()}[]";
+            }
+            return $"---@field {Name} {PropertyType.TypeAsLuaString()}{indexerAnnotation} {Description}";
         }
     }
 }

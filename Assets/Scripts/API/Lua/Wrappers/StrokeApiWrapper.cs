@@ -178,12 +178,12 @@ namespace TiltBrush
         public void MergeFrom(string name) => ApiMethods.MergeNamedFile(name);
 
         [LuaDocsDescription("Hides the section of the stroke that is outside the specified range")]
-        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
-        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
-        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
-        public void SetShaderClipping(float start, float end)
+        [LuaDocsParameter("clipStart", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("clipEnd", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myStroke:SetShaderClipping(0.1, 0.9)")]
+        public void SetShaderClipping(float clipStart, float clipEnd)
         {
-            _Stroke.SetShaderClipping(start, end);
+            _Stroke.SetShaderClipping(clipStart, clipEnd);
         }
 
         [LuaDocsDescription("Changes a shader float parameter")]

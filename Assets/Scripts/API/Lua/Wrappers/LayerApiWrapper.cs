@@ -253,20 +253,36 @@ namespace TiltBrush
             return ApiMethods.LookupBrushDescriptor(brushType);
         }
 
-        [LuaDocsDescription("Hides the section of the each batch of strokes that is outside the specified range. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsDescription("Hides the section of the each batch of strokes that is outside the specified range. Affects all strokes on this layer with this brush type")]
         [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
-        [LuaDocsParameter("start", "The amount of the stroke to hide from the start (0-1)")]
-        [LuaDocsParameter("end", "The amount of the stroke to hide from the end (0-1)")]
-        [LuaDocsExample("myStroke:SetShaderFloat(\"_EmissionGain\", 0.5)")]
-        public void SetShaderClipping(string brushType, float start, float end)
+        [LuaDocsParameter("clipStart", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("clipEnd", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myLayer:SetShaderClipping(0.1, 0.9)")]
+        public void SetShaderClipping(float clipStart, float clipEnd)
+        {
+            foreach (var batch in _CanvasScript.BatchManager.AllBatches())
+            {
+                float startIndex = clipStart * batch.Geometry.NumVerts;
+                float endIndex = clipEnd * batch.Geometry.NumVerts;
+                batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
+                batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
+            }
+        }
+
+        [LuaDocsDescription("Hides the section of the each batch of strokes that is outside the specified range. Affects all strokes on this layer with this brush type")]
+        [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
+        [LuaDocsParameter("clipStart", "The amount of the stroke to hide from the start (0-1)")]
+        [LuaDocsParameter("clipEnd", "The amount of the stroke to hide from the end (0-1)")]
+        [LuaDocsExample("myLayer:SetShaderClipping(\"Ink\", 0.1, 0.9)")]
+        public void SetShaderClipping(string brushType, float clipStart, float clipEnd)
         {
             var desc = _GetDesc(brushType);
             if (desc == null || !desc.Material.HasFloat("_ClipStart") || !desc.Material.HasFloat("_ClipEnd"))
             {
                 foreach (var batch in _GetBatches(desc))
                 {
-                    float startIndex = start * batch.Geometry.NumVerts;
-                    float endIndex = end * batch.Geometry.NumVerts;
+                    float startIndex = clipStart * batch.Geometry.NumVerts;
+                    float endIndex = clipEnd * batch.Geometry.NumVerts;
                     batch.InstantiatedMaterial.SetFloat("_ClipStart", startIndex);
                     batch.InstantiatedMaterial.SetFloat("_ClipEnd", endIndex);
                 }
@@ -281,14 +297,12 @@ namespace TiltBrush
         {
             foreach (var batch in _CanvasScript.BatchManager.AllBatches())
             {
-                Debug.Log($"{batch}");
-                if (!batch.InstantiatedMaterial.HasFloat(parameter)) return;
-                Debug.Log($"changing {batch}");
+                if (!batch.InstantiatedMaterial.HasFloat(parameter)) continue;
                 batch.InstantiatedMaterial.SetFloat(parameter, value);
             }
         }
 
-        [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsDescription("Changes a shader float parameter. Affects all strokes on this layer with this brush type")]
         [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
         [LuaDocsParameter("parameter", "The shader parameter name")]
         [LuaDocsParameter("value", "The new value")]
@@ -303,7 +317,20 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Changes a shader color parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsDescription("Changes a shader color parameter. Affects all strokes on this layer")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("color", "The new color")]
+        [LuaDocsExample("myLayer:SetShaderColor(\"_TintColor\", Color.red)")]
+        public void SetShaderColor(string parameter, ColorApiWrapper color)
+        {
+            foreach (var batch in _CanvasScript.BatchManager.AllBatches())
+            {
+                if (!batch.InstantiatedMaterial.HasColor(parameter)) continue;
+                batch.InstantiatedMaterial.SetColor(parameter, color._Color);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader color parameter. Affects all strokes on this layer with this brush type")]
         [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
         [LuaDocsParameter("parameter", "The shader parameter name")]
         [LuaDocsParameter("color", "The new color")]
@@ -318,7 +345,21 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Changes a shader texture parameter. Affects all strokes on this layer of the given brush type")]
+
+        [LuaDocsDescription("Changes a shader texture parameter. Affects all strokes on this layer")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("image", "The new image to use as a texture")]
+        [LuaDocsExample("myLayer:SetShaderTexture(\"_MainTex\", myImage)")]
+        public void SetShaderTexture(string parameter, ImageApiWrapper image)
+        {
+            foreach (var batch in _CanvasScript.BatchManager.AllBatches())
+            {
+                if (!batch.InstantiatedMaterial.HasTexture(parameter)) continue;
+                batch.InstantiatedMaterial.SetTexture(parameter, image._ImageWidget.ReferenceImage.FullSize);
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader texture parameter. Affects all strokes on this layer with this brush type")]
         [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
         [LuaDocsParameter("parameter", "The shader parameter name")]
         [LuaDocsParameter("image", "The new image to use as a texture")]
@@ -333,7 +374,23 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer of the given brush type")]
+        [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer")]
+        [LuaDocsParameter("parameter", "The shader parameter name")]
+        [LuaDocsParameter("x", "The new x value")]
+        [LuaDocsParameter("y", "The new y value")]
+        [LuaDocsParameter("z", "The new z value")]
+        [LuaDocsParameter("w", "The new w value")]
+        [LuaDocsExample("myLayer:SetShaderVector(\"_TimeOverrideValue\", 0.5, 0, 0, 0)")]
+        public void SetShaderVector(string parameter, float x, float y = 0, float z = 0, float w = 0)
+        {
+            foreach (var batch in _CanvasScript.BatchManager.AllBatches())
+            {
+                if (!batch.InstantiatedMaterial.HasVector(parameter)) continue;
+                batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
+            }
+        }
+
+        [LuaDocsDescription("Changes a shader vector parameter. Affects all strokes on this layer with this brush type")]
         [LuaDocsParameter("brushType", "Only strokes of this brush type will be affected")]
         [LuaDocsParameter("parameter", "The shader parameter name")]
         [LuaDocsParameter("x", "The new x value")]
