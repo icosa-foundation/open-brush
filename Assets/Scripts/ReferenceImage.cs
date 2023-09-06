@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VectorGraphics;
 using Superla.RadianceHDR;
 using UnityEngine;
 
@@ -117,17 +118,32 @@ namespace TiltBrush
         /// by the user of this method.
         public void AcquireImageFullsize(bool runForeground = false)
         {
-            m_FullSizeReferences++;
-            if (m_FullSizeReferences == 1)
+            if (FilePath.EndsWith(".svg"))
             {
                 // Try the cache first.
                 m_FullSize = ImageCache.LoadImageCache(FilePath);
                 if (m_FullSize == null)
                 {
-                    // Otherwise, this will generate a cache.
-                    m_FullSize = Object.Instantiate(Icon);
-                    var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
-                    App.Instance.StartCoroutine(co);
+                    // TODO Move into the async code path?
+                    var importer = new RuntimeSVGImporter();
+                    m_FullSize = importer.ImportAsTexture(FilePath);
+                    ImageCache.SaveImageCache(m_FullSize, FilePath);
+                }
+            }
+            else
+            {
+                m_FullSizeReferences++;
+                if (m_FullSizeReferences == 1)
+                {
+                    // Try the cache first.
+                    m_FullSize = ImageCache.LoadImageCache(FilePath);
+                    if (m_FullSize == null)
+                    {
+                        // Otherwise, this will generate a cache.
+                        m_FullSize = Object.Instantiate(Icon);
+                        var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
+                        App.Instance.StartCoroutine(co);
+                    }
                 }
             }
         }
@@ -286,6 +302,30 @@ namespace TiltBrush
             }
 
             Debug.Assert(m_State == ImageState.NotReady, "Invariant");
+
+            if (FilePath.EndsWith(".svg"))
+            {
+                // TODO Move into the async code path?
+                var importer = new RuntimeSVGImporter();
+                var tex = importer.ImportAsTexture(FilePath);
+                ImageCache.SaveImageCache(tex, FilePath);
+                m_ImageAspect = (float)tex.width / tex.height;
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                {
+                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                    m_Icon = resizedTex;
+                    Object.Destroy(resizedTex);
+                }
+                else
+                {
+                    m_Icon = tex;
+                }
+                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                m_State = ImageState.Ready;
+                return true;
+            }
 
             if (FilePath.EndsWith(".hdr"))
             {

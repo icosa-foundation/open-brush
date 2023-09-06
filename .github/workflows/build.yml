@@ -46,7 +46,7 @@ jobs:
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -234,7 +234,7 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -587,7 +587,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -597,6 +597,7 @@ jobs:
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v3
         with:
@@ -608,7 +609,7 @@ jobs:
           j2 Support/steam/app.vdf.j2 > build_windows_openxr/app.vdf
           j2 Support/steam/main_depot.vdf.j2 > build_windows_openxr/main_depot.vdf
           j2 Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/build_windows_openxr/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
@@ -617,6 +618,12 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
           OPEN_BRUSH_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
+      - name: Update steam login secret
+        run: |
+          base64 -i /home/runner/Steam/config/config.vdf | gh secret set -R icosa-foundation/open-brush STEAM_CONFIG_VDF
+          md5sum /home/runner/Steam/config/config.vdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
