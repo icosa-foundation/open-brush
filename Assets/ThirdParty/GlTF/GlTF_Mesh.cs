@@ -13,13 +13,13 @@ public sealed class GlTF_Mesh : GlTF_ReferencedObject {
     return "mesh_" + o.ToGltf1Name();
   }
 
-  public void Populate(TiltBrush.GeometryPool pool) {
+  public void Populate(TiltBrush.GeometryPool pool, bool largeIndices) {
     pool.EnsureGeometryResident();
 
     if (primitives.Count > 0) {
       // Vertex data is shared among all the primitives in the mesh, so only do [0]
       primitives[0].attributes.Populate(pool);
-      primitives[0].Populate(pool);
+      primitives[0].Populate(pool, largeIndices);
 
       // I guess someone might want to map Unity submeshes -> gltf primitives.
       // - First you'd want to make sure that consuming tools won't freak out about that,

@@ -331,8 +331,12 @@ MonoBehaviour:
   m_MeshCollider: {fileID: 6574194}
   m_ParticleBounds: {x: 1.2, y: 1.2, z: 0}
   m_PanelPopUpMap:
-  - m_PopUpPrefab: {fileID: 197348, guid: 41a9315e35469455cbb17380475173b6, type: 3}
-    m_Command: 5
+  - m_PopUpPrefab: {fileID: 1000012632495268, guid: 90e90ffa9fbcd2946aa1987c26b3524d,
+      type: 3}
+    m_Command: 5201
+  - m_PopUpPrefab: {fileID: 8644332587479430734, guid: bdb7d2ac05cca8346b210c2b576878cb,
+      type: 3}
+    m_Command: 5202
   m_PanelDescription: LAYERS_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:
