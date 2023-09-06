@@ -17,6 +17,7 @@
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",
+    "com.unity.vectorgraphics": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush",
     "com.unity.xr.core-utils": "2.1.1",
     "com.unity.xr.management": "4.2.1",
     "com.unity.xr.oculus": "3.2.2",
