@@ -48,6 +48,24 @@ namespace TiltBrush
             m_AssetLocation = assetLocation;
         }
 
+        // Used for SVG exports
+        public void AddSvgIem(Material unityMaterial)
+        {
+            m_MaterialToIem.Add(
+                unityMaterial,
+                new DynamicExportableMaterial(
+                    parent: TbtSettings.Instance.m_SvgMaterial.descriptor,
+                    durableName: unityMaterial.name,
+                    uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
+                    uriBase: m_AssetLocation
+                )
+                {
+                    BaseColorFactor = Color.white,
+                    BaseColorTex = null,
+                }
+            );
+        }
+
 #if FBX_SUPPORTED
   // Used for FBX imports
   public void Add(
