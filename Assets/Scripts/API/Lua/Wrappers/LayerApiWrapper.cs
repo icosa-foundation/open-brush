@@ -141,12 +141,8 @@ namespace TiltBrush
         [LuaDocsDescription("The transform of the layer")]
         public TrTransform transform
         {
-            get => App.Scene.Pose.inverse * _CanvasScript.Pose;
-            set
-            {
-                value = App.Scene.Pose * value;
-                _CanvasScript.Pose = value;
-            }
+            get => _CanvasScript.LocalPose;
+            set => _CanvasScript.LocalPose = value;
         }
 
         [LuaDocsDescription("The 3D position of the Layer (specifically the position of it's anchor point")]

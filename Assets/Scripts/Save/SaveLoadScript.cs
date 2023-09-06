@@ -686,15 +686,6 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
-                    Coords.CanvasLocalPose = TrTransform.identity;
-                    if (jsonData.CanvasTransformInSceneSpace != TrTransform.identity)
-                    {
-                        Debug.LogWarning("This file has an unsupported, experimental Canvas Transform specified.");
-                        if (Config.IsExperimental)
-                        {
-                            Coords.CanvasLocalPose = jsonData.CanvasTransformInSceneSpace;
-                        }
-                    }
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
@@ -726,7 +717,7 @@ namespace TiltBrush
                                 tr.scale = 1;
                                 layer.Transform = tr;
                             }
-                            canvas.Pose = layer.Transform;
+                            canvas.LocalPose = layer.Transform;
                         }
                     }
                 }

@@ -109,7 +109,6 @@ namespace TiltBrush
                 Lights = LightsControlScript.m_Instance.CustomLights,
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
                 SceneTransformInRoomSpace = Coords.AsRoom[App.Instance.m_SceneTransform],
-                CanvasTransformInSceneSpace = App.Scene.AsScene[App.Instance.m_CanvasTransform],
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
