@@ -561,7 +561,6 @@ MonoBehaviour:
   layersPanel: {fileID: 176644, guid: 832e29c521f326a41adfb1176478943b, type: 3}
   timelineNotches: []
   timelineFrameObjects: []
-  animatedModels: []
 --- !u!1 &1000013585526572
 GameObject:
   m_ObjectHideFlags: 0
@@ -2923,7 +2922,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Duplicate Frame
+  m_DescriptionText: Split Frame
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 

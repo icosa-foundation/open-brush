@@ -44,6 +44,7 @@ namespace TiltBrush.Layers
         public GameObject scrollUpButton;
         public GameObject scrollDownButton;
         
+        bool animationEvent = false;
 
         private void Start()
         {
@@ -52,11 +53,13 @@ namespace TiltBrush.Layers
             App.Scene.animationUI_manager.startTimeline();
         }
 
-
+        public void setAnimating(bool animatingNow){
+            animationEvent = animatingNow; 
+        }
        
-        private void ResetUI()
+        public void ResetUI()
         {
-
+            if (animationEvent ) return;
 
             m_Canvases = new List<CanvasScript>();
             var layerCanvases = App.Scene.LayerCanvases.ToArray();
@@ -64,6 +67,11 @@ namespace TiltBrush.Layers
 
             foreach (GameObject widget in m_Widgets){
 
+
+     
+                if (widget.GetComponentInChildren<ModelWidget>() != null){
+                    Destroy(widget.GetComponentInChildren<ModelWidget>().gameObject);
+                }
                 Destroy(widget);
             }
             m_Widgets.Clear();
@@ -105,35 +113,40 @@ namespace TiltBrush.Layers
             
             
             }
-            if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null){
+            // if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null){
                 
-                if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels != null){
+            //     if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels != null){
 
-                    var animatedModels = this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels;
-                    print(animatedModels.Count);
+            //         var animatedModels = this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels;
+            //         print(animatedModels.Count);
 
-                    for (int a = 0; a < animatedModels.Count; a++){
+            //         for (int a = 0; a < animatedModels.Count; a++){
 
-                    var newWidget = Instantiate(modeltrackWidget,this.gameObject.transform,false);
+            //         var newWidget = Instantiate(modeltrackWidget,this.gameObject.transform,false);
 
-                    var modelPreview = Instantiate(animatedModels[a].gameObject.GetComponentInChildren<ObjModelScript>().gameObject,newWidget.gameObject.transform,false);
+            //         var modelPreview = Instantiate(animatedModels[a].gameObject.GetComponentInChildren<ObjModelScript>().gameObject,newWidget.gameObject.transform,false);
+
+            //         modelPreview.transform.SetParent(newWidget.gameObject.transform, false);
+                  
                      
-                    modelPreview.transform.localScale = new Vector3(0.01f,0.01f,0.01f);
-                    modelPreview.transform.localPosition = new Vector3(-0.785000026f,-0.0680000037f,-0.141000003f);
-                     EditorGUIUtility.PingObject(modelPreview);
+            //         // modelPreview.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+            //         modelPreview.transform.localPosition = new Vector3(-0.785000026f,-0.0680000037f,-0.141000003f);
+            //          EditorGUIUtility.PingObject(modelPreview);
 
-                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = animatedModels[a].name;
-                    // Active button means hidden layer
-                    newWidget.GetComponentInChildren<FocusModelTrackButton>().SetButtonActivation(false);
-                    Vector3 localPos = mainWidget.transform.localPosition;
-                    localPos.y -=  (a + i)*scrollHeight;
+      
 
-                    newWidget.transform.localPosition = localPos;
-                    m_Widgets.Add(newWidget);
+            //         newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = animatedModels[a].name;
+            //         // Active button means hidden layer
+            //         newWidget.GetComponentInChildren<FocusModelTrackButton>().SetButtonActivation(false);
+            //         Vector3 localPos = mainWidget.transform.localPosition;
+            //         localPos.y -=  (a + i)*scrollHeight;
+
+            //         newWidget.transform.localPosition = localPos;
+            //         m_Widgets.Add(newWidget);
               
-                }
-                }
-            }
+            //     }
+            //     }
+            // }
             
 
             UpdateScroll();
@@ -177,8 +190,7 @@ namespace TiltBrush.Layers
         }
         private void UpdateScroll(){
 
-            print("SCROLL OFFSET " + scrollOffset);
-            print("WIDGET COUNT " +  m_Widgets.Count);
+      
              for (int i = 0; i < m_Widgets.Count; i++)
             {
                 Vector3 localPos = mainWidget.transform.localPosition;
@@ -190,7 +202,7 @@ namespace TiltBrush.Layers
 
                 int thisWidgetOffset = i + scrollOffset;
 
-                print("WIDGET OFFSET " +  thisWidgetOffset);
+             
                 if (thisWidgetOffset >= 7 || thisWidgetOffset < 0){
                     m_Widgets[i].SetActive(false);
                 }else{
@@ -216,14 +228,14 @@ namespace TiltBrush.Layers
         }
 
         // Subscribes to events
-        private void OnEnable()
+        public void OnEnable()
         {
             App.Scene.ActiveCanvasChanged += ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
         }
 
         // Unsubscribes to events
-        private void OnDisable()
+        public void OnDisable()
         {
             App.Scene.ActiveCanvasChanged -= ActiveSceneChanged;
             App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
