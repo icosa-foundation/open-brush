@@ -439,6 +439,13 @@ namespace TiltBrush
             animationUI_manager.MarkLayerAsDeleteRefresh(layer);
         }
 
+        public void RenameLayer(CanvasScript layer, string newName)
+        {
+            if (layer == MainCanvas) return;
+            layer.gameObject.name = newName;
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
         public void MarkLayerAsNotDeleted(CanvasScript layer)
         {
             m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);

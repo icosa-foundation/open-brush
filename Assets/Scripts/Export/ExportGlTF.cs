@@ -115,7 +115,9 @@ namespace TiltBrush
             // 1. will not write files whose names conflict with payload's
             // 2. will clean up the entire directory when done
             // This works, as long as the payload isn't used for more than one export (it currently isn't)
-            using (var exporter = new GlTF_ScriptableExporter(payload.temporaryDirectory, gltfVersion))
+            using (var exporter = new GlTF_ScriptableExporter(
+                       payload.temporaryDirectory, gltfVersion,
+                       App.UserConfig.Flags.LargeMeshSupport))
             {
                 exporter.AllowHttpUri = allowHttpUri;
                 try

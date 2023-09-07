@@ -133,6 +133,39 @@ namespace TiltBrush.Layers
             App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
         }
 
+    private void initScroll()
+    {
+        scrollOffset = 0;
+        scrollHeight = 0.2f;
+    }
+
+    private void UpdateScroll()
+    {
+        for (int i = 0; i < m_Widgets.Count; i++)
+        {
+            Vector3 localPos = mainWidget.transform.localPosition;
+            float subtractingVal = i * scrollHeight + scrollOffset * scrollHeight;
+            localPos.y -= subtractingVal;
+            m_Widgets[i].transform.localPosition = localPos;
+
+            int thisWidgetOffset = i + scrollOffset;
+            if (thisWidgetOffset >= 7 || thisWidgetOffset < 0)
+            {
+                m_Widgets[i].SetActive(false);
+            }
+            else
+            {
+                m_Widgets[i].SetActive(true);
+            }
+        }
+
+        scrollUpButton.SetActive(scrollOffset != 0);
+        scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > 7);
+
+        App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
+    }
+
+
         public void scrollDirection(bool upDirection)
         {
             if (scrollOffset == 0 && upDirection) return;
@@ -160,11 +193,11 @@ namespace TiltBrush.Layers
             App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
         }
 
-        public void DeleteLayer(GameObject widget)
+        public void DeleteLayer(int index)
         {
-            if (GetCanvasFromWidget(widget) == App.Scene.MainCanvas) return; // Don't delete the main canvas
-            var layer = GetCanvasFromWidget(widget);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(layer));
+            var canvas = m_Canvases[index];
+            if (canvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(canvas));
         }
 
         public void DeleteLayerGeneral()
@@ -174,12 +207,9 @@ namespace TiltBrush.Layers
             App.Scene.animationUI_manager.resetTimeline();
         }
 
-        public void SquashLayer(GameObject widget)
+        public void SquashLayer(int index)
         {
-            var canvas = GetCanvasFromWidget(widget);
-            var index = m_Widgets.IndexOf(widget);
-
-
+            var canvas = m_Canvases[index];
             var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SquashLayerCommand(canvas, prevCanvas)
@@ -196,9 +226,9 @@ namespace TiltBrush.Layers
             );
         }
 
-        public void ClearLayerContents(GameObject widget)
+        public void ClearLayerContents(int index)
         {
-            CanvasScript canvas = GetCanvasFromWidget(widget);
+            var canvas = m_Canvases[index];
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
         }
 

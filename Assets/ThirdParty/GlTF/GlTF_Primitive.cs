@@ -13,8 +13,15 @@ public sealed class GlTF_Primitive {
     this.attributes = attributes;
   }
 
-  public void Populate(TiltBrush.GeometryPool pool) {
-    indices.PopulateUshort(pool.m_Tris.ToArray());
+  public void Populate(TiltBrush.GeometryPool pool, bool largeIndices) {
+      if (largeIndices)
+      {
+          indices.PopulateUint(pool.m_Tris.ToArray());
+      }
+      else
+      {
+          indices.PopulateUshort(pool.m_Tris.ToArray());
+      }
   }
 
   public IEnumerable<GlTF_ReferencedObject> IterReferences(GlTF_Globals G) {
