@@ -134,38 +134,6 @@ namespace TiltBrush.Layers
             App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
         }
 
-    private void initScroll()
-    {
-        scrollOffset = 0;
-        scrollHeight = 0.2f;
-    }
-
-    private void UpdateScroll()
-    {
-        for (int i = 0; i < m_Widgets.Count; i++)
-        {
-            Vector3 localPos = mainWidget.transform.localPosition;
-            float subtractingVal = i * scrollHeight + scrollOffset * scrollHeight;
-            localPos.y -= subtractingVal;
-            m_Widgets[i].transform.localPosition = localPos;
-
-            int thisWidgetOffset = i + scrollOffset;
-            if (thisWidgetOffset >= 7 || thisWidgetOffset < 0)
-            {
-                m_Widgets[i].SetActive(false);
-            }
-            else
-            {
-                m_Widgets[i].SetActive(true);
-            }
-        }
-
-        scrollUpButton.SetActive(scrollOffset != 0);
-        scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > 7);
-
-        App.Scene.animationUI_manager.updateTrackScroll(scrollOffset, scrollHeight);
-    }
-
 
         public void scrollDirection(bool upDirection)
         {
