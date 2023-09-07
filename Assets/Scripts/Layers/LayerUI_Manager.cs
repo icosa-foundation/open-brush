@@ -74,23 +74,30 @@ namespace TiltBrush.Layers
             }
             m_Widgets.Clear();
 
-
-            int i = 0;
-            for (i = 0; i < layerCanvases.Length; i++)
+            for (int i = 0; i < layerCanvases.Length; i++)
             {
                 var newWidget = Instantiate(layersWidget, this.gameObject.transform, false);
                 // newWidget.transform.SetParent(this.gameObject.transform, false);
-
-                if (i == 0) newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-                if (i == 0) newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-
+                newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = layerCanvases[i].name;
+                if (i == 0)
+                {
+                    newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = $"{m_MainLayerName.GetLocalizedString()}";
+                    newWidget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<LayerPopupButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
+                    newWidget.GetComponentInChildren<RenameLayerButton>()?.gameObject.SetActive(false);
+                }
                 if (layerCanvases[i] == App.ActiveCanvas)
                 {
                     newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
                 }
-                newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
                 // Active button means hidden layer
                 newWidget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!layerCanvases[i].isActiveAndEnabled);
+
+                foreach (var btn in newWidget.GetComponentsInChildren<OptionButton>())
+                {
+                    btn.m_CommandParam = i;
+                }
 
                 Vector3 localPos = mainWidget.transform.localPosition;
                 localPos.y -= i * scrollHeight;
