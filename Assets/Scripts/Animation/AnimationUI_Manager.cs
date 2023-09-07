@@ -178,6 +178,8 @@ namespace TiltBrush.FrameAnimation
 
         }
 
+
+        int previousShowingFrame = -1;
         private void showFrame(int frameIndex)
         {
 
@@ -185,6 +187,8 @@ namespace TiltBrush.FrameAnimation
 
 
             print("SHOWING FRAME ++ " + frameIndex);
+
+            if (previousShowingFrame == frameIndex) return;
 
             foreach (Track track in timeline)
             {
@@ -208,6 +212,8 @@ namespace TiltBrush.FrameAnimation
                 }
                 track.Frames[frameIndex] = thisFrame;
             }
+
+            previousShowingFrame = frameIndex;
 
 
         }
@@ -1222,7 +1228,7 @@ namespace TiltBrush.FrameAnimation
         {
 
 
-            printTimeline();
+      
             if (lastCanvas != App.Scene.ActiveCanvas)
             {
                 previousCanvasBatches = 0;

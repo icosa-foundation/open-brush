@@ -60,6 +60,7 @@ namespace TiltBrush.Layers
         {
             if (animationEvent) return;
 
+
             m_Canvases = new List<CanvasScript>();
             var canvases = App.Scene.LayerCanvases.ToArray();
 
