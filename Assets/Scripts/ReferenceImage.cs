@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VectorGraphics;
 using Superla.RadianceHDR;
 using Unity.VectorGraphics;
 using UnityEngine;
