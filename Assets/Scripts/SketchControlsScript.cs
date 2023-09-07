@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TiltBrush.Layers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SymmetryMode = TiltBrush.PointerManager.SymmetryMode;
@@ -144,6 +145,8 @@ namespace TiltBrush
             ReadOnlyNotice,
             ShowContribution,
             RenameSketch = 5200,
+            OpenLayerOptionsPopup = 5201,
+            RenameLayer = 5202,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -4551,6 +4554,13 @@ namespace TiltBrush
                     {
                         ISketchSet sketchSet = SketchbookPanel.Instance.GetSketchSet((SketchbookPanel.RootSet)iParam2);
                         sketchSet.RenameSketch(iParam1, KeyboardPopUpWindow.m_LastInput);
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
+                case GlobalCommands.RenameLayer:
+                    {
+                        var layer = App.Scene.GetCanvasByLayerIndex(iParam1);
+                        App.Scene.RenameLayer(layer, KeyboardPopUpWindow.m_LastInput);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }

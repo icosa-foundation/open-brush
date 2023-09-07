@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+﻿// Copyright 2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    class MenuPopUpWindow : PopUpWindow
+    class SketchbookMenuPopUpWindow : MenuPopUpWindow
     {
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
@@ -26,22 +26,26 @@ namespace TiltBrush
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
             {
-                button.SetCommandParameters(iCommandParam, iCommandParam2);
+                if (iCommandParam == 0)
+                {
+                    button.SetButtonAvailable(false);
+                }
+                else
+                {
+                    button.SetCommandParameters(iCommandParam, iCommandParam2);
+                }
             }
 
             // The rename button should only be enabled for categories that support renaming
             var renameButton = GetComponentInChildren<KeyboardPopupButton>();
-            var sketchSetType = (SketchbookPanel.RootSet)iCommandParam2;
-            renameButton.SetButtonAvailable(sketchSetType == SketchbookPanel.RootSet.Local);
+            SketchSetType sketchSetType = (SketchSetType)iCommandParam2;
+            renameButton.SetButtonAvailable(sketchSetType == SketchSetType.User);
         }
 
-        // This code is specific to the "Rename" button in the Sketchbook menu
-        // This popup class is currently only used for the Sketchbook menu
-        // If that changes then this probably belongs in a subclass
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
         {
-            var sketchSetType = (SketchbookPanel.RootSet)btn.m_CommandParam2;
-            var sketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local) as FileSketchSet;
+            SketchSetType sketchSetType = (SketchSetType)btn.m_CommandParam2;
+            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User) as FileSketchSet;
             var sceneFileInfo = sketchSet.GetSketchSceneFileInfo(btn.m_CommandParam);
             var currentName = Path.GetFileName(sceneFileInfo.FullPath);
             if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
