@@ -69,6 +69,7 @@ public class TbtSettings : ScriptableObject {
   public PbrMaterialInfo m_PbrOpaqueDoubleSided;
   public PbrMaterialInfo m_PbrBlendSingleSided;
   public PbrMaterialInfo m_PbrBlendDoubleSided;
+  public PbrMaterialInfo m_SvgMaterial;
 
   /// <returns>null if not found</returns>
   public bool TryGetBrush(Guid guid, out BrushDescriptor desc) {
