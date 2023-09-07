@@ -14,13 +14,7 @@
 
 namespace TiltBrush.Layers
 {
-    public class DeleteLayerButton : OptionButton
+    public class LayerPopupButton : OptionButton
     {
-        protected override void OnButtonPressed()
-        {
-            base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().DeleteLayer(m_CommandParam);
-        }
-
     }
 }

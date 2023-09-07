@@ -24,10 +24,6 @@ namespace TiltBrush
     /// TODO: implement optional attributes
     public class Batch : MonoBehaviour
     {
-        // This must be a multiple of 3
-        const int MAX_VERTS_SOFT = 15999;  // The limit above which we try not to go
-        const int MAX_VERTS_HARD = 0xfffe; // This is the Unity limit
-
         private BatchPool m_ParentPool;
         private MeshFilter m_MeshFilter;
         private bool m_bVertexDataDirty;
@@ -207,7 +203,9 @@ namespace TiltBrush
         /// Note that empty batches will accept verts up to the Unity VB limit.
         public bool HasSpaceFor(int nVert)
         {
-            return m_Geometry.NumVerts + nVert <= MAX_VERTS_SOFT;
+            // The limit above which we try not to go (This must be a multiple of 3)
+            int max_verts = App.UserConfig.Flags.LargeMeshSupport ? 2147483646 : 15999;
+            return m_Geometry.NumVerts + nVert <= max_verts;
         }
 
         static Bounds GetBoundsFor(List<Vector3> aVert, int iVert, int nVert,
