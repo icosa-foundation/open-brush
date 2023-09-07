@@ -20,36 +20,6 @@ namespace TiltBrush
 
     class MenuPopUpWindow : PopUpWindow
     {
-        public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
-        {
-            // TODO : Fix this hangnail.
-            OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
-            foreach (OptionButton button in optionButtons)
-            {
-                button.SetCommandParameters(iCommandParam, iCommandParam2);
-            }
-
-            // The rename button should only be enabled for categories that support renaming
-            var renameButton = GetComponentInChildren<KeyboardPopupButton>();
-            var sketchSetType = (SketchbookPanel.RootSet)iCommandParam2;
-            renameButton.SetButtonAvailable(sketchSetType == SketchbookPanel.RootSet.Local);
-        }
-
-        // This code is specific to the "Rename" button in the Sketchbook menu
-        // This popup class is currently only used for the Sketchbook menu
-        // If that changes then this probably belongs in a subclass
-        public void SetInitialKeyboardText(KeyboardPopupButton btn)
-        {
-            var sketchSetType = (SketchbookPanel.RootSet)btn.m_CommandParam2;
-            var sketchSet = SketchbookPanel.Instance.GetSketchSet(SketchbookPanel.RootSet.Local) as FileSketchSet;
-            var sceneFileInfo = sketchSet.GetSketchSceneFileInfo(btn.m_CommandParam);
-            var currentName = Path.GetFileName(sceneFileInfo.FullPath);
-            if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
-            {
-                currentName = currentName.Substring(0, currentName.Length - SaveLoadScript.TILT_SUFFIX.Length);
-            }
-            KeyboardPopUpWindow.m_InitialText = currentName;
-        }
     }
 
 } // namespace TiltBrush
