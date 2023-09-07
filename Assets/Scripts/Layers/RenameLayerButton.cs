@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+using UnityEngine.Events;
 namespace TiltBrush.Layers
 {
-    public class DeleteLayerButton : OptionButton
+    public class RenameLayerButton : OptionButton
     {
-        protected override void OnButtonPressed()
-        {
-            base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().DeleteLayer(m_CommandParam);
-        }
+        [SerializeField]
+        private UnityEvent<RenameLayerButton> m_BeforePopupAction;
 
+        override protected void OnButtonPressed()
+        {
+            m_BeforePopupAction.Invoke(this);
+            base.OnButtonPressed();
+        }
     }
 }
