@@ -89,8 +89,7 @@ namespace TiltBrush.Layers
             if (i == 0) newWidget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
 
             if (layerCanvases[i] == App.ActiveCanvas){
-                print("ACTIVE CANVAS");
-                print(layerCanvases[i]);
+
                 newWidget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(layerCanvases[i] == App.ActiveCanvas);
             }
             newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
@@ -100,10 +99,10 @@ namespace TiltBrush.Layers
             Vector3 localPos = mainWidget.transform.localPosition;
             localPos.y -= i*scrollHeight;
 
-            print("LOCAL POS BEFORE " +  localPos.y + " " + scrollOffset);
+          
 
             localPos.y -= scrollOffset;
-            print("LOCAL POS AFTER " +  localPos.y);
+          
 
             newWidget.transform.localPosition = localPos;
             m_Widgets.Add(newWidget);
@@ -113,75 +112,10 @@ namespace TiltBrush.Layers
             
             
             }
-            // if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>() != null){
-                
-            //     if (this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels != null){
-
-            //         var animatedModels = this.gameObject.GetComponent<TiltBrush.FrameAnimation.AnimationUI_Manager>().animatedModels;
-            //         print(animatedModels.Count);
-
-            //         for (int a = 0; a < animatedModels.Count; a++){
-
-            //         var newWidget = Instantiate(modeltrackWidget,this.gameObject.transform,false);
-
-            //         var modelPreview = Instantiate(animatedModels[a].gameObject.GetComponentInChildren<ObjModelScript>().gameObject,newWidget.gameObject.transform,false);
-
-            //         modelPreview.transform.SetParent(newWidget.gameObject.transform, false);
-                  
-                     
-            //         // modelPreview.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
-            //         modelPreview.transform.localPosition = new Vector3(-0.785000026f,-0.0680000037f,-0.141000003f);
-            //          EditorGUIUtility.PingObject(modelPreview);
-
-      
-
-            //         newWidget.GetComponentInChildren<TMPro.TextMeshPro>().text = animatedModels[a].name;
-            //         // Active button means hidden layer
-            //         newWidget.GetComponentInChildren<FocusModelTrackButton>().SetButtonActivation(false);
-            //         Vector3 localPos = mainWidget.transform.localPosition;
-            //         localPos.y -=  (a + i)*scrollHeight;
-
-            //         newWidget.transform.localPosition = localPos;
-            //         m_Widgets.Add(newWidget);
-              
-            //     }
-            //     }
-            // }
+           
             
-
             UpdateScroll();
-            // print("START RESET UI");
-            // m_Canvases = new List<CanvasScript>();
-            // var canvases = App.Scene.LayerCanvases.ToArray();
-            // for (int i = 0; i < m_Widgets.Count; i++)
-            // {
-            //     print("FOR HERE " + i + " " + canvases.Length);
-            //     var widget = m_Widgets[i];
-
-             
-            //     if (i >= canvases.Length)
-            //     {
-                    
-            //         widget.SetActive(false);
-            //         continue;
-            //     }
-            //     // widget.SetActive(true);
-            //      widget.SetActive(false);
-            //     var canvas = canvases[i];
-            //     if (i == 0) widget.GetComponentInChildren<DeleteLayerButton>()?.gameObject.SetActive(false);
-            //     if (i == 0) widget.GetComponentInChildren<SquashLayerButton>()?.gameObject.SetActive(false);
-            //     widget.GetComponentInChildren<FocusLayerButton>().SetButtonActivation(canvas == App.ActiveCanvas);
-            //     print("BEFORE PRE STRING");
-            //     print(" PRE STRINGS 1" + m_MainLayerName.GetLocalizedString() );
-            //      print(" PRE STRINGS 2" +  m_AdditionalLayerName.GetLocalizedString());
-            //     widget.GetComponentInChildren<TMPro.TextMeshPro>().text = (i == 0) ? $"{m_MainLayerName.GetLocalizedString()}" : $"{m_AdditionalLayerName.GetLocalizedString()} {i}";
-            //     // Active button means hidden layer
-            //     widget.GetComponentInChildren<ToggleVisibilityLayerButton>().SetButtonActivation(!canvas.isActiveAndEnabled);
-            //     m_Canvases.Add(canvas);
-            // }
-
-            // print("RESET UI DONE");
-            // print(m_Canvases.Count);
+          
         }
 
         private void initScroll(){
@@ -258,7 +192,6 @@ namespace TiltBrush.Layers
             var canvas = GetCanvasFromWidget(widget);
             var index = m_Widgets.IndexOf(widget);
 
-            print("SQUASHING ORIG" + index);
 
             var prevCanvas = m_Canvases[Mathf.Max(index - 1, 0)];
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -271,7 +204,7 @@ namespace TiltBrush.Layers
 
             var canvas = App.Scene.ActiveCanvas;
             var index = App.Scene.GetLayerNumFromCanvas(App.Scene.ActiveCanvas);
-            print("SQUASHING GENERAL" + index);
+    
             var prevCanvas = App.Scene.GetCanvasFromLayerNum(Mathf.Max(index -1, 0));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SquashLayerCommand(canvas, prevCanvas)
@@ -292,25 +225,21 @@ namespace TiltBrush.Layers
 
         public void AddLayer()
         {
-            print("ADD 1~ LAYER NOW ");
+  
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new AddLayerCommand(true));
-            print("ADD 2~  ");
+
             App.Scene.animationUI_manager.resetTimeline();
         }
 
         public void ToggleVisibility(GameObject widget)
         {
             CanvasScript canvas = GetCanvasFromWidget(widget);
-            print("TOGGLE VISIBILITY");
-            print(canvas);
             App.Scene.ToggleLayerVisibility(canvas);
         }
 
         public void SetActiveLayer(GameObject widget)
         {
-            print("SETTING ACTIVE LAYER");
             var newActiveCanvas = GetCanvasFromWidget(widget);
-            print(newActiveCanvas);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ActivateLayerCommand(newActiveCanvas));
             ResetUI();
         }
