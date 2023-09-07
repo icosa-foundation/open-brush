@@ -80,6 +80,7 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
   // List of all exported files (so far).
   public HashSet<string> ExportedFiles { get; private set; }
   private CultureInfo m_previousCulture;
+  private readonly bool m_largeMeshes;
 
   // Total number of triangles exported.
   public int NumTris { get; private set; }
@@ -93,8 +94,9 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
   // temporaryDirectory may be null.
   // If non-null, ownership of the directory is transferred.
-  public GlTF_ScriptableExporter(string temporaryDirectory, int gltfVersion) {
+  public GlTF_ScriptableExporter(string temporaryDirectory, int gltfVersion, bool largeMeshSupport) {
     m_globals = new GlTF_Globals(temporaryDirectory, gltfVersion);
+    m_largeMeshes = largeMeshSupport;
     if (TiltBrush.App.PlatformConfig.EnableExportMemoryOptimization) {
       m_globals.EnableFileStream();
     }
@@ -318,7 +320,7 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
       // Populate mesh data only once.
       AddMeshDependencies(meshNameAndId, mesh.exportableMaterial, gltfMesh, gltfLayout);
-      gltfMesh.Populate(pool);
+      gltfMesh.Populate(pool, m_largeMeshes);
       G.meshes.Add(gltfMesh);
     }
 
@@ -658,9 +660,13 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
     GlTF_Primitive primitive = new GlTF_Primitive(
         new GlTF_Attributes(G, meshName, gltfLayout));
 
+    var indexSize = m_largeMeshes ?
+        GlTF_Accessor.ComponentType.UNSIGNED_INT :
+        GlTF_Accessor.ComponentType.USHORT;
+
     GlTF_Accessor indexAccessor = G.CreateAccessor(
         GlTF_Accessor.GetNameFromObject(meshName, "indices_0"),
-        GlTF_Accessor.Type.SCALAR, GlTF_Accessor.ComponentType.USHORT,
+        GlTF_Accessor.Type.SCALAR, indexSize,
         isNonVertexAttributeAccessor: true);
     primitive.indices = indexAccessor;
     if (gltfMesh.primitives.Count > 0) {
