@@ -182,11 +182,6 @@ jobs:
             vrsdk: Monoscopic
             cache: Linux
 
-          - name: MacOS Monoscopic
-            targetPlatform: StandaloneOSX
-            vrsdk: Monoscopic
-            cache: MacOS
-
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
@@ -737,8 +732,47 @@ jobs:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
 
-  publish_oculus:
-    name: Publish Oculus Release
+  publish_oculus_quest:
+    name: Publish Oculus Quest Release
+    needs: [configuration, build]
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest)
+        uses: actions/download-artifact@v3
+        with:
+          name: Oculus Quest
+          path: build_oculus_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
+          cd releases
+          unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
+          fi
+
+  publish_oculus_rift:
+    name: Publish Oculus Rift Release
     needs: [configuration, build]
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
@@ -752,11 +786,6 @@ jobs:
         with:
           name: Windows Rift
           path: build_windows_rift
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v3
-        with:
-          name: Oculus Quest
-          path: build_oculus_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -764,25 +793,18 @@ jobs:
           RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
           OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
-          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
           mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
           cd releases
-          unzip symbols.zip
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so'
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}"
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
           fi
