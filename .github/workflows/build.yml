@@ -413,13 +413,13 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           fromTag: "${{ needs.configuration.outputs.previousrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -520,12 +520,12 @@ jobs:
     runs-on: ubuntu-latest
     if:
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: "Build Changelog"
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
           fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
           toTag: "${{ needs.configuration.outputs.currentrelease }}"
@@ -571,7 +571,7 @@ jobs:
         with:
           source-directory: 'changelog/'
           target-directory: 'automatic-release-notes/'
-          destination-github-username: 'icosa-gallery'
+          destination-github-username: 'icosa-foundation'
           destination-repository-name: 'open-brush-docs'
           user-name: 'release-note-bot'
           user-email: automatic-release@icosa
@@ -582,7 +582,7 @@ jobs:
     needs: [configuration, build]
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
@@ -597,7 +597,6 @@ jobs:
         run: |
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
-          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v3
         with:
@@ -636,7 +635,7 @@ jobs:
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       contains(github.ref, 'refs/tags/v')
 
     steps:
@@ -668,7 +667,7 @@ jobs:
       VERSION: ${{ needs.configuration.outputs.version}}
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       contains(github.ref, 'refs/tags/v')
 
     steps:
@@ -699,7 +698,7 @@ jobs:
       VERSION: ${{ needs.configuration.outputs.version }}
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
@@ -737,7 +736,7 @@ jobs:
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:

@@ -21,7 +21,9 @@ namespace TiltBrush
         {
             base.OnButtonPressed();
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.VideoWidgetPrefab, TrTransform.FromTransform(transform));
+                WidgetManager.m_Instance.VideoWidgetPrefab, TrTransform.FromTransform(transform), null,
+                false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+            );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
 
             VideoWidget videoWidget = createCommand.Widget as VideoWidget;
