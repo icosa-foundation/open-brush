@@ -708,8 +708,8 @@ namespace TiltBrush
 
                     if (jsonData.AnimationTracks != null)
                     {
-                   
-                        for (int i = 0 ;i < jsonData.AnimationTracks.numFrames -1; i++)  // Skip the main canvas
+
+                        for (int i = 0; i < jsonData.AnimationTracks.numFrames - 1; i++)  // Skip the main canvas
                         {
                             App.Scene.animationUI_manager.addKeyFrame();
                         }
@@ -724,14 +724,14 @@ namespace TiltBrush
                     print("BEFORE FOCUS FRAME");
 
 
-                     App.Scene.animationUI_manager.printTimeline();
-                   
+                    App.Scene.animationUI_manager.printTimeline();
+
 
                     Debug.Log("AFTER LOAD TIMELINE");
                     App.Scene.animationUI_manager.printTimeline();
                     App.Scene.animationUI_manager.resetTimeline();
-                     App.Scene.animationUI_manager.focusFrameNum(0);
-                     App.Scene.animationUI_manager.timelineSlide(0);
+                    App.Scene.animationUI_manager.focusFrameNum(0);
+                    App.Scene.animationUI_manager.timelineSlide(0);
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();

@@ -12,7 +12,7 @@ namespace TiltBrush.FrameAnimation
             base.OnButtonPressed();
             var uiManager = GetComponentInParent<AnimationUI_Manager>();
             uiManager.toggleAnimation();
-            
+
         }
     }
 } // namespace TiltBrush

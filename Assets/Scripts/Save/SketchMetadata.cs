@@ -604,7 +604,7 @@ namespace TiltBrush
         public bool Visible;
     }
 
-   [Serializable]
+    [Serializable]
     public class AnimationTrackMetadata
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

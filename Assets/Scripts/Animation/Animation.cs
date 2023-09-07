@@ -6,9 +6,9 @@ using System;
 
 namespace TiltBrush.FrameAnimation
 {
-public class FrameAnimation : MonoBehaviour
+    public class FrameAnimation : MonoBehaviour
 
-{
- 
-}
+    {
+
+    }
 }

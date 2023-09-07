@@ -108,7 +108,7 @@ namespace TiltBrush
                 using (var canvases = AllCanvases.GetEnumerator())
                 {
                     while (canvases.MoveNext())
-                    {   
+                    {
                         Debug.Log("PREV HERE ");
                         Debug.Log(prevScene);
                         Debug.Log(canvases.Current);
@@ -246,7 +246,7 @@ namespace TiltBrush
         {
 
 
-            
+
             var go = new GameObject(string.Format("Layer {0}", LayerCanvases.Count()));
             go.transform.parent = transform;
             Coords.AsLocal[go.transform] = TrTransform.identity;
@@ -267,11 +267,12 @@ namespace TiltBrush
 
             // Add canvases for other animation frames
             animationUI_manager.AddLayerRefresh(layer);
-            
+
             return layer;
         }
 
-        public CanvasScript AddCanvas(){
+        public CanvasScript AddCanvas()
+        {
 
             var go = new GameObject("new");
             go.transform.parent = transform;
@@ -284,20 +285,20 @@ namespace TiltBrush
             var frame = go.AddComponent<CanvasScript>();
 
             return frame;
-        
+
         }
 
-        
+
         public void DestroyCanvas(CanvasScript layer)
         {
-       
-         
+
+
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
 
 
-        } 
+        }
 
         // Destructive delete - no undo possible
         public void DestroyLayer(CanvasScript layer)
@@ -323,21 +324,27 @@ namespace TiltBrush
             int index = m_LayerCanvases.IndexOf(canvas);
             return index + 1;
         }
- 
-        public int GetLayerNumFromCanvas(CanvasScript canvas){
+
+        public int GetLayerNumFromCanvas(CanvasScript canvas)
+        {
             int index = 0;
-            foreach (CanvasScript layer in LayerCanvases){
-                if (layer.Equals(canvas)){break;};
+            foreach (CanvasScript layer in LayerCanvases)
+            {
+                if (layer.Equals(canvas)) { break; };
                 index++;
             }
             return index;
         }
-        public CanvasScript GetCanvasFromLayerNum(int num){
+        public CanvasScript GetCanvasFromLayerNum(int num)
+        {
             int index = 0;
-            foreach (CanvasScript layer in LayerCanvases){
-                if (num == index){
+            foreach (CanvasScript layer in LayerCanvases)
+            {
+                if (num == index)
+                {
                     return layer;
-                    ;};
+                    ;
+                };
                 index++;
             }
             return null;
@@ -392,7 +399,7 @@ namespace TiltBrush
             App.Scene.LayerCanvasesUpdate?.Invoke();
         }
 
-         public void HideCanvas(CanvasScript canvas)
+        public void HideCanvas(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
 
@@ -466,13 +473,13 @@ namespace TiltBrush
 
         public AnimationMetadata AnimationTracksSerialized()
         {
-      
 
-       
+
+
             var meta = new AnimationMetadata();
             var layers = LayerCanvases.ToArray();
             meta.Tracks = new AnimationTrackMetadata[layers.Count()];
-      
+
 
             for (var i = 0; i < layers.Length; i++)
             {
@@ -484,7 +491,7 @@ namespace TiltBrush
                 };
             }
 
-            meta.numFrames =  animationUI_manager.timeline.Count;
+            meta.numFrames = animationUI_manager.timeline.Count;
             return meta;
         }
     }

@@ -140,14 +140,14 @@ namespace TiltBrush
             Debug.Log("1");
             bool resetGroupContinue = false;
             var canvases = App.Scene.animationUI_manager.getTrackCanvases();
-            var canvasToIndexMap = new Dictionary<CanvasScript,Tuple<uint,uint>>();
+            var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
             Debug.Log("2");
             for (uint indexFrame = 0; indexFrame < canvases.Count; indexFrame++)
             {
                 for (uint indexLayer = 0; indexLayer < canvases[0].Count; indexLayer++)
                 {
                     var canvas = canvases[(int)indexFrame][(int)indexLayer];
-                    canvasToIndexMap[canvas] = new Tuple<uint, uint>(indexFrame,indexLayer);
+                    canvasToIndexMap[canvas] = new Tuple<uint, uint>(indexFrame, indexLayer);
                 }
             }
             Debug.Log("3");
@@ -269,7 +269,8 @@ namespace TiltBrush
                 {
                     writer.UInt32(copy.trackIndex);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0){
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
+                {
 
                     writer.UInt32(copy.frameIndex);
                 }
@@ -434,8 +435,8 @@ namespace TiltBrush
                 //    clear lowest set bit: x & (x-1)
 
 
-                   UInt32 thisTrack = 0;
-                   int MaxTrack = 0,MaxFrame = 0;
+                UInt32 thisTrack = 0;
+                int MaxTrack = 0, MaxFrame = 0;
 
 
 
@@ -499,9 +500,9 @@ namespace TiltBrush
                             break;
                         case StrokeExtension.Frame:
                             UInt32 frameIndex = reader.UInt32();
-                            Debug.Log("ADDING S FRAME " + thisTrack + " " + frameIndex.ToString() );
+                            Debug.Log("ADDING S FRAME " + thisTrack + " " + frameIndex.ToString());
 
-                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)frameIndex,(int)thisTrack);
+                            var canvas = App.Scene.animationUI_manager.getTimelineCanvas((int)frameIndex, (int)thisTrack);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.Seed:

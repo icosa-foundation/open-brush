@@ -152,7 +152,7 @@ namespace TiltBrush
             clone.transform.rotation = rotation;
             clone.Model = this.Model;
 
-         
+
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
@@ -160,7 +160,7 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
 
-          
+
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -226,23 +226,23 @@ namespace TiltBrush
             {
                 return;
             }
-           this.gameObject.transform.SetParent(App.Scene.ActiveCanvas.transform) ;
+            this.gameObject.transform.SetParent(App.Scene.ActiveCanvas.transform);
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
 
             print("MODEL PARENT " + this.gameObject.name);
 
-            print("CREATING MODEL ^^ " + m_ModelInstance.gameObject.name);    
+            print("CREATING MODEL ^^ " + m_ModelInstance.gameObject.name);
 
-           
-             
-            var uiManager =  App.Scene.animationUI_manager;
 
-            uiManager.addAnimatedModel(this.gameObject,Model.GetExportName());
 
-          
-      
+            var uiManager = App.Scene.animationUI_manager;
+
+            uiManager.addAnimatedModel(this.gameObject, Model.GetExportName());
+
+
+
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,

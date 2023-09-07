@@ -78,7 +78,7 @@ namespace TiltBrush
             Debug.Log("HELLO");
             foreach (var strokeSnapshot in SketchWriter.EnumerateAdjustedSnapshots(strokes))
             {
-                 Debug.Log("STROKE HERE");
+                Debug.Log("STROKE HERE");
                 if (stopwatch.ElapsedTicks > maxTicks)
                 {
                     stopwatch.Reset();

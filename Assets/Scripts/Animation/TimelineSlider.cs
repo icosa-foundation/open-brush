@@ -28,16 +28,17 @@ namespace TiltBrush.FrameAnimation
             SetSliderPositionToReflectValue();
         }
 
-           // For @Animation
-        public void setSliderValue(float fValue){
-     
-            float newVal = (fValue - 0.5f)* m_MeshScale.x;
-     
+        // For @Animation
+        public void setSliderValue(float fValue)
+        {
+
+            float newVal = (fValue - 0.5f) * m_MeshScale.x;
+
 
             Vector3 vLocalPos = m_Nob.transform.localPosition;
-            m_Nob.transform.localPosition = new Vector3(newVal,vLocalPos.y,vLocalPos.z);
+            m_Nob.transform.localPosition = new Vector3(newVal, vLocalPos.y, vLocalPos.z);
             // UpdateValue(fValue);
-            
+
 
         }
 
@@ -46,7 +47,7 @@ namespace TiltBrush.FrameAnimation
             base.UpdateValue(fValue);
             // PointerManager.m_Instance.FreePaintPointerAngle = fValue * 90.0f;
 
-             var uiManager = GetComponentInParent<AnimationUI_Manager>();
+            var uiManager = GetComponentInParent<AnimationUI_Manager>();
             uiManager.timelineSlide(fValue);
         }
 
