@@ -182,6 +182,11 @@ jobs:
             vrsdk: Monoscopic
             cache: Linux
 
+          - name: MacOS Monoscopic
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+
           - name: Android OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
