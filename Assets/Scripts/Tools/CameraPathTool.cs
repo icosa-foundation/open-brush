@@ -62,7 +62,7 @@ namespace TiltBrush
         {
             base.Awake();
             App.Switchboard.CameraPathModeChanged += OnCameraPathModeChanged;
-            m_PreviewSegment = CameraPath.CreateSegment(null);
+            m_PreviewSegment = MovementPath.CreateSegment(null);
             m_PreviewSegment.renderer.material.color = Color.white;
             m_Mode = Mode.AddPositionKnot;
             RefreshMeshVisibility();
@@ -165,7 +165,7 @@ namespace TiltBrush
                         if (m_LastValidPath != null)
                         {
                             m_LastValidPath.AddPathConstrainedKnot(
-                                CameraPathKnot.Type.Position, m_LastValidPosition, toolAttachXf.rotation);
+                                MovementPathKnot.Type.Position, m_LastValidPosition, toolAttachXf.rotation);
                             m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
                             m_LastPlacedKnotPath = m_LastValidPath;
                         }
@@ -188,7 +188,7 @@ namespace TiltBrush
                         if (m_LastValidPath != null)
                         {
                             m_LastValidPath.AddPathConstrainedKnot(
-                                CameraPathKnot.Type.Rotation, m_LastValidPosition, toolAttachXf.rotation);
+                                MovementPathKnot.Type.Rotation, m_LastValidPosition, toolAttachXf.rotation);
                             m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
                             m_LastPlacedKnotPath = m_LastValidPath;
                         }
@@ -197,7 +197,7 @@ namespace TiltBrush
                         if (m_LastValidPath != null)
                         {
                             m_LastValidPath.AddPathConstrainedKnot(
-                                CameraPathKnot.Type.Speed, m_LastValidPosition, toolAttachXf.rotation);
+                                MovementPathKnot.Type.Speed, m_LastValidPosition, toolAttachXf.rotation);
                             m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
                             m_LastPlacedKnotPath = m_LastValidPath;
                         }
@@ -206,7 +206,7 @@ namespace TiltBrush
                         if (m_LastValidPath != null)
                         {
                             m_LastValidPath.AddPathConstrainedKnot(
-                                CameraPathKnot.Type.Fov, m_LastValidPosition, toolAttachXf.rotation);
+                                MovementPathKnot.Type.Fov, m_LastValidPosition, toolAttachXf.rotation);
                             m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
                             m_LastPlacedKnotPath = m_LastValidPath;
                         }
@@ -242,7 +242,7 @@ namespace TiltBrush
 
                     switch (m_LastPlacedKnot.knot.KnotType)
                     {
-                        case CameraPathKnot.Type.Position:
+                        case MovementPathKnot.Type.Position:
                             if (m_LastPlacedKnot.control != 0)
                             {
                                 CameraPathPositionKnot pk = m_LastPlacedKnot.knot as CameraPathPositionKnot;
@@ -261,7 +261,7 @@ namespace TiltBrush
                                         mergesWithCreateCommand: true));
                             }
                             break;
-                        case CameraPathKnot.Type.Rotation:
+                        case MovementPathKnot.Type.Rotation:
                             // Rotation knots hide when we grab them, and in their place, we set the preview widget.
                             m_LastPlacedKnot.knot.gameObject.SetActive(false);
                             SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(
@@ -270,14 +270,14 @@ namespace TiltBrush
                                 new MoveConstrainedKnotCommand(m_LastPlacedKnotPath.Path, m_LastPlacedKnot,
                                     inputXf.rotation, mergesWithCreateCommand: true));
                             break;
-                        case CameraPathKnot.Type.Speed:
+                        case MovementPathKnot.Type.Speed:
                             CameraPathSpeedKnot sk = m_LastPlacedKnot.knot as CameraPathSpeedKnot;
                             float speed = sk.GetSpeedValueFromY(
                                 InputManager.Brush.Behavior.PointerAttachPoint.transform.position.y);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                 new ModifySpeedKnotCommand(sk, speed, mergesWithCreateCommand: true));
                             break;
-                        case CameraPathKnot.Type.Fov:
+                        case MovementPathKnot.Type.Fov:
                             CameraPathFovKnot fk = m_LastPlacedKnot.knot as CameraPathFovKnot;
                             float fov = fk.GetFovValueFromY(
                                 InputManager.Brush.Behavior.PointerAttachPoint.transform.position.y);
@@ -295,7 +295,7 @@ namespace TiltBrush
                     RefreshMeshVisibility();
 
                     // Rotation knots hide when we grab them, make sure it's enabled.
-                    if (m_LastPlacedKnot.knot.KnotType == CameraPathKnot.Type.Rotation)
+                    if (m_LastPlacedKnot.knot.KnotType == MovementPathKnot.Type.Rotation)
                     {
                         m_LastPlacedKnot.knot.gameObject.SetActive(true);
                         SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(null);
@@ -362,29 +362,29 @@ namespace TiltBrush
                         else
                         {
                             // logic for extending off one end of the path.
-                            CameraPath.EndType end = widget.Path.IsPositionNearEnd(xf.position);
+                            MovementPath.EndType end = widget.Path.IsPositionNearEnd(xf.position);
                             // If we're not near an end point but we're in loop mode, break out of loop mode.
-                            if (end == CameraPath.EndType.None && m_ExtendPathType == ExtendPathType.Loop)
+                            if (end == MovementPath.EndType.None && m_ExtendPathType == ExtendPathType.Loop)
                             {
                                 m_ExtendPath = null;
                                 m_ExtendPathType = ExtendPathType.None;
                             }
-                            else if (end != CameraPath.EndType.None && m_ExtendPathType != ExtendPathType.Loop)
+                            else if (end != MovementPath.EndType.None && m_ExtendPathType != ExtendPathType.Loop)
                             {
                                 m_ExtendPath = widget;
                                 // If we're currently extending our path and we're now close to the other end,
                                 // set our extend type to looping.
                                 if (widget.Path.NumPositionKnots > 1 &&
                                     (m_ExtendPathType == ExtendPathType.ExtendAtHead &&
-                                    end == CameraPath.EndType.Tail) ||
+                                    end == MovementPath.EndType.Tail) ||
                                     (m_ExtendPathType == ExtendPathType.ExtendAtTail &&
-                                    end == CameraPath.EndType.Head))
+                                    end == MovementPath.EndType.Head))
                                 {
                                     m_ExtendPathType = ExtendPathType.Loop;
                                 }
                                 else
                                 {
-                                    m_ExtendPathType = (end == CameraPath.EndType.Head) ? ExtendPathType.ExtendAtHead :
+                                    m_ExtendPathType = (end == MovementPath.EndType.Head) ? ExtendPathType.ExtendAtHead :
                                         ExtendPathType.ExtendAtTail;
                                 }
                             }

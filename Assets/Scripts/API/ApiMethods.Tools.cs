@@ -140,7 +140,7 @@
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.PinTool);
         }
 
-        [ApiEndpoint("tool.camerapath", "Activates the CameraPath Tool")]
+        [ApiEndpoint("tool.camerapath", "Activates the MovementPath Tool")]
         public static void ActivateCameraPathTool()
         {
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);

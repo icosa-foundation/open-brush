@@ -194,7 +194,7 @@ namespace TiltBrush
         public static void DrawCameraPath(int index)
         {
             CameraPathWidget widget = _GetActiveCameraPath(index);
-            CameraPath path = widget.Path;
+            MovementPath path = widget.Path;
             var positions = new List<Vector3>();
             var rotations = new List<Quaternion>();
             for (float t = 0; t < path.Segments.Count; t += .1f)

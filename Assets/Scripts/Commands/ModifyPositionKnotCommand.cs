@@ -18,7 +18,7 @@ namespace TiltBrush
 {
     public class ModifyPositionKnotCommand : BaseKnotCommand<CameraPathPositionKnot>
     {
-        private CameraPath m_Path;
+        private MovementPath m_Path;
         private CameraPathPositionKnot m_KnotLoopPartner;
         private Quaternion m_StartRotation_CS;
         private Quaternion m_EndRotation_CS;
@@ -30,7 +30,7 @@ namespace TiltBrush
         private int m_PartnerKnotIndex;
         private bool m_Final;
 
-        public ModifyPositionKnotCommand(CameraPath path, KnotDescriptor knotDesc, float endSpeed,
+        public ModifyPositionKnotCommand(MovementPath path, KnotDescriptor knotDesc, float endSpeed,
                                          Vector3 endForward_GS, bool mergesWithCreateCommand = false, bool final = false,
                                          BaseCommand parent = null)
             : base((CameraPathPositionKnot)knotDesc.knot, mergesWithCreateCommand, parent)

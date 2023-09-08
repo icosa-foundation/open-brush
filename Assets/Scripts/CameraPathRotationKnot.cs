@@ -15,7 +15,7 @@
 namespace TiltBrush
 {
 
-    public class CameraPathRotationKnot : CameraPathKnot
+    public class CameraPathRotationKnot : MovementPathKnot
     {
         override protected void Awake()
         {

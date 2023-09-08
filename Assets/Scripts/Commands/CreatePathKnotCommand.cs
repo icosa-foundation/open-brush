@@ -19,14 +19,14 @@ namespace TiltBrush
     public class CreatePathKnotCommand : BaseCommand
     {
         private CameraPathWidget m_Widget;
-        private CameraPathKnot.Type m_KnotType;
+        private MovementPathKnot.Type m_KnotType;
         private TrTransform m_SpawnXf;
-        private CameraPathKnot m_CreatedKnot;
+        private MovementPathKnot m_CreatedKnot;
         private PathT m_PathT;
 
         // Adds a path knot of type knotType to the path owned by widget at the
         // transform defined by spawnXf.
-        public CreatePathKnotCommand(CameraPathWidget widget, CameraPathKnot.Type knotType,
+        public CreatePathKnotCommand(CameraPathWidget widget, MovementPathKnot.Type knotType,
                                      PathT pathT, TrTransform spawnXf,
                                      BaseCommand parent = null)
             : base(parent)
@@ -57,16 +57,16 @@ namespace TiltBrush
             {
                 switch (m_KnotType)
                 {
-                    case CameraPathKnot.Type.Position:
+                    case MovementPathKnot.Type.Position:
                         m_CreatedKnot = m_Widget.Path.CreatePositionKnot(m_SpawnXf.translation);
                         break;
-                    case CameraPathKnot.Type.Rotation:
+                    case MovementPathKnot.Type.Rotation:
                         m_CreatedKnot = m_Widget.Path.CreateRotationKnot(m_PathT, m_SpawnXf.rotation);
                         break;
-                    case CameraPathKnot.Type.Speed:
+                    case MovementPathKnot.Type.Speed:
                         m_CreatedKnot = m_Widget.Path.CreateSpeedKnot(m_PathT);
                         break;
-                    case CameraPathKnot.Type.Fov:
+                    case MovementPathKnot.Type.Fov:
                         m_CreatedKnot = m_Widget.Path.CreateFovKnot(m_PathT);
                         break;
                     default:
@@ -77,7 +77,7 @@ namespace TiltBrush
 
             switch (m_KnotType)
             {
-                case CameraPathKnot.Type.Position:
+                case MovementPathKnot.Type.Position:
                     int knotIndex = m_PathT.Floor();
                     // If we're inserting a point and it's at the head, take on the characteristics of
                     // the head knot.  This will cause InsertPositionKnot to register the path as looping,
@@ -92,13 +92,13 @@ namespace TiltBrush
                     }
                     m_Widget.Path.InsertPositionKnot((CameraPathPositionKnot)m_CreatedKnot, knotIndex);
                     break;
-                case CameraPathKnot.Type.Rotation:
+                case MovementPathKnot.Type.Rotation:
                     m_Widget.Path.AddRotationKnot((CameraPathRotationKnot)m_CreatedKnot, m_PathT);
                     break;
-                case CameraPathKnot.Type.Speed:
+                case MovementPathKnot.Type.Speed:
                     m_Widget.Path.AddSpeedKnot((CameraPathSpeedKnot)m_CreatedKnot, m_PathT);
                     break;
-                case CameraPathKnot.Type.Fov:
+                case MovementPathKnot.Type.Fov:
                     m_Widget.Path.AddFovKnot((CameraPathFovKnot)m_CreatedKnot, m_PathT);
                     break;
                 default:

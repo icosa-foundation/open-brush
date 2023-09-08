@@ -22,9 +22,9 @@ namespace TiltBrush
         private TrTransform m_RemovedXf;
         private int m_KnotIndex;
         private PathT m_PathT;
-        public CameraPathKnot Knot { get; }
+        public MovementPathKnot Knot { get; }
 
-        public RemovePathKnotCommand(CameraPathWidget widget, CameraPathKnot knot,
+        public RemovePathKnotCommand(CameraPathWidget widget, MovementPathKnot knot,
                                      TrTransform removeXf, BaseCommand parent = null)
             : base(parent)
         {
@@ -35,7 +35,7 @@ namespace TiltBrush
             // If we're removing a position knot, remember its ordered index. This is necessary
             // because it's probable that the path will change after removal and Undo won't be able
             // to place the knot back on the path at the current position.
-            if (Knot.KnotType == CameraPathKnot.Type.Position)
+            if (Knot.KnotType == MovementPathKnot.Type.Position)
             {
                 m_KnotIndex = m_Widget.Path.PositionKnots.IndexOf((CameraPathPositionKnot)Knot);
                 m_PathT = new PathT();
@@ -56,16 +56,16 @@ namespace TiltBrush
 
             switch (Knot.KnotType)
             {
-                case CameraPathKnot.Type.Position:
+                case MovementPathKnot.Type.Position:
                     m_Widget.Path.InsertPositionKnot((CameraPathPositionKnot)Knot, m_KnotIndex);
                     break;
-                case CameraPathKnot.Type.Rotation:
+                case MovementPathKnot.Type.Rotation:
                     m_Widget.Path.AddRotationKnot((CameraPathRotationKnot)Knot, m_PathT);
                     break;
-                case CameraPathKnot.Type.Speed:
+                case MovementPathKnot.Type.Speed:
                     m_Widget.Path.AddSpeedKnot((CameraPathSpeedKnot)Knot, m_PathT);
                     break;
-                case CameraPathKnot.Type.Fov:
+                case MovementPathKnot.Type.Fov:
                     m_Widget.Path.AddFovKnot((CameraPathFovKnot)Knot, m_PathT);
                     break;
             }
