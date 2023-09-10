@@ -29558,12 +29558,16 @@ MonoBehaviour:
     type: 3}
   m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
     type: 3}
-  m_MovementPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
+  m_CameraPathPositionKnotPrefab: {fileID: 1334758335721002, guid: 38b506951b7a81e4e9a6c65a9a20efa9,
     type: 3}
-  m_MovementPathRotationKnotPrefab: {fileID: 0}
-  m_MovementPathSpeedKnotPrefab: {fileID: 0}
-  m_MovementPathFovKnotPrefab: {fileID: 0}
-  m_MovementPathKnotSegmentPrefab: {fileID: 0}
+  m_CameraPathRotationKnotPrefab: {fileID: 1140733690629052, guid: 7f151c0a0ebce55489176683756d7114,
+    type: 3}
+  m_CameraPathSpeedKnotPrefab: {fileID: 1334758335721002, guid: 0b67ae7cf6315f542a055b2d19bf134f,
+    type: 3}
+  m_CameraPathFovKnotPrefab: {fileID: 1269927219481460, guid: 52cbfcb07255b0d44be458440c4b7b59,
+    type: 3}
+  m_CameraPathKnotSegmentPrefab: {fileID: 1134264905350750, guid: 30133aa311127674b9021c2f6baae4d3,
+    type: 3}
   m_Home: {fileID: 1780237822}
   m_HomeHintLinePrefab: {fileID: 164972, guid: 0ce8790842bf7424d9065461833d80e9, type: 3}
   m_WidgetSnapAngle: 15

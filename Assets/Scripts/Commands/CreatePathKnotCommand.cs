@@ -14,12 +14,11 @@
 
 using UnityEngine;
 
-
 namespace TiltBrush
 {
     public class CreatePathKnotCommand : BaseCommand
     {
-        private MovementPathWidget m_Widget;
+        private CameraPathWidget m_Widget;
         private MovementPathKnot.Type m_KnotType;
         private TrTransform m_SpawnXf;
         private MovementPathKnot m_CreatedKnot;
@@ -27,7 +26,7 @@ namespace TiltBrush
 
         // Adds a path knot of type knotType to the path owned by widget at the
         // transform defined by spawnXf.
-        public CreatePathKnotCommand(MovementPathWidget widget, MovementPathKnot.Type knotType,
+        public CreatePathKnotCommand(CameraPathWidget widget, MovementPathKnot.Type knotType,
                                      PathT pathT, TrTransform spawnXf,
                                      BaseCommand parent = null)
             : base(parent)
@@ -54,27 +53,20 @@ namespace TiltBrush
             // The scale of path widgets is arbitrary.  However, the scale should be one at knot creation
             // time so newly added knots have appropriate mesh scales.
             m_Widget.transform.localScale = Vector3.one;
-
-            Debug.Log("PATH SWITCH " ) ;
             if (m_CreatedKnot == null)
             {
                 switch (m_KnotType)
                 {
                     case MovementPathKnot.Type.Position:
-                        Debug.Log("1 " ) ;
                         m_CreatedKnot = m_Widget.Path.CreatePositionKnot(m_SpawnXf.translation);
-                        Debug.Log(m_CreatedKnot);
                         break;
                     case MovementPathKnot.Type.Rotation:
-                         Debug.Log("2 " ) ;
                         m_CreatedKnot = m_Widget.Path.CreateRotationKnot(m_PathT, m_SpawnXf.rotation);
                         break;
                     case MovementPathKnot.Type.Speed:
-                        Debug.Log("3 " ) ;
                         m_CreatedKnot = m_Widget.Path.CreateSpeedKnot(m_PathT);
                         break;
                     case MovementPathKnot.Type.Fov:
-                        Debug.Log("4 " ) ;
                         m_CreatedKnot = m_Widget.Path.CreateFovKnot(m_PathT);
                         break;
                     default:
@@ -90,29 +82,24 @@ namespace TiltBrush
                     // If we're inserting a point and it's at the head, take on the characteristics of
                     // the head knot.  This will cause InsertPositionKnot to register the path as looping,
                     // which is what we want.
-
-
-                    Debug.Log("PATH IS NULL " ) ;
-                    Debug.Log(m_Widget );
-                    Debug.Log(m_CreatedKnot );
                     if (m_Widget.Path.IsPositionNearHead(m_CreatedKnot.transform.position) &&
                         knotIndex == m_Widget.Path.NumPositionKnots)
                     {
-                        MovementPathPositionKnot cppkCreated = (MovementPathPositionKnot)m_CreatedKnot;
-                        MovementPathPositionKnot cppkHead = m_Widget.Path.PositionKnots[0];
+                        CameraPathPositionKnot cppkCreated = (CameraPathPositionKnot)m_CreatedKnot;
+                        CameraPathPositionKnot cppkHead = m_Widget.Path.PositionKnots[0];
                         cppkCreated.transform.rotation = cppkHead.transform.rotation;
                         cppkCreated.TangentMagnitude = cppkHead.TangentMagnitude;
                     }
-                    m_Widget.Path.InsertPositionKnot((MovementPathPositionKnot)m_CreatedKnot, knotIndex);
+                    m_Widget.Path.InsertPositionKnot((CameraPathPositionKnot)m_CreatedKnot, knotIndex);
                     break;
                 case MovementPathKnot.Type.Rotation:
-                    m_Widget.Path.AddRotationKnot((MovementPathRotationKnot)m_CreatedKnot, m_PathT);
+                    m_Widget.Path.AddRotationKnot((CameraPathRotationKnot)m_CreatedKnot, m_PathT);
                     break;
                 case MovementPathKnot.Type.Speed:
-                    m_Widget.Path.AddSpeedKnot((MovementPathSpeedKnot)m_CreatedKnot, m_PathT);
+                    m_Widget.Path.AddSpeedKnot((CameraPathSpeedKnot)m_CreatedKnot, m_PathT);
                     break;
                 case MovementPathKnot.Type.Fov:
-                    m_Widget.Path.AddFovKnot((MovementPathFovKnot)m_CreatedKnot, m_PathT);
+                    m_Widget.Path.AddFovKnot((CameraPathFovKnot)m_CreatedKnot, m_PathT);
                     break;
                 default:
                     Debug.Log("CreatePathKnotCommand knot type unsupported.");

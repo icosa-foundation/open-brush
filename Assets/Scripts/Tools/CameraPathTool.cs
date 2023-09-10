@@ -43,15 +43,15 @@ namespace TiltBrush
         [SerializeField] private GameObject m_RemoveKnot;
 
         private Mode m_Mode;
-        private MovementPathWidget m_PrevLastValidPath;
-        private MovementPathWidget m_LastValidPath;
+        private CameraPathWidget m_PrevLastValidPath;
+        private CameraPathWidget m_LastValidPath;
         private Vector3 m_LastValidPosition;
 
-        private MovementPathWidget m_ExtendPath;
+        private CameraPathWidget m_ExtendPath;
         private ExtendPathType m_ExtendPathType;
 
         private KnotDescriptor m_LastPlacedKnot;
-        private MovementPathWidget m_LastPlacedKnotPath;
+        private CameraPathWidget m_LastPlacedKnotPath;
         private TrTransform m_LastPlacedKnotXf_LS;
 
         private KnotSegment m_PreviewSegment;
@@ -245,12 +245,12 @@ namespace TiltBrush
                         case MovementPathKnot.Type.Position:
                             if (m_LastPlacedKnot.control != 0)
                             {
-                                MovementPathPositionKnot pk = m_LastPlacedKnot.knot as MovementPathPositionKnot;
+                                CameraPathPositionKnot pk = m_LastPlacedKnot.knot as CameraPathPositionKnot;
                                 float tangentMag = pk.GetTangentMagnitudeFromControlXf(inputXf);
                                 Vector3 knotFwd =
                                     (inputXf.translation - m_LastPlacedKnot.knot.transform.position).normalized;
-                                if ((MovementPathPositionKnot.ControlType)m_LastPlacedKnot.control ==
-                                    MovementPathPositionKnot.ControlType.TangentControlBack)
+                                if ((CameraPathPositionKnot.ControlType)m_LastPlacedKnot.control ==
+                                    CameraPathPositionKnot.ControlType.TangentControlBack)
                                 {
                                     knotFwd *= -1.0f;
                                 }
@@ -271,14 +271,14 @@ namespace TiltBrush
                                     inputXf.rotation, mergesWithCreateCommand: true));
                             break;
                         case MovementPathKnot.Type.Speed:
-                            MovementPathSpeedKnot sk = m_LastPlacedKnot.knot as MovementPathSpeedKnot;
+                            CameraPathSpeedKnot sk = m_LastPlacedKnot.knot as CameraPathSpeedKnot;
                             float speed = sk.GetSpeedValueFromY(
                                 InputManager.Brush.Behavior.PointerAttachPoint.transform.position.y);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                 new ModifySpeedKnotCommand(sk, speed, mergesWithCreateCommand: true));
                             break;
                         case MovementPathKnot.Type.Fov:
-                            MovementPathFovKnot fk = m_LastPlacedKnot.knot as MovementPathFovKnot;
+                            CameraPathFovKnot fk = m_LastPlacedKnot.knot as CameraPathFovKnot;
                             float fov = fk.GetFovValueFromY(
                                 InputManager.Brush.Behavior.PointerAttachPoint.transform.position.y);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -322,10 +322,10 @@ namespace TiltBrush
 
                 GrabWidgetData currentData = WidgetManager.m_Instance.GetCurrentCameraPath();
                 var datas = WidgetManager.m_Instance.CameraPathWidgets;
-                foreach (TypedWidgetData<MovementPathWidget> data in datas)
+                foreach (TypedWidgetData<CameraPathWidget> data in datas)
                 {
-                    MovementPathWidget widget = data.WidgetScript;
-                    Debug.AssertFormat(widget != null, "Non-MovementPathWidget in MovementPathWidget list");
+                    CameraPathWidget widget = data.WidgetScript;
+                    Debug.AssertFormat(widget != null, "Non-CameraPathWidget in CameraPathWidget list");
 
                     // Check our tool attach point against the path.  If there is a collision, we're going
                     // to jump the position of our mesh to the point on the path.

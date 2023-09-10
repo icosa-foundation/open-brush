@@ -16,7 +16,7 @@ using System;
 
 namespace TiltBrush
 {
-    public class MovePositionKnotCommand : BaseKnotCommand<MovementPathPositionKnot>
+    public class MovePositionKnotCommand : BaseKnotCommand<CameraPathPositionKnot>
     {
         private MovementPath m_Path;
         private TrTransform m_StartXf_CS;
@@ -27,7 +27,7 @@ namespace TiltBrush
 
         public MovePositionKnotCommand(MovementPath path, KnotDescriptor knotDesc,
                                        TrTransform endXf_GS, bool final = false, BaseCommand parent = null)
-            : base((MovementPathPositionKnot)knotDesc.knot, false, parent)
+            : base((CameraPathPositionKnot)knotDesc.knot, false, parent)
         {
             m_Path = path;
             m_EndXf_CS = App.Scene.Pose.inverse * endXf_GS;
@@ -37,7 +37,7 @@ namespace TiltBrush
 
             if (Knot == null)
             {
-                throw new ArgumentException("MovePositionKnotCommand requires MovementPathPositionKnot");
+                throw new ArgumentException("MovePositionKnotCommand requires CameraPathPositionKnot");
             }
             m_StartXf_CS = TrTransform.FromLocalTransform(Knot.transform);
         }

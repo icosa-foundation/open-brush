@@ -49,7 +49,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
 
-            if (m_Widget is MovementPathWidget)
+            if (m_Widget is CameraPathWidget)
             {
                 WidgetManager.m_Instance.ValidateCurrentCameraPath();
                 App.Switchboard.TriggerCameraPathDeleted();
@@ -67,7 +67,7 @@ namespace TiltBrush
                 m_Widget.SetSignedWidgetSize(m_WidgetTransform.scale);
                 WidgetManager.m_Instance.RefreshPinAndUnpinLists();
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: true);
-                if (m_Widget is MovementPathWidget)
+                if (m_Widget is CameraPathWidget)
                 {
                     App.Switchboard.TriggerCameraPathCreated();
                 }
