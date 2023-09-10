@@ -899,7 +899,7 @@ namespace TiltBrush
             {
                 foreach (var unityMat in mf.GetComponent<MeshRenderer>().materials)
                 {
-                    m_ImportMaterialCollector.Add(unityMat, false);
+                    m_ImportMaterialCollector.Add(unityMat);
                 }
             }
         }

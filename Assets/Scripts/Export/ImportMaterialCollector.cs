@@ -93,7 +93,7 @@ namespace TiltBrush
 #endif
 
         // Used for GLTFast
-        public void Add(Material unityMaterial, bool transparent)
+        public void Add(Material unityMaterial)
         {
             TbtSettings.PbrMaterialInfo pbrInfo = unityMaterial.renderQueue < 3000 // TODO Is this reliable?
                 ? TbtSettings.Instance.m_PbrBlendDoubleSided
