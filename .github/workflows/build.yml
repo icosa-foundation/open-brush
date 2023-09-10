@@ -298,6 +298,13 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+      - uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}
+
       - name: Set filename (for Windows)
         if: matrix.targetPlatform == 'StandaloneWindows64'
         env:
@@ -418,6 +425,8 @@ jobs:
           # Print the files to be deleted
           find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm
+          # The package cache is stored in a separate, shared, cache
+          rm -rf Library/PackageCache
           echo "Final space used"
           du -mcsh Library
 
