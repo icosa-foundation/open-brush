@@ -14,13 +14,13 @@
 
 namespace TiltBrush
 {
-    public class ModifyFovKnotCommand : BaseKnotCommand<CameraPathFovKnot>
+    public class ModifyFovKnotCommand : BaseKnotCommand<MovementPathFovKnot>
     {
         private float m_StartFov;
         private float m_EndFov;
         private bool m_Final;
 
-        public ModifyFovKnotCommand(CameraPathFovKnot knot, float endFov,
+        public ModifyFovKnotCommand(MovementPathFovKnot knot, float endFov,
                                     bool mergesWithCreateCommand = false, bool final = false,
                                     BaseCommand parent = null) : base(knot, mergesWithCreateCommand, parent)
         {

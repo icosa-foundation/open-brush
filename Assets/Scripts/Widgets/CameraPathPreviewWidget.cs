@@ -21,7 +21,7 @@ namespace TiltBrush
     {
         [SerializeField] private Color m_RecordColor;
 
-        private CameraPathWidget m_CurrentPathWidget;
+        private MovementPathWidget m_CurrentPathWidget;
         private Vector3? m_LastRecordedInputXf;
         private PathT m_PathT;
 
@@ -64,7 +64,7 @@ namespace TiltBrush
                     // camera path stop advancing.  To correct this, ensure the minimum speed is
                     // the lowest speed available for a speed knot.
                     float speed = Mathf.Max(m_CurrentPathWidget.Path.GetSpeed(m_PathT),
-                        CameraPathSpeedKnot.kMinSpeed);
+                        MovementPathSpeedKnot.kMinSpeed);
                     bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
                         m_PathT, out m_PathT);
 
