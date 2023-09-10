@@ -290,7 +290,8 @@ jobs:
           cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
           rm -rf tmp.plugin tmp.package
 
-      - uses: actions/cache@v3
+      - name: Restore Library/
+        uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -298,7 +299,8 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
-      - uses: actions/cache@v3
+      - name: Restore Library/PackageCache
+        uses: actions/cache/restore@v3
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -413,6 +415,15 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: build
+
+      - name: Save Library/PackageCache cache
+        uses: actions/cache/save@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}
+
       - name: Clean Library before caching
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
@@ -429,6 +440,15 @@ jobs:
           rm -rf Library/PackageCache
           echo "Final space used"
           du -mcsh Library
+
+      - name: Save Library/ cache
+        uses: actions/cache/save@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
   release:
     name: Create Github Release
