@@ -2082,6 +2082,26 @@ namespace TiltBrush
             return true;
         }
 
+        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
+        {
+            string soundClipsDirectory = SoundClipLibraryPath();
+            if (Directory.Exists(soundClipsDirectory))
+            {
+                return true;
+            }
+            if (!InitDirectoryAtPath(soundClipsDirectory))
+            {
+                return false;
+            }
+            foreach (var soundClip in defaultSoundClips)
+            {
+                string destFilename = Path.GetFileName(soundClip);
+                FileUtils.WriteBytesFromResources(soundClip, Path.Combine(soundClipsDirectory, destFilename));
+            }
+
+            return true;
+        }
+        
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
@@ -2105,6 +2125,11 @@ namespace TiltBrush
         public static string VideoLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "Videos");
+        }
+        
+        public static string SoundClipLibraryPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Sound Clips");
         }
 
         public static string BackgroundImagesLibraryPath()
