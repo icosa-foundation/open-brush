@@ -418,6 +418,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v3
+        if: github.ref == 'refs/heads/main'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -443,6 +444,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v3
+        if: github.ref == 'refs/heads/main'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
