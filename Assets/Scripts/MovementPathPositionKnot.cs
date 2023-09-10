@@ -17,7 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class CameraPathPositionKnot : MovementPathKnot
+    public class MovementPathPositionKnot : MovementPathKnot
     {
         public enum ControlType
         {

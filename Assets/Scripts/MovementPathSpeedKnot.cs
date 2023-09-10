@@ -18,7 +18,7 @@ using TMPro;
 namespace TiltBrush
 {
 
-    public class CameraPathSpeedKnot : MovementPathKnot
+    public class MovementPathSpeedKnot : MovementPathKnot
     {
         public enum ControlType
         {

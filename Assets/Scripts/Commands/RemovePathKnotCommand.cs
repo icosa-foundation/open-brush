@@ -18,13 +18,13 @@ namespace TiltBrush
 {
     public class RemovePathKnotCommand : BaseCommand
     {
-        private CameraPathWidget m_Widget;
+        private MovementPathWidget m_Widget;
         private TrTransform m_RemovedXf;
         private int m_KnotIndex;
         private PathT m_PathT;
         public MovementPathKnot Knot { get; }
 
-        public RemovePathKnotCommand(CameraPathWidget widget, MovementPathKnot knot,
+        public RemovePathKnotCommand(MovementPathWidget widget, MovementPathKnot knot,
                                      TrTransform removeXf, BaseCommand parent = null)
             : base(parent)
         {
@@ -37,7 +37,7 @@ namespace TiltBrush
             // to place the knot back on the path at the current position.
             if (Knot.KnotType == MovementPathKnot.Type.Position)
             {
-                m_KnotIndex = m_Widget.Path.PositionKnots.IndexOf((CameraPathPositionKnot)Knot);
+                m_KnotIndex = m_Widget.Path.PositionKnots.IndexOf((MovementPathPositionKnot)Knot);
                 m_PathT = new PathT();
             }
             else
@@ -57,16 +57,16 @@ namespace TiltBrush
             switch (Knot.KnotType)
             {
                 case MovementPathKnot.Type.Position:
-                    m_Widget.Path.InsertPositionKnot((CameraPathPositionKnot)Knot, m_KnotIndex);
+                    m_Widget.Path.InsertPositionKnot((MovementPathPositionKnot)Knot, m_KnotIndex);
                     break;
                 case MovementPathKnot.Type.Rotation:
-                    m_Widget.Path.AddRotationKnot((CameraPathRotationKnot)Knot, m_PathT);
+                    m_Widget.Path.AddRotationKnot((MovementPathRotationKnot)Knot, m_PathT);
                     break;
                 case MovementPathKnot.Type.Speed:
-                    m_Widget.Path.AddSpeedKnot((CameraPathSpeedKnot)Knot, m_PathT);
+                    m_Widget.Path.AddSpeedKnot((MovementPathSpeedKnot)Knot, m_PathT);
                     break;
                 case MovementPathKnot.Type.Fov:
-                    m_Widget.Path.AddFovKnot((CameraPathFovKnot)Knot, m_PathT);
+                    m_Widget.Path.AddFovKnot((MovementPathFovKnot)Knot, m_PathT);
                     break;
             }
 

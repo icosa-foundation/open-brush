@@ -27,7 +27,7 @@ namespace TiltBrush
         [SerializeField] protected GameObject m_AddPathMesh;
         [SerializeField] protected TextMeshPro m_PathNumberText;
 
-        private CameraPathWidget m_PathWidget;
+        private MovementPathWidget m_PathWidget;
         private int m_NumActivePaths;
 
         override protected void Awake()
@@ -56,7 +56,7 @@ namespace TiltBrush
             // Note that this caching method is ok in this instance because these buttons are transient.
             var datas = WidgetManager.m_Instance.CameraPathWidgets;
             m_NumActivePaths = 0;
-            foreach (TypedWidgetData<CameraPathWidget> data in datas)
+            foreach (TypedWidgetData<MovementPathWidget> data in datas)
             {
                 ++m_NumActivePaths;
             }
