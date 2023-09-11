@@ -3243,6 +3243,14 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 144201565051027456
+    m_Key: PANEL_AUDIO_CLIP_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Key: PANEL_REFERENCE_AUDIO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

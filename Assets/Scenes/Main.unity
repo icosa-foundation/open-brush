@@ -9843,6 +9843,7 @@ GameObject:
   - component: {fileID: 652605572}
   - component: {fileID: 652605564}
   - component: {fileID: 652605570}
+  - component: {fileID: 652605574}
   m_Layer: 0
   m_Name: App
   m_TagString: Untagged
@@ -10638,6 +10639,25 @@ MonoBehaviour:
   - DefaultBackgroundImages/panorama.jpg
   - DefaultBackgroundImages/stereopanorama.jpg
   - DefaultBackgroundImages/ATTRIBUTION.txt
+--- !u!114 &652605574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652605543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dca52281a4840acb41e0cb27ab4671c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DefaultSoundClips:
+  - DefaultSoundClips/underwater.wav
+  m_DebugOutput: 0
+  m_supportedSoundClipExtensions:
+  - .wav
+  - .ogg
+  - .mp3
 --- !u!4 &669339392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4492044767078796625, guid: 382dabebd59956d499aefb54b02f804d,
@@ -29544,6 +29564,8 @@ MonoBehaviour:
   m_ImageWidgetPrefab: {fileID: 11466202, guid: 6d552c9f635cf0f41ae59c1222d8442f,
     type: 3}
   m_VideoWidgetPrefab: {fileID: 854942063617328480, guid: a1bf54eee52cec14e8207351740867f3,
+    type: 3}
+  m_SoundClipWidgetPrefab: {fileID: 854942063617328480, guid: eb0cb4b31c139874e8f348d6682dec69,
     type: 3}
   m_CameraPathWidgetPrefab: {fileID: 114268259032398848, guid: a933b2a19614a6c4da08a0143f0ec912,
     type: 3}

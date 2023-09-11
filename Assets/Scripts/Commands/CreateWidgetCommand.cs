@@ -110,6 +110,11 @@ namespace TiltBrush
                     m_Widget.transform.parent = m_Canvas.transform;
                     m_Widget.Show(true);
                 }
+                else if (m_Widget is SoundClipWidget)
+                {
+                    m_Widget.transform.parent = m_Canvas.transform;
+                    m_Widget.Show(true);
+                }
                 else if (m_Widget is VideoWidget)
                 {
                     m_Widget.transform.parent = m_Canvas.transform;

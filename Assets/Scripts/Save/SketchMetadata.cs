@@ -673,6 +673,22 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltSoundClip
+    {
+        public string FilePath { get; set; } // relative to Media Library folder
+        public float AspectRatio { get; set; }
+        public bool Pinned;
+        public TrTransform Transform;
+        public bool Paused { get; set; }
+        public float Time { get; set; }
+        public float Volume { get; set; }
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+        public bool TwoSided { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]

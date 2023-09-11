@@ -105,6 +105,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
+        [SerializeField] SoundClipWidget m_SoundClipWidgetPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
         [SerializeField] private GameObject m_CameraPathRotationKnotPrefab;
@@ -144,6 +145,7 @@ namespace TiltBrush
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
+        private List<TypedWidgetData<SoundClipWidget>> m_SoundClipWidgets;
         private List<TypedWidgetData<CameraPathWidget>> m_CameraPathWidgets;
 
         // These lists are used by the PinTool.  They're kept in sync by the
@@ -155,6 +157,7 @@ namespace TiltBrush
         private TiltModels75[] m_loadingTiltModels75;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
+        private TiltSoundClip[] m_loadingTiltSoundClips;
 
         private List<GrabWidgetData> m_WidgetsNearBrush;
         private List<GrabWidgetData> m_WidgetsNearWand;
@@ -264,6 +267,8 @@ namespace TiltBrush
 
         public bool AnyVideoWidgetActive => m_VideoWidgets.Any(x => x.m_WidgetObject.activeSelf);
 
+        public bool AnySoundClipWidgetActive => m_SoundClipWidgets.Any(x => x.m_WidgetObject.activeSelf);
+
         public bool AnyCameraPathWidgetsActive =>
             m_CameraPathWidgets.Any(x => x.m_WidgetObject.activeSelf);
 
@@ -300,6 +305,7 @@ namespace TiltBrush
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
+            m_SoundClipWidgets = new List<TypedWidgetData<SoundClipWidget>>();
             m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
 
             m_CanBePinnedWidgets = new List<GrabWidget>();
@@ -326,6 +332,7 @@ namespace TiltBrush
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
+        public SoundClipWidget SoundClipWidgetPrefab { get { return m_SoundClipWidgetPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
         public GameObject CameraPathRotationKnotPrefab { get { return m_CameraPathRotationKnotPrefab; } }
@@ -383,6 +390,13 @@ namespace TiltBrush
                     yield return m_VideoWidgets[i];
                 }
             }
+            for (int i = 0; i < m_SoundClipWidgets.Count; ++i)
+            {
+                if (m_SoundClipWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_SoundClipWidgets[i];
+                }
+            }
             for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
                 if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
@@ -397,7 +411,9 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets);
+                return ret.Concat(m_ImageWidgets)
+                    .Concat(m_VideoWidgets)
+                    .Concat(m_SoundClipWidgets);
             }
         }
 
@@ -597,7 +613,10 @@ namespace TiltBrush
 
         public bool HasSelectableWidgets()
         {
-            return (m_ModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
+            return m_ModelWidgets.Count > 0 ||
+                m_ImageWidgets.Count > 0 ||
+                m_VideoWidgets.Count > 0 ||
+                m_SoundClipWidgets.Count > 0 ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -1028,6 +1047,7 @@ namespace TiltBrush
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
+            GetUnselectedActiveWidgetsInList(m_SoundClipWidgets);
             if (!m_StencilsDisabled)
             {
                 GetUnselectedActiveWidgetsInList(m_StencilWidgets);
@@ -1058,6 +1078,7 @@ namespace TiltBrush
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
+                RefreshPinUnpinWidgetList(m_SoundClipWidgets);
                 RefreshPinUnpinWidgetList(m_StencilWidgets);
 
                 RefreshPinAndUnpinAction();
@@ -1135,6 +1156,10 @@ namespace TiltBrush
             {
                 m_VideoWidgets.Add(new TypedWidgetData<VideoWidget>(video));
             }
+            else if (generic is SoundClipWidget soundClip)
+            {
+                m_SoundClipWidgets.Add(new TypedWidgetData<SoundClipWidget>(soundClip));
+            }
             else if (generic is CameraPathWidget cpw)
             {
                 m_CameraPathWidgets.Add(new TypedWidgetData<CameraPathWidget>(cpw));
@@ -1185,6 +1210,7 @@ namespace TiltBrush
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_SoundClipWidgets, rWidget)) { return; }
             if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
             RemoveFrom(m_GrabWidgets, rWidget);
         }
@@ -1331,6 +1357,7 @@ namespace TiltBrush
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_VideoWidgets);
+            DestroyWidgetList(m_SoundClipWidgets);
             DestroyWidgetList(m_StencilWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
             SetCurrentCameraPath_Internal(null);
@@ -1498,6 +1525,8 @@ namespace TiltBrush
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
             m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<SoundClipWidget>> ActiveSoundClipWidgets =>
+            m_SoundClipWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
             m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
 

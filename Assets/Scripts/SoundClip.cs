@@ -15,7 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace TiltBrush
 {
@@ -55,13 +57,7 @@ namespace TiltBrush
                 remove { m_OnSoundClipInitialized -= value; }
             }
 
-            private AudioSource SoundClipAudioSource => m_SoundClip.m_AudioSource;
-
-            public Texture SoundClipTexture
-            {
-                get { return m_SoundClipInitialized ? SoundClipAudioSource.texture : null; }
-            }
-
+            private AudioSource SoundClipAudioSource => m_SoundClip.m_SoundClipAudioSource;
             public bool Playing
             {
                 get => m_SoundClipInitialized ? SoundClipAudioSource.isPlaying : false;
@@ -83,21 +79,21 @@ namespace TiltBrush
 
             public float Volume
             {
-                get => (!m_SoundClipInitialized || SoundClipAudioSource.GetDirectAudioMute(0))
-                    ? 0f : SoundClipAudioSource.GetDirectAudioVolume(0);
+                get => (!m_SoundClipInitialized || SoundClipAudioSource.mute)
+                    ? 0f : SoundClipAudioSource.volume;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
                         if (value <= 0.005f)
                         {
-                            SoundClipAudioSource.SetDirectAudioVolume(0, 0f);
-                            SoundClipAudioSource.SetDirectAudioMute(0, true);
+                            SoundClipAudioSource.volume = 0;
+                            SoundClipAudioSource.mute = true;
                         }
                         else
                         {
-                            SoundClipAudioSource.SetDirectAudioMute(0, false);
-                            SoundClipAudioSource.SetDirectAudioVolume(0, value);
+                            SoundClipAudioSource.mute = false;
+                            SoundClipAudioSource.volume = value;
                         }
                     }
                 }
@@ -105,12 +101,12 @@ namespace TiltBrush
 
             public float Position
             {
-                get => m_SoundClipInitialized ? (float)(SoundClipAudioSource.time / SoundClipAudioSource.length) : 0f;
+                get => m_SoundClipInitialized ? (float)(SoundClipAudioSource.time / SoundClipAudioSource.clip.length) : 0f;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
-                        SoundClipAudioSource.time = SoundClipAudioSource.length * Mathf.Clamp01(value);
+                        SoundClipAudioSource.time = SoundClipAudioSource.clip.length * Mathf.Clamp01(value);
                     }
                 }
             }
@@ -122,19 +118,19 @@ namespace TiltBrush
                 {
                     if (m_SoundClipInitialized)
                     {
-                        SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)SoundClipAudioSource.length);
+                        SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)SoundClipAudioSource.clip.length);
                     }
                 }
             }
 
-            public float Length => m_SoundClipInitialized ? (float)SoundClipAudioSource.length : 0f;
+            public float Length => m_SoundClipInitialized ? (float)SoundClipAudioSource.clip.length : 0f;
 
             public Controller(SoundClip soundClip)
             {
                 m_SoundClip = soundClip;
                 if (m_SoundClip.m_SoundClipAudioSource != null)
                 {
-                    m_SoundClipInitialized = m_SoundClip.m_SoundClipAudioSource.isPrepared;
+                    m_SoundClipInitialized = m_SoundClip.m_SoundClipAudioSource.clip != null;
                 }
             }
 
@@ -174,7 +170,6 @@ namespace TiltBrush
         /// filename.
         public string PersistentPath { get; }
         public string AbsolutePath { get; }
-        public bool NetworkSoundClip { get; }
         public string HumanName { get; }
 
         public Texture2D Thumbnail { get; private set; }
@@ -193,7 +188,6 @@ namespace TiltBrush
 
         public SoundClip(string filePath)
         {
-            NetworkSoundClip = filePath.EndsWith(".txt");
             PersistentPath = filePath.Substring(App.SoundClipLibraryPath().Length + 1);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
@@ -208,7 +202,6 @@ namespace TiltBrush
             Aspect = 16 / 9f;
             PersistentPath = "";
             AbsolutePath = "";
-            NetworkSoundClip = false;
             HumanName = "";
         }
 
@@ -247,58 +240,47 @@ namespace TiltBrush
             }
         }
 
+        async Task<AudioClip> LoadClip(string path)
+        {
+            AudioClip clip = null;
+            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.WAV))
+            {
+                uwr.SendWebRequest();
+
+                try
+                {
+                    while (!uwr.isDone) await Task.Delay(5);
+
+                    if (uwr.isNetworkError || uwr.isHttpError) Debug.Log($"{uwr.error}");
+                    else
+                    {
+                        clip = DownloadHandlerAudioClip.GetContent(uwr);
+                    }
+                }
+                catch (Exception err)
+                {
+                    Debug.Log($"{err.Message}, {err.StackTrace}");
+                }
+            }
+            return clip;
+        }
+
+
         private IEnumerator<Null> PrepareAudioPlayer(Action onCompletion)
         {
             Error = null;
             var gobj = new GameObject(HumanName);
             gobj.transform.SetParent(SoundClipCatalog.Instance.gameObject.transform);
-            try
+            m_SoundClipAudioSource = gobj.AddComponent<AudioSource>();
+            m_SoundClipAudioSource.playOnAwake = false;
+            string fullPath = System.IO.Path.Combine(App.SoundClipLibraryPath(), PersistentPath);
+            var audioClipTask = LoadClip(fullPath);
+            while (!audioClipTask.IsCompleted)
             {
-                m_SoundClipAudioSource = gobj.AddComponent<AudioSource>();
-                m_SoundClipAudioSource.playOnAwake = false;
-                if (NetworkSoundClip)
-                {
-                    if (System.IO.File.Exists(AbsolutePath))
-                    {
-                        m_SoundClipAudioSource.url = System.IO.File.ReadAllText(AbsolutePath);
-                    }
-                }
-                else
-                {
-                    string fullPath = System.IO.Path.Combine(App.SoundClipLibraryPath(), PersistentPath);
-                    m_SoundClipAudioSource.url = $"{fullPath}";
-                }
-                m_SoundClipAudioSource.isLooping = true;
-                m_SoundClipAudioSource.renderMode = SoundClipRenderMode.APIOnly;
-                m_SoundClipAudioSource.skipOnDrop = true;
-                m_SoundClipAudioSource.audioOutputMode = SoundClipAudioOutputMode.Direct;
-                m_SoundClipAudioSource.Prepare();
-                m_SoundClipAudioSource.errorReceived += OnError;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                Error = ex.Message;
-                yield break;
-            }
-
-            while (!m_SoundClipAudioSource.isPrepared)
-            {
-                if (Error != null)
-                {
-                    yield break;
-                }
                 yield return null;
             }
-
-            // This code is *super* useful for testing the sound clip panel, and I've written it at
-            // least five times, so I'd like to just leave it here as it may well be useful in the future.
-#if false
-    // Delays the clip load by two seconds
-    for (var wait = DateTime.Now + TimeSpan.FromSeconds(2); wait > DateTime.Now;) {
-      yield return null;
-    }
-#endif
+            m_SoundClipAudioSource.clip = audioClipTask.Result;
+            m_SoundClipAudioSource.loop = true;
 
             Width = 128;
             Height = 128;
@@ -348,18 +330,7 @@ namespace TiltBrush
             {
                 yield return null;
             }
-            // Because the Thumbnail needs to be a Texture2D, we need to do the little dance of copying
-            // the rendertexture over to the Texture2D.
-            var rt = RenderTexture.GetTemporary(width, height, 0);
-            Graphics.Blit(m_SoundClipAudioSource.texture, rt);
-            Thumbnail = new Texture2D(width, height, TextureFormat.RGB24, false);
-            var oldActive = RenderTexture.active;
-            RenderTexture.active = rt;
-            Thumbnail.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            RenderTexture.active = oldActive;
-            Thumbnail.Apply(false);
-            RenderTexture.ReleaseTemporary(rt);
-            thumbnailExtractor.Dispose();
+            Thumbnail = GetWaveform(50, Color.white);
             IsInitialized = true;
         }
 
@@ -384,6 +355,39 @@ namespace TiltBrush
         public override string ToString()
         {
             return $"{HumanName}: {Width}x{Height} {Aspect}";
+        }
+
+        public Texture2D GetWaveform(float saturation, Color col)
+        {
+            var width = Thumbnail.width;
+            var height = Thumbnail.height;
+            var audio = m_SoundClipAudioSource.clip;
+            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            float[] samples = new float[audio.samples];
+            float[] waveform = new float[width];
+            audio.GetData(samples, 0);
+            int packSize = ( audio.samples / width ) + 1;
+            int s = 0;
+            for (int i = 0; i < audio.samples; i += packSize) {
+                waveform[s] = Mathf.Abs(samples[i]);
+                s++;
+            }
+
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+
+            for (int x = 0; x < waveform.Length; x++) {
+                for (int y = 0; y <= waveform[x] * ((float)height * saturation); y++) {
+                    tex.SetPixel(x, ( height / 2 ) + y, col);
+                    tex.SetPixel(x, ( height / 2 ) - y, col);
+                }
+            }
+            tex.Apply();
+
+            return tex;
         }
     }
 } // namespace TiltBrush
