@@ -512,12 +512,13 @@ namespace TiltBrush
                     this,
                     warnings
                 );
-
+                m_AllowExport = true;
                 await t;
 
             }
             catch (Exception ex)
             {
+                m_AllowExport = false;
                 m_LoadError = new LoadError("Invalid data", ex.Message);
                 Debug.LogException(ex);
             }
@@ -891,5 +892,16 @@ namespace TiltBrush
             return "Unknown";
         }
 
+        public void AssignMaterialsToCollector(ImportMaterialCollector collector)
+        {
+            m_ImportMaterialCollector = collector;
+            foreach (var mf in GetMeshes())
+            {
+                foreach (var unityMat in mf.GetComponent<MeshRenderer>().materials)
+                {
+                    m_ImportMaterialCollector.Add(unityMat);
+                }
+            }
+        }
     }
 } // namespace TiltBrush;
