@@ -150,5 +150,18 @@ namespace TiltBrush.Layers
                 new DuplicateSelectionCommand(SelectionManager.m_Instance.SelectionTransform)
             );
         }
+
+        public void HandleMoveSelectionToCurrentLayer()
+        {
+            var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+            var widgets = SelectionManager.m_Instance.SelectedWidgets.ToList();
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new SelectCommand(strokes, widgets,
+                    SelectionManager.m_Instance.SelectionTransform,
+                    true,
+                    targetCanvas: App.ActiveCanvas
+                )
+            );
+        }
     }
 }

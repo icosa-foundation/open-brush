@@ -3436,6 +3436,10 @@ MonoBehaviour:
     m_Localized: Depth
     m_Metadata:
       m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: Move Selection to Current Layer
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
