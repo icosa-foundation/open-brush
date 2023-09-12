@@ -39,9 +39,5 @@ namespace TiltBrush
         [LuaDocsExample("Selection:Trim(5)")]
         [LuaDocsParameter("count", "The number of points to trim from each stroke")]
         public static void Trim(int count) => ApiMethods.TrimSelection(count);
-
-        [LuaDocsDescription("Selects all brush strokes and widgets on the current layer")]
-        [LuaDocsExample("Selection:SelectAll()")]
-        public static void SelectAll() => ApiMethods.SelectAll();
     }
 }
