@@ -652,6 +652,9 @@ function Guide:NewCustom(transform, model) end
 function Guide:Select() end
 
 
+function Guide:Deselect() end
+
+
 function Guide:Delete() end
 
 ---@param scale Vector3 The scale vector for scaling the Guide Widget
@@ -706,6 +709,9 @@ function Image:Import(location) end
 function Image:Select() end
 
 
+function Image:Deselect() end
+
+
 function Image:Delete() end
 
 ---@param depth number The depth of the extrusion
@@ -756,6 +762,9 @@ Layer = {}
 
 ---@return Layer The new layer
 function Layer:New() end
+
+
+function Layer:SelectAll() end
 
 
 function Layer:CenterPivot() end
@@ -1066,6 +1075,9 @@ function Model:Import(filename) end
 
 
 function Model:Select() end
+
+
+function Model:Deselect() end
 
 
 function Model:Delete() end
@@ -1535,6 +1547,9 @@ function Rotation:Multiply(other) end
 ---Methods for type Selection
 
 
+function Selection:Deselect() end
+
+
 function Selection:Duplicate() end
 
 
@@ -1557,9 +1572,6 @@ function Selection:Resize() end
 
 ---@param count number The number of points to trim from each stroke
 function Selection:Trim(count) end
-
-
-function Selection:SelectAll() end
 
 ---Properties for class Sketch
 
@@ -1660,6 +1672,9 @@ function Stroke:Delete() end
 
 function Stroke:Select() end
 
+
+function Stroke:Deselect() end
+
 ---@param from number Start stroke index (0 is the first stroke that was drawn
 ---@param to number End stroke index
 function Stroke:SelectRange(from, to) end
@@ -1713,6 +1728,12 @@ StrokeList = {}
 
 
 ---Methods for type StrokeList
+
+
+function StrokeList:Select() end
+
+
+function StrokeList:Deselect() end
 
 
 function StrokeList:Delete() end
@@ -2277,6 +2298,9 @@ function Video:Import(location) end
 
 
 function Video:Select() end
+
+
+function Video:Deselect() end
 
 
 function Video:Delete() end
