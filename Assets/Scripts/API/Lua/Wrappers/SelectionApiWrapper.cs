@@ -5,6 +5,8 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SelectionApiWrapper
     {
+        public static void Deselect() => SelectionManager.m_Instance.ClearActiveSelection();
+
         [LuaDocsDescription("Duplicates the currently selected items")]
         [LuaDocsExample("Selection:Duplicate()")]
         public static void Duplicate() => ApiMethods.DuplicateSelection();

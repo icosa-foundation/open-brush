@@ -151,6 +151,10 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { _Stroke });
         }
 
+        [LuaDocsDescription("Removes this stroke from the current selection")]
+        [LuaDocsExample("myStroke:Deselect()")]
+        public void Deselect() => SelectionManager.m_Instance.DeselectStrokes(new [] {_Stroke});
+
         [LuaDocsDescription("Adds multiple strokes to the current selection")]
         [LuaDocsExample("Stroke:SelectMultiple(0, 4) --Adds the first 5 strokes on the sketch")]
         [LuaDocsParameter("from", "Start stroke index (0 is the first stroke that was drawn")]
