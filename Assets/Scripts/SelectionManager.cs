@@ -877,15 +877,15 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
-        public void InvertSelection()
+        public void InvertSelection(CanvasScript canvas)
         {
             // Build a list of all the strokes in the main canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the main canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select everything that was in the main canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -914,15 +914,15 @@ namespace TiltBrush
                 new FlipSelectionCommand(m_SelectedStrokes, m_SelectedWidgets, flipPlaneInSelectionSpace));
         }
 
-        public void SelectAll()
+        public void SelectAll(CanvasScript canvas)
         {
             // Build a list of all the strokes in the main canvas.
             List<Stroke> unselectedStrokes =
-                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes();
+                SketchMemoryScript.m_Instance.GetAllUnselectedActiveStrokes(canvas);
 
             // Build a list of all the unpinned widgets in the main canvas.
             List<GrabWidget> unselectedWidgets =
-                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets();
+                WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
             // Select em all.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
