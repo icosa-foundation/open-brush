@@ -1007,7 +1007,7 @@ namespace TiltBrush
         }
 
         // If canvas is null then return all widgets
-        public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas = null)
+        public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas)
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
