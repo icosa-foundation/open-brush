@@ -32,6 +32,20 @@ namespace TiltBrush
             _Strokes = strokes;
         }
 
+        [LuaDocsDescription("Adds these strokes to the current selection")]
+        [LuaDocsExample("myStrokes:Select()")]
+        public void Select()
+        {
+            SelectionManager.m_Instance.SelectStrokes(_Strokes);
+        }
+
+        [LuaDocsDescription("Removes these strokes from the current selection")]
+        [LuaDocsExample("myStrokes:Deselect()")]
+        public void Deselect()
+        {
+            SelectionManager.m_Instance.DeselectStrokes(_Strokes);
+        }
+
         [LuaDocsDescription("Deletes all the strokes in the list")]
         [LuaDocsExample("myStrokes:Delete()")]
         public void Delete()
