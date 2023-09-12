@@ -120,6 +120,10 @@ namespace TiltBrush
         [LuaDocsExample("myGuide:Select()")]
         public void Select() => ApiMethods.SelectWidget(_StencilWidget);
 
+        [LuaDocsDescription("Removes the guide from the current selection")]
+        [LuaDocsExample("myGuide:Deselect()")]
+        public void Deselect() => ApiMethods.DeselectWidget(_StencilWidget);
+
         [LuaDocsDescription("Deletes the guide")]
         [LuaDocsExample("myGuide:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_StencilWidget);

@@ -77,6 +77,10 @@ namespace TiltBrush
         [LuaDocsExample("myVideo:Select()")]
         public void Select() => ApiMethods.SelectWidget(_VideoWidget);
 
+        [LuaDocsDescription("Removes this Video Widget from the current selection")]
+        [LuaDocsExample("myVideo:Deselect()")]
+        public void Deselect() => ApiMethods.DeselectWidget(_VideoWidget);
+
         [LuaDocsDescription("Deletes this Video Widget")]
         [LuaDocsExample("myVideo:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_VideoWidget);

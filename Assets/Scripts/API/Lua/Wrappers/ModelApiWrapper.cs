@@ -78,6 +78,10 @@ namespace TiltBrush
         [LuaDocsExample(@"myModel:Select()")]
         public void Select() => ApiMethods.SelectWidget(_ModelWidget);
 
+        [LuaDocsDescription("Removes the model from the current selection")]
+        [LuaDocsExample("myModel:Deselect()")]
+        public void Deselect() => ApiMethods.DeselectWidget(_ModelWidget);
+
         [LuaDocsDescription(@"Deletes this model")]
         [LuaDocsExample(@"myModel:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
