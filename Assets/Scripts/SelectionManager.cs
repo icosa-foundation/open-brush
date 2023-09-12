@@ -808,7 +808,7 @@ namespace TiltBrush
 
                 var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
                 widget.SetCanvas(destination);
-                widget.RestoreGameObjectLayer(App.ActiveCanvas.gameObject.layer);
+                widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
 
