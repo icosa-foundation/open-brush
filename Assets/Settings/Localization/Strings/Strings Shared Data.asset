@@ -3243,6 +3243,10 @@ MonoBehaviour:
     m_Key: WEBCAM_PANEL_NEXT_DEVICE
     m_Metadata:
       m_Items: []
+  - m_Id: 137988464450723840
+    m_Key: LAYERS_PANEL_MOVELAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
