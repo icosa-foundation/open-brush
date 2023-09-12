@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using Newtonsoft.Json;
 
@@ -66,6 +67,25 @@ namespace TiltBrush
             timeslicedConstructor = TimeslicedConstructor();
         }
 
+        public static void ExportMetadata(string path)
+        {
+            var instance = new SketchSnapshot();
+            using (var jsonWriter = new CustomJsonWriter(new StreamWriter(new FileStream(path, FileMode.Create))))
+            {
+                instance.m_JsonSerializer.Serialize(jsonWriter, instance.m_Metadata);
+            }
+        }
+
+        // Initialize just enough to generate metadata JSON for export
+        public SketchSnapshot()
+        {
+            m_JsonSerializer = new JsonSerializer();
+            m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
+            m_SaveIconCapture = null;
+            m_GroupIdMapping = new GroupIdMapping();
+            m_Metadata = GetSketchMetadata();
+        }
+
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
@@ -87,13 +107,18 @@ namespace TiltBrush
             }
             stopwatch.Stop();
 
+            m_Metadata = GetSketchMetadata();
+        }
+
+        public SketchMetadata GetSketchMetadata()
+        {
             // Note: This assumes Room space == Global space.
             TrTransform xfThumbnail_RS = SketchControlsScript.m_Instance.GetSaveIconTool()
                 .LastSaveCameraRigState.GetLossyTrTransform();
 
             bool hasAuthor = !string.IsNullOrEmpty(App.UserConfig.User.Author);
 
-            m_Metadata = new SketchMetadata
+            return new SketchMetadata
             {
                 //      BrushIndex = brushGuids.ToArray(), // Need to do this on actual save!
                 EnvironmentPreset = SceneSettings.m_Instance.GetDesiredPreset().m_Guid.ToString("D"),
