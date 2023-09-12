@@ -166,6 +166,10 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
+        [LuaDocsDescription("Selects all strokes and widgets on this layer")]
+        [LuaDocsExample("myLayer:SelectAll()")]
+        public static void SelectAll() => SelectionManager.m_Instance.SelectAll(App.ActiveCanvas);
+
         [LuaDocsDescription("Move the pivot point of the layer to the average center of it's contents")]
         [LuaDocsExample(@"myLayer:CenterPivot()")]
         public void CenterPivot() => _CanvasScript.CenterPivot();
