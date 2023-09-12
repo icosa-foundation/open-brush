@@ -145,6 +145,9 @@ URL=" + kExportDocumentationUrl;
                 {
                     OverlayManager.m_Instance.UpdateProgress(0.1f);
                     ExportRaw.Export(filename);
+
+                    // Also write the metadata that would normally go in the .tilt file
+                    SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
                 }
             progress.CompleteWork("json");
 

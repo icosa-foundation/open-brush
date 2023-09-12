@@ -14,12 +14,12 @@
 
 namespace TiltBrush.Layers
 {
-    public class ClearLayerContentsButton : BaseButton
+    public class ClearLayerContentsButton : OptionButton
     {
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().ClearLayerContents(transform.parent.gameObject);
+            GetComponentInParent<LayerUI_Manager>().ClearLayerContents(m_CommandParam);
         }
     }
 }

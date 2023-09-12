@@ -39,6 +39,7 @@ public sealed class GlTF_Globals : IDisposable {
   private bool b3dm;
   private readonly int m_gltfVersion;
   public readonly GlTF_BufferView m_scalarUshortElementArrayBv;
+  public readonly GlTF_BufferView m_scalarUintElementArrayBv;
   public readonly GlTF_BufferView m_stride4Bv;
   public readonly GlTF_BufferView m_stride8Bv;
   public readonly GlTF_BufferView m_stride12Bv;
@@ -145,6 +146,8 @@ public sealed class GlTF_Globals : IDisposable {
     }
     m_scalarUshortElementArrayBv = GlTF_BufferView.Create(this, "ushortBufferView",
                                        GlTF_BufferView.kTarget_ELEMENT_ARRAY_BUFFER);
+    m_scalarUintElementArrayBv = GlTF_BufferView.Create(this, "uintBufferView",
+        GlTF_BufferView.kTarget_ELEMENT_ARRAY_BUFFER);
     // These names aren't really accurate any more; but I'm keeping them for easier diffing.
     m_stride4Bv = GlTF_BufferView.Create(this, "floatBufferView");
     m_stride8Bv = GlTF_BufferView.Create(this, "vec2BufferView");
@@ -887,6 +890,9 @@ public sealed class GlTF_Globals : IDisposable {
     } else if (c == GlTF_Accessor.ComponentType.USHORT &&
                type == GlTF_Accessor.Type.SCALAR) {
       return this.m_scalarUshortElementArrayBv;
+    } else if (c == GlTF_Accessor.ComponentType.UNSIGNED_INT &&
+               type == GlTF_Accessor.Type.SCALAR) {
+        return this.m_scalarUintElementArrayBv;
     } else if (c == GlTF_Accessor.ComponentType.UNSIGNED_BYTE &&
                type == GlTF_Accessor.Type.VEC4) {
       return m_stride4Bv;
