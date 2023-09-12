@@ -1010,6 +1010,7 @@ namespace TiltBrush
         public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas)
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
+            if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
@@ -1026,14 +1027,7 @@ namespace TiltBrush
                     GrabWidget w = list[i].m_WidgetScript;
                     if (!w.Pinned && w.gameObject.activeSelf)
                     {
-                        if (
-                            // If canvas == null then get all unselected widgets
-                            (canvas == null && w.transform.parent != App.Scene.SelectionCanvas.transform) ||
-
-                            // Or else only on the specified canvas
-                            w.transform.parent != canvas.transform
-
-                        ) continue;
+                        if (w.transform.parent != canvas.transform) continue;
                         widgets.Add(w);
                     }
                 }
