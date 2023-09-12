@@ -90,6 +90,7 @@ namespace TiltBrush
             }
             model.CalcBoundsGltf(go);
             model.EndCreatePrefab(go, warnings);
+            if (success) model.AssignMaterialsToCollector(importMaterialCollector);
         }
     }
 }
