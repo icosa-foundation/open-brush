@@ -4787,11 +4787,11 @@ namespace TiltBrush
                     PointerManager.m_Instance.BringSymmetryToUser();
                     break;
                 case GlobalCommands.InvertSelection:
-                    SelectionManager.m_Instance.InvertSelection();
+                    SelectionManager.m_Instance.InvertSelection(App.ActiveCanvas);
                     break;
                 case GlobalCommands.SelectAll:
                     SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
-                    SelectionManager.m_Instance.SelectAll();
+                    SelectionManager.m_Instance.SelectAll(App.ActiveCanvas);
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.FlipSelection:
