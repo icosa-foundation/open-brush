@@ -47,8 +47,9 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+            TextTool = 5400,
             SnipTool = 11000,
-            JoinTool = 11001
+            JoinTool = 11001,
         }
         public ToolType m_Type;
 

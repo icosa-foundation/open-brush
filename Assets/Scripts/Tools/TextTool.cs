@@ -24,9 +24,9 @@ namespace TiltBrush
 {
     public class TextTool : BaseTool
     {
-        private PopUpWindow m_PopUpPrefab;
-        private PopUpWindow m_ActivePopUp;
-        
+
+        public static TextWidget m_CurrentWidget;
+
         override public void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
@@ -56,8 +56,8 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
-                TextWidget nearestWidget = WidgetManager.m_Instance.GetNearestTextWidget(rAttachPoint.position, 0.1f);
-                if (!nearestWidget)
+                m_CurrentWidget = WidgetManager.m_Instance.GetNearestTextWidget(rAttachPoint.position, 0.1f);
+                if (!m_CurrentWidget)
                 {
                     var tr = TrTransform.TR(
                         rAttachPoint.position,
@@ -82,28 +82,12 @@ namespace TiltBrush
                     SketchControlsScript.m_Instance.EatGazeObjectInput();
                     SelectionManager.m_Instance.RemoveFromSelection(false);
                     AudioManager.m_Instance.ShowHideWidget(true, transform.position);
-                    nearestWidget = textWidget;
+                    m_CurrentWidget = textWidget;
                 }
-                
-                // Create a new popup.
-                m_ActivePopUp = Instantiate(
-                    m_PopUpPrefab,
-                    rAttachPoint.position,
-                    rAttachPoint.rotation
-                );
-
-                Vector3 vPos = rAttachPoint.position +
-                    (rAttachPoint.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
-                    rAttachPoint.TransformVector(Vector3.forward);
-                m_ActivePopUp.transform.position = vPos;
-                m_ActivePopUp.transform.parent = rAttachPoint;
-                m_ActivePopUp.Init(gameObject, nearestWidget.Text);
-
-                m_ActivePopUp.m_OnClose += () =>
-                {
-                    nearestWidget.Text = KeyboardPopUpWindow.m_LastInput;
-                };
-                m_EatInput = !m_ActivePopUp.IsLongPressPopUp();
+            }
+            if (m_CurrentWidget != null)
+            {
+                m_CurrentWidget.Text = KeyboardPopUpWindow.m_LastInput;
             }
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
         }

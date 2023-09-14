@@ -23,11 +23,29 @@ namespace TiltBrush
 
         public override float? AspectRatio =>
             m_TextMeshPro.renderedWidth / m_TextMeshPro.renderedHeight;
+
+        protected override void UpdateScale()
+        {
+            base.UpdateScale();
+            UpdateCollider();
+        }
         
         public string Text
         {
             get => m_TextMeshPro.text;
-            set => m_TextMeshPro.text = value;
+            set
+            {
+                m_TextMeshPro.text = value;
+                UpdateCollider();
+            }
+        }
+
+        private void UpdateCollider()
+        {
+            m_TextMeshPro.ForceMeshUpdate();
+            var size = m_TextMeshPro.GetRenderedValues(true);
+            // No idea why the 1.3 and 0.9 is necessary, but it is.
+            m_BoxCollider.transform.localScale = new Vector3(size.x * 1.3f, size.y * 0.9f, m_BoxCollider.transform.localScale.z);
         }
 
         public Color TextColor

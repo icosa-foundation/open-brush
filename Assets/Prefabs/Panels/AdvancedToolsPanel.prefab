@@ -814,6 +814,9 @@ MonoBehaviour:
   - m_PopUpPrefab: {fileID: 1887799951535888, guid: a600c48c5f105874e8e750977bb95d4b,
       type: 3}
     m_Command: 11500
+  - m_PopUpPrefab: {fileID: 8644332587479430734, guid: bdb7d2ac05cca8346b210c2b576878cb,
+      type: 3}
+    m_Command: 12001
   m_PanelDescription: ADVANCEDTOOLS_PANEL_DESCRIPTION
   m_LocalizedPanelDescription:
     m_TableReference:
@@ -2501,7 +2504,7 @@ GameObject:
   - component: {fileID: 1319175746123658152}
   - component: {fileID: 7156252261596179870}
   m_Layer: 16
-  m_Name: Button_Join (1)
+  m_Name: Button_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2594,7 +2597,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6535217432110762182}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: f924f0ff57b618b44aaef2d9484ee7af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
@@ -2631,7 +2634,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 11001
+  m_Tool: 5400
   m_EatGazeInputOnPress: 0
   references:
     version: 2

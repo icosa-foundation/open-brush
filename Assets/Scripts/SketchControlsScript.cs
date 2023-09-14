@@ -154,7 +154,8 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            OpenTextInputPopup = 12001
         }
 
         public enum ControlsType
@@ -4936,7 +4937,8 @@ namespace TiltBrush
                     OpenUrl($"http://localhost:{App.HttpServer.HttpPort}/examplescripts");
                     break;
                 case GlobalCommands.RepaintOptions: break; // Intentionally blank.
-                case GlobalCommands.Null: break; // Intentionally blank.
+                case GlobalCommands.OpenTextInputPopup: break; // Intentionally blank.
+                case GlobalCommands.Null: break;           // Intentionally blank.
                 default:
                     Debug.LogError($"Unrecognized command {rEnum}");
                     break;
