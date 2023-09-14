@@ -18,6 +18,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.filoe.cscore": {
+      "version": "https://github.com/icosa-mirror/com.filoe.cscore.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "85891599eb66651704ae81d09d72a68745a71ce9"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
