@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -31,11 +30,13 @@ namespace TiltBrush
         /// Properties of sound clips that can change (playing state, volume, scrub position) are all accessed
         /// through the Controller - properties of clips that are unchanging are accessed through the
         /// SoundClip.
-        public class Controller : IDisposable
+        public class SoundClipController : IDisposable
         {
             private Action m_OnSoundClipInitialized;
             private SoundClip m_SoundClip;
             private bool m_SoundClipInitialized;
+
+            public GvrAudioSource m_SoundClipAudioSource;
 
             public bool Initialized => m_SoundClipInitialized;
 
@@ -57,21 +58,20 @@ namespace TiltBrush
                 remove { m_OnSoundClipInitialized -= value; }
             }
 
-            private AudioSource SoundClipAudioSource => m_SoundClip.m_SoundClipAudioSource;
             public bool Playing
             {
-                get => m_SoundClipInitialized ? SoundClipAudioSource.isPlaying : false;
+                get => m_SoundClipInitialized ? m_SoundClipAudioSource.isPlaying : false;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
-                        if (SoundClipAudioSource.isPlaying)
+                        if (m_SoundClipAudioSource.isPlaying)
                         {
-                            SoundClipAudioSource.Pause();
+                            m_SoundClipAudioSource.Pause();
                         }
                         else
                         {
-                            SoundClipAudioSource.Play();
+                            m_SoundClipAudioSource.Play();
                         }
                     }
                 }
@@ -79,21 +79,21 @@ namespace TiltBrush
 
             public float Volume
             {
-                get => (!m_SoundClipInitialized || SoundClipAudioSource.mute)
-                    ? 0f : SoundClipAudioSource.volume;
+                get => (!m_SoundClipInitialized || m_SoundClipAudioSource.mute)
+                    ? 0f : m_SoundClipAudioSource.volume;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
                         if (value <= 0.005f)
                         {
-                            SoundClipAudioSource.volume = 0;
-                            SoundClipAudioSource.mute = true;
+                            m_SoundClipAudioSource.volume = 0;
+                            m_SoundClipAudioSource.mute = true;
                         }
                         else
                         {
-                            SoundClipAudioSource.mute = false;
-                            SoundClipAudioSource.volume = value;
+                            m_SoundClipAudioSource.mute = false;
+                            m_SoundClipAudioSource.volume = value;
                         }
                     }
                 }
@@ -101,44 +101,46 @@ namespace TiltBrush
 
             public float Position
             {
-                get => m_SoundClipInitialized ? (float)(SoundClipAudioSource.time / SoundClipAudioSource.clip.length) : 0f;
+                get => m_SoundClipInitialized ? (float)(m_SoundClipAudioSource.time / m_SoundClipAudioSource.clip.length) : 0f;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
-                        SoundClipAudioSource.time = SoundClipAudioSource.clip.length * Mathf.Clamp01(value);
+                        m_SoundClipAudioSource.time = m_SoundClipAudioSource.clip.length * Mathf.Clamp01(value);
                     }
                 }
             }
 
             public float Time
             {
-                get => m_SoundClipInitialized ? (float)SoundClipAudioSource.time : 0f;
+                get => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.time : 0f;
                 set
                 {
                     if (m_SoundClipInitialized)
                     {
-                        SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)SoundClipAudioSource.clip.length);
+                        m_SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)m_SoundClipAudioSource.clip.length);
                     }
                 }
             }
 
-            public float Length => m_SoundClipInitialized ? (float)SoundClipAudioSource.clip.length : 0f;
+            public float Length => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.clip.length : 0f;
 
-            public Controller(SoundClip soundClip)
+            public SoundClipController(SoundClip soundClip, SoundClipWidget widget)
             {
                 m_SoundClip = soundClip;
-                if (m_SoundClip.m_SoundClipAudioSource != null)
+                m_SoundClipAudioSource = widget.gameObject.GetComponent<GvrAudioSource>();
+                if (m_SoundClipAudioSource != null)
                 {
-                    m_SoundClipInitialized = m_SoundClip.m_SoundClipAudioSource.clip != null;
+                    m_SoundClipInitialized = m_SoundClipAudioSource.clip != null;
                 }
             }
 
-            public Controller(Controller other)
+            public SoundClipController(SoundClipController other)
             {
                 m_SoundClip = other.m_SoundClip;
+                m_SoundClipAudioSource = other.m_SoundClipAudioSource;
                 m_SoundClipInitialized = other.m_SoundClipInitialized;
-                m_SoundClip.m_Controllers.Add(this);
+                m_SoundClip.m_Controller = this;
             }
 
             public void Dispose()
@@ -163,8 +165,7 @@ namespace TiltBrush
             return new SoundClip();
         }
 
-        private AudioSource m_SoundClipAudioSource;
-        private HashSet<Controller> m_Controllers = new HashSet<Controller>();
+        private SoundClipController m_Controller;
 
         /// Persistent path is relative to the Tilt Brush/Media Library/SoundClips directory, if it is a
         /// filename.
@@ -182,7 +183,7 @@ namespace TiltBrush
 
         public bool IsInitialized { get; private set; }
 
-        public bool HasInstances => m_Controllers.Count > 0;
+        public bool HasInstances => m_Controller != null;
 
         public string Error { get; private set; }
 
@@ -209,34 +210,30 @@ namespace TiltBrush
         /// to Dispose a controller after it is finished with. If disposal does not happen, then the
         /// clip decoder will keep decoding, using up memory and bandwidth. If the audio is turned on
         /// then the audio will continue. DISPOSE OF YOUR CONTROLLERS.
-        public Controller CreateController()
+        public SoundClipController CreateController(SoundClipWidget widget)
         {
-            Controller controller = new Controller(this);
+            SoundClipController soundClipController = new SoundClipController(this, widget);
             bool alreadyPrepared = HasInstances;
-            m_Controllers.Add(controller);
+            m_Controller = soundClipController;
             if (!alreadyPrepared)
             {
                 SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(InitializeControllers));
             }
-            return controller;
+            return soundClipController;
         }
 
         private void InitializeControllers()
         {
-            foreach (var controller in m_Controllers)
-            {
-                controller.OnInitialization();
-            }
+            m_Controller.OnInitialization();
         }
 
-        private void OnControllerDisposed(Controller controller)
+        private void OnControllerDisposed(SoundClipController soundClipController)
         {
-            m_Controllers.Remove(controller);
-            if (!HasInstances && m_SoundClipAudioSource != null)
+            if (!HasInstances && m_Controller.m_SoundClipAudioSource != null)
             {
-                m_SoundClipAudioSource.Stop();
-                UnityEngine.Object.Destroy(m_SoundClipAudioSource.gameObject);
-                m_SoundClipAudioSource = null;
+                m_Controller.m_SoundClipAudioSource.Stop();
+                UnityEngine.Object.Destroy(m_Controller.m_SoundClipAudioSource.gameObject);
+                m_Controller.m_SoundClipAudioSource = null;
             }
         }
 
@@ -269,26 +266,22 @@ namespace TiltBrush
         private IEnumerator<Null> PrepareAudioPlayer(Action onCompletion)
         {
             Error = null;
-            var gobj = new GameObject(HumanName);
-            gobj.transform.SetParent(SoundClipCatalog.Instance.gameObject.transform);
-            m_SoundClipAudioSource = gobj.AddComponent<AudioSource>();
-            m_SoundClipAudioSource.playOnAwake = false;
+            m_Controller.m_SoundClipAudioSource.playOnAwake = false;
             string fullPath = System.IO.Path.Combine(App.SoundClipLibraryPath(), PersistentPath);
             var audioClipTask = LoadClip(fullPath);
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
             }
-            m_SoundClipAudioSource.clip = audioClipTask.Result;
-            m_SoundClipAudioSource.loop = true;
+            m_Controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
+            m_Controller.m_SoundClipAudioSource.loop = true;
 
             Width = 128;
             Height = 128;
             Aspect = 1;
 
-            // Video does this but I don't think it makes sense for audio
-            // m_SoundClipAudioSource.mute = true;
-            // m_SoundClipAudioSource.Play();
+            m_Controller.m_SoundClipAudioSource.mute = true;
+            m_Controller.m_SoundClipAudioSource.Play();
 
             if (onCompletion != null)
             {
@@ -296,23 +289,13 @@ namespace TiltBrush
             }
         }
 
-        private void OnError(AudioSource player, string error)
+        private void OnError(GvrAudioSource player, string error)
         {
             Error = error;
         }
 
         public IEnumerator<Null> Initialize()
         {
-            Controller thumbnailExtractor = CreateController();
-            while (!thumbnailExtractor.Initialized)
-            {
-                if (Error != null)
-                {
-                    thumbnailExtractor.Dispose();
-                    yield break;
-                }
-                yield return null;
-            }
             int width, height;
             if (Aspect > 1)
             {
@@ -326,7 +309,7 @@ namespace TiltBrush
             }
             // A frame does not always seem to be immediately available, so wait until we've hit at least
             // the second frame before continuing.
-            while (m_SoundClipAudioSource.time < 0.1)
+            while (m_Controller.m_SoundClipAudioSource.time < 0.1)
             {
                 yield return null;
             }
@@ -336,15 +319,11 @@ namespace TiltBrush
 
         public void Dispose()
         {
-            if (m_SoundClipAudioSource != null)
+            if (m_Controller.m_SoundClipAudioSource != null)
             {
-                Debug.Assert(m_Controllers.Count > 0,
-                    "There should be controllers if the SoundClipAudioSource is not null.");
-                foreach (var controller in m_Controllers.ToArray())
-                {
-                    // Controller.Dispose handles removing itself from m_Controllers, so we don't do it here.
-                    controller.Dispose();
-                }
+                Debug.Assert(m_Controller != null,
+                    "There should be a controller if the SoundClipAudioSource is not null.");
+                m_Controller.Dispose();
             }
             if (Thumbnail != null)
             {
@@ -361,7 +340,7 @@ namespace TiltBrush
         {
             var width = Thumbnail.width;
             var height = Thumbnail.height;
-            var audio = m_SoundClipAudioSource.clip;
+            var audio = m_Controller.m_SoundClipAudioSource.clip;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             float[] samples = new float[audio.samples];
             float[] waveform = new float[width];

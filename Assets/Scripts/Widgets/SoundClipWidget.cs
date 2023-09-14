@@ -36,7 +36,7 @@ namespace TiltBrush
             get { return m_SoundClip; }
         }
 
-        public SoundClip.Controller SoundClipController { get; private set; }
+        public SoundClip.SoundClipController SoundClipController { get; private set; }
 
         public void SetSoundClip(SoundClip soundClip)
         {
@@ -107,7 +107,7 @@ namespace TiltBrush
             {
                 m_InitialState = null;
             }
-            SoundClipController = m_SoundClip.CreateController();
+            SoundClipController = m_SoundClip.CreateController(this);
             SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
         }
 

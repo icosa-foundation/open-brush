@@ -120,7 +120,7 @@ namespace TiltBrush
             get { return typeof(AudioIcon); }
         }
 
-        protected SoundClip.Controller SelectedSoundClip
+        protected SoundClip.SoundClipController SelectedSoundClip
         {
             get
             {

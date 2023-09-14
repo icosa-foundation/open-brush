@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 413480}
   - component: {fileID: 854942063617328480}
+  - component: {fileID: 6714732647065839654}
   m_Layer: 0
   m_Name: SoundClipWidget
   m_TagString: Untagged
@@ -74,6 +75,41 @@ MonoBehaviour:
   m_UngrabbableFromInside: 0
   m_MinSize_CS: 0.05
   m_MaxSize_CS: 2000
+--- !u!114 &6714732647065839654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 104792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dbca64e524ea44f9b26142ec59aca8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bypassRoomEffects: 0
+  directivityAlpha: 0
+  directivitySharpness: 1
+  listenerDirectivityAlpha: 0.125
+  listenerDirectivitySharpness: 1
+  gainDb: 3
+  occlusionEnabled: 0
+  playOnAwake: 1
+  disableOnStop: 0
+  sourceClip: {fileID: 0}
+  sourceLoop: 1
+  sourceMute: 0
+  sourcePitch: 1
+  sourcePriority: 128
+  sourceSpatialBlend: 1
+  sourceDopplerLevel: 0
+  sourceSpread: 0
+  sourceVolume: 1
+  sourceRolloffMode: 0
+  sourceMaxDistance: 15
+  sourceMinDistance: 0.75
+  hrtfEnabled: 1
+  audioSource: {fileID: 0}
 --- !u!1 &105650
 GameObject:
   m_ObjectHideFlags: 0
