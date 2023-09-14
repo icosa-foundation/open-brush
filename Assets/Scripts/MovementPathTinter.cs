@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class CameraPathTinter : MonoBehaviour
+    public class MovementPathTinter : MonoBehaviour
     {
         private List<KnotSegment> m_TintedSegments;
         private List<MovementPathKnot> m_TintedKnots;

@@ -17,9 +17,9 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class CameraPathToolModeButton : BaseButton
+    public class MovementPathToolModeButton : BaseButton
     {
-        [SerializeField] private CameraPathTool.Mode m_Mode;
+        [SerializeField] private MovementPathTool.Mode m_Mode;
 
         override protected void Awake()
         {
@@ -38,7 +38,7 @@ namespace TiltBrush
             base.UpdateVisuals();
 
             // Availability visuals.
-            if (m_Mode != CameraPathTool.Mode.AddPositionKnot)
+            if (m_Mode != MovementPathTool.Mode.AddPositionKnot)
             {
                 bool wasAvailable = IsAvailable();
                 bool available = WidgetManager.m_Instance.AnyActivePathHasAKnot();
@@ -51,7 +51,7 @@ namespace TiltBrush
             // Activated visuals.
             bool bWasToggleActive = m_ToggleActive;
             m_ToggleActive = false;
-            CameraPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as CameraPathTool;
+            MovementPathTool cpt = SketchSurfacePanel.m_Instance.ActiveTool as MovementPathTool;
             if (cpt != null)
             {
                 m_ToggleActive = cpt.CurrentMode == m_Mode;
@@ -64,6 +64,7 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
+          
             if (m_ToggleActive)
             {
                 SketchSurfacePanel.m_Instance.EnableDefaultTool();
@@ -73,7 +74,7 @@ namespace TiltBrush
                 WidgetManager.m_Instance.CameraPathsVisible = true;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SketchSurfacePanel.m_Instance.RequestHideActiveTool(true);
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
                 App.Switchboard.TriggerCameraPathModeChanged(m_Mode);
             }
         }

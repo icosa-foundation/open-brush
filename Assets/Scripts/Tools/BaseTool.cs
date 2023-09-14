@@ -45,7 +45,7 @@ namespace TiltBrush
             SelectionTool,
             PinTool,
             EmptyTool,
-            CameraPathTool,
+            MovementPathTool,
             FlyTool,
             SnipTool = 11000,
             JoinTool = 11001

@@ -29,7 +29,7 @@ namespace TiltBrush
         public event Action CameraPathVisibilityChanged;
         public event Action CameraPathKnotChanged;
         public event Action CameraPathDeleted;
-        public event Action<CameraPathTool.Mode> CameraPathModeChanged;
+        public event Action<MovementPathTool.Mode> CameraPathModeChanged;
         public event Action CameraPathCreated;
         public event Action CurrentCameraPathChanged;
         public event Action AllWidgetsDestroyed;
@@ -100,7 +100,7 @@ namespace TiltBrush
             CameraPathDeleted?.Invoke();
         }
 
-        public void TriggerCameraPathModeChanged(CameraPathTool.Mode mode)
+        public void TriggerCameraPathModeChanged(MovementPathTool.Mode mode)
         {
             CameraPathModeChanged?.Invoke(mode);
         }

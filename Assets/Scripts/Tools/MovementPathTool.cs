@@ -17,7 +17,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class CameraPathTool : BaseTool
+    public class MovementPathTool : BaseTool
     {
         public enum Mode
         {
@@ -115,7 +115,7 @@ namespace TiltBrush
             {
                 if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.MenuContextClick))
                 {
-                    SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(false);
+                    SketchControlsScript.m_Instance.MovementPathCaptureRig.StopRecordingPath(false);
                 }
                 return;
             }
@@ -264,7 +264,7 @@ namespace TiltBrush
                         case MovementPathKnot.Type.Rotation:
                             // Rotation knots hide when we grab them, and in their place, we set the preview widget.
                             m_LastPlacedKnot.knot.gameObject.SetActive(false);
-                            SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(
+                            SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(
                                 m_LastPlacedKnot.knot.PathT);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                                 new MoveConstrainedKnotCommand(m_LastPlacedKnotPath.Path, m_LastPlacedKnot,
@@ -298,7 +298,7 @@ namespace TiltBrush
                     if (m_LastPlacedKnot.knot.KnotType == MovementPathKnot.Type.Rotation)
                     {
                         m_LastPlacedKnot.knot.gameObject.SetActive(true);
-                        SketchControlsScript.m_Instance.CameraPathCaptureRig.OverridePreviewWidgetPathT(null);
+                        SketchControlsScript.m_Instance.MovementPathCaptureRig.OverridePreviewWidgetPathT(null);
                     }
                 }
                 m_LastPlacedKnot = null;

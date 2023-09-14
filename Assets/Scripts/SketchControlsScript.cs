@@ -517,7 +517,7 @@ namespace TiltBrush
         private GrabWidget m_IRCChatWidget;
         private GrabWidget m_YouTubeChatWidget;
         private MultiCamCaptureRig m_MultiCamCaptureRig;
-        private CameraPathCaptureRig m_CameraPathCaptureRig;
+        private MovementPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
 
@@ -537,7 +537,7 @@ namespace TiltBrush
             get { return m_MultiCamCaptureRig; }
         }
 
-        public CameraPathCaptureRig CameraPathCaptureRig
+        public MovementPathCaptureRig MovementPathCaptureRig
         {
             get { return m_CameraPathCaptureRig; }
         }
@@ -796,7 +796,7 @@ namespace TiltBrush
             m_MultiCamCaptureRig = GetComponentInChildren<MultiCamCaptureRig>(true);
             m_MultiCamCaptureRig.Init();
 
-            m_CameraPathCaptureRig = GetComponentInChildren<CameraPathCaptureRig>(true);
+            m_CameraPathCaptureRig = GetComponentInChildren<MovementPathCaptureRig>(true);
             m_CameraPathCaptureRig.Init();
 
             m_SketchSurfacePanel = m_SketchSurface.GetComponent<SketchSurfacePanel>();
@@ -4920,7 +4920,7 @@ namespace TiltBrush
                     {
                         m_SketchSurfacePanel.EnableDefaultTool();
                     }
-                    CameraPathCaptureRig.RecordPath();
+                    MovementPathCaptureRig.RecordPath();
                     EatGazeObjectInput();
                     break;
                 case GlobalCommands.OpenScriptsCommandsList:
@@ -5042,7 +5042,7 @@ namespace TiltBrush
             // I'm doing this because if we leave the camera path tool active, the camera path
             // panel shows the button highlighted, which affects the user's flow for being
             // invited to start a path.  It looks weird.
-            if (m_SketchSurfacePanel.ActiveToolType == BaseTool.ToolType.CameraPathTool)
+            if (m_SketchSurfacePanel.ActiveToolType == BaseTool.ToolType.MovementPathTool)
             {
                 m_SketchSurfacePanel.EnableDefaultTool();
             }
@@ -5143,7 +5143,7 @@ namespace TiltBrush
                 case GlobalCommands.ToggleCameraPathPreview:
                     return m_WidgetManager.CanRecordCurrentCameraPath();
                 case GlobalCommands.DeleteCameraPath:
-                    return CameraPathCaptureRig.Enabled && m_WidgetManager.AnyActivePathHasAKnot();
+                    return MovementPathCaptureRig.Enabled && m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.ToggleCameraPathVisuals:
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:

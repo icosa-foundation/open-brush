@@ -18,7 +18,7 @@ using UnityEngine.Localization;
 namespace TiltBrush
 {
 
-    public class CameraPathCaptureRig : MonoBehaviour
+    public class MovementPathCaptureRig : MonoBehaviour
     {
         [SerializeField] private GameObject m_Object;
         [SerializeField] private GameObject m_Camera;
@@ -109,10 +109,10 @@ namespace TiltBrush
             m_Widget.TintForRecording(true);
             UpdateCameraTransform(m_Widget.transform);
             WidgetManager.m_Instance.FollowingPath = true;
-            // When we begin recording a camera path, switch to the CameraPathTool and set the
+            // When we begin recording a camera path, switch to the MovementPathTool and set the
             // mode to recording.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
-            App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+            App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.Recording);
 
             VideoRecorderUtils.StartVideoCapture(
                 MultiCamTool.GetSaveName(MultiCamStyle.Video),
@@ -142,10 +142,10 @@ namespace TiltBrush
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(false);
 
-            // When we stop recording a camera path, make sure our CameraPathTool isn't in the
+            // When we stop recording a camera path, make sure our MovementPathTool isn't in the
             // recording state.
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
-            App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.MovementPathTool);
+            App.Switchboard.TriggerCameraPathModeChanged(MovementPathTool.Mode.AddPositionKnot);
         }
 
         void RefreshVisibility()
