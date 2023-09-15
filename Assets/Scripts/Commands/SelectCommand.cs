@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -40,6 +41,7 @@ namespace TiltBrush
         private bool m_CheckForClearedSelection;
         private bool m_IsGrabbingGroup;
         private bool m_IsEndGrabbingGroup;
+        private CanvasScript m_TargetCanvas; // Override original canvas as target for deselection.
 
         override public bool NeedsSave
         {
@@ -79,6 +81,7 @@ namespace TiltBrush
             TrTransform initialTransform,
             bool deselect = false, bool initial = false, bool checkForClearedSelection = false,
             bool isGrabbingGroup = false, bool isEndGrabbingGroup = false,
+            CanvasScript targetCanvas = null,
             BaseCommand parent = null)
             : base(parent)
         {
@@ -146,6 +149,7 @@ namespace TiltBrush
             m_CheckForClearedSelection = checkForClearedSelection;
             m_IsGrabbingGroup = isGrabbingGroup;
             m_IsEndGrabbingGroup = isEndGrabbingGroup;
+            m_TargetCanvas = targetCanvas;
         }
 
         protected override void OnRedo()
@@ -154,11 +158,11 @@ namespace TiltBrush
             {
                 if (m_Strokes != null)
                 {
-                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes);
+                    SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
                 }
                 if (m_Widgets != null)
                 {
-                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets);
+                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets, m_TargetCanvas);
                 }
             }
             else
@@ -212,7 +216,7 @@ namespace TiltBrush
                 }
                 if (m_Widgets != null)
                 {
-                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets);
+                    SelectionManager.m_Instance.DeselectWidgets(m_Widgets, m_TargetCanvas);
                 }
             }
 
