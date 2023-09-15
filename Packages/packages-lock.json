@@ -14,11 +14,11 @@
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
     "com.meta.xr.sdk.utilities": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#open-brush",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.utilities.git#meta-mr-test",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "79e3da292d15308ab01b14e9487b8b1253dcba84"
+      "hash": "57bad66c67cd72a31898a1d29dae4d4201ef36c1"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
