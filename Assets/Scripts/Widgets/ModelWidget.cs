@@ -239,7 +239,7 @@ namespace TiltBrush
 
             var uiManager = App.Scene.animationUI_manager;
 
-            uiManager.addAnimatedModel(this.gameObject, Model.GetExportName());
+
 
 
 

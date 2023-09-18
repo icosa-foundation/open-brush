@@ -41,6 +41,8 @@ namespace TiltBrush
         private Vector3? m_KnotEditingLastInputXf;
         private float m_GrabControlInitialYDiff;
 
+        public bool belongsToAnimation = false;
+
         public MovementPath Path { get { return m_Path; } }
 
         override public Transform GrabTransform_GS
@@ -99,6 +101,9 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathCreated();
         }
 
+        public void setPathAnimation(bool animation){
+            belongsToAnimation = animation;
+        }
         void OnPoseChanged(TrTransform prev, TrTransform current)
         {
             // Attempting to start a coroutine when inactive was throwing an error.

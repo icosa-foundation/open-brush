@@ -401,8 +401,8 @@ namespace TiltBrush
             }
         }
 
-        public IEnumerable<TypedWidgetData<MovementPathWidget>> CameraPathWidgets =>
-            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+        public IEnumerable<TypedWidgetData<MovementPathWidget>> MovementPathWidgets =>
+            m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
 
         public TypedWidgetData<MovementPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
 
@@ -477,9 +477,11 @@ namespace TiltBrush
         // The reason we need these methods is because our UI buttons work with SketchControls
         // global commands, which can be modified with generic integer parameters.  In those
         // cases, we can't pass a MovementPathWidget object.
+
+    
         public MovementPathWidget GetNthActiveCameraPath(int nth)
         {
-            var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+            var activeCameraPathWidgets = m_MovementPathWidgets.Where(x => x.m_WidgetObject.activeSelf && !x.WidgetScript.belongsToAnimation);
             foreach (var cpw in activeCameraPathWidgets)
             {
                 if (nth == 0)
@@ -504,7 +506,7 @@ namespace TiltBrush
             int index = 0;
             for (int i = 0; i < m_MovementPathWidgets.Count; ++i)
             {
-                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf)
+                if (m_MovementPathWidgets[i].m_WidgetObject.activeSelf && !m_MovementPathWidgets[i].WidgetScript.belongsToAnimation)
                 {
                     if (m_MovementPathWidgets[i].WidgetScript == path)
                     {
@@ -518,15 +520,19 @@ namespace TiltBrush
 
         public MovementPathWidget CreatePathWidget()
         {
+            Debug.Log("CREATE PATH WIDGET");
             CreateWidgetCommand command =
                 new CreateWidgetCommand(m_MovementPathWidgetPrefab, TrTransform.identity);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             return m_MovementPathWidgets.Last().WidgetScript;
         }
 
+   
+
+
         public bool AnyActivePathHasAKnot()
         {
-            var datas = CameraPathWidgets;
+            var datas = MovementPathWidgets;
             foreach (TypedWidgetData<MovementPathWidget> data in datas)
             {
                 if (data.WidgetScript.Path.NumPositionKnots > 0)
@@ -1137,6 +1143,7 @@ namespace TiltBrush
             }
             else if (generic is MovementPathWidget cpw)
             {
+                Debug.Log("adding to movement path Widget");
                 m_MovementPathWidgets.Add(new TypedWidgetData<MovementPathWidget>(cpw));
             }
             else

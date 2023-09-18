@@ -1132,7 +1132,7 @@ GameObject:
   - component: {fileID: 838269095489546767}
   - component: {fileID: 6207019134380725635}
   - component: {fileID: 2333484583684039180}
-  - component: {fileID: 6567840905337045675}
+  - component: {fileID: 8694988753533605795}
   m_Layer: 16
   m_Name: Button_AddPositionKnot
   m_TagString: Untagged
@@ -1218,7 +1218,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &6567840905337045675
+--- !u!114 &8694988753533605795
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1227,22 +1227,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 3655584221376191180}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 967c894945223aa4380b6db857bf29b6, type: 3}
+  m_Script: {fileID: 11500000, guid: 0b338d0bf5858104eb371449ca618cb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName: 
     m_TableEntryReference:
-      m_KeyId: 7677371119017984
+      m_KeyId: 0
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: CAMERAPATH_PANEL_ADDPOSITIONKNOT_BUTTON_DESCRIPTION
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
@@ -1260,11 +1260,11 @@ MonoBehaviour:
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
-  m_ZAdjustClick: 0.02
+  m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Mode: 0
+  m_Mode: 6
   references:
     version: 2
     RefIds: []

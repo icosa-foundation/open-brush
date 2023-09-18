@@ -21,12 +21,16 @@ namespace TiltBrush
     {
         public enum Mode
         {
+            
             AddPositionKnot,
             AddRotationKnot,
             AddSpeedKnot,
             AddFovKnot,
             RemoveKnot,
-            Recording
+            Recording,
+
+            AddAnimationPositionKnot,
+
         }
 
         public enum ExtendPathType
@@ -120,7 +124,7 @@ namespace TiltBrush
                 return;
             }
 
-            var widgets = WidgetManager.m_Instance.CameraPathWidgets;
+            var widgets = WidgetManager.m_Instance.MovementPathWidgets;
             Transform toolAttachXf = InputManager.Brush.Geometry.ToolAttachPoint;
 
             bool input = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
@@ -184,6 +188,44 @@ namespace TiltBrush
                             }
                         }
                         break;
+                    case Mode.AddAnimationPositionKnot:
+                        Debug.Log("ADDING ANIMATION KNOT");
+                        // Create a new path if none exists or if we're trying to add a position point
+                        // in a place where we're not extending an existing path.
+                        if (!WidgetManager.m_Instance.AnyCameraPathWidgetsActive ||
+                            (m_LastValidPath == null && m_ExtendPath == null))
+                        {
+                            m_ExtendPath = WidgetManager.m_Instance.CreatePathWidget();
+                            m_ExtendPath.setPathAnimation(true);
+                            m_ExtendPathType = ExtendPathType.ExtendAtHead;
+                            WidgetManager.m_Instance.SetCurrentCameraPath(m_ExtendPath);
+                            App.Scene.animationUI_manager.addAnimationPath(m_ExtendPath);
+
+                        }
+
+                        if (m_LastValidPath != null)
+                        {
+                            m_LastValidPath.AddPathConstrainedKnot(
+                                MovementPathKnot.Type.Position, m_LastValidPosition, toolAttachXf.rotation);
+                            m_LastPlacedKnot = m_LastValidPath.Path.LastPlacedKnotInfo;
+                            m_LastPlacedKnotPath = m_LastValidPath;
+                        }
+                        else if (m_ExtendPath != null)
+                        {
+                            // Manipulation of a path we wish to extend.
+                            m_ExtendPath.ExtendPath(toolAttachXf.position, m_ExtendPathType);
+
+                            // Remember the index of the path we just added to, so we can manipulate it
+                            // while input is held.
+                            // Don't record this if we just made our path loop.
+                            if (!m_ExtendPath.Path.PathLoops)
+                            {
+                                m_LastPlacedKnot = m_ExtendPath.Path.LastPlacedKnotInfo;
+                                m_LastPlacedKnotPath = m_ExtendPath;
+                            }
+                        }
+                        break;
+                         
                     case Mode.AddRotationKnot:
                         if (m_LastValidPath != null)
                         {
@@ -321,7 +363,7 @@ namespace TiltBrush
                 m_LastValidPath = null;
 
                 GrabWidgetData currentData = WidgetManager.m_Instance.GetCurrentCameraPath();
-                var datas = WidgetManager.m_Instance.CameraPathWidgets;
+                var datas = WidgetManager.m_Instance.MovementPathWidgets;
                 foreach (TypedWidgetData<MovementPathWidget> data in datas)
                 {
                     MovementPathWidget widget = data.WidgetScript;

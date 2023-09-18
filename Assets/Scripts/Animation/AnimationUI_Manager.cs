@@ -46,6 +46,8 @@ namespace TiltBrush.FrameAnimation
             public bool deleted;
             public CanvasScript canvas;
 
+            public MovementPathWidget animatedPath;
+
         }
 
         public struct Track
@@ -63,6 +65,7 @@ namespace TiltBrush.FrameAnimation
             thisframeLayer.canvas = canvas;
             thisframeLayer.visible = (bool)App.Scene.IsLayerVisible(canvas);
             thisframeLayer.deleted = false;
+            thisframeLayer.animatedPath = null;
             return thisframeLayer;
         }
 
@@ -130,6 +133,7 @@ namespace TiltBrush.FrameAnimation
 
 
             App.Scene.animationUI_manager = this;
+            resetTimeline();
 
 
         }
@@ -224,14 +228,41 @@ namespace TiltBrush.FrameAnimation
             resetTimeline();
         }
 
-        public void addAnimatedModel(GameObject gameObject, string modelname)
+        public void addAnimationPath(MovementPathWidget pathwidget)
         {
 
-            animatedModel newModel;
-            newModel.gameObject = gameObject;
-            newModel.name = modelname;
-            animatedModels.Add(newModel);
-            print("OBJ POSITIION: " + newModel.gameObject.transform.localPosition);
+            
+            (int,int) Loc = getCanvasIndex(App.Scene.ActiveCanvas);
+
+            CanvasScript origCanvas = timeline[Loc.Item2].Frames[Loc.Item1].canvas;
+
+            int i = 0;
+
+            List<Frame> framesChanging = new List<Frame>();
+            while ( 
+                i < timeline[Loc.Item2].Frames.Count &&
+                timeline[Loc.Item2].Frames[Loc.Item1 + i].canvas.Equals(origCanvas)
+                ){
+
+                    i++;
+                }
+                
+            
+
+            for (int c =0;c< i;c++){
+
+                Frame changingFrame = timeline[Loc.Item2].Frames[Loc.Item1 + c];
+
+                changingFrame.animatedPath = pathwidget;
+                timeline[Loc.Item2].Frames[Loc.Item1 + c] = changingFrame;
+            }
+
+
+            Debug.Log("FINISHED ANIMATED PATH ");
+            Debug.Log(timeline[Loc.Item2].Frames[Loc.Item1].animatedPath);
+
+       
+            resetTimeline();
 
 
         }
@@ -292,7 +323,7 @@ namespace TiltBrush.FrameAnimation
             printTimeline();
         }
 
-        public (int, int) getCanvasIndex(CanvasScript canvas)
+        public (int, int)  getCanvasIndex(CanvasScript canvas)
         {
 
             for (int trackNum = 0; trackNum < timeline.Count; trackNum++)
@@ -601,7 +632,15 @@ namespace TiltBrush.FrameAnimation
                         // Hide all ui indicators first
                         for (int o = 0; o < frameButton.GetChildCount(); o++)
                         {
+
                             frameButton.GetChild(o).gameObject.SetActive(false);
+
+                            
+                            if (timeline[i].Frames[f].animatedPath != null && frameButton.GetChild(o).gameObject.GetComponent<SpriteRenderer>() != null){
+                                    Debug.Log( "BUT COLOUR " + frameButton.GetChild(o).gameObject.name);
+                                    frameButton.GetChild(o).gameObject.GetComponent<SpriteRenderer>().color = new Color(92f/255f, 52f/255f, 237f/255f);
+                            }
+                            
                         }
                         bool backwardsConnect = (f > 0 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f - 1].canvas));
                         bool forwardConnect = f < timeline[0].Frames.Count - 1 && timeline[i].Frames[f].canvas.Equals(timeline[i].Frames[f + 1].canvas);
@@ -981,6 +1020,7 @@ namespace TiltBrush.FrameAnimation
                 // CanvasScript newCanvas = App.Scene.AddCanvas();
                 // frameLayer addingLayer = newFrameLayer(newCanvas);
                 addingFrame.deleted = timeline[l].Frames[0].deleted;
+                addingFrame.animatedPath = timeline[l].Frames[timeline[l].Frames.Count - 1].animatedPath;
                 print("ADDING LAYER - " + l);
 
                 timeline[l].Frames.Insert(getFrameOn() + 1, addingFrame);
