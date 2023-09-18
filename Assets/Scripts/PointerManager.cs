@@ -1487,7 +1487,9 @@ namespace TiltBrush
                     }
                 }
 
-                if (m_SymmetryColorShiftEnabled)
+                // Currently only Multimirror mode shows UI for color shift
+                // So disable it for all other modes
+                if (m_SymmetryColorShiftEnabled && m_CurrentSymmetryMode == SymmetryMode.MultiMirror)
                 {
                     script.SetColor(m_SymmetryPointerColors[i % m_SymmetryPointerColors.Count]);
                 }
