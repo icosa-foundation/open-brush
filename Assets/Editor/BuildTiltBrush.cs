@@ -832,7 +832,7 @@ static class BuildTiltBrush
                 {
                     i++;
                 }
-                else if (args[i] == "-disableAccountLogins")
+                else if (args[i] == "-btb-disableAccountLogins")
                 {
                     tiltOptions.disableAccountLogins = true;
                 }

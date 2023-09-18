@@ -210,7 +210,7 @@ jobs:
             vrsdk: Pico
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -disableAccountLogins
+            extraoptions: -btb-il2cpp -btb-disableAccountLogins
 
     steps:
       - name: Free extra space
