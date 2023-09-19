@@ -14,35 +14,38 @@
 
 using UnityEngine;
 using UnityEngine.Localization;
+using TMPro;
 
 namespace TiltBrush
 {
 
     public class LanguageButton : BaseButton
     {
+        [Header("Locale Text")]
         private Locale m_Preset;
+        [SerializeField] private TextMeshPro m_LocaleText;
 
-        [SerializeField] private LocalizedTexture m_Texture;
-
-        override protected void ConfigureTextureAtlas()
-        {
-            if (SketchControlsScript.m_Instance.AtlasIconTextures)
-            {
-                // Lighting icons are assigned later.  We want atlasing on all our
-                // buttons, so just set it to the default for now.
-                RefreshAtlasedMaterial();
-            }
-            else
-            {
-                base.ConfigureTextureAtlas();
-            }
-        }
+        // override protected void ConfigureTextureAtlas()
+        // {
+        //     if (SketchControlsScript.m_Instance.AtlasIconTextures)
+        //     {
+        //         // Lighting icons are assigned later.  We want atlasing on all our
+        //         // buttons, so just set it to the default for now.
+        //         RefreshAtlasedMaterial();
+        //     }
+        //     else
+        //     {
+        //         base.ConfigureTextureAtlas();
+        //     }
+        // }
 
         public void SetPreset(Locale rPreset)
         {
             m_Preset = rPreset;
 
             SetDescriptionText(m_Preset.LocaleName);
+
+            m_LocaleText.text = m_Preset.Identifier.Code;
         }
 
         override protected void OnButtonPressed()
