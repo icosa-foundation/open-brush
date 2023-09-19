@@ -156,12 +156,16 @@ namespace TiltBrush
                     foreach (var param in prop.GetParameters())
                     {
                         string description;
+                        string defaultValue = param.DefaultValue?.ToString();
+                        if (defaultValue is "True" or "False") defaultValue = defaultValue.ToLower(); // Lua bools are lower case
                         if (!paramDict.TryGetValue(param.Name, out description)) description = "";
                         var parameter = new LuaDocsParameter
                         {
                             Name = param.Name,
                             Description = description,
-                            ParameterType = LuaDocsType.CsharpTypeToDocsType(param.ParameterType)
+                            ParameterType = LuaDocsType.CsharpTypeToDocsType(param.ParameterType),
+                            IsOptional = param.IsOptional,
+                            DefaultValue = defaultValue
                         };
                         method.Parameters.Add(parameter);
                     }

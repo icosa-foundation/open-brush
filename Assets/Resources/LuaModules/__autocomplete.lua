@@ -1,7 +1,6 @@
 ---@meta
 
 
----Properties for class App
 
 ---@class App
 ---@field time number The time in seconds since Open Brush was launched
@@ -11,10 +10,6 @@
 ---@field environment string Get or set the current environment by name
 ---@field clipboardText string Get or set the clipboard text
 App = {}
-
-
----Methods for type App
-
 
 function App:Undo() end
 
@@ -83,16 +78,16 @@ function App:SetFont(fontData) end
 ---@param filename string The filename to use for the saved snapshot
 ---@param width number Image width
 ---@param height number Image height
----@param superSampling number The supersampling strength to apply (between 0.125 and 4.0)
----@param renderDepth boolean If true then render the depth buffer instead of the image
+---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
+---@param renderDepth? boolean If true then render the depth buffer instead of the image
 function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string The filename to use for the saved snapshot
----@param width number The width of the image
+---@param width? number The width of the image
 function App:Take360Snapshot(tr, filename, width) end
 
----Properties for class Brush
+
 
 ---@class Brush
 ---@field timeSincePressed number Time in seconds since the brush trigger was last pressed
@@ -117,10 +112,6 @@ function App:Take360Snapshot(tr, filename, width) end
 ---@field LastColorPickedHsv Vector3 | number[] The last color picked by the brush in HSV.
 ---@field currentPath Path | Transform[] The current path of the brush. Assumes a stroke is in progress.
 Brush = {}
-
-
----Methods for type Brush
-
 ---@param includeTags string[] Include brushes that have any of these tags
 ---@param excludeTags string[] Exclude brushes that have any of these tags
 ---@return string[] A filtered list of brush types
@@ -168,7 +159,7 @@ function Brush:GetShaderTextureParameters(type) end
 ---@return string[] A list of vector property names usable with Stroke:SetShaderVector
 function Brush:GetShaderVectorParameters(type) end
 
----Properties for class CameraPath
+
 
 ---@class CameraPath
 ---@field index number Returns the index of this Camera Path in Sketch.cameraPaths
@@ -180,10 +171,6 @@ function Brush:GetShaderVectorParameters(type) end
 ---@field rotation Rotation | number[] The 3D orientation of the Brush Camera Path
 ---@field scale number The scale of the camera path
 CameraPath = {}
-
-
----Methods for type CameraPath
-
 
 function CameraPath:RenderActivePath() end
 
@@ -261,7 +248,7 @@ function CameraPath:InsertSpeedAtTime(t, speed) end
 ---@param position Vector3 The position to extend the camera path to
 ---@param rotation Rotation The rotation of the camera path at the extended position
 ---@param smoothing number The smoothing factor applied to the new point
----@param atStart boolean Determines whether the extension is done at the start or end of the camera path. True=start, false=end
+---@param atStart? boolean Determines whether the extension is done at the start or end of the camera path. True=start, false=end
 function CameraPath:Extend(position, rotation, smoothing, atStart) end
 
 
@@ -271,8 +258,8 @@ function CameraPath:Loop() end
 function CameraPath:RecordActivePath() end
 
 ---@param time number The time at which to sample the camera path
----@param loop boolean Determines whether the camera path should loop
----@param pingpong boolean Determines whether the camera path should pingpong (reverse direction every loop
+---@param loop? boolean Determines whether the camera path should loop
+---@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop
 ---@return Transform The sampled transform of the camera at the specified time
 function CameraPath:Sample(time, loop, pingpong) end
 
@@ -281,17 +268,13 @@ function CameraPath:Sample(time, loop, pingpong) end
 ---@return CameraPath A new simplified Camera Path
 function CameraPath:Simplify(tolerance, smoothing) end
 
----Properties for class CameraPathList
+
 
 ---@class CameraPathList
 ---@field last CameraPath Returns the last Camera Path
 ---@field count number The number of Camera Paths
 ---@field active CameraPath The active Camera Path
 CameraPathList = {}
-
-
----Methods for type CameraPathList
-
 
 function CameraPathList:ShowAll() end
 
@@ -301,7 +284,7 @@ function CameraPathList:HideAll() end
 ---@param active boolean A boolean value indicating whether to preview the active path or not
 function CameraPathList:PreviewActivePath(active) end
 
----Properties for class Color
+
 
 ---@class Color
 ---@field r number The red component
@@ -326,13 +309,9 @@ function CameraPathList:PreviewActivePath(active) end
 ---@field white Color | number[] The color white
 ---@field yellow Color | number[] The color yellow
 Color = {}
-
-
----Methods for type Color
-
----@param r number The red component of the color. Default is 0
----@param g number The green component of the color. Default is 0
----@param b number The blue component of the color. Default is 0
+---@param r? number The red component of the color. Default is 0
+---@param g? number The green component of the color. Default is 0
+---@param b? number The blue component of the color. Default is 0
 ---@return Color instance of the Color
 function Color:New(r, g, b) end
 
@@ -406,7 +385,7 @@ function Color:NotEquals(other) end
 ---@return boolean true if this color is not equal to the specified RGB values; otherwise, false
 function Color:NotEquals(r, g, b) end
 
----Properties for class Environment
+
 
 ---@class Environment
 ---@field current Environment The current environment settings
@@ -423,23 +402,19 @@ function Color:NotEquals(r, g, b) end
 Environment = {}
 
 
-
----Properties for class EnvironmentList
-
 ---@class EnvironmentList
 ---@field last Environment Returns the last environment
 ---@field current Environment Returns the current environment
 ---@field count number The number of available environments
 EnvironmentList = {}
-
-
----Methods for type EnvironmentList
-
 ---@param name string The name of the environment to get
 ---@return Environment The environment, or nil if no environment has that name
 function EnvironmentList:ByName(name) end
----Methods for type Easing
 
+
+
+---@class Easing
+Easing = {}
 ---@param t number The input value between 0 and 1
 ---@return number The input is returned unchanged
 function Easing:Linear(t) end
@@ -564,7 +539,7 @@ function Easing:OutBounce(t) end
 ---@return number The value smoothed in and out
 function Easing:InOutBounce(t) end
 
----Properties for class Group
+
 
 ---@class Group
 ---@field images ImageList | Image[] All the images in this group
@@ -573,10 +548,6 @@ function Easing:InOutBounce(t) end
 ---@field guides GuideList | Guide[] All the guides in this group
 ---@field cameraPaths CameraPathList | CameraPath[] All the camera paths in this group
 Group = {}
-
-
----Methods for type Group
-
 
 ---@return Group The new group
 function Group:New() end
@@ -599,16 +570,13 @@ function Group:Add(cameraPath) end
 ---@param stroke Stroke The Stroke to add
 function Group:Add(stroke) end
 
----Properties for class GroupList
+
 
 ---@class GroupList
 ---@field last Group Returns the last layer
 ---@field count number The number of layers
 GroupList = {}
 
-
-
----Properties for class Guide
 
 ---@class Guide
 ---@field index number The index of the active widget
@@ -619,10 +587,6 @@ GroupList = {}
 ---@field rotation Rotation | number[] The 3D orientation of the Guide Widget
 ---@field scale number The scale of the Guide Widget
 Guide = {}
-
-
----Methods for type Guide
-
 ---@param transform Transform The transform of the Guide Widget
 ---@return Guide A new cube guide
 function Guide:NewCube(transform) end
@@ -660,7 +624,7 @@ function Guide:Delete() end
 ---@param scale Vector3 The scale vector for scaling the Guide Widget
 function Guide:Scale(scale) end
 
----Properties for class GuideList
+
 
 ---@class GuideList
 ---@field lastSelected Guide Returns the last guide that was selected
@@ -670,8 +634,8 @@ function Guide:Scale(scale) end
 GuideList = {}
 
 
----Methods for type Headset
-
+---@class Headset
+Headset = {}
 ---@param size number How many frames of position/rotation to remember
 function Headset:ResizeHistory(size) end
 
@@ -686,7 +650,7 @@ function Headset:PastPosition(back) end
 ---@return Rotation 
 function Headset:PastRotation(back) end
 
----Properties for class Image
+
 
 ---@class Image
 ---@field index number The index of the active widget
@@ -697,10 +661,6 @@ function Headset:PastRotation(back) end
 ---@field rotation Rotation | number[] The 3D orientation of the Image Widget
 ---@field scale number The scale of the image widget
 Image = {}
-
-
----Methods for type Image
-
 ---@param location string The location of the image
 ---@return Image The imported image widget
 function Image:Import(location) end
@@ -715,7 +675,7 @@ function Image:Deselect() end
 function Image:Delete() end
 
 ---@param depth number The depth of the extrusion
----@param color Color The color of the extrusion
+---@param color? Color The color of the extrusion
 function Image:Extrude(depth, color) end
 
 
@@ -727,7 +687,7 @@ function Image:FormEncode() end
 ---@return string 
 function Image:SaveBase64(base64, filename) end
 
----Properties for class ImageList
+
 
 ---@class ImageList
 ---@field lastSelected Image Returns the last image that was selected
@@ -735,9 +695,6 @@ function Image:SaveBase64(base64, filename) end
 ---@field count number The number of images
 ImageList = {}
 
-
-
----Properties for class Layer
 
 ---@class Layer
 ---@field strokes StrokeList | Stroke[] All the strokes on this layer
@@ -755,10 +712,6 @@ ImageList = {}
 ---@field rotation Rotation | number[] The rotation of the layer in 3D space
 ---@field scale number The scale of the layer
 Layer = {}
-
-
----Methods for type Layer
-
 
 ---@return Layer The new layer
 function Layer:New() end
@@ -832,20 +785,20 @@ function Layer:SetShaderTexture(brushType, parameter, image) end
 
 ---@param parameter string The shader parameter name
 ---@param x number The new x value
----@param y number The new y value
----@param z number The new z value
----@param w number The new w value
+---@param y? number The new y value
+---@param z? number The new z value
+---@param w? number The new w value
 function Layer:SetShaderVector(parameter, x, y, z, w) end
 
 ---@param brushType string Only strokes of this brush type will be affected
 ---@param parameter string The shader parameter name
 ---@param x number The new x value
----@param y number The new y value
----@param z number The new z value
----@param w number The new w value
+---@param y? number The new y value
+---@param z? number The new z value
+---@param w? number The new w value
 function Layer:SetShaderVector(brushType, parameter, x, y, z, w) end
 
----Properties for class LayerList
+
 
 ---@class LayerList
 ---@field last Layer Returns the last layer
@@ -855,9 +808,6 @@ function Layer:SetShaderVector(brushType, parameter, x, y, z, w) end
 LayerList = {}
 
 
-
----Properties for class Math
-
 ---@class Math
 ---@field deg2Rad number A constant that you multiply with a value in degrees to convert it to radians
 ---@field epsilon number The smallest value that a float can have such that 1.0 plus this does not equal 1.0
@@ -866,10 +816,6 @@ LayerList = {}
 ---@field pi number The value of Pi
 ---@field rad2Deg number A constant that you multiply with a value in radians to convert it to degrees
 Math = {}
-
-
----Methods for type Math
-
 ---@param f number The input value
 ---@return number The absolute value of f
 function Math:Abs(f) end
@@ -1054,7 +1000,7 @@ function Math:Cosh(f) end
 ---@return number The hyperbolic tangent of f
 function Math:Tanh(f) end
 
----Properties for class Model
+
 
 ---@class Model
 ---@field index number The index of the active Model Widget
@@ -1065,10 +1011,6 @@ function Math:Tanh(f) end
 ---@field rotation Rotation | number[] The 3D orientation of the Model Widget
 ---@field scale number The scale of the Model Widget
 Model = {}
-
-
----Methods for type Model
-
 ---@param filename string The filename of the model to be imported
 ---@return Model Returns the Model instance
 function Model:Import(filename) end
@@ -1082,7 +1024,7 @@ function Model:Deselect() end
 
 function Model:Delete() end
 
----Properties for class ModelList
+
 
 ---@class ModelList
 ---@field lastSelected Model Returns the last model that was selected
@@ -1091,17 +1033,10 @@ function Model:Delete() end
 ModelList = {}
 
 
-
----Properties for class Path
-
 ---@class Path
 ---@field count number Returns the number of points in this path
 ---@field last Transform Returns the last point in this path
 Path = {}
-
-
----Methods for type Path
-
 
 ---@return Path 
 function Path:New() end
@@ -1182,7 +1117,7 @@ function Path:FindMaximumY() end
 ---@return number 
 function Path:FindMaximumZ() end
 
----@param size number The size of the cube to fit the path into
+---@param size? number The size of the cube to fit the path into
 function Path:Normalize(size) end
 
 ---@param trs Transform[] 
@@ -1204,20 +1139,16 @@ function Path:SubdivideSegments(parts) end
 ---@param startTangent Vector3 Starting tangent
 ---@param endTangent Vector3 End tangent
 ---@param resolution number Resolution of the spline
----@param tangentStrength number Strength of the tangent
+---@param tangentStrength? number Strength of the tangent
 ---@return Path Instance of PathApiWrapper
 function Path:Hermite(startTransform, endTransform, startTangent, endTangent, resolution, tangentStrength) end
 
----Properties for class PathList
+
 
 ---@class PathList
 ---@field count number Gets the number of paths in the PathList
 ---@field pointCount number Gets the number of points in all paths in the PathList
 PathList = {}
-
-
----Methods for type PathList
-
 
 ---@return PathList 
 function PathList:New() end
@@ -1266,7 +1197,7 @@ function PathList:ScaleBy(scale) end
 
 function PathList:Center() end
 
----@param size number The size of the cube to fit inside
+---@param size? number The size of the cube to fit inside
 function PathList:Normalize(size) end
 
 ---@param spacing number The distance between each new point
@@ -1286,16 +1217,12 @@ function PathList:Join() end
 ---@return Path The path with the most control points
 function PathList:Longest() end
 
----Properties for class Path2d
+
 
 ---@class Path2d
 ---@field count number Returns the number of points in this path
 ---@field last Transform Returns the last point in this path
 Path2d = {}
-
-
----Methods for type Path2d
-
 
 ---@return Path2d 
 function Path2d:New() end
@@ -1365,7 +1292,7 @@ function Path2d:FindMaximumX() end
 ---@return number 
 function Path2d:FindMaximumY() end
 
----@param size number The size of the square to fit the path into
+---@param size? number The size of the square to fit the path into
 function Path2d:Normalize(size) end
 
 ---@param sides number The number of sides for the polygon
@@ -1375,7 +1302,7 @@ function Path2d:Polygon(sides) end
 ---@param spacing number The space between points in the new pat
 function Path2d:Resample(spacing) end
 
----Properties for class Pointer
+
 
 ---@class Pointer
 ---@field isDrawing boolean True if the pointer is currently drawing a stroke, otherwise false
@@ -1389,14 +1316,10 @@ function Path2d:Resample(spacing) end
 ---@field rotation Rotation | number[] The 3D orientation of the Pointer
 Pointer = {}
 
-
----Methods for type Pointer
-
-
 ---@return Pointer The new pointer
 function Pointer:New() end
 
----Properties for class Random
+
 
 ---@class Random
 ---@field insideUnitCircle Vector2 | number[] Returns a random 2d point inside a circle of radius 1
@@ -1407,10 +1330,6 @@ function Pointer:New() end
 ---@field value number Returns a random number between 0 and 1
 ---@field color Color | number[] Returns a random color
 Random = {}
-
-
----Methods for type Random
-
 ---@param hueMin number Minimum hue
 ---@param hueMax number Maximum hue
 ---@param saturationMin number Minimum saturation
@@ -1433,7 +1352,7 @@ function Random:Range(min, max) end
 ---@return number The random number  >= min and <= max
 function Random:Range(min, max) end
 
----Properties for class Rotation
+
 
 ---@class Rotation
 ---@field x number The amount of rotation around the x axis in degrees
@@ -1450,13 +1369,9 @@ function Random:Range(min, max) end
 ---@field angle number The angle in degrees of the angle-axis representation of this rotation
 ---@field axis Vector3 | number[] The axis part of the angle-axis representation of this rotation
 Rotation = {}
-
-
----Methods for type Rotation
-
----@param x number The angle of rotation on the x axis in degrees
----@param y number The angle of rotation on the y axis in degrees
----@param z number The angle of rotation on the z axis in degrees
+---@param x? number The angle of rotation on the x axis in degrees
+---@param y? number The angle of rotation on the y axis in degrees
+---@param z? number The angle of rotation on the z axis in degrees
 ---@return Rotation 
 function Rotation:New(x, y, z) end
 
@@ -1544,8 +1459,11 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@param other Rotation The other rotation
 ---@return Rotation The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
----Methods for type Selection
 
+
+
+---@class Selection
+Selection = {}
 
 function Selection:Deselect() end
 
@@ -1573,7 +1491,7 @@ function Selection:Resize() end
 ---@param count number The number of points to trim from each stroke
 function Selection:Trim(count) end
 
----Properties for class Sketch
+
 
 ---@class Sketch
 ---@field cameraPaths CameraPathList | CameraPath[] Returns a list of active camera paths in the sketch
@@ -1592,10 +1510,6 @@ function Selection:Trim(count) end
 ---@field mainLightRotation Rotation | number[] The main light's rotation
 ---@field secondaryLightRotation Rotation | number[] The secondary light's rotation
 Sketch = {}
-
-
----Methods for type Sketch
-
 ---@param name string The filename of the sketch
 function Sketch:Open(name) end
 
@@ -1614,7 +1528,7 @@ function Sketch:NewSketch() end
 ---@param filename string The filename of the image
 function Sketch:ImportSkybox(filename) end
 
----Properties for class Spectator
+
 
 ---@class Spectator
 ---@field canSeeWidgets boolean Sets whether Widgets are visible to the spectator camera
@@ -1629,10 +1543,6 @@ function Sketch:ImportSkybox(filename) end
 ---@field rotation Rotation | number[] The 3D orientation of the Spectator Camera
 ---@field lockedToScene boolean Sets whether the spectator camera moves with the scene or with the user
 Spectator = {}
-
-
----Methods for type Spectator
-
 ---@param position Vector3 The point in the scene to look towards
 function Spectator:LookAt(position) end
 
@@ -1648,7 +1558,7 @@ function Spectator:Wobble() end
 
 function Spectator:Circular() end
 
----Properties for class Stroke
+
 
 ---@class Stroke
 ---@field path Path | Transform[] The control points of this stroke from a Path
@@ -1659,10 +1569,6 @@ function Spectator:Circular() end
 ---@field group Group The group this stroke is part of
 ---@field count number The number of control points in this stroke
 Stroke = {}
-
-
----Methods for type Stroke
-
 ---@param brushName string The name (or guid) of the brush to get the material from
 function Stroke:ChangeMaterial(brushName) end
 
@@ -1713,22 +1619,18 @@ function Stroke:SetShaderTexture(parameter, image) end
 
 ---@param parameter string The shader parameter name
 ---@param x number The new x value
----@param y number The new y value
----@param z number The new z value
----@param w number The new w value
+---@param y? number The new y value
+---@param z? number The new z value
+---@param w? number The new w value
 function Stroke:SetShaderVector(parameter, x, y, z, w) end
 
----Properties for class StrokeList
+
 
 ---@class StrokeList
 ---@field lastSelected Stroke | Transform[] Returns the last stroke that was selected
 ---@field last Stroke | Transform[] Returns the last Stroke
 ---@field count number The number of strokes
 StrokeList = {}
-
-
----Methods for type StrokeList
-
 
 function StrokeList:Select() end
 
@@ -1756,41 +1658,40 @@ function StrokeList:SetShaderTexture(parameter, image) end
 
 ---@param parameter string The shader parameter name
 ---@param x number The new x value
----@param y number The new y value
----@param z number The new z value
----@param w number The new w value
+---@param y? number The new y value
+---@param z? number The new z value
+---@param w? number The new w value
 function StrokeList:SetShaderVector(parameter, x, y, z, w) end
----Methods for type Svg
 
+
+
+---@class Svg
+Svg = {}
 ---@param svgPath string The SVG path string to parse
 ---@return PathList Returns a PathList representing the parsed SVG path
 function Svg:ParsePathString(svgPath) end
 
 ---@param svg string A text string that is valid SVG document
----@param offsetPerPath number Each path can be lifted to form a layered result
----@param includeColors boolean Whether the colors from the SVG are used
+---@param offsetPerPath? number Each path can be lifted to form a layered result
+---@param includeColors? boolean Whether the colors from the SVG are used
 ---@return PathList Returns a PathList representing the parsed SVG document
 function Svg:ParseDocument(svg, offsetPerPath, includeColors) end
 
 ---@param svg string The SVG path string to draw
----@param tr Transform The transform to apply to the result
+---@param tr? Transform The transform to apply to the result
 function Svg:DrawPathString(svg, tr) end
 
 ---@param svg string A text string that is a valid SVG document
----@param tr Transform The transform (position, rotation and scale) to apply to the result
+---@param tr? Transform The transform (position, rotation and scale) to apply to the result
 function Svg:DrawDocument(svg, tr) end
 
----Properties for class Symmetry
+
 
 ---@class Symmetry
 ---@field current SymmetrySettings The current symmetry settings
 ---@field brushOffset Vector3 | number[] Gets the offset betwen the current brush position and the symmetry widget
 ---@field wandOffset Vector3 | number[] Gets the offset betwen the current wand position and the symmetry widget
 Symmetry = {}
-
-
----Methods for type Symmetry
-
 
 function Symmetry:SummonWidget() end
 
@@ -1805,8 +1706,8 @@ function Symmetry:Square(angle) end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param n number The exponent of the superellipse. This determines the roundness vs sharpness of the corners of the superellipse. For n = 2, you get an ellipse. As n increases, the shape becomes more rectangular with sharper corners. As n approaches infinity, the superellipse becomes a rectangle. If n is less than 1, the shape becomes a star with pointed tips.
----@param a number The horizontal radius of the superellipse
----@param b number The vertical radius of the superellipse
+---@param a? number The horizontal radius of the superellipse
+---@param b? number The vertical radius of the superellipse
 ---@return number 
 function Symmetry:Superellipse(angle, n, a, b) end
 
@@ -1818,7 +1719,7 @@ function Symmetry:Rsquare(angle, size, cornerRadius) end
 
 ---@param angle number The angle in degrees to sample the radius at
 ---@param numSides number The number of sides of the polygon
----@param radius number The distance from the center to any vertex
+---@param radius? number The distance from the center to any vertex
 ---@return number 
 function Symmetry:Polygon(angle, numSides, radius) end
 
@@ -1856,7 +1757,7 @@ function Symmetry:GetBrushGuids() end
 ---@return Path 
 function Symmetry:PathToPolar(path) end
 
----Properties for class SymmetrySettings
+
 
 ---@class SymmetrySettings
 ---@field mode SymmetryMode The symmetry mode
@@ -1875,24 +1776,23 @@ function Symmetry:PathToPolar(path) end
 ---@field wallpaperSkewY number The skew of the wallpaper symmetry in the Y axis
 SymmetrySettings = {}
 
-
----Methods for type SymmetrySettings
-
-
 ---@return SymmetrySettings 
 function SymmetrySettings:Duplicate() end
----Methods for type Timer
 
+
+
+---@class Timer
+Timer = {}
 ---@param fn function The function to call
 ---@param interval number How long to wait inbetween repeated calls
----@param delay number How long to wait until the first call
----@param repeats number The number of times to call the function. A value of -1 means "run forever"
+---@param delay? number How long to wait until the first call
+---@param repeats? number The number of times to call the function. A value of -1 means "run forever"
 function Timer:Set(fn, interval, delay, repeats) end
 
 ---@param fn function The function to remove
 function Timer:Unset(fn) end
 
----Properties for class Transform
+
 
 ---@class Transform
 ---@field inverse Transform The inverse of this transform
@@ -1907,10 +1807,6 @@ function Timer:Unset(fn) end
 ---@field scale number Get or set the scale of this transform
 ---@field identity Transform A transform that does nothing. No translation, rotation or scaling
 Transform = {}
-
-
----Methods for type Transform
-
 ---@param transform Transform The transform to apply
 ---@return Transform 
 function Transform:TransformBy(transform) end
@@ -1957,16 +1853,13 @@ function Transform:New(x, y, z) end
 ---@return Transform 
 function Transform:Multiply(other) end
 
----Properties for class User
+
 
 ---@class User
 ---@field position Vector3 | number[] The 3D position of the user's viewpoint
 ---@field rotation Rotation | number[] The 3D orientation of the User (usually only a rotation around the Y axis unless you've set it manually or disabled axis locking
 User = {}
 
-
-
----Properties for class Vector2
 
 ---@class Vector2
 ---@field x number The x coordinate
@@ -1983,12 +1876,8 @@ User = {}
 ---@field up Vector2 | number[] A vector of 1 in the y axis
 ---@field zero Vector2 | number[] A vector of 0 in all axes
 Vector2 = {}
-
-
----Methods for type Vector2
-
----@param x number The x coordinate
----@param y number The y coordinate
+---@param x? number The x coordinate
+---@param y? number The y coordinate
 ---@return Vector2 
 function Vector2:New(x, y) end
 
@@ -2120,7 +2009,7 @@ function Vector2:NotEquals(other) end
 ---@return boolean 
 function Vector2:NotEquals(x, y) end
 
----Properties for class Vector3
+
 
 ---@class Vector3
 ---@field x number The x coordinate
@@ -2140,10 +2029,6 @@ function Vector2:NotEquals(x, y) end
 ---@field up Vector3 | number[] A vector of 1 in the y axis
 ---@field zero Vector3 | number[] A vector of 0 in all axes
 Vector3 = {}
-
-
----Methods for type Vector3
-
 ---@param x number The x coordinate
 ---@param y number The y coordinate
 ---@param z number The z coordinate
@@ -2277,7 +2162,7 @@ function Vector3:NotEquals(other) end
 ---@return boolean 
 function Vector3:NotEquals(x, y, z) end
 
----Properties for class Video
+
 
 ---@class Video
 ---@field index number Gets the index of this Video
@@ -2288,10 +2173,6 @@ function Vector3:NotEquals(x, y, z) end
 ---@field rotation Rotation | number[] The 3D orientation of the Video Widget
 ---@field scale number The scale of the Video Widget
 Video = {}
-
-
----Methods for type Video
-
 ---@param location string The filename of the video file to import from the user's MediaLibrary/Videos folder
 ---@return Video 
 function Video:Import(location) end
@@ -2305,7 +2186,7 @@ function Video:Deselect() end
 
 function Video:Delete() end
 
----Properties for class VideoList
+
 
 ---@class VideoList
 ---@field lastSelected Video Returns the last Video that was selected
@@ -2314,17 +2195,10 @@ function Video:Delete() end
 VideoList = {}
 
 
-
----Properties for class Visualizer
-
 ---@class Visualizer
 ---@field sampleRate number The current audio sample rate
 ---@field duration number The current duration of the audio buffer
 Visualizer = {}
-
-
----Methods for type Visualizer
-
 
 function Visualizer:EnableScripting() end
 
@@ -2355,7 +2229,7 @@ function Visualizer:SetBeatAccumulators(x, y, z, w) end
 ---@param peak number The peak value
 function Visualizer:SetBandPeak(peak) end
 
----Properties for class Wand
+
 
 ---@class Wand
 ---@field position Vector3 | number[] The 3D position of the Wand Controller
@@ -2366,10 +2240,6 @@ function Visualizer:SetBandPeak(peak) end
 ---@field triggerIsPressed boolean Check whether the wand trigger is currently pressed
 ---@field triggerPressedThisFrame boolean Check whether the wand trigger was pressed during the current frame
 Wand = {}
-
-
----Methods for type Wand
-
 ---@param size number The size of the history buffer
 function Wand:ResizeHistory(size) end
 
@@ -2383,8 +2253,11 @@ function Wand:PastPosition(back) end
 ---@param back number How far back in the history to get the rotation from
 ---@return Rotation 
 function Wand:PastRotation(back) end
----Methods for type Waveform
 
+
+
+---@class Waveform
+Waveform = {}
 ---@param time number The time to sample the waveform at
 ---@param frequency number The frequency of the wave
 ---@return number The value of the wave sampled at the given time
@@ -2459,7 +2332,7 @@ function Waveform:BlueNoise(previous) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2467,7 +2340,7 @@ function Waveform:Sine(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2475,7 +2348,7 @@ function Waveform:Cosine(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2483,7 +2356,7 @@ function Waveform:Triangle(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2491,7 +2364,7 @@ function Waveform:Sawtooth(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2499,7 +2372,7 @@ function Waveform:Square(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2507,7 +2380,7 @@ function Waveform:Exponent(time, frequency, duration, sampleRate, amplitude) end
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) end
 
@@ -2516,7 +2389,7 @@ function Waveform:Parabolic(time, frequency, duration, sampleRate, amplitude) en
 ---@param pulseWidth number The width of the pulse
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, amplitude) end
 
@@ -2525,7 +2398,7 @@ function Waveform:Pulse(time, frequency, pulseWidth, duration, sampleRate, ampli
 ---@param power number The power exponent of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude) end
 
@@ -2534,7 +2407,7 @@ function Waveform:Power(time, frequency, power, duration, sampleRate, amplitude)
 ---@param exponent number The exponent of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, sampleRate, amplitude) end
 
@@ -2542,29 +2415,32 @@ function Waveform:ExponentialSawtoothWave(time, frequency, exponent, duration, s
 ---@param frequency number The frequency of the wave
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:PerlinNoise(time, frequency, duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:WhiteNoise(duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:BrownNoise(duration, sampleRate, amplitude) end
 
 ---@param duration number The duration of samples to generate
 ---@param sampleRate number The sample rate of the generated waveform
----@param amplitude number The amplitude of the generated waveform
+---@param amplitude? number The amplitude of the generated waveform
 ---@return number[] An array of float values
 function Waveform:BlueNoise(duration, sampleRate, amplitude) end
----Methods for type WebRequest
 
+
+
+---@class WebRequest
+WebRequest = {}
 ---@param url string The URL to send the request to
 ---@param onSuccess function A function to call when the request succeeds
 ---@param onError function A function to call when the request fails
@@ -2580,11 +2456,10 @@ function WebRequest:Get(url, onSuccess, onError, headers, context) end
 ---@param context table A value to pass to the onSuccess and onError functions
 function WebRequest:Post(url, postData, onSuccess, onError, headers, context) end
 
----Values for enum SymmetryMode
+
 
 ---@class SymmetryMode
-t = Class()
-
+SymmetryMode = {}
 SymmetryMode.None = nil
 SymmetryMode.Standard = nil
 SymmetryMode.Scripted = nil
@@ -2593,11 +2468,9 @@ SymmetryMode.Point = nil
 SymmetryMode.Wallpaper = nil
 
 
----Values for enum SymmetryPointType
 
 ---@class SymmetryPointType
-t = Class()
-
+SymmetryPointType = {}
 SymmetryPointType.Cn = nil
 SymmetryPointType.Cnv = nil
 SymmetryPointType.Cnh = nil
@@ -2614,11 +2487,9 @@ SymmetryPointType.I = nil
 SymmetryPointType.Ih = nil
 
 
----Values for enum SymmetryWallpaperType
 
 ---@class SymmetryWallpaperType
-t = Class()
-
+SymmetryWallpaperType = {}
 SymmetryWallpaperType.p1 = nil
 SymmetryWallpaperType.pg = nil
 SymmetryWallpaperType.cm = nil

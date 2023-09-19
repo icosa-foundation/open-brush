@@ -73,44 +73,24 @@ namespace TiltBrush
             string methods = "";
             string enumValues = "";
 
-
-            if (Properties.Count > 0)
-            {
-                properties = $@"
----Properties for class {Name}
-
----@class {Name}
-{String.Join("\n", Properties
+            if (Properties.Count > 0) properties = $@"{String.Join("\n",
+                Properties
     .Where(p => p.Name != "Item")  // Exclude indexers
     .Select(p => p.AutocompleteSerialize()))}
-{Name} = {{}}
-
+";
+            if (EnumValues.Count > 0) enumValues = $@"{String.Join("\n",
+                EnumValues.Select(p => p.AutocompleteSerialize(Name)))}
 
 ";
-            }
-
-            if (EnumValues.Count > 0)
-            {
-                enumValues = $@"
----Values for enum {Name}
+            if (Methods.Count > 0) methods = $@"{String.Join("\n",
+                Methods.Select(m => m.AutocompleteSerialize(Name)))}
+";
+            
+            return $@"
 
 ---@class {Name}
-t = Class()
-
-{String.Join("\n", EnumValues.Select(p => p.AutocompleteSerialize(Name)))}
-
-";
-            }
-
-            if (Methods.Count > 0)
-            {
-                methods = $@"---Methods for type {Name}
-
-{String.Join("\n", Methods.Select(m => m.AutocompleteSerialize(Name)))}";
-
-            }
-            
-            return $"{properties}{enumValues}{methods}";
+{properties}{Name} = {{}}
+{enumValues}{methods}";
         }
 
         public string MarkdownSerialize()
@@ -369,17 +349,21 @@ t = Class()
         public string Name;
         public LuaDocsType ParameterType;
         public string Description;
-        
-        // 0=name 1=type 2=description
-        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>";
+        public bool IsOptional;
+        public string DefaultValue;
+
+        // 0=name 1=type 2=default value 3=description
+        private string markdownTemplate = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>";
+
         public string MarkdownSerialize()
         {
-            return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), Description);
+            return string.Format(markdownTemplate, Name, ParameterType.TypeAsMarkdownString(), DefaultValue, Description);
         }
         
         public string AutocompleteSerialize()
         {
-            return $"---@param {Name} {ParameterType.TypeAsLuaString()} {Description}";
+            string suffix = IsOptional ? "?" : "";
+            return $"---@param {Name}{suffix} {ParameterType.TypeAsLuaString()} {Description}";
         }
     }
     
@@ -419,7 +403,7 @@ t = Class()
 **Parameters:**
 
 <table data-full-width=""false"">
-<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+<thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
 <tbody>{parameters}</tbody></table>
 
 ";
