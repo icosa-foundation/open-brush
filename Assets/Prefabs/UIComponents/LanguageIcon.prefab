@@ -63,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a08e3eea390ffc74692b629cc5ca40e6, type: 2}
+  - {fileID: 2100000, guid: fa3ac38f4458f634bb011e473d562036, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -135,7 +135,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 0}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1

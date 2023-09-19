@@ -15,6 +15,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -22,11 +24,11 @@ namespace TiltBrush
     public class LanguagePopUpWindow : PagingPopUpWindow
     {
         private string m_CurrentPresetDesc;
-        private List<TiltBrush.Environment> m_Environments;
+        private Locale[] m_Locales;
 
         protected override int m_DataCount
         {
-            get { return m_Environments.Count; }
+            get { return m_Locales.Length; }
         }
 
         protected override void InitIcon(ImageIcon icon)
@@ -37,58 +39,39 @@ namespace TiltBrush
         protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int iCatalog)
         {
             LanguageButton iconButton = icon.m_IconScript as LanguageButton;
-            iconButton.SetPreset(m_Environments[iCatalog]);
-            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Environments[iCatalog].Description);
+            iconButton.SetPreset(m_Locales[iCatalog]);
+            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Locales[iCatalog].Identifier.Code);
         }
 
         override public void Init(GameObject rParent, string sText)
         {
-            //build list of lighting presets we're going to show
-            m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
+            //build list of locale presets we're going to show
+            Locale currentSelectedLocale = LocalizationSettings.SelectedLocale;
 
-            //find the active lighting preset
-            TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
-            if (rCurrentPreset != null)
+            m_Locales = App.Instance.m_Manifest.Locales;
+
+            int iPresetIndex = -1;
+            m_CurrentPresetDesc = currentSelectedLocale.Identifier.Code;
+
+            for (int i = 0; i < m_Locales.Length; ++i)
             {
-                //find the index of our current preset in the preset list
-                int iPresetIndex = -1;
-                m_CurrentPresetDesc = rCurrentPreset.Description;
-                for (int i = 0; i < m_Environments.Count; ++i)
+                if (m_Locales[i].Identifier.Code == m_CurrentPresetDesc)
                 {
-                    if (m_Environments[i].Description == m_CurrentPresetDesc)
-                    {
-                        iPresetIndex = i;
-                        break;
-                    }
-                }
-
-                if (iPresetIndex != -1)
-                {
-                    //set our current page to show the active preset if we have more than one page
-                    if (m_Environments.Count > m_IconCountFullPage)
-                    {
-                        m_RequestedPageIndex = iPresetIndex / m_IconCountNavPage;
-                    }
+                    iPresetIndex = i;
+                    break;
                 }
             }
-            SceneSettings.m_Instance.FadingToDesiredEnvironment += OnFadingToDesiredEnvironment;
+
+            if (iPresetIndex != -1)
+            {
+                if (m_Locales.Length > m_IconCountFullPage)
+                {
+                    m_RequestedPageIndex = iPresetIndex / m_IconCountNavPage;
+                }
+            }
 
             base.Init(rParent, sText);
         }
 
-        protected void OnFadingToDesiredEnvironment()
-        {
-            TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
-            if (rCurrentPreset != null)
-            {
-                m_CurrentPresetDesc = rCurrentPreset.Description;
-            }
-            RefreshPage();
-        }
-
-        void OnDestroy()
-        {
-            SceneSettings.m_Instance.FadingToDesiredEnvironment -= OnFadingToDesiredEnvironment;
-        }
     }
 } // namespace TiltBrush

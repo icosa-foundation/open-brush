@@ -89,7 +89,7 @@ MonoBehaviour:
     type: 3}
   m_IconSpacing: 0.46
   m_IconGridWidthFullPage: 3
-  m_IconGridHeightFullPage: 3
+  m_IconGridHeightFullPage: 2
   m_IconCountNavPage: 6
 --- !u!114 &114212356968007602
 MonoBehaviour:

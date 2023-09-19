@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+using UnityEngine.Localization;
+
 namespace TiltBrush
 {
 
     public class LanguageButton : BaseButton
     {
-        private TiltBrush.Environment m_Preset;
+        private Locale m_Preset;
+
+        [SerializeField] private LocalizedTexture m_Texture;
 
         override protected void ConfigureTextureAtlas()
         {
@@ -33,28 +38,27 @@ namespace TiltBrush
             }
         }
 
-        public void SetPreset(TiltBrush.Environment rPreset)
+        public void SetPreset(Locale rPreset)
         {
             m_Preset = rPreset;
 
-            SetButtonTexture(m_Preset.m_IconTexture);
-            SetDescriptionText(m_Preset.Description);
+            SetDescriptionText(m_Preset.LocaleName);
         }
 
         override protected void OnButtonPressed()
         {
-            if (SceneSettings.m_Instance.IsTransitioning &&
-                SceneSettings.m_Instance.GetDesiredPreset() == m_Preset)
-            {
-                return;
-            }
-            if (LightsControlScript.m_Instance.LightsChanged ||
-                SceneSettings.m_Instance.EnvironmentChanged ||
-                SceneSettings.m_Instance.CurrentEnvironment != m_Preset)
-            {
-                SceneSettings.m_Instance.RecordSkyColorsForFading();
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SwitchEnvironmentCommand(m_Preset));
-            }
+            // if (SceneSettings.m_Instance.IsTransitioning &&
+            //     SceneSettings.m_Instance.GetDesiredPreset() == m_Preset)
+            // {
+            //     return;
+            // }
+            // if (LightsControlScript.m_Instance.LightsChanged ||
+            //     SceneSettings.m_Instance.EnvironmentChanged ||
+            //     SceneSettings.m_Instance.CurrentEnvironment != m_Preset)
+            // {
+            //     SceneSettings.m_Instance.RecordSkyColorsForFading();
+            //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SwitchEnvironmentCommand(m_Preset));
+            // }
         }
     }
 } // namespace TiltBrush
