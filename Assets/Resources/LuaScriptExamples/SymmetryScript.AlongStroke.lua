@@ -24,7 +24,7 @@ end
 
 function updatePath()
     if stroke == nil then
-        App.Error("Please draw a stroke and then restart this plugin")
+        App:Error("Please draw a stroke and then restart this plugin")
         path = Path:New()
     else
         path = stroke.path

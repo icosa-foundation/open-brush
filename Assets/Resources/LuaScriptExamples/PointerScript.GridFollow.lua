@@ -25,7 +25,7 @@ function Main()
         if framesSinceChange > framesBetweenChanges then
 
             -- A vector from the actual Brush.Position to the calculated one used for drawing
-            vector = Brush.position.Subtract(currentPosition)
+            vector = Brush.position:Subtract(currentPosition)
 
             -- Store whether the vector is positive or negative in each axis
             signs = Vector3:New(

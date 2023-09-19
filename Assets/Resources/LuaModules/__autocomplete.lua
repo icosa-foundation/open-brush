@@ -2443,9 +2443,9 @@ function Waveform:BlueNoise(duration, sampleRate, amplitude) end
 WebRequest = {}
 ---@param url string The URL to send the request to
 ---@param onSuccess function A function to call when the request succeeds
----@param onError function A function to call when the request fails
----@param headers table A table of key-value pairs to send as headers
----@param context table A value to pass to the onSuccess and onError functions
+---@param onError? function A function to call when the request fails
+---@param headers? table A table of key-value pairs to send as headers
+---@param context? table A value to pass to the onSuccess and onError functions
 function WebRequest:Get(url, onSuccess, onError, headers, context) end
 
 ---@param url string The URL to send the request to

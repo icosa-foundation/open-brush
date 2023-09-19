@@ -18,7 +18,7 @@ function Main()
         p = Sphere(u,v)
         return Transform:New(
             initialPos:Add(p),
-            Rotation.lookRotation(p, Vector3.right)
+            Rotation:LookRotation(p, Vector3.right)
         )
     end
 end

@@ -13,7 +13,7 @@ end
 function Main()
     pointers = Path:New()
     for i = 0.0, copies do
-        position = Vector3.Lerp(Symmetry.brushOffset, Symmetry.wandOffset, i/copies)
+        position = Vector3:Lerp(Symmetry.brushOffset, Symmetry.wandOffset, i/copies)
         pointers:Insert(position)
     end
     return pointers

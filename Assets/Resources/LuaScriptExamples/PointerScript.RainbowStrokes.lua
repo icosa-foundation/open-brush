@@ -16,7 +16,7 @@ function Main()
 
     if App.frames % rate == 0 then
         newHue = Waveform:Triangle(App.time, hueShiftFrequency) * hueShiftAmount
-        newColor = Color.hsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
+        newColor = Color:HsvToRgb(initialHsv.x + newHue, initialHsv.y, initialHsv.z)
         Brush.colorRgb = newColor
         Brush:ForceNewStroke()
     end
