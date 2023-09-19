@@ -71,6 +71,23 @@ namespace TiltBrush
             }
 
             base.Init(rParent, sText);
+
+            LocalizationSettings.SelectedLocaleChanged += LocaleChanged;
+        }
+
+        void LocaleChanged(Locale locale)
+        {
+            if (locale != null)
+            {
+                m_CurrentPresetDesc = locale.Identifier.Code;
+            }
+            RefreshPage();
+            RequestClose();
+        }
+
+        void OnDestroy()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= LocaleChanged;
         }
 
     }

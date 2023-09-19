@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using TMPro;
 
 namespace TiltBrush
@@ -24,20 +25,6 @@ namespace TiltBrush
         [Header("Locale Text")]
         private Locale m_Preset;
         [SerializeField] private TextMeshPro m_LocaleText;
-
-        // override protected void ConfigureTextureAtlas()
-        // {
-        //     if (SketchControlsScript.m_Instance.AtlasIconTextures)
-        //     {
-        //         // Lighting icons are assigned later.  We want atlasing on all our
-        //         // buttons, so just set it to the default for now.
-        //         RefreshAtlasedMaterial();
-        //     }
-        //     else
-        //     {
-        //         base.ConfigureTextureAtlas();
-        //     }
-        // }
 
         public void SetPreset(Locale rPreset)
         {
@@ -50,18 +37,7 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            // if (SceneSettings.m_Instance.IsTransitioning &&
-            //     SceneSettings.m_Instance.GetDesiredPreset() == m_Preset)
-            // {
-            //     return;
-            // }
-            // if (LightsControlScript.m_Instance.LightsChanged ||
-            //     SceneSettings.m_Instance.EnvironmentChanged ||
-            //     SceneSettings.m_Instance.CurrentEnvironment != m_Preset)
-            // {
-            //     SceneSettings.m_Instance.RecordSkyColorsForFading();
-            //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SwitchEnvironmentCommand(m_Preset));
-            // }
+            LocalizationSettings.SelectedLocale = m_Preset;
         }
     }
 } // namespace TiltBrush

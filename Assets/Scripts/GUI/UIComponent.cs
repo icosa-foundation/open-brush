@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -172,7 +173,6 @@ namespace TiltBrush
 
         private void OnLocaleChanged(UnityEngine.Localization.Locale locale)
         {
-            Debug.Log($"locale changed! {Description}");
             SetDescriptionText(Description, DescriptionExtra);
         }
 
@@ -186,6 +186,8 @@ namespace TiltBrush
 
             // Create description with initial description values.
             SetDescriptionText(Description, DescriptionExtra);
+
+            LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
         }
 
         // ReSharper disable once Unity.RedundantEventFunction
@@ -226,6 +228,7 @@ namespace TiltBrush
 
         virtual protected void OnDestroy()
         {
+            LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
             UnregisterComponent();
         }
 
