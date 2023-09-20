@@ -23,7 +23,7 @@ namespace TiltBrush
 
     public class LanguagePopUpWindow : PagingPopUpWindow
     {
-        private string m_CurrentPresetDesc;
+        private string m_CurrentPresetIdCode;
         private Locale[] m_Locales;
 
         protected override int m_DataCount
@@ -40,7 +40,7 @@ namespace TiltBrush
         {
             LanguageButton iconButton = icon.m_IconScript as LanguageButton;
             iconButton.SetPreset(m_Locales[iCatalog]);
-            iconButton.SetButtonSelected(m_CurrentPresetDesc == m_Locales[iCatalog].Identifier.Code);
+            iconButton.SetButtonSelected(m_CurrentPresetIdCode == m_Locales[iCatalog].Identifier.Code);
         }
 
         override public void Init(GameObject rParent, string sText)
@@ -51,11 +51,11 @@ namespace TiltBrush
             m_Locales = App.Instance.m_Manifest.Locales;
 
             int iPresetIndex = -1;
-            m_CurrentPresetDesc = currentSelectedLocale.Identifier.Code;
+            m_CurrentPresetIdCode = currentSelectedLocale.Identifier.Code;
 
             for (int i = 0; i < m_Locales.Length; ++i)
             {
-                if (m_Locales[i].Identifier.Code == m_CurrentPresetDesc)
+                if (m_Locales[i].Identifier.Code == m_CurrentPresetIdCode)
                 {
                     iPresetIndex = i;
                     break;
@@ -79,7 +79,7 @@ namespace TiltBrush
         {
             if (locale != null)
             {
-                m_CurrentPresetDesc = locale.Identifier.Code;
+                m_CurrentPresetIdCode = locale.Identifier.Code;
             }
             RefreshPage();
             RequestClose();
