@@ -1625,7 +1625,7 @@ MonoBehaviour:
   m_CanBeDetachedFromWand: 1
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
-  m_ExperimentalModeToggle: {fileID: 0}
+  m_ExperimentalModeToggle: {fileID: 6926684204091440275}
   references:
     version: 2
     RefIds: []
