@@ -111,7 +111,7 @@ namespace TiltBrush
                 int iAmountOverCap = m_MeterIndex - iCappedIndex;
                 if (iAmountOverCap > 1)
                 {
-                    return m_MaxMeterDescription + " x" + iAmountOverCap.ToString();
+                    return m_MaxMeterDescription.GetLocalizedString() + " x" + iAmountOverCap.ToString();
                 }
                 else
                 {

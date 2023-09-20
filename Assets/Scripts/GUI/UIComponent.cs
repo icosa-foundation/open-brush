@@ -171,7 +171,7 @@ namespace TiltBrush
             }
         }
 
-        private void OnLocaleChanged(UnityEngine.Localization.Locale locale)
+        virtual protected void OnSelectedLocaleChanged(UnityEngine.Localization.Locale locale)
         {
             SetDescriptionText(Description, DescriptionExtra);
         }
@@ -187,7 +187,7 @@ namespace TiltBrush
             // Create description with initial description values.
             SetDescriptionText(Description, DescriptionExtra);
 
-            LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+            LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
         }
 
         // ReSharper disable once Unity.RedundantEventFunction
@@ -228,7 +228,7 @@ namespace TiltBrush
 
         virtual protected void OnDestroy()
         {
-            LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
             UnregisterComponent();
         }
 

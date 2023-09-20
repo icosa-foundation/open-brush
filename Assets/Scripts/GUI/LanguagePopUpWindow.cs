@@ -72,10 +72,10 @@ namespace TiltBrush
 
             base.Init(rParent, sText);
 
-            LocalizationSettings.SelectedLocaleChanged += LocaleChanged;
+            LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
         }
 
-        void LocaleChanged(Locale locale)
+        void OnSelectedLocaleChanged(Locale locale)
         {
             if (locale != null)
             {
@@ -87,7 +87,7 @@ namespace TiltBrush
 
         void OnDestroy()
         {
-            LocalizationSettings.SelectedLocaleChanged -= LocaleChanged;
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
         }
 
     }
