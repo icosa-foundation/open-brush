@@ -46,6 +46,23 @@ namespace TiltBrush
             //build list of lighting presets we're going to show
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
+            // Remove passthrough scene for devices that don't support it
+            // (everything but Quest).
+            // TODO: Better way to detect Passthrough support.
+            // Extra: Passthrough should be *per* envrionment really!
+            // See https://github.com/icosa-foundation/open-brush/issues/456
+#if !OCULUS_SUPPORTED
+            foreach (var env in m_Environments)
+            {
+                // Passthrough
+                if (env.m_Guid.ToString() == "e38af599-4575-46ff-a040-459703dbcd36")
+                {
+                    m_Environments.Remove(env);
+                    break;
+                }
+            }
+#endif // OCULUS_SUPPORTED
+
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
