@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: LanguageIcon
+  m_Name: LocaleIcon
   m_Shader: {fileID: 4800000, guid: f73cb58105789394bb27651598fb38e8, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5

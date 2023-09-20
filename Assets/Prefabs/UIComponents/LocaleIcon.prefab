@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6592536}
   - component: {fileID: 5989120667634538186}
   m_Layer: 0
-  m_Name: LanguageIcon
+  m_Name: LocaleIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

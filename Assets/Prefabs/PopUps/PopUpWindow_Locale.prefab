@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1953223544299146039}
   - component: {fileID: 114212356968007602}
   m_Layer: 16
-  m_Name: PopUpWindow_Language
+  m_Name: PopUpWindow_Locale
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

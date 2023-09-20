@@ -20,8 +20,7 @@ using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
-
-    public class LanguagePopUpWindow : PagingPopUpWindow
+    public class LocalePopUpWindow : PagingPopUpWindow
     {
         private string m_CurrentPresetIdCode;
         private Locale[] m_Locales;
@@ -38,7 +37,7 @@ namespace TiltBrush
 
         protected override void RefreshIcon(PagingPopUpWindow.ImageIcon icon, int iCatalog)
         {
-            LanguageButton iconButton = icon.m_IconScript as LanguageButton;
+            LocaleButton iconButton = icon.m_IconScript as LocaleButton;
             iconButton.SetPreset(m_Locales[iCatalog]);
             iconButton.SetButtonSelected(m_CurrentPresetIdCode == m_Locales[iCatalog].Identifier.Code);
         }

@@ -19,8 +19,7 @@ using TMPro;
 
 namespace TiltBrush
 {
-
-    public class LanguageButton : BaseButton
+    public class LocaleButton : BaseButton
     {
         [Header("Locale Text")]
         private Locale m_Preset;
